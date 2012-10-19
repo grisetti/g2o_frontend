@@ -1,0 +1,12 @@
+#ifndef G2O_FRONTEND_CONFIG_H
+#define G2O_FRONTEND__CONFIG_H
+
+#cmakedefine G2O_FRONTEND__HAVE_OPENGL 1
+#cmakedefine G2O_FRONTEND__OPENMP 1
+#cmakedefine G2O_FRONTEND__SHARED_LIBS 1
+
+// available sparse matrix libraries
+#cmakedefine G2O_FRONTEND__HAVE_CHOLMOD 1
+#cmakedefine G2O_FRONTEND__HAVE_CSPARSE 1
+
+#endif
