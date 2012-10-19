@@ -176,8 +176,6 @@ namespace g2o {
   }
   
   bool FeatureTracker::setNeighborFrames(BaseFrame* f1, BaseFrame* f2, bool connect_){
-    assert(_frames.count(f1));
-    assert(_frames.count(f2));
     if (connect_) {
       if(f1->neighbors().count(f2))
 	return false;
