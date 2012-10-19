@@ -141,7 +141,7 @@ int main(int argc, char**argv){
   float minRange;
   arg.param("o", outfilename, "otest.g2o", "output file name"); 
   arg.param("maxRange", maxRange, 1e3, "maximum range to sense features"); 
-  arg.param("minRange", minRange, 0, "minimum range to sense features"); 
+  arg.param("minRange", minRange, 0.5, "minimum range to sense features"); 
   arg.param("noLoop", noLoop, false, "disable loop closure"); 
   arg.param("localMapSize", localMapSize, 5, "num of nodes in the path to use in the local map"); 
   arg.param("incrementalGuessMaxFeatureDistance", incrementalGuessMaxFeatureDistance, 1., "max distance between predicted and projected feature, used to process raw readings"); 
