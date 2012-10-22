@@ -208,29 +208,42 @@ namespace g2o {
       //FrameClusterer frameClusterer;
       _frameClusterer->compute(prunedClosures);
       cerr << "in the closure there are " << _frameClusterer->numClusters() << " regions" << endl;
-      for (int i =0; i < _frameClusterer->numClusters(); i++ ){
+      for (int i =0; i < _frameClusterer->numClusters() && featuresToMatchInLocalMap.size(); i++ ){
 	cerr << "\t cluster: " << i << " " << _frameClusterer->cluster(i).size() << endl;
   
 	  
-	// optimize each cluster
-	_optimizationManager->initializeLocal(_frameClusterer->cluster(i),0,true);
-	_optimizationManager->optimize(_localOptimizeIterations);
 
 	BaseTrackedFeatureSet featuresInCluster;
 	FeatureTracker::selectFeaturesWithLandmarks(featuresInCluster, _frameClusterer->cluster(i));
-	cerr << "\t\t" << " #features with landmarks: " << featuresInCluster.size() <<  endl;
+	int minFeatures = (int)featuresInCluster.size() < (int) featuresToMatchInLocalMap.size() ? 
+	  (int)featuresInCluster.size()  : (int) featuresToMatchInLocalMap.size();
 
-	if ((int)featuresInCluster.size() >= _minFeaturesInCluster) {
+	if (minFeatures < _minFeaturesInCluster){
+	  //cerr << "\t\t" << " #too few features (" << minFeatures << "), rejecting match"<<  endl;
+	} else {
+	  cerr << "\t\t" << " #enough features  (" << minFeatures << "), accepting match"<<  endl;
+	  // optimize each cluster
+	  _optimizationManager->initializeLocal(_frameClusterer->cluster(i),0,true);
+	  _optimizationManager->optimize(_localOptimizeIterations);
+	  
 	  _correspondenceFinder->compute(featuresInCluster, featuresToMatchInLocalMap);
 	  CorrespondenceVector clusterClosureCorrespondences=_correspondenceFinder->correspondences();
 	  cerr << "\t\t" << " #matches:  " << clusterClosureCorrespondences.size() <<  endl;
 	  
 	  _matcher->compute(clusterClosureCorrespondences);
 	  CorrespondenceVector clusterClosureMatches=_matcher->matches();
-	  int maxInliers = (featuresToMatchInLocalMap.size()<featuresInCluster.size())? featuresToMatchInLocalMap.size() : featuresInCluster.size();
-	  float inlierRatio = (float) clusterClosureMatches.size() / (float) maxInliers;
+	  // cout the number of matches of *different* matched features in the current local map
+	  // sorting the vector and counting could be substantially more efficient
+	  BaseTrackedFeatureSet differentMatches;
+	  for (size_t i = 0; i<clusterClosureMatches.size(); i++){
+	    differentMatches.insert(clusterClosureMatches[i].f2);
+	  }
+	  int numDifferentMatches = differentMatches.size();
+
+	  float inlierRatio = (float) numDifferentMatches / minFeatures;
 	  int landmarkIdentityMatches = _matcher->landmarkIdentityMatches();
-	  cerr << "\t\t" << " #ransac:   " << clusterClosureMatches.size() <<  " inlierRatio: " << inlierRatio << " identityMatches: " << 
+	  cerr << "\t\t" << " #ransac:   " << clusterClosureMatches.size() 
+	       <<  " differentMatches: " <<  numDifferentMatches << "  inlierRatio: " << inlierRatio << " identityMatches: " << 
 	    landmarkIdentityMatches << endl;
 	  
 	  if (inlierRatio > _closureInlierRatio || landmarkIdentityMatches > _loopRansacIdentityMatches) {
@@ -244,15 +257,14 @@ namespace g2o {
 	      //cerr << "\t\t\tc:" << k << " " << l1 << " " <<  l2 << " " << c.distance << " " << occurrences << endl;
 	    }
 	  }
-	} else {
-	  cerr << "\t\t" << " #too few features, rejecting match"<<  endl;
-	}
-	_optimizationManager->cleanup();
+	  _optimizationManager->cleanup();
+	} 
       }
     }
+
     _mergedLandmarks = _correspondenceManager->merge(1);
     int recursivelyMergedLandmarks = 0;
-    if (1 && _mergedLandmarks) {
+    if (_mergedLandmarks) {
       int newlyMerged;
       do {
 	_frameClusterer->compute(closureCandidates);
