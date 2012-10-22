@@ -66,6 +66,18 @@ TARGET_LINK_LIBRARIES(slam_simulator3d_application
 
 SET_TARGET_PROPERTIES(slam_simulator3d_application PROPERTIES OUTPUT_NAME slam_simulator3d${EXE_POSTFIX})
 
+ADD_EXECUTABLE(g2o_anonymize_observations_application   g2o_anonymize_observations.cpp
+)
+TARGET_LINK_LIBRARIES(g2o_anonymize_observations_application
+  types_data
+  ${G2O_TYPES_SLAM3D}
+  ${G2O_TYPES_SLAM2D}
+  ${G2O_TYPES_DATA}
+  ${G2O_CORE_LIBRARY} 
+  ${G2O_STUFF_LIBRARY}
+)
+SET_TARGET_PROPERTIES(g2o_anonymize_observations_application PROPERTIES OUTPUT_NAME g2o_anonymize_observations${EXE_POSTFIX})
+
 
 # INSTALL(TARGETS g2o_simulator_library g2o_simulator2d_application g2o_simulator3d_application
 #   RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin

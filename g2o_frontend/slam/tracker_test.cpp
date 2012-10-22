@@ -122,48 +122,55 @@ int main(int argc, char**argv){
   int minFeaturesInCluster;
   int minFrameToFrameInliers;
   int minLandmarkCreationFrames;
-  float closureInlierRatio;
   int optimizeEachN;
   int dumpEachN;
   double incrementalGuessMaxFeatureDistance;
   double incrementalRansacInlierThreshold;
   double incrementalDistanceDifferenceThreshold;
-  double loopLinearClosureThreshold;
   double loopAngularClosureThreshold;
+  int    loopGuessMaxFeatureDistance;
+  double loopLinearClosureThreshold;
   double loopRansacIdentityMatches;
   double loopRansacInlierThreshold;
+  double loopRansacInlierRatio;
+  double loopLandmarkMergeDistance;
   int intraFrameConnectivityThreshold;
-  int loopGuessMaxFeatureDistance;
   int localOptimizeIterations;
   int globalOptimizeIterations;
   int updateViewerEachN;
   float maxRange;
   float minRange;
+  bool odometryIsGood;
+  int incrementalFeatureTrackingWindow;
   arg.param("o", outfilename, "otest.g2o", "output file name"); 
   arg.param("maxRange", maxRange, 1e3, "maximum range to sense features"); 
-  arg.param("minRange", minRange, 0.5, "minimum range to sense features"); 
+  arg.param("minRange", minRange, 0.5, "minimum range to sense features");
+  arg.param("minLandmarkCreationFrames", minLandmarkCreationFrames, 2, "minimum range to sense features");
   arg.param("noLoop", noLoop, false, "disable loop closure"); 
+  arg.param("odometryIsGood", odometryIsGood, false, "use settings for good odometry"); 
   arg.param("localMapSize", localMapSize, 5, "num of nodes in the path to use in the local map"); 
+  arg.param("incrementalFeatureTrackingWindow", incrementalFeatureTrackingWindow, 1, "num of frames to look before to seek for a feature match"); 
   arg.param("incrementalGuessMaxFeatureDistance", incrementalGuessMaxFeatureDistance, 1., "max distance between predicted and projected feature, used to process raw readings"); 
-  arg.param("incrementalRansacInlierThreshold", incrementalRansacInlierThreshold, 0.2, "inlier distance in the incremental phase"); 
-  arg.param("incrementalDistanceDifferenceThreshold", incrementalDistanceDifferenceThreshold, 0.3, "min distance between an inlier and the second best inlier for the same feature"); 
+  arg.param("incrementalRansacInlierThreshold", incrementalRansacInlierThreshold, 0.5, "inlier distance in the incremental phase"); 
+  arg.param("incrementalDistanceDifferenceThreshold", incrementalDistanceDifferenceThreshold, 0.2, "min distance between an inlier and the second best inlier for the same feature"); 
+  
   arg.param("loopLinearClosureThreshold", loopLinearClosureThreshold, 5., "max linear distance between frames to check for loop closure");
   arg.param("loopAngularClosureThreshold", loopAngularClosureThreshold, M_PI, "max angular between frames to check for loop closure");
-  arg.param("loopGuessMaxFeatureDistance", loopGuessMaxFeatureDistance, 3., "max distance between predicted and projected feature, used to determine correspondence in loop closing"); 
-  arg.param("loopRansacIdentityMatches", loopRansacIdentityMatches, 5, "min number of matches between known landmarks to use for ransac to force the alignment between two local maps"); 
-  arg.param("loopRansacInlierThreshold", loopRansacInlierThreshold, 0.05, "inlier threshold for ransac in loop closing"); 
-
+  arg.param("loopGuessMaxFeatureDistance", loopGuessMaxFeatureDistance, 2., "max distance between predicted and projected feature, used to determine correspondence in loop closing"); 
+  arg.param("loopRansacIdentityMatches", loopRansacIdentityMatches, 4, "min number of matches between known landmarks to use for ransac to force the alignment between two local maps"); 
+  arg.param("loopRansacInlierThreshold", loopRansacInlierThreshold, .3, "inlier distance threshold for ransac in loop closing"); 
+  arg.param("loopRansacInlierRatio", loopRansacInlierRatio, .8, "inlier fraction  for ransac in loop closing"); 
+  arg.param("loopLandmarkMergeDistance", loopLandmarkMergeDistance, .1, "distance between two instances of landmarks in the local under which the merging occursx"); 
+  
   arg.param("intraFrameConnectivityThreshold", intraFrameConnectivityThreshold, 2, "num of landmarks that should be seen by two frames to consider them neighbors"); 
   arg.param("localOptimizeIterations", localOptimizeIterations, 3, "iterations of the optimizer during the local phase (local maps, incremental matching)"); 
-  arg.param("globalOptimizeIterations", globalOptimizeIterations, 3, "iterations of the optimizer when merging landmarks"); 
+  arg.param("globalOptimizeIterations", globalOptimizeIterations, 10, "iterations of the optimizer when merging landmarks"); 
   arg.param("optimizeEachN", optimizeEachN, 5, "perform a global optimization each <x> frames"); 
   arg.param("dumpEachN", dumpEachN, -1, "saves a dump of the running SLAM problem each <x> iterations"); 
   arg.param("updateViewerEachN", updateViewerEachN, -1, "updates the viewer of the running SLAM problem each <x> iterations"); 
 
-  arg.param("minLandmarkCreationFrames", minLandmarkCreationFrames, 1, "min num of times to associate a featue to create a landmark"); 
-  arg.param("closureInlierRatio", closureInlierRatio, 0.5, "fraction of inliers that should match to merge landmarks in loop closing"); 
   arg.param("minFeaturesInCluster", minFeaturesInCluster, 10, "min num of features to consider in a cluster "); 
-  arg.param("minFrameToFrameInliers", minFrameToFrameInliers, 2, "min num of matching features to do some landmark calculation"); 
+  arg.param("minFrameToFrameInliers", minFrameToFrameInliers, 0, "min num of matching features to do something with the frame"); 
   arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
   
   arg.parseArgs(argc, argv);
@@ -230,7 +237,7 @@ int main(int argc, char**argv){
   GraphItemSelector* graphItemSelector = new GraphItemSelector;
   OptimizationManager* optimizationManager = new OptimizationManager(tracker, graphItemSelector);
   FrameClusterer* frameClusterer = new FrameClusterer;
-
+  PointXYLandmarkDistanceEstimator* landmarkDistanceEstimator = new PointXYLandmarkDistanceEstimator;
   LoopClosureManager* loopClosureManager = new LoopClosureManager(tracker, 
 								  closureDetector,
 								  frameClusterer,
@@ -238,11 +245,13 @@ int main(int argc, char**argv){
 								  landmarkCorrespondenceManager,
 								  loopClosureMatcher,
 								  optimizationManager,
-								  graphItemSelector);
+								  graphItemSelector,
+								  landmarkDistanceEstimator);
   loopClosureManager->setMinFeaturesInCluster(minFeaturesInCluster);
-  loopClosureManager->setClosureInlierRatio(closureInlierRatio);
+  loopClosureManager->setClosureInlierRatio(loopRansacInlierRatio);
   loopClosureManager->setLoopRansacIdentityMatches(loopRansacIdentityMatches);
   loopClosureManager->setLocalOptimizeIterations(localOptimizeIterations);
+  loopClosureManager->setLandmarkMergeDistanceThreshold(loopLandmarkMergeDistance);
 
 
 
@@ -304,6 +313,7 @@ int main(int argc, char**argv){
       BaseFrame* localMapGaugeFrame = tracker->lastNFrames(localFrames, localMapSize);
 
       // do one round of optimization, it never hurts
+      cerr << "A" << endl;
       optimizationManager->initializeLocal(localFrames, localMapGaugeFrame, false);
       optimizationManager->optimize(localOptimizeIterations);
       optimizationManager->cleanup();
@@ -312,7 +322,7 @@ int main(int argc, char**argv){
       // look for the conrrespondences based on the odometry
       // thisa applies first the correspondenceFinder than the matcher
       CorrespondenceVector correspondences;
-      tracker->searchInitialCorrespondences(correspondences);
+      tracker->searchInitialCorrespondences(correspondences, incrementalFeatureTrackingWindow);
  
       // look for the conrrespondences based on the odometry
       // thisa applies first the correspondenceFinder than the matcher
@@ -325,21 +335,24 @@ int main(int argc, char**argv){
       // if you found a reasonable number of inliers, correct the estimate of the
       // last vertex with the matcher estimate for the translation
       SE2 transformation = matcher->transformation();
-      if (matcher->numInliers()>minFrameToFrameInliers){
+      if (matcher->numInliers()>=minFrameToFrameInliers){
 	v->setEstimate(transformation * v->estimate());
       }
 
       // update the bookkeeping, by connecting the tracked features found in the correspondences
       // and by creating the landmarks when a track was confirmed for a while
       tracker->updateTracksAndLandmarks(filtered);
- 
       // do one round of optimization, it makes the local map prettier when looking for loop closures
+      cerr << "B" << endl;
+      
       optimizationManager->initializeLocal(localFrames, localMapGaugeFrame, false);
       optimizationManager->optimize(localOptimizeIterations);
       optimizationManager->cleanup();
+      
+ 
 
       // connect the frames from which you observed some landmark in common
-      int newIncrementalLinks = tracker->refineConnectivity(localFrames, 1);
+      int newIncrementalLinks = tracker->refineConnectivity(localFrames, 1, odometryIsGood);
       cerr << "newIncrementalLinks: " << newIncrementalLinks << endl;
 
       // BaseTrackedFeatureSet newFeaturesWithLandmark;
@@ -382,8 +395,8 @@ int main(int argc, char**argv){
     frameCount ++;
 
     vPrev = v;
-    //int a;
-    //cin >> a;
+    // int a;
+    // cin >> a;
 
     // do the cleaning
     if ((int)localFrames.size() == localMapSize ) {

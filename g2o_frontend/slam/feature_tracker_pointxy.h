@@ -59,14 +59,14 @@ namespace g2o {
     inline void setInliersThreshold(double a) { _inliersThreshold = a; }
     inline double inliersThreshold() const { return _inliersThreshold; }
 
-    inline void setIntraFrameDistanceDifferenceThreshold(double a) { _intraFrameDistanceDifferenceThreshold = a; }
-    inline double intraFrameDistanceDifferenceThreshold() const { return _intraFrameDistanceDifferenceThreshold; }
+    inline void setIntraFrameDistanceDifferenceThreshold(double a) { _squaredIntraFrameDistanceDifferenceThreshold = a*a; }
+    inline double intraFrameDistanceDifferenceThreshold() const { return _squaredIntraFrameDistanceDifferenceThreshold; }
 
-    inline void setInterFrameDistanceDifferenceThreshold(double a) { _interFrameDistanceDifferenceThreshold = a; }
-    inline double interFrameDistanceDifferenceThreshold() const { return _interFrameDistanceDifferenceThreshold; }
+    inline void setInterFrameDistanceDifferenceThreshold(double a) { _squaredInterFrameDistanceDifferenceThreshold = a*a; }
+    inline double interFrameDistanceDifferenceThreshold() const { return _squaredInterFrameDistanceDifferenceThreshold; }
 
-    inline void setInlierDistanceThreshold(double a) { _inlierDistanceThreshold = a; }
-    double inlierDistanceThreshold() const { return _inlierDistanceThreshold; }
+    inline void setInlierDistanceThreshold(double a) { _squaredInlierDistanceThreshold = a*a; }
+    double inlierDistanceThreshold() const { return _squaredInlierDistanceThreshold; }
 
     inline FeatureMappingMode featureMappingMode(int i) {
       return _featureMappingMode[i];
@@ -93,9 +93,9 @@ namespace g2o {
     double _maxIterationsThreshold;
     double _minIterationsThreshold;
     double _inliersThreshold;
-    double _intraFrameDistanceDifferenceThreshold;
-    double _interFrameDistanceDifferenceThreshold;
-    double _inlierDistanceThreshold;
+    double _squaredIntraFrameDistanceDifferenceThreshold;
+    double _squaredInterFrameDistanceDifferenceThreshold;
+    double _squaredInlierDistanceThreshold;
     FeatureMappingMode _featureMappingMode[2];
     
     SE2 _transformation;
@@ -115,6 +115,10 @@ namespace g2o {
     double _squaredLinearClosureThreshold;
     double _angularClosureThreshold;
 
+  };
+
+  struct PointXYLandmarkDistanceEstimator : public LandmarkDistanceEstimator {
+    virtual bool compute(double& distance, BaseTrackedLandmark* l1, BaseTrackedLandmark* l2);
   };
 
 }// end namespace

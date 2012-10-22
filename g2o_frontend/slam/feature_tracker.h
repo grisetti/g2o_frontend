@@ -122,18 +122,20 @@ namespace g2o {
 
     inline void setEdge(OptimizableGraph::Edge* e) {_edge = e;}
 
-    inline int numChildren() {
-      return _numChildren;
+    inline int numChildren() const {
+      return _children.size();
     }
 
-    BaseTrackedFeatureSet children();
+    inline BaseTrackedFeatureSet& children() {return _children;}
+    inline const BaseTrackedFeatureSet& children() const {return _children;}
     OptimizableGraph::Edge* _edge;
+    
   protected:
     BaseFrame* _frame;
     BaseFeatureData* _featureData;
     BaseTrackedFeature* _previous;
     BaseTrackedLandmark* _landmark;
-    int _numChildren;
+    BaseTrackedFeatureSet _children;
   };
 
 
@@ -284,7 +286,7 @@ namespace g2o {
     const OptimizableGraph* graph() const {return _graph;}
     
     // look for the correspondences with odometry
-    void searchInitialCorrespondences(CorrespondenceVector& correspondences);
+    void searchInitialCorrespondences(CorrespondenceVector& correspondences, int numFrames=1);
     
     // do side effect by creating landmarks and connecting tracked features based on the set of correspondences passed
     void updateTracksAndLandmarks(const CorrespondenceVector& correspondences);
@@ -306,7 +308,7 @@ namespace g2o {
     inline BaseTrackedLandmarkSet& landmarks() { return _landmarks; };
     
     bool setNeighborFrames(BaseFrame* f1, BaseFrame* f2, bool connect);
-    int refineConnectivity(BaseFrameSet& frames, int minCommonLandmarks);
+    int refineConnectivity(BaseFrameSet& frames, int minCommonLandmarks, bool odometryIsGood=false);
 
 
     // utlities
