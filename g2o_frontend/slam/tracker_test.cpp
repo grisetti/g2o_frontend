@@ -21,42 +21,81 @@
 using namespace std;
 using namespace g2o;
 
-void dumpEdges(ostream& os, BaseFrameSet& fset) {
+
+void dumpEdges(ostream& os, BaseFrameSet& fset, 
+	       bool writeOdometry = true, 
+	       bool writeLandmarks = true, 
+	       bool writeIntraFrame = false) {
+
    GraphItemSelector graphSelector;
   graphSelector.compute(fset);
   HyperGraph::EdgeSet& eset=graphSelector.selectedEdges();
   OptimizableGraph::VertexSet& vset=graphSelector.selectedVertices();
   
   os << "set size ratio -1" << endl;
-  os << "plot '-' w l lw 0.5, '-' w p ps 1.5, '-' w p ps 0.5" << endl;
-  // write the odometries
-  for (HyperGraph::EdgeSet::iterator it = eset.begin(); it!=eset.end(); it++){
-    const EdgeSE2* e = dynamic_cast<const EdgeSE2*>(*it);
-    if (! e)
-      continue;
-    const VertexSE2* v1 = dynamic_cast<const VertexSE2*>(e->vertices()[0]);
-    const VertexSE2* v2 = dynamic_cast<const VertexSE2*>(e->vertices()[1]);
-    os << v1->estimate().translation().x() << " " << v1->estimate().translation().y() << endl;
-    os << v2->estimate().translation().x() << " " << v2->estimate().translation().y() << endl;
-    os << endl;
+  os << "plot ";
+  if (writeOdometry) {
+    os << "'-' w l lw 0.5, ";
   }
-  os << "e" << endl;
+  if (writeIntraFrame) {
+    os << "'-' w l lw 0.5, ";
+  }
+  if (writeLandmarks) {
+    os << "'-' w p ps 0.5,";
+  }
+  os << "'-' w p ps 1.5" << endl;
 
-  // write the robot poses
+  if (writeOdometry){
+    for (HyperGraph::EdgeSet::iterator it = eset.begin(); it!=eset.end(); it++){
+      const EdgeSE2* e = dynamic_cast<const EdgeSE2*>(*it);
+      if (! e)
+	continue;
+      const VertexSE2* v1 = dynamic_cast<const VertexSE2*>(e->vertices()[0]);
+      const VertexSE2* v2 = dynamic_cast<const VertexSE2*>(e->vertices()[1]);
+      os << v1->estimate().translation().x() << " " << v1->estimate().translation().y() << endl;
+      os << v2->estimate().translation().x() << " " << v2->estimate().translation().y() << endl;
+      os << endl;
+    }
+    os << "e" << endl;
+  }
+
+  if (writeIntraFrame) {
+    for (BaseFrameSet::iterator it = fset.begin(); it!=fset.end(); it++){
+      BaseFrame* f = *it;
+      const VertexSE2* v1 = f->vertex<const VertexSE2*>();
+      if (!v1)
+	continue;
+      for (BaseFrameSet::iterator iit = f->neighbors().begin(); iit!=f->neighbors().end(); iit++){
+	BaseFrame* f2 = *iit;
+	if (! fset.count(f2))
+	  continue;
+	const VertexSE2* v2 = f2->vertex<const VertexSE2*>();
+	if (! v2)
+	  continue;
+	os << v1->estimate().translation().x() << " " << v1->estimate().translation().y() << " " << v1->estimate().rotation().angle() << endl;
+	os << v2->estimate().translation().x() << " " << v2->estimate().translation().y() << " " << v2->estimate().rotation().angle() << endl;
+	os << endl;
+      }
+    }
+    os << "e" << endl;
+  }
+
+  // write the landmarks
+  if (writeLandmarks) {
+    for (OptimizableGraph::VertexSet::iterator it = vset.begin(); it!=vset.end(); it++){
+      const VertexPointXY* v = dynamic_cast<const VertexPointXY*>(*it);
+      if (! v)
+	continue;
+      os << v->estimate().x() << " " << v->estimate().y() <<  endl;
+    }
+    os << "e" << endl;
+  }
+  
   for (OptimizableGraph::VertexSet::iterator it = vset.begin(); it!=vset.end(); it++){
     const VertexSE2* v = dynamic_cast<const VertexSE2*>(*it);
     if (! v)
       continue;
     os << v->estimate().translation().x() << " " << v->estimate().translation().y() << " " << v->estimate().rotation().angle() << endl;
-  }
-  os << "e" << endl;
-
-  // write the landmarks
-  for (OptimizableGraph::VertexSet::iterator it = vset.begin(); it!=vset.end(); it++){
-    const VertexPointXY* v = dynamic_cast<const VertexPointXY*>(*it);
-    if (! v)
-      continue;
-    os << v->estimate().x() << " " << v->estimate().y() <<  endl;
   }
   os << "e" << endl;
   os << endl;

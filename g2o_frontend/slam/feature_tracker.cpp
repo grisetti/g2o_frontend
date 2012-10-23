@@ -162,8 +162,8 @@ namespace g2o {
     if (connect_) {
       if(f1->neighbors().count(f2))
 	return false;
-      //f1->neighbors().insert(f2);
-      //f2->neighbors().insert(f1);
+      f1->neighbors().insert(f2);
+      f2->neighbors().insert(f1);
     } else {
       //if (f1->previous()==f2 || f2->previous()==f1) return false;
       if(!f1->neighbors().count(f2))
