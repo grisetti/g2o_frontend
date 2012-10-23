@@ -107,13 +107,14 @@ namespace g2o {
       if (it == s1.end()) {
 	it = s2.begin();
 	mode = _featureMappingMode[1];
-	continue;
       }
       BaseTrackedFeature* trackedFeature = *it;
-      Eigen::Vector2d remappedFeaturePose;
+      Eigen::Vector2d remappedFeaturePose(0,0);
       bool remappingResult = remapFeaturePose(remappedFeaturePose,trackedFeature,mode);
-      if (!remappingResult)
+      if (!remappingResult){
+	cerr << "FATAL!!!!!, no remapping result" << endl;
 	return;
+      }
       fpmap.insert(std::make_pair(trackedFeature,remappedFeaturePose));
     }
     
@@ -135,9 +136,9 @@ namespace g2o {
     _maxIterationsThreshold = 0.5;
     _minIterationsThreshold = 0.1;
     _inliersThreshold = 0.5;
-    _intraFrameDistanceDifferenceThreshold = 1.;
-    _interFrameDistanceDifferenceThreshold = 0.1;
-    _inlierDistanceThreshold = 0.1;
+    _squaredIntraFrameDistanceDifferenceThreshold = 1.;
+    _squaredInterFrameDistanceDifferenceThreshold = 0.1;
+    _squaredInlierDistanceThreshold = 0.1;
     _featureMappingMode[0]=UseLandmarkIfAvailable;
     _featureMappingMode[1]=UseLandmarkIfAvailable;
  }
@@ -147,6 +148,13 @@ namespace g2o {
     // if we are matching landmarks, put in the beginning of the checks the landmarks that
     // are the same
     CorrespondenceVector correspondences = correspondences_;
+
+    if (correspondences.size()<2){
+      _matches = correspondences;
+      _numInliers = correspondences.size();
+      return;
+    }
+
     int identityMatches = 0;
     if (_featureMappingMode[0] == UseLandmark && _featureMappingMode[1] == UseLandmark) {
       int k=0;
@@ -211,8 +219,6 @@ namespace g2o {
 
     //cerr << "maxIterations=" << maxIterations << endl;
     int numIterations = 0;
-    if (correspondences.size()<2)
-      return;
     // now sample pairs of correspondences, in a systematic manner
     for (size_t i = 0; i<correspondences.size()-1; i++){
       const Correspondence& c1 = correspondences[i];
@@ -243,15 +249,15 @@ namespace g2o {
 
 	// reject for the matching pairs of features that are too close,
 	// as they are unstable
-	if (dA<_interFrameDistanceDifferenceThreshold)
+	if (dA<_squaredInterFrameDistanceDifferenceThreshold)
 	  continue;
-	if (dB<_interFrameDistanceDifferenceThreshold)
+	if (dB<_squaredInterFrameDistanceDifferenceThreshold)
 	  continue;
 
 	
 	// reject the match if the euclidean distance calculated in the different frames differ too much
 	// as they are likely to be wrong
-	if (fabs(dA - dB)> _intraFrameDistanceDifferenceThreshold)
+	if (fabs(dA - dB)> _squaredIntraFrameDistanceDifferenceThreshold)
 	  continue;
 	
 	// compute a transform that aligns the frames based on the correspondences 
@@ -278,7 +284,7 @@ namespace g2o {
 	for (size_t k = 0; k<correspondences.size(); k++){
 	  Vector2d pt = deltaT + R * poses2[k];
 	  double dist=(poses1[k] - pt).squaredNorm();
-	  if (dist < _inlierDistanceThreshold){
+	  if (dist < _squaredInlierDistanceThreshold){
 	    currentInliers ++;
 	    currentErrors[k] = dist;
 	    currentError += dist;
@@ -341,4 +347,12 @@ namespace g2o {
   }
   
 
+  bool PointXYLandmarkDistanceEstimator::compute(double& distance, BaseTrackedLandmark* l1, BaseTrackedLandmark* l2){
+    VertexPointXY* v1 = l1->vertex<VertexPointXY*>();
+    VertexPointXY* v2 = l2->vertex<VertexPointXY*>();
+    if (! v1 || ! v2)
+      return false;
+    distance = (v1->estimate()-v2->estimate()).norm();
+    return true;
+  }
 }// end namespace

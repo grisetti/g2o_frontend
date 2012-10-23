@@ -106,8 +106,13 @@ protected:
   bool _pushDone;
   GraphItemSelector* _graphItemSelector;
   void _initialize(BaseFrameSet& fset, bool push, BaseFrame* gaugeFrame = 0);
+  bool _isInitialized;
 };
 
+
+ struct LandmarkDistanceEstimator{
+   virtual bool compute(double& distance, BaseTrackedLandmark* l1, BaseTrackedLandmark* l2);
+ };
 
 /**
    Surprisingly handles the loop closures.
@@ -133,7 +138,8 @@ protected:
 		      LandmarkCorrespondenceManager* correspondenceManager_,
 		      Matcher* matcher_,
 		      OptimizationManager* optimizationManager_,
-		      GraphItemSelector* graphItemSelector_);
+		      GraphItemSelector* graphItemSelector_,
+		      LandmarkDistanceEstimator* landmarkDistanceEstimator_);
 
    virtual void compute(BaseFrameSet& localFrames, BaseFrame* localMapGaugeFrame);
 
@@ -148,6 +154,9 @@ protected:
    inline int localOptimizeIterations() const {return _localOptimizeIterations; }
    inline void setLocalOptimizeIterations(int localOptimizeIterations_) { _localOptimizeIterations = localOptimizeIterations_; }
 
+   inline double landmarkMergeDistanceThreshold() const { return _landmarkMergeDistanceThreshold; }
+   inline void setLandmarkMergeDistanceThreshold( double a) { _landmarkMergeDistanceThreshold = a; }
+
    inline const BaseFrameSet& touchedFrames() const {return _touchedFrames;}
    inline BaseFrameSet& touchedFrames() {return _touchedFrames;}
 
@@ -160,11 +169,15 @@ protected:
    OptimizationManager* _optimizationManager;
    GraphItemSelector* _graphItemSelector;
    FrameClusterer* _frameClusterer;
+   LandmarkDistanceEstimator* _landmarkDistanceEstimator;
+   // parameters
+   double _landmarkMergeDistanceThreshold;
    int _minFeaturesInCluster;
    double _closureInlierRatio;
    int _loopRansacIdentityMatches;
-   BaseFrameSet _touchedFrames;
    int _localOptimizeIterations;
+   // state
+   BaseFrameSet _touchedFrames;
    int _mergedLandmarks;
  };
 

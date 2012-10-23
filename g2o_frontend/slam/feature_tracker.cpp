@@ -29,9 +29,7 @@ namespace g2o {
   BaseTrackedFeature::BaseTrackedFeature(BaseFrame* frame_, 
 					 BaseFeatureData* featureData_, 
 					 BaseTrackedFeature* previous_):
-    _frame(frame_), _featureData(featureData_) {
-    _previous = 0;
-    _numChildren=0;
+    _frame(frame_), _featureData(featureData_), _previous(previous_) {
     _landmark = 0;
     _edge = 0;
     setPrevious(previous_);
@@ -51,32 +49,15 @@ namespace g2o {
 
   void BaseTrackedFeature::setPrevious(BaseTrackedFeature* previous_) {
     if (_previous != 0){
-      _previous->_numChildren--;
+      _previous->_children.erase(this);
     }
     if (previous_ != 0){
-      previous_->_numChildren++;
+      previous_->_children.insert(this);
     }
     _previous = previous_;
   }
 
   
-
-  BaseTrackedFeatureSet BaseTrackedFeature::children() {
-    BaseTrackedFeatureSet rval;
-    BaseFrame* nextFrame = _frame-> next();
-    if (nextFrame) {
-      for (BaseTrackedFeatureSet::iterator it=nextFrame->features().begin();
-	   it != nextFrame->features().end(); it++){
-	BaseTrackedFeature* f = *it;
-	if (f->previous() == this)
-	  rval.insert(*it);
-      }
-    }
-    //scan all elements whose previous is this
-    //and add them to the set
-    return rval;
-  }
-
 
   BaseTrackedLandmark::BaseTrackedLandmark(OptimizableGraph::Vertex* v)
     :_vertex(v) {}
@@ -179,8 +160,8 @@ namespace g2o {
     if (connect_) {
       if(f1->neighbors().count(f2))
 	return false;
-      //f1->neighbors().insert(f2);
-      //f2->neighbors().insert(f1);
+      f1->neighbors().insert(f2);
+      f2->neighbors().insert(f1);
     } else {
       //if (f1->previous()==f2 || f2->previous()==f1) return false;
       if(!f1->neighbors().count(f2))
@@ -264,8 +245,8 @@ namespace g2o {
     BaseFrame * frame = feature->frame();
     frame->features().insert(feature);
     // consistency check;
-    if (feature->previous())
-      assert("addTrackedFeature:  ERROR, previous frame does not match previous feature frame" && feature->previous()->frame() == frame->previous());
+    // if (feature->previous())
+    //   assert("addTrackedFeature:  ERROR, previous frame does not match previous feature frame" && feature->previous()->frame() == frame->previous());
     BaseTrackedLandmark* landmark = feature->landmark();
     if (landmark && !_landmarks.count(landmark)){
       assert (0 && "addTrackedFeature: ERROR, landmark must be already inserted in the pool");
@@ -305,38 +286,71 @@ namespace g2o {
     return 0;
   }
 
-  void FeatureTracker::searchInitialCorrespondences(CorrespondenceVector& correspondences_) {
+  void FeatureTracker::searchInitialCorrespondences(CorrespondenceVector& correspondences_, int numFrames) {
     assert (_correspondenceFinder);
     correspondences_.clear();
     BaseFrame* current = _lastFrame;
     if (! current)
       return;
     BaseFrame* previous = current->previous();
-    if (! previous)
-      return;
-    _correspondenceFinder->compute(previous->features(),current->features());
-    const CorrespondenceVector& correspondences = _correspondenceFinder->correspondences();
-    cerr << "Odom: found " << correspondences.size() << " correspondences" << endl;
-    /*
-      for (size_t i =0; i<correspondences.size(); i++){
-      cerr << "\t\t" << i << " " 
-      << correspondences[i].f1 << "," << correspondences[i].f2 
-      << " d=" << correspondences[i].distance << endl;
+    BaseTrackedFeatureSet openFeatures=current->features();
+    int k = 1;
+    //cerr << "start" << endl;
+    while (previous && numFrames >0 && ! openFeatures.empty()) {
+      //cerr << "f: " << k << " ptr:" << previous << " #features:" << previous->features().size() << endl; 
+      k++;
+      _correspondenceFinder->compute(previous->features(),openFeatures);
+      const CorrespondenceVector& correspondences = _correspondenceFinder->correspondences();
+      //cerr << "Odom: found " << correspondences.size() << " correspondences" << endl;
+      /*
+	for (size_t i =0; i<correspondences.size(); i++){
+	cerr << "\t\t" << i << " " 
+	<< correspondences[i].f1 << "," << correspondences[i].f2 
+	<< " d=" << correspondences[i].distance << endl;
+	}
+      */
+    
+      assert(_matcher);
+      _matcher->compute(correspondences);
+      const CorrespondenceVector& matches = _matcher->matches();
+     
+      //cerr << "RANSAC " << matches.size() << " matches" << endl;
+
+      for (size_t i = 0; i<matches.size(); i++){
+	const Correspondence& c = matches[i];
+	openFeatures.erase(c.f2);
       }
-    */
-    
-    assert(_matcher);
-    _matcher->compute(correspondences);
-    const CorrespondenceVector& matches = _matcher->matches();
-    
-    cerr << "RANSAC " << matches.size() << " matches" << endl;
-    // for (size_t i =0; i<matches.size(); i++){
+      correspondences_.insert(correspondences_.end(), matches.begin(), matches.end());
+      previous = previous->previous();
+      numFrames --;
+    }
+    //cerr << "end" << endl;
+    // if (! previous)
+    //   return;
+    // _correspondenceFinder->compute(previous->features(),current->features());
+    // const CorrespondenceVector& correspondences = _correspondenceFinder->correspondences();
+    // cerr << "Odom: found " << correspondences.size() << " correspondences" << endl;
+    // /*
+    //   for (size_t i =0; i<correspondences.size(); i++){
     //   cerr << "\t\t" << i << " " 
-    // 	   << matches[i].f1 << "," << matches[i].f2 
-    // 	   << " d=" << matches[i].distance << endl;
-    // }
-    correspondences_ = matches;
+    //   << correspondences[i].f1 << "," << correspondences[i].f2 
+    //   << " d=" << correspondences[i].distance << endl;
+    //   }
+    // */
+    
+    // assert(_matcher);
+    // _matcher->compute(correspondences);
+    // const CorrespondenceVector& matches = _matcher->matches();
+    
+    // cerr << "RANSAC " << matches.size() << " matches" << endl;
+    // // for (size_t i =0; i<matches.size(); i++){
+    // //   cerr << "\t\t" << i << " " 
+    // // 	   << matches[i].f1 << "," << matches[i].f2 
+    // // 	   << " d=" << matches[i].distance << endl;
+    // // }
+    // correspondences_ = matches;
   }
+
 
   void FeatureTracker::updateTracksAndLandmarks(const CorrespondenceVector& correspondences) {
     cerr << "Updating Tracks" << endl;
@@ -358,7 +372,7 @@ namespace g2o {
       // 	   << f1 << "," << f2 
       // 	   << " d:" << c.distance << " l:" << l << endl;
       
-      if (l>_minLandmarkCreationFrames && l>_landmarkConstructor->minNumObservations()){
+      if (l>=_minLandmarkCreationFrames && l>=_landmarkConstructor->minNumObservations()){
 	BaseTrackedLandmark* landmark = f1->landmark();
 	if (! landmark){
 	  // pack a vector of observations that holds a sequence sufficient to initialize the landmark
@@ -402,7 +416,7 @@ namespace g2o {
 	  landmark->features().insert(f2);
 	}
       }
-    } 
+    }
   }
 
   typedef std::multimap<BaseTrackedLandmark*, BaseTrackedFeature*> LandmarkFeatureMap;
@@ -467,7 +481,7 @@ namespace g2o {
   }
 
 
-  int FeatureTracker::refineConnectivity(BaseFrameSet& frames, int minCommonLandmarks){
+  int FeatureTracker::refineConnectivity(BaseFrameSet& frames, int minCommonLandmarks, bool odometryIsGood){
     int addedLinks = 0;
   for (BaseFrameSet::iterator it = frames.begin(); it!=frames.end(); it++){
     BaseFrameSet::iterator it2=it; it2++;
@@ -478,7 +492,8 @@ namespace g2o {
 	continue;
       BaseTrackedLandmarkSet commonSet;
       commonLandmarks(commonSet, f1, f2 );
-      if ((int)commonSet.size()>minCommonLandmarks){
+      if ((int)commonSet.size()>minCommonLandmarks ||
+	  (odometryIsGood && (f1->previous() == f2 || f2->previous() == f1)) ){
 	bool result = setNeighborFrames(f1, f2, true);
 	if (result)
 	  addedLinks ++;

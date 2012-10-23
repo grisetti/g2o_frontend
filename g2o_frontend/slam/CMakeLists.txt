@@ -33,6 +33,18 @@ TARGET_LINK_LIBRARIES(tracker_test_application
 )
 SET_TARGET_PROPERTIES(tracker_test_application PROPERTIES OUTPUT_NAME tracker_test${EXE_POSTFIX})
 
+ADD_EXECUTABLE(g2o_anonymize_observations_application   g2o_anonymize_observations.cpp
+)
+TARGET_LINK_LIBRARIES(g2o_anonymize_observations_application
+  types_data
+  ${G2O_TYPES_SLAM3D}
+  ${G2O_TYPES_SLAM2D}
+  ${G2O_TYPES_DATA}
+  ${G2O_CORE_LIBRARY} 
+  ${G2O_STUFF_LIBRARY}
+)
+SET_TARGET_PROPERTIES(g2o_anonymize_observations_application PROPERTIES OUTPUT_NAME g2o_anonymize_observations${EXE_POSTFIX})
+
 # ADD_EXECUTABLE(slam_simulator3d_application
 #   test_simulator3d.cpp
 # )

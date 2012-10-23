@@ -77,6 +77,7 @@ namespace g2o {
     _graphItemSelector = graphItemSelector_;
     _pushDone = false;
     _gauge = 0;
+    _isInitialized = false;
   }
   
   void OptimizationManager::initializeLocal(BaseFrameSet& fset, BaseFrame* gaugeFrame, bool push){
@@ -104,12 +105,17 @@ namespace g2o {
   }
   
   void OptimizationManager::cleanup(){
-    _pushDone =  false;
+    if (!_isInitialized){
+      cerr << "OptimizationManager: Fatal, double cleanup" << endl;
+      exit(0);
+    }
+    _isInitialized = false;
     if (_pushDone) {
       for (OptimizableGraph::VertexSet::iterator it=_vertices.begin(); it!=_vertices.end(); it++){
 	OptimizableGraph::Vertex* v=static_cast<OptimizableGraph::Vertex*>(*it);
 	v->pop();
       }
+      _pushDone =  false;
     }
     _edges.clear();
     _vertices.clear();
@@ -117,9 +123,14 @@ namespace g2o {
   }
 
   void OptimizationManager::_initialize(BaseFrameSet& fset, bool push, BaseFrame* gaugeFrame){
+    if (_isInitialized){
+      cerr << "OptimizationManager: Fatal, double initialization" << endl;
+      exit(0);
+    }
+    _isInitialized = true;
+
     if (_pushDone)  {
       cerr << "FATAL, double push detected" << endl;
-      exit(0);
     }
     _pushDone = push;
     _edges.clear();
@@ -142,15 +153,20 @@ namespace g2o {
     }
   }
 
+  bool LandmarkDistanceEstimator::compute(double& , BaseTrackedLandmark* , BaseTrackedLandmark* ) {
+    return false;
+  }
+
 
   LoopClosureManager::LoopClosureManager(FeatureTracker* tracker_, 
-		     LoopClosureCandidateDetector * closureCandidateDetector_,
-		     FrameClusterer* frameClusterer_,
-		     CorrespondenceFinder* correspondenceFinder_,
-		     LandmarkCorrespondenceManager* correspondenceManager_,
-		     Matcher* matcher_,
-		     OptimizationManager* optimizationManager_,
-		     GraphItemSelector* graphItemSelector_) {
+					 LoopClosureCandidateDetector * closureCandidateDetector_,
+					 FrameClusterer* frameClusterer_,
+					 CorrespondenceFinder* correspondenceFinder_,
+					 LandmarkCorrespondenceManager* correspondenceManager_,
+					 Matcher* matcher_,
+					 OptimizationManager* optimizationManager_,
+					 GraphItemSelector* graphItemSelector_,
+					 LandmarkDistanceEstimator* landmarkDistanceEstimator_) {
     _tracker = tracker_; 
     _closureCandidateDetector = closureCandidateDetector_;
     _frameClusterer = frameClusterer_;
@@ -159,6 +175,13 @@ namespace g2o {
     _matcher = matcher_;
     _optimizationManager = optimizationManager_;
     _graphItemSelector = graphItemSelector_;
+    _landmarkDistanceEstimator = landmarkDistanceEstimator_;
+
+    _minFeaturesInCluster = 5 ;
+    _closureInlierRatio = 0.5;
+    _loopRansacIdentityMatches = 5;
+    _localOptimizeIterations = 4;
+    _landmarkMergeDistanceThreshold = 0.1;
   }
 
   void LoopClosureManager::compute(BaseFrameSet& localFrames, BaseFrame* localMapGaugeFrame) {
@@ -166,9 +189,10 @@ namespace g2o {
     _mergedLandmarks = 0;
     _touchedFrames.insert(localFrames.begin(), localFrames.end());
 
+    BaseFrameSet closureCandidates;
     if (localMapGaugeFrame) {
       _closureCandidateDetector->compute(_tracker->lastFrame());
-      BaseFrameSet& closureCandidates = _closureCandidateDetector->candidates();
+      closureCandidates = _closureCandidateDetector->candidates();
       _touchedFrames.insert(closureCandidates.begin(), closureCandidates.end());
 
       cerr <<  "local map has" << localFrames.size() << endl;
@@ -184,53 +208,92 @@ namespace g2o {
       //FrameClusterer frameClusterer;
       _frameClusterer->compute(prunedClosures);
       cerr << "in the closure there are " << _frameClusterer->numClusters() << " regions" << endl;
-      for (int i =0; i < _frameClusterer->numClusters(); i++ ){
+      for (int i =0; i < _frameClusterer->numClusters() && featuresToMatchInLocalMap.size(); i++ ){
 	cerr << "\t cluster: " << i << " " << _frameClusterer->cluster(i).size() << endl;
   
 	  
-	// optimize each cluster
-	_optimizationManager->initializeLocal(_frameClusterer->cluster(i),0,true);
-	_optimizationManager->optimize(_localOptimizeIterations);
 
 	BaseTrackedFeatureSet featuresInCluster;
 	FeatureTracker::selectFeaturesWithLandmarks(featuresInCluster, _frameClusterer->cluster(i));
-	cerr << "\t\t" << " #features with landmarks: " << featuresInCluster.size() <<  endl;
+	int minFeatures = (int)featuresInCluster.size() < (int) featuresToMatchInLocalMap.size() ? 
+	  (int)featuresInCluster.size()  : (int) featuresToMatchInLocalMap.size();
 
-	if ((int)featuresInCluster.size() < _minFeaturesInCluster) {
-	  cerr << "\t\t" << " #too few features, rejecting match"<<  endl;
-	  _optimizationManager->cleanup();
-	  continue;
-	}
-
-	_correspondenceFinder->compute(featuresInCluster, featuresToMatchInLocalMap);
-	CorrespondenceVector clusterClosureCorrespondences=_correspondenceFinder->correspondences();
-	cerr << "\t\t" << " #matches:  " << clusterClosureCorrespondences.size() <<  endl;
+	if (minFeatures < _minFeaturesInCluster){
+	  //cerr << "\t\t" << " #too few features (" << minFeatures << "), rejecting match"<<  endl;
+	} else {
+	  cerr << "\t\t" << " #enough features  (" << minFeatures << "), accepting match"<<  endl;
+	  // optimize each cluster
+	  _optimizationManager->initializeLocal(_frameClusterer->cluster(i),0,true);
+	  _optimizationManager->optimize(_localOptimizeIterations);
 	  
-	_matcher->compute(clusterClosureCorrespondences);
-	CorrespondenceVector clusterClosureMatches=_matcher->matches();
-	int maxInliers = (featuresToMatchInLocalMap.size()<featuresInCluster.size())? featuresToMatchInLocalMap.size() : featuresInCluster.size();
-	float inlierRatio = (float) clusterClosureMatches.size() / (float) maxInliers;
-	int landmarkIdentityMatches = _matcher->landmarkIdentityMatches();
-	cerr << "\t\t" << " #ransac:   " << clusterClosureMatches.size() <<  " inlierRatio: " << inlierRatio << " identityMatches: " << 
-	  landmarkIdentityMatches << endl;
+	  _correspondenceFinder->compute(featuresInCluster, featuresToMatchInLocalMap);
+	  CorrespondenceVector clusterClosureCorrespondences=_correspondenceFinder->correspondences();
+	  cerr << "\t\t" << " #matches:  " << clusterClosureCorrespondences.size() <<  endl;
 	  
-	if (inlierRatio > _closureInlierRatio || landmarkIdentityMatches > _loopRansacIdentityMatches) {
-	  for (size_t k=0; k<clusterClosureMatches.size(); k++){
-	    Correspondence c = clusterClosureMatches[k];
-	    BaseTrackedLandmark* l1=c.f1->landmark();
-	    BaseTrackedLandmark* l2=c.f2->landmark();
-	    if (l1!=l2) {
-	      _correspondenceManager->addCorrespondence(l1, l2);
-	    }
-	    //cerr << "\t\t\tc:" << k << " " << l1 << " " <<  l2 << " " << c.distance << " " << occurrences << endl;
+	  _matcher->compute(clusterClosureCorrespondences);
+	  CorrespondenceVector clusterClosureMatches=_matcher->matches();
+	  // cout the number of matches of *different* matched features in the current local map
+	  // sorting the vector and counting could be substantially more efficient
+	  BaseTrackedFeatureSet differentMatches;
+	  for (size_t i = 0; i<clusterClosureMatches.size(); i++){
+	    differentMatches.insert(clusterClosureMatches[i].f2);
 	  }
-	}
-	_optimizationManager->cleanup();
+	  int numDifferentMatches = differentMatches.size();
+
+	  float inlierRatio = (float) numDifferentMatches / minFeatures;
+	  int landmarkIdentityMatches = _matcher->landmarkIdentityMatches();
+	  cerr << "\t\t" << " #ransac:   " << clusterClosureMatches.size() 
+	       <<  " differentMatches: " <<  numDifferentMatches << "  inlierRatio: " << inlierRatio << " identityMatches: " << 
+	    landmarkIdentityMatches << endl;
+	  
+	  if (inlierRatio > _closureInlierRatio || landmarkIdentityMatches > _loopRansacIdentityMatches) {
+	    for (size_t k=0; k<clusterClosureMatches.size(); k++){
+	      Correspondence c = clusterClosureMatches[k];
+	      BaseTrackedLandmark* l1=c.f1->landmark();
+	      BaseTrackedLandmark* l2=c.f2->landmark();
+	      if (l1!=l2) {
+		_correspondenceManager->addCorrespondence(l1, l2);
+	      }
+	      //cerr << "\t\t\tc:" << k << " " << l1 << " " <<  l2 << " " << c.distance << " " << occurrences << endl;
+	    }
+	  }
+	  _optimizationManager->cleanup();
+	} 
       }
     }
-    _mergedLandmarks = _correspondenceManager->merge(1);
-  } 
 
+    _mergedLandmarks = _correspondenceManager->merge(1);
+    int recursivelyMergedLandmarks = 0;
+    if (_mergedLandmarks) {
+      int newlyMerged;
+      do {
+	_frameClusterer->compute(closureCandidates);
+	newlyMerged = 0;
+	for (int i=0; i< _frameClusterer->numClusters(); i++) {
+	  _optimizationManager->initializeLocal(_frameClusterer->cluster(i),0,true);
+	  _optimizationManager->optimize(_localOptimizeIterations);
+	  BaseTrackedFeatureSet featuresInCluster;
+	  FeatureTracker::selectFeaturesWithLandmarks(featuresInCluster, _frameClusterer->cluster(i));
+	  for (BaseTrackedFeatureSet::iterator it = featuresInCluster.begin(); it!=featuresInCluster.end(); it++){
+	    BaseTrackedLandmark* l1 = (*it)->landmark();
+	    for (BaseTrackedFeatureSet::iterator iit = it; iit!=featuresInCluster.end(); iit++) {
+	      BaseTrackedLandmark* l2 = (*iit)->landmark();
+	      if (l1 == l2)
+		continue;
+	      double distance;
+	      if(_landmarkDistanceEstimator->compute(distance, l1, l2) && distance < _landmarkMergeDistanceThreshold){
+		_correspondenceManager->addCorrespondence(l1,l2);
+	      }
+	    }
+	  }
+	  _optimizationManager->cleanup();
+	  newlyMerged += _correspondenceManager->merge(1);
+	}
+	recursivelyMergedLandmarks += newlyMerged;
+      } while (newlyMerged);
+    }
+    _mergedLandmarks += recursivelyMergedLandmarks;
+  }
 
   LandmarkCorrespondence::LandmarkCorrespondence(BaseTrackedLandmark* l1_, BaseTrackedLandmark* l2_) {
     if (l1_<=l2_){
