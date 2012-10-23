@@ -1,6 +1,8 @@
 #include "feature_tracker_closure.h"
 #include <deque>
 #include <assert.h>
+#include <deque>
+
 #include "g2o/core/sparse_optimizer.h"
 
 namespace g2o {

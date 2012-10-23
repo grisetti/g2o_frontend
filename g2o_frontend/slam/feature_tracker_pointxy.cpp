@@ -87,8 +87,7 @@ namespace g2o {
     return false;
   }
 
-  typedef std::map<BaseTrackedFeature*, Eigen::Vector2d> FeaturePoseMap;
-  
+ 
   PointXYInitialGuessCorrespondenceFinder::PointXYInitialGuessCorrespondenceFinder(){
     _featureMappingMode[0]=UseLandmarkIfAvailable;
     _featureMappingMode[1]=UseLandmarkIfAvailable;
@@ -180,8 +179,8 @@ namespace g2o {
     // first remap the correspondences
     _matches = correspondences;
     _transformation = SE2();
-    std::vector<Eigen::Vector2d> poses1(correspondences.size());
-    std::vector<Eigen::Vector2d> poses2(correspondences.size());
+    std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d> > poses1(correspondences.size());
+    std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d> > poses2(correspondences.size());
 
     
     for (size_t i=0; i<correspondences.size(); i++){

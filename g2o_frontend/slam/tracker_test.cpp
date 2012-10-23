@@ -352,27 +352,32 @@ int main(int argc, char**argv){
       BaseFrame* localMapGaugeFrame = tracker->lastNFrames(localFrames, localMapSize);
 
       // do one round of optimization, it never hurts
-      cerr << "A" << endl;
+      //cerr << "A" << endl;
       optimizationManager->initializeLocal(localFrames, localMapGaugeFrame, false);
       optimizationManager->optimize(localOptimizeIterations);
       optimizationManager->cleanup();
 
+      //cerr << "B" << endl;
       
       // look for the conrrespondences based on the odometry
       // thisa applies first the correspondenceFinder than the matcher
       CorrespondenceVector correspondences;
       tracker->searchInitialCorrespondences(correspondences, incrementalFeatureTrackingWindow);
  
-      // look for the conrrespondences based on the odometry
+      //cerr << "C" << endl;
+      
+			// look for the conrrespondences based on the odometry
       // thisa applies first the correspondenceFinder than the matcher
       secondMatchFilter->compute(correspondences);
 
+      //cerr << "D" << endl;
       // remove the ambiguous correspondences 
       const CorrespondenceVector& filtered = secondMatchFilter->filtered();
       cerr << "SecondMatchFilter " << filtered.size() << " filtered" << endl;
  
       // if you found a reasonable number of inliers, correct the estimate of the
       // last vertex with the matcher estimate for the translation
+      //cerr << "E" << endl;
       SE2 transformation = matcher->transformation();
       if (matcher->numInliers()>=minFrameToFrameInliers){
 	v->setEstimate(transformation * v->estimate());
@@ -382,14 +387,13 @@ int main(int argc, char**argv){
       // and by creating the landmarks when a track was confirmed for a while
       tracker->updateTracksAndLandmarks(filtered);
       // do one round of optimization, it makes the local map prettier when looking for loop closures
-      cerr << "B" << endl;
-      
+      //cerr << "F" << endl;
       optimizationManager->initializeLocal(localFrames, localMapGaugeFrame, false);
       optimizationManager->optimize(localOptimizeIterations);
       optimizationManager->cleanup();
       
- 
-
+			//cerr << "G" << endl;
+      
       // connect the frames from which you observed some landmark in common
       int newIncrementalLinks = tracker->refineConnectivity(localFrames, 1, odometryIsGood);
       cerr << "newIncrementalLinks: " << newIncrementalLinks << endl;

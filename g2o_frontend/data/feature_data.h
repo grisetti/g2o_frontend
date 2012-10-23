@@ -36,6 +36,9 @@
 
 
 struct BaseFeatureData: public g2o::OptimizableGraph::Data{
+	
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  
   virtual bool read(std::istream& is);
   //! write the data to a stream 
   virtual bool write(std::ostream& os) const;
@@ -52,6 +55,9 @@ struct BaseFeatureData: public g2o::OptimizableGraph::Data{
 };
 
 struct FeaturePointXYData: public BaseFeatureData{
+	
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  
   virtual int positionMeasurementDimension() const;
   virtual void positionMeasurement(double*) const;
   virtual void setPositionMeasurement(const double*);

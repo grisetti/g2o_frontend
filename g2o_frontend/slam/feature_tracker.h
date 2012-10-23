@@ -5,6 +5,8 @@
 #include "g2o/core/optimizable_graph.h"
 #include "g2o/types/slam2d/types_slam2d.h"
 
+#include <Eigen/StdVector>
+
 namespace g2o {
 
   struct BaseFrame;
@@ -28,6 +30,9 @@ namespace g2o {
       </ul>
    */
   struct BaseFrame {
+
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  
   BaseFrame(OptimizableGraph::Vertex* v,
 	    OptimizableGraph::Edge* e,
 	    BaseFrame* p,
@@ -87,6 +92,9 @@ namespace g2o {
       </ul>
    */
   struct BaseTrackedFeature{
+		
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  
   BaseTrackedFeature(BaseFrame* frame_, 
 		     BaseFeatureData* featureData_, 
 		     BaseTrackedFeature* previous_);
@@ -143,6 +151,9 @@ namespace g2o {
       to a vertex in the graph.
    */
   struct BaseTrackedLandmark{
+	  
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    
     BaseTrackedLandmark(OptimizableGraph::Vertex* v);
  
     template <typename LandmarkVertexType>
@@ -163,6 +174,9 @@ namespace g2o {
       The distance is 0 if the features "look" the same, according to the metric used to compute the correspondence.
    */
   struct Correspondence {
+	 
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  
   Correspondence(BaseTrackedFeature* f1_=0, BaseTrackedFeature* f2_=0, double distance_=0 ): 
     f1(f1_), f2(f2_), distance(distance_) {}
   
@@ -174,7 +188,7 @@ namespace g2o {
     BaseTrackedFeature* f2;
     double distance;
   };
-  typedef std::vector<Correspondence> CorrespondenceVector;
+  typedef std::vector<Correspondence,Eigen::aligned_allocator<Correspondence> > CorrespondenceVector;
 
 
 
@@ -183,7 +197,10 @@ namespace g2o {
       Overridden for specific feature and landmark types.
    */
   struct LandmarkConstructor {
-    // instantiates a landmark given a set of measurements that are supposed to come from the same landmark. If null, it returns false;
+	
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+   
+		// instantiates a landmark given a set of measurements that are supposed to come from the same landmark. If null, it returns false;
     //! returns a landmark object constructed from the sequence of features given as argument, and initialized accordingly
     virtual BaseTrackedLandmark* constructLandmark(std::vector<BaseTrackedFeature*> &) = 0;
     //! returns an graph edge that contains the measure of the landmark's vertex ad is labeled with the feature's measurement andn information matrix.
@@ -195,6 +212,9 @@ namespace g2o {
       Overridden in specific implementations
    */
   struct CorrespondenceFinder {
+		
+	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    
     // determines candidate correspondences between two sets of features;
     virtual void compute(BaseTrackedFeatureSet& s1, BaseTrackedFeatureSet& s2) = 0;
     inline const CorrespondenceVector& correspondences() {return _correspondences;}
@@ -207,6 +227,9 @@ namespace g2o {
       given a set of (noisy) correspondences. read RANSAC. Overridden.
    */
   struct Matcher {
+		
+	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    
     // computes the best match between a set of correspondences;
     Matcher();
     virtual void compute(const CorrespondenceVector& correspondences) = 0;
@@ -224,6 +247,9 @@ namespace g2o {
   /** Function object that rejects the correspondences based on some criteria.
    */
   struct CorrespondenceFilter{
+		
+	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+		
     virtual void compute(const CorrespondenceVector& correspondences)=0;
     inline const CorrespondenceVector& filtered() const {return _filtered;}
   protected:
@@ -252,6 +278,9 @@ namespace g2o {
      It stores the state and  "owns" the internal structures.
    */
   struct FeatureTracker{
+	  
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    
     FeatureTracker(OptimizableGraph* graph_, 
 		   LandmarkConstructor* landmarkConstructor_, 
 		   CorrespondenceFinder* correspondenceFinder_,
