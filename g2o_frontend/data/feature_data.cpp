@@ -144,7 +144,9 @@ HyperGraphElementAction* FeaturePointXYDataDrawAction::operator()(HyperGraph::Hy
   FeaturePointXYData* that = static_cast<FeaturePointXYData*>(element);
   if (_pointSize) {
     glPointSize(_pointSize->value());
-    }
+  } else 
+    glPointSize(1);
+
   glColor4f(1.f,0.f,0.f,0.5f);
   glPushMatrix();
   glBegin(GL_POINTS);

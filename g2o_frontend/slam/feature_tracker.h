@@ -8,7 +8,6 @@
 #include <Eigen/StdVector>
 
 namespace g2o {
-
   struct BaseFrame;
   struct BaseTrackedFeature;
   struct BaseTrackedLandmark;
@@ -28,15 +27,14 @@ namespace g2o {
       <li>a set of "tracked features"</li>
       <li>a set of "neighbor" frames that are those from which a substantial set of landmark has been seen in common</li>
       </ul>
-   */
+  */
   struct BaseFrame {
-
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   
-  BaseFrame(OptimizableGraph::Vertex* v,
-	    OptimizableGraph::Edge* e,
-	    BaseFrame* p,
-	    BaseFrame* n);
+    BaseFrame(OptimizableGraph::Vertex* v,
+	      OptimizableGraph::Edge* e,
+	      BaseFrame* p,
+	      BaseFrame* n);
 
     template<typename VertexType> 
     VertexType vertex() {return dynamic_cast<VertexType>(_vertex);}
@@ -90,14 +88,13 @@ namespace g2o {
       made by the robot to the landmark, and rhe measurement of such an edge should be labeled with the measurement
       of the feature.
       </ul>
-   */
+  */
   struct BaseTrackedFeature{
-		
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-  
-  BaseTrackedFeature(BaseFrame* frame_, 
-		     BaseFeatureData* featureData_, 
-		     BaseTrackedFeature* previous_);
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    
+    BaseTrackedFeature(BaseFrame* frame_, 
+		       BaseFeatureData* featureData_, 
+		       BaseTrackedFeature* previous_);
 
     virtual ~BaseTrackedFeature();
   
@@ -149,10 +146,9 @@ namespace g2o {
 
   /** Basic structure that represents a tracked landmark. A landmark can arise from many tracked features and corresponds
       to a vertex in the graph.
-   */
+  */
   struct BaseTrackedLandmark{
-	  
-		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
     BaseTrackedLandmark(OptimizableGraph::Vertex* v);
  
@@ -172,14 +168,13 @@ namespace g2o {
 
   /** Basic structure that represents a correspondence between a pair of features. 
       The distance is 0 if the features "look" the same, according to the metric used to compute the correspondence.
-   */
+  */
   struct Correspondence {
-	 
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-  
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    
   Correspondence(BaseTrackedFeature* f1_=0, BaseTrackedFeature* f2_=0, double distance_=0 ): 
     f1(f1_), f2(f2_), distance(distance_) {}
-  
+    
     inline bool operator<(const Correspondence& c2) const {
       return distance<c2.distance;
     }
@@ -195,12 +190,11 @@ namespace g2o {
   /** Function object that instantiates a landmark object starting from a sequence of observations.
       The track should be at least long as minNumObervations(), otherwise the landmark creation fails.
       Overridden for specific feature and landmark types.
-   */
+  */
   struct LandmarkConstructor {
-	
-		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
    
-		// instantiates a landmark given a set of measurements that are supposed to come from the same landmark. If null, it returns false;
+    // instantiates a landmark given a set of measurements that are supposed to come from the same landmark. If null, it returns false;
     //! returns a landmark object constructed from the sequence of features given as argument, and initialized accordingly
     virtual BaseTrackedLandmark* constructLandmark(std::vector<BaseTrackedFeature*> &) = 0;
     //! returns an graph edge that contains the measure of the landmark's vertex ad is labeled with the feature's measurement andn information matrix.
@@ -210,10 +204,9 @@ namespace g2o {
 
   /** Function object that computes the correspondence of two sets of features.
       Overridden in specific implementations
-   */
+  */
   struct CorrespondenceFinder {
-		
-	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
     // determines candidate correspondences between two sets of features;
     virtual void compute(BaseTrackedFeatureSet& s1, BaseTrackedFeatureSet& s2) = 0;
@@ -225,10 +218,9 @@ namespace g2o {
 
   /** Function object that computes deterimines the aligment of two frames or two sets of features,
       given a set of (noisy) correspondences. read RANSAC. Overridden.
-   */
+  */
   struct Matcher {
-		
-	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
     // computes the best match between a set of correspondences;
     Matcher();
@@ -247,8 +239,7 @@ namespace g2o {
   /** Function object that rejects the correspondences based on some criteria.
    */
   struct CorrespondenceFilter{
-		
-	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 		
     virtual void compute(const CorrespondenceVector& correspondences)=0;
     inline const CorrespondenceVector& filtered() const {return _filtered;}
@@ -258,7 +249,7 @@ namespace g2o {
 
   /** This rejects the correspondences of the matches where the distance between the best match for a feature
       and the second best match for the second feature is too small. (read the features are ambiguous).
-   */
+  */
   struct CorrespondenceSecondMatchFilter : public CorrespondenceFilter {
     CorrespondenceSecondMatchFilter(double distanceDifferenceThreshold = 0.5, double distanceRatioThreshold=-1.);
     virtual void compute(const CorrespondenceVector& correspondences);
@@ -276,10 +267,9 @@ namespace g2o {
   /**
      Tracker, manages the incremental tracking of features, frames and so on.
      It stores the state and  "owns" the internal structures.
-   */
+  */
   struct FeatureTracker{
-	  
-		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
     FeatureTracker(OptimizableGraph* graph_, 
 		   LandmarkConstructor* landmarkConstructor_, 

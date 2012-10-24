@@ -11,10 +11,9 @@
 namespace g2o {
  
   struct PointXYLandmarkConstructor: public LandmarkConstructor{
-	  
-		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
-    virtual BaseTrackedLandmark* constructLandmark(std::vector<BaseTrackedFeature*> &);
+      virtual BaseTrackedLandmark* constructLandmark(std::vector<BaseTrackedFeature*> &);
     virtual OptimizableGraph::Edge* constructEdge(BaseTrackedLandmark* l, BaseTrackedFeature* f);
     virtual int minNumObservations() const {return 1;}
   };
@@ -23,15 +22,14 @@ namespace g2o {
   bool remapFeaturePose(Vector2d& newPose, BaseTrackedFeature* trackedFeature, FeatureMappingMode mode);
   
   typedef std::map<BaseTrackedFeature*, Eigen::Vector2d, 
-	std::less<BaseTrackedFeature*>,
-	Eigen::aligned_allocator<std::pair<BaseTrackedFeature*, Eigen::Vector2d> > > FeaturePoseMap;
+    std::less<BaseTrackedFeature*>,
+    Eigen::aligned_allocator<std::pair<BaseTrackedFeature*, Eigen::Vector2d> > > FeaturePoseMap;
   
   
   struct PointXYInitialGuessCorrespondenceFinder: public CorrespondenceFinder {
-	  
-		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
-    PointXYInitialGuessCorrespondenceFinder();
+      PointXYInitialGuessCorrespondenceFinder();
     
     // determines candidate correspondences between two sets of features;
     virtual void compute(BaseTrackedFeatureSet& s1, BaseTrackedFeatureSet& s2);
@@ -54,10 +52,10 @@ namespace g2o {
   };
 
   struct PointXYRansacMatcher: public Matcher{
-		
-	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     
-		PointXYRansacMatcher();
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    
+      PointXYRansacMatcher();
     virtual void compute(const CorrespondenceVector& correspondences);  
     inline const CorrespondenceVector& matches() {return _matches;}
     //virtual bool applyCandidateTransform();
@@ -117,9 +115,9 @@ namespace g2o {
 
   struct SE2LoopClosureCandidateDetector: public LoopClosureCandidateDetector {
 	  
-		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 		
-    SE2LoopClosureCandidateDetector(FeatureTracker* tracker_);
+      SE2LoopClosureCandidateDetector(FeatureTracker* tracker_);
     virtual void compute(BaseFrame* frame);
     inline void setLinearClosureThreshold(double t) { _squaredLinearClosureThreshold = t*t; }
     inline void setAngularClosureThreshold(double t) { _angularClosureThreshold = t*t; }
@@ -133,10 +131,8 @@ namespace g2o {
   };
 
   struct PointXYLandmarkDistanceEstimator : public LandmarkDistanceEstimator {
-	  
-		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-		
-    virtual bool compute(double& distance, BaseTrackedLandmark* l1, BaseTrackedLandmark* l2);
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+      virtual bool compute(double& distance, BaseTrackedLandmark* l1, BaseTrackedLandmark* l2);
   };
 
 }// end namespace
