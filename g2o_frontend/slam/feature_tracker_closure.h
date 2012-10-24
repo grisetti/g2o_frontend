@@ -7,6 +7,9 @@ namespace g2o {
   /**class that computes the candidate frames in the pool where to look for a loop closure
    */
   struct LoopClosureCandidateDetector{
+		
+	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    
     LoopClosureCandidateDetector (FeatureTracker* tracker_);
     virtual void compute(BaseFrame* current) = 0;
     inline FeatureTracker* tracker() { return _tracker; }
@@ -25,6 +28,9 @@ namespace g2o {
      Used to extract a portion of the optimization graph, starting from a set of frames.
    */
   struct GraphItemSelector {
+		
+	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    
     GraphItemSelector();
     virtual void compute(BaseFrameSet& frameSet);
     inline HyperGraph::EdgeSet& selectedEdges() {return _selectedEdges;}
@@ -38,6 +44,9 @@ namespace g2o {
   /**Determines the connected regions in a set of frames.
    */
   struct FrameClusterer {
+		
+	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    
     virtual void compute(BaseFrameSet& frameSet);
     inline BaseFrameSet& cluster(int i) {return _clusters.at(i);}
     inline int numClusters() const {return _clusters.size(); }
@@ -49,6 +58,9 @@ namespace g2o {
   /**Correspondence, but for landmarks. Used when merging local maps
    */
   struct LandmarkCorrespondence {
+		
+	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    
     LandmarkCorrespondence(BaseTrackedLandmark* l1_, BaseTrackedLandmark* l2_);
 
     inline bool operator < (const LandmarkCorrespondence& c) const 
@@ -61,6 +73,9 @@ namespace g2o {
   /**Struct that keeps track of  "Counting" how many times the landmarks of local maps match, after loop closure.
    */
   struct LandmarkCorrespondenceManager {
+		
+	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+		
     typedef std::map<LandmarkCorrespondence, int> LandmarkCorrespondenceIntMap;
 
     LandmarkCorrespondenceManager(FeatureTracker* tracker_);
@@ -87,6 +102,9 @@ namespace g2o {
      graph_based structs
    */
 struct OptimizationManager{
+	
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  
   OptimizationManager(FeatureTracker* tracker_, GraphItemSelector* graphItemSelector_);
   // initialize the optimization of a portion of the graph, keeping fixed gaugeFrame.
   // if push is true, the optimization is undone at cleanup
@@ -111,6 +129,9 @@ protected:
 
 
  struct LandmarkDistanceEstimator{
+	 
+	 EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+   
    virtual bool compute(double& distance, BaseTrackedLandmark* l1, BaseTrackedLandmark* l2);
  };
 
@@ -131,6 +152,9 @@ protected:
    </ul>
 */
  struct LoopClosureManager {
+	 
+	 EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+   
    LoopClosureManager(FeatureTracker* tracker_, 
 		      LoopClosureCandidateDetector * closureCandidateDetector_,
 		      FrameClusterer* frameClusterer_,

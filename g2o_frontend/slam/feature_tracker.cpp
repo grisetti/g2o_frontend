@@ -1,5 +1,4 @@
 #include "feature_tracker.h"
-#include <deque>
 #include <assert.h>
 #include "g2o/core/sparse_optimizer.h"
 
@@ -295,13 +294,13 @@ namespace g2o {
     BaseFrame* previous = current->previous();
     BaseTrackedFeatureSet openFeatures=current->features();
     int k = 1;
-    //cerr << "start" << endl;
+    cerr << "start" << endl;
     while (previous && numFrames >0 && ! openFeatures.empty()) {
-      //cerr << "f: " << k << " ptr:" << previous << " #features:" << previous->features().size() << endl; 
+      cerr << "f: " << k << " ptr:" << previous << " #features:" << previous->features().size() << endl; 
       k++;
       _correspondenceFinder->compute(previous->features(),openFeatures);
       const CorrespondenceVector& correspondences = _correspondenceFinder->correspondences();
-      //cerr << "Odom: found " << correspondences.size() << " correspondences" << endl;
+      cerr << "Odom: found " << correspondences.size() << " correspondences" << endl;
       /*
 	for (size_t i =0; i<correspondences.size(); i++){
 	cerr << "\t\t" << i << " " 
@@ -314,7 +313,7 @@ namespace g2o {
       _matcher->compute(correspondences);
       const CorrespondenceVector& matches = _matcher->matches();
      
-      //cerr << "RANSAC " << matches.size() << " matches" << endl;
+      cerr << "RANSAC " << matches.size() << " matches" << endl;
 
       for (size_t i = 0; i<matches.size(); i++){
 	const Correspondence& c = matches[i];
@@ -324,7 +323,7 @@ namespace g2o {
       previous = previous->previous();
       numFrames --;
     }
-    //cerr << "end" << endl;
+    cerr << "end" << endl;
     // if (! previous)
     //   return;
     // _correspondenceFinder->compute(previous->features(),current->features());
