@@ -215,6 +215,10 @@ namespace g2o {
   
 	  
 
+	// GIORGIO TODO:
+	// consider only one feature per landnmark, you'll become way more efficient
+	// you are an idiot.
+
 	BaseTrackedFeatureSet featuresInCluster;
 	FeatureTracker::selectFeaturesWithLandmarks(featuresInCluster, _frameClusterer->cluster(i));
 	int minFeatures = (int)featuresInCluster.size() < (int) featuresToMatchInLocalMap.size() ? 

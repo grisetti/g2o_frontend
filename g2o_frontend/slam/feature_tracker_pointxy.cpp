@@ -171,6 +171,7 @@ namespace g2o {
 	}
       }
       identityMatches = k;
+      std::sort(correspondences.begin()+k, correspondences.end());
     }
     
     _landmarkIdentityMatches = identityMatches;
