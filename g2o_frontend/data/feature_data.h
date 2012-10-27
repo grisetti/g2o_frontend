@@ -34,7 +34,8 @@
 #include "g2o/core/hyper_graph_action.h"
 #include "g2o/types/slam2d/types_slam2d.h"
 
-
+namespace g2o {
+  
 struct BaseFeatureData: public g2o::OptimizableGraph::Data{
 	
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -79,7 +80,6 @@ struct FeaturePointXYData: public BaseFeatureData{
 
 
 #ifdef G2O_HAVE_OPENGL
-
 class FeaturePointXYDataDrawAction: public g2o::DrawAction{
  public:
   FeaturePointXYDataDrawAction();
@@ -92,5 +92,7 @@ class FeaturePointXYDataDrawAction: public g2o::DrawAction{
 };
 
 #endif
+
+} // end namespace
 
 #endif

@@ -102,10 +102,10 @@ void dumpEdges(ostream& os, BaseFrameSet& fset,
 }
 
 
-void dumpEdges(ostream& os, FeatureTracker* tracker) {
+void dumpEdges(ostream& os, MapperState* mapperState) {
   GraphItemSelector graphSelector;
   BaseFrameSet fset;
-  for (VertexFrameMap::iterator it = tracker->frames().begin(); it!=tracker->frames().end(); it++){
+  for (VertexFrameMap::iterator it = mapperState->frames().begin(); it!=mapperState->frames().end(); it++){
     fset.insert(it->second);
   }
   dumpEdges(os, fset);
@@ -127,7 +127,7 @@ void sigquit_handler(int sig)
   }
 }
 
-void saveThings(string filename , FeatureTracker* tracker, int seqNum = -1)  {
+void saveThings(string filename , MapperState* mapperState, int seqNum = -1)  {
   if (seqNum>-1) {
     string baseFilename = filename.substr(0,filename.find_last_of("."));
     char seqNumStr[10];
@@ -139,7 +139,7 @@ void saveThings(string filename , FeatureTracker* tracker, int seqNum = -1)  {
   HyperGraph::EdgeSet eset;
   GraphItemSelector graphSelector;
   BaseFrameSet fset;
-  for (VertexFrameMap::iterator it = tracker->frames().begin(); it!=tracker->frames().end(); it++){
+  for (VertexFrameMap::iterator it = mapperState->frames().begin(); it!=mapperState->frames().end(); it++){
     fset.insert(it->second);
   }
   graphSelector.compute(fset);
@@ -147,7 +147,7 @@ void saveThings(string filename , FeatureTracker* tracker, int seqNum = -1)  {
   vset=graphSelector.selectedVertices();
 
   ofstream os(filename.c_str());
-  tracker->graph()->saveSubset(os, eset);
+  mapperState->graph()->saveSubset(os, eset);
 }
 
 
@@ -188,9 +188,9 @@ int main(int argc, char**argv){
   arg.param("noLoop", noLoop, false, "disable loop closure"); 
   arg.param("odometryIsGood", odometryIsGood, false, "use settings for good odometry"); 
   arg.param("localMapSize", localMapSize, 5, "num of nodes in the path to use in the local map"); 
-  arg.param("incrementalFeatureTrackingWindow", incrementalFeatureTrackingWindow, 1, "num of frames to look before to seek for a feature match"); 
+  arg.param("incrementalFeatureTrackingWindow", incrementalFeatureTrackingWindow, 4, "num of frames to look before to seek for a feature match"); 
   arg.param("incrementalGuessMaxFeatureDistance", incrementalGuessMaxFeatureDistance, 1., "max distance between predicted and projected feature, used to process raw readings"); 
-  arg.param("incrementalRansacInlierThreshold", incrementalRansacInlierThreshold, 0.5, "inlier distance in the incremental phase"); 
+  arg.param("incrementalRansacInlierThreshold", incrementalRansacInlierThreshold, 0.4, "inlier distance in the incremental phase"); 
   arg.param("incrementalDistanceDifferenceThreshold", incrementalDistanceDifferenceThreshold, 0.2, "min distance between an inlier and the second best inlier for the same feature"); 
   
   arg.param("loopLinearClosureThreshold", loopLinearClosureThreshold, 5., "max linear distance between frames to check for loop closure");
@@ -250,14 +250,14 @@ int main(int argc, char**argv){
   CorrespondenceSecondMatchFilter* secondMatchFilter = new CorrespondenceSecondMatchFilter();
   secondMatchFilter->setDistanceDifferenceThreshold(incrementalDistanceDifferenceThreshold);
 
-  FeatureTracker* tracker= new FeatureTracker(graph,
-					      landmarkConstructor,
-					      correspondenceFinder,
-					      matcher);
-  tracker->setMinLandmarkCreationFrames(minLandmarkCreationFrames);
-  //tracker->setMinLandmarkCommitFrames(2);
+  MapperState* mapperState= new MapperState(graph, landmarkConstructor);
+  
+  Tracker* tracker = new Tracker(mapperState, correspondenceFinder, matcher);
+  
+  mapperState->setMinLandmarkCreationFrames(minLandmarkCreationFrames);
+  //mapperState->setMinLandmarkCommitFrames(2);
 
-  SE2LoopClosureCandidateDetector* closureDetector = new SE2LoopClosureCandidateDetector(tracker);
+  SE2LoopClosureCandidateDetector* closureDetector = new SE2LoopClosureCandidateDetector(mapperState);
   closureDetector->setLinearClosureThreshold(loopLinearClosureThreshold);
   closureDetector->setAngularClosureThreshold(loopAngularClosureThreshold);
 
@@ -272,12 +272,12 @@ int main(int argc, char**argv){
   loopClosureMatcher->setFeatureMappingMode(0, UseLandmark);
   loopClosureMatcher->setFeatureMappingMode(1, UseLandmark);
 
-  LandmarkCorrespondenceManager* landmarkCorrespondenceManager =  new LandmarkCorrespondenceManager(tracker);
+  LandmarkCorrespondenceManager* landmarkCorrespondenceManager =  new LandmarkCorrespondenceManager(mapperState);
   GraphItemSelector* graphItemSelector = new GraphItemSelector;
-  OptimizationManager* optimizationManager = new OptimizationManager(tracker, graphItemSelector);
+  OptimizationManager* optimizationManager = new OptimizationManager(mapperState, graphItemSelector);
   FrameClusterer* frameClusterer = new FrameClusterer;
   PointXYLandmarkDistanceEstimator* landmarkDistanceEstimator = new PointXYLandmarkDistanceEstimator;
-  LoopClosureManager* loopClosureManager = new LoopClosureManager(tracker, 
+  LoopClosureManager* loopClosureManager = new LoopClosureManager(mapperState, 
 								  closureDetector,
 								  frameClusterer,
 								  loopCorrespondenceFinder,
@@ -325,9 +325,9 @@ int main(int argc, char**argv){
     } 
 
     cerr << "adding frame: " << v->id() << endl;
-    tracker->addFrame(v,e);
+    mapperState->addFrame(v,e);
     if (! initialFrame)
-      initialFrame = tracker->lastFrame();
+      initialFrame = mapperState->lastFrame();
 
     OptimizableGraph::Data* d = v->userData();
     k = 0;
@@ -335,8 +335,8 @@ int main(int argc, char**argv){
       FeaturePointXYData* fdata = dynamic_cast<FeaturePointXYData*>(d);
       d=d->next();
       if (fdata && fdata->positionMeasurement().norm()<maxRange && fdata->positionMeasurement().norm()>minRange) {
-	BaseTrackedFeature* f = new BaseTrackedFeature(tracker->lastFrame(), fdata, 0);
-	tracker->addTrackedFeature(f);
+	BaseTrackedFeature* f = new BaseTrackedFeature(mapperState->lastFrame(), fdata, 0);
+	mapperState->addTrackedFeature(f);
 	k++;
       }
       //cerr << "\t f:" << k++ << endl;
@@ -349,7 +349,7 @@ int main(int argc, char**argv){
     if (vPrev) {
       // compute the local map, and its origin in localMapGaugeFrame. the gauge is the 
       // oldest frame in the trajectory
-      BaseFrame* localMapGaugeFrame = tracker->lastNFrames(localFrames, localMapSize);
+      BaseFrame* localMapGaugeFrame = mapperState->lastNFrames(localFrames, localMapSize);
 
       // do one round of optimization, it never hurts
       //cerr << "A" << endl;
@@ -385,7 +385,7 @@ int main(int argc, char**argv){
 
       // update the bookkeeping, by connecting the tracked features found in the correspondences
       // and by creating the landmarks when a track was confirmed for a while
-      tracker->updateTracksAndLandmarks(filtered);
+      mapperState->updateTracksAndLandmarks(filtered);
       // do one round of optimization, it makes the local map prettier when looking for loop closures
       //cerr << "F" << endl;
       optimizationManager->initializeLocal(localFrames, localMapGaugeFrame, false);
@@ -395,11 +395,11 @@ int main(int argc, char**argv){
 			//cerr << "G" << endl;
       
       // connect the frames from which you observed some landmark in common
-      int newIncrementalLinks = tracker->refineConnectivity(localFrames, 1, odometryIsGood);
+      int newIncrementalLinks = mapperState->refineConnectivity(localFrames, 1, odometryIsGood);
       cerr << "newIncrementalLinks: " << newIncrementalLinks << endl;
 
       // BaseTrackedFeatureSet newFeaturesWithLandmark;
-      // FeatureTracker::selectFeaturesWithLandmarks(newFeaturesWithLandmark, tracker->lastFrame());
+      // MapperState::selectFeaturesWithLandmarks(newFeaturesWithLandmark, mapperState->lastFrame());
       // cerr << "# features with landmark in the current frame: " << newFeaturesWithLandmark.size() << endl;
 
       // do the loop closing by matching local maps made out of landmarks and trying to match those
@@ -414,7 +414,7 @@ int main(int argc, char**argv){
     cerr << "number of frames interested in this operation: " << loopClosureManager->touchedFrames().size() << endl;
 
     // again update the bookkeeping on the frame graph
-    int newLinks = tracker->refineConnectivity(loopClosureManager->touchedFrames(), intraFrameConnectivityThreshold);
+    int newLinks = mapperState->refineConnectivity(loopClosureManager->touchedFrames(), intraFrameConnectivityThreshold);
     cerr << "number of intra-frame links added: " << newLinks << endl;
 
     // if something happened and enough cycles are passed, do a global optimization)
@@ -429,10 +429,10 @@ int main(int argc, char**argv){
 
     if (dumpEachN>0 && !(frameCount%dumpEachN)){
       cerr << "saving... ";
-      saveThings(outfilename, tracker, frameCount);
+      saveThings(outfilename, mapperState, frameCount);
     }
     if (updateViewerEachN>0 && !(frameCount%updateViewerEachN)){
-      dumpEdges(cout, tracker);
+      dumpEdges(cout, mapperState);
     }
 
     frameCount ++;
@@ -459,7 +459,7 @@ int main(int argc, char**argv){
 	for (BaseTrackedFeatureSet::iterator it=fset.begin(); it!=fset.end(); it++) {
 	  BaseTrackedFeature * f = *it;
 	  if (! f->landmark()){
-	    killedFeatures += tracker->removeTrackedFeature(f, true, true);
+	    killedFeatures += mapperState->removeTrackedFeature(f, true, true);
 	  } 
 	}
       }
@@ -471,9 +471,9 @@ int main(int argc, char**argv){
   
  
   cerr << "saving.... " << endl;
-  saveThings(outfilename, tracker);
-  cerr << "# frames: " << tracker->frames().size() << endl;
-  cerr << "# landmarks: " << tracker->landmarks().size() << endl;
+  saveThings(outfilename, mapperState);
+  cerr << "# frames: " << mapperState->frames().size() << endl;
+  cerr << "# landmarks: " << mapperState->landmarks().size() << endl;
   cerr << "# vertices: " << graph->vertices().size() << endl;
   cerr << "# edges: " << graph->edges().size() << endl;
   cerr << "# closureCorrespondences: " << landmarkCorrespondenceManager->size() << endl;

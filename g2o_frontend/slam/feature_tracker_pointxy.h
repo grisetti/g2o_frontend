@@ -117,7 +117,7 @@ namespace g2o {
 	  
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 		
-      SE2LoopClosureCandidateDetector(FeatureTracker* tracker_);
+      SE2LoopClosureCandidateDetector(MapperState* mapperState_);
     virtual void compute(BaseFrame* frame);
     inline void setLinearClosureThreshold(double t) { _squaredLinearClosureThreshold = t*t; }
     inline void setAngularClosureThreshold(double t) { _angularClosureThreshold = t*t; }

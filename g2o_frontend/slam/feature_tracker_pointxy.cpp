@@ -314,8 +314,8 @@ namespace g2o {
   }
 
   
-  SE2LoopClosureCandidateDetector::SE2LoopClosureCandidateDetector(FeatureTracker* tracker_)
-    :LoopClosureCandidateDetector(tracker_){
+  SE2LoopClosureCandidateDetector::SE2LoopClosureCandidateDetector(MapperState* mapperState_)
+    :LoopClosureCandidateDetector(mapperState_){
     _squaredLinearClosureThreshold = 25;
     _angularClosureThreshold = M_PI;
   }
@@ -328,7 +328,7 @@ namespace g2o {
     assert(v);
     SE2 estimate = v->estimate();
     cerr << "num closing candidates for vertex " << v->id() << ": ";
-    for (VertexFrameMap::iterator it=_tracker->frames().begin(); it!=_tracker->frames().end(); it++){
+    for (VertexFrameMap::iterator it=_mapperState->frames().begin(); it!=_mapperState->frames().end(); it++){
       BaseFrame* f = it->second;
       VertexSE2* v2 = f->vertex<VertexSE2*>();
       assert(v2);

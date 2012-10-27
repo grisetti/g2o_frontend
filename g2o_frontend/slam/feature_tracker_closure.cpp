@@ -8,8 +8,8 @@
 namespace g2o {
   using namespace std;
 
-  LoopClosureCandidateDetector::LoopClosureCandidateDetector(FeatureTracker* tracker_) {
-    _tracker = tracker_;
+  LoopClosureCandidateDetector::LoopClosureCandidateDetector(MapperState* mapperState_) {
+    _mapperState = mapperState_;
   }
 
 
@@ -74,8 +74,8 @@ namespace g2o {
     }
   }
 
-  OptimizationManager::OptimizationManager(FeatureTracker* tracker_, GraphItemSelector* graphItemSelector_) {
-    _tracker = tracker_;
+  OptimizationManager::OptimizationManager(MapperState* mapperState_, GraphItemSelector* graphItemSelector_) {
+    _mapperState = mapperState_;
     _graphItemSelector = graphItemSelector_;
     _pushDone = false;
     _gauge = 0;
@@ -88,7 +88,7 @@ namespace g2o {
 
   void OptimizationManager::initializeGlobal(BaseFrame* gaugeFrame){
     BaseFrameSet fset;
-    for (VertexFrameMap::iterator it = _tracker->frames().begin(); it!=_tracker->frames().end(); it++){
+    for (VertexFrameMap::iterator it = _mapperState->frames().begin(); it!=_mapperState->frames().end(); it++){
       fset.insert(it->second);
     }
     _initialize(fset, false, gaugeFrame);
@@ -97,7 +97,7 @@ namespace g2o {
   void OptimizationManager::optimize(int iterations){
     if (_edges.empty())
       return;
-    SparseOptimizer* optimizer = dynamic_cast <SparseOptimizer*> (_tracker->graph());
+    SparseOptimizer* optimizer = dynamic_cast <SparseOptimizer*> (_mapperState->graph());
     if (_gauge)
       _gauge->setFixed(true);
     optimizer->initializeOptimization(_edges);
@@ -160,7 +160,7 @@ namespace g2o {
   }
 
 
-  LoopClosureManager::LoopClosureManager(FeatureTracker* tracker_, 
+  LoopClosureManager::LoopClosureManager(MapperState* mapperState_, 
 					 LoopClosureCandidateDetector * closureCandidateDetector_,
 					 FrameClusterer* frameClusterer_,
 					 CorrespondenceFinder* correspondenceFinder_,
@@ -169,7 +169,7 @@ namespace g2o {
 					 OptimizationManager* optimizationManager_,
 					 GraphItemSelector* graphItemSelector_,
 					 LandmarkDistanceEstimator* landmarkDistanceEstimator_) {
-    _tracker = tracker_; 
+    _mapperState = mapperState_; 
     _closureCandidateDetector = closureCandidateDetector_;
     _frameClusterer = frameClusterer_;
     _correspondenceFinder = correspondenceFinder_;
@@ -193,13 +193,13 @@ namespace g2o {
 
     BaseFrameSet closureCandidates;
     if (localMapGaugeFrame) {
-      _closureCandidateDetector->compute(_tracker->lastFrame());
+      _closureCandidateDetector->compute(_mapperState->lastFrame());
       closureCandidates = _closureCandidateDetector->candidates();
       _touchedFrames.insert(closureCandidates.begin(), closureCandidates.end());
 
       cerr <<  "local map has" << localFrames.size() << endl;
       BaseTrackedFeatureSet featuresToMatchInLocalMap;
-      FeatureTracker::selectFeaturesWithLandmarks(featuresToMatchInLocalMap, localFrames);
+      MapperState::selectFeaturesWithLandmarks(featuresToMatchInLocalMap, localFrames);
       cerr << "found " << featuresToMatchInLocalMap.size() << " features in the local map" << endl;
       
       BaseFrameSet prunedClosures;
@@ -220,7 +220,7 @@ namespace g2o {
 	// you are an idiot.
 
 	BaseTrackedFeatureSet featuresInCluster;
-	FeatureTracker::selectFeaturesWithLandmarks(featuresInCluster, _frameClusterer->cluster(i));
+	MapperState::selectFeaturesWithLandmarks(featuresInCluster, _frameClusterer->cluster(i));
 	int minFeatures = (int)featuresInCluster.size() < (int) featuresToMatchInLocalMap.size() ? 
 	  (int)featuresInCluster.size()  : (int) featuresToMatchInLocalMap.size();
 
@@ -279,7 +279,7 @@ namespace g2o {
 	  _optimizationManager->initializeLocal(_frameClusterer->cluster(i),0,true);
 	  _optimizationManager->optimize(_localOptimizeIterations);
 	  BaseTrackedFeatureSet featuresInCluster;
-	  FeatureTracker::selectFeaturesWithLandmarks(featuresInCluster, _frameClusterer->cluster(i));
+	  MapperState::selectFeaturesWithLandmarks(featuresInCluster, _frameClusterer->cluster(i));
 	  for (BaseTrackedFeatureSet::iterator it = featuresInCluster.begin(); it!=featuresInCluster.end(); it++){
 	    BaseTrackedLandmark* l1 = (*it)->landmark();
 	    for (BaseTrackedFeatureSet::iterator iit = it; iit!=featuresInCluster.end(); iit++) {
@@ -312,8 +312,8 @@ namespace g2o {
   }
   
 
-  LandmarkCorrespondenceManager::LandmarkCorrespondenceManager(FeatureTracker* tracker_) {
-    _tracker = tracker_;
+  LandmarkCorrespondenceManager::LandmarkCorrespondenceManager(MapperState* mapperState_) {
+    _mapperState = mapperState_;
   }
 
   int LandmarkCorrespondenceManager::addCorrespondence(BaseTrackedLandmark* l1_, BaseTrackedLandmark* l2_, int k){
@@ -394,8 +394,8 @@ namespace g2o {
 	BaseTrackedLandmark* l1=corr.l1;
 	BaseTrackedLandmark* l2=corr.l2;
 	mergeLandmarks(l1,l2);
-	if (_tracker->landmarks().count(l1) && _tracker->landmarks().count(l2)){
-	  _tracker->mergeLandmarks(l1,l2);
+	if (_mapperState->landmarks().count(l1) && _mapperState->landmarks().count(l2)){
+	  _mapperState->mergeLandmarks(l1,l2);
 	}
       }
     } while (mergedCorrespondences.size());

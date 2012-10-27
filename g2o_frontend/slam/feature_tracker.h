@@ -11,7 +11,7 @@ namespace g2o {
   struct BaseFrame;
   struct BaseTrackedFeature;
   struct BaseTrackedLandmark;
-  struct FeatureTracker;
+  struct MapperState;
 
   typedef std::set<BaseTrackedFeature*> BaseTrackedFeatureSet;
   typedef std::set<BaseTrackedLandmark*> BaseTrackedLandmarkSet;
@@ -268,13 +268,11 @@ namespace g2o {
      Tracker, manages the incremental tracking of features, frames and so on.
      It stores the state and  "owns" the internal structures.
   */
-  struct FeatureTracker{
+  struct MapperState{
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
-    FeatureTracker(OptimizableGraph* graph_, 
-		   LandmarkConstructor* landmarkConstructor_, 
-		   CorrespondenceFinder* correspondenceFinder_,
-		   Matcher* matcher_);
+    MapperState(OptimizableGraph* graph_, 
+		   LandmarkConstructor* landmarkConstructor_);
   
     //! this adds a landmark to the pool, not to the graph
     void addLandmark(BaseTrackedLandmark* l);
@@ -303,9 +301,6 @@ namespace g2o {
 
     OptimizableGraph* graph() {return _graph;}
     const OptimizableGraph* graph() const {return _graph;}
-    
-    // look for the correspondences with odometry
-    void searchInitialCorrespondences(CorrespondenceVector& correspondences, int numFrames=1);
     
     // do side effect by creating landmarks and connecting tracked features based on the set of correspondences passed
     void updateTracksAndLandmarks(const CorrespondenceVector& correspondences);
@@ -342,14 +337,26 @@ namespace g2o {
     OptimizableGraph* _graph;
   
     LandmarkConstructor*  _landmarkConstructor;
-    CorrespondenceFinder* _correspondenceFinder;
-    Matcher* _matcher;
 
     int _minLandmarkCreationFrames;
     int _minLandmarkCommitFrames;
     int _runningLandmarkId;
   };
 
+  struct Tracker{
+    Tracker(MapperState* mapperState_, CorrespondenceFinder* correspondenceFinder_, Matcher* matcher_);
+
+
+          
+    // look for the correspondences with odometry
+    void searchInitialCorrespondences(CorrespondenceVector& correspondences, int numFrames=1);
+
+  protected:
+      MapperState* _mapperState;
+      CorrespondenceFinder* _correspondenceFinder;
+      Matcher* _matcher;
+  };
+  
 }// end namespace
 
 #endif

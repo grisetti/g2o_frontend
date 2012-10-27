@@ -10,17 +10,17 @@ namespace g2o {
 		
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
-    LoopClosureCandidateDetector (FeatureTracker* tracker_);
+    LoopClosureCandidateDetector (MapperState* mapperState_);
     virtual void compute(BaseFrame* current) = 0;
-    inline FeatureTracker* tracker() { return _tracker; }
-    inline const FeatureTracker* tracker() const {return _tracker;}
-    inline OptimizableGraph* graph() {return _tracker->graph();}
-    inline const OptimizableGraph* graph() const {return _tracker->graph();}
+    inline MapperState* mapperState() { return _mapperState; }
+    inline const MapperState* mapperState() const {return _mapperState;}
+    inline OptimizableGraph* graph() {return _mapperState->graph();}
+    inline const OptimizableGraph* graph() const {return _mapperState->graph();}
     inline const BaseFrameSet& candidates() const { return _candidates; };
     inline BaseFrameSet& candidates() {return _candidates; }
 
   protected:
-    FeatureTracker* _tracker;
+    MapperState* _mapperState;
     BaseFrameSet _candidates;
   };
   
@@ -78,14 +78,14 @@ namespace g2o {
 		
     typedef std::map<LandmarkCorrespondence, int> LandmarkCorrespondenceIntMap;
 
-    LandmarkCorrespondenceManager(FeatureTracker* tracker_);
+    LandmarkCorrespondenceManager(MapperState* mapperState_);
     int addCorrespondence(BaseTrackedLandmark* l1_, BaseTrackedLandmark* l2_, int k=1);
     bool removeCorrespondence(BaseTrackedLandmark* l1_, BaseTrackedLandmark* l2_);
     int occurrences (BaseTrackedLandmark* l1_, BaseTrackedLandmark* l2_);
     void mergeLandmarks(BaseTrackedLandmark* lkept, BaseTrackedLandmark* lremoved);
     inline size_t size() const {return _landmarkCorrespondenceMap.size();}
 
-    /**This does the merging of the landmarks, updates the bookkeeping and does side effect in the tracker.
+    /**This does the merging of the landmarks, updates the bookkeeping and does side effect in the mapperState.
        @param minCount: the min number of times a landmark should have been matched
        @returns: the number of merged landmarks
     */
@@ -93,19 +93,19 @@ namespace g2o {
 
 
   protected:
-    FeatureTracker* _tracker;
+    MapperState* _mapperState;
     LandmarkCorrespondenceIntMap _landmarkCorrespondenceMap;
   };
 
 
-  /**handles the optimization, wrapping the access from the tracker based structs to the 
+  /**handles the optimization, wrapping the access from the mapperState based structs to the 
      graph_based structs
   */
   struct OptimizationManager{
 	
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   
-    OptimizationManager(FeatureTracker* tracker_, GraphItemSelector* graphItemSelector_);
+    OptimizationManager(MapperState* mapperState_, GraphItemSelector* graphItemSelector_);
     // initialize the optimization of a portion of the graph, keeping fixed gaugeFrame.
     // if push is true, the optimization is undone at cleanup
     void initializeLocal(BaseFrameSet& fset, BaseFrame* gaugeFrame = 0, bool push=true);
@@ -117,7 +117,7 @@ namespace g2o {
     void cleanup();
   
   protected:
-    FeatureTracker* _tracker;
+    MapperState* _mapperState;
     HyperGraph::EdgeSet _edges;
     OptimizableGraph::VertexSet _vertices;
     OptimizableGraph::Vertex* _gauge;
@@ -155,7 +155,7 @@ namespace g2o {
 	 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
    
-    LoopClosureManager(FeatureTracker* tracker_, 
+    LoopClosureManager(MapperState* mapperState_, 
 		       LoopClosureCandidateDetector * closureCandidateDetector_,
 		       FrameClusterer* frameClusterer_,
 		       CorrespondenceFinder* correspondenceFinder_,
@@ -185,7 +185,7 @@ namespace g2o {
     inline BaseFrameSet& touchedFrames() {return _touchedFrames;}
 
   protected:  
-    FeatureTracker* _tracker; 
+    MapperState* _mapperState; 
     LoopClosureCandidateDetector * _closureCandidateDetector;
     CorrespondenceFinder* _correspondenceFinder;
     LandmarkCorrespondenceManager* _correspondenceManager;
