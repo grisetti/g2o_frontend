@@ -190,14 +190,14 @@ int main(int argc, char**argv){
   arg.param("localMapSize", localMapSize, 5, "num of nodes in the path to use in the local map"); 
   arg.param("incrementalFeatureTrackingWindow", incrementalFeatureTrackingWindow, 4, "num of frames to look before to seek for a feature match"); 
   arg.param("incrementalGuessMaxFeatureDistance", incrementalGuessMaxFeatureDistance, 1., "max distance between predicted and projected feature, used to process raw readings"); 
-  arg.param("incrementalRansacInlierThreshold", incrementalRansacInlierThreshold, 0.4, "inlier distance in the incremental phase"); 
+  arg.param("incrementalRansacInlierThreshold", incrementalRansacInlierThreshold, 0.3, "inlier distance in the incremental phase"); 
   arg.param("incrementalDistanceDifferenceThreshold", incrementalDistanceDifferenceThreshold, 0.2, "min distance between an inlier and the second best inlier for the same feature"); 
   
   arg.param("loopLinearClosureThreshold", loopLinearClosureThreshold, 5., "max linear distance between frames to check for loop closure");
   arg.param("loopAngularClosureThreshold", loopAngularClosureThreshold, M_PI, "max angular between frames to check for loop closure");
   arg.param("loopGuessMaxFeatureDistance", loopGuessMaxFeatureDistance, 2., "max distance between predicted and projected feature, used to determine correspondence in loop closing"); 
   arg.param("loopRansacIdentityMatches", loopRansacIdentityMatches, 4, "min number of matches between known landmarks to use for ransac to force the alignment between two local maps"); 
-  arg.param("loopRansacInlierThreshold", loopRansacInlierThreshold, .3, "inlier distance threshold for ransac in loop closing"); 
+  arg.param("loopRansacInlierThreshold", loopRansacInlierThreshold, .4, "inlier distance threshold for ransac in loop closing"); 
   arg.param("loopRansacInlierRatio", loopRansacInlierRatio, .8, "inlier fraction  for ransac in loop closing"); 
   arg.param("loopLandmarkMergeDistance", loopLandmarkMergeDistance, .1, "distance between two instances of landmarks in the local under which the merging occursx"); 
   
@@ -341,6 +341,7 @@ int main(int argc, char**argv){
       }
       //cerr << "\t f:" << k++ << endl;
     }
+    
     cerr << "adding " << k << " features" << endl;
 
     int mergedLandmarks = 0;
@@ -459,7 +460,7 @@ int main(int argc, char**argv){
 	for (BaseTrackedFeatureSet::iterator it=fset.begin(); it!=fset.end(); it++) {
 	  BaseTrackedFeature * f = *it;
 	  if (! f->landmark()){
-	    killedFeatures += mapperState->removeTrackedFeature(f, true, true);
+	    killedFeatures += mapperState->removeTrackedFeature(f, true);
 	  } 
 	}
       }
@@ -477,4 +478,39 @@ int main(int argc, char**argv){
   cerr << "# vertices: " << graph->vertices().size() << endl;
   cerr << "# edges: " << graph->edges().size() << endl;
   cerr << "# closureCorrespondences: " << landmarkCorrespondenceManager->size() << endl;
+  
+  cerr << "cleaning up" << endl;
+  cerr << "landmarkConstructor" << endl;
+  delete landmarkConstructor;
+  cerr << "correspondenceFinder" << endl;
+  delete correspondenceFinder;
+  cerr << "matcher" << endl;
+  delete matcher;
+  cerr << "secondMatchFilter" << endl;
+  delete secondMatchFilter;
+  cerr << "tracker" << endl;
+  delete tracker;
+  cerr << "closureDetector" << endl;
+  delete closureDetector;
+  cerr << "loopCorrespondenceFinder" << endl;
+  delete loopCorrespondenceFinder;
+  cerr << "loopClosureMatcher" << endl;
+  delete loopClosureMatcher;
+  cerr << "landmarkCorrespondenceManager" << endl;
+  delete landmarkCorrespondenceManager;
+  cerr << "graphItemSelector" << endl;
+  delete graphItemSelector;
+  cerr << "optimizationManager" << endl;
+  delete optimizationManager;
+  cerr << "frameClusterer" << endl;
+  delete frameClusterer;
+  cerr << "landmarkDistanceEstimator" << endl;
+  delete landmarkDistanceEstimator;
+  cerr << "loopClosureManager" << endl;
+  delete loopClosureManager;
+  cerr << "mapperState" << endl;
+  delete mapperState;
+  cerr << "graph" << endl;
+  delete graph;
+  cerr << "done" << endl;
 }

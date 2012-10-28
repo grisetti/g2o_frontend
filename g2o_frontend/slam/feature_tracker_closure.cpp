@@ -1,4 +1,5 @@
 #include "feature_tracker_closure.h"
+#include "g2o/stuff/timeutil.h"
 #include <deque>
 #include <assert.h>
 #include <deque>

@@ -269,11 +269,11 @@ namespace g2o {
      It stores the state and  "owns" the internal structures.
   */
   struct MapperState{
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    
     MapperState(OptimizableGraph* graph_, 
 		   LandmarkConstructor* landmarkConstructor_);
   
+    ~MapperState();
+    
     //! this adds a landmark to the pool, not to the graph
     void addLandmark(BaseTrackedLandmark* l);
 
@@ -294,7 +294,7 @@ namespace g2o {
     //! this removes a track of features from the pool
     // if they reference a landmark, also the landmark is removed
     // returns the numnber of tracked features removed
-    int removeTrackedFeature(BaseTrackedFeature* feature, bool recursive, bool removeLandmarks);
+    int removeTrackedFeature(BaseTrackedFeature* feature, bool recursive);
 
     inline BaseFrame* lastFrame() {return _lastFrame;}
     inline const BaseFrame* lastFrame() const {return _lastFrame;}

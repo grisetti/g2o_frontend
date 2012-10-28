@@ -1,3 +1,4 @@
+#include "g2o/stuff/timeutil.h"
 #include "feature_tracker_pointxy.h"
 #include <deque>
 #include <assert.h>
@@ -143,7 +144,7 @@ namespace g2o {
  }
 
   void PointXYRansacMatcher::compute(const CorrespondenceVector& correspondences_){
-
+    
     // if we are matching landmarks, put in the beginning of the checks the landmarks that
     // are the same
     CorrespondenceVector correspondences = correspondences_;
@@ -256,7 +257,7 @@ namespace g2o {
 
 	
 	// reject the match if the euclidean distance calculated in the different frames differ too much
-	// as they are likely to be wrong
+	// as they are likely to be wrong1
 	if (fabs(dA - dB)> _squaredIntraFrameDistanceDifferenceThreshold)
 	  continue;
 	
@@ -313,12 +314,14 @@ namespace g2o {
     }
   }
 
+ 
   
   SE2LoopClosureCandidateDetector::SE2LoopClosureCandidateDetector(MapperState* mapperState_)
     :LoopClosureCandidateDetector(mapperState_){
     _squaredLinearClosureThreshold = 25;
     _angularClosureThreshold = M_PI;
   }
+  
   
   void SE2LoopClosureCandidateDetector::compute(BaseFrame* frame) {
     _candidates.clear();

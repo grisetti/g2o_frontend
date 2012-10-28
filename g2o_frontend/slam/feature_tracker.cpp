@@ -34,7 +34,10 @@ namespace g2o {
     setPrevious(previous_);
   }
 
-  BaseTrackedFeature::~BaseTrackedFeature(){}
+  BaseTrackedFeature::~BaseTrackedFeature(){
+    //cerr << "\t\tdeleting feature " << this << endl;
+    //assert (0);
+  }
   
   int BaseTrackedFeature::trackLenght() const {
     const BaseTrackedFeature* f=this;
@@ -218,7 +221,9 @@ namespace g2o {
     _graph->removeVertex(v2);
     _landmarks.erase(l2);
     delete l2;
-  }
+  }    std::set<BaseTrackedLandmark*> _landmarks;
+    VertexFrameMap _frames;
+
 
   // this adds a landmark and all edges to the graph
   void MapperState::confirmLandmark(BaseTrackedLandmark* /*f*/){
@@ -229,7 +234,7 @@ namespace g2o {
     BaseFrame * frame = new BaseFrame(v,odometry,_lastFrame, 0);
     if (_lastFrame){
       _lastFrame->setNext(frame);
-      _lastFrame->neighbors().insert(frame);
+      //_lastFrame->neighbors().insert(frame);
       //frame->neighbors().insert(_lastFrame);
     }
     _lastFrame = frame;
@@ -250,35 +255,36 @@ namespace g2o {
 
   // this removes a track of features from the pool
   // if they reference a landmark, also the landmark is removed
-  int MapperState::removeTrackedFeature(BaseTrackedFeature* feature, bool recursive, bool removeLandmarks){
+  int MapperState::removeTrackedFeature(BaseTrackedFeature* feature, bool recursive){
+    // remove the feature from the frame
+    assert(feature->frame());
+    if (feature->frame())
+      feature->frame()->features().erase(feature);
     // detach the next features
     BaseTrackedFeatureSet children = feature->children();
     for (BaseTrackedFeatureSet::iterator it=children.begin(); it!=children.end(); it++){
       BaseTrackedFeature* f = *it;
       f->setPrevious(0);
     }
-
+    
     // if there is a landmark and the landmark has no observations after matching the feature, delete the landmark
     BaseTrackedLandmark * l = feature->landmark();
-    if (removeLandmarks && l ) {
+    if (l){
       OptimizableGraph::Edge* e = feature->edge<OptimizableGraph::Edge*>();
       if (e)
 	_graph->removeEdge(e);
       l->features().erase(feature);
       if (l->features().empty()) 
-	removeLandmark(feature->landmark());
+	removeLandmark(l);
     }
 
     // if the shit is recursive go backwards and remove all the track
     BaseTrackedFeature* previousFeature = feature->previous();
-    if (feature->frame())
-      feature->frame()->features().erase(feature);
     delete feature;
-    return 1;
     if (recursive && previousFeature && previousFeature->numChildren()==0) {
-      return 1 + removeTrackedFeature(previousFeature, recursive, removeLandmarks);
+      return 1 + removeTrackedFeature(previousFeature, recursive);
     }
-    return 0;
+    return 1;
   }
 
 
@@ -427,7 +433,27 @@ namespace g2o {
   }
   return addedLinks;
 }
-  
+
+  MapperState::~MapperState() {std::set<BaseTrackedLandmark*> _landmarks;
+   cerr << "deleting landmarks" << endl;
+     for (std::set<BaseTrackedLandmark*>::iterator it=_landmarks.begin(); it!=_landmarks.end(); it++){
+      BaseTrackedLandmark* l=*it;
+      delete l;
+    }
+    cerr << "deleting features" << endl;
+    for (VertexFrameMap::iterator it = _frames.begin(); it!=_frames.end(); it++){
+      // cerr << "\t frame:" << it->first->id() << endl;
+	BaseFrame* frame = it->second;
+	for (BaseTrackedFeatureSet::iterator fit = frame->features().begin(); fit !=frame->features().end(); fit++){
+	    BaseTrackedFeature* feature = *fit;
+	    // cerr << "\t\t feature:" << feature << endl;
+	    delete feature;
+	}
+    }
+    //delete frame;
+    cerr << "done" << endl;
+  }
+
 
   Tracker::Tracker(MapperState* mapperState_, CorrespondenceFinder* correspondenceFinder_, Matcher* matcher_) {
       _mapperState = mapperState_;
@@ -459,7 +485,9 @@ namespace g2o {
 	<< " d=" << correspondences[i].distance << endl;
 	}
       */
-    
+      // if (correspondences.size()==1 && correspondences[0].distance >.3)
+      // 	correspondences.clear();
+
       assert(_matcher);
       _matcher->compute(correspondences);
       const CorrespondenceVector& matches = _matcher->matches();
@@ -474,6 +502,7 @@ namespace g2o {
       previous = previous->previous();
       numFrames --;
     }
+
     cerr << "end" << endl;
     
   }
