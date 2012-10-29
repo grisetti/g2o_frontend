@@ -19,7 +19,7 @@ namespace g2o {
   };
 
   enum FeatureMappingMode{UseRobotPose,UseLandmark,UseLandmarkIfAvailable,LocalFrame};
-  bool remapFeaturePose(Vector2d& newPose, BaseTrackedFeature* trackedFeature, FeatureMappingMode mode);
+  bool remapPose(Vector2d& newPose, Matchable* trackedFeature, FeatureMappingMode mode);
   
   typedef std::map<BaseTrackedFeature*, Eigen::Vector2d, 
     std::less<BaseTrackedFeature*>,

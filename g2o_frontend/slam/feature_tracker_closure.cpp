@@ -241,7 +241,7 @@ namespace g2o {
 	  CorrespondenceVector clusterClosureMatches=_matcher->matches();
 	  // cout the number of matches of *different* matched features in the current local map
 	  // sorting the vector and counting could be substantially more efficient
-	  BaseTrackedFeatureSet differentMatches;
+	  MatchableSet differentMatches;
 	  for (size_t i = 0; i<clusterClosureMatches.size(); i++){
 	    differentMatches.insert(clusterClosureMatches[i].f2);
 	  }
@@ -256,8 +256,10 @@ namespace g2o {
 	  if (inlierRatio > _closureInlierRatio || landmarkIdentityMatches > _loopRansacIdentityMatches) {
 	    for (size_t k=0; k<clusterClosureMatches.size(); k++){
 	      Correspondence c = clusterClosureMatches[k];
-	      BaseTrackedLandmark* l1=c.f1->landmark();
-	      BaseTrackedLandmark* l2=c.f2->landmark();
+	      BaseTrackedFeature* f1 = dynamic_cast<BaseTrackedFeature*>(c.f1);
+	      BaseTrackedFeature* f2 = dynamic_cast<BaseTrackedFeature*>(c.f2);
+	      BaseTrackedLandmark* l1=f1->landmark();
+	      BaseTrackedLandmark* l2=f2->landmark();
 	      if (l1!=l2) {
 		_correspondenceManager->addCorrespondence(l1, l2);
 	      }

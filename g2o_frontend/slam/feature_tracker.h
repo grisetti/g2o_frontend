@@ -78,6 +78,10 @@ namespace g2o {
     BaseFrameSet _neighbors;
   };
  
+  struct Matchable{
+    virtual ~Matchable();
+  };
+  typedef std::set<Matchable*> MatchableSet;
 
   /** Basic structure that holds a feature that was tracked between soem frames. 
       A tracked feature belongs to (only one!) framem can originate from another feature present in the
@@ -89,7 +93,7 @@ namespace g2o {
       of the feature.
       </ul>
   */
-  struct BaseTrackedFeature{
+  struct BaseTrackedFeature: public Matchable{
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
     BaseTrackedFeature(BaseFrame* frame_, 
@@ -147,7 +151,7 @@ namespace g2o {
   /** Basic structure that represents a tracked landmark. A landmark can arise from many tracked features and corresponds
       to a vertex in the graph.
   */
-  struct BaseTrackedLandmark{
+  struct BaseTrackedLandmark: public Matchable{
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
     BaseTrackedLandmark(OptimizableGraph::Vertex* v);
@@ -170,17 +174,15 @@ namespace g2o {
       The distance is 0 if the features "look" the same, according to the metric used to compute the correspondence.
   */
   struct Correspondence {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    
-  Correspondence(BaseTrackedFeature* f1_=0, BaseTrackedFeature* f2_=0, double distance_=0 ): 
+  Correspondence(Matchable* f1_=0, Matchable* f2_=0, double distance_=0 ): 
     f1(f1_), f2(f2_), distance(distance_) {}
     
     inline bool operator<(const Correspondence& c2) const {
       return distance<c2.distance;
     }
 
-    BaseTrackedFeature* f1;
-    BaseTrackedFeature* f2;
+    Matchable* f1;
+    Matchable* f2;
     double distance;
   };
   typedef std::vector<Correspondence,Eigen::aligned_allocator<Correspondence> > CorrespondenceVector;

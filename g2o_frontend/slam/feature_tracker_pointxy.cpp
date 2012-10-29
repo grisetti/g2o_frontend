@@ -52,38 +52,51 @@ namespace g2o {
     return e;
   }
 
-  bool remapFeaturePose(Vector2d& newPose, BaseTrackedFeature* trackedFeature, FeatureMappingMode mode){
-    FeaturePointXYData* featureData = trackedFeature->featureData<FeaturePointXYData*>();
-    if (! featureData)
-      return false;
-    VertexSE2* robotVertex=trackedFeature->frame()->vertex<VertexSE2*>();
-    BaseTrackedLandmark* landmark = trackedFeature->landmark();
-    VertexPointXY* landmarkVertex = 0;
-    if (landmark)
-      landmarkVertex = trackedFeature->landmark()->vertex<VertexPointXY*>();
-    if (! robotVertex)
-      return false;
-    switch (mode) {
-    case LocalFrame:
-      newPose = featureData->positionMeasurement();
-      return true;
-    case UseRobotPose: 
-      newPose = robotVertex->estimate() * featureData->positionMeasurement();
-      return true;
-    case UseLandmark:
-      if (! landmarkVertex)
+  bool remapPose(Vector2d& newPose, Matchable* matchable, FeatureMappingMode mode){
+    BaseTrackedFeature* trackedFeature = dynamic_cast<BaseTrackedFeature*>(matchable);
+    if (trackedFeature) {
+      FeaturePointXYData* featureData = trackedFeature->featureData<FeaturePointXYData*>();
+      if (! featureData)
 	return false;
-      newPose = landmarkVertex->estimate();
-      return true;
-    case UseLandmarkIfAvailable:
-      if (landmarkVertex)
-	newPose = landmarkVertex->estimate();
-      else {
-	// cerr << "featureData" << featureData << "\t";
-	// cerr << "robotVertex" << robotVertex->id() << endl;
+      VertexSE2* robotVertex=trackedFeature->frame()->vertex<VertexSE2*>();
+      BaseTrackedLandmark* landmark = trackedFeature->landmark();
+      VertexPointXY* landmarkVertex = 0;
+      if (landmark)
+      landmarkVertex = trackedFeature->landmark()->vertex<VertexPointXY*>();
+      if (! robotVertex)
+	return false;
+      switch (mode) {
+      case LocalFrame:
+	newPose = featureData->positionMeasurement();
+	return true;
+      case UseRobotPose: 
 	newPose = robotVertex->estimate() * featureData->positionMeasurement();
+	return true;
+      case UseLandmark:
+	if (! landmarkVertex)
+	  return false;
+	newPose = landmarkVertex->estimate();
+	return true;
+      case UseLandmarkIfAvailable:
+	if (landmarkVertex)
+	  newPose = landmarkVertex->estimate();
+	else {
+	  // cerr << "featureData" << featureData << "\t";
+	  // cerr << "robotVertex" << robotVertex->id() << endl;
+	  newPose = robotVertex->estimate() * featureData->positionMeasurement();
+	}
+	return true;
       }
-      return true;
+      return false;
+    }
+    BaseTrackedLandmark* trackedLandmark = dynamic_cast<BaseTrackedLandmark*>(matchable);
+    if (trackedLandmark) {
+      if (mode == UseLandmark){
+	VertexPointXY* landmarkVertex = trackedLandmark->vertex<VertexPointXY*>();
+	newPose = landmarkVertex->estimate();
+	return true;
+      }
+      return false;
     }
     return false;
   }
@@ -110,7 +123,7 @@ namespace g2o {
       }
       BaseTrackedFeature* trackedFeature = *it;
       Eigen::Vector2d remappedFeaturePose(0,0);
-      bool remappingResult = remapFeaturePose(remappedFeaturePose,trackedFeature,mode);
+      bool remappingResult = remapPose(remappedFeaturePose,trackedFeature,mode);
       if (!remappingResult){
 	cerr << "FATAL!!!!!, no remapping result" << endl;
 	return;
@@ -160,10 +173,20 @@ namespace g2o {
       int k=0;
       for (size_t i = 0; i< correspondences.size(); i++) {
 	Correspondence c = correspondences[i];
-	BaseTrackedFeature* f1 = c.f1;
-	BaseTrackedFeature* f2 = c.f2;
-	BaseTrackedLandmark* l1 = f1->landmark();
-	BaseTrackedLandmark* l2 = f2->landmark();
+	BaseTrackedLandmark* l1=0, *l2=0;
+	BaseTrackedFeature* f1 = dynamic_cast<BaseTrackedFeature*>(c.f1);
+	BaseTrackedFeature* f2 = dynamic_cast<BaseTrackedFeature*>(c.f2);
+	if (f1 && f2){
+	  l1 = f1->landmark();
+	  l2 = f2->landmark();
+	} else {
+	  l1 = dynamic_cast<BaseTrackedLandmark*>(c.f1);
+	  l2 = dynamic_cast<BaseTrackedLandmark*>(c.f2);
+	}
+	if (! l1 || ! l2){
+	  cerr << "fatal, no landmarks nor features in the pool" <<endl;
+	  exit(0);
+	}
 	if (l1 == l2) {
 	  Correspondence caux = correspondences[k];
 	  correspondences[k] = c;
@@ -189,13 +212,13 @@ namespace g2o {
       const Correspondence& c = correspondences[i];
       Vector2d p1, p2;
       bool remappingResult = false;
-      remappingResult = remapFeaturePose(p1, c.f1, _featureMappingMode[0]);
+      remappingResult = remapPose(p1, c.f1, _featureMappingMode[0]);
       if (! remappingResult){
 	_matches.clear();
 	return;
       }
       poses1[i] = p1;
-      remappingResult = remapFeaturePose(p2, c.f2, _featureMappingMode[1]);
+      remappingResult = remapPose(p2, c.f2, _featureMappingMode[1]);
       if (! remappingResult) {
 	_matches.clear();
 	return;

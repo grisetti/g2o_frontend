@@ -18,6 +18,7 @@
 #include "g2o/core/optimization_algorithm_levenberg.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 
+
 using namespace std;
 using namespace g2o;
 
@@ -302,8 +303,11 @@ int main(int argc, char**argv){
 
   BaseFrame* initialFrame=0;
   signal(SIGINT, sigquit_handler);
-  for (size_t i=0; i<vertexIds.size() && ! hasToStop; i++){
+  double timeIncremental=0;
+  double timeClosure=0;
+  double timeGlobalOptimization=0;
 
+  for (size_t i=0; i<vertexIds.size() && ! hasToStop; i++){
     OptimizableGraph::Vertex* _v=graph->vertex(vertexIds[i]);
     VertexSE2* v=dynamic_cast<VertexSE2*>(_v);
     if (!v)
@@ -348,6 +352,7 @@ int main(int argc, char**argv){
     BaseFrameSet localFrames;
  
     if (vPrev) {
+      double timeIncrementalStart = get_monotonic_time();
       // compute the local map, and its origin in localMapGaugeFrame. the gauge is the 
       // oldest frame in the trajectory
       BaseFrame* localMapGaugeFrame = mapperState->lastNFrames(localFrames, localMapSize);
@@ -393,6 +398,7 @@ int main(int argc, char**argv){
       optimizationManager->optimize(localOptimizeIterations);
       optimizationManager->cleanup();
       
+
 			//cerr << "G" << endl;
       
       // connect the frames from which you observed some landmark in common
@@ -409,7 +415,12 @@ int main(int argc, char**argv){
 	mergedLandmarks = loopClosureManager->mergedLandmarks();
       }
       hasToOptimizeGlobally = hasToOptimizeGlobally || mergedLandmarks;
+
+      double timeIncrementalEnd = get_monotonic_time();
+      timeIncremental += timeIncrementalEnd - timeIncrementalStart;
     }
+    
+    double timeClosureStart = get_monotonic_time();
     
     cerr << "number of merged landmarks: " << mergedLandmarks << endl;
     cerr << "number of frames interested in this operation: " << loopClosureManager->touchedFrames().size() << endl;
@@ -418,14 +429,20 @@ int main(int argc, char**argv){
     int newLinks = mapperState->refineConnectivity(loopClosureManager->touchedFrames(), intraFrameConnectivityThreshold);
     cerr << "number of intra-frame links added: " << newLinks << endl;
 
+    double timeClosureEnd = get_monotonic_time();
+    timeClosure += timeClosureEnd - timeClosureStart;
+
     // if something happened and enough cycles are passed, do a global optimization)
     if (hasToOptimizeGlobally && !(frameCount%optimizeEachN)){
+      double timeGlobalOptimizationStart = get_monotonic_time();
       cerr << "Global Optimize... ";
       optimizationManager->initializeGlobal(initialFrame);
       optimizationManager->optimize(globalOptimizeIterations);
       optimizationManager->cleanup();
       cerr << "done" << endl;
       hasToOptimizeGlobally =  false;
+      double timeGlobalOptimizationEnd = get_monotonic_time();
+      timeGlobalOptimization += timeGlobalOptimizationEnd - timeGlobalOptimizationStart;
     }
 
     if (dumpEachN>0 && !(frameCount%dumpEachN)){
@@ -513,4 +530,9 @@ int main(int argc, char**argv){
   cerr << "graph" << endl;
   delete graph;
   cerr << "done" << endl;
+
+  cerr << "timings: " << endl;
+  cerr << "\tincremental: " << timeIncremental <<  " ms" << endl;
+  cerr << "\tclosure:     " << timeClosure <<  " ms" << endl;
+  cerr << "\tglobalOpt:   " << timeGlobalOptimization <<  " ms" << endl;
 }

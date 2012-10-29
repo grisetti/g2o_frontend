@@ -24,7 +24,9 @@ namespace g2o {
       }
     }
   }
-  
+
+  Matchable::~Matchable(){}
+
   BaseTrackedFeature::BaseTrackedFeature(BaseFrame* frame_, 
 					 BaseFeatureData* featureData_, 
 					 BaseTrackedFeature* previous_):
@@ -108,12 +110,12 @@ namespace g2o {
       sort(_filtered.begin(), _filtered.end(), cs);
     
       int prevIdx = -1;
-     BaseTrackedFeature* prev = 0;
+     Matchable* prev = 0;
       double prevDistance = std::numeric_limits<double>::max();
       
       bool firstFound = false;
       for (size_t i = 0; i<_filtered.size(); i++){
-	BaseTrackedFeature* f=(k==0)? _filtered[i].f1 : _filtered[i].f2;
+	Matchable* f=(k==0)? _filtered[i].f1 : _filtered[i].f2;
 	double distance = _filtered[i].distance;
 	//cerr << "k: " << k << " f1:" << _filtered[i].f1 << " f2:" << _filtered[i].f2 << " d:" <<  distance <<endl;
 	if (prev!=f) {
@@ -288,19 +290,32 @@ namespace g2o {
   }
 
 
-  void MapperState::updateTracksAndLandmarks(const CorrespondenceVector& correspondences) {
+  void MapperState::updateTracksAndLandmarks(const CorrespondenceVector& correspondences_){
+    CorrespondenceVector correspondences(correspondences_.size());
+    int k=0;
+    for (size_t i=0; i<correspondences_.size(); i++){
+      Correspondence  c = correspondences_[i];
+      BaseTrackedFeature* f1 = dynamic_cast<BaseTrackedFeature*>(c.f1);
+      BaseTrackedFeature* f2 = dynamic_cast<BaseTrackedFeature*>(c.f2);
+      if (f1 && f2) {
+	correspondences[k]=c;
+	k++;
+      }
+    }
+    correspondences.resize(k);
+
     cerr << "Updating Tracks" << endl;
     for (size_t i=0; i<correspondences.size(); i++){
       Correspondence  c = correspondences[i];
-      BaseTrackedFeature* f1 = c.f1;
-      BaseTrackedFeature* f2 = c.f2;
+      BaseTrackedFeature* f1 = static_cast<BaseTrackedFeature*>(c.f1);
+      BaseTrackedFeature* f2 = static_cast<BaseTrackedFeature*>(c.f2);
       f2->setPrevious(f1);
     }
   
     for (size_t i =0; i<correspondences.size(); i++){
       Correspondence  c = correspondences[i];
-      BaseTrackedFeature* f1 = c.f1;
-      BaseTrackedFeature* f2 = c.f2;
+      BaseTrackedFeature* f1 = static_cast<BaseTrackedFeature*>(c.f1);
+      BaseTrackedFeature* f2 = static_cast<BaseTrackedFeature*>(c.f2);
 
       int l=f2->trackLenght();
 
@@ -338,7 +353,7 @@ namespace g2o {
 	      assert(0 && "error creating edge");
 	    }
 	  }
-	  //cerr << "made new landmark, id:" << landmark->vertex<OptimizableGraph::Vertex*>()->id() << endl;
+	  // cerr << "made new landmark, id:" << landmark->vertex<OptimizableGraph::Vertex*>()->id() << endl;
 
 	} else {
 	  //cerr << "extending existant landmark, id:" << landmark->vertex<OptimizableGraph::Vertex*>()->id() << endl;
@@ -423,11 +438,20 @@ namespace g2o {
 	continue;
       BaseTrackedLandmarkSet commonSet;
       commonLandmarks(commonSet, f1, f2 );
-      if ((int)commonSet.size()>minCommonLandmarks ||
-	  (odometryIsGood && (f1->previous() == f2 || f2->previous() == f1)) ){
+      int numCommonLandmarks = commonSet.size();
+      bool framesAreConnected = (f1->neighbors().count(f2) && f2->neighbors().count(f1));
+      bool framesAreConsecutive = (f1->previous() == f2) || (f2->previous() == f1);
+      if (numCommonLandmarks > minCommonLandmarks ||
+	  (odometryIsGood && framesAreConsecutive) ){
 	bool result = setNeighborFrames(f1, f2, true);
 	if (result)
 	  addedLinks ++;
+      } else {
+	if (framesAreConnected){
+	  bool result = setNeighborFrames(f1, f2, false);
+	  if (result)
+	    addedLinks --;
+	}
       }
     }
   }
@@ -496,7 +520,7 @@ namespace g2o {
 
       for (size_t i = 0; i<matches.size(); i++){
 	const Correspondence& c = matches[i];
-	openFeatures.erase(c.f2);
+	openFeatures.erase(static_cast<BaseTrackedFeature*>(c.f2));
       }
       correspondences_.insert(correspondences_.end(), matches.begin(), matches.end());
       previous = previous->previous();
