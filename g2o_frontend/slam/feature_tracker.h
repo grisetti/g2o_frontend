@@ -19,9 +19,13 @@ namespace g2o {
   typedef std::map<OptimizableGraph::Vertex*, BaseFrame*> VertexFrameMap;
 
 
+  /** Basic matchable element. Can be anything: a feature, a landmark, a robot pose or a frame
+      To be used by all generic algorithms later on.
+   */
   struct Matchable{
     virtual ~Matchable();
   };
+
   typedef std::set<Matchable*> MatchableSet;
 
   /** Basic structure that holds the oberrvations a robot takes from a give position.
