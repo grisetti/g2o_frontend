@@ -108,34 +108,33 @@ namespace g2o {
     _squaredDistanceThreshold = 0.01;
   }
 
-  // determines candidate correspondences between two sets of features;
-  void PointXYInitialGuessCorrespondenceFinder::compute(BaseTrackedFeatureSet& s1, BaseTrackedFeatureSet& s2){
+  void PointXYInitialGuessCorrespondenceFinder::compute(MatchableSet& s1, MatchableSet& s2){
     _correspondences.clear();
     if (!s1.size() || !s2.size())
       return;
     // compute the position of the features according to the frames to which they belong
-    FeaturePoseMap fpmap;
+    MatchablePoseMap fpmap;
     FeatureMappingMode  mode = _featureMappingMode[0];
-    for (BaseTrackedFeatureSet::iterator it= s1.begin(); it!=s2.end(); it++){
+    for (MatchableSet::iterator it= s1.begin(); it!=s2.end(); it++){
       if (it == s1.end()) {
 	it = s2.begin();
 	mode = _featureMappingMode[1];
       }
-      BaseTrackedFeature* trackedFeature = *it;
+      Matchable* matchable = *it;
       Eigen::Vector2d remappedFeaturePose(0,0);
-      bool remappingResult = remapPose(remappedFeaturePose,trackedFeature,mode);
+      bool remappingResult = remapPose(remappedFeaturePose,matchable,mode);
       if (!remappingResult){
 	cerr << "FATAL!!!!!, no remapping result" << endl;
 	return;
       }
-      fpmap.insert(std::make_pair(trackedFeature,remappedFeaturePose));
+      fpmap.insert(std::make_pair(matchable,remappedFeaturePose));
     }
     
-    for (BaseTrackedFeatureSet::iterator it1= s1.begin(); it1!=s1.end(); it1++){
-      BaseTrackedFeature* trackedFeature1 = *it1;
+    for (MatchableSet::iterator it1= s1.begin(); it1!=s1.end(); it1++){
+      Matchable* trackedFeature1 = *it1;
       Vector2d pose1=fpmap[trackedFeature1];
-      for (BaseTrackedFeatureSet::iterator it2= s2.begin(); it2!=s2.end(); it2++) {
-	BaseTrackedFeature* trackedFeature2 = *it2;
+      for (MatchableSet::iterator it2= s2.begin(); it2!=s2.end(); it2++) {
+	Matchable* trackedFeature2 = *it2;
 	Vector2d pose2=fpmap[trackedFeature2];
 	double d = (pose1-pose2).squaredNorm();
 	if (d<_squaredDistanceThreshold)
@@ -144,6 +143,30 @@ namespace g2o {
     }
     std::sort(_correspondences.begin(), _correspondences.end());
   }
+
+  // void PointXYInitialGuessCorrespondenceFinder::compute(BaseTrackedFeatureSet& s1, BaseTrackedFeatureSet& s2){
+  //   MatchableSet _s1;
+  //   for (BaseTrackedFeatureSet::iterator it=s1.begin(); it!=s1.end(); it++){
+  //     _s1.insert(*it);
+  //   }
+  //   MatchableSet _s2;
+  //   for (BaseTrackedFeatureSet::iterator it=s2.begin(); it!=s2.end(); it++){
+  //     _s2.insert(*it);
+  //   }
+  //   compute(_s1, _s2);
+  // }
+
+  // void PointXYInitialGuessCorrespondenceFinder::compute(BaseTrackedLandmarkSet& s1, BaseTrackedLandmarkSet& s2){
+  //   MatchableSet _s1;
+  //   for (BaseTrackedLandmarkSet::iterator it=s1.begin(); it!=s1.end(); it++){
+  //     _s1.insert(*it);
+  //   }
+  //   MatchableSet _s2;
+  //   for (BaseTrackedLandmarkSet::iterator it=s2.begin(); it!=s2.end(); it++){
+  //     _s2.insert(*it);
+  //   }
+  //   compute(_s1, _s2);
+  // }
   
   PointXYRansacMatcher::PointXYRansacMatcher() {
     _maxIterationsThreshold = 0.5;

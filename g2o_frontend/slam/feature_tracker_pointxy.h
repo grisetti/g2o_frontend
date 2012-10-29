@@ -21,9 +21,9 @@ namespace g2o {
   enum FeatureMappingMode{UseRobotPose,UseLandmark,UseLandmarkIfAvailable,LocalFrame};
   bool remapPose(Vector2d& newPose, Matchable* trackedFeature, FeatureMappingMode mode);
   
-  typedef std::map<BaseTrackedFeature*, Eigen::Vector2d, 
-    std::less<BaseTrackedFeature*>,
-    Eigen::aligned_allocator<std::pair<BaseTrackedFeature*, Eigen::Vector2d> > > FeaturePoseMap;
+  typedef std::map<Matchable*, Eigen::Vector2d, 
+    std::less<Matchable*>,
+    Eigen::aligned_allocator<std::pair<Matchable*, Eigen::Vector2d> > > MatchablePoseMap;
   
   
   struct PointXYInitialGuessCorrespondenceFinder: public CorrespondenceFinder {
@@ -32,7 +32,7 @@ namespace g2o {
       PointXYInitialGuessCorrespondenceFinder();
     
     // determines candidate correspondences between two sets of features;
-    virtual void compute(BaseTrackedFeatureSet& s1, BaseTrackedFeatureSet& s2);
+    virtual void compute(MatchableSet& s1, MatchableSet& s2);
 
     inline void setDistanceThreshold(double dt) { _squaredDistanceThreshold = dt*dt; }
 

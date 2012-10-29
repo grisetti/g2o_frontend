@@ -199,10 +199,15 @@ namespace g2o {
       _touchedFrames.insert(closureCandidates.begin(), closureCandidates.end());
 
       cerr <<  "local map has" << localFrames.size() << endl;
-      BaseTrackedFeatureSet featuresToMatchInLocalMap;
-      MapperState::selectFeaturesWithLandmarks(featuresToMatchInLocalMap, localFrames);
-      cerr << "found " << featuresToMatchInLocalMap.size() << " features in the local map" << endl;
-      
+      // BaseTrackedFeatureSet featuresToMatchInLocalMap;
+      // MapperState::selectFeaturesWithLandmarks(featuresToMatchInLocalMap, localFrames);
+      // cerr << "found " << featuresToMatchInLocalMap.size() << " features in the local map" << endl;
+
+      BaseTrackedLandmarkSet _landmarksToMatchInLocalMap;
+      MapperState::selectLandmarks(_landmarksToMatchInLocalMap, localFrames);
+      MatchableSet& landmarksToMatchInLocalMap=reinterpret_cast<MatchableSet&>(_landmarksToMatchInLocalMap);
+      cerr << "found " << landmarksToMatchInLocalMap.size() << " landmarks in the local map" << endl;
+
       BaseFrameSet prunedClosures;
       std::set_difference(closureCandidates.begin(), closureCandidates.end(), 
 			  localFrames.begin(), localFrames.end(),
@@ -211,19 +216,15 @@ namespace g2o {
       //FrameClusterer frameClusterer;
       _frameClusterer->compute(prunedClosures);
       cerr << "in the closure there are " << _frameClusterer->numClusters() << " regions" << endl;
-      for (int i =0; i < _frameClusterer->numClusters() && featuresToMatchInLocalMap.size(); i++ ){
+      for (int i =0; i < _frameClusterer->numClusters() && landmarksToMatchInLocalMap.size(); i++ ){
 	cerr << "\t cluster: " << i << " " << _frameClusterer->cluster(i).size() << endl;
   
-	  
+	BaseTrackedLandmarkSet _landmarksInCluster;
+	MapperState::selectLandmarks(_landmarksInCluster, _frameClusterer->cluster(i));
+	MatchableSet& landmarksInCluster=reinterpret_cast<MatchableSet&>(_landmarksInCluster);
 
-	// GIORGIO TODO:
-	// consider only one feature per landnmark, you'll become way more efficient
-	// you are an idiot.
-
-	BaseTrackedFeatureSet featuresInCluster;
-	MapperState::selectFeaturesWithLandmarks(featuresInCluster, _frameClusterer->cluster(i));
-	int minFeatures = (int)featuresInCluster.size() < (int) featuresToMatchInLocalMap.size() ? 
-	  (int)featuresInCluster.size()  : (int) featuresToMatchInLocalMap.size();
+	int minFeatures = (int)landmarksInCluster.size() < (int) landmarksToMatchInLocalMap.size() ? 
+	  (int)landmarksInCluster.size()  : (int) landmarksToMatchInLocalMap.size();
 
 	if (minFeatures < _minFeaturesInCluster){
 	  //cerr << "\t\t" << " #too few features (" << minFeatures << "), rejecting match"<<  endl;
@@ -233,19 +234,13 @@ namespace g2o {
 	  _optimizationManager->initializeLocal(_frameClusterer->cluster(i),0,true);
 	  _optimizationManager->optimize(_localOptimizeIterations);
 	  
-	  _correspondenceFinder->compute(featuresInCluster, featuresToMatchInLocalMap);
+	  _correspondenceFinder->compute(landmarksInCluster, landmarksToMatchInLocalMap);
 	  CorrespondenceVector clusterClosureCorrespondences=_correspondenceFinder->correspondences();
 	  cerr << "\t\t" << " #matches:  " << clusterClosureCorrespondences.size() <<  endl;
 	  
 	  _matcher->compute(clusterClosureCorrespondences);
 	  CorrespondenceVector clusterClosureMatches=_matcher->matches();
-	  // cout the number of matches of *different* matched features in the current local map
-	  // sorting the vector and counting could be substantially more efficient
-	  MatchableSet differentMatches;
-	  for (size_t i = 0; i<clusterClosureMatches.size(); i++){
-	    differentMatches.insert(clusterClosureMatches[i].f2);
-	  }
-	  int numDifferentMatches = differentMatches.size();
+	  int numDifferentMatches = clusterClosureMatches.size();
 
 	  float inlierRatio = (float) numDifferentMatches / minFeatures;
 	  int landmarkIdentityMatches = _matcher->landmarkIdentityMatches();
@@ -256,10 +251,8 @@ namespace g2o {
 	  if (inlierRatio > _closureInlierRatio || landmarkIdentityMatches > _loopRansacIdentityMatches) {
 	    for (size_t k=0; k<clusterClosureMatches.size(); k++){
 	      Correspondence c = clusterClosureMatches[k];
-	      BaseTrackedFeature* f1 = dynamic_cast<BaseTrackedFeature*>(c.f1);
-	      BaseTrackedFeature* f2 = dynamic_cast<BaseTrackedFeature*>(c.f2);
-	      BaseTrackedLandmark* l1=f1->landmark();
-	      BaseTrackedLandmark* l2=f2->landmark();
+	      BaseTrackedLandmark* l1=dynamic_cast<BaseTrackedLandmark*>(c.f1);
+	      BaseTrackedLandmark* l2=dynamic_cast<BaseTrackedLandmark*>(c.f2);
 	      if (l1!=l2) {
 		_correspondenceManager->addCorrespondence(l1, l2);
 	      }
@@ -281,12 +274,12 @@ namespace g2o {
 	for (int i=0; i< _frameClusterer->numClusters(); i++) {
 	  _optimizationManager->initializeLocal(_frameClusterer->cluster(i),0,true);
 	  _optimizationManager->optimize(_localOptimizeIterations);
-	  BaseTrackedFeatureSet featuresInCluster;
-	  MapperState::selectFeaturesWithLandmarks(featuresInCluster, _frameClusterer->cluster(i));
-	  for (BaseTrackedFeatureSet::iterator it = featuresInCluster.begin(); it!=featuresInCluster.end(); it++){
-	    BaseTrackedLandmark* l1 = (*it)->landmark();
-	    for (BaseTrackedFeatureSet::iterator iit = it; iit!=featuresInCluster.end(); iit++) {
-	      BaseTrackedLandmark* l2 = (*iit)->landmark();
+	  BaseTrackedLandmarkSet landmarksInCluster;
+	  MapperState::selectLandmarks(landmarksInCluster, _frameClusterer->cluster(i));
+	  for (BaseTrackedLandmarkSet::iterator it = landmarksInCluster.begin(); it!=landmarksInCluster.end(); it++){
+	    BaseTrackedLandmark* l1 = *it;
+	    for (BaseTrackedLandmarkSet::iterator iit = it; iit!=landmarksInCluster.end(); iit++) {
+	      BaseTrackedLandmark* l2 = *iit;
 	      if (l1 == l2)
 		continue;
 	      double distance;

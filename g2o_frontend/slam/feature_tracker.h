@@ -18,6 +18,12 @@ namespace g2o {
   typedef std::set<BaseFrame*> BaseFrameSet;
   typedef std::map<OptimizableGraph::Vertex*, BaseFrame*> VertexFrameMap;
 
+
+  struct Matchable{
+    virtual ~Matchable();
+  };
+  typedef std::set<Matchable*> MatchableSet;
+
   /** Basic structure that holds the oberrvations a robot takes from a give position.
       A frame is associated with:
       <ul>  
@@ -56,7 +62,7 @@ namespace g2o {
     }
 
     inline BaseTrackedFeatureSet& features() {return _features;}
-  
+    inline MatchableSet& matchables() {return reinterpret_cast<MatchableSet&>(_features);}
     inline BaseFrame* previous() { return _previousFrame;}
     inline void setPrevious(BaseFrame* p) { _previousFrame = p;   }
 
@@ -78,10 +84,6 @@ namespace g2o {
     BaseFrameSet _neighbors;
   };
  
-  struct Matchable{
-    virtual ~Matchable();
-  };
-  typedef std::set<Matchable*> MatchableSet;
 
   /** Basic structure that holds a feature that was tracked between soem frames. 
       A tracked feature belongs to (only one!) framem can originate from another feature present in the
@@ -210,8 +212,8 @@ namespace g2o {
   struct CorrespondenceFinder {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
-    // determines candidate correspondences between two sets of features;
-    virtual void compute(BaseTrackedFeatureSet& s1, BaseTrackedFeatureSet& s2) = 0;
+    // determines candidate correspondences between two sets of matchable objects;
+    virtual void compute(MatchableSet& s1, MatchableSet& s2) = 0;
     inline const CorrespondenceVector& correspondences() {return _correspondences;}
   protected:
     CorrespondenceVector _correspondences;
@@ -329,6 +331,7 @@ namespace g2o {
 
     // utlities
     static void commonLandmarks(BaseTrackedLandmarkSet& common, BaseFrame* f1, BaseFrame* f2);
+    static void selectLandmarks(BaseTrackedLandmarkSet& landmarks, BaseFrameSet& frameSet);
     static void selectFeaturesWithLandmarks(BaseTrackedFeatureSet& featureSet, BaseFrameSet& frameSet);
     static void selectFeaturesWithLandmarks(BaseTrackedFeatureSet& featureSet, BaseFrame* frame);
     BaseFrame* lastNFrames(BaseFrameSet& fset, int nFramesBack) ;

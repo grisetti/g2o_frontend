@@ -408,7 +408,22 @@ namespace g2o {
     fset.insert(frame);
     selectFeaturesWithLandmarks(featureSet, fset);
   }
-  
+ 
+  void MapperState::selectLandmarks(BaseTrackedLandmarkSet& landmarks, BaseFrameSet& frameSet){
+    landmarks.clear();
+    for (BaseFrameSet::iterator it=frameSet.begin(); it!=frameSet.end(); it++){
+      BaseFrame* frame = *it;
+      for (BaseTrackedFeatureSet::iterator fit=frame->features().begin(); 
+	   fit!=frame->features().end(); fit++){
+	BaseTrackedFeature* feature = *fit;
+	BaseTrackedLandmark* landmark=feature->landmark();
+	if (landmark && !landmarks.count(feature->landmark())){
+	    landmarks.insert(feature->landmark());
+	}
+      }
+    }
+  }
+ 
 
   BaseFrame* MapperState::lastNFrames(BaseFrameSet& fset, int nFramesBack) {
     fset.clear();
@@ -493,13 +508,13 @@ namespace g2o {
     if (! current)
       return;
     BaseFrame* previous = current->previous();
-    BaseTrackedFeatureSet openFeatures=current->features();
+    MatchableSet openFeatures=current->matchables();
     int k = 1;
     cerr << "start" << endl;
     while (previous && numFrames >0 && ! openFeatures.empty()) {
       cerr << "f: " << k << " ptr:" << previous << " #features:" << previous->features().size() << endl; 
       k++;
-      _correspondenceFinder->compute(previous->features(),openFeatures);
+      _correspondenceFinder->compute(previous->matchables(),openFeatures);
       const CorrespondenceVector& correspondences = _correspondenceFinder->correspondences();
       cerr << "Odom: found " << correspondences.size() << " correspondences" << endl;
       /*
