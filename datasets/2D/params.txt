@@ -1,0 +1,11 @@
+# world-1000-dense-highnoise.g2o
+tracker_test -odometryIsGood -dumpEachN 50 world-1000-dense-highnoise.g2o >& out.txt
+
+# world-2000-noassoc.g2o
+tracker_test -odometryIsGood -localMapSize 10 -incrementalFeatureTrackingWindow 9 -minFeaturesInCluster 5 -updateViewerEachN 1 world-2000-noassoc.g2o | gnuplot
+
+# world-2000-lownoise-noassoc.g2o
+tracker_test -odometryIsGood -localMapSize 10 -incrementalFeatureTrackingWindow 9 -minFeaturesInCluster 5 -updateViewerEachN 1 world-2000-lownoise-noassoc.g2o | gnuplot
+
+#victoria
+tracker_test -odometryIsGood -minFeaturesInCluster 4 -localMapSize 50 -incrementalFeatureTrackingWindow 49 -incrementalGuessMaxFeatureDistance 2 -incrementalRansacInlierThreshold 0.5 -loopLinearClosureThreshold 50 -loopGuessMaxFeatureDistance 60 -loopRansacInlierThreshold 2 -updateViewerEachN 50 victoriaPark-noassoc.g2o | gnuplot
