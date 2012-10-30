@@ -62,12 +62,12 @@ void dumpEdges(ostream& os, BaseFrameSet& fset,
 
   if (writeIntraFrame) {
     for (BaseFrameSet::iterator it = fset.begin(); it!=fset.end(); it++){
-      BaseFrame* f = *it;
+      BaseSequentialFrame* f = *it;
       const VertexSE2* v1 = f->vertex<const VertexSE2*>();
       if (!v1)
 	continue;
       for (BaseFrameSet::iterator iit = f->neighbors().begin(); iit!=f->neighbors().end(); iit++){
-	BaseFrame* f2 = *iit;
+	BaseSequentialFrame* f2 = *iit;
 	if (! fset.count(f2))
 	  continue;
 	const VertexSE2* v2 = f2->vertex<const VertexSE2*>();
@@ -301,7 +301,7 @@ int main(int argc, char**argv){
   int frameCount = 1;
   int hasToOptimizeGlobally =  false;
 
-  BaseFrame* initialFrame=0;
+  BaseSequentialFrame* initialFrame=0;
   signal(SIGINT, sigquit_handler);
   double timeIncremental=0;
   double timeClosure=0;
@@ -355,7 +355,7 @@ int main(int argc, char**argv){
       double timeIncrementalStart = get_monotonic_time();
       // compute the local map, and its origin in localMapGaugeFrame. the gauge is the 
       // oldest frame in the trajectory
-      BaseFrame* localMapGaugeFrame = mapperState->lastNFrames(localFrames, localMapSize);
+      BaseSequentialFrame* localMapGaugeFrame = mapperState->lastNFrames(localFrames, localMapSize);
 
       // do one round of optimization, it never hurts
       //cerr << "A" << endl;
@@ -461,10 +461,10 @@ int main(int argc, char**argv){
 
     // do the cleaning
     if ((int)localFrames.size() == localMapSize ) {
-      BaseFrame* oldestFrame = 0;
-      BaseFrame* outOfLocalMapFrame = 0; 
+      BaseSequentialFrame* oldestFrame = 0;
+      BaseSequentialFrame* outOfLocalMapFrame = 0; 
       for (BaseFrameSet::iterator it = localFrames.begin(); it!= localFrames.end(); it++){
-	BaseFrame* f = *it;
+	BaseSequentialFrame* f = *it;
 	if (! oldestFrame || oldestFrame->vertex<OptimizableGraph::Vertex*>()->id() > oldestFrame->vertex<OptimizableGraph::Vertex*>()->id()){
 	  oldestFrame = f;
 	}
@@ -473,9 +473,10 @@ int main(int argc, char**argv){
 	outOfLocalMapFrame = oldestFrame->previous();
       int killedFeatures = 0;
       if (outOfLocalMapFrame) {
-	BaseTrackedFeatureSet fset = outOfLocalMapFrame->features();
-	for (BaseTrackedFeatureSet::iterator it=fset.begin(); it!=fset.end(); it++) {
-	  BaseTrackedFeature * f = *it;
+	MatchableSet fset;
+	outOfLocalMapFrame->features(fset);
+	for (MatchableSet::iterator it=fset.begin(); it!=fset.end(); it++) {
+	  BaseTrackedFeature * f = reinterpret_cast<BaseTrackedFeature *>(*it);
 	  if (! f->landmark()){
 	    killedFeatures += mapperState->removeTrackedFeature(f, true);
 	  } 

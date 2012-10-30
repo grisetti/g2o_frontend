@@ -11,7 +11,7 @@ namespace g2o {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
     LoopClosureCandidateDetector (MapperState* mapperState_);
-    virtual void compute(BaseFrame* current) = 0;
+    virtual void compute(BaseSequentialFrame* current) = 0;
     inline MapperState* mapperState() { return _mapperState; }
     inline const MapperState* mapperState() const {return _mapperState;}
     inline OptimizableGraph* graph() {return _mapperState->graph();}
@@ -108,9 +108,9 @@ namespace g2o {
     OptimizationManager(MapperState* mapperState_, GraphItemSelector* graphItemSelector_);
     // initialize the optimization of a portion of the graph, keeping fixed gaugeFrame.
     // if push is true, the optimization is undone at cleanup
-    void initializeLocal(BaseFrameSet& fset, BaseFrame* gaugeFrame = 0, bool push=true);
+    void initializeLocal(BaseFrameSet& fset, BaseSequentialFrame* gaugeFrame = 0, bool push=true);
     // global optimization
-    void initializeGlobal(BaseFrame* gaugeFrame = 0);  
+    void initializeGlobal(BaseSequentialFrame* gaugeFrame = 0);  
     // do optimization
     void optimize(int iterations);  
     // always call this after initializeGlobal or initializeLocal
@@ -123,7 +123,7 @@ namespace g2o {
     OptimizableGraph::Vertex* _gauge;
     bool _pushDone;
     GraphItemSelector* _graphItemSelector;
-    void _initialize(BaseFrameSet& fset, bool push, BaseFrame* gaugeFrame = 0);
+    void _initialize(BaseFrameSet& fset, bool push, BaseSequentialFrame* gaugeFrame = 0);
     bool _isInitialized;
   };
 
@@ -165,7 +165,7 @@ namespace g2o {
 		       GraphItemSelector* graphItemSelector_,
 		       LandmarkDistanceEstimator* landmarkDistanceEstimator_);
 
-    virtual void compute(BaseFrameSet& localFrames, BaseFrame* localMapGaugeFrame);
+    virtual void compute(BaseFrameSet& localFrames, BaseSequentialFrame* localMapGaugeFrame);
 
     inline int mergedLandmarks() const {return _mergedLandmarks;}
   

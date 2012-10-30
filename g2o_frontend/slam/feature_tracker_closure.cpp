@@ -21,11 +21,13 @@ namespace g2o {
     _selectedEdges.clear();
     _selectedVertices.clear();
     for (BaseFrameSet::iterator it=frameSet.begin(); it!=frameSet.end(); it++){
-      BaseFrame* frame = *it;
+      BaseSequentialFrame* frame = *it;
       OptimizableGraph::Vertex* v=frame->vertex<OptimizableGraph::Vertex*>();
       _selectedVertices.insert(v);
-      for (BaseTrackedFeatureSet::iterator fit=frame->features().begin(); fit != frame->features().end(); fit ++){
-	BaseTrackedFeature* feature = *fit;
+      MatchableSet features;
+      frame->features(features);
+      for (MatchableSet::iterator fit=features.begin(); fit != features.end(); fit ++){
+	BaseTrackedFeature* feature = reinterpret_cast<BaseTrackedFeature*>(*fit);
 	if (feature->landmark()){
 	  OptimizableGraph::Edge* edge = feature->edge<OptimizableGraph::Edge*>();
 	  if (edge) {
@@ -36,7 +38,7 @@ namespace g2o {
 	  }
 	}
       }
-      BaseFrame* previousFrame = frame->previous();
+      BaseSequentialFrame* previousFrame = frame->previous();
       if (frameSet.count(previousFrame)){
 	OptimizableGraph::Edge* odometryEdge = frame->odometryEdge<OptimizableGraph::Edge*>();
 	_selectedEdges.insert(odometryEdge);
@@ -44,26 +46,26 @@ namespace g2o {
     }
   }
 
-  typedef std::deque<BaseFrame*> BaseFrameDeque;
+  typedef std::deque<BaseSequentialFrame*> BaseFrameDeque;
 
   void FrameClusterer::compute(BaseFrameSet& frameSet){
     _clusters.clear();
     BaseFrameSet openFrames =  frameSet;
     while(!openFrames.empty()) {
       BaseFrameSet currentCluster;
-      BaseFrame* firstFrame = *(openFrames.begin());
+      BaseSequentialFrame* firstFrame = *(openFrames.begin());
       BaseFrameDeque frameDeque;
 
       frameDeque.push_back(firstFrame);
       openFrames.erase(firstFrame);
       currentCluster.insert(firstFrame);
       while (! frameDeque.empty()){
-	BaseFrame* frame = frameDeque.front();
+	BaseSequentialFrame* frame = frameDeque.front();
 	frameDeque.pop_front();
 	currentCluster.insert(frame);
 	for (BaseFrameSet::iterator neighborIt=frame->neighbors().begin();
 	     neighborIt!=frame->neighbors().end(); neighborIt++){
-	  BaseFrame* otherFrame = *neighborIt;
+	  BaseSequentialFrame* otherFrame = *neighborIt;
 	  if (openFrames.count(otherFrame)){
 	    openFrames.erase(otherFrame);
 	    currentCluster.insert(otherFrame);
@@ -83,11 +85,11 @@ namespace g2o {
     _isInitialized = false;
   }
   
-  void OptimizationManager::initializeLocal(BaseFrameSet& fset, BaseFrame* gaugeFrame, bool push){
+  void OptimizationManager::initializeLocal(BaseFrameSet& fset, BaseSequentialFrame* gaugeFrame, bool push){
     _initialize(fset, push, gaugeFrame);
   }
 
-  void OptimizationManager::initializeGlobal(BaseFrame* gaugeFrame){
+  void OptimizationManager::initializeGlobal(BaseSequentialFrame* gaugeFrame){
     BaseFrameSet fset;
     for (VertexFrameMap::iterator it = _mapperState->frames().begin(); it!=_mapperState->frames().end(); it++){
       fset.insert(it->second);
@@ -125,7 +127,7 @@ namespace g2o {
     _gauge=0;
   }
 
-  void OptimizationManager::_initialize(BaseFrameSet& fset, bool push, BaseFrame* gaugeFrame){
+  void OptimizationManager::_initialize(BaseFrameSet& fset, bool push, BaseSequentialFrame* gaugeFrame){
     if (_isInitialized){
       cerr << "OptimizationManager: Fatal, double initialization" << endl;
       exit(0);
@@ -187,7 +189,7 @@ namespace g2o {
     _landmarkMergeDistanceThreshold = 0.1;
   }
 
-  void LoopClosureManager::compute(BaseFrameSet& localFrames, BaseFrame* localMapGaugeFrame) {
+  void LoopClosureManager::compute(BaseFrameSet& localFrames, BaseSequentialFrame* localMapGaugeFrame) {
     _touchedFrames.clear();
     _mergedLandmarks = 0;
     _touchedFrames.insert(localFrames.begin(), localFrames.end());
@@ -203,9 +205,8 @@ namespace g2o {
       // MapperState::selectFeaturesWithLandmarks(featuresToMatchInLocalMap, localFrames);
       // cerr << "found " << featuresToMatchInLocalMap.size() << " features in the local map" << endl;
 
-      BaseTrackedLandmarkSet _landmarksToMatchInLocalMap;
-      MapperState::selectLandmarks(_landmarksToMatchInLocalMap, localFrames);
-      MatchableSet& landmarksToMatchInLocalMap=reinterpret_cast<MatchableSet&>(_landmarksToMatchInLocalMap);
+      MatchableSet landmarksToMatchInLocalMap;
+      MapperState::selectLandmarks(landmarksToMatchInLocalMap, localFrames);
       cerr << "found " << landmarksToMatchInLocalMap.size() << " landmarks in the local map" << endl;
 
       BaseFrameSet prunedClosures;
@@ -219,9 +220,8 @@ namespace g2o {
       for (int i =0; i < _frameClusterer->numClusters() && landmarksToMatchInLocalMap.size(); i++ ){
 	cerr << "\t cluster: " << i << " " << _frameClusterer->cluster(i).size() << endl;
   
-	BaseTrackedLandmarkSet _landmarksInCluster;
-	MapperState::selectLandmarks(_landmarksInCluster, _frameClusterer->cluster(i));
-	MatchableSet& landmarksInCluster=reinterpret_cast<MatchableSet&>(_landmarksInCluster);
+	MatchableSet landmarksInCluster;
+	MapperState::selectLandmarks(landmarksInCluster, _frameClusterer->cluster(i));
 
 	int minFeatures = (int)landmarksInCluster.size() < (int) landmarksToMatchInLocalMap.size() ? 
 	  (int)landmarksInCluster.size()  : (int) landmarksToMatchInLocalMap.size();
@@ -274,12 +274,12 @@ namespace g2o {
 	for (int i=0; i< _frameClusterer->numClusters(); i++) {
 	  _optimizationManager->initializeLocal(_frameClusterer->cluster(i),0,true);
 	  _optimizationManager->optimize(_localOptimizeIterations);
-	  BaseTrackedLandmarkSet landmarksInCluster;
+	  MatchableSet landmarksInCluster;
 	  MapperState::selectLandmarks(landmarksInCluster, _frameClusterer->cluster(i));
-	  for (BaseTrackedLandmarkSet::iterator it = landmarksInCluster.begin(); it!=landmarksInCluster.end(); it++){
-	    BaseTrackedLandmark* l1 = *it;
-	    for (BaseTrackedLandmarkSet::iterator iit = it; iit!=landmarksInCluster.end(); iit++) {
-	      BaseTrackedLandmark* l2 = *iit;
+	  for (MatchableSet::iterator it = landmarksInCluster.begin(); it!=landmarksInCluster.end(); it++){
+	    BaseTrackedLandmark* l1 = reinterpret_cast<BaseTrackedLandmark*>(*it);
+	    for (MatchableSet::iterator iit = it; iit!=landmarksInCluster.end(); iit++) {
+	      BaseTrackedLandmark* l2 = reinterpret_cast<BaseTrackedLandmark*>(*iit);
 	      if (l1 == l2)
 		continue;
 	      double distance;

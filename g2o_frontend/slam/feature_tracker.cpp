@@ -5,29 +5,46 @@
 namespace g2o {
   using namespace std;
 
-  BaseFrame::BaseFrame(OptimizableGraph::Vertex* v,
-		       OptimizableGraph::Edge* e,
-		       BaseFrame* p,
-		       BaseFrame* n):
-    _vertex(v), _odometryEdge(e), _previousFrame(p), _nextFrame(n) {
+  BaseFrame::BaseFrame(OptimizableGraph::Vertex* v):
+    _vertex(v) {
   }
 
   void BaseFrame::setVertex(OptimizableGraph::Vertex* v) { _vertex = v; }
 
-
-  void BaseFrame::landmarks(BaseTrackedLandmarkSet& landmarks_){
-    for (BaseTrackedFeatureSet::iterator it = _features.begin(); it!=_features.end(); it++){
-      BaseTrackedFeature* f = *it;
-      BaseTrackedLandmark* l = f->landmark();
-      if (l){
+  void BaseFrame::landmarks(MatchableSet& landmarks_){
+    for (MatchableSet::iterator it = _matchables.begin(); it!=_matchables.end(); it++){
+      BaseTrackedLandmark* l = 0;
+      BaseTrackedFeature* f = dynamic_cast<BaseTrackedFeature*>(*it);
+      if (f) {
+	l=f->landmark();
+      } else {
+	l = dynamic_cast<BaseTrackedLandmark*>(*it);
+      }
+      if (l) {
 	landmarks_.insert(l);
       }
     }
   }
 
+  void BaseFrame::features(MatchableSet& features_){
+    for (MatchableSet::iterator it = _matchables.begin(); it!=_matchables.end(); it++){
+      BaseTrackedFeature* f = dynamic_cast<BaseTrackedFeature*>(*it);
+      if (f) {
+	features_.insert(f);
+      }
+    }
+  }
+
+  BaseSequentialFrame::BaseSequentialFrame(OptimizableGraph::Vertex* v,
+		       OptimizableGraph::Edge* e,
+		       BaseSequentialFrame* p,
+		       BaseSequentialFrame* n):
+    BaseFrame(v), _odometryEdge(e), _previousFrame(p), _nextFrame(n) {
+  }
+
   Matchable::~Matchable(){}
 
-  BaseTrackedFeature::BaseTrackedFeature(BaseFrame* frame_, 
+  BaseTrackedFeature::BaseTrackedFeature(BaseSequentialFrame* frame_, 
 					 BaseFeatureData* featureData_, 
 					 BaseTrackedFeature* previous_):
     _frame(frame_), _featureData(featureData_), _previous(previous_) {
@@ -156,7 +173,7 @@ namespace g2o {
     _runningLandmarkId = 1000000;
   }
   
-  bool MapperState::setNeighborFrames(BaseFrame* f1, BaseFrame* f2, bool connect_){
+  bool MapperState::setNeighborFrames(BaseSequentialFrame* f1, BaseSequentialFrame* f2, bool connect_){
     if (connect_) {
       if(f1->neighbors().count(f2))
 	return false;
@@ -233,7 +250,7 @@ namespace g2o {
 
   // this adds e new frame at the end of the history
   void MapperState::addFrame(OptimizableGraph::Vertex* v, OptimizableGraph::Edge* odometry) {
-    BaseFrame * frame = new BaseFrame(v,odometry,_lastFrame, 0);
+    BaseSequentialFrame * frame = new BaseSequentialFrame(v,odometry,_lastFrame, 0);
     if (_lastFrame){
       _lastFrame->setNext(frame);
       //_lastFrame->neighbors().insert(frame);
@@ -244,8 +261,8 @@ namespace g2o {
   }
 
   void MapperState::addTrackedFeature(BaseTrackedFeature* feature) {
-    BaseFrame * frame = feature->frame();
-    frame->features().insert(feature);
+    BaseSequentialFrame * frame = feature->frame();
+    frame->matchables().insert(feature);
     // consistency check;
     // if (feature->previous())
     //   assert("addTrackedFeature:  ERROR, previous frame does not match previous feature frame" && feature->previous()->frame() == frame->previous());
@@ -261,7 +278,7 @@ namespace g2o {
     // remove the feature from the frame
     assert(feature->frame());
     if (feature->frame())
-      feature->frame()->features().erase(feature);
+      feature->frame()->matchables().erase(feature);
     // detach the next features
     BaseTrackedFeatureSet children = feature->children();
     for (BaseTrackedFeatureSet::iterator it=children.begin(); it!=children.end(); it++){
@@ -371,10 +388,10 @@ namespace g2o {
   }
 
   
-  void MapperState::commonLandmarks(BaseTrackedLandmarkSet& common, BaseFrame* f1, BaseFrame* f2) {
+  void MapperState::commonLandmarks(MatchableSet& common, BaseSequentialFrame* f1, BaseSequentialFrame* f2) {
     common.clear();
     assert(f1!=f2);
-    BaseTrackedLandmarkSet landmarks1, landmarks2;
+    MatchableSet landmarks1, landmarks2;
     f1->landmarks(landmarks1);
     f2->landmarks(landmarks2);
     
@@ -386,49 +403,19 @@ namespace g2o {
   
   typedef std::set<BaseTrackedLandmark*> BaseLandmarkSet;
   
-  void MapperState::selectFeaturesWithLandmarks(BaseTrackedFeatureSet& featureSet, BaseFrameSet& frameSet){
-    featureSet.clear();
-    BaseLandmarkSet landmarks;
-    for (BaseFrameSet::iterator it=frameSet.begin(); it!=frameSet.end(); it++){
-      BaseFrame* frame = *it;
-      for (BaseTrackedFeatureSet::iterator fit=frame->features().begin(); 
-	   fit!=frame->features().end(); fit++){
-	BaseTrackedFeature* feature = *fit;
-	BaseTrackedLandmark* landmark=feature->landmark();
-	if (landmark && !landmarks.count(feature->landmark())){
-	    landmarks.insert(feature->landmark());
-	    featureSet.insert(feature);
-	}
-      }
-    }
-  }
-
-  void MapperState::selectFeaturesWithLandmarks(BaseTrackedFeatureSet& featureSet, BaseFrame* frame){
-    BaseFrameSet fset;
-    fset.insert(frame);
-    selectFeaturesWithLandmarks(featureSet, fset);
-  }
- 
-  void MapperState::selectLandmarks(BaseTrackedLandmarkSet& landmarks, BaseFrameSet& frameSet){
+  
+  void MapperState::selectLandmarks(MatchableSet& landmarks, BaseFrameSet& frameSet){
     landmarks.clear();
     for (BaseFrameSet::iterator it=frameSet.begin(); it!=frameSet.end(); it++){
-      BaseFrame* frame = *it;
-      for (BaseTrackedFeatureSet::iterator fit=frame->features().begin(); 
-	   fit!=frame->features().end(); fit++){
-	BaseTrackedFeature* feature = *fit;
-	BaseTrackedLandmark* landmark=feature->landmark();
-	if (landmark && !landmarks.count(feature->landmark())){
-	    landmarks.insert(feature->landmark());
-	}
-      }
+      BaseSequentialFrame* frame = *it;
+      frame->landmarks(landmarks);
     }
   }
  
-
-  BaseFrame* MapperState::lastNFrames(BaseFrameSet& fset, int nFramesBack) {
+  BaseSequentialFrame* MapperState::lastNFrames(BaseFrameSet& fset, int nFramesBack) {
     fset.clear();
-    BaseFrame* f=lastFrame();
-    BaseFrame* fp=lastFrame();
+    BaseSequentialFrame* f=lastFrame();
+    BaseSequentialFrame* fp=lastFrame();
     while (f && nFramesBack>0){
       nFramesBack --;
       fset.insert(f);
@@ -446,12 +433,12 @@ namespace g2o {
     int addedLinks = 0;
   for (BaseFrameSet::iterator it = frames.begin(); it!=frames.end(); it++){
     BaseFrameSet::iterator it2=it; it2++;
-    BaseFrame* f1 = *it;
+    BaseSequentialFrame* f1 = *it;
     for (; it2!=frames.end(); it2++){
-      BaseFrame* f2 = *it2;
+      BaseSequentialFrame* f2 = *it2;
       if (f1==f2)
 	continue;
-      BaseTrackedLandmarkSet commonSet;
+      MatchableSet commonSet;
       commonLandmarks(commonSet, f1, f2 );
       int numCommonLandmarks = commonSet.size();
       bool framesAreConnected = (f1->neighbors().count(f2) && f2->neighbors().count(f1));
@@ -473,7 +460,8 @@ namespace g2o {
   return addedLinks;
 }
 
-  MapperState::~MapperState() {std::set<BaseTrackedLandmark*> _landmarks;
+  MapperState::~MapperState() {
+
    cerr << "deleting landmarks" << endl;
      for (std::set<BaseTrackedLandmark*>::iterator it=_landmarks.begin(); it!=_landmarks.end(); it++){
       BaseTrackedLandmark* l=*it;
@@ -482,11 +470,11 @@ namespace g2o {
     cerr << "deleting features" << endl;
     for (VertexFrameMap::iterator it = _frames.begin(); it!=_frames.end(); it++){
       // cerr << "\t frame:" << it->first->id() << endl;
-	BaseFrame* frame = it->second;
-	for (BaseTrackedFeatureSet::iterator fit = frame->features().begin(); fit !=frame->features().end(); fit++){
-	    BaseTrackedFeature* feature = *fit;
-	    // cerr << "\t\t feature:" << feature << endl;
-	    delete feature;
+	BaseSequentialFrame* frame = it->second;
+	MatchableSet features;
+	frame->features(features);
+	for (MatchableSet::iterator fit = features.begin(); fit !=features.end(); fit++){
+	    delete *fit;
 	}
     }
     //delete frame;
@@ -504,15 +492,19 @@ namespace g2o {
   void Tracker::searchInitialCorrespondences(CorrespondenceVector& correspondences_, int numFrames) {
     assert (_correspondenceFinder);
     correspondences_.clear();
-    BaseFrame* current = _mapperState->lastFrame();
+    BaseSequentialFrame* current = _mapperState->lastFrame();
     if (! current)
       return;
-    BaseFrame* previous = current->previous();
+    BaseSequentialFrame* previous = current->previous();
     MatchableSet openFeatures=current->matchables();
     int k = 1;
     cerr << "start" << endl;
+    MatchableSet currentFeatures;
+    current->features(currentFeatures);
     while (previous && numFrames >0 && ! openFeatures.empty()) {
-      cerr << "f: " << k << " ptr:" << previous << " #features:" << previous->features().size() << endl; 
+      MatchableSet previousFeatures;
+      previous->features(previousFeatures);
+      cerr << "f: " << k << " ptr:" << previous << " #features:" << previousFeatures.size() << endl; 
       k++;
       _correspondenceFinder->compute(previous->matchables(),openFeatures);
       const CorrespondenceVector& correspondences = _correspondenceFinder->correspondences();

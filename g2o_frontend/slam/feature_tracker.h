@@ -8,15 +8,6 @@
 #include <Eigen/StdVector>
 
 namespace g2o {
-  struct BaseFrame;
-  struct BaseTrackedFeature;
-  struct BaseTrackedLandmark;
-  struct MapperState;
-
-  typedef std::set<BaseTrackedFeature*> BaseTrackedFeatureSet;
-  typedef std::set<BaseTrackedLandmark*> BaseTrackedLandmarkSet;
-  typedef std::set<BaseFrame*> BaseFrameSet;
-  typedef std::map<OptimizableGraph::Vertex*, BaseFrame*> VertexFrameMap;
 
 
   /** Basic matchable element. Can be anything: a feature, a landmark, a robot pose or a frame
@@ -25,8 +16,19 @@ namespace g2o {
   struct Matchable{
     virtual ~Matchable();
   };
-
   typedef std::set<Matchable*> MatchableSet;
+
+  
+  struct BaseSequentialFrame;
+  struct BaseTrackedFeature;
+  struct BaseTrackedLandmark;
+  struct MapperState;
+
+  typedef std::set<BaseTrackedFeature*> BaseTrackedFeatureSet;
+  typedef std::set<BaseTrackedLandmark*> BaseTrackedLandmarkSet;
+  typedef std::set<BaseSequentialFrame*> BaseFrameSet;
+  typedef std::map<OptimizableGraph::Vertex*, BaseSequentialFrame*> VertexFrameMap;
+
 
   /** Basic structure that holds the oberrvations a robot takes from a give position.
       A frame is associated with:
@@ -39,12 +41,7 @@ namespace g2o {
       </ul>
   */
   struct BaseFrame {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  
-    BaseFrame(OptimizableGraph::Vertex* v,
-	      OptimizableGraph::Edge* e,
-	      BaseFrame* p,
-	      BaseFrame* n);
+    BaseFrame(OptimizableGraph::Vertex* v);
 
     template<typename VertexType> 
     VertexType vertex() {return dynamic_cast<VertexType>(_vertex);}
@@ -52,8 +49,39 @@ namespace g2o {
     template<typename VertexType> 
     VertexType vertex() const {return dynamic_cast<VertexType>(_vertex);}
   
-  
     virtual void setVertex(OptimizableGraph::Vertex* v);
+
+    inline MatchableSet& matchables() {return _matchables;}
+    BaseFrameSet& neighbors () {return _neighbors;}
+    const BaseFrameSet& neighbors () const {return _neighbors;}
+
+    void landmarks(MatchableSet& landmarks_);
+    void features(MatchableSet& features_);
+
+    
+  protected:
+    OptimizableGraph::Vertex* _vertex;
+    MatchableSet _matchables;
+    BaseFrameSet _neighbors;
+  };
+
+
+
+  /** Basic structure that holds the oberrvations a robot takes from a give position.
+      A frame is associated with:
+      <ul>  
+      <li>a previous frame in the trajectory (if not the first) </li>
+      <li>a vertex of the graph indicating the robot pose from where the observations were taken </li>
+      <li>an edge from the odometry (whose information matrix might be set to 0 if no odom is present</li>
+      <li>a set of "tracked features"</li>
+      <li>a set of "neighbor" frames that are those from which a substantial set of landmark has been seen in common</li>
+      </ul>
+  */
+  struct BaseSequentialFrame : public BaseFrame {
+    BaseSequentialFrame(OptimizableGraph::Vertex* v,
+	      OptimizableGraph::Edge* e,
+	      BaseSequentialFrame* p,
+	      BaseSequentialFrame* n);
 
     template<typename OdometryEdgeType> 
     OdometryEdgeType odometryEdge() {return dynamic_cast<OdometryEdgeType>(_odometryEdge);}
@@ -65,25 +93,16 @@ namespace g2o {
       _odometryEdge = e; 
     }
 
-    inline BaseTrackedFeatureSet& features() {return _features;}
-    inline MatchableSet& matchables() {return reinterpret_cast<MatchableSet&>(_features);}
-    inline BaseFrame* previous() { return _previousFrame;}
-    inline void setPrevious(BaseFrame* p) { _previousFrame = p;   }
+    inline BaseSequentialFrame* previous() { return _previousFrame;}
+    inline void setPrevious(BaseSequentialFrame* p) { _previousFrame = p;   }
 
-    inline BaseFrame* next() { return _nextFrame;}
-    inline void setNext(BaseFrame* p) { _nextFrame = p; } 
+    inline BaseSequentialFrame* next() { return _nextFrame;}
+    inline void setNext(BaseSequentialFrame* p) { _nextFrame = p; } 
 
-    
-    BaseFrameSet& neighbors () {return _neighbors;}
-    const BaseFrameSet& neighbors () const {return _neighbors;}
-
-    void landmarks(BaseTrackedLandmarkSet& landmarks_);
-    
   protected:
-    OptimizableGraph::Vertex* _vertex;
     OptimizableGraph::Edge* _odometryEdge;
-    BaseFrame* _previousFrame;
-    BaseFrame* _nextFrame;
+    BaseSequentialFrame* _previousFrame;
+    BaseSequentialFrame* _nextFrame;
     BaseTrackedFeatureSet _features;
     BaseFrameSet _neighbors;
   };
@@ -102,14 +121,14 @@ namespace g2o {
   struct BaseTrackedFeature: public Matchable{
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
-    BaseTrackedFeature(BaseFrame* frame_, 
+    BaseTrackedFeature(BaseSequentialFrame* frame_, 
 		       BaseFeatureData* featureData_, 
 		       BaseTrackedFeature* previous_);
 
     virtual ~BaseTrackedFeature();
   
-    inline BaseFrame* frame() { return _frame;}
-    inline const BaseFrame* frame() const { return _frame;}
+    inline BaseSequentialFrame* frame() { return _frame;}
+    inline const BaseSequentialFrame* frame() const { return _frame;}
   
     template <typename FeatureDataType> 
     FeatureDataType featureData() {return _featureData ? dynamic_cast <FeatureDataType>(_featureData) : 0;}
@@ -146,7 +165,7 @@ namespace g2o {
     OptimizableGraph::Edge* _edge;
     
   protected:
-    BaseFrame* _frame;
+    BaseSequentialFrame* _frame;
     BaseFeatureData* _featureData;
     BaseTrackedFeature* _previous;
     BaseTrackedLandmark* _landmark;
@@ -304,8 +323,8 @@ namespace g2o {
     // returns the numnber of tracked features removed
     int removeTrackedFeature(BaseTrackedFeature* feature, bool recursive);
 
-    inline BaseFrame* lastFrame() {return _lastFrame;}
-    inline const BaseFrame* lastFrame() const {return _lastFrame;}
+    inline BaseSequentialFrame* lastFrame() {return _lastFrame;}
+    inline const BaseSequentialFrame* lastFrame() const {return _lastFrame;}
 
     OptimizableGraph* graph() {return _graph;}
     const OptimizableGraph* graph() const {return _graph;}
@@ -329,18 +348,16 @@ namespace g2o {
     inline const BaseTrackedLandmarkSet& landmarks() const { return _landmarks; };
     inline BaseTrackedLandmarkSet& landmarks() { return _landmarks; };
     
-    bool setNeighborFrames(BaseFrame* f1, BaseFrame* f2, bool connect);
+    bool setNeighborFrames(BaseSequentialFrame* f1, BaseSequentialFrame* f2, bool connect);
     int refineConnectivity(BaseFrameSet& frames, int minCommonLandmarks, bool odometryIsGood=false);
 
 
     // utlities
-    static void commonLandmarks(BaseTrackedLandmarkSet& common, BaseFrame* f1, BaseFrame* f2);
-    static void selectLandmarks(BaseTrackedLandmarkSet& landmarks, BaseFrameSet& frameSet);
-    static void selectFeaturesWithLandmarks(BaseTrackedFeatureSet& featureSet, BaseFrameSet& frameSet);
-    static void selectFeaturesWithLandmarks(BaseTrackedFeatureSet& featureSet, BaseFrame* frame);
-    BaseFrame* lastNFrames(BaseFrameSet& fset, int nFramesBack) ;
+    static void commonLandmarks(MatchableSet& common, BaseSequentialFrame* f1, BaseSequentialFrame* f2);
+    static void selectLandmarks(MatchableSet& landmarks, BaseFrameSet& frameSet);
+    BaseSequentialFrame* lastNFrames(BaseFrameSet& fset, int nFramesBack) ;
   protected:
-    BaseFrame* _lastFrame;
+    BaseSequentialFrame* _lastFrame;
     std::set<BaseTrackedLandmark*> _landmarks;
     VertexFrameMap _frames;
     OptimizableGraph* _graph;
