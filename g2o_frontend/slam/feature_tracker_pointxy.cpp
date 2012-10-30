@@ -108,6 +108,46 @@ namespace g2o {
     _squaredDistanceThreshold = 0.01;
   }
 
+  void PointXYInitialGuessCorrespondenceFinder::compute(MatchableIdMap::iterator s1_begin, 
+							   MatchableIdMap::iterator s1_end,
+							   MatchableIdMap::iterator s2_begin, 
+							   MatchableIdMap::iterator s2_end){
+    _correspondences.clear();
+    if (s1_begin == s1_end|| s2_begin == s2_end)
+      return;
+    // compute the position of the features according to the frames to which they belong
+    MatchablePoseMap fpmap;
+    FeatureMappingMode  mode = _featureMappingMode[0];
+    for (MatchableIdMap::iterator it= s1_begin; it!=s2_end; it++){
+      if (it == s1_end) {
+	it = s2_begin;
+	mode = _featureMappingMode[1];
+      }
+      Matchable* matchable = it->second;
+      Eigen::Vector2d remappedFeaturePose(0,0);
+      bool remappingResult = remapPose(remappedFeaturePose,matchable,mode);
+      if (!remappingResult){
+	cerr << "FATAL!!!!!, no remapping result" << endl;
+	return;
+      }
+      fpmap.insert(std::make_pair(matchable,remappedFeaturePose));
+    }
+    
+    for (MatchableIdMap::iterator it1= s1_begin; it1!=s1_end; it1++){
+      Matchable* trackedFeature1 = it1->second;
+      Vector2d pose1=fpmap[trackedFeature1];
+      for (MatchableIdMap::iterator it2= s2_begin; it2!=s2_end; it2++) {
+	Matchable* trackedFeature2 = it2->second;
+	Vector2d pose2=fpmap[trackedFeature2];
+	double d = (pose1-pose2).squaredNorm();
+	if (d<_squaredDistanceThreshold)
+	  _correspondences.push_back(Correspondence(trackedFeature1, trackedFeature2, sqrt(d)));
+      }
+    }
+    std::sort(_correspondences.begin(), _correspondences.end());
+  }
+
+
   void PointXYInitialGuessCorrespondenceFinder::compute(MatchableSet& s1, MatchableSet& s2){
     _correspondences.clear();
     if (!s1.size() || !s2.size())

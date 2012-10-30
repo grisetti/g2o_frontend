@@ -13,12 +13,32 @@ namespace g2o {
   /** Basic matchable element. Can be anything: a feature, a landmark, a robot pose or a frame
       To be used by all generic algorithms later on.
    */
-  struct Matchable{
-    virtual ~Matchable();
-  };
-  typedef std::set<Matchable*> MatchableSet;
 
   
+  struct Matchable{
+    enum MatchableType {Unknown=0, Landmark=0x0100000000000000 , Feature =0x0200000000000000};
+    Matchable(MatchableType mtype, size_t id_=0);
+    virtual ~Matchable();
+    virtual size_t id() const {return _id;}
+    static size_t makeId(MatchableType matchableType);
+  protected:
+    size_t _id;
+  };
+
+  struct MatchablePtrComparator {
+    bool operator() (const Matchable* m1, const Matchable* m2) {
+      if (! m1 && m2)
+	return true;
+      if ( !m2)
+	return false;
+      return m1->id() < m2->id();
+    }
+  };
+  
+  typedef std::set<Matchable*,MatchablePtrComparator> MatchableSet; 
+  typedef std::map<size_t,Matchable*> MatchableIdMap; 
+
+
   struct BaseSequentialFrame;
   struct BaseTrackedFeature;
   struct BaseTrackedLandmark;
@@ -58,7 +78,8 @@ namespace g2o {
     void landmarks(MatchableSet& landmarks_);
     void features(MatchableSet& features_);
 
-    
+    MatchableIdMap::iterator lowerBound(Matchable::MatchableType t);
+    MatchableIdMap::iterator upperBound(Matchable::MatchableType t);
   protected:
     OptimizableGraph::Vertex* _vertex;
     MatchableSet _matchables;
@@ -237,6 +258,8 @@ namespace g2o {
     
     // determines candidate correspondences between two sets of matchable objects;
     virtual void compute(MatchableSet& s1, MatchableSet& s2) = 0;
+    virtual void compute(MatchableIdMap::iterator s1_begin, MatchableIdMap::iterator s1_end,
+			 MatchableIdMap::iterator s2_begin, MatchableIdMap::iterator s2_end)=0;
     inline const CorrespondenceVector& correspondences() {return _correspondences;}
   protected:
     CorrespondenceVector _correspondences;

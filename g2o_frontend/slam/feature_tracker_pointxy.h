@@ -34,6 +34,9 @@ namespace g2o {
     // determines candidate correspondences between two sets of features;
     virtual void compute(MatchableSet& s1, MatchableSet& s2);
 
+    virtual void compute(MatchableIdMap::iterator s1_begin, MatchableIdMap::iterator s1_end,
+			 MatchableIdMap::iterator s2_begin, MatchableIdMap::iterator s2_end);
+
     inline void setDistanceThreshold(double dt) { _squaredDistanceThreshold = dt*dt; }
 
     double distanceThreshold() const { return sqrt(_squaredDistanceThreshold); }

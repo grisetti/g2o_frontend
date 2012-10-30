@@ -5,6 +5,17 @@
 namespace g2o {
   using namespace std;
 
+  static size_t lastMatchableId = 0;
+
+  Matchable::Matchable(MatchableType mtype, size_t id_){
+    if (!id_)
+      _id = mtype + lastMatchableId++;
+    else
+      _id = id_;
+  }
+
+  Matchable::~Matchable(){}
+
   BaseFrame::BaseFrame(OptimizableGraph::Vertex* v):
     _vertex(v) {
   }
@@ -42,12 +53,11 @@ namespace g2o {
     BaseFrame(v), _odometryEdge(e), _previousFrame(p), _nextFrame(n) {
   }
 
-  Matchable::~Matchable(){}
-
+  
   BaseTrackedFeature::BaseTrackedFeature(BaseSequentialFrame* frame_, 
 					 BaseFeatureData* featureData_, 
 					 BaseTrackedFeature* previous_):
-    _frame(frame_), _featureData(featureData_), _previous(previous_) {
+    Matchable(Matchable::Feature),_frame(frame_), _featureData(featureData_), _previous(previous_) {
     _landmark = 0;
     _edge = 0;
     setPrevious(previous_);
@@ -81,7 +91,7 @@ namespace g2o {
   
 
   BaseTrackedLandmark::BaseTrackedLandmark(OptimizableGraph::Vertex* v)
-    :_vertex(v) {}
+    :Matchable(Matchable::Landmark),_vertex(v) {}
   
   Matcher::Matcher(){
     _landmarkIdentityMatches = 0;
