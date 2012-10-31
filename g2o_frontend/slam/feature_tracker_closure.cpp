@@ -24,10 +24,8 @@ namespace g2o {
       BaseSequentialFrame* frame = *it;
       OptimizableGraph::Vertex* v=frame->vertex<OptimizableGraph::Vertex*>();
       _selectedVertices.insert(v);
-      MatchableSet features;
-      frame->features(features);
-      for (MatchableSet::iterator fit=features.begin(); fit != features.end(); fit ++){
-	BaseTrackedFeature* feature = reinterpret_cast<BaseTrackedFeature*>(*fit);
+      for (MatchableIdMap::iterator fit=frame->featuresBegin(); fit != frame->featuresEnd(); fit ++){
+	BaseTrackedFeature* feature = reinterpret_cast<BaseTrackedFeature*>(fit->second);
 	if (feature->landmark()){
 	  OptimizableGraph::Edge* edge = feature->edge<OptimizableGraph::Edge*>();
 	  if (edge) {
@@ -205,7 +203,7 @@ namespace g2o {
       // MapperState::selectFeaturesWithLandmarks(featuresToMatchInLocalMap, localFrames);
       // cerr << "found " << featuresToMatchInLocalMap.size() << " features in the local map" << endl;
 
-      MatchableSet landmarksToMatchInLocalMap;
+      MatchableIdMap landmarksToMatchInLocalMap;
       MapperState::selectLandmarks(landmarksToMatchInLocalMap, localFrames);
       cerr << "found " << landmarksToMatchInLocalMap.size() << " landmarks in the local map" << endl;
 
@@ -220,7 +218,7 @@ namespace g2o {
       for (int i =0; i < _frameClusterer->numClusters() && landmarksToMatchInLocalMap.size(); i++ ){
 	cerr << "\t cluster: " << i << " " << _frameClusterer->cluster(i).size() << endl;
   
-	MatchableSet landmarksInCluster;
+	MatchableIdMap landmarksInCluster;
 	MapperState::selectLandmarks(landmarksInCluster, _frameClusterer->cluster(i));
 
 	int minFeatures = (int)landmarksInCluster.size() < (int) landmarksToMatchInLocalMap.size() ? 
@@ -234,7 +232,8 @@ namespace g2o {
 	  _optimizationManager->initializeLocal(_frameClusterer->cluster(i),0,true);
 	  _optimizationManager->optimize(_localOptimizeIterations);
 	  
-	  _correspondenceFinder->compute(landmarksInCluster, landmarksToMatchInLocalMap);
+	  _correspondenceFinder->compute(landmarksInCluster.begin(), landmarksInCluster.end(),
+					 landmarksToMatchInLocalMap.begin(), landmarksToMatchInLocalMap.end());
 	  CorrespondenceVector clusterClosureCorrespondences=_correspondenceFinder->correspondences();
 	  cerr << "\t\t" << " #matches:  " << clusterClosureCorrespondences.size() <<  endl;
 	  
@@ -274,12 +273,11 @@ namespace g2o {
 	for (int i=0; i< _frameClusterer->numClusters(); i++) {
 	  _optimizationManager->initializeLocal(_frameClusterer->cluster(i),0,true);
 	  _optimizationManager->optimize(_localOptimizeIterations);
-	  MatchableSet landmarksInCluster;
+	  MatchableIdMap landmarksInCluster;
 	  MapperState::selectLandmarks(landmarksInCluster, _frameClusterer->cluster(i));
-	  for (MatchableSet::iterator it = landmarksInCluster.begin(); it!=landmarksInCluster.end(); it++){
-	    BaseTrackedLandmark* l1 = reinterpret_cast<BaseTrackedLandmark*>(*it);
-	    for (MatchableSet::iterator iit = it; iit!=landmarksInCluster.end(); iit++) {
-	      BaseTrackedLandmark* l2 = reinterpret_cast<BaseTrackedLandmark*>(*iit);
+	  for (MatchableIdMap::iterator it = landmarksInCluster.begin(); it!=landmarksInCluster.end(); it++){	    BaseTrackedLandmark* l1 = reinterpret_cast<BaseTrackedLandmark*>(it->second);
+	    for (MatchableIdMap::iterator iit = it; iit!=landmarksInCluster.end(); iit++) {
+	      BaseTrackedLandmark* l2 = reinterpret_cast<BaseTrackedLandmark*>(iit->second);
 	      if (l1 == l2)
 		continue;
 	      double distance;

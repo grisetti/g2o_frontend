@@ -473,10 +473,10 @@ int main(int argc, char**argv){
 	outOfLocalMapFrame = oldestFrame->previous();
       int killedFeatures = 0;
       if (outOfLocalMapFrame) {
-	MatchableSet fset;
-	outOfLocalMapFrame->features(fset);
-	for (MatchableSet::iterator it=fset.begin(); it!=fset.end(); it++) {
-	  BaseTrackedFeature * f = reinterpret_cast<BaseTrackedFeature *>(*it);
+	MatchableIdMap fset;
+	fset.insert(outOfLocalMapFrame->featuresBegin(), outOfLocalMapFrame->featuresEnd());
+	for (MatchableIdMap::iterator it=fset.begin(); it!=fset.end(); it++) {
+	  BaseTrackedFeature * f = reinterpret_cast<BaseTrackedFeature *>(it->second);
 	  if (! f->landmark()){
 	    killedFeatures += mapperState->removeTrackedFeature(f, true);
 	  } 

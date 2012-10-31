@@ -16,7 +16,12 @@ namespace g2o {
 
   
   struct Matchable{
-    enum MatchableType {Unknown=0, Landmark=0x0100000000000000 , Feature =0x0200000000000000};
+    enum MatchableType {
+      Unknown=0, 
+      Landmark=0x0100000000000000 , LandmarkEnd=0x01ffffffffffffff , 
+      Feature =0x0200000000000000 , FeatureEnd= 0x02ffffffffffffff
+    };
+
     Matchable(MatchableType mtype, size_t id_=0);
     virtual ~Matchable();
     virtual size_t id() const {return _id;}
@@ -25,17 +30,7 @@ namespace g2o {
     size_t _id;
   };
 
-  struct MatchablePtrComparator {
-    bool operator() (const Matchable* m1, const Matchable* m2) {
-      if (! m1 && m2)
-	return true;
-      if ( !m2)
-	return false;
-      return m1->id() < m2->id();
-    }
-  };
-  
-  typedef std::set<Matchable*,MatchablePtrComparator> MatchableSet; 
+  typedef std::set<Matchable*> MatchableSet; 
   typedef std::map<size_t,Matchable*> MatchableIdMap; 
 
 
@@ -71,18 +66,19 @@ namespace g2o {
   
     virtual void setVertex(OptimizableGraph::Vertex* v);
 
-    inline MatchableSet& matchables() {return _matchables;}
+    inline MatchableIdMap& matchables() {return _matchables;}
+
     BaseFrameSet& neighbors () {return _neighbors;}
     const BaseFrameSet& neighbors () const {return _neighbors;}
 
-    void landmarks(MatchableSet& landmarks_);
-    void features(MatchableSet& features_);
+    MatchableIdMap::iterator landmarksBegin() {return _matchables.lower_bound(Matchable::Landmark);}
+    MatchableIdMap::iterator landmarksEnd() {return   _matchables.lower_bound(Matchable::LandmarkEnd);}
+    MatchableIdMap::iterator featuresBegin() {return _matchables.lower_bound(Matchable::Feature);}
+    MatchableIdMap::iterator featuresEnd() {return   _matchables.lower_bound(Matchable::FeatureEnd);}
 
-    MatchableIdMap::iterator lowerBound(Matchable::MatchableType t);
-    MatchableIdMap::iterator upperBound(Matchable::MatchableType t);
   protected:
     OptimizableGraph::Vertex* _vertex;
-    MatchableSet _matchables;
+    MatchableIdMap _matchables;
     BaseFrameSet _neighbors;
   };
 
@@ -256,8 +252,6 @@ namespace g2o {
   struct CorrespondenceFinder {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
-    // determines candidate correspondences between two sets of matchable objects;
-    virtual void compute(MatchableSet& s1, MatchableSet& s2) = 0;
     virtual void compute(MatchableIdMap::iterator s1_begin, MatchableIdMap::iterator s1_end,
 			 MatchableIdMap::iterator s2_begin, MatchableIdMap::iterator s2_end)=0;
     inline const CorrespondenceVector& correspondences() {return _correspondences;}
@@ -376,12 +370,13 @@ namespace g2o {
 
 
     // utlities
-    static void commonLandmarks(MatchableSet& common, BaseSequentialFrame* f1, BaseSequentialFrame* f2);
-    static void selectLandmarks(MatchableSet& landmarks, BaseFrameSet& frameSet);
+    static void commonLandmarks(MatchableIdMap& common, BaseSequentialFrame* f1, BaseSequentialFrame* f2);
+    static void selectLandmarks(MatchableIdMap& landmarks, BaseFrameSet& frameSet);
+    static void selectLandmarks(MatchableIdMap& landmarks, BaseFrame* frame);
     BaseSequentialFrame* lastNFrames(BaseFrameSet& fset, int nFramesBack) ;
   protected:
     BaseSequentialFrame* _lastFrame;
-    std::set<BaseTrackedLandmark*> _landmarks;
+    BaseTrackedLandmarkSet _landmarks;
     VertexFrameMap _frames;
     OptimizableGraph* _graph;
   
