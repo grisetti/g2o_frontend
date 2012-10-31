@@ -62,12 +62,12 @@ void dumpEdges(ostream& os, BaseFrameSet& fset,
 
   if (writeIntraFrame) {
     for (BaseFrameSet::iterator it = fset.begin(); it!=fset.end(); it++){
-      BaseSequentialFrame* f = *it;
+      BaseFrame* f = *it;
       const VertexSE2* v1 = f->vertex<const VertexSE2*>();
       if (!v1)
 	continue;
       for (BaseFrameSet::iterator iit = f->neighbors().begin(); iit!=f->neighbors().end(); iit++){
-	BaseSequentialFrame* f2 = *iit;
+	BaseFrame* f2 = *iit;
 	if (! fset.count(f2))
 	  continue;
 	const VertexSE2* v2 = f2->vertex<const VertexSE2*>();
@@ -109,7 +109,7 @@ void dumpEdges(ostream& os, MapperState* mapperState) {
   for (VertexFrameMap::iterator it = mapperState->frames().begin(); it!=mapperState->frames().end(); it++){
     fset.insert(it->second);
   }
-  dumpEdges(os, fset);
+  dumpEdges(os, fset, false, true, true);
 }
 
 
@@ -301,7 +301,7 @@ int main(int argc, char**argv){
   int frameCount = 1;
   int hasToOptimizeGlobally =  false;
 
-  BaseSequentialFrame* initialFrame=0;
+  BaseFrame* initialFrame=0;
   signal(SIGINT, sigquit_handler);
   double timeIncremental=0;
   double timeClosure=0;
@@ -357,7 +357,7 @@ int main(int argc, char**argv){
       double timeIncrementalStart = get_monotonic_time();
       // compute the local map, and its origin in localMapGaugeFrame. the gauge is the 
       // oldest frame in the trajectory
-      BaseSequentialFrame* localMapGaugeFrame = mapperState->lastNFrames(localFrames, localMapSize);
+      BaseFrame* localMapGaugeFrame = mapperState->lastNFrames(localFrames, localMapSize);
 
       // do one round of optimization, it never hurts
       //cerr << "A" << endl;
@@ -428,7 +428,7 @@ int main(int argc, char**argv){
     cerr << "### Bookeeping ###" << endl;
 
     // again update the bookkeeping on the frame graph
-    int newLinks = mapperState->refineConnectivity(loopClosureManager->touchedFrames(), intraFrameConnectivityThreshold);
+    int newLinks = mapperState->refineConnectivity(loopClosureManager->touchedFrames(), intraFrameConnectivityThreshold, odometryIsGood);
     cerr << "\tmerged #landmarks: " << mergedLandmarks << "\t#frames: " << loopClosureManager->touchedFrames().size() << " # of if-links: " << newLinks << endl;
 
 
@@ -460,16 +460,18 @@ int main(int argc, char**argv){
 
     // do the cleaning
     if ((int)localFrames.size() == localMapSize ) {
-      BaseSequentialFrame* oldestFrame = 0;
-      BaseSequentialFrame* outOfLocalMapFrame = 0; 
+      BaseFrame* oldestFrame = 0;
+      BaseFrame* outOfLocalMapFrame = 0; 
       for (BaseFrameSet::iterator it = localFrames.begin(); it!= localFrames.end(); it++){
-	BaseSequentialFrame* f = *it;
+	BaseFrame* f = *it;
 	if (! oldestFrame || oldestFrame->vertex<OptimizableGraph::Vertex*>()->id() > oldestFrame->vertex<OptimizableGraph::Vertex*>()->id()){
 	  oldestFrame = f;
 	}
       }
-      if (oldestFrame)
-	outOfLocalMapFrame = oldestFrame->previous();
+      if (oldestFrame){
+	BaseSequentialFrame* seqOldestFrame = dynamic_cast<BaseSequentialFrame*>(oldestFrame);
+	outOfLocalMapFrame = seqOldestFrame->previous();
+      }
       int killedFeatures = 0;
       if (outOfLocalMapFrame) {
 	MatchableIdMap fset;

@@ -30,7 +30,7 @@ namespace g2o {
   }
 
   
-  BaseTrackedFeature::BaseTrackedFeature(BaseSequentialFrame* frame_, 
+  BaseTrackedFeature::BaseTrackedFeature(BaseFrame* frame_, 
 					 BaseFeatureData* featureData_, 
 					 BaseTrackedFeature* previous_):
     Matchable(Matchable::Feature),_frame(frame_), _featureData(featureData_), _previous(previous_) {
@@ -159,7 +159,7 @@ namespace g2o {
     _runningLandmarkId = 1000000;
   }
   
-  bool MapperState::setNeighborFrames(BaseSequentialFrame* f1, BaseSequentialFrame* f2, bool connect_){
+  bool MapperState::setNeighborFrames(BaseFrame* f1, BaseFrame* f2, bool connect_){
     if (connect_) {
       if(f1->neighbors().count(f2))
 	return false;
@@ -262,18 +262,19 @@ namespace g2o {
 
   // this adds e new frame at the end of the history
   void MapperState::addFrame(OptimizableGraph::Vertex* v, OptimizableGraph::Edge* odometry) {
-    BaseSequentialFrame * frame = new BaseSequentialFrame(v,odometry,_lastFrame, 0);
-    if (_lastFrame){
-      _lastFrame->setNext(frame);
-      //_lastFrame->neighbors().insert(frame);
-      //frame->neighbors().insert(_lastFrame);
+    BaseSequentialFrame* lastSequentialFrame=0;
+    if (_lastFrame)
+      lastSequentialFrame=dynamic_cast<BaseSequentialFrame*>(_lastFrame);
+    BaseSequentialFrame * frame = new BaseSequentialFrame(v,odometry,lastSequentialFrame, 0);
+    if (lastSequentialFrame){
+      lastSequentialFrame->setNext(frame);
     }
     _lastFrame = frame;
     _frames.insert(std::make_pair(v,frame));
   }
 
   void MapperState::addTrackedFeature(BaseTrackedFeature* feature) {
-    BaseSequentialFrame * frame = feature->frame();
+    BaseFrame * frame = feature->frame();
     frame->matchables().insert(make_pair(feature->id(), feature));
     // consistency check;
     // if (feature->previous())
@@ -401,7 +402,7 @@ namespace g2o {
   }
 
  
-  void MapperState::commonMatchables(MatchableIdMap& common, BaseSequentialFrame* f1, BaseSequentialFrame* f2, Matchable::MatchableType t) {
+  void MapperState::commonMatchables(MatchableIdMap& common, BaseFrame* f1, BaseFrame* f2, Matchable::MatchableType t) {
     common.clear();
     assert(f1!=f2);
 
@@ -414,15 +415,17 @@ namespace g2o {
   void MapperState::selectMatchables(MatchableIdMap& matchables, BaseFrameSet& frameSet, Matchable::MatchableType t){
     matchables.clear();
     for (BaseFrameSet::iterator it=frameSet.begin(); it!=frameSet.end(); it++){
-      BaseSequentialFrame* frame = *it;
+      BaseFrame* frame = *it;
       matchables.insert(frame->matchableBegin(t), frame->matchableEnd(t));
     }
   }
  
-  BaseSequentialFrame* MapperState::lastNFrames(BaseFrameSet& fset, int nFramesBack) {
+  BaseFrame* MapperState::lastNFrames(BaseFrameSet& fset, int nFramesBack) {
     fset.clear();
-    BaseSequentialFrame* f=lastFrame();
-    BaseSequentialFrame* fp=lastFrame();
+    BaseSequentialFrame* f=0;
+    if(lastFrame())
+      f=dynamic_cast<BaseSequentialFrame*>(lastFrame());
+    BaseSequentialFrame* fp=f;
     while (f && nFramesBack>0){
       nFramesBack --;
       fset.insert(f);
@@ -440,23 +443,25 @@ namespace g2o {
     int addedLinks = 0;
   for (BaseFrameSet::iterator it = frames.begin(); it!=frames.end(); it++){
     BaseFrameSet::iterator it2=it; it2++;
-    BaseSequentialFrame* f1 = *it;
+    BaseFrame* f1 = *it;
     for (; it2!=frames.end(); it2++){
-      BaseSequentialFrame* f2 = *it2;
+      BaseFrame* f2 = *it2;
       if (f1==f2)
 	continue;
       MatchableIdMap commonSet;
       commonMatchables(commonSet, f1, f2, Matchable::Landmark );
       int numCommonLandmarks = commonSet.size();
       bool framesAreConnected = (f1->neighbors().count(f2)) && (f2->neighbors().count(f1));
-      bool framesAreConsecutive = (f1->previous() == f2) || (f2->previous() == f1);
+      BaseSequentialFrame* sf1 = dynamic_cast<BaseSequentialFrame*>(f1);
+      BaseSequentialFrame* sf2 = dynamic_cast<BaseSequentialFrame*>(f2);
+      bool framesAreConsecutive = sf2 && sf2 && ((sf1->previous() == sf2) || (sf2->previous() == sf1));
       if (numCommonLandmarks > minCommonLandmarks ||
 	  (odometryIsGood && framesAreConsecutive) ){
 	bool result = setNeighborFrames(f1, f2, true);
 	if (result)
 	  addedLinks ++;
       } else {
-	if (framesAreConnected){
+	if (framesAreConnected && ! (odometryIsGood && framesAreConsecutive)){
 	  bool result = setNeighborFrames(f1, f2, false);
 	  if (result)
 	    addedLinks --;
@@ -477,7 +482,7 @@ namespace g2o {
     cerr << "deleting features" << endl;
     for (VertexFrameMap::iterator it = _frames.begin(); it!=_frames.end(); it++){
       // cerr << "\t frame:" << it->first->id() << endl;
-	BaseSequentialFrame* frame = it->second;
+	BaseFrame* frame = it->second;
 	for (MatchableIdMap::iterator fit = frame->featuresBegin(); fit !=frame->featuresEnd(); fit++){
 	    delete fit->second;
 	}
@@ -497,7 +502,9 @@ namespace g2o {
   void Tracker::searchInitialCorrespondences(CorrespondenceVector& correspondences_, int numFrames) {
     assert (_correspondenceFinder);
     correspondences_.clear();
-    BaseSequentialFrame* current = _mapperState->lastFrame();
+    BaseSequentialFrame* current = 0;
+    if(_mapperState->lastFrame())
+      current = dynamic_cast<BaseSequentialFrame*>(_mapperState->lastFrame());
     if (! current)
       return;
     BaseSequentialFrame* previous = current->previous();

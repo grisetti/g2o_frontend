@@ -21,7 +21,7 @@ namespace g2o {
     _selectedEdges.clear();
     _selectedVertices.clear();
     for (BaseFrameSet::iterator it=frameSet.begin(); it!=frameSet.end(); it++){
-      BaseSequentialFrame* frame = *it;
+      BaseFrame* frame = *it;
       OptimizableGraph::Vertex* v=frame->vertex<OptimizableGraph::Vertex*>();
       _selectedVertices.insert(v);
       for (MatchableIdMap::iterator fit=frame->featuresBegin(); fit != frame->featuresEnd(); fit ++){
@@ -36,34 +36,35 @@ namespace g2o {
 	  }
 	}
       }
-      BaseSequentialFrame* previousFrame = frame->previous();
+      BaseSequentialFrame* seqFrame = dynamic_cast<BaseSequentialFrame*>(frame);
+      BaseSequentialFrame* previousFrame = seqFrame->previous();
       if (frameSet.count(previousFrame)){
-	OptimizableGraph::Edge* odometryEdge = frame->odometryEdge<OptimizableGraph::Edge*>();
+	OptimizableGraph::Edge* odometryEdge = seqFrame->odometryEdge<OptimizableGraph::Edge*>();
 	_selectedEdges.insert(odometryEdge);
       }
     }
   }
 
-  typedef std::deque<BaseSequentialFrame*> BaseFrameDeque;
+  typedef std::deque<BaseFrame*> BaseFrameDeque;
 
   void FrameClusterer::compute(BaseFrameSet& frameSet){
     _clusters.clear();
     BaseFrameSet openFrames =  frameSet;
     while(!openFrames.empty()) {
       BaseFrameSet currentCluster;
-      BaseSequentialFrame* firstFrame = *(openFrames.begin());
+      BaseFrame* firstFrame = *(openFrames.begin());
       BaseFrameDeque frameDeque;
 
       frameDeque.push_back(firstFrame);
       openFrames.erase(firstFrame);
       currentCluster.insert(firstFrame);
       while (! frameDeque.empty()){
-	BaseSequentialFrame* frame = frameDeque.front();
+	BaseFrame* frame = frameDeque.front();
 	frameDeque.pop_front();
 	currentCluster.insert(frame);
 	for (BaseFrameSet::iterator neighborIt=frame->neighbors().begin();
 	     neighborIt!=frame->neighbors().end(); neighborIt++){
-	  BaseSequentialFrame* otherFrame = *neighborIt;
+	  BaseFrame* otherFrame = *neighborIt;
 	  if (openFrames.count(otherFrame)){
 	    openFrames.erase(otherFrame);
 	    currentCluster.insert(otherFrame);
@@ -83,11 +84,11 @@ namespace g2o {
     _isInitialized = false;
   }
   
-  void OptimizationManager::initializeLocal(BaseFrameSet& fset, BaseSequentialFrame* gaugeFrame, bool push){
+  void OptimizationManager::initializeLocal(BaseFrameSet& fset, BaseFrame* gaugeFrame, bool push){
     _initialize(fset, push, gaugeFrame);
   }
 
-  void OptimizationManager::initializeGlobal(BaseSequentialFrame* gaugeFrame){
+  void OptimizationManager::initializeGlobal(BaseFrame* gaugeFrame){
     BaseFrameSet fset;
     for (VertexFrameMap::iterator it = _mapperState->frames().begin(); it!=_mapperState->frames().end(); it++){
       fset.insert(it->second);
@@ -125,7 +126,7 @@ namespace g2o {
     _gauge=0;
   }
 
-  void OptimizationManager::_initialize(BaseFrameSet& fset, bool push, BaseSequentialFrame* gaugeFrame){
+  void OptimizationManager::_initialize(BaseFrameSet& fset, bool push, BaseFrame* gaugeFrame){
     if (_isInitialized){
       cerr << "OptimizationManager: Fatal, double initialization" << endl;
       exit(0);
@@ -187,7 +188,7 @@ namespace g2o {
     _landmarkMergeDistanceThreshold = 0.1;
   }
 
-  void LoopClosureManager::compute(BaseFrameSet& localFrames, BaseSequentialFrame* localMapGaugeFrame) {
+  void LoopClosureManager::compute(BaseFrameSet& localFrames, BaseFrame* localMapGaugeFrame) {
     _touchedFrames.clear();
     _mergedLandmarks = 0;
     _touchedFrames.insert(localFrames.begin(), localFrames.end());

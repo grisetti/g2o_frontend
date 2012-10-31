@@ -35,6 +35,7 @@ namespace g2o {
   typedef std::map<size_t,Matchable*> MatchableIdMap; 
 
 
+  struct BaseFrame;
   struct BaseSequentialFrame;
   struct BaseTrackedFeature;
   struct BaseTrackedLandmark;
@@ -42,7 +43,7 @@ namespace g2o {
 
   typedef std::set<BaseTrackedFeature*> BaseTrackedFeatureSet;
   typedef std::set<BaseTrackedLandmark*> BaseTrackedLandmarkSet;
-  typedef std::set<BaseSequentialFrame*> BaseFrameSet;
+  typedef std::set<BaseFrame*> BaseFrameSet;
   typedef std::map<OptimizableGraph::Vertex*, BaseSequentialFrame*> VertexFrameMap;
 
 
@@ -148,14 +149,14 @@ namespace g2o {
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
-    BaseTrackedFeature(BaseSequentialFrame* frame_, 
+    BaseTrackedFeature(BaseFrame* frame_, 
 		       BaseFeatureData* featureData_, 
 		       BaseTrackedFeature* previous_);
 
     virtual ~BaseTrackedFeature();
   
-    inline BaseSequentialFrame* frame() { return _frame;}
-    inline const BaseSequentialFrame* frame() const { return _frame;}
+    inline BaseFrame* frame() { return _frame;}
+    inline const BaseFrame* frame() const { return _frame;}
   
     template <typename FeatureDataType> 
     FeatureDataType featureData() {return _featureData ? dynamic_cast <FeatureDataType>(_featureData) : 0;}
@@ -192,7 +193,7 @@ namespace g2o {
     OptimizableGraph::Edge* _edge;
     
   protected:
-    BaseSequentialFrame* _frame;
+    BaseFrame* _frame;
     BaseFeatureData* _featureData;
     BaseTrackedFeature* _previous;
     BaseTrackedLandmark* _landmark;
@@ -351,8 +352,8 @@ namespace g2o {
     // returns the numnber of tracked features removed
     int removeTrackedFeature(BaseTrackedFeature* feature, bool recursive);
 
-    inline BaseSequentialFrame* lastFrame() {return _lastFrame;}
-    inline const BaseSequentialFrame* lastFrame() const {return _lastFrame;}
+    inline BaseFrame* lastFrame() {return _lastFrame;}
+    inline const BaseFrame* lastFrame() const {return _lastFrame;}
 
     OptimizableGraph* graph() {return _graph;}
     const OptimizableGraph* graph() const {return _graph;}
@@ -376,17 +377,17 @@ namespace g2o {
     inline const BaseTrackedLandmarkSet& landmarks() const { return _landmarks; };
     inline BaseTrackedLandmarkSet& landmarks() { return _landmarks; };
     
-    bool setNeighborFrames(BaseSequentialFrame* f1, BaseSequentialFrame* f2, bool connect);
+    bool setNeighborFrames(BaseFrame* f1, BaseFrame* f2, bool connect);
     int refineConnectivity(BaseFrameSet& frames, int minCommonLandmarks, bool odometryIsGood=false);
 
 
     // utlities
-    static void commonMatchables(MatchableIdMap& common, BaseSequentialFrame* f1, BaseSequentialFrame* f2, Matchable::MatchableType t);
+    static void commonMatchables(MatchableIdMap& common, BaseFrame* f1, BaseFrame* f2, Matchable::MatchableType t);
     static void selectMatchables(MatchableIdMap& landmarks, BaseFrameSet& frameSet, Matchable::MatchableType t);
 
-    BaseSequentialFrame* lastNFrames(BaseFrameSet& fset, int nFramesBack) ;
+    BaseFrame* lastNFrames(BaseFrameSet& fset, int nFramesBack) ;
   protected:
-    BaseSequentialFrame* _lastFrame;
+    BaseFrame* _lastFrame;
     BaseTrackedLandmarkSet _landmarks;
     VertexFrameMap _frames;
     OptimizableGraph* _graph;

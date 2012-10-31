@@ -374,7 +374,7 @@ namespace g2o {
   }
   
   
-  void SE2LoopClosureCandidateDetector::compute(BaseSequentialFrame* frame) {
+  void SE2LoopClosureCandidateDetector::compute(BaseFrame* frame) {
     _candidates.clear();
     VertexSE2* v = frame->vertex<VertexSE2*>();
  
@@ -382,7 +382,7 @@ namespace g2o {
     assert(v);
     SE2 estimate = v->estimate();
     for (VertexFrameMap::iterator it=_mapperState->frames().begin(); it!=_mapperState->frames().end(); it++){
-      BaseSequentialFrame* f = it->second;
+      BaseFrame* f = it->second;
       VertexSE2* v2 = f->vertex<VertexSE2*>();
       assert(v2);
       //cerr << "check " << v2->id() << endl;
