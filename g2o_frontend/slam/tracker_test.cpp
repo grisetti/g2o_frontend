@@ -198,7 +198,7 @@ int main(int argc, char**argv){
   arg.param("loopAngularClosureThreshold", loopAngularClosureThreshold, M_PI, "max angular between frames to check for loop closure");
   arg.param("loopGuessMaxFeatureDistance", loopGuessMaxFeatureDistance, 2., "max distance between predicted and projected feature, used to determine correspondence in loop closing"); 
   arg.param("loopRansacIdentityMatches", loopRansacIdentityMatches, 4, "min number of matches between known landmarks to use for ransac to force the alignment between two local maps"); 
-  arg.param("loopRansacInlierThreshold", loopRansacInlierThreshold, .4, "inlier distance threshold for ransac in loop closing"); 
+  arg.param("loopRansacInlierThreshold", loopRansacInlierThreshold, .3, "inlier distance threshold for ransac in loop closing"); 
   arg.param("loopRansacInlierRatio", loopRansacInlierRatio, .8, "inlier fraction  for ransac in loop closing"); 
   arg.param("loopLandmarkMergeDistance", loopLandmarkMergeDistance, .1, "distance between two instances of landmarks in the local under which the merging occursx"); 
   
@@ -327,8 +327,10 @@ int main(int argc, char**argv){
 	addedEdges.insert(e);
       }
     } 
-
-    cerr << "adding frame: " << v->id() << endl;
+    cerr << endl;
+    for (int i=0; i<100; i++) cerr << "*";
+    cerr << endl;
+    cerr << "adding frame: " << v->id();
     mapperState->addFrame(v,e);
     if (! initialFrame)
       initialFrame = mapperState->lastFrame();
@@ -343,15 +345,15 @@ int main(int argc, char**argv){
 	mapperState->addTrackedFeature(f);
 	k++;
       }
-      //cerr << "\t f:" << k++ << endl;
     }
     
-    cerr << "adding " << k << " features" << endl;
+    cerr << " with " << k << " features" << endl;
 
     int mergedLandmarks = 0;
     BaseFrameSet localFrames;
  
     if (vPrev) {
+      cerr << "### Open Loop ###" << endl;
       double timeIncrementalStart = get_monotonic_time();
       // compute the local map, and its origin in localMapGaugeFrame. the gauge is the 
       // oldest frame in the trajectory
@@ -379,7 +381,7 @@ int main(int argc, char**argv){
       //cerr << "D" << endl;
       // remove the ambiguous correspondences 
       const CorrespondenceVector& filtered = secondMatchFilter->filtered();
-      cerr << "SecondMatchFilter " << filtered.size() << " filtered" << endl;
+      cerr << "\tSecondMatchFilter: " << filtered.size() << " filtered" << endl;
  
       // if you found a reasonable number of inliers, correct the estimate of the
       // last vertex with the matcher estimate for the translation
@@ -403,43 +405,40 @@ int main(int argc, char**argv){
       
       // connect the frames from which you observed some landmark in common
       int newIncrementalLinks = mapperState->refineConnectivity(localFrames, 1, odometryIsGood);
-      cerr << "newIncrementalLinks: " << newIncrementalLinks << endl;
+      cerr << "\tnewIncrementalLinks: " << newIncrementalLinks << endl;
 
       // BaseTrackedFeatureSet newFeaturesWithLandmark;
       // MapperState::selectFeaturesWithLandmarks(newFeaturesWithLandmark, mapperState->lastFrame());
       // cerr << "# features with landmark in the current frame: " << newFeaturesWithLandmark.size() << endl;
+      double timeIncrementalEnd = get_monotonic_time();
+      timeIncremental += timeIncrementalEnd - timeIncrementalStart;
 
+      double timeClosureStart = get_monotonic_time();
       // do the loop closing by matching local maps made out of landmarks and trying to match those
       if (! noLoop && localMapGaugeFrame) {
+	cerr<< "### Loop Closure ###" << endl;
 	loopClosureManager->compute(localFrames, localMapGaugeFrame);
 	mergedLandmarks = loopClosureManager->mergedLandmarks();
       }
       hasToOptimizeGlobally = hasToOptimizeGlobally || mergedLandmarks;
-
-      double timeIncrementalEnd = get_monotonic_time();
-      timeIncremental += timeIncrementalEnd - timeIncrementalStart;
+      double timeClosureEnd = get_monotonic_time();
+      timeClosure += timeClosureEnd - timeClosureStart;
     }
     
-    double timeClosureStart = get_monotonic_time();
-    
-    cerr << "number of merged landmarks: " << mergedLandmarks << endl;
-    cerr << "number of frames interested in this operation: " << loopClosureManager->touchedFrames().size() << endl;
+    cerr << "### Bookeeping ###" << endl;
 
     // again update the bookkeeping on the frame graph
     int newLinks = mapperState->refineConnectivity(loopClosureManager->touchedFrames(), intraFrameConnectivityThreshold);
-    cerr << "number of intra-frame links added: " << newLinks << endl;
+    cerr << "\tmerged #landmarks: " << mergedLandmarks << "\t#frames: " << loopClosureManager->touchedFrames().size() << " # of if-links: " << newLinks << endl;
 
-    double timeClosureEnd = get_monotonic_time();
-    timeClosure += timeClosureEnd - timeClosureStart;
 
     // if something happened and enough cycles are passed, do a global optimization)
     if (hasToOptimizeGlobally && !(frameCount%optimizeEachN)){
+      cerr << "### Global Opt ###" << endl;
       double timeGlobalOptimizationStart = get_monotonic_time();
-      cerr << "Global Optimize... ";
       optimizationManager->initializeGlobal(initialFrame);
       optimizationManager->optimize(globalOptimizeIterations);
       optimizationManager->cleanup();
-      cerr << "done" << endl;
       hasToOptimizeGlobally =  false;
       double timeGlobalOptimizationEnd = get_monotonic_time();
       timeGlobalOptimization += timeGlobalOptimizationEnd - timeGlobalOptimizationStart;
@@ -482,7 +481,11 @@ int main(int argc, char**argv){
 	  } 
 	}
       }
-      cerr << "removing " << killedFeatures << " unmatched features from the history" << endl;
+      cerr << "### Cleanup and Stats ### " << endl;
+      cerr << "\tremoving " << killedFeatures << " unmatched features from the history" << endl;
+      cerr << "\t#landmark correspondences: " << landmarkCorrespondenceManager->correspondencesSize() <<
+	" tainted: " << landmarkCorrespondenceManager->taintedSize() << endl;
+
     }
   }
   cerr << endl;
@@ -495,7 +498,7 @@ int main(int argc, char**argv){
   cerr << "# landmarks: " << mapperState->landmarks().size() << endl;
   cerr << "# vertices: " << graph->vertices().size() << endl;
   cerr << "# edges: " << graph->edges().size() << endl;
-  cerr << "# closureCorrespondences: " << landmarkCorrespondenceManager->size() << endl;
+  cerr << "# closureCorrespondences: " << landmarkCorrespondenceManager->correspondencesSize() << endl;
   
   cerr << "cleaning up" << endl;
   cerr << "landmarkConstructor" << endl;

@@ -181,6 +181,12 @@ namespace g2o {
     _landmarks.insert(l);
     if (l->vertex<OptimizableGraph::Vertex*>())
       _graph->addVertex(l->vertex<OptimizableGraph::Vertex*>());
+    for (BaseTrackedFeatureSet::iterator it = l->features().begin(); it!=l->features().end(); it++){
+      BaseTrackedFeature* f=*it;
+      if (f->frame()){
+	f->frame()->matchables().insert(make_pair(l->id(), l));
+      }
+    }
   }
 
   // this removes a landmark from the pool and from all tracked features that were referencing it;
@@ -190,6 +196,13 @@ namespace g2o {
 	 it!=l->features().end(); it++){
       BaseTrackedFeature* f=*it;
       f->setLandmark(0);
+      if (f->frame()){
+	int result = f->frame()->matchables().erase(l->id());
+	if (!result){
+	  cerr << "fatal, landmark removed twice" << endl;
+	  exit (0);
+	}
+      }
     }
     // erase the vertex
     OptimizableGraph::Vertex* v=l->vertex<OptimizableGraph::Vertex*>();
@@ -199,19 +212,30 @@ namespace g2o {
     delete l;
   }
 
-  void MapperState::mergeLandmarks(BaseTrackedLandmark* l1, BaseTrackedLandmark* l2) {
+  bool MapperState::mergeLandmarks(BaseTrackedLandmark* l1, BaseTrackedLandmark* l2) {
     if (!l1 || !l2)
-      return;
+      return false;
     if (l1==l2)
-      return;
+      return false;
     //cerr << "merging landmarks: " << l1 << " " << l2 << endl;
     OptimizableGraph::Vertex* v1 = l1->vertex<OptimizableGraph::Vertex*>();
     OptimizableGraph::Vertex* v2 = l2->vertex<OptimizableGraph::Vertex*>();
+    bool error = false;
     for (BaseTrackedFeatureSet::iterator it=l2->features().begin(); it!=l2->features().end(); it++){
       BaseTrackedFeature* feature=*it;
-      //cerr << "\tfeature: " << feature << endl;
+      BaseFrame* frame2=feature->frame();
+      error |= frame2->matchables().count(l1->id());
+    }
+    if (error)
+      return false;
+
+    for (BaseTrackedFeatureSet::iterator it=l2->features().begin(); it!=l2->features().end(); it++){
+      BaseTrackedFeature* feature=*it;
+      BaseFrame* frame2=feature->frame();
       OptimizableGraph::Edge* edge = feature->edge<OptimizableGraph::Edge*>();
       assert(feature->landmark() == l2);
+
+      //cerr << "\tfeature: " << feature << endl;
       v2->edges().erase(edge);
       for (size_t i =0 ; i<edge->vertices().size(); i++){
 	if (edge->vertices()[i]==v2)
@@ -222,10 +246,13 @@ namespace g2o {
       feature->setLandmark(l1);
       l1->features().insert(feature);
       assert(feature->landmark() == l1);
+      frame2->matchables().erase(l2->id());
+      frame2->matchables().insert(make_pair(l1->id(), l1));
     }
     _graph->removeVertex(v2);
     _landmarks.erase(l2);
     delete l2;
+    return true;
   }    
   
 
@@ -306,7 +333,6 @@ namespace g2o {
     }
     correspondences.resize(k);
 
-    cerr << "Updating Tracks" << endl;
     for (size_t i=0; i<correspondences.size(); i++){
       Correspondence  c = correspondences[i];
       BaseTrackedFeature* f1 = static_cast<BaseTrackedFeature*>(c.f1);
@@ -349,6 +375,8 @@ namespace g2o {
 	    assert(e);
 	    f->setEdge(e);
 	    landmark->features().insert(f);
+	    if (f->frame())
+	      f->frame()->matchables().insert(make_pair(landmark->id(), landmark));
 	    f=f->previous();
 	    bool retval = _graph->addEdge(e);
 	    if (! retval) {
@@ -372,45 +400,22 @@ namespace g2o {
     }
   }
 
-  
-  void MapperState::commonLandmarks(MatchableIdMap& common, BaseSequentialFrame* f1, BaseSequentialFrame* f2) {
+ 
+  void MapperState::commonMatchables(MatchableIdMap& common, BaseSequentialFrame* f1, BaseSequentialFrame* f2, Matchable::MatchableType t) {
     common.clear();
     assert(f1!=f2);
-    MatchableIdMap landmarks1, landmarks2;
-    selectLandmarks(landmarks1, f1);
-    selectLandmarks(landmarks2, f2);
 
-    std::set_intersection(landmarks1.begin(), landmarks1.end(), 
-			  landmarks2.begin(), landmarks2.end(),
+    std::set_intersection(f1->matchableBegin(t), f1->matchableEnd(t),
+			  f2->matchableBegin(t), f2->matchableEnd(t),
 			  inserter(common, common.begin()),
-			  landmarks2.value_comp());
+			  f2->matchables().value_comp());
   }
 
-  
-  void MapperState::selectLandmarks(MatchableIdMap& landmarks, BaseFrameSet& frameSet){
-    landmarks.clear();
+  void MapperState::selectMatchables(MatchableIdMap& matchables, BaseFrameSet& frameSet, Matchable::MatchableType t){
+    matchables.clear();
     for (BaseFrameSet::iterator it=frameSet.begin(); it!=frameSet.end(); it++){
       BaseSequentialFrame* frame = *it;
-      landmarks.insert(frame->landmarksBegin(), frame->landmarksEnd());
-      for (MatchableIdMap::iterator iit = frame->featuresBegin(); iit != frame->featuresEnd(); iit++) {
-	BaseTrackedFeature* feature = reinterpret_cast<BaseTrackedFeature*> (iit->second);
-	BaseTrackedLandmark* landmark = feature->landmark();
-	if (landmark){
-	  landmarks.insert(make_pair(landmark->id(), landmark));
-	}
-      }
-    }
-  }
-
-  void MapperState::selectLandmarks(MatchableIdMap& landmarks, BaseFrame* frame){
-    landmarks.clear();
-    landmarks.insert(frame->landmarksBegin(), frame->landmarksEnd());
-    for (MatchableIdMap::iterator iit = frame->featuresBegin(); iit != frame->featuresEnd(); iit++) {
-      BaseTrackedFeature* feature = reinterpret_cast<BaseTrackedFeature*> (iit->second);
-      BaseTrackedLandmark* landmark = feature->landmark();
-      if (landmark){
-	landmarks.insert(make_pair(landmark->id(), landmark));
-      }
+      matchables.insert(frame->matchableBegin(t), frame->matchableEnd(t));
     }
   }
  
@@ -441,7 +446,7 @@ namespace g2o {
       if (f1==f2)
 	continue;
       MatchableIdMap commonSet;
-      commonLandmarks(commonSet, f1, f2 );
+      commonMatchables(commonSet, f1, f2, Matchable::Landmark );
       int numCommonLandmarks = commonSet.size();
       bool framesAreConnected = (f1->neighbors().count(f2)) && (f2->neighbors().count(f1));
       bool framesAreConsecutive = (f1->previous() == f2) || (f2->previous() == f1);
@@ -500,16 +505,15 @@ namespace g2o {
     openFeatures.insert(current->featuresBegin(), current->featuresEnd());
 
     int k = 1;
-    cerr << "start" << endl;
     while (previous && numFrames >0 && ! openFeatures.empty()) {
       MatchableIdMap previousFeatures;
       previousFeatures.insert(previous->featuresBegin(), previous->featuresEnd());
-      cerr << "f: " << k << " ptr:" << previous << " #features:" << previousFeatures.size() << endl; 
+      cerr << "\tframe: " << k << " ptr:" << previous << " #features:" << previousFeatures.size() << endl; 
       k++;
       _correspondenceFinder->compute(previous->featuresBegin(), previous->featuresEnd(),
 				     openFeatures.begin(), openFeatures.end());
       const CorrespondenceVector& correspondences = _correspondenceFinder->correspondences();
-      cerr << "Odom: found " << correspondences.size() << " correspondences" << endl;
+      cerr << "\tOdom: found " << correspondences.size() << " correspondences" << endl;
       /*
 	for (size_t i =0; i<correspondences.size(); i++){
 	cerr << "\t\t" << i << " " 
@@ -524,7 +528,7 @@ namespace g2o {
       _matcher->compute(correspondences);
       const CorrespondenceVector& matches = _matcher->matches();
      
-      cerr << "RANSAC " << matches.size() << " matches" << endl;
+      cerr << "\tRANSAC " << matches.size() << " matches" << endl;
 
       for (size_t i = 0; i<matches.size(); i++){
 	const Correspondence& c = matches[i];
@@ -534,8 +538,6 @@ namespace g2o {
       previous = previous->previous();
       numFrames --;
     }
-
-    cerr << "end" << endl;
     
   }
 

@@ -198,44 +198,45 @@ namespace g2o {
       closureCandidates = _closureCandidateDetector->candidates();
       _touchedFrames.insert(closureCandidates.begin(), closureCandidates.end());
 
-      cerr <<  "local map has" << localFrames.size() << endl;
+      //cerr <<  "local map has" << localFrames.size() << endl;
       // BaseTrackedFeatureSet featuresToMatchInLocalMap;
       // MapperState::selectFeaturesWithLandmarks(featuresToMatchInLocalMap, localFrames);
       // cerr << "found " << featuresToMatchInLocalMap.size() << " features in the local map" << endl;
 
-      MatchableIdMap landmarksToMatchInLocalMap;
-      MapperState::selectLandmarks(landmarksToMatchInLocalMap, localFrames);
-      cerr << "found " << landmarksToMatchInLocalMap.size() << " landmarks in the local map" << endl;
+      MatchableIdMap landmarksInLocalMap;
+      MapperState::selectMatchables(landmarksInLocalMap, localFrames, Matchable::Landmark);
+      cerr << "\tfound " << landmarksInLocalMap.size() << " landmarks in the local map" << endl;
 
       BaseFrameSet prunedClosures;
       std::set_difference(closureCandidates.begin(), closureCandidates.end(), 
 			  localFrames.begin(), localFrames.end(),
 			  inserter(prunedClosures, prunedClosures.begin()));
-      cerr << "pruned closures: " << prunedClosures.size() << endl;
+      cerr << "\tfound " << prunedClosures.size() << " potential closing frames" << endl;
+      
       //FrameClusterer frameClusterer;
       _frameClusterer->compute(prunedClosures);
-      cerr << "in the closure there are " << _frameClusterer->numClusters() << " regions" << endl;
-      for (int i =0; i < _frameClusterer->numClusters() && landmarksToMatchInLocalMap.size(); i++ ){
-	cerr << "\t cluster: " << i << " " << _frameClusterer->cluster(i).size() << endl;
+      cerr << "\tin the closure there are " << _frameClusterer->numClusters() << " regions" << endl;
+      for (int i =0; i < _frameClusterer->numClusters() && landmarksInLocalMap.size(); i++ ){
+	cerr << "\t\tcluster: " << i << " " << _frameClusterer->cluster(i).size() << endl;
   
 	MatchableIdMap landmarksInCluster;
-	MapperState::selectLandmarks(landmarksInCluster, _frameClusterer->cluster(i));
+	MapperState::selectMatchables(landmarksInCluster, _frameClusterer->cluster(i), Matchable::Landmark);
 
-	int minFeatures = (int)landmarksInCluster.size() < (int) landmarksToMatchInLocalMap.size() ? 
-	  (int)landmarksInCluster.size()  : (int) landmarksToMatchInLocalMap.size();
+	int minFeatures = (int)landmarksInCluster.size() < (int) landmarksInLocalMap.size() ? 
+	  (int)landmarksInCluster.size()  : (int) landmarksInLocalMap.size();
 
 	if (minFeatures < _minFeaturesInCluster){
 	  //cerr << "\t\t" << " #too few features (" << minFeatures << "), rejecting match"<<  endl;
 	} else {
-	  cerr << "\t\t" << " #enough features  (" << minFeatures << "), accepting match"<<  endl;
+	  cerr << "\t\t\t" << " enough features  (" << minFeatures << "), accepting match"<<  endl;
 	  // optimize each cluster
 	  _optimizationManager->initializeLocal(_frameClusterer->cluster(i),0,true);
 	  _optimizationManager->optimize(_localOptimizeIterations);
 	  
 	  _correspondenceFinder->compute(landmarksInCluster.begin(), landmarksInCluster.end(),
-					 landmarksToMatchInLocalMap.begin(), landmarksToMatchInLocalMap.end());
+					 landmarksInLocalMap.begin(), landmarksInLocalMap.end());
 	  CorrespondenceVector clusterClosureCorrespondences=_correspondenceFinder->correspondences();
-	  cerr << "\t\t" << " #matches:  " << clusterClosureCorrespondences.size() <<  endl;
+	  cerr << "\t\t\t" << " matches:  " << clusterClosureCorrespondences.size() <<  endl;
 	  
 	  _matcher->compute(clusterClosureCorrespondences);
 	  CorrespondenceVector clusterClosureMatches=_matcher->matches();
@@ -243,9 +244,8 @@ namespace g2o {
 
 	  float inlierRatio = (float) numDifferentMatches / minFeatures;
 	  int landmarkIdentityMatches = _matcher->landmarkIdentityMatches();
-	  cerr << "\t\t" << " #ransac:   " << clusterClosureMatches.size() 
-	       <<  " differentMatches: " <<  numDifferentMatches << "  inlierRatio: " << inlierRatio << " identityMatches: " << 
-	    landmarkIdentityMatches << endl;
+	  cerr << "\t\t\t" << " RANSAC:   " << clusterClosureMatches.size() 
+	       <<  " differentMatches: " <<  numDifferentMatches << "  inlierRatio: " << inlierRatio << " identityMatches: " << landmarkIdentityMatches << endl;
 	  
 	  if (inlierRatio > _closureInlierRatio || landmarkIdentityMatches > _loopRansacIdentityMatches) {
 	    for (size_t k=0; k<clusterClosureMatches.size(); k++){
@@ -274,7 +274,7 @@ namespace g2o {
 	  _optimizationManager->initializeLocal(_frameClusterer->cluster(i),0,true);
 	  _optimizationManager->optimize(_localOptimizeIterations);
 	  MatchableIdMap landmarksInCluster;
-	  MapperState::selectLandmarks(landmarksInCluster, _frameClusterer->cluster(i));
+	  MapperState::selectMatchables(landmarksInCluster, _frameClusterer->cluster(i), Matchable::Landmark);
 	  for (MatchableIdMap::iterator it = landmarksInCluster.begin(); it!=landmarksInCluster.end(); it++){	    BaseTrackedLandmark* l1 = reinterpret_cast<BaseTrackedLandmark*>(it->second);
 	    for (MatchableIdMap::iterator iit = it; iit!=landmarksInCluster.end(); iit++) {
 	      BaseTrackedLandmark* l2 = reinterpret_cast<BaseTrackedLandmark*>(iit->second);
@@ -311,7 +311,11 @@ namespace g2o {
   }
 
   int LandmarkCorrespondenceManager::addCorrespondence(BaseTrackedLandmark* l1_, BaseTrackedLandmark* l2_, int k){
+    if (l1_== l2_)
+      return 0;
     LandmarkCorrespondence corr(l1_, l2_);
+    if(_taintedCorrespondences.count(corr))
+      return 0;
     LandmarkCorrespondenceIntMap::iterator it=_landmarkCorrespondenceMap.find(corr);
     if (it==_landmarkCorrespondenceMap.end()){
       _landmarkCorrespondenceMap.insert(make_pair(corr, k));
@@ -378,7 +382,7 @@ namespace g2o {
       mergedCorrespondences.clear();
       for (LandmarkCorrespondenceIntMap::iterator it=_landmarkCorrespondenceMap.begin();
 	   it!=_landmarkCorrespondenceMap.end(); it++){
-	if (it->second>minCount) {
+	if (it->second>minCount && ! _taintedCorrespondences.count(it->first)) {
 	  mergedCorrespondences.push_back(it->first);
 	  merged ++;
 	}
@@ -389,7 +393,11 @@ namespace g2o {
 	BaseTrackedLandmark* l2=corr.l2;
 	mergeLandmarks(l1,l2);
 	if (_mapperState->landmarks().count(l1) && _mapperState->landmarks().count(l2)){
-	  _mapperState->mergeLandmarks(l1,l2);
+	  bool result = _mapperState->mergeLandmarks(l1,l2);
+	  if (!result) {
+	    _landmarkCorrespondenceMap.erase(corr);
+	    _taintedCorrespondences.insert(corr);
+	  }
 	}
       }
     } while (mergedCorrespondences.size());

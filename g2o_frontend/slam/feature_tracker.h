@@ -14,13 +14,14 @@ namespace g2o {
       To be used by all generic algorithms later on.
    */
 
-  
+
   struct Matchable{
     enum MatchableType {
       Unknown=0, 
-      Landmark=0x0100000000000000 , LandmarkEnd=0x01ffffffffffffff , 
-      Feature =0x0200000000000000 , FeatureEnd= 0x02ffffffffffffff
+      Landmark=0x0100000000000000 , 
+      Feature =0x0200000000000000 
     };
+    static const size_t MatchableRange = 0x00ffffffffffffff;
 
     Matchable(MatchableType mtype, size_t id_=0);
     virtual ~Matchable();
@@ -67,14 +68,21 @@ namespace g2o {
     virtual void setVertex(OptimizableGraph::Vertex* v);
 
     inline MatchableIdMap& matchables() {return _matchables;}
-
     BaseFrameSet& neighbors () {return _neighbors;}
+
     const BaseFrameSet& neighbors () const {return _neighbors;}
 
-    MatchableIdMap::iterator landmarksBegin() {return _matchables.lower_bound(Matchable::Landmark);}
-    MatchableIdMap::iterator landmarksEnd() {return   _matchables.lower_bound(Matchable::LandmarkEnd);}
-    MatchableIdMap::iterator featuresBegin() {return _matchables.lower_bound(Matchable::Feature);}
-    MatchableIdMap::iterator featuresEnd() {return   _matchables.lower_bound(Matchable::FeatureEnd);}
+    inline MatchableIdMap::iterator matchableBegin(Matchable::MatchableType t) {
+      return _matchables.lower_bound(t);
+    }
+    inline MatchableIdMap::iterator matchableEnd(Matchable::MatchableType t) {
+      return _matchables.lower_bound(t+Matchable::MatchableRange);
+    }
+
+    MatchableIdMap::iterator landmarksBegin() {return matchableBegin(Matchable::Landmark);}
+    MatchableIdMap::iterator landmarksEnd()   {return matchableEnd(Matchable::Landmark);}
+    MatchableIdMap::iterator featuresBegin()  {return matchableBegin(Matchable::Feature);}
+    MatchableIdMap::iterator featuresEnd()    {return matchableEnd(Matchable::Feature);}
 
   protected:
     OptimizableGraph::Vertex* _vertex;
@@ -136,6 +144,8 @@ namespace g2o {
       </ul>
   */
   struct BaseTrackedFeature: public Matchable{
+    friend class MapperState;
+
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     
     BaseTrackedFeature(BaseSequentialFrame* frame_, 
@@ -324,7 +334,8 @@ namespace g2o {
     //! this removes a landmark from the pool and from all tracked features that were referencing it;
     void removeLandmark(BaseTrackedLandmark* l);
 
-    void mergeLandmarks(BaseTrackedLandmark* l1, BaseTrackedLandmark* l2);
+    //! this removes a landmark from the pool and from all tracked features that were referencing it;
+    bool mergeLandmarks(BaseTrackedLandmark* l1, BaseTrackedLandmark* l2);
 
     //! this adds a landmark and all edges to the graph
     void confirmLandmark(BaseTrackedLandmark* /*f*/);
@@ -370,9 +381,9 @@ namespace g2o {
 
 
     // utlities
-    static void commonLandmarks(MatchableIdMap& common, BaseSequentialFrame* f1, BaseSequentialFrame* f2);
-    static void selectLandmarks(MatchableIdMap& landmarks, BaseFrameSet& frameSet);
-    static void selectLandmarks(MatchableIdMap& landmarks, BaseFrame* frame);
+    static void commonMatchables(MatchableIdMap& common, BaseSequentialFrame* f1, BaseSequentialFrame* f2, Matchable::MatchableType t);
+    static void selectMatchables(MatchableIdMap& landmarks, BaseFrameSet& frameSet, Matchable::MatchableType t);
+
     BaseSequentialFrame* lastNFrames(BaseFrameSet& fset, int nFramesBack) ;
   protected:
     BaseSequentialFrame* _lastFrame;

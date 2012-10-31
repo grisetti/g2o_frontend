@@ -148,41 +148,6 @@ namespace g2o {
   }
 
 
-  void PointXYInitialGuessCorrespondenceFinder::compute(MatchableSet& s1, MatchableSet& s2){
-    _correspondences.clear();
-    if (!s1.size() || !s2.size())
-      return;
-    // compute the position of the features according to the frames to which they belong
-    MatchablePoseMap fpmap;
-    FeatureMappingMode  mode = _featureMappingMode[0];
-    for (MatchableSet::iterator it= s1.begin(); it!=s2.end(); it++){
-      if (it == s1.end()) {
-	it = s2.begin();
-	mode = _featureMappingMode[1];
-      }
-      Matchable* matchable = *it;
-      Eigen::Vector2d remappedFeaturePose(0,0);
-      bool remappingResult = remapPose(remappedFeaturePose,matchable,mode);
-      if (!remappingResult){
-	cerr << "FATAL!!!!!, no remapping result" << endl;
-	return;
-      }
-      fpmap.insert(std::make_pair(matchable,remappedFeaturePose));
-    }
-    
-    for (MatchableSet::iterator it1= s1.begin(); it1!=s1.end(); it1++){
-      Matchable* trackedFeature1 = *it1;
-      Vector2d pose1=fpmap[trackedFeature1];
-      for (MatchableSet::iterator it2= s2.begin(); it2!=s2.end(); it2++) {
-	Matchable* trackedFeature2 = *it2;
-	Vector2d pose2=fpmap[trackedFeature2];
-	double d = (pose1-pose2).squaredNorm();
-	if (d<_squaredDistanceThreshold)
-	  _correspondences.push_back(Correspondence(trackedFeature1, trackedFeature2, sqrt(d)));
-      }
-    }
-    std::sort(_correspondences.begin(), _correspondences.end());
-  }
 
   // void PointXYInitialGuessCorrespondenceFinder::compute(BaseTrackedFeatureSet& s1, BaseTrackedFeatureSet& s2){
   //   MatchableSet _s1;
@@ -416,7 +381,6 @@ namespace g2o {
     // do an ugly greedy search for frames which are metrically near to the actual one;
     assert(v);
     SE2 estimate = v->estimate();
-    cerr << "num closing candidates for vertex " << v->id() << ": ";
     for (VertexFrameMap::iterator it=_mapperState->frames().begin(); it!=_mapperState->frames().end(); it++){
       BaseSequentialFrame* f = it->second;
       VertexSE2* v2 = f->vertex<VertexSE2*>();
@@ -432,7 +396,6 @@ namespace g2o {
 	//cerr << v2->id() << " ";
       }
     }
-    cerr << _candidates.size() << endl;
   }
   
 

@@ -77,13 +77,14 @@ namespace g2o {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 		
     typedef std::map<LandmarkCorrespondence, int> LandmarkCorrespondenceIntMap;
-
+    typedef std::set<LandmarkCorrespondence> LandmarkCorrespondenceSet;
     LandmarkCorrespondenceManager(MapperState* mapperState_);
     int addCorrespondence(BaseTrackedLandmark* l1_, BaseTrackedLandmark* l2_, int k=1);
     bool removeCorrespondence(BaseTrackedLandmark* l1_, BaseTrackedLandmark* l2_);
     int occurrences (BaseTrackedLandmark* l1_, BaseTrackedLandmark* l2_);
     void mergeLandmarks(BaseTrackedLandmark* lkept, BaseTrackedLandmark* lremoved);
-    inline size_t size() const {return _landmarkCorrespondenceMap.size();}
+    inline size_t correspondencesSize() const {return _landmarkCorrespondenceMap.size();}
+    inline size_t taintedSize() const {return _taintedCorrespondences.size();}
 
     /**This does the merging of the landmarks, updates the bookkeeping and does side effect in the mapperState.
        @param minCount: the min number of times a landmark should have been matched
@@ -95,6 +96,7 @@ namespace g2o {
   protected:
     MapperState* _mapperState;
     LandmarkCorrespondenceIntMap _landmarkCorrespondenceMap;
+    LandmarkCorrespondenceSet _taintedCorrespondences;
   };
 
 

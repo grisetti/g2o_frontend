@@ -31,9 +31,6 @@ namespace g2o {
     
       PointXYInitialGuessCorrespondenceFinder();
     
-    // determines candidate correspondences between two sets of features;
-    virtual void compute(MatchableSet& s1, MatchableSet& s2);
-
     virtual void compute(MatchableIdMap::iterator s1_begin, MatchableIdMap::iterator s1_end,
 			 MatchableIdMap::iterator s2_begin, MatchableIdMap::iterator s2_end);
 
