@@ -260,18 +260,74 @@ namespace g2o {
   void MapperState::confirmLandmark(BaseTrackedLandmark* /*f*/){
   }
 
-  // this adds e new frame at the end of the history
-  void MapperState::addFrame(OptimizableGraph::Vertex* v, OptimizableGraph::Edge* odometry) {
-    BaseSequentialFrame* lastSequentialFrame=0;
-    if (_lastFrame)
-      lastSequentialFrame=dynamic_cast<BaseSequentialFrame*>(_lastFrame);
-    BaseSequentialFrame * frame = new BaseSequentialFrame(v,odometry,lastSequentialFrame, 0);
-    if (lastSequentialFrame){
-      lastSequentialFrame->setNext(frame);
-    }
-    _lastFrame = frame;
-    _frames.insert(std::make_pair(v,frame));
+  // this adds e new frame to the pool
+  bool MapperState::addFrame(BaseFrame* f){
+    // if a frame having the same vertex is in the pool return false;
+    OptimizableGraph::Vertex* v = f->vertex<OptimizableGraph::Vertex*>();
+    if (!v)
+      return false;
+    if (_frames.count(v))
+      return false;
+    _frames.insert(make_pair(v,f));
+    return true;
   }
+
+  bool MapperState::removeFrame(BaseFrame* f){
+    OptimizableGraph::Vertex* v = f->vertex<OptimizableGraph::Vertex*>();
+    if (!v)
+      return false;
+    if (!_frames.count(v))
+      return false;
+
+    // detach the frame from all neighbors
+    for (BaseFrameSet::iterator it = f->neighbors().begin(); it!=f->neighbors().end(); it++){
+      BaseFrame* fother = *it;
+      fother->neighbors().erase(f);
+    }
+
+    // erase all features for the frame
+    MatchableIdMap features;
+    features.insert(f->featuresBegin(), f->featuresEnd());
+    for (MatchableIdMap::iterator it = features.begin(); it!=features.end(); it++){
+      BaseTrackedFeature* feature = reinterpret_cast<BaseTrackedFeature*> (it->second);
+      removeTrackedFeature(feature, false);
+    }
+    delete f;
+    return true;
+  }
+
+  bool MapperState::detachFrame(BaseFrame* f){
+    OptimizableGraph::Vertex* v = f->vertex<OptimizableGraph::Vertex*>();
+    if (!v)
+      return false;
+    if (!_frames.count(v))
+      return false;
+
+    // detach the frame from all neighbors
+    for (BaseFrameSet::iterator it = f->neighbors().begin(); it!=f->neighbors().end(); it++){
+      BaseFrame* fother = *it;
+      fother->neighbors().erase(f);
+    }
+    f->neighbors().clear();
+
+    // erase all features for the frame
+    MatchableIdMap features;
+    features.insert(f->featuresBegin(), f->featuresEnd());
+    for (MatchableIdMap::iterator it = features.begin(); it!=features.end(); it++){
+      BaseTrackedFeature* feature = reinterpret_cast<BaseTrackedFeature*> (it->second);
+      for (BaseTrackedFeatureSet::iterator fit = feature->children().begin(); 
+	   fit!=feature->children().end(); fit ++){
+	BaseTrackedFeature* otherFeature = *fit;
+	otherFeature->_previous = 0;
+      }
+      feature->children().clear();
+      if (feature->previous()){
+	feature->setPrevious(0);
+      }
+    }
+    return true;
+  }
+
 
   void MapperState::addTrackedFeature(BaseTrackedFeature* feature) {
     BaseFrame * frame = feature->frame();
@@ -496,6 +552,23 @@ namespace g2o {
       _mapperState = mapperState_;
       _correspondenceFinder = correspondenceFinder_;
       _matcher = matcher_;
+  }
+
+  BaseSequentialFrame* Tracker::addFrame(OptimizableGraph::Vertex* v, OptimizableGraph::Edge* odometry) {
+    BaseSequentialFrame* lastSequentialFrame=0;
+    if (_mapperState->lastFrame())
+      lastSequentialFrame=dynamic_cast<BaseSequentialFrame*>(_mapperState->lastFrame());
+    BaseSequentialFrame * frame = new BaseSequentialFrame(v,odometry,lastSequentialFrame, 0);
+    if (lastSequentialFrame){
+      lastSequentialFrame->setNext(frame);
+    }
+    if (_mapperState->addFrame(frame)){
+      _mapperState->_lastFrame=frame;
+    } else {
+      delete frame;
+      return 0;
+    }
+    return frame;
   }
 
   

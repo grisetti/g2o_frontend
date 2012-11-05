@@ -11,7 +11,7 @@ namespace g2o {
 
 
   /** Basic matchable element. Can be anything: a feature, a landmark, a robot pose or a frame
-      To be used by all generic algorithms later on.
+      To be used by all generic algorithms that attempt to match two (sets of) frames.
    */
 
 
@@ -44,7 +44,7 @@ namespace g2o {
   typedef std::set<BaseTrackedFeature*> BaseTrackedFeatureSet;
   typedef std::set<BaseTrackedLandmark*> BaseTrackedLandmarkSet;
   typedef std::set<BaseFrame*> BaseFrameSet;
-  typedef std::map<OptimizableGraph::Vertex*, BaseSequentialFrame*> VertexFrameMap;
+  typedef std::map<OptimizableGraph::Vertex*, BaseFrame*> VertexFrameMap;
 
 
   /** Basic structure that holds the oberrvations a robot takes from a give position.
@@ -324,6 +324,7 @@ namespace g2o {
      It stores the state and  "owns" the internal structures.
   */
   struct MapperState{
+    friend struct Tracker;
     MapperState(OptimizableGraph* graph_, 
 		   LandmarkConstructor* landmarkConstructor_);
   
@@ -341,8 +342,15 @@ namespace g2o {
     //! this adds a landmark and all edges to the graph
     void confirmLandmark(BaseTrackedLandmark* /*f*/);
 
-    //! this adds e new frame at the end of the history
-    void addFrame(OptimizableGraph::Vertex* v, OptimizableGraph::Edge* odometry);
+
+    //! this removes a frame from the pool
+    bool addFrame(BaseFrame * frame);
+
+    //! this removes a frame from the pool
+    bool removeFrame(BaseFrame * frame);
+
+    //! this etaches a frame from the pool
+    bool detachFrame(BaseFrame* f);
 
     //! this adds e new feature to the pool
     void addTrackedFeature(BaseTrackedFeature* feature);
@@ -402,7 +410,8 @@ namespace g2o {
   struct Tracker{
     Tracker(MapperState* mapperState_, CorrespondenceFinder* correspondenceFinder_, Matcher* matcher_);
 
-
+    //! this adds e new frame at the end of the history of the mapper state
+    BaseSequentialFrame* addFrame(OptimizableGraph::Vertex* v, OptimizableGraph::Edge* odometry);
           
     // look for the correspondences with odometry
     void searchInitialCorrespondences(CorrespondenceVector& correspondences, int numFrames=1);
@@ -412,7 +421,7 @@ namespace g2o {
       CorrespondenceFinder* _correspondenceFinder;
       Matcher* _matcher;
   };
-  
+
 }// end namespace
 
 #endif
