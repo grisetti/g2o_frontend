@@ -349,6 +349,9 @@ namespace g2o {
     //! this removes a frame from the pool
     bool removeFrame(BaseFrame * frame);
 
+    //! this etaches a frame from the pool
+    bool detachFrame(BaseFrame* f);
+
     //! this adds e new feature to the pool
     void addTrackedFeature(BaseTrackedFeature* feature);
 

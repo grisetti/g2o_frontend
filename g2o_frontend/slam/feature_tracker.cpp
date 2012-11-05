@@ -296,6 +296,38 @@ namespace g2o {
     return true;
   }
 
+  bool MapperState::detachFrame(BaseFrame* f){
+    OptimizableGraph::Vertex* v = f->vertex<OptimizableGraph::Vertex*>();
+    if (!v)
+      return false;
+    if (!_frames.count(v))
+      return false;
+
+    // detach the frame from all neighbors
+    for (BaseFrameSet::iterator it = f->neighbors().begin(); it!=f->neighbors().end(); it++){
+      BaseFrame* fother = *it;
+      fother->neighbors().erase(f);
+    }
+    f->neighbors().clear();
+
+    // erase all features for the frame
+    MatchableIdMap features;
+    features.insert(f->featuresBegin(), f->featuresEnd());
+    for (MatchableIdMap::iterator it = features.begin(); it!=features.end(); it++){
+      BaseTrackedFeature* feature = reinterpret_cast<BaseTrackedFeature*> (it->second);
+      for (BaseTrackedFeatureSet::iterator fit = feature->children().begin(); 
+	   fit!=feature->children().end(); fit ++){
+	BaseTrackedFeature* otherFeature = *fit;
+	otherFeature->_previous = 0;
+      }
+      feature->children().clear();
+      if (feature->previous()){
+	feature->setPrevious(0);
+      }
+    }
+    return true;
+  }
+
 
   void MapperState::addTrackedFeature(BaseTrackedFeature* feature) {
     BaseFrame * frame = feature->frame();
