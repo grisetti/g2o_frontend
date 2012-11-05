@@ -2,6 +2,7 @@ ADD_LIBRARY(types_data ${G2O_FRONTEND_LIB_TYPE}
   #point_cloud_data.cpp point_cloud_data.h
   #image_data.cpp image_data.h
   #rgbd_image_data.cpp rgbd_image_data.h
+  depth_registered_data.cpp depth_registered_data.h
   feature_data.cpp feature_data.h # IMPORTANT
 )
 
