@@ -2,7 +2,6 @@
 #include <fstream>
 #include "g2o/stuff/macros.h"
 #include "g2o/core/factory.h"
-//#include "depth_traits.h"
 
 #ifdef WINDOWS
 #include <windows.h>
@@ -63,7 +62,6 @@ void DepthRegisteredData::update()
     _depthImage = new cv::Mat();
     *_intensityImage = cv::imread((_baseFilename + "_intensity.png") .c_str(), -1);
     *_depthImage = cv::imread((_baseFilename + "_depth.png") .c_str(), -1);
-    cout << "letto immagine " << _baseFilename << "_depth.png" << endl;
   }
 }
 
@@ -105,8 +103,6 @@ bool DepthRegisteredDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction:
 HyperGraphElementAction* DepthRegisteredDataDrawAction::operator()(HyperGraph::HyperGraphElement* element, 
 							      HyperGraphElementAction::Parameters* params_)
 {
-	DepthRegisteredData* that = static_cast<DepthRegisteredData*>(element);
-
   if(typeid(*element).name()!=_typeName)
     return 0;
   
@@ -121,26 +117,23 @@ HyperGraphElementAction* DepthRegisteredDataDrawAction::operator()(HyperGraph::H
 
   glPushMatrix();
   //int step = 1;
-  if(_beamsDownsampling )
+  //if(_beamsDownsampling )
     //step = _beamsDownsampling->value();
   if(_pointSize)
     glPointSize(_pointSize->value());
   
+  DepthRegisteredData* that = static_cast<DepthRegisteredData*>(element);
   unsigned short* dptr=reinterpret_cast<unsigned short*>(that->_depthImage->data);
 	
-  
   glBegin(GL_POINTS);
-  glColor4f(1.f,1.f,1.f,1.f);
-  glPushAttrib(GL_LIGHTING);
-  glDisable(GL_LIGHTING);
+  glColor4f(1.f, 0.f, 0.f, 0.5f);
   static const double fx = 5.758157348632812e+02;
 	static const double fy = 5.758157348632812e+02;
 	static const double center_x = 3.145e+02;
 	static const double center_y = 2.355e+02;
-	double unit_scaling = 1.0f*0.001f;
+	double unit_scaling = 0.001f;
   float constant_x = unit_scaling / fx;
   float constant_y = unit_scaling / fy;
-  
   
   for(int i = 0; i < that->_depthImage->rows; i++)  {
     for(int j = 0; j < that->_depthImage->cols; j++) {
@@ -150,14 +143,14 @@ HyperGraphElementAction* DepthRegisteredDataDrawAction::operator()(HyperGraph::H
       	// Computing the Cartesian coordinates of the current pixel
       	float x = (j - center_x) * d * constant_x;
       	float y = (i - center_y) * d * constant_y;
-      	float z = (float)d * 0.001f;
+      	float z = ((float)d) * unit_scaling;
       	glNormal3f(-x, -y, -z);
     		glVertex3f(x, y, z);
     	}
     	dptr++;
     } 
 	}
-	glPopAttrib();
+	
   glEnd();
   glPopMatrix();
   return this;

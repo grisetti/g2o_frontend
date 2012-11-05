@@ -69,7 +69,6 @@ class DepthRegisteredDataDrawAction: public g2o::DrawAction{
   virtual bool refreshPropertyPtrs(g2o::HyperGraphElementAction::Parameters* params_);
   g2o::IntProperty* _beamsDownsampling;
   g2o::FloatProperty* _pointSize;
-  
 };
 
 #endif
