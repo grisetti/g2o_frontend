@@ -109,7 +109,7 @@ void dumpEdges(ostream& os, MapperState* mapperState) {
   for (VertexFrameMap::iterator it = mapperState->frames().begin(); it!=mapperState->frames().end(); it++){
     fset.insert(it->second);
   }
-  dumpEdges(os, fset, false, true, true);
+  dumpEdges(os, fset, true, true, false);
 }
 
 
@@ -331,7 +331,7 @@ int main(int argc, char**argv){
     for (int i=0; i<100; i++) cerr << "*";
     cerr << endl;
     cerr << "adding frame: " << v->id();
-    mapperState->addFrame(v,e);
+    tracker->addFrame(v,e);
     if (! initialFrame)
       initialFrame = mapperState->lastFrame();
 
