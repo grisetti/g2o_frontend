@@ -1,4 +1,11 @@
-#include "depth_registered_data.h"
+/*
+ * RGBDData.cpp
+ *
+ *  Created on: Nov 14, 2012
+ *      Author: jacopo
+ */
+
+#include "RGBDData.h"
 #include <fstream>
 #include "g2o/stuff/macros.h"
 #include "g2o/core/factory.h"
@@ -18,7 +25,7 @@
 using namespace g2o;
 using namespace std;
 
-DepthRegisteredData::DepthRegisteredData()
+RGBDData::RGBDData()
 {
   _paramIndex = -1;
   _baseFilename = "none";
@@ -29,9 +36,10 @@ DepthRegisteredData::DepthRegisteredData()
   _depthImage = 0;
 }
 
-DepthRegisteredData::~DepthRegisteredData(){}
+RGBDData::~RGBDData(){}
 
-bool DepthRegisteredData::read(std::istream& is) 
+//! read the data from a stream
+bool RGBDData::read(std::istream& is) 
 {
   int _paramIndex;
   is >> _paramIndex >> _baseFilename;
@@ -43,9 +51,9 @@ bool DepthRegisteredData::read(std::istream& is)
 }
 
 //! write the data to a stream
-bool DepthRegisteredData::write(std::ostream& os) const 
+bool RGBDData::write(std::ostream& os) const 
 {
-  if(_cameraParams)
+  if (_cameraParams)
     os << _cameraParams->id();
   else
     os << -1;
@@ -54,9 +62,9 @@ bool DepthRegisteredData::write(std::ostream& os) const
   return true;
 }
 
-void DepthRegisteredData::update()
+void RGBDData::update()
 {
-  if(!_intensityImage) 
+  if (!_intensityImage) 
   {
     _intensityImage = new cv::Mat();
     _depthImage = new cv::Mat();
@@ -65,29 +73,25 @@ void DepthRegisteredData::update()
   }
 }
 
-void DepthRegisteredData::release()
+void RGBDData::release()
 {
-  if(_intensityImage) 
+  if (_intensityImage) 
   {
     delete _intensityImage;
     _intensityImage = 0;
   }
-  if(_depthImage) 
+  if (_depthImage) 
   {
     delete _depthImage;
     _depthImage = 0;
   }
 }
 
-DepthRegisteredDataDrawAction::DepthRegisteredDataDrawAction(): DrawAction(typeid(DepthRegisteredData).name())
+bool RGBDDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction::Parameters* params_)
 {
-}
-
-bool DepthRegisteredDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction::Parameters* params_)
-{
-  if(!DrawAction::refreshPropertyPtrs(params_))
+  if (!DrawAction::refreshPropertyPtrs(params_))
     return false;
-  if(_previousParams)
+  if (_previousParams)
   {
     _beamsDownsampling = _previousParams->makeProperty<IntProperty>(_typeName + "::BEAMS_DOWNSAMPLING", 20);
     _pointSize = _previousParams->makeProperty<FloatProperty>(_typeName + "::POINT_SIZE", .05f);
@@ -95,24 +99,24 @@ bool DepthRegisteredDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction:
   else 
   {
     _beamsDownsampling = 0;
-    _pointSize= 0;
+    _pointSize = 0;
   }
   return true;
 }
 
-HyperGraphElementAction* DepthRegisteredDataDrawAction::operator()(HyperGraph::HyperGraphElement* element, 
-							      HyperGraphElementAction::Parameters* params_)
+HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphElement* element, 
+							      																								HyperGraphElementAction::Parameters* params_)
 {
   if(typeid(*element).name()!=_typeName)
     return 0;
   
   refreshPropertyPtrs(params_);
-  if(! _previousParams)
+  if (!_previousParams)
   {
     return this;
   }
 
-  if(_show && !_show->value())
+  if (_show && !_show->value())
     return this;
 
   glPushMatrix();
@@ -122,8 +126,8 @@ HyperGraphElementAction* DepthRegisteredDataDrawAction::operator()(HyperGraph::H
   if(_pointSize)
     glPointSize(_pointSize->value());
   
-  DepthRegisteredData* that = static_cast<DepthRegisteredData*>(element);
-  unsigned short* dptr=reinterpret_cast<unsigned short*>(that->_depthImage->data);
+  RGBDData* that = static_cast<RGBDData*>(element);
+  unsigned short* dptr = reinterpret_cast<unsigned short*>(that->_depthImage->data);
 	
   glBegin(GL_POINTS);
   glColor4f(1.f, 0.f, 0.f, 0.5f);
@@ -156,5 +160,5 @@ HyperGraphElementAction* DepthRegisteredDataDrawAction::operator()(HyperGraph::H
   return this;
 }
 
-G2O_REGISTER_TYPE(DATA_DEPTH_REGISTERED, DepthRegisteredData);
-G2O_REGISTER_ACTION(DepthRegisteredDataDrawAction);
+G2O_REGISTER_TYPE(RGBD_DATA, RGBDData);
+G2O_REGISTER_ACTION(RGBDDataDrawAction);

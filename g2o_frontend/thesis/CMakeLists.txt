@@ -9,6 +9,7 @@ ADD_LIBRARY(thesis ${G2O_FRONTEND_LIB_THESIS}
 	SequentialDataQueue.cpp SequentialDataQueue.h
 	SequentialSynchronousDataQueue.cpp SequentialSynchronousDataQueue.h
 	StampedData.cpp StampedData.h
+	RGBDData.cpp RGBDData.h
 	)
 
 SET_TARGET_PROPERTIES(thesis PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_thesis)
