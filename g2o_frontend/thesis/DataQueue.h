@@ -9,6 +9,7 @@
 #define DATAQUEUE_H_
 
 #include "g2o/core/hyper_graph.h"
+#include <queue>
 
 class DataQueue {
 public:
