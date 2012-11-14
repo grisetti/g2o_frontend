@@ -9,23 +9,7 @@
 #define PRIORITYDATAQUEUE_H_
 
 #include "DataQueue.h"
-
-class Stamped {
-public:
-	double _timeStamp;
-};
-
-class StampedData : public g2o::HyperGraph::Data, public Stamped {
-};
-
-class CompareTime {
-public:
-	bool operator()(Stamped* sd1, Stamped* sd2) {
-		if(sd1->_timeStamp >= sd2->_timeStamp)
-			return true;
-		return false;
-	}
-};
+#include "StampedData.h"
 
 class PriorityDataQueue : public DataQueue {
 public:
@@ -36,7 +20,7 @@ public:
 	virtual void pop_front();
 	virtual void insert(g2o::HyperGraph::Data* d);
 protected:
-	std::priority_queue<Stamped*, std::vector<Stamped*>, CompareTime> _queue;
+	std::priority_queue<Stamped*, std::vector<Stamped*>, CompareStamp> _queue;
 };
 
 #endif /* PRIORITYDATAQUEUE_H_ */
