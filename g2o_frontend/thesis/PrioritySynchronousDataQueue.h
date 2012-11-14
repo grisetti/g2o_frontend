@@ -8,11 +8,13 @@
 #ifndef PRIORITYSYNCHRONOUSDATAQUEUE_H_
 #define PRIORITYSYNCHRONOUSDATAQUEUE_H_
 
-class PrioritySynchronousDataQueue {
+#include "PriorityDataQueue.h"
+
+class PrioritySynchronousDataQueue : public PriorityDataQueue {
 public:
 	PrioritySynchronousDataQueue();
 	virtual ~PrioritySynchronousDataQueue();
-	virtual void insert(Data* d);
+	virtual void insert(g2o::HyperGraph::Data* d);
 	//fillme
 };
 

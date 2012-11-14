@@ -8,14 +8,14 @@
 #ifndef DATAQUEUE_H_
 #define DATAQUEUE_H_
 
+#include "g2o/core/hyper_graph.h"
+
 class DataQueue {
 public:
 	DataQueue();
 	virtual ~DataQueue();
-	DataQueue();
-	virtual ~DataQueue();
 	virtual bool empty();
-	virtual Data* front();
+	virtual g2o::HyperGraph::Data* front();
 	virtual void pop_front();
 };
 

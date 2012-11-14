@@ -8,6 +8,8 @@
 #ifndef MUTEXED_H_
 #define MUTEXED_H_
 
+#include <boost/thread/mutex.hpp>
+
 class Mutexed {
 public:
 	Mutexed();

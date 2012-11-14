@@ -8,7 +8,7 @@
 #include "Sensor.h"
 
 Sensor::Sensor() {
-	_parameter = new Parameter();
+
 }
 
 Sensor::~Sensor() {
