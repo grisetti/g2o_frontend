@@ -8,6 +8,9 @@
 #ifndef SENSORHANDLER_H_
 #define SENSORHANDLER_H_
 
+#include "Sensor.h"
+#include "PriorityDataQueue.h"
+
 class SensorHandler {
 public:
 	SensorHandler();

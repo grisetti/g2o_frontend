@@ -8,13 +8,15 @@
 #ifndef SENSOR_H_
 #define SENSOR_H_
 
+#include "g2o/core/parameter.h"
+
 class Sensor {
 public:
 	Sensor();
 	virtual ~Sensor();
-	virtual bool setParameter(Parameter* p);
+	virtual bool setParameter(g2o::Parameter* p);
 protected:
-	Parameter* _parameter;
+	g2o::Parameter* _parameter;
 };
 
 #endif /* SENSOR_H_ */

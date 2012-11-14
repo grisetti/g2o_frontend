@@ -8,11 +8,13 @@
 #ifndef SEQUENTIALDATAQUEUE_H_
 #define SEQUENTIALDATAQUEUE_H_
 
-class SequentialDataQueue {
+#include "DataQueue.h"
+
+class SequentialDataQueue : public DataQueue{
 public:
 	SequentialDataQueue();
 	virtual ~SequentialDataQueue();
-	virtual void push_back(Data* d);
+	virtual void push_back(g2o::HyperGraph::Data* d);
 	//fillme
 };
 
