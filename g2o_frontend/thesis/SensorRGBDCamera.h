@@ -15,6 +15,7 @@ class SensorRGBDCamera : public Sensor {
 public:
 	SensorRGBDCamera();
 	virtual ~SensorRGBDCamera();
+	g2o::Parameter* getParameter() const { return _parameter; }
 	bool setParameter(g2o::Parameter* p);
 };
 

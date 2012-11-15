@@ -51,7 +51,7 @@ struct DepthRegisteredData: public g2o::OptimizableGraph::Data{
   cv::Mat*_depthImage;
  protected:
   std::string _baseFilename;
-  g2o::ParameterStereoCamera* _cameraParams;
+	g2o::ParameterStereoCamera* _cameraParams;
   long int _ts_usec;
   long int _ts_sec;
  private:

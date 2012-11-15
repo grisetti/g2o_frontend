@@ -29,7 +29,7 @@ RGBDData::RGBDData()
 {
   _paramIndex = -1;
   _baseFilename = "none";
-  _cameraParams = 0;
+  _rgbdCameraSensor = 0;
   _ts_sec = 0;
   _ts_usec = 0;
   _intensityImage = 0;
@@ -53,8 +53,8 @@ bool RGBDData::read(std::istream& is)
 //! write the data to a stream
 bool RGBDData::write(std::ostream& os) const 
 {
-  if (_cameraParams)
-    os << _cameraParams->id();
+  if (_rgbdCameraSensor)
+    os << _rgbdCameraSensor->getParameter()->id();
   else
     os << -1;
   os << " " <<  _baseFilename << " ";
@@ -120,27 +120,33 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
     return this;
 
   glPushMatrix();
-  //int step = 1;
-  //if(_beamsDownsampling )
-    //step = _beamsDownsampling->value();
+  int step = 1;
+  if(_beamsDownsampling )
+    step = _beamsDownsampling->value();
   if(_pointSize)
     glPointSize(_pointSize->value());
+  else 
+    glPointSize(1);
   
   RGBDData* that = static_cast<RGBDData*>(element);
   unsigned short* dptr = reinterpret_cast<unsigned short*>(that->_depthImage->data);
 	
   glBegin(GL_POINTS);
   glColor4f(1.f, 0.f, 0.f, 0.5f);
-  static const double fx = 5.758157348632812e+02;
-	static const double fy = 5.758157348632812e+02;
-	static const double center_x = 3.145e+02;
-	static const double center_y = 2.355e+02;
+  
+  g2o::ParameterCamera* param = (g2o::ParameterCamera*)that->getSensor()->getParameter();
+  Eigen::Matrix3d K = param->Kcam();
+  
+  static const double fx = K(0, 0);
+	static const double fy = K(1, 1);
+	static const double center_x = K(0, 2);
+	static const double center_y = K(1, 2);
 	double unit_scaling = 0.001f;
   float constant_x = unit_scaling / fx;
   float constant_y = unit_scaling / fy;
   
   for(int i = 0; i < that->_depthImage->rows; i++)  {
-    for(int j = 0; j < that->_depthImage->cols; j++) {
+    for(int j = 0; j < that->_depthImage->cols; j += step) {
     	unsigned short d = *dptr;
     	if(d != 0)
       {
@@ -151,7 +157,7 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
       	glNormal3f(-x, -y, -z);
     		glVertex3f(x, y, z);
     	}
-    	dptr++;
+    	dptr += step;
     } 
 	}
 	

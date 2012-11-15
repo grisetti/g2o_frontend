@@ -8,7 +8,8 @@
 #include "SensorRGBDCamera.h"
 
 SensorRGBDCamera::SensorRGBDCamera() {
-
+	_parameter = new g2o::ParameterCamera();
+	((g2o::ParameterCamera*)_parameter)->setKcam(5.75, 5.75, 3.14, 2.35);
 }
 
 SensorRGBDCamera::~SensorRGBDCamera() {

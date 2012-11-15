@@ -14,6 +14,7 @@ class Sensor {
 public:
 	Sensor();
 	virtual ~Sensor();
+	virtual g2o::Parameter* getParameter();
 	virtual bool setParameter(g2o::Parameter* p);
 protected:
 	g2o::Parameter* _parameter;

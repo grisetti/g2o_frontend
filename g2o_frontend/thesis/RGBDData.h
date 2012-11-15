@@ -14,8 +14,8 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "g2o/core/hyper_graph.h"
 #include "g2o/core/hyper_graph_action.h"
-#include "g2o/types/slam2d/types_slam2d.h"
 #include "g2o/types/slam3d/types_slam3d.h"
+#include "SensorRGBDCamera.h"
 
 class RGBDData: public g2o::HyperGraph::Data {
 public:  
@@ -29,11 +29,12 @@ public:
   void release();
   const std::string& baseFilename() const { return _baseFilename; };
   void  setBaseFilename(const std::string baseFilename_) { _baseFilename = baseFilename_; };
+  SensorRGBDCamera* getSensor() const { return _rgbdCameraSensor; }
   cv::Mat* _intensityImage;
   cv::Mat* _depthImage;
 protected:
   std::string _baseFilename;
-  g2o::ParameterCamera* _cameraParams;
+  SensorRGBDCamera* _rgbdCameraSensor;
   long int _ts_usec;
   long int _ts_sec;
 private:
