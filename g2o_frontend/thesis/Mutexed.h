@@ -16,7 +16,7 @@ public:
 	virtual ~Mutexed();
 	void lock();
 	void unlock();
-	void isLocked();
+	bool isLocked();
 protected:
 	boost::mutex _mutex;
 };

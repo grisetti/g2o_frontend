@@ -8,7 +8,7 @@
 #include "StampedData.h"
 #include <ros/ros.h>
 #include <ros/time.h>
-#include </opt/ros/fuerte/stacks/geometry/tf/include/tf/tf.h>	// CREATE A ROS PACKAGE!!!
+// #include </opt/ros/fuerte/stacks/geometry/tf/include/tf/tf.h>	// CREATE A ROS PACKAGE!!!
 #include <iostream>
 #include <fstream>
 

@@ -23,7 +23,7 @@ void Mutexed::unlock(){
   this->_mutex.unlock();
 }
 
-void Mutexed::isLocked(){
+bool Mutexed::isLocked(){
   bool getLock = this->_mutex.try_lock();
   if(getLock){
     this->_mutex.unlock();

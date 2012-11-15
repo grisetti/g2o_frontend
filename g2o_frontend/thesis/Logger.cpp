@@ -25,10 +25,10 @@ void queueProcessing(PrioritySynchronousDataQueue * queue, std::string output_fi
   StampedData * data;
   std::ofstream fout(output_filename.c_str());
   while(true){
-    data = queue->front();
+    data = (StampedData *)queue->front();
     if(data){	// queue is not empty
       if(data->timeStamp() < ros::Time::now().toSec() - ANCIENT_ENOUGH){	// data is old enough
-	data = queue->front_and_pop();
+	data = (StampedData *)queue->front_and_pop();
 	if(!data){continue;}	// someone else took away all the datas, go back to "while(true)"
 	
 	// get the trasformation at the data timestamp
