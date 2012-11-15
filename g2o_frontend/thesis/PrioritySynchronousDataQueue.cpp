@@ -16,31 +16,42 @@ PrioritySynchronousDataQueue::~PrioritySynchronousDataQueue() {
 }
 
 bool PrioritySynchronousDataQueue::empty() {
-	_mutex.lock();
+	this->lock();
 	bool isEmpty = _queue.empty();
-	_mutex.unlock();
+	this->unlock();
 	return(isEmpty);
 }
 
 g2o::HyperGraph::Data* PrioritySynchronousDataQueue::front() {
 	StampedData* dataPtr = 0;
 	{
-		_mutex.lock();
+		this->lock();
 		if(!_queue.empty())
 			dataPtr = (StampedData*)_queue.top();
-		_mutex.unlock();
+		this->unlock();
 	}
 	return(dataPtr);
 }
 
 void PrioritySynchronousDataQueue::pop_front() {
-	_mutex.lock();
+	this->lock();
 	_queue.pop();
-	_mutex.unlock();
+	this->unlock();
+}
+
+g2o::HyperGraph::Data* PrioritySynchronousDataQueue::front_and_pop() {
+  StampedData* dataPtr = 0;
+  this->lock();
+  if(!_queue.empty()){
+    dataPtr = (StampedData*)_queue.top();
+    _queue.pop();
+  }
+  this->unlock();
+  return dataPtr;
 }
 
 void PrioritySynchronousDataQueue::insert(g2o::HyperGraph::Data* d) {
-	_mutex.lock();
+	this->lock();
 	_queue.push((StampedData*)d);
-	_mutex.unlock();
+	this->unlock();
 }

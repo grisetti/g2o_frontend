@@ -16,31 +16,31 @@ SequentialSynchronousDataQueue::~SequentialSynchronousDataQueue() {
 }
 
 bool SequentialSynchronousDataQueue::empty() {
-	_mutex.lock();
+	this->lock();
 	bool isEmpty = _queue.empty();
-	_mutex.unlock();
+	this->unlock();
 	return(isEmpty);
 }
 
 g2o::HyperGraph::Data* SequentialSynchronousDataQueue::front() {
 	g2o::HyperGraph::Data* dataPtr = 0;
 	{
-		_mutex.lock();
+		this->lock();
 		if(!_queue.empty())
 			dataPtr = _queue.front();
-		_mutex.unlock();
+		this->unlock();
 	}
 	return(dataPtr);
 }
 
 void SequentialSynchronousDataQueue::pop_front() {
-	_mutex.lock();
+	this->lock();
 	_queue.pop();
-	_mutex.unlock();
+	this->unlock();
 }
 
 void SequentialSynchronousDataQueue::push_back(g2o::HyperGraph::Data* d) {
-	_mutex.lock();
+	this->lock();
 	_queue.push(d);
-	_mutex.unlock();
+	this->unlock();
 }
