@@ -127,10 +127,10 @@ HyperGraphElementAction* DepthRegisteredDataDrawAction::operator()(HyperGraph::H
 	
   glBegin(GL_POINTS);
   glColor4f(1.f, 0.f, 0.f, 0.5f);
-  static const double fx = 5.758157348632812e+02;
-	static const double fy = 5.758157348632812e+02;
-	static const double center_x = 3.145e+02;
-	static const double center_y = 2.355e+02;
+  static const double fx = 5.25e+02;
+	static const double fy = 5.25e+02;
+	static const double center_x = 3.195e+02;
+	static const double center_y = 2.395e+02;
 	double unit_scaling = 0.001f;
   float constant_x = unit_scaling / fx;
   float constant_y = unit_scaling / fy;

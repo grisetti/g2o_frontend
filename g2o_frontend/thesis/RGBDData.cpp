@@ -105,7 +105,7 @@ bool RGBDDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction::Parameters
 }
 
 HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphElement* element, 
-							      																								HyperGraphElementAction::Parameters* params_)
+																HyperGraphElementAction::Parameters* params_)
 {
   if(typeid(*element).name()!=_typeName)
     return 0;

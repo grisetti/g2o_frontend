@@ -8,13 +8,16 @@
 #include "Sensor.h"
 
 Sensor::Sensor() {
-	_frame = "";
 }
 
-Sensor::Sensor(std::string frame_) {
+Sensor::Sensor(std::string* frame_) {
 	_frame = frame_;
 }
 
 Sensor::~Sensor() {
 
+}
+
+void Sensor::setFrame( std::string* frame_) {
+	_frame = frame_;
 }

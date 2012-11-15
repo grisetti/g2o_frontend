@@ -14,8 +14,8 @@ class Stamped {
 public:
 	Stamped() : _timeStamp(-1.) {};
 	Stamped(double timeStamp_) { _timeStamp = timeStamp_; };
-	double timeStamp() const { return _timeStamp; }
-  void setTimestamp(double ts);
+	inline double timeStamp() const { return _timeStamp; }
+	void setTimestamp(double ts);
 protected:	
 	double _timeStamp;
 };

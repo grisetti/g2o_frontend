@@ -9,17 +9,17 @@
 
 SensorRGBDCamera::SensorRGBDCamera() {
 	_parameter = new g2o::ParameterCamera();
-	((g2o::ParameterCamera*)_parameter)->setKcam(5.75, 5.75, 3.14, 2.35);
+	((g2o::ParameterCamera*)_parameter)->setKcam(5.25, 5.25, 3.195, 2.395);
 }
 
 SensorRGBDCamera::~SensorRGBDCamera() {
 
 }
 
-bool SensorRGBDCamera::setParameter(g2o::Parameter* p) {
-	g2o::ParameterCamera* camParam = dynamic_cast<g2o::ParameterCamera*>(p);
+bool SensorRGBDCamera::setParameter(g2o::Parameter* parameter_) {
+	g2o::ParameterCamera* camParam = dynamic_cast<g2o::ParameterCamera*>(parameter_);
 	if (camParam == 0)
 		return false;
-	_parameter = p;
+	_parameter = parameter_;
 	return true;
 }

@@ -9,18 +9,23 @@
 #define SENSOR_H_
 
 #include "g2o/core/parameter.h"
+#include <list>
 
 class Sensor {
 public:
 	Sensor();
-	Sensor(std::string frame_);
+	Sensor(std::string* frame_);
 	virtual ~Sensor();
 	virtual g2o::Parameter* getParameter();
-	virtual bool setParameter(g2o::Parameter* p);
-	std::string getFrame() { return _frame; };
+	std::string* getFrame() { return _frame; };
+	virtual bool setParameter(g2o::Parameter* parameter_);
+	void setFrame( std::string* frame_);
+	
+	
+	
 protected:
 	g2o::Parameter* _parameter;
-	std::string _frame;
+	std::string* _frame;
 };
 
 #endif /* SENSOR_H_ */

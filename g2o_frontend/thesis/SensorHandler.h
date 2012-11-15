@@ -14,7 +14,16 @@
 class SensorHandler {
 public:
 	SensorHandler();
+	SensorHandler(Sensor* sensor_);
+	
 	virtual ~SensorHandler();
+	virtual Sensor getSensor();
+	virtual bool setQueue(PriorityDataQueue* queue_);
+	virtual bool setSensor();
+	virtual bool calibrateSensor();
+	virtual void registerCallback();
+	virtual void unregisterCallback();
+	
 protected:
 	Sensor* _sensor;
 	PriorityDataQueue* _queue;
