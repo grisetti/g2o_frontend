@@ -13,11 +13,14 @@
 class Sensor {
 public:
 	Sensor();
+	Sensor(std::string frame_);
 	virtual ~Sensor();
 	virtual g2o::Parameter* getParameter();
 	virtual bool setParameter(g2o::Parameter* p);
+	std::string getFrame() { return _frame; };
 protected:
 	g2o::Parameter* _parameter;
+	std::string _frame;
 };
 
 #endif /* SENSOR_H_ */
