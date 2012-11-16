@@ -34,18 +34,18 @@ private:
 	int _paramIndex;
 };
 
-//	#ifdef G2O_HAVE_OPENGL
-//
-//	class OmnicamDataDrawAction : public g2o::DrawAction{
-//	public:
-//	  OmnicamDataDrawAction() : DrawAction(typeid(OmnicamData).name()) {};
-//	  virtual HyperGraphElementAction* operator()(g2o::HyperGraph::HyperGraphElement* element,
-//	  	g2o::HyperGraphElementAction::Parameters* params_ );
-//	protected:
-//	  virtual bool refreshPropertyPtrs(g2o::HyperGraphElementAction::Parameters* params_);
-//	  g2o::FloatProperty* _pointSize;
-//	};
-//
-//	#endif	// endif G2O_HAVE_OPENGL
+	#ifdef G2O_HAVE_OPENGL
+
+	class OmnicamDataDrawAction : public g2o::DrawAction{
+	public:
+	  OmnicamDataDrawAction() : DrawAction(typeid(OmnicamData).name()) {};
+	  virtual HyperGraphElementAction* operator()(g2o::HyperGraph::HyperGraphElement* element,
+	  	g2o::HyperGraphElementAction::Parameters* params_ );
+	protected:
+	  virtual bool refreshPropertyPtrs(g2o::HyperGraphElementAction::Parameters* params_);
+	  g2o::FloatProperty* _pointSize;
+	};
+
+	#endif	// endif G2O_HAVE_OPENGL
 
 #endif	// endif OMNICAMDATA_H
