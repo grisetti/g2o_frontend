@@ -24,7 +24,7 @@ bool SensorRGBDCamera::setParameter(g2o::Parameter* parameter_) {
 	return true;
 }
 
-void SensorRGBDCamera::setTopics(string* intensityTopic_, string* depthTopic_) {
+void SensorRGBDCamera::setTopics(string intensityTopic_, string depthTopic_) {
 	_intensityTopic = intensityTopic_;
 	_depthTopic = depthTopic_;
 }
