@@ -20,7 +20,7 @@ bool PriorityDataQueue::empty() {
 }
 
 g2o::HyperGraph::Data* PriorityDataQueue::front() {
-		return((StampedData*)_queue.top());
+		return((SensorData*)_queue.top());
 }
 
 void PriorityDataQueue::pop_front() {
@@ -28,5 +28,5 @@ void PriorityDataQueue::pop_front() {
 }
 
 void PriorityDataQueue::insert(g2o::HyperGraph::Data* d) {
-	_queue.push((StampedData*)d);
+	_queue.push((SensorData*)d);
 }

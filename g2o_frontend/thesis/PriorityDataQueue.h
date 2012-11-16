@@ -9,7 +9,7 @@
 #define PRIORITYDATAQUEUE_H_
 
 #include "DataQueue.h"
-#include "StampedData.h"
+#include "SensorData.h"
 
 class PriorityDataQueue : public DataQueue {
 public:

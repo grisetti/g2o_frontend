@@ -21,6 +21,7 @@ public:
 	virtual bool setSensor();
 	virtual bool calibrateSensor();
 	virtual void registerCallback();
+	virtual bool writeOut() const = 0;
 	
 protected:
 	Sensor* _sensor;

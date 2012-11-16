@@ -19,8 +19,11 @@ public:
 	virtual ~Sensor();
 	virtual g2o::Parameter* getParameter();
 	virtual bool setParameter(g2o::Parameter* parameter_);
+	int getNum() { return _num; };
+	void setNum(int num_);
 protected:
 	g2o::Parameter* _parameter;
+	int _num;
 };
 
 #endif /* SENSOR_H_ */

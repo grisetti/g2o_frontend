@@ -25,7 +25,7 @@ OmnicamData::OmnicamData(){
 	_image = 0;
 }
 
-OmnicamData::OmnicamData(double timestamp_) : StampedData(timestamp_){
+OmnicamData::OmnicamData(double timestamp_) : SensorData(timestamp_){
   _paramIndex = -1;
   _baseFilename = "none";
   _cameraParams = 0;
@@ -62,6 +62,11 @@ bool OmnicamData::write(std::ostream& os) const {
 		// write the constraints
 		os << "EDGE_BEARING_SE2_XY " << firstId << " " << firstId+i+1 << " " << _observations[i] << " " << 200;
 	}
+	return false;
+}
+
+bool OmnicamData::writeOut() const
+{
 	return false;
 }
 

@@ -8,7 +8,7 @@ ADD_LIBRARY(thesis ${G2O_FRONTEND_LIB_THESIS}
 	SensorRGBDCamera.cpp SensorRGBDCamera.h
 	SequentialDataQueue.cpp SequentialDataQueue.h
 	SequentialSynchronousDataQueue.cpp SequentialSynchronousDataQueue.h
-	StampedData.cpp StampedData.h
+	SensorData.cpp SensorData.h
 	RGBDData.cpp RGBDData.h
 	OmnicamData.cpp OmnicamData.h
 	)
