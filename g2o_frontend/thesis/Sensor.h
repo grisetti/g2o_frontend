@@ -11,21 +11,26 @@
 #include "g2o/core/parameter.h"
 #include <list>
 
+using namespace std;
+
 class Sensor {
 public:
 	Sensor();
-	Sensor(std::string* frame_);
+	Sensor(string* frameFrom_, string* frameTo_);
 	virtual ~Sensor();
 	virtual g2o::Parameter* getParameter();
-	std::string* getFrame() { return _frame; };
+	string* getFrameFrom() { return _frameFrom; };
 	virtual bool setParameter(g2o::Parameter* parameter_);
-	void setFrame( std::string* frame_);
+	void setFrameFrom( string* frameFrom_);
+	string* getFrameTo() { return _frameTo; };
+	void setFrameTo( string* frameTo_);
 	
 	
 	
 protected:
 	g2o::Parameter* _parameter;
-	std::string* _frame;
+	string* _frameFrom;
+	string* _frameTo;
 };
 
 #endif /* SENSOR_H_ */

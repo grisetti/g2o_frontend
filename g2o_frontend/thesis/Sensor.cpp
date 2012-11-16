@@ -10,14 +10,19 @@
 Sensor::Sensor() {
 }
 
-Sensor::Sensor(std::string* frame_) {
-	_frame = frame_;
+Sensor::Sensor(string* frameFrom_, string* framTo_) {
+	_frameFrom = frameFrom_;
+	_frameTo = framTo_;
 }
 
 Sensor::~Sensor() {
 
 }
 
-void Sensor::setFrame( std::string* frame_) {
-	_frame = frame_;
+void Sensor::setFrameFrom( string* frameFrom_) {
+	_frameFrom = frameFrom_;
+}
+
+void Sensor::setFrameTo(string* frameTo_) {
+	_frameTo = frameTo_;
 }
