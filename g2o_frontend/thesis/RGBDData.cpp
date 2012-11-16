@@ -36,6 +36,16 @@ RGBDData::RGBDData()
   _depthImage = 0;
 }
 
+RGBDData::RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_) {
+	_paramIndex = -1;
+  _baseFilename = "none";
+  _rgbdCameraSensor = 0;
+  _ts_sec = 0;
+  _ts_usec = 0;
+  _intensityImage = intensityImage_;
+  _depthImage = depthImage_;
+}
+
 RGBDData::~RGBDData(){}
 
 //! read the data from a stream

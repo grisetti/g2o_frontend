@@ -16,21 +16,11 @@ using namespace std;
 class Sensor {
 public:
 	Sensor();
-	Sensor(string* frameFrom_, string* frameTo_);
 	virtual ~Sensor();
 	virtual g2o::Parameter* getParameter();
-	string* getFrameFrom() { return _frameFrom; };
 	virtual bool setParameter(g2o::Parameter* parameter_);
-	void setFrameFrom( string* frameFrom_);
-	string* getFrameTo() { return _frameTo; };
-	void setFrameTo( string* frameTo_);
-	
-	
-	
 protected:
 	g2o::Parameter* _parameter;
-	string* _frameFrom;
-	string* _frameTo;
 };
 
 #endif /* SENSOR_H_ */

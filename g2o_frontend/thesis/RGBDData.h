@@ -13,13 +13,14 @@
 
 #include "opencv2/highgui/highgui.hpp"
 #include "g2o/core/hyper_graph.h"
-#include "g2o/core/hyper_graph_action.h"
+#include "g2o_frontend/thesis/StampedData.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "SensorRGBDCamera.h"
 
-class RGBDData: public g2o::HyperGraph::Data {
+class RGBDData: public StampedData {
 public:  
   RGBDData();
+  RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_);
   virtual ~RGBDData();
   //! read the data from a stream
   virtual bool read(std::istream& is);

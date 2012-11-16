@@ -24,6 +24,10 @@ class StampedData : public g2o::HyperGraph::Data, public Stamped {
 public:
 	StampedData() : g2o::HyperGraph::Data(), Stamped() {};
 	StampedData (double timeStamp) : g2o::HyperGraph::Data(), Stamped(timeStamp) {};
+	//! read the data from a stream
+	virtual bool read(std::istream& is) = 0;
+	//! write the data to a stream
+	virtual bool write(std::ostream& os) const = 0;	
 	virtual ~StampedData();
 };
 
