@@ -1,4 +1,11 @@
-#include "depth_registered_data.h"
+/*
+ * RGBDData.cpp
+ *
+ *  Created on: Nov 14, 2012
+ *      Author: jacopo
+ */
+
+#include "RGBDData.h"
 #include <fstream>
 #include "g2o/stuff/macros.h"
 #include "g2o/core/factory.h"
@@ -18,20 +25,31 @@
 using namespace g2o;
 using namespace std;
 
-DepthRegisteredData::DepthRegisteredData()
+RGBDData::RGBDData()
 {
   _paramIndex = -1;
   _baseFilename = "none";
-  _cameraParams = 0;
+  _rgbdCameraSensor = 0;
   _ts_sec = 0;
   _ts_usec = 0;
   _intensityImage = 0;
   _depthImage = 0;
 }
 
-DepthRegisteredData::~DepthRegisteredData(){}
+RGBDData::RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_) {
+	_paramIndex = -1;
+  _baseFilename = "none";
+  _rgbdCameraSensor = 0;
+  _ts_sec = 0;
+  _ts_usec = 0;
+  _intensityImage = intensityImage_;
+  _depthImage = depthImage_;
+}
 
-bool DepthRegisteredData::read(std::istream& is) 
+RGBDData::~RGBDData(){}
+
+//! read the data from a stream
+bool RGBDData::read(std::istream& is) 
 {
   int _paramIndex;
   is >> _paramIndex >> _baseFilename;
@@ -43,10 +61,10 @@ bool DepthRegisteredData::read(std::istream& is)
 }
 
 //! write the data to a stream
-bool DepthRegisteredData::write(std::ostream& os) const 
+bool RGBDData::write(std::ostream& os) const 
 {
-  if(_cameraParams)
-    os << _cameraParams->id();
+  if (_rgbdCameraSensor)
+    os << _rgbdCameraSensor->getParameter()->id();
   else
     os << -1;
   os << " " <<  _baseFilename << " ";
@@ -54,9 +72,25 @@ bool DepthRegisteredData::write(std::ostream& os) const
   return true;
 }
 
-void DepthRegisteredData::update()
+bool RGBDData::writeOut() const
 {
-  if(!_intensityImage) 
+	char name[8];
+	int num = _rgbdCameraSensor->getNum();
+	
+	sprintf(name, "%05d", num);
+	char buf[100];
+	sprintf(buf, "%05d_intensity.pgm", num);
+	cv::imwrite(buf, *_intensityImage);
+	sprintf(buf, "%05d_depth.pgm", num);
+	cv::imwrite(buf, *_depthImage);
+	cout << "Saved frame #" << num << endl;
+	
+	return true;
+}
+
+void RGBDData::update()
+{
+  if (!_intensityImage) 
   {
     _intensityImage = new cv::Mat();
     _depthImage = new cv::Mat();
@@ -65,29 +99,25 @@ void DepthRegisteredData::update()
   }
 }
 
-void DepthRegisteredData::release()
+void RGBDData::release()
 {
-  if(_intensityImage) 
+  if (_intensityImage) 
   {
     delete _intensityImage;
     _intensityImage = 0;
   }
-  if(_depthImage) 
+  if (_depthImage) 
   {
     delete _depthImage;
     _depthImage = 0;
   }
 }
 
-DepthRegisteredDataDrawAction::DepthRegisteredDataDrawAction(): DrawAction(typeid(DepthRegisteredData).name())
+bool RGBDDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction::Parameters* params_)
 {
-}
-
-bool DepthRegisteredDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction::Parameters* params_)
-{
-  if(!DrawAction::refreshPropertyPtrs(params_))
+  if (!DrawAction::refreshPropertyPtrs(params_))
     return false;
-  if(_previousParams)
+  if (_previousParams)
   {
     _beamsDownsampling = _previousParams->makeProperty<IntProperty>(_typeName + "::BEAMS_DOWNSAMPLING", 20);
     _pointSize = _previousParams->makeProperty<FloatProperty>(_typeName + "::POINT_SIZE", .05f);
@@ -95,48 +125,54 @@ bool DepthRegisteredDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction:
   else 
   {
     _beamsDownsampling = 0;
-    _pointSize= 0;
+    _pointSize = 0;
   }
   return true;
 }
 
-HyperGraphElementAction* DepthRegisteredDataDrawAction::operator()(HyperGraph::HyperGraphElement* element, 
-							      HyperGraphElementAction::Parameters* params_)
+HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphElement* element, 
+																HyperGraphElementAction::Parameters* params_)
 {
   if(typeid(*element).name()!=_typeName)
     return 0;
   
   refreshPropertyPtrs(params_);
-  if(! _previousParams)
+  if (!_previousParams)
   {
     return this;
   }
 
-  if(_show && !_show->value())
+  if (_show && !_show->value())
     return this;
 
   glPushMatrix();
-  //int step = 1;
-  //if(_beamsDownsampling )
-    //step = _beamsDownsampling->value();
+  int step = 1;
+  if(_beamsDownsampling )
+    step = _beamsDownsampling->value();
   if(_pointSize)
     glPointSize(_pointSize->value());
+  else 
+    glPointSize(1);
   
-  DepthRegisteredData* that = static_cast<DepthRegisteredData*>(element);
-  unsigned short* dptr=reinterpret_cast<unsigned short*>(that->_depthImage->data);
+  RGBDData* that = static_cast<RGBDData*>(element);
+  unsigned short* dptr = reinterpret_cast<unsigned short*>(that->_depthImage->data);
 	
   glBegin(GL_POINTS);
   glColor4f(1.f, 0.f, 0.f, 0.5f);
-  static const double fx = 5.25e+02;
-	static const double fy = 5.25e+02;
-	static const double center_x = 3.195e+02;
-	static const double center_y = 2.395e+02;
+  
+  g2o::ParameterCamera* param = (g2o::ParameterCamera*)that->getSensor()->getParameter();
+  Eigen::Matrix3d K = param->Kcam();
+  
+  static const double fx = K(0, 0);
+	static const double fy = K(1, 1);
+	static const double center_x = K(0, 2);
+	static const double center_y = K(1, 2);
 	double unit_scaling = 0.001f;
   float constant_x = unit_scaling / fx;
   float constant_y = unit_scaling / fy;
   
   for(int i = 0; i < that->_depthImage->rows; i++)  {
-    for(int j = 0; j < that->_depthImage->cols; j++) {
+    for(int j = 0; j < that->_depthImage->cols; j += step) {
     	unsigned short d = *dptr;
     	if(d != 0)
       {
@@ -147,7 +183,7 @@ HyperGraphElementAction* DepthRegisteredDataDrawAction::operator()(HyperGraph::H
       	glNormal3f(-x, -y, -z);
     		glVertex3f(x, y, z);
     	}
-    	dptr++;
+    	dptr += step;
     } 
 	}
 	
@@ -156,5 +192,5 @@ HyperGraphElementAction* DepthRegisteredDataDrawAction::operator()(HyperGraph::H
   return this;
 }
 
-G2O_REGISTER_TYPE(DATA_DEPTH_REGISTERED, DepthRegisteredData);
-G2O_REGISTER_ACTION(DepthRegisteredDataDrawAction);
+G2O_REGISTER_TYPE(RGBD_DATA, RGBDData);
+G2O_REGISTER_ACTION(RGBDDataDrawAction);
