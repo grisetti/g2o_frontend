@@ -23,6 +23,7 @@ OmnicamData::OmnicamData(){
 	_baseFilename = "none";
 	_cameraParams = 0;
 	_image = 0;
+	_sensorNumber = 0;
 }
 
 OmnicamData::OmnicamData(double timestamp_) : StampedData(timestamp_){
@@ -30,6 +31,7 @@ OmnicamData::OmnicamData(double timestamp_) : StampedData(timestamp_){
   _baseFilename = "none";
   _cameraParams = 0;
   _image = 0;
+  _sensorNumber = 0;
 }
 
 OmnicamData::~OmnicamData(){
@@ -48,34 +50,9 @@ bool OmnicamData::read(std::istream& is) {
 
 //! write the data to a stream
 bool OmnicamData::write(std::ostream& os) const {
-	int firstId = _nextId;
-	// write the robot pose vertex
-	os << "VERTEX_SE2 " << firstId << " " << _pose[0] << " " << _pose[1] << " " << _pose[2] << std::endl;
+	os << "OMNICAM_DATA " << _sensorNumber << " " << _baseFilename
 	
-	// for every landmark seen from here
-	for(unsigned int i=0; i<_observations.size(); i++){
-		// write the landmark position
-		os << "VERTEX_XY " << firstId+i+1;
-		_observed_landmarks[i].write(os);
-		os << std::endl;
-		
-		// write the constraints
-		os << "EDGE_BEARING_SE2_XY " << firstId << " " << firstId+i+1 << " " << _observations[i] << " " << 200;
-	}
-	return false;
-}
-
-// set the odometry
-void OmnicamData::setPose(double x, double y, double theta){
-	_pose[0] = x;
-	_pose[1] = y;
-	_pose[2] = theta;
-}
-
-// add a constraint
-void OmnicamData::addObservation(double bearing, g2o::VertexPointXY landmark){
-	_observations.push_back(bearing);
-	_observed_landmarks.push_back(landmark);
+	return true;
 }
 
 G2O_REGISTER_TYPE(OMNICAM_DATA, OmnicamData);
