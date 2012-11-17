@@ -11,10 +11,6 @@ PrioritySynchronousDataQueue::PrioritySynchronousDataQueue() {
 
 }
 
-PrioritySynchronousDataQueue::~PrioritySynchronousDataQueue() {
-
-}
-
 bool PrioritySynchronousDataQueue::empty() {
 	this->lock();
 	bool isEmpty = _queue.empty();
@@ -23,11 +19,11 @@ bool PrioritySynchronousDataQueue::empty() {
 }
 
 g2o::HyperGraph::Data* PrioritySynchronousDataQueue::front() {
-	StampedData* dataPtr = 0;
+	SensorData* dataPtr = 0;
 	{
 		this->lock();
 		if(!_queue.empty())
-			dataPtr = (StampedData*)_queue.top();
+			dataPtr = (SensorData*)_queue.top();
 		this->unlock();
 	}
 	return(dataPtr);
@@ -40,10 +36,10 @@ void PrioritySynchronousDataQueue::pop_front() {
 }
 
 g2o::HyperGraph::Data* PrioritySynchronousDataQueue::front_and_pop() {
-  StampedData* dataPtr = 0;
+  SensorData* dataPtr = 0;
   this->lock();
   if(!_queue.empty()){
-    dataPtr = (StampedData*)_queue.top();
+    dataPtr = (SensorData*)_queue.top();
     _queue.pop();
   }
   this->unlock();
@@ -52,6 +48,6 @@ g2o::HyperGraph::Data* PrioritySynchronousDataQueue::front_and_pop() {
 
 void PrioritySynchronousDataQueue::insert(g2o::HyperGraph::Data* d) {
 	this->lock();
-	_queue.push((StampedData*)d);
+	_queue.push((SensorData*)d);
 	this->unlock();
 }

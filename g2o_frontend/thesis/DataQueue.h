@@ -14,10 +14,9 @@
 class DataQueue {
 public:
 	DataQueue();
-	virtual ~DataQueue();
-	virtual bool empty();
-	virtual g2o::HyperGraph::Data* front();
-	virtual void pop_front();
+	virtual bool empty() = 0;
+	virtual g2o::HyperGraph::Data* front() = 0;
+	virtual void pop_front() = 0;
 };
 
 #endif /* DATAQUEUE_H_ */

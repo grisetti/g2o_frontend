@@ -13,11 +13,11 @@
 
 #include "opencv2/highgui/highgui.hpp"
 #include "g2o/core/hyper_graph.h"
-#include "g2o_frontend/thesis/StampedData.h"
+#include "g2o_frontend/thesis/SensorData.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "SensorRGBDCamera.h"
 
-class RGBDData: public StampedData {
+class RGBDData: public SensorData {
 public:  
   RGBDData();
   RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_);
@@ -26,6 +26,7 @@ public:
   virtual bool read(std::istream& is);
   //! write the data to a stream
   virtual bool write(std::ostream& os) const;
+  virtual bool writeOut() const;
   void update();
   void release();
   const std::string& baseFilename() const { return _baseFilename; };

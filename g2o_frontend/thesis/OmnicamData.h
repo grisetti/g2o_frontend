@@ -1,14 +1,14 @@
 #ifndef OMNICAMDATA_H
 #define OMNICAMDATA_H
 
-#include "StampedData.h"
+#include "SensorData.h"
 #include "g2o/core/hyper_graph.h"
 #include "g2o/core/hyper_graph_action.h"
 #include "g2o/types/slam2d/types_slam2d.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "opencv2/highgui/highgui.hpp"
 
-class OmnicamData : public StampedData{
+class OmnicamData : public SensorData{
 public:
 	OmnicamData();
 	OmnicamData(double timestamp_);
@@ -17,6 +17,7 @@ public:
 	virtual bool read(std::istream& is);
 	//! write the data to a stream
 	virtual bool write(std::ostream& os) const;
+	virtual bool writeOut() const;
 	const std::string& baseFilename() const { return _baseFilename; };
 	void  setBaseFilename(const std::string baseFilename_) { _baseFilename = baseFilename_; };
 	cv::Mat* _image;

@@ -9,12 +9,11 @@
 #define PRIORITYDATAQUEUE_H_
 
 #include "DataQueue.h"
-#include "StampedData.h"
+#include "SensorData.h"
 
 class PriorityDataQueue : public DataQueue {
 public:
 	PriorityDataQueue();
-	virtual ~PriorityDataQueue();
 	virtual bool empty();
 	virtual g2o::HyperGraph::Data* front();
 	virtual void pop_front();

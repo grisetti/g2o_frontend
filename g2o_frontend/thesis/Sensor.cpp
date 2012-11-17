@@ -8,9 +8,18 @@
 #include "Sensor.h"
 
 Sensor::Sensor() {
-
+	_num = 0;
 }
 
-Sensor::~Sensor() {
+g2o::Parameter* Sensor::getParameter() { 
+	return _parameter; 
+}
+	
+bool Sensor::setParameter(g2o::Parameter* parameter_) { 
+	_parameter = parameter_;
+	return true; 
+}
 
+void Sensor::setNum(int num_) {
+	_num = num_;
 }

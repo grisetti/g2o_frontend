@@ -14,7 +14,6 @@
 class SequentialSynchronousDataQueue : public SequentialDataQueue, public Mutexed {
 public:
 	SequentialSynchronousDataQueue();
-	~SequentialSynchronousDataQueue();
 	bool empty();
 	g2o::HyperGraph::Data* front();
 	void pop_front();

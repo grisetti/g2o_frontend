@@ -72,6 +72,22 @@ bool RGBDData::write(std::ostream& os) const
   return true;
 }
 
+bool RGBDData::writeOut() const
+{
+	char name[8];
+	int num = _rgbdCameraSensor->getNum();
+	
+	sprintf(name, "%05d", num);
+	char buf[100];
+	sprintf(buf, "%05d_intensity.pgm", num);
+	cv::imwrite(buf, *_intensityImage);
+	sprintf(buf, "%05d_depth.pgm", num);
+	cv::imwrite(buf, *_depthImage);
+	cout << "Saved frame #" << num << endl;
+	
+	return true;
+}
+
 void RGBDData::update()
 {
   if (!_intensityImage) 

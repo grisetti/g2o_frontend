@@ -26,7 +26,7 @@ OmnicamData::OmnicamData(){
 	_sensorNumber = 0;
 }
 
-OmnicamData::OmnicamData(double timestamp_) : StampedData(timestamp_){
+OmnicamData::OmnicamData(double timestamp_) : SensorData(timestamp_){
   _paramIndex = -1;
   _baseFilename = "none";
   _cameraParams = 0;
@@ -50,9 +50,7 @@ bool OmnicamData::read(std::istream& is) {
 
 //! write the data to a stream
 bool OmnicamData::write(std::ostream& os) const {
-	os << "OMNICAM_DATA " << _sensorNumber << " " << _baseFilename
-	
-	return true;
+	os << "OMNICAM_DATA " << _sensorNumber << " " << _baseFilename;
 }
 
 G2O_REGISTER_TYPE(OMNICAM_DATA, OmnicamData);
