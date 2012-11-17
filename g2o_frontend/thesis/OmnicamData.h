@@ -21,10 +21,16 @@ public:
 	const std::string& baseFilename() const { return _baseFilename; };
 	void  setBaseFilename(const std::string baseFilename_) { _baseFilename = baseFilename_; };
 	cv::Mat* _image;
+	void setSensorNumber(int sensorNumber_);
+	void setAcquisitionNumber(int acquisitionNumber_);
+	void setImage(cv::Mat* image_);
 protected:
 	std::string _baseFilename;		// name of the image file associated with this data
 	g2o::ParameterCamera* _cameraParams;	// pointer to the camera parametres
 private:
+	void computeFileName();
+	std::string _filename;
+	int _acquisitionNumber;
 	int _sensorNumber;
 	int _paramIndex;
 };
