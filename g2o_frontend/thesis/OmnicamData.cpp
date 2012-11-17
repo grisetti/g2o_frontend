@@ -54,5 +54,14 @@ bool OmnicamData::write(std::ostream& os) const {
 	return true;
 }
 
+//! saves the image on a file
+bool OmnicamData::writeOut() const
+{
+  // save the image
+  return true;
+}
+
+
+
 G2O_REGISTER_TYPE(OMNICAM_DATA, OmnicamData);
 //G2O_REGISTER_ACTION(OMNICAMDataDrawAction);
