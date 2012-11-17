@@ -51,6 +51,7 @@ bool OmnicamData::read(std::istream& is) {
 //! write the data to a stream
 bool OmnicamData::write(std::ostream& os) const {
 	os << "OMNICAM_DATA " << _sensorNumber << " " << _baseFilename;
+	return true;
 }
 
 G2O_REGISTER_TYPE(OMNICAM_DATA, OmnicamData);
