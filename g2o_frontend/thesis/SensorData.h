@@ -5,8 +5,8 @@
  *      Author: jacopo
  */
 
-#ifndef STAMPEDDATA_H_
-#define STAMPEDDATA_H_
+#ifndef SENSORDATA_H_
+#define SENSORDATA_H_
 
 #include "g2o/core/hyper_graph.h"
 
@@ -29,8 +29,6 @@ public:
 	//! write the data to a stream
 	virtual bool write(std::ostream& os) const = 0;
 	virtual bool writeOut() const = 0;
-	virtual void setBaseFilename(const std::string baseFilename_);
-	virtual ~SensorData();
 };
 
 class CompareStamp {
@@ -42,4 +40,4 @@ public:
 	}
 };
 
-#endif /* STAMPEDDATA_H_ */
+#endif /* SENSORDATA_H_ */

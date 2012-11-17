@@ -78,8 +78,6 @@ bool RGBDData::writeOut() const
 	int num = _rgbdCameraSensor->getNum();
 	
 	sprintf(name, "%05d", num);
-// 	_baseFilename = (std::string)name;
-	
 	char buf[100];
 	sprintf(buf, "%05d_intensity.pgm", num);
 	cv::imwrite(buf, *_intensityImage);

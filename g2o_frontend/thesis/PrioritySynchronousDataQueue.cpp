@@ -11,10 +11,6 @@ PrioritySynchronousDataQueue::PrioritySynchronousDataQueue() {
 
 }
 
-PrioritySynchronousDataQueue::~PrioritySynchronousDataQueue() {
-
-}
-
 bool PrioritySynchronousDataQueue::empty() {
 	this->lock();
 	bool isEmpty = _queue.empty();

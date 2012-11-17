@@ -11,10 +11,6 @@ SequentialSynchronousDataQueue::SequentialSynchronousDataQueue() {
 
 }
 
-SequentialSynchronousDataQueue::~SequentialSynchronousDataQueue() {
-
-}
-
 bool SequentialSynchronousDataQueue::empty() {
 	this->lock();
 	bool isEmpty = _queue.empty();

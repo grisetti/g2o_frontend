@@ -11,6 +11,3 @@ DataQueue::DataQueue() {
 
 }
 
-DataQueue::~DataQueue() {
-
-}

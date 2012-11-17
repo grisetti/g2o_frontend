@@ -16,7 +16,6 @@ using namespace std;
 class Sensor {
 public:
 	Sensor();
-	virtual ~Sensor();
 	virtual g2o::Parameter* getParameter();
 	virtual bool setParameter(g2o::Parameter* parameter_);
 	int getNum() { return _num; };

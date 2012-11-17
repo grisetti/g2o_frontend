@@ -13,7 +13,6 @@
 class SequentialDataQueue : public DataQueue{
 public:
 	SequentialDataQueue();
-	~SequentialDataQueue();
 	virtual bool empty();
 	virtual g2o::HyperGraph::Data* front();
 	virtual void pop_front();

@@ -11,10 +11,6 @@ SequentialDataQueue::SequentialDataQueue() {
 	
 }
 
-SequentialDataQueue::~SequentialDataQueue() {
-
-}
-
 bool SequentialDataQueue::empty() {
 	return(_queue.empty());
 }

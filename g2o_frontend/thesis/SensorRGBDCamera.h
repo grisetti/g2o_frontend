@@ -14,9 +14,8 @@
 class SensorRGBDCamera : public Sensor {
 public:
 	SensorRGBDCamera();
-	virtual ~SensorRGBDCamera();
-	g2o::Parameter* getParameter() const { return _parameter; }
-	bool setParameter(g2o::Parameter* parameter_);
+	virtual g2o::Parameter* getParameter() const;
+	virtual bool setParameter(g2o::Parameter* parameter_);
 	std::string getIntensityTopic() { return _intensityTopic; };
 	std::string getDepthTopic() { return _depthTopic; };
 	void setTopics(std::string intensityTopic_, std::string depthTopic_);

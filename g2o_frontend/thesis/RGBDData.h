@@ -23,10 +23,10 @@ public:
   RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_);
   virtual ~RGBDData();
   //! read the data from a stream
-  bool read(std::istream& is);
+  virtual bool read(std::istream& is);
   //! write the data to a stream
-  bool write(std::ostream& os) const;
-  bool writeOut() const;
+  virtual bool write(std::ostream& os) const;
+  virtual bool writeOut() const;
   void update();
   void release();
   const std::string& baseFilename() const { return _baseFilename; };

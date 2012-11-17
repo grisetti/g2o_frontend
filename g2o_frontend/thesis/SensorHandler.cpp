@@ -11,7 +11,3 @@ SensorHandler::SensorHandler() {
 
 }
 
-SensorHandler::~SensorHandler() {
-
-}
-

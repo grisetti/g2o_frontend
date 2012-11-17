@@ -12,8 +12,8 @@ SensorRGBDCamera::SensorRGBDCamera() {
 	((g2o::ParameterCamera*)_parameter)->setKcam(5.25, 5.25, 3.195, 2.395);
 }
 
-SensorRGBDCamera::~SensorRGBDCamera() {
-
+g2o::Parameter* SensorRGBDCamera::getParameter() const {
+	return _parameter;
 }
 
 bool SensorRGBDCamera::setParameter(g2o::Parameter* parameter_) {

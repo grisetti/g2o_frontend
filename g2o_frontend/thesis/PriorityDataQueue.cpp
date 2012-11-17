@@ -11,10 +11,6 @@ PriorityDataQueue::PriorityDataQueue() {
 
 }
 
-PriorityDataQueue::~PriorityDataQueue() {
-
-}
-
 bool PriorityDataQueue::empty() {
 	return(_queue.empty());
 }
