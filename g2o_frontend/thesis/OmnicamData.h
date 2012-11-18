@@ -24,10 +24,12 @@ public:
 	void setSensorNumber(int sensorNumber_);
 	void setAcquisitionNumber(int acquisitionNumber_);
 	void setImage(cv::Mat* image_);
+	void computeFileName();
 protected:
 	std::string _baseFilename;		// name of the image file associated with this data
 	g2o::ParameterCamera* _cameraParams;	// pointer to the camera parametres
 private:
+	std::string _filename;
 	void init();
 	int _acquisitionNumber;
 	int _sensorNumber;

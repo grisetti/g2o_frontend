@@ -20,7 +20,7 @@ using namespace std;
 
 void OmnicamData::init(){
   _paramIndex = -1;
-  _baseFilename = "image";
+  _baseFilename = "omni_image";
   _cameraParams = 0;
   _image = 0;
   _sensorNumber = 0;
@@ -64,35 +64,30 @@ bool OmnicamData::read(std::istream& is) {
 	return false;
 }
 
-static std::string computeFileName(std::string baseFileName_, int acquisitionNumber_)
+void OmnicamData::computeFileName()
 {
-  std::string filename;
-  filename = baseFileName_;
-  filename.append("_");
+  _filename = _baseFilename;
+  _filename = _filename.append("_");
   
   char num[8];
-  sprintf(num, "%05d", acquisitionNumber_);
-  filename.append(num);
+  sprintf(num, "%05d", _acquisitionNumber);
+  _filename = _filename.append(num);
   
-  filename.append(".pgm");
-  return filename;
+  _filename = _filename.append(".pgm");
 }
 
 //! write the data to a stream
 bool OmnicamData::write(std::ostream& os) const {
-	
-  std::string filename = computeFileName(_baseFilename, _acquisitionNumber);
-	os << "OMNICAM_DATA " << _sensorNumber << " " << filename << std::endl;
+	os << "OMNICAM_DATA " << _sensorNumber << " " << _filename << std::endl;
 	return true;
 }
 
 //! saves the image on a file
 bool OmnicamData::writeOut() const
 {
-  std::string filename = computeFileName(_baseFilename, _acquisitionNumber);
   // save the image
-    cv::imwrite(filename.c_str(), *_image);
-    std::cout << "image saved to " << filename << std::endl;
+    cv::imwrite(_filename.c_str(), *_image);
+    std::cout << "Omnicam image saved to " << _filename << std::endl;
   return true;
 }
 
