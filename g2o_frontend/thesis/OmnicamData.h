@@ -28,8 +28,7 @@ protected:
 	std::string _baseFilename;		// name of the image file associated with this data
 	g2o::ParameterCamera* _cameraParams;	// pointer to the camera parametres
 private:
-	void computeFileName();
-	std::string _filename;
+	void init();
 	int _acquisitionNumber;
 	int _sensorNumber;
 	int _paramIndex;
