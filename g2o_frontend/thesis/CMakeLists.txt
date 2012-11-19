@@ -8,8 +8,12 @@ ADD_LIBRARY(thesis ${G2O_FRONTEND_LIB_THESIS}
 	Sensor.cpp Sensor.h
 	SensorHandler.cpp SensorHandler.h
 	SensorRGBDCamera.cpp SensorRGBDCamera.h
+	SensorOmnicam.cpp SensorOmnicam.h
 	SequentialDataQueue.cpp SequentialDataQueue.h
 	SequentialSynchronousDataQueue.cpp SequentialSynchronousDataQueue.h
+	SensorData.cpp SensorData.h  	
+	RGBDData.cpp RGBDData.h
+	OmnicamData.cpp OmnicamData.h
 	)
 
 SET_TARGET_PROPERTIES(thesis PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_thesis)
