@@ -29,7 +29,7 @@ public:
 	virtual bool read(std::istream& is) = 0;
 	//! write the data to a stream
 	virtual bool write(std::ostream& os) const = 0;
-	virtual void writeOut(int num) const = 0;
+	virtual void writeOut() = 0;
 };
 
 class CompareStamp {

@@ -46,6 +46,18 @@ RGBDData::RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_) {
   _depthImage = depthImage_;
 }
 
+RGBDData::RGBDData(Sensor* sensor_, cv::Mat* intensityImage_, cv::Mat* depthImage_)
+{
+	_paramIndex = -1;
+  _baseFilename = "none";
+  _rgbdCameraSensor = (SensorRGBDCamera*)sensor_;
+  std::cout << "Sensor from Data: " << _rgbdCameraSensor << std::endl;
+  _ts_sec = 0;
+  _ts_usec = 0;
+  _intensityImage = intensityImage_;
+  _depthImage = depthImage_;
+}
+
 RGBDData::~RGBDData(){
 	if(! _intensityImage)
 		delete _intensityImage;
@@ -77,20 +89,17 @@ bool RGBDData::write(std::ostream& os) const
   return true;
 }
 
-void RGBDData::writeOut(int num) const
+void RGBDData::writeOut()
 {
-	std::cout << "0" << std::endl;
-	char name[8];
-	sprintf(name, "%05d", num);
-	char buf[100];
-	std::cout << "1" << std::endl;
+  //int num = this->_rgbdCameraSensor->getNum(); // Questa è la riga che scassa
+	int num = 0; // Ovviamento impostando num a 0 il logger salverà tutte le
+								// immagini ma tutte con lo stesso nome e quindi avremo una sola
+								// immagine salvata alla fine, l'ultima.
+	char buf[25];
 	sprintf(buf, "%05d_intensity.pgm", num);
-	std::cout << "2" << std::endl;
 	cv::imwrite(buf, *_intensityImage);
-	std::cout << "3" << std::endl;
 	sprintf(buf, "%05d_depth.pgm", num);
 	cv::imwrite(buf, *_depthImage);
-	std::cout << "4" << std::endl;
 	cout << "Saved frame #" << num << endl;
 }
 
@@ -103,6 +112,13 @@ void RGBDData::update()
     *_intensityImage = cv::imread((_baseFilename + "_intensity.pgm") .c_str(), -1);
     *_depthImage = cv::imread((_baseFilename + "_depth.pgm") .c_str(), -1);
   }
+}
+
+void RGBDData::setSensor(SensorRGBDCamera* rgbdCameraSensor_)
+{
+  std::cout << "Sono dentro" << std::endl;
+  _rgbdCameraSensor = rgbdCameraSensor_;
+	std::cout << "Variabile assegnata " << std::endl;
 }
 
 void RGBDData::release()

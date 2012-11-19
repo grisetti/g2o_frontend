@@ -83,7 +83,7 @@ bool OmnicamData::write(std::ostream& os) const {
 }
 
 //! saves the image on a file
-void OmnicamData::writeOut(int num) const
+void OmnicamData::writeOut()
 {
   // save the image
     cv::imwrite(_filename.c_str(), *_image);

@@ -21,17 +21,19 @@ class RGBDData: public SensorData {
 public:  
   RGBDData();
   RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_);
+  RGBDData(Sensor* sensor_, cv::Mat* intensityImage_, cv::Mat* depthImage_);
   virtual ~RGBDData();
   //! read the data from a stream
   virtual bool read(std::istream& is);
   //! write the data to a stream
   virtual bool write(std::ostream& os) const;
-  virtual void writeOut(int num) const;
+  virtual void writeOut();
   void update();
-  void release();
+  void setSensor(SensorRGBDCamera* rgbdCameraSensor_);
+		void release();
   const std::string& baseFilename() const { return _baseFilename; };
   void  setBaseFilename(const std::string baseFilename_) { _baseFilename = baseFilename_; };
-  SensorRGBDCamera* getSensor() const { return _rgbdCameraSensor; }
+		SensorRGBDCamera* getSensor() const { return _rgbdCameraSensor; }
   cv::Mat* _intensityImage;
   cv::Mat* _depthImage;
 protected:

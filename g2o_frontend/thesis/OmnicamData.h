@@ -17,7 +17,7 @@ public:
 	virtual bool read(std::istream& is);
 	//! write the data to a stream
 	virtual bool write(std::ostream& os) const;
-	virtual void writeOut(int num) const;
+	virtual void writeOut();
 	const std::string& baseFilename() const { return _baseFilename; };
 	void  setBaseFilename(const std::string baseFilename_) { _baseFilename = baseFilename_; };
 	cv::Mat* _image;

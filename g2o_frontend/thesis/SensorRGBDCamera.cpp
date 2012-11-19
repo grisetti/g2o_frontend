@@ -26,7 +26,7 @@ bool SensorRGBDCamera::setParameter(g2o::Parameter* parameter_) {
 }
 
 int SensorRGBDCamera::getNum()
-{
+{ 
 	return _num;
 }
 	
