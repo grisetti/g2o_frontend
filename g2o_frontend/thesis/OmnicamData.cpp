@@ -83,12 +83,11 @@ bool OmnicamData::write(std::ostream& os) const {
 }
 
 //! saves the image on a file
-bool OmnicamData::writeOut() const
+void OmnicamData::writeOut(int num) const
 {
   // save the image
     cv::imwrite(_filename.c_str(), *_image);
     std::cout << "Omnicam image saved to " << _filename << std::endl;
-  return true;
 }
 
 // OmnicamDataDrawAction methods are here, but they do nothing.
