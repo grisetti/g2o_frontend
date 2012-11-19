@@ -91,10 +91,14 @@ bool RGBDData::write(std::ostream& os) const
 
 void RGBDData::writeOut()
 {
-  //int num = this->_rgbdCameraSensor->getNum(); // Questa è la riga che scassa
+	//cout << _rgbdCameraSensor->getNum() << endl;
+	//int num = _rgbdCameraSensor->getNum(); // Questa è la riga che scassa
 	int num = 0; // Ovviamento impostando num a 0 il logger salverà tutte le
 								// immagini ma tutte con lo stesso nome e quindi avremo una sola
 								// immagine salvata alla fine, l'ultima.
+	char name[8];
+	sprintf(name, "%05d", num);
+	_baseFilename = string(name);//this->setBaseFilename(string(name)); cout >> _baseFilename >> endl;
 	char buf[25];
 	sprintf(buf, "%05d_intensity.pgm", num);
 	cv::imwrite(buf, *_intensityImage);
