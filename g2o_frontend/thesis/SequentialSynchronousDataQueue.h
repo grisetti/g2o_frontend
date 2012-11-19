@@ -15,7 +15,7 @@ class SequentialSynchronousDataQueue : public SequentialDataQueue, public Mutexe
 public:
 	SequentialSynchronousDataQueue();
 	bool empty();
-	g2o::HyperGraph::Data* front();
+	virtual g2o::HyperGraph::Data* front();
 	void pop_front();
 	void push_back(g2o::HyperGraph::Data* d);
 };

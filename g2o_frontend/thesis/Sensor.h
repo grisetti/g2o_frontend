@@ -16,10 +16,10 @@ using namespace std;
 class Sensor {
 public:
 	Sensor();
-	virtual g2o::Parameter* getParameter();
-	virtual bool setParameter(g2o::Parameter* parameter_);
-	int getNum() { return _num; };
-	void setNum(int num_);
+	virtual g2o::Parameter* getParameter() = 0;
+	virtual bool setParameter(g2o::Parameter* parameter_) = 0;
+	virtual int getNum() = 0;
+	virtual void setNum(int num_) = 0;
 protected:
 	g2o::Parameter* _parameter;
 	int _num;

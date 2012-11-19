@@ -26,7 +26,7 @@ public:
   virtual bool read(std::istream& is);
   //! write the data to a stream
   virtual bool write(std::ostream& os) const;
-  virtual bool writeOut() const;
+  virtual void writeOut(int num) const;
   void update();
   void release();
   const std::string& baseFilename() const { return _baseFilename; };

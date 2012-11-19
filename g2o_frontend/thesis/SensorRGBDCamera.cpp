@@ -10,9 +10,10 @@
 SensorRGBDCamera::SensorRGBDCamera() {
 	_parameter = new g2o::ParameterCamera();
 	((g2o::ParameterCamera*)_parameter)->setKcam(5.25, 5.25, 3.195, 2.395);
+	_num = 0;
 }
 
-g2o::Parameter* SensorRGBDCamera::getParameter() const {
+g2o::Parameter* SensorRGBDCamera::getParameter() {
 	return _parameter;
 }
 
@@ -22,6 +23,16 @@ bool SensorRGBDCamera::setParameter(g2o::Parameter* parameter_) {
 		return false;
 	_parameter = parameter_;
 	return true;
+}
+
+int SensorRGBDCamera::getNum()
+{
+	return _num;
+}
+	
+void SensorRGBDCamera::setNum(int num_)
+{
+	_num = num_;
 }
 
 void SensorRGBDCamera::setTopics(string intensityTopic_, string depthTopic_) {

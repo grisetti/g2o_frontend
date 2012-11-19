@@ -46,7 +46,12 @@ RGBDData::RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_) {
   _depthImage = depthImage_;
 }
 
-RGBDData::~RGBDData(){}
+RGBDData::~RGBDData(){
+	if(! _intensityImage)
+		delete _intensityImage;
+	if(! _depthImage)		
+		delete _depthImage;
+}
 
 //! read the data from a stream
 bool RGBDData::read(std::istream& is) 
@@ -72,20 +77,21 @@ bool RGBDData::write(std::ostream& os) const
   return true;
 }
 
-bool RGBDData::writeOut() const
+void RGBDData::writeOut(int num) const
 {
+	std::cout << "0" << std::endl;
 	char name[8];
-	int num = _rgbdCameraSensor->getNum();
-	
 	sprintf(name, "%05d", num);
 	char buf[100];
+	std::cout << "1" << std::endl;
 	sprintf(buf, "%05d_intensity.pgm", num);
+	std::cout << "2" << std::endl;
 	cv::imwrite(buf, *_intensityImage);
+	std::cout << "3" << std::endl;
 	sprintf(buf, "%05d_depth.pgm", num);
 	cv::imwrite(buf, *_depthImage);
+	std::cout << "4" << std::endl;
 	cout << "Saved frame #" << num << endl;
-	
-	return true;
 }
 
 void RGBDData::update()
