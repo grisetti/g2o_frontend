@@ -30,12 +30,13 @@ public:
   virtual void writeOut();
   void update();
   void setSensor(SensorRGBDCamera* rgbdCameraSensor_);
-		void release();
+  void release();
   const std::string& baseFilename() const { return _baseFilename; };
   void  setBaseFilename(const std::string baseFilename_) { _baseFilename = baseFilename_; };
-		SensorRGBDCamera* getSensor() const { return _rgbdCameraSensor; }
+  SensorRGBDCamera* getSensor() const { return _rgbdCameraSensor; }
   cv::Mat* _intensityImage;
   cv::Mat* _depthImage;
+    
 protected:
   std::string _baseFilename;
   SensorRGBDCamera* _rgbdCameraSensor;
