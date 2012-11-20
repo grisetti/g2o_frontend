@@ -1,9 +1,3 @@
-/*
- * Sensor.h
- *
- *  Created on: Nov 14, 2012
- *      Author: jacopo
- */
 
 #ifndef SENSOR_H_
 #define SENSOR_H_
@@ -12,15 +6,32 @@
 #include <list>
 
 using namespace std;
-
+/**
+ *  Generic sensor class, purely abstract
+ */
 class Sensor {
 public:
+	/** 
+	* Class constructor
+	*/
 	Sensor();
+
+	/** 
+	* Paramater Getter, purely virtual
+	*/
 	virtual g2o::Parameter* getParameter() = 0;
+
+	/** 
+	* Paramater setter, purely virtual
+	*/
 	virtual bool setParameter(g2o::Parameter* parameter_) = 0;
+
+	
 	virtual int getNum() = 0;
 	virtual void setNum(int num_) = 0;
 protected:
+
+	
 	g2o::Parameter* _parameter;
 	int _num;
 };
