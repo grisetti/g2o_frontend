@@ -26,7 +26,6 @@ public:
 	*/
 	virtual bool setParameter(g2o::Parameter* parameter_) = 0;
 
-	
 	virtual int getNum() = 0;
 	virtual void setNum(int num_) = 0;
 protected:
