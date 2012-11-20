@@ -11,6 +11,9 @@
 #include "g2o/core/hyper_graph.h"
 #include <iostream>
 
+
+class Sensor;
+
 class Stamped {
 public:
 	Stamped() : _timeStamp(-1.) {};
@@ -30,6 +33,10 @@ public:
 	//! write the data to a stream
 	virtual bool write(std::ostream& os) const = 0;
 	virtual void writeOut() = 0;
+	
+	virtual Sensor* getSensor() const = 0;
+	virtual void    setSensor(Sensor* s) = 0;
+
 };
 
 class CompareStamp {

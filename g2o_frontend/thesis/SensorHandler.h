@@ -17,7 +17,6 @@ public:
 	virtual Sensor* getSensor() = 0;
 	virtual bool setQueue(PriorityDataQueue* queue_) = 0;
 	virtual bool setSensor(Sensor* sensor_s) = 0;
-	virtual bool calibrateSensor() = 0;
 	virtual void registerCallback() = 0;
 	
 protected:

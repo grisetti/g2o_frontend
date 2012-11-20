@@ -34,6 +34,7 @@ RGBDData::RGBDData()
   _ts_usec = 0;
   _intensityImage = 0;
   _depthImage = 0;
+  _dataContainer = 0;
 }
 
 RGBDData::RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_) {
@@ -44,6 +45,7 @@ RGBDData::RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_) {
   _ts_usec = 0;
   _intensityImage = intensityImage_;
   _depthImage = depthImage_;
+  _dataContainer = 0;
 }
 
 RGBDData::RGBDData(Sensor* sensor_, cv::Mat* intensityImage_, cv::Mat* depthImage_)
@@ -55,6 +57,7 @@ RGBDData::RGBDData(Sensor* sensor_, cv::Mat* intensityImage_, cv::Mat* depthImag
   _ts_usec = 0;
   _intensityImage = intensityImage_;
   _depthImage = depthImage_;
+  _dataContainer = 0;
 }
 
 RGBDData::~RGBDData(){
@@ -67,7 +70,6 @@ RGBDData::~RGBDData(){
 //! read the data from a stream
 bool RGBDData::read(std::istream& is) 
 {
-  int _paramIndex;
   is >> _paramIndex >> _baseFilename;
   is >> _ts_sec >> _ts_usec;
   _intensityImage = 0;
@@ -117,9 +119,9 @@ void RGBDData::update()
   }
 }
 
-void RGBDData::setSensor(SensorRGBDCamera* rgbdCameraSensor_)
+void RGBDData::setSensor(Sensor* rgbdCameraSensor_)
 {
-	_rgbdCameraSensor = rgbdCameraSensor_;
+  _rgbdCameraSensor = dynamic_cast<SensorRGBDCamera*>(rgbdCameraSensor_) ;
 }
 
 void RGBDData::release()
@@ -183,7 +185,29 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
   glBegin(GL_POINTS);
   glColor4f(1.f, 0.f, 0.f, 0.5f);
   
-  g2o::ParameterCamera* param = (g2o::ParameterCamera*)that->getSensor()->getParameter();
+  
+  g2o::HyperGraph::DataContainer* container = that->dataContainer();
+  cout << "datacontainer" << container << endl;
+  g2o::OptimizableGraph::Vertex* v= dynamic_cast<g2o::OptimizableGraph::Vertex*>(container);
+  if (0 && !v) {
+    cout << "die" << v << endl;
+  }
+  OptimizableGraph* g=v->graph();
+  if (0 && !g) {
+    cout << " now" << g << endl;
+  }
+ 
+ g2o::Parameter* p =g->parameters().getParameter(that->paramIndex());
+  if (0 && !p) {
+    cout << "with" << p << " " << that->paramIndex() << endl;
+  }
+  g2o::ParameterCamera* param = dynamic_cast<g2o::ParameterCamera*> (p);
+  if (0 &&!param) {
+    cout << " extreme" << endl;
+  }
+  cout << "param is";
+  param->write(cout);
+  cout << endl;
   Eigen::Matrix3d K = param->Kcam();
   
   static const double fx = K(0, 0);
@@ -194,19 +218,26 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
   float constant_x = unit_scaling / fx;
   float constant_y = unit_scaling / fy;
   
+  int k = 0;
+  cout << "the image is: " <<that->_depthImage->rows << " " << that->_depthImage->cols << endl;
   for(int i = 0; i < that->_depthImage->rows; i++)  {
-    for(int j = 0; j < that->_depthImage->cols; j += step) {
+    for(int j = 0; j < that->_depthImage->cols; j ++) {
     	unsigned short d = *dptr;
     	if(d != 0)
       {
       	// Computing the Cartesian coordinates of the current pixel
-      	float x = (j - center_x) * d * constant_x;
+	float x = (j - center_x) * d * constant_x;
       	float y = (i - center_y) * d * constant_y;
       	float z = ((float)d) * unit_scaling;
-      	glNormal3f(-x, -y, -z);
-    		glVertex3f(x, y, z);
+      	if (k<5) {
+	  cout << x << " " << y << " " << z << endl;
+	}
+	k++;
+
+	glNormal3f(-x, -y, -z);
+	glVertex3f(x, y, z);
     	}
-    	dptr += step;
+    	dptr ++;
     } 
 	}
 	
