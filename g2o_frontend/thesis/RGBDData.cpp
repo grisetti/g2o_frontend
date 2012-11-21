@@ -9,6 +9,7 @@
 #include <fstream>
 #include "g2o/stuff/macros.h"
 #include "g2o/core/factory.h"
+#include <Eigen/Dense>
 
 #ifdef WINDOWS
 #include <windows.h>
@@ -189,9 +190,9 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
   
   g2o::OptimizableGraph::Vertex* v= dynamic_cast<g2o::OptimizableGraph::Vertex*>(container);
   
-  OptimizableGraph* g=v->graph();
+  OptimizableGraph* g = v->graph();
   
- 	g2o::Parameter* p =g->parameters().getParameter(that->paramIndex());
+ 	g2o::Parameter* p = g->parameters().getParameter(that->paramIndex());
   
   g2o::ParameterCamera* param = dynamic_cast<g2o::ParameterCamera*> (p);
   
@@ -203,7 +204,7 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
 	static const double fy = K(1, 1);
 	static const double center_x = K(0, 2);
 	static const double center_y = K(1, 2);
-	std::cout << "Parametri: " << fx << " " << fy << " " << center_x << " " << center_y << std::endl;
+
 	double unit_scaling = 0.001f;
   float constant_x = unit_scaling / fx;
   float constant_y = unit_scaling / fy;
@@ -217,9 +218,16 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
 				float x = (j - center_x) * d * constant_x;
       	float y = (i - center_y) * d * constant_y;
       	float z = ((float)d) * unit_scaling;
-
-				glNormal3f(-x, -y, -z);
-				glVertex3f(x, y, z);
+				Eigen::Vector3d point(x, y, z);
+				Eigen::Isometry3d offset = param->offset();
+				Vector7d off = g2o::internal::toVectorQT(offset);
+				Eigen::Quaternion<double> q(off[6], off[3], off[4], off[5]);
+				Eigen::Vector3d t(off[0], off[1], off[2]);
+				Eigen::Matrix3d R = q.toRotationMatrix();
+				point = R*point;				
+				point = point + t;				
+				glNormal3f(-point(0), -point(1), -point(2));
+				glVertex3f(point(0), point(1), point(2));
     	}
     	dptr=dptr+step;
     } 
