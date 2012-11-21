@@ -9,7 +9,7 @@
 
 SensorRGBDCamera::SensorRGBDCamera() {
 	_parameter = new g2o::ParameterCamera();
-	((g2o::ParameterCamera*)_parameter)->setKcam(5.25, 5.25, 3.195, 2.395);
+	((g2o::ParameterCamera*)_parameter)->setKcam(5.25e02, 5.25e02, 3.195e02, 2.395e02);
 	_num = 0;
 }
 

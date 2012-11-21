@@ -197,8 +197,8 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
   g2o::ParameterCamera* param = dynamic_cast<g2o::ParameterCamera*> (p);
   
   Eigen::Matrix3d K = param->Kcam();
-  double paramScaling = 100;
-  K = K*paramScaling;
+//   double paramScaling = 100;
+//   K = K*paramScaling;
   
   static const double fx = K(0, 0);
 	static const double fy = K(1, 1);
