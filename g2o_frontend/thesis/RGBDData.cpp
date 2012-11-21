@@ -144,7 +144,7 @@ bool RGBDDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction::Parameters
     return false;
   if (_previousParams)
   {
-    _beamsDownsampling = _previousParams->makeProperty<IntProperty>(_typeName + "::BEAMS_DOWNSAMPLING", 20);
+    _beamsDownsampling = _previousParams->makeProperty<IntProperty>(_typeName + "::BEAMS_DOWNSAMPLING", 5);
     _pointSize = _previousParams->makeProperty<FloatProperty>(_typeName + "::POINT_SIZE", .05f);
   } 
   else 
@@ -185,59 +185,43 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
   glBegin(GL_POINTS);
   glColor4f(1.f, 0.f, 0.f, 0.5f);
   
-  
   g2o::HyperGraph::DataContainer* container = that->dataContainer();
-  cout << "datacontainer" << container << endl;
+  
   g2o::OptimizableGraph::Vertex* v= dynamic_cast<g2o::OptimizableGraph::Vertex*>(container);
-  if (0 && !v) {
-    cout << "die" << v << endl;
-  }
+  
   OptimizableGraph* g=v->graph();
-  if (0 && !g) {
-    cout << " now" << g << endl;
-  }
- 
- g2o::Parameter* p =g->parameters().getParameter(that->paramIndex());
-  if (0 && !p) {
-    cout << "with" << p << " " << that->paramIndex() << endl;
-  }
+  
+ 	g2o::Parameter* p =g->parameters().getParameter(that->paramIndex());
+  
   g2o::ParameterCamera* param = dynamic_cast<g2o::ParameterCamera*> (p);
-  if (0 &&!param) {
-    cout << " extreme" << endl;
-  }
-  cout << "param is";
-  param->write(cout);
-  cout << endl;
+  
   Eigen::Matrix3d K = param->Kcam();
+  double paramScaling = 100;
+  K = K*paramScaling;
   
   static const double fx = K(0, 0);
 	static const double fy = K(1, 1);
 	static const double center_x = K(0, 2);
 	static const double center_y = K(1, 2);
+	std::cout << "Parametri: " << fx << " " << fy << " " << center_x << " " << center_y << std::endl;
 	double unit_scaling = 0.001f;
   float constant_x = unit_scaling / fx;
   float constant_y = unit_scaling / fy;
   
-  int k = 0;
-  cout << "the image is: " <<that->_depthImage->rows << " " << that->_depthImage->cols << endl;
   for(int i = 0; i < that->_depthImage->rows; i++)  {
-    for(int j = 0; j < that->_depthImage->cols; j ++) {
+    for(int j = 0; j < that->_depthImage->cols; j+=step) {
     	unsigned short d = *dptr;
     	if(d != 0)
       {
       	// Computing the Cartesian coordinates of the current pixel
-	float x = (j - center_x) * d * constant_x;
+				float x = (j - center_x) * d * constant_x;
       	float y = (i - center_y) * d * constant_y;
       	float z = ((float)d) * unit_scaling;
-      	if (k<5) {
-	  cout << x << " " << y << " " << z << endl;
-	}
-	k++;
 
-	glNormal3f(-x, -y, -z);
-	glVertex3f(x, y, z);
+				glNormal3f(-x, -y, -z);
+				glVertex3f(x, y, z);
     	}
-    	dptr ++;
+    	dptr=dptr+step;
     } 
 	}
 	
