@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 2.8)
+
 ADD_LIBRARY(thesis ${G2O_FRONTEND_LIB_THESIS}
 	DataQueue.cpp DataQueue.h
 	Mutexed.cpp Mutexed.h
@@ -9,7 +11,7 @@ ADD_LIBRARY(thesis ${G2O_FRONTEND_LIB_THESIS}
 	SensorOmnicam.cpp SensorOmnicam.h
 	SequentialDataQueue.cpp SequentialDataQueue.h
 	SequentialSynchronousDataQueue.cpp SequentialSynchronousDataQueue.h
-	SensorData.cpp SensorData.h
+	SensorData.cpp SensorData.h  	
 	RGBDData.cpp RGBDData.h
 	OmnicamData.cpp OmnicamData.h
 	)
@@ -19,8 +21,8 @@ SET_TARGET_PROPERTIES(thesis PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_thesis)
 IF(CMAKE_BUILD_TYPE MATCHES Release)
   TARGET_LINK_LIBRARIES(thesis
     ${G2O_TYPES_DATA_LIBRARY}
-    ${G2O_TYPES_SLAM2D_LIBRARY}
-    ${G2O_TYPES_SLAM3D_LIBRARY}
+    ${G2O_TYPES_SLAM2D}
+    ${G2O_TYPES_SLAM3D}
     ${G2O_STUFF_LIBRARY} 
     ${G2O_CORE_LIBRARY} 
     ${PCL_LIBRARIES}
@@ -32,8 +34,8 @@ ENDIF(CMAKE_BUILD_TYPE MATCHES Release)
 IF(CMAKE_BUILD_TYPE MATCHES Debug)
   TARGET_LINK_LIBRARIES(thesis
     ${G2O_TYPES_DATA_LIBRARY_DEBUG}
-    ${G2O_TYPES_SLAM2D_LIBRARY_DEBUG}
-    ${G2O_TYPES_SLAM3D_LIBRARY_DEBUG}
+    ${G2O_TYPES_SLAM2D_DEBUG}
+    ${G2O_TYPES_SLAM3D_DEBUG}
     ${G2O_STUFF_LIBRARY_DEBUG} 
     ${G2O_CORE_LIBRARY_DEBUG} 
     ${PCL_LIBRARIES}

@@ -9,6 +9,7 @@
 #include <fstream>
 #include "g2o/stuff/macros.h"
 #include "g2o/core/factory.h"
+#include <Eigen/Dense>
 
 #ifdef WINDOWS
 #include <windows.h>
@@ -34,6 +35,7 @@ RGBDData::RGBDData()
   _ts_usec = 0;
   _intensityImage = 0;
   _depthImage = 0;
+  _dataContainer = 0;
 }
 
 RGBDData::RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_) {
@@ -44,14 +46,31 @@ RGBDData::RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_) {
   _ts_usec = 0;
   _intensityImage = intensityImage_;
   _depthImage = depthImage_;
+  _dataContainer = 0;
 }
 
-RGBDData::~RGBDData(){}
+RGBDData::RGBDData(Sensor* sensor_, cv::Mat* intensityImage_, cv::Mat* depthImage_)
+{
+	_paramIndex = -1;
+  _baseFilename = "none";
+  _rgbdCameraSensor = (SensorRGBDCamera*)sensor_;
+  _ts_sec = 0;
+  _ts_usec = 0;
+  _intensityImage = intensityImage_;
+  _depthImage = depthImage_;
+  _dataContainer = 0;
+}
+
+RGBDData::~RGBDData(){
+	if(! _intensityImage)
+		delete _intensityImage;
+	if(! _depthImage)		
+		delete _depthImage;
+}
 
 //! read the data from a stream
 bool RGBDData::read(std::istream& is) 
 {
-  int _paramIndex;
   is >> _paramIndex >> _baseFilename;
   is >> _ts_sec >> _ts_usec;
   _intensityImage = 0;
@@ -72,20 +91,22 @@ bool RGBDData::write(std::ostream& os) const
   return true;
 }
 
-bool RGBDData::writeOut() const
+void RGBDData::writeOut()
 {
-	char name[8];
 	int num = _rgbdCameraSensor->getNum();
+	_rgbdCameraSensor->setNum(num+1);
 	
+	char name[8];	
 	sprintf(name, "%05d", num);
-	char buf[100];
+	_baseFilename = string(name);
+	//cout << _baseFilename << endl;
+	
+	char buf[25];
 	sprintf(buf, "%05d_intensity.pgm", num);
 	cv::imwrite(buf, *_intensityImage);
 	sprintf(buf, "%05d_depth.pgm", num);
 	cv::imwrite(buf, *_depthImage);
 	cout << "Saved frame #" << num << endl;
-	
-	return true;
 }
 
 void RGBDData::update()
@@ -97,6 +118,11 @@ void RGBDData::update()
     *_intensityImage = cv::imread((_baseFilename + "_intensity.pgm") .c_str(), -1);
     *_depthImage = cv::imread((_baseFilename + "_depth.pgm") .c_str(), -1);
   }
+}
+
+void RGBDData::setSensor(Sensor* rgbdCameraSensor_)
+{
+  _rgbdCameraSensor = dynamic_cast<SensorRGBDCamera*>(rgbdCameraSensor_) ;
 }
 
 void RGBDData::release()
@@ -119,7 +145,7 @@ bool RGBDDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction::Parameters
     return false;
   if (_previousParams)
   {
-    _beamsDownsampling = _previousParams->makeProperty<IntProperty>(_typeName + "::BEAMS_DOWNSAMPLING", 20);
+    _beamsDownsampling = _previousParams->makeProperty<IntProperty>(_typeName + "::BEAMS_DOWNSAMPLING", 5);
     _pointSize = _previousParams->makeProperty<FloatProperty>(_typeName + "::POINT_SIZE", .05f);
   } 
   else 
@@ -160,30 +186,50 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
   glBegin(GL_POINTS);
   glColor4f(1.f, 0.f, 0.f, 0.5f);
   
-  g2o::ParameterCamera* param = (g2o::ParameterCamera*)that->getSensor()->getParameter();
+  g2o::HyperGraph::DataContainer* container = that->dataContainer();
+  
+  g2o::OptimizableGraph::Vertex* v= dynamic_cast<g2o::OptimizableGraph::Vertex*>(container);
+  
+  OptimizableGraph* g = v->graph();
+  
+ 	g2o::Parameter* p = g->parameters().getParameter(that->paramIndex());
+  
+  g2o::ParameterCamera* param = dynamic_cast<g2o::ParameterCamera*> (p);
+  
   Eigen::Matrix3d K = param->Kcam();
+//   double paramScaling = 100;
+//   K = K*paramScaling;
   
   static const double fx = K(0, 0);
 	static const double fy = K(1, 1);
 	static const double center_x = K(0, 2);
 	static const double center_y = K(1, 2);
+
 	double unit_scaling = 0.001f;
   float constant_x = unit_scaling / fx;
   float constant_y = unit_scaling / fy;
   
   for(int i = 0; i < that->_depthImage->rows; i++)  {
-    for(int j = 0; j < that->_depthImage->cols; j += step) {
+    for(int j = 0; j < that->_depthImage->cols; j+=step) {
     	unsigned short d = *dptr;
     	if(d != 0)
       {
       	// Computing the Cartesian coordinates of the current pixel
-      	float x = (j - center_x) * d * constant_x;
+				float x = (j - center_x) * d * constant_x;
       	float y = (i - center_y) * d * constant_y;
       	float z = ((float)d) * unit_scaling;
-      	glNormal3f(-x, -y, -z);
-    		glVertex3f(x, y, z);
+				Eigen::Vector3d point(x, y, z);
+				Eigen::Isometry3d offset = param->offset();
+				Vector7d off = g2o::internal::toVectorQT(offset);
+				Eigen::Quaternion<double> q(off[6], off[3], off[4], off[5]);
+				Eigen::Vector3d t(off[0], off[1], off[2]);
+				Eigen::Matrix3d R = q.toRotationMatrix();
+				point = R*point;				
+				point = point + t;				
+				glNormal3f(-point(0), -point(1), -point(2));
+				glVertex3f(point(0), point(1), point(2));
     	}
-    	dptr += step;
+    	dptr=dptr+step;
     } 
 	}
 	

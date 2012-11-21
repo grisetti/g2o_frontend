@@ -19,8 +19,11 @@ public:
 	bool setParameter(g2o::Parameter* parameter_);
 	void setTopic(std::string* imageTopic_);
 	std::string * getTopic();
+	inline void setSensorNumber(int sNum_){_sensorNumber = sNum_;};
+	inline int getSensorNumber(){return _sensorNumber;};
 protected:
 	std::string * _topic;
+	int _sensorNumber;
 };
 
 #endif /* SENSORRGBDCAMERA_H_ */

@@ -9,6 +9,10 @@
 #define SENSORDATA_H_
 
 #include "g2o/core/hyper_graph.h"
+#include <iostream>
+
+
+class Sensor;
 
 class Stamped {
 public:
@@ -28,7 +32,11 @@ public:
 	virtual bool read(std::istream& is) = 0;
 	//! write the data to a stream
 	virtual bool write(std::ostream& os) const = 0;
-	virtual bool writeOut() const = 0;
+	virtual void writeOut() = 0;
+	
+	virtual Sensor* getSensor() const = 0;
+	virtual void    setSensor(Sensor* s) = 0;
+
 };
 
 class CompareStamp {
