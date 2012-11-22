@@ -102,9 +102,9 @@ void RGBDData::writeOut()
 	//cout << _baseFilename << endl;
 	
 	char buf[25];
-	sprintf(buf, "%05d_intensity.pgm", num);
+	sprintf(buf, "rgbd_%05d_intensity.pgm", num);
 	cv::imwrite(buf, *_intensityImage);
-	sprintf(buf, "%05d_depth.pgm", num);
+	sprintf(buf, "rgbd_%05d_depth.pgm", num);
 	cv::imwrite(buf, *_depthImage);
 	cout << "Saved frame #" << num << endl;
 }
@@ -145,7 +145,7 @@ bool RGBDDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction::Parameters
     return false;
   if (_previousParams)
   {
-    _beamsDownsampling = _previousParams->makeProperty<IntProperty>(_typeName + "::BEAMS_DOWNSAMPLING", 5);
+    _beamsDownsampling = _previousParams->makeProperty<IntProperty>(_typeName + "::BEAMS_DOWNSAMPLING", 10);
     _pointSize = _previousParams->makeProperty<FloatProperty>(_typeName + "::POINT_SIZE", .05f);
   } 
   else 
@@ -157,7 +157,7 @@ bool RGBDDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction::Parameters
 }
 
 HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphElement* element, 
-																HyperGraphElementAction::Parameters* params_)
+						     	HyperGraphElementAction::Parameters* params_)
 {
   if(typeid(*element).name()!=_typeName)
     return 0;
@@ -182,9 +182,9 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
   
   RGBDData* that = static_cast<RGBDData*>(element);
   unsigned short* dptr = reinterpret_cast<unsigned short*>(that->_depthImage->data);
+  unsigned char* dptrIntensity = reinterpret_cast<unsigned char*>(that->_intensityImage->data);
 	
   glBegin(GL_POINTS);
-  glColor4f(1.f, 0.f, 0.f, 0.5f);
   
   g2o::HyperGraph::DataContainer* container = that->dataContainer();
   
@@ -192,46 +192,48 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
   
   OptimizableGraph* g = v->graph();
   
- 	g2o::Parameter* p = g->parameters().getParameter(that->paramIndex());
+  g2o::Parameter* p = g->parameters().getParameter(that->paramIndex());
   
   g2o::ParameterCamera* param = dynamic_cast<g2o::ParameterCamera*> (p);
   
   Eigen::Matrix3d K = param->Kcam();
-//   double paramScaling = 100;
-//   K = K*paramScaling;
-  
-  static const double fx = K(0, 0);
-	static const double fy = K(1, 1);
-	static const double center_x = K(0, 2);
-	static const double center_y = K(1, 2);
 
-	double unit_scaling = 0.001f;
+  static const double fx = K(0, 0);
+  static const double fy = K(1, 1);
+  static const double center_x = K(0, 2);
+  static const double center_y = K(1, 2);
+
+  double unit_scaling = 0.001f;
   float constant_x = unit_scaling / fx;
   float constant_y = unit_scaling / fy;
   
+
   for(int i = 0; i < that->_depthImage->rows; i++)  {
     for(int j = 0; j < that->_depthImage->cols; j+=step) {
     	unsigned short d = *dptr;
-    	if(d != 0)
-      {
-      	// Computing the Cartesian coordinates of the current pixel
-				float x = (j - center_x) * d * constant_x;
-      	float y = (i - center_y) * d * constant_y;
-      	float z = ((float)d) * unit_scaling;
-				Eigen::Vector3d point(x, y, z);
-				Eigen::Isometry3d offset = param->offset();
-				Vector7d off = g2o::internal::toVectorQT(offset);
-				Eigen::Quaternion<double> q(off[6], off[3], off[4], off[5]);
-				Eigen::Vector3d t(off[0], off[1], off[2]);
-				Eigen::Matrix3d R = q.toRotationMatrix();
-				point = R*point;				
-				point = point + t;				
-				glNormal3f(-point(0), -point(1), -point(2));
-				glVertex3f(point(0), point(1), point(2));
-    	}
-    	dptr=dptr+step;
-    } 
+	unsigned int color = (unsigned int)*dptrIntensity;
+    	if(d != 0) {
+	  // Computing the Cartesian coordinates of the current pixel
+	  float x = (j - center_x) * d * constant_x;
+	  float y = (i - center_y) * d * constant_y;
+	  float z = ((float)d) * unit_scaling;
+	  Eigen::Vector3d point(x, y, z);
+	  Eigen::Isometry3d offset = param->offset();
+	  Vector7d off = g2o::internal::toVectorQT(offset);
+	  Eigen::Quaternion<double> q(off[6], off[3], off[4], off[5]);
+	  Eigen::Vector3d t(off[0], off[1], off[2]);
+	  Eigen::Matrix3d R = q.toRotationMatrix();
+	  point = R*point;				
+	  point = point + t;
+	  float vertexColor = color/255.0f;
+	  glColor4f(vertexColor, vertexColor, vertexColor, 0.5f);
+	  glNormal3f(-point(0), -point(1), -point(2));
+	  glVertex3f(point(0), point(1), point(2));
 	}
+    	dptr = dptr + step;
+	dptrIntensity = dptrIntensity + step;
+    } 
+  }
 	
   glEnd();
   glPopMatrix();
