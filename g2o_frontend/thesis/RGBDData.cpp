@@ -62,10 +62,10 @@ RGBDData::RGBDData(Sensor* sensor_, cv::Mat* intensityImage_, cv::Mat* depthImag
 }
 
 RGBDData::~RGBDData(){
-	if(! _intensityImage)
-		delete _intensityImage;
-	if(! _depthImage)		
-		delete _depthImage;
+  if(_intensityImage)
+    delete _intensityImage;
+  if(_depthImage)		
+    delete _depthImage;
 }
 
 //! read the data from a stream
