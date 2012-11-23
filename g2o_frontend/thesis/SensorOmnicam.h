@@ -15,15 +15,14 @@ class SensorOmnicam : public Sensor {
 public:
 	SensorOmnicam();
 	virtual ~SensorOmnicam();
-	g2o::Parameter* getParameter() const { return _parameter; }
+	virtual g2o::Parameter* getParameter();
 	bool setParameter(g2o::Parameter* parameter_);
-	void setTopic(std::string* imageTopic_);
+	virtual int getNum();
+	virtual void setNum(int num_);
 	std::string * getTopic();
-	inline void setSensorNumber(int sNum_){_sensorNumber = sNum_;};
-	inline int getSensorNumber(){return _sensorNumber;};
+	void setTopic(std::string* imageTopic_);
 protected:
 	std::string * _topic;
-	int _sensorNumber;
 };
 
 #endif /* SENSORRGBDCAMERA_H_ */

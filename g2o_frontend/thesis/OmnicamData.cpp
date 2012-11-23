@@ -20,74 +20,65 @@ using namespace std;
 
 void OmnicamData::init(){
   _paramIndex = -1;
-  _baseFilename = "omni_image";
-  _cameraParams = 0;
+  _baseFilename = "none";
+  _omnicamSensor = 0;
+  _ts_sec = 0;
+  _ts_usec = 0;
   _image = 0;
-  _sensorNumber = 0;
-  _acquisitionNumber = 0;
+  _dataContainer = 0;
 }
 
 OmnicamData::OmnicamData(){
   this->init();
 }
 
-OmnicamData::OmnicamData(double timestamp_) : SensorData(timestamp_){
+OmnicamData::OmnicamData(cv::Mat* image_){
   this->init();
-}
-
-void OmnicamData::setImage(cv::Mat* image_)
-{
   _image = image_;
 }
 
-
 OmnicamData::~OmnicamData(){
-	if (_image){
-		delete _image;
-		_image = 0;
-	}
-}
-
-void OmnicamData::setSensorNumber(int sensorNumber_)
-{
-  _sensorNumber = sensorNumber_;
-}
-
-void OmnicamData::setAcquisitionNumber(int acquisitionNumber_){
-  _acquisitionNumber = acquisitionNumber_;
+  if(_image)
+    delete _image;
 }
 
 //! read the data from a stream
 bool OmnicamData::read(std::istream& is) {
-	int r;
-	is >> r;	
+  is >> _paramIndex >> _baseFilename;
+  is >> _ts_sec >> _ts_usec;
+  if(_image != 0){
+    delete _image;
+  }
+  _image = new cv::Mat();
+  *_image = cv::imread(_baseFilename+"omni.pgm");
 	return false;
-}
-
-void OmnicamData::computeFileName()
-{
-  _filename = _baseFilename;
-  _filename = _filename.append("_");
-  
-  char num[8];
-  sprintf(num, "%05d", _acquisitionNumber);
-  _filename = _filename.append(num);
-  
-  _filename = _filename.append(".pgm");
 }
 
 //! write the data to a stream
 bool OmnicamData::write(std::ostream& os) const {
-	os << "OMNICAM_DATA " << _sensorNumber << " " << _filename << std::endl;
-	return true;
+  if(_omnicamSensor)
+    os << _omnicamSensor->getParameter()->id();
+  else
+    os << -1;
+  os << " " << _baseFilename << " ";
+  os << _ts_sec << " " << _ts_usec;
+  return true;
 }
 
 //! saves the image on a file
 void OmnicamData::writeOut()
 {
-  // save the image
-    cv::imwrite(_filename.c_str(), *_image);
-    std::cout << "Omnicam image saved to " << _filename << std::endl;
+  int num = _omnicamSensor->getNum();
+  _omnicamSensor->setNum(num+1);
+  
+  char name[8];
+  sprintf(name, "%05d", num);
+  _baseFilename = string(name);
+  
+  char buf[25];
+  sprintf(buf, "omni_%05d.pgm", num);
+  cv::imwrite(buf, *_image);
+  cout << "Saved omnicam image #" << num << endl;
 }
 
 // OmnicamDataDrawAction methods are here, but they do nothing.
@@ -96,6 +87,16 @@ bool OmnicamDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction::Paramet
 {
   return DrawAction::refreshPropertyPtrs(params_);
 }
+
+void OmnicamData::setImage(cv::Mat* image_)
+{
+  _image = image_;
+}
+
+void OmnicamData::setSensor(Sensor* omniSensor_){
+  _omnicamSensor = dynamic_cast<SensorOmnicam*>(omniSensor_);
+}
+
 
 HyperGraphElementAction* OmnicamDataDrawAction::operator()(HyperGraph::HyperGraphElement* element, HyperGraphElementAction::Parameters* params_)
 {
