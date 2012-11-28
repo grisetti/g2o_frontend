@@ -8,21 +8,34 @@
 #include "PriorityDataQueue.h"
 
 PriorityDataQueue::PriorityDataQueue() {
-
+  _lastElementTime = -1;
 }
 
-bool PriorityDataQueue::empty() {
-	return(_queue.empty());
+bool PriorityDataQueue::empty() const {
+  return(_queue.empty());
 }
 
 g2o::HyperGraph::Data* PriorityDataQueue::front() {
-		return((SensorData*)_queue.top());
+  return((SensorData*)_queue.top());
+}
+
+size_t PriorityDataQueue::size() const {
+  return _queue.size();
 }
 
 void PriorityDataQueue::pop_front() {
-	_queue.pop();
+  _queue.pop();
+  if (_queue.empty())
+    _lastElementTime = -1;
 }
 
-void PriorityDataQueue::insert(g2o::HyperGraph::Data* d) {
-	_queue.push((SensorData*)d);
+double PriorityDataQueue::lastElementTime() const {
+  return _lastElementTime;
+}
+
+void PriorityDataQueue::insert(g2o::HyperGraph::Data* d_) {
+  SensorData* d = (SensorData*) d_;
+  _queue.push(d);
+  if (_lastElementTime < d->timeStamp())
+    _lastElementTime = d->timeStamp();
 }

@@ -15,15 +15,15 @@ Mutexed::~Mutexed() {
 
 }
 
-void Mutexed::lock(){
+void Mutexed::lock() const{
   this->_mutex.lock();
 }
 
-void Mutexed::unlock(){
+void Mutexed::unlock() const{
   this->_mutex.unlock();
 }
 
-bool Mutexed::isLocked(){
+bool Mutexed::isLocked() const{
   bool getLock = this->_mutex.try_lock();
   if(getLock){
     this->_mutex.unlock();

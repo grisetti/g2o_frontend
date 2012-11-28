@@ -14,11 +14,11 @@ class Mutexed {
 public:
 	Mutexed();
 	virtual ~Mutexed();
-	void lock();
-	void unlock();
-	bool isLocked();
+	void lock() const;
+	void unlock() const;
+	bool isLocked() const;
 protected:
-	boost::mutex _mutex;
+	mutable boost::mutex _mutex;
 };
 
 #endif /* MUTEXED_H_ */

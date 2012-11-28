@@ -11,7 +11,7 @@ PrioritySynchronousDataQueue::PrioritySynchronousDataQueue() {
 
 }
 
-bool PrioritySynchronousDataQueue::empty() {
+bool PrioritySynchronousDataQueue::empty() const {
 	this->lock();
 	bool isEmpty = _queue.empty();
 	this->unlock();
@@ -39,15 +39,15 @@ g2o::HyperGraph::Data* PrioritySynchronousDataQueue::front_and_pop() {
   SensorData* dataPtr = 0;
   this->lock();
   if(!_queue.empty()){
-    dataPtr = (SensorData*)_queue.top();
-    _queue.pop();
+    dataPtr = (SensorData*)PriorityDataQueue::front();
+    PriorityDataQueue::pop_front();
   }
   this->unlock();
   return dataPtr;
 }
 
 void PrioritySynchronousDataQueue::insert(g2o::HyperGraph::Data* d) {
-	this->lock();
-	_queue.push((SensorData*)d);
+	this->lock();	
+	PriorityDataQueue::insert(d);
 	this->unlock();
 }
