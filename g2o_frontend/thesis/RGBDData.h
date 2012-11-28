@@ -29,12 +29,12 @@ public:
   virtual bool write(std::ostream& os) const;
   virtual void writeOut();
   void update();
-  virtual void setSensor(Sensor* rgbdCameraSensor_);
   void release();
   inline int paramIndex() {return _paramIndex;}
   const std::string& baseFilename() const { return _baseFilename; };
   void  setBaseFilename(const std::string baseFilename_) { _baseFilename = baseFilename_; };
-  virtual Sensor* getSensor() const { return _rgbdCameraSensor; }
+  virtual Sensor* getSensor() const { return _rgbdCameraSensor; }  
+  virtual void setSensor(Sensor* rgbdCameraSensor_);
   cv::Mat* _intensityImage;
   cv::Mat* _depthImage;
     

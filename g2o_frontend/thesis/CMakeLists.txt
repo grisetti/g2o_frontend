@@ -14,17 +14,19 @@ ADD_LIBRARY(thesis ${G2O_FRONTEND_LIB_THESIS}
 	SensorData.cpp SensorData.h  	
 	RGBDData.cpp RGBDData.h
 	OmnicamData.cpp OmnicamData.h
-	)
+	LaserRobotData.cpp LaserRobotData.h 
+	SensorLaserRobot.cpp SensorLaserRobot.h
+)
 
 SET_TARGET_PROPERTIES(thesis PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_thesis)
 
 IF(CMAKE_BUILD_TYPE MATCHES Release)
   TARGET_LINK_LIBRARIES(thesis
-    ${G2O_TYPES_DATA_LIBRARY}
+    ${G2O_TYPES_DATA}
     ${G2O_TYPES_SLAM2D}
     ${G2O_TYPES_SLAM3D}
-    ${G2O_STUFF_LIBRARY} 
-    ${G2O_CORE_LIBRARY} 
+    ${G2O_STUFF}
+    ${G2O_CORE}
     ${PCL_LIBRARIES}
     ${OpenCV_LIBS}
     ${OPENGL_gl_LIBRARY}
