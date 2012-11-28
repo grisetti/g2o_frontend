@@ -106,7 +106,7 @@ void RGBDData::writeOut()
 	cv::imwrite(buf, *_intensityImage);
 	sprintf(buf, "rgbd_%05d_depth.pgm", num);
 	cv::imwrite(buf, *_depthImage);
-	cout << "Saved frame #" << num << endl;
+	//cout << "Saved frame #" << num << endl;
 }
 
 void RGBDData::update()
