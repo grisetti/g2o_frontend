@@ -39,7 +39,7 @@ RGBDData::RGBDData()
 }
 
 RGBDData::RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_) {
-	_paramIndex = -1;
+  _paramIndex = -1;
   _baseFilename = "none";
   _rgbdCameraSensor = 0;
   _ts_sec = 0;
@@ -51,7 +51,7 @@ RGBDData::RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_) {
 
 RGBDData::RGBDData(Sensor* sensor_, cv::Mat* intensityImage_, cv::Mat* depthImage_)
 {
-	_paramIndex = -1;
+  _paramIndex = -1;
   _baseFilename = "none";
   _rgbdCameraSensor = (SensorRGBDCamera*)sensor_;
   _ts_sec = 0;
@@ -82,6 +82,7 @@ bool RGBDData::read(std::istream& is)
 //! write the data to a stream
 bool RGBDData::write(std::ostream& os) const 
 {
+  
   if (_rgbdCameraSensor)
     os << _rgbdCameraSensor->getParameter()->id();
   else
@@ -91,22 +92,18 @@ bool RGBDData::write(std::ostream& os) const
   return true;
 }
 
-void RGBDData::writeOut()
+void RGBDData::writeOut(std::string g2oGraphFilename)
 {
-	int num = _rgbdCameraSensor->getNum();
-	_rgbdCameraSensor->setNum(num+1);
-	
-	char name[8];	
-	sprintf(name, "%05d", num);
-	_baseFilename = string(name);
-	//cout << _baseFilename << endl;
-	
-	char buf[25];
-	sprintf(buf, "rgbd_%05d_intensity.pgm", num);
-	cv::imwrite(buf, *_intensityImage);
-	sprintf(buf, "rgbd_%05d_depth.pgm", num);
-	cv::imwrite(buf, *_depthImage);
-	//cout << "Saved frame #" << num << endl;
+  int num = _rgbdCameraSensor->getNum();
+  _rgbdCameraSensor->setNum(num+1);
+  _baseFilename = g2oGraphFilename.substr(0, g2oGraphFilename.length()-4);
+  char buf[50];
+  sprintf(buf, "%s_rgbd_%d_%05d_intensity.pgm", &_baseFilename[0], _rgbdCameraSensor->getParameter()->id(), num);
+  cv::imwrite(buf, *_intensityImage);
+  sprintf(buf, "%s_rgbd_%d_%05d_depth.pgm", &_baseFilename[0], _rgbdCameraSensor->getParameter()->id(), num);
+  cv::imwrite(buf, *_depthImage);
+  _baseFilename = string(buf);
+  _baseFilename = _baseFilename.substr(0, _baseFilename.length()-10);
 }
 
 void RGBDData::update()
@@ -207,7 +204,6 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
   float constant_x = unit_scaling / fx;
   float constant_y = unit_scaling / fy;
   
-
   for(int i = 0; i < that->_depthImage->rows; i++)  {
     for(int j = 0; j < that->_depthImage->cols; j+=step) {
     	unsigned short d = *dptr;

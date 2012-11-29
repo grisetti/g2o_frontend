@@ -66,19 +66,16 @@ bool OmnicamData::write(std::ostream& os) const {
 }
 
 //! saves the image on a file
-void OmnicamData::writeOut()
+void OmnicamData::writeOut(std::string g2oGraphFilename)
 {
   int num = _omnicamSensor->getNum();
   _omnicamSensor->setNum(num+1);
-  
-  char name[8];
-  sprintf(name, "%05d", num);
-  _baseFilename = string(name);
-  
-  char buf[25];
-  sprintf(buf, "omni_%05d.pgm", num);
+  _baseFilename = g2oGraphFilename.substr(0, g2oGraphFilename.length()-4);
+  char buf[50];
+  sprintf(buf, "%s_omni_%d_%05d.pgm", &_baseFilename[0], _omnicamSensor->getParameter()->id(), num);
   cv::imwrite(buf, *_image);
-  cout << "Saved omnicam image #" << num << endl;
+  _baseFilename = string(buf);
+  _baseFilename = _baseFilename.substr(0, _baseFilename.length()-4);
 }
 
 // OmnicamDataDrawAction methods are here, but they do nothing.

@@ -19,7 +19,7 @@ public:
 	virtual bool read(std::istream& is);
 	//! write the data to a stream
 	virtual bool write(std::ostream& os) const;
-	virtual void writeOut();
+	virtual void writeOut(std::string g2oGraphFilename);
 	
 	const std::string& baseFilename() const { return _baseFilename; };
 	void  setBaseFilename(const std::string baseFilename_) { _baseFilename = baseFilename_; };
