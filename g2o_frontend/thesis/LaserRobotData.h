@@ -29,6 +29,7 @@
 #include "g2o/core/hyper_graph.h"
 #include "g2o_frontend/thesis/SensorData.h"
 #include "g2o/types/slam3d/types_slam3d.h"
+#include "g2o/types/slam2d/types_slam2d.h"
 #include "SensorLaserRobot.h"
 
 /**
@@ -48,32 +49,13 @@ public:
 	virtual bool read(std::istream& is);
 	//! write the data to a stream
 	virtual bool write(std::ostream& os) const;	
-  //virtual void writeOut();
+  virtual void writeOut() {}
 	//void update();
 	//void release();
   inline int paramIndex() {return _paramIndex;}	
-	const std::string& baseFilename() const { return _baseFilename; };
-	void  setBaseFilename(const std::string baseFilename_) { _baseFilename = baseFilename_; };
+	
 	virtual Sensor* getSensor() const { return _laserRobotSensor; }
 	virtual void setSensor(Sensor* laserRobotSensor_);
-	
-	//! odom of the robot
-  const g2o::SE2& odomPose() const { return _odomPose;}
-  void setOdomPose(const g2o::SE2& odomPose);
-	//! position of the laser wrt the world
-	g2o::SE2 laserPose() const { return _odomPose * _laserRobotSensor->laserParams().laserPose; };
-	
-	double timestamp() const { return _timestamp;}
-	void setTimestamp(double ts);
-
-	double loggerTimestamp() const { return _loggerTimestamp;}
-	void setLoggerTimestamp(double ts);
-
-// 	const std::string& tag() const { return _tag;}
-// 	void setTag(const std::string& tag);
-
-	const std::string& hostname() const { return _hostname;}
-	void setHostname(const std::string& hostname);
 	/**
 	* computes a cartesian view of the beams (x,y).
 	* @return a vector with the points of the scan in cartesian coordinates.
@@ -81,18 +63,18 @@ public:
 	Point2DVector cartesian() const;
 
 protected:
-	std::string _baseFilename;
   SensorLaserRobot* _laserRobotSensor;
-	g2o::SE2 _odomPose;
-	double _timestamp; ///< timestamp when the measurement was generated
-  double _loggerTimestamp; ///< timestamp when the measurement was recorded
-	//std::string _tag; ///< string tag (FLASER, ROBOTLASER, ODOM..) of the line in the log
-  std::string _hostname; ///< name of the computer/robot generating the data
 	//! velocities and safety distances of the robot
 	double _laserTv, _laserRv, _forwardSafetyDist, _sideSaftyDist, _turnAxis;
-	
-private:
-  int _paramIndex;
+	int _paramIndex;
+	std::vector<float> _ranges;
+	std::vector<float> _intensities;
+	float _firstBeamAngle;
+	float _fov;
+	float _minRange;
+	float _maxRange;
+	float _accuracy;
+  
 };	
 
 #ifdef G2O_HAVE_OPENGL

@@ -19,15 +19,30 @@
 
 
 #include "SensorLaserRobot.h"
+#include <g2o/types/slam3d/parameter_se3_offset.h>
 
-SensorLaserRobot::SensorLaserRobot(): 
-	_laserParams(0, 180, -M_PI/2, M_PI/180., 50.,0.1, 0)
+SensorLaserRobot::SensorLaserRobot() 
+// 	: _laserParams(0, 180, -M_PI/2, M_PI/180., 50.,0.1, 0)
 {
 	_num = 0;	
 }
 
 SensorLaserRobot::~SensorLaserRobot()
 {
+}
+
+
+g2o::Parameter* SensorLaserRobot::getParameter() {
+	return _parameter;
+}
+
+bool SensorLaserRobot::setParameter(g2o::Parameter* parameter_)
+{
+	g2o::ParameterSE3Offset* laserParam = dynamic_cast<g2o::ParameterSE3Offset*> (parameter_);
+	if (laserParam == 0)
+		return false;
+	_parameter = parameter_;
+	return true;
 }
 
 int SensorLaserRobot::getNum()
@@ -50,12 +65,12 @@ void SensorLaserRobot::setRanges(const std::vector< double >& ranges_)
 	_ranges = ranges_;
 }
 
-void SensorLaserRobot::setRemissions(const std::vector< double >& remissions_)
+void SensorLaserRobot::setIntensities(const std::vector< double >& intensities_)
 {
-	_remissions = remissions_;
+	_intensities = intensities_;
 }
 
-void SensorLaserRobot::setLaserParams(const g2o::LaserParameters& laserParams_)
-{
-	_laserParams = laserParams_;
-}
+// void SensorLaserRobot::setLaserParams(const g2o::LaserParameters& laserParams_)
+// {
+// 	_laserParams = laserParams_;
+// }

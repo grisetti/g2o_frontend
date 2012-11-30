@@ -19,11 +19,12 @@
 
 
 #include "LaserRobotData.h"
-#include <fstream>
 #include "g2o/stuff/macros.h"
 #include "g2o/core/factory.h"
 #include <Eigen/Dense>
+#include <fstream>
 #include <iomanip>
+
 #ifdef WINDOWS
 #include <windows.h>
 #endif
@@ -43,8 +44,12 @@ LaserRobotData::LaserRobotData():
 		_laserTv(0.), _laserRv(0.), _forwardSafetyDist(0.), _sideSaftyDist(0.), _turnAxis(0.)
 {
 	_paramIndex = -1;
-	_baseFilename = "none";
 	_laserRobotSensor = 0;
+	_firstBeamAngle = 0;
+	_fov = 0;
+	_minRange = 0;
+	_maxRange = 0;
+	_accuracy = 0;
 	
 }
 
@@ -54,70 +59,90 @@ LaserRobotData::~LaserRobotData()
 
 bool LaserRobotData::read(istream& is)
 {
-	int type;
-	double angle, fov, res, maxrange, acc;
-	int remission_mode;
-	is >> type >> angle >> fov >> res >> maxrange >> acc >> remission_mode;
+	float res, remissionMode;
+	
+	is >> _paramIndex >> _firstBeamAngle >> _fov >> res >> _maxRange >> _accuracy >> remissionMode;
 
 	int beams;
 	is >> beams;
-	_laserRobotSensor->_laserParams = LaserParameters(type, beams, angle, res, maxrange, acc, remission_mode);
-	_laserRobotSensor->_ranges.resize(beams);
+	_ranges.resize(beams);
 	for (int i=0; i<beams; i++)
-		is >> _laserRobotSensor->_ranges[i];
+		is >> _ranges[i];
 
 	is >> beams;
-	_laserRobotSensor->_remissions.resize(beams);
+	_intensities.resize(beams);
 	for (int i = 0; i < beams; i++)
-		is >> _laserRobotSensor->_remissions[i];
+		is >> _intensities[i];
 
 	// special robot laser stuff
 	double x,y,theta;
+	//odom pose of the robot: no need
 	is >> x >> y >> theta;
-	SE2 lp(x,y,theta);
-	//cerr << "x: " << x << " y:" << y << " th:" << theta << " ";
+	//laser pose wrt to the world: no need
 	is >> x >> y >> theta;
-	//cerr << "x: " << x << " y:" << y << " th:" << theta;
-	_odomPose = SE2(x,y,theta);
-	_laserRobotSensor->_laserParams.laserPose = _odomPose.inverse()*lp;
 	is >> _laserTv >>  _laserRv >>  _forwardSafetyDist >> _sideSaftyDist >> _turnAxis;
 
-	// timestamp + host
-	is >> _timestamp;
-	is >> _hostname;
-	is >> _loggerTimestamp;
+	// timestamp + hostname
+	string hostname;
+	double ts;
+	is >> ts;
+	is >> hostname;
+	setTimeStamp(ts);
+	is >> ts;
 	return true;
+}
+
+Eigen::Vector3d to2D(const Eigen::Isometry3d& iso) {
+	
+	Eigen::Vector3d rv;
+	rv[0] = iso.translation().x();
+	rv[1] = iso.translation().y();
+	Eigen::AngleAxisd aa(iso.linear());
+	rv[2] = aa.angle();	
+	return rv;
 }
 
 bool LaserRobotData::write(ostream& os) const
 {
-		os << _laserRobotSensor->_laserParams.type << " " << _laserRobotSensor->_laserParams.firstBeamAngle << " " << _laserRobotSensor->_laserParams.fov << " "
-      << _laserRobotSensor->_laserParams.angularStep << " " << _laserRobotSensor->_laserParams.maxRange << " " << _laserRobotSensor->_laserParams.accuracy << " "
-      << _laserRobotSensor->_laserParams.remissionMode << " ";
-    os << _laserRobotSensor->ranges().size();
-    for (size_t i = 0; i < _laserRobotSensor->ranges().size(); ++i)
-      os << " " << _laserRobotSensor->ranges()[i];
-    os << " " << _laserRobotSensor->_remissions.size();
-    for (size_t i = 0; i < _laserRobotSensor->_remissions.size(); ++i)
-      os << " " << _laserRobotSensor->_remissions[i];
+		const HyperGraph::DataContainer* container = dataContainer();
+		const VertexSE3* v = dynamic_cast<const VertexSE3*> (container);
+		if (! v) return false;
+		
+		const OptimizableGraph* g = v->graph();
+		
+		const Parameter* p = g->parameters().getParameter(_paramIndex);
+		
+		const ParameterSE3Offset* oparam = dynamic_cast<const g2o::ParameterSE3Offset*> (p);
+		
+		Eigen::Isometry3d offset = oparam->offset();
+		Eigen::Vector3d lp = to2D(offset);
+		
+		float angularStep = _fov / _ranges.size();
+		int remissionMode = 0;
+		os << _paramIndex << " " << _firstBeamAngle << " " << _fov << " " << angularStep << " " << _maxRange << " " << _accuracy << " "
+			<< remissionMode << " ";
+    os << _ranges.size();
+    for (size_t i = 0; i < _ranges.size(); ++i) 
+			os << " " << _ranges[i];
+    os << " " << _intensities.size();
+    for (size_t i = 0; i < _intensities.size(); ++i) 
+			os << " " << _intensities[i];
 
-    // odometry pose
-    Eigen::Vector3d p = (_odomPose * _laserRobotSensor->_laserParams.laserPose).toVector();
-    os << " " << p.x() << " " << p.y() << " " << p.z();
-    p = _odomPose.toVector();
-    os << " " << p.x() << " " << p.y() << " " << p.z();
+		// odometry pose
+    Eigen::Vector3d pose = to2D(v->estimate());
+    os << " " << pose.x() << " " << pose.y() << " " << pose.z();
+    // laser pose wrt the world
+    pose =  to2D(v->estimate()*offset);
+    os << " " << pose.x() << " " << pose.y() << " " << pose.z();
 
     // crap values
     os << FIXED(" " <<  _laserTv << " " <<  _laserRv << " " << _forwardSafetyDist << " "
         << _sideSaftyDist << " " << _turnAxis);
-    os << FIXED(" " << timestamp() << " " << hostname() << " " << loggerTimestamp());
+		//the second timestamp is the logged timestamp
+		string hn = "hostname";
+    os << FIXED(" " << _timeStamp << " " << hn << " " << _timeStamp);
 
     return os.good();
-}
-
-void LaserRobotData::setOdomPose(const g2o::SE2& odomPose_)
-{
-	_odomPose = odomPose_;
 }
 
 
@@ -126,39 +151,20 @@ void LaserRobotData::setSensor(Sensor* laserRobotsensor_)
 	_laserRobotSensor = dynamic_cast<SensorLaserRobot*>(laserRobotsensor_);
 }
 
-void LaserRobotData::setTimestamp(double ts)
-{
-	_timestamp = ts;
-}
-
-void LaserRobotData::setLoggerTimestamp(double ts)
-{
-	_loggerTimestamp = ts;
-}
-
-// void LaserRobotData::setTag(const std::string& tag)
-// {
-// 	_tag = tag;
-// }
-
-void LaserRobotData::setHostname(const std::string& hostname_)
-{
-	_hostname = hostname_;
-}
 
 LaserRobotData::Point2DVector LaserRobotData::cartesian() const
 {
 	Point2DVector points;
-		for (size_t i = 0; i < _laserRobotSensor->ranges().size(); ++i) {
-			const double& r = _laserRobotSensor->ranges()[i];
-			if (r < _laserRobotSensor->laserParams().maxRange) {
-				double alpha = _laserRobotSensor->laserParams().firstBeamAngle + i * _laserRobotSensor->laserParams().angularStep;
-				points.push_back(Eigen::Vector2d(cos(alpha) * r, sin(alpha) * r));
-			}
+	float angularStep = _fov / _ranges.size();
+	for (size_t i = 0; i < _laserRobotSensor->ranges().size(); ++i) {
+		const double& r = _laserRobotSensor->ranges()[i];
+		if (r < _maxRange) {
+			double alpha = _firstBeamAngle + i * angularStep;
+			points.push_back(Eigen::Vector2d(cos(alpha) * r, sin(alpha) * r));
 		}
-		return points;
+	}
+	return points;
 }
-
 
 
 
@@ -182,7 +188,8 @@ bool LaserRobotDataDrawAction::refreshPropertyPtrs(g2o::HyperGraphElementAction:
 }
 
 
-g2o::HyperGraphElementAction* LaserRobotDataDrawAction::operator()(g2o::HyperGraph::HyperGraphElement* element, g2o::HyperGraphElementAction::Parameters* params_)
+HyperGraphElementAction* LaserRobotDataDrawAction::operator()(HyperGraph::HyperGraphElement* element, 
+								  HyperGraphElementAction::Parameters* params_)
 {
 	if (typeid(*element).name()!=_typeName)
 			return 0;
@@ -210,10 +217,19 @@ g2o::HyperGraphElementAction* LaserRobotDataDrawAction::operator()(g2o::HyperGra
 			points = npoints;
 		}
 		
-		
 		glPushMatrix();
-		SensorLaserRobot* sensor  = dynamic_cast<SensorLaserRobot*>(that->getSensor());
-		const SE2& laserPose = sensor->laserParams().laserPose;
+		const HyperGraph::DataContainer* container = that->dataContainer();
+		const VertexSE3* v = dynamic_cast<const VertexSE3*> (container);
+		if (! v) return false;
+		const OptimizableGraph* g = v->graph();
+		
+		const Parameter* p = g->parameters().getParameter(that->paramIndex());
+		
+		const ParameterSE3Offset* oparam = dynamic_cast<const ParameterSE3Offset*> (p);
+		
+		Eigen::Isometry3d offset = oparam->offset();
+		
+		const SE2& laserPose = SE2(to2D(offset));
 		glTranslatef((float)laserPose.translation().x(), (float)laserPose.translation().y(), 0.f);
 		glRotatef((float)RAD2DEG(laserPose.rotation().angle()),0.f,0.f,1.f);
 		glBegin(GL_POINTS);
@@ -230,6 +246,7 @@ g2o::HyperGraphElementAction* LaserRobotDataDrawAction::operator()(g2o::HyperGra
 		glEnd();
 		glPopMatrix();
 		return this;
+	return 0;
 }
 
 

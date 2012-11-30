@@ -7,7 +7,6 @@
 
 #include "SensorHandler.h"
 
-SensorHandler::SensorHandler() {
-
+SensorHandler::SensorHandler() : _sensor(NULL), _queue(NULL) {
 }
 

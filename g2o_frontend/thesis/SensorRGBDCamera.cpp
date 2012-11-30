@@ -6,6 +6,7 @@
  */
 
 #include "SensorRGBDCamera.h"
+#include "g2o/types/slam3d/parameter_camera.h"
 
 SensorRGBDCamera::SensorRGBDCamera() {
 	_parameter = new g2o::ParameterCamera();

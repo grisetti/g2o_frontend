@@ -8,7 +8,6 @@
 #include "Sensor.h"
 #include <iostream>
 
-Sensor::Sensor() {
-
+Sensor::Sensor() : _parameter(NULL), _num(0) {
 }
 

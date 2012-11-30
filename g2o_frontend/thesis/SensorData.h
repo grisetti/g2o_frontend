@@ -19,7 +19,7 @@ public:
 	Stamped() : _timeStamp(-1.) {};
 	Stamped(double timeStamp_) { _timeStamp = timeStamp_; };
 	inline double timeStamp() const { return _timeStamp; }
-	void setTimestamp(double ts);
+	void setTimeStamp(double ts);
 protected:	
 	double _timeStamp;
 };

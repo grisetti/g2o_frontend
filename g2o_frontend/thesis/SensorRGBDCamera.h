@@ -9,7 +9,6 @@
 #define SENSORRGBDCAMERA_H_
 
 #include "Sensor.h"
-#include "g2o/types/slam3d/parameter_camera.h"
 
 class SensorRGBDCamera : public Sensor {
 public:

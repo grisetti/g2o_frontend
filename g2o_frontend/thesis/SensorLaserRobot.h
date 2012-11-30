@@ -21,7 +21,6 @@
 #ifndef SENSORLASERROBOT_H
 #define SENSORLASERROBOT_H
 #include "Sensor.h"
-#include <g2o/types/data/laser_parameters.h>
 
 class SensorLaserRobot: public Sensor
 {
@@ -31,10 +30,10 @@ public:
 	virtual ~SensorLaserRobot();
 	
 	//! the parameters of the laser
-// 	virtual g2o::Parameter* getParameter();
-// 	virtual bool setParameter(g2o::Parameter* parameter_);
-	const g2o::LaserParameters& laserParams() const { return _laserParams; }
-	void setLaserParams(const g2o::LaserParameters& laserParams_);
+	virtual g2o::Parameter* getParameter();
+	virtual bool setParameter(g2o::Parameter* parameter_);
+// 	const g2o::LaserParameters& laserParams() const { return _laserParams; }
+// 	void setLaserParams(const g2o::LaserParameters& laserParams_);
 	
 	virtual int getNum();
 	virtual void setNum(int num_);
@@ -46,19 +45,14 @@ public:
 	void setRanges(const std::vector<double>& ranges);
 
 	//! the remission measurements by the laser
-	const std::vector<double>& remissions() const { return _remissions; }
-	void setRemissions(const std::vector<double>& remissions);
-
-	/*TODO: protected?!*/
-	g2o::LaserParameters _laserParams;
-	std::vector<double> _ranges;
-  std::vector<double> _remissions;
+	const std::vector<double>& intensities() const { return _intensities; }
+	void setIntensities(const std::vector<double>& intensities);
 	 
 protected:
 	std::string _scanTopic;
 // 	g2o::LaserParameters _laserParams;
-// 	std::vector<double> _ranges;
-//  std::vector<double> _remissions;
+	std::vector<double> _ranges;
+	std::vector<double> _intensities;
 
 };
 

@@ -7,6 +7,6 @@
 
 #include "SensorData.h"
 
-void Stamped::setTimestamp(double ts) {
+void Stamped::setTimeStamp(double ts) {
 	_timeStamp = ts;
 }
