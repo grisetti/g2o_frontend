@@ -66,7 +66,7 @@ bool OmnicamData::write(std::ostream& os) const {
 }
 
 //! saves the image on a file
-void OmnicamData::writeOut(std::string g2oGraphFilename)
+void OmnicamData::writeOut(const std::string& g2oGraphFilename)
 {
   int num = _omnicamSensor->getNum();
   _omnicamSensor->setNum(num+1);

@@ -49,10 +49,11 @@ public:
 	virtual bool read(std::istream& is);
 	//! write the data to a stream
 	virtual bool write(std::ostream& os) const;	
-  virtual void writeOut() {}
+	virtual void writeOut(const std::string&) {}
 	//void update();
 	//void release();
-  inline int paramIndex() {return _paramIndex;}	
+	inline int paramIndex() const {return _paramIndex;}	
+	inline void setParamIndex(int pi) {_paramIndex = pi;}	
 	
 	virtual Sensor* getSensor() const { return _laserRobotSensor; }
 	virtual void setSensor(Sensor* laserRobotSensor_);
@@ -61,6 +62,11 @@ public:
 	* @return a vector with the points of the scan in cartesian coordinates.
 	*/
 	Point2DVector cartesian() const;
+	const std::vector<float>& ranges() const {return _ranges;}
+	std::vector<float>& ranges() {return _ranges;}	
+	const std::vector<float>& intensities() const {return _intensities;}
+	std::vector<float>& intensities() {return _intensities;}
+
 
 protected:
   SensorLaserRobot* _laserRobotSensor;

@@ -92,7 +92,7 @@ bool RGBDData::write(std::ostream& os) const
   return true;
 }
 
-void RGBDData::writeOut(std::string g2oGraphFilename)
+void RGBDData::writeOut(const std::string& g2oGraphFilename)
 {
   int num = _rgbdCameraSensor->getNum();
   _rgbdCameraSensor->setNum(num+1);

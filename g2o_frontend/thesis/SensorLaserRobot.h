@@ -37,22 +37,12 @@ public:
 	
 	virtual int getNum();
 	virtual void setNum(int num_);
-	std::string getScanTopic() { return _scanTopic; };
-	void setScanTopic(std::string scanTopic_);
+	std::string getTopic() { return _scanTopic; };
+	void setTopic(std::string scanTopic_);
 
-	//! the range measurements by the laser
-	const std::vector<double>& ranges() const { return _ranges; }
-	void setRanges(const std::vector<double>& ranges);
-
-	//! the remission measurements by the laser
-	const std::vector<double>& intensities() const { return _intensities; }
-	void setIntensities(const std::vector<double>& intensities);
 	 
 protected:
 	std::string _scanTopic;
-// 	g2o::LaserParameters _laserParams;
-	std::vector<double> _ranges;
-	std::vector<double> _intensities;
 
 };
 
