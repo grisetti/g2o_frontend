@@ -27,7 +27,7 @@ public:
   virtual bool read(std::istream& is);
   //! write the data to a stream
   virtual bool write(std::ostream& os) const;
-  virtual void writeOut(std::string g2oGraphFilename);
+  virtual void writeOut(const std::string& g2oGraphFilename);
   void update();
   void release();
   inline int paramIndex() {return _paramIndex;}
