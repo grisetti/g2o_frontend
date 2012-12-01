@@ -45,11 +45,11 @@ LaserRobotData::LaserRobotData():
 {
   _paramIndex = -1;
   _laserRobotSensor = 0;
-  _firstBeamAngle = 0;
-  _fov = 0;
+  _firstBeamAngle = -M_PI/2;
+  _fov = M_PI;
   _minRange = 0;
-  _maxRange = 0;
-  _accuracy = 0;
+  _maxRange = 30;
+  _accuracy = 0.1;
 	
 }
 
@@ -106,6 +106,7 @@ bool LaserRobotData::write(ostream& os) const {
   const HyperGraph::DataContainer* container = dataContainer();
   const VertexSE3* v = dynamic_cast<const VertexSE3*> (container);
   if (! v) {
+    cerr << "dataContainer = " << container << endl;
     cerr << "dynamic cast failed" << endl;
     return false;
   }
@@ -172,12 +173,13 @@ LaserRobotData::Point2DVector LaserRobotData::cartesian() const
   Point2DVector points;
   points.reserve(_ranges.size());
   float angularStep = _fov / _ranges.size();
+  float alpha=_firstBeamAngle;
   for (size_t i = 0; i < _ranges.size(); ++i) {
     const float& r = _ranges[i];
     if (r < _maxRange) {
-      double alpha = _firstBeamAngle + i * angularStep;
       points.push_back(Eigen::Vector2d(cos(alpha) * r, sin(alpha) * r));
     }
+    alpha+=angularStep;
   }
   return points;
 }
@@ -190,8 +192,8 @@ bool LaserRobotDataDrawAction::refreshPropertyPtrs(g2o::HyperGraphElementAction:
     return false;
   if (_previousParams)
     {
-      _beamsDownsampling = _previousParams->makeProperty<IntProperty>(_typeName + "::BEAMS_DOWNSAMPLING", 10);
-      _pointSize = _previousParams->makeProperty<FloatProperty>(_typeName + "::POINT_SIZE", .05f);
+      _beamsDownsampling = _previousParams->makeProperty<IntProperty>(_typeName + "::BEAMS_DOWNSAMPLING", 1);
+      _pointSize = _previousParams->makeProperty<FloatProperty>(_typeName + "::POINT_SIZE", 1.0f);
       _maxRange = _previousParams->makeProperty<FloatProperty>(_typeName + "::MAX_RANGE", -1.);
     } 
   else 
@@ -219,36 +221,29 @@ HyperGraphElementAction* LaserRobotDataDrawAction::operator()(HyperGraph::HyperG
   LaserRobotData* that = static_cast<LaserRobotData*>(element);
 
   LaserRobotData::Point2DVector points = that->cartesian();
+
+  int k=0;
   if (_maxRange && _maxRange->value() >= 0 ) {
-    // prune the cartesian points;
-    LaserRobotData::Point2DVector npoints(points.size());
-    int k = 0;
     float r2=_maxRange->value();
     r2 *= r2;
     for (size_t i=0; i<points.size(); i++){
-      float x = points[i].x();
-      float y = points[i].y();
-      if (x*x + y*y < r2) npoints[k++] = points[i];
+      if (points[i].squaredNorm()<r2)
+	points[k++]=points[i];
     }
-    points = npoints;
+    points.resize(k);
   }
-		
-  glPushMatrix();
+  
   const HyperGraph::DataContainer* container = that->dataContainer();
   const VertexSE3* v = dynamic_cast<const VertexSE3*> (container);
   if (! v) return false;
+
   const OptimizableGraph* g = v->graph();
-		
   const Parameter* p = g->parameters().getParameter(that->paramIndex());
-		
   const ParameterSE3Offset* oparam = dynamic_cast<const ParameterSE3Offset*> (p);
 		
-  Eigen::Isometry3d offset = oparam->offset();
-		
-  const SE2& laserPose = SE2(to2D(offset));
-  glTranslatef((float)laserPose.translation().x(), (float)laserPose.translation().y(), 0.f);
-  glRotatef((float)RAD2DEG(laserPose.rotation().angle()),0.f,0.f,1.f);
-  glBegin(GL_POINTS);
+  const Eigen::Isometry3d& offset = oparam->offset();
+  glPushMatrix();
+  glMultMatrixd(offset.data());
   glColor4f(1.f,0.f,0.f,0.5f);
   int step = 1;
   if (_beamsDownsampling )
@@ -256,6 +251,7 @@ HyperGraphElementAction* LaserRobotDataDrawAction::operator()(HyperGraph::HyperG
   if (_pointSize) {
     glPointSize(_pointSize->value());
   }
+  glBegin(GL_POINTS);
   for (size_t i=0; i<points.size(); i+=step){
     glVertex3f((float)points[i].x(), (float)points[i].y(), 0.f);
   }

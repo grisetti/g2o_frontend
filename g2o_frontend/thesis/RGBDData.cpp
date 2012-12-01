@@ -207,27 +207,27 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
   for(int i = 0; i < that->_depthImage->rows; i++)  {
     for(int j = 0; j < that->_depthImage->cols; j+=step) {
     	unsigned short d = *dptr;
-			unsigned int color = (unsigned int)*dptrIntensity;
+	unsigned int color = (unsigned int)*dptrIntensity;
     	if(d != 0) {
-				// Computing the Cartesian coordinates of the current pixel
-				float x = (j - center_x) * d * constant_x;
-				float y = (i - center_y) * d * constant_y;
-				float z = ((float)d) * unit_scaling;
-				Eigen::Vector3d point(x, y, z);
-				Eigen::Isometry3d offset = param->offset();
-				Vector7d off = g2o::internal::toVectorQT(offset);
-				Eigen::Quaternion<double> q(off[6], off[3], off[4], off[5]);
-				Eigen::Vector3d t(off[0], off[1], off[2]);
-				Eigen::Matrix3d R = q.toRotationMatrix();
-				point = R*point;				
-				point = point + t;
-				float vertexColor = color/255.0f;
-				glColor4f(vertexColor, vertexColor, vertexColor, 0.5f);
+	  // Computing the Cartesian coordinates of the current pixel
+	  float x = (j - center_x) * d * constant_x;
+	  float y = (i - center_y) * d * constant_y;
+	  float z = ((float)d) * unit_scaling;
+	  Eigen::Vector3d point(x, y, z);
+	  Eigen::Isometry3d offset = param->offset();
+	  Vector7d off = g2o::internal::toVectorQT(offset);
+	  Eigen::Quaternion<double> q(off[6], off[3], off[4], off[5]);
+	  Eigen::Vector3d t(off[0], off[1], off[2]);
+	  Eigen::Matrix3d R = q.toRotationMatrix();
+	  point = R*point;				
+	  point = point + t;
+	  float vertexColor = color/255.0f;
+	  glColor4f(vertexColor, vertexColor, vertexColor, 0.5f);
 				glNormal3f(-point(0), -point(1), -point(2));
 				glVertex3f(point(0), point(1), point(2));
-			}
+	}
     	dptr = dptr + step;
-			dptrIntensity = dptrIntensity + step;
+	dptrIntensity = dptrIntensity + step;
     } 
   }
 	

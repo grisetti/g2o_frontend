@@ -25,7 +25,6 @@
 #include <iosfwd>
 #include <string>
 
-#include "opencv2/highgui/highgui.hpp"
 #include "g2o/core/hyper_graph.h"
 #include "g2o_frontend/thesis/SensorData.h"
 #include "g2o/types/slam3d/types_slam3d.h"
@@ -66,7 +65,18 @@ public:
 	std::vector<float>& ranges() {return _ranges;}	
 	const std::vector<float>& intensities() const {return _intensities;}
 	std::vector<float>& intensities() {return _intensities;}
+	
+	float minRange() const { return _minRange; }
+	void  setMinRange(float r) { _minRange = r; }
 
+	float maxRange() const { return _maxRange; }
+	void  setMaxRange(float r)  { _maxRange = r; }
+
+	float fov() const { return _fov; }
+	void setFov(float f) { _fov = f; }
+
+	float firstBeamAngle() const { return _firstBeamAngle; }
+	void setFirstBeamAngle(float fba)  { _firstBeamAngle = fba; }
 
 protected:
   SensorLaserRobot* _laserRobotSensor;
@@ -89,7 +99,7 @@ class LaserRobotDataDrawAction : public g2o::DrawAction{
 public:
   LaserRobotDataDrawAction() : DrawAction(typeid(LaserRobotData).name()) {};
   virtual HyperGraphElementAction* operator()(g2o::HyperGraph::HyperGraphElement* element, 
-					      																g2o::HyperGraphElementAction::Parameters* params_ );
+					      g2o::HyperGraphElementAction::Parameters* params_ );
 protected:
   virtual bool refreshPropertyPtrs(g2o::HyperGraphElementAction::Parameters* params_);
   g2o::IntProperty* _beamsDownsampling;
