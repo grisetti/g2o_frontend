@@ -20,7 +20,7 @@ disp(gtX);
 
 #generate a set of noised points with different levels
 nLevel = [0 0.001  0.01 0.1 0.5];
-Pjn = zeros(6, np, nLevel+1);
+Pjn = zeros(6, np, size(nLevel)(2));
 Pjn(:, :, 1) = pwn_remapPoints(Pi, gtX);
 
 Omegas = zeros(6,6,nLevel);

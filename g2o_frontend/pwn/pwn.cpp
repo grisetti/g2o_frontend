@@ -125,7 +125,9 @@ inline void cloud2img(Vector6fPtrMatrix& pointsImage,
 		      MatrixXf& zBuffer /* temp zBuffer for working. Allocate it outside*/) {
   
   zBuffer.resize(pointsImage.rows(), pointsImage.cols());
-  informationImage.fill(0);
+  if (omegas.size())
+    informationImage.fill(0);
+
   pointsImage.fill(0);
   zBuffer.fill(std::numeric_limits<double>::max());
 
@@ -147,16 +149,51 @@ inline void cloud2img(Vector6fPtrMatrix& pointsImage,
     if (zBuffer(y,x)>pt.z()){
       zBuffer(y,x)=pt.z();
       pointsImage(y,x) = &p;
-      informationImage(y,x) = &omegas[i];
+      if (omegas.size())
+	informationImage(y,x) = &omegas[i];
     }
   }
 }
 
 
-inline int pwn_align(float& error, Isometry3f& Xnew, 
+void cloud2img(Vector6fPtrMatrix& pointsImage, 
+	       Vector6fVector& points, 
+	       const Isometry3f& X,
+	       const Matrix3f& cameraMatrix,
+	       MatrixXf& zBuffer /* temp zBuffer for working. Allocate it outside*/) {
+  static Matrix6fVector dummy_omegas;
+  static Matrix6fPtrMatrix dummy_informationImage(0,0);
+  cloud2img(pointsImage, dummy_informationImage, points, dummy_omegas, X, cameraMatrix, zBuffer );
+}
+
+/**
+computes the aligment of range images with normals
+@returns the number of inliers
+
+Returned parameters:
+float& error // final error of the function
+Isometry3f& Xnew // transform that moves pref onto pcurr
+
+Input parameters:
+Vector6fVector& refPoints // points in the reference scan
+Vector6fVector& currPoints,  // points in the moving scan
+Matrix6fVector& currInformation, // omegas of the moving scan
+Isometry3f& X, // initial transform
+Matrix3f& cameraMatrix, // camer matrix
+int rows, // how big image
+int cols,
+float inlierThreshold // error to consider a point an inlier
+int minInliers, // how  many outliers
+int innerIterations, // inner iterations for least sqares
+int outerIterations, // outetr iterations
+*/
+
+inline int pwn_align(float& error,    
+		     Isometry3f& Xnew, 
 		     Vector6fVector& refPoints, 
 		     Vector6fVector& currPoints, 
-		     Matrix6fVector& refInformation,
+		     Matrix6fVector& currInformation,
+		     //input
 		     Isometry3f& X,
 		     Matrix3f& cameraMatrix,
 		     int rows,
@@ -167,32 +204,27 @@ inline int pwn_align(float& error, Isometry3f& Xnew,
 		     int outerIterations) {
   // allocate the reference images
   Vector6fPtrMatrix refImage(rows, cols);
-  Matrix6fPtrMatrix refInformationImage(rows, cols);
 
   Vector6fPtrMatrix currImage(rows, cols);
   Matrix6fPtrMatrix currInformationImage(rows, cols);
   
-  Matrix6fVector dummyOmegas(currPoints.size());
   MatrixXf zBuffer(rows, cols);
   // construct the pointer map for the current image
   cloud2img(currImage, currInformationImage,
-	    currPoints, dummyOmegas,
+	    currPoints, currInformation,
 	    Isometry3f::Identity(), cameraMatrix, zBuffer);
   Isometry3f Xcurrent = X;
   int inliers = 0;
   int size=cols*rows;
   for (int i=0; i<outerIterations; i++){
     // remap the reference frame in the local one;
-    cloud2img(refImage, refInformationImage,
-	      refPoints, refInformation,
-
-	      Xcurrent, cameraMatrix, zBuffer);
+    cloud2img(refImage, refPoints, Xcurrent, cameraMatrix, zBuffer);
     for (int j=0; j<innerIterations; j++){
       cerr << "\tinner iteration" << j << endl;
       float iterationError;
       Isometry3f _xNew;
       inliers =  pwn_iteration(iterationError, _xNew, 
-			       refImage.data(), currImage.data(), refInformationImage.data(),size, 
+			       refImage.data(), currImage.data(), currInformationImage.data(), size, 
 			       Xcurrent, inlierThreshold, minInliers);
       cerr << "\t\tinliers: " << inliers <<  " error:" << error << endl;
       if (inliers<minInliers) {
@@ -215,7 +247,9 @@ unit tests quat2mat/mat2quat
 unit tests t2v/v2t
 unit tests remapPoint
 unit tests cloud2img
-unit tests pwn_iteration (compare with octave)
+unit tests pwn_iteration (compare with octave !!!!)
+
+//
 validation of the concept fro dinamic association
 - plot the associations and see how they look like
 - run the optimization in step-by-step mode
