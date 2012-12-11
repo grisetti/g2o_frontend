@@ -80,13 +80,13 @@ void computeIterativeCovariance(Matrix3f &covariance,
 }
 
 // Computes curvature and normals using integral images.
-void computeIntegralCovariance(Matrix3f &covariance, float &curvature, 
+void computeIntegralCovariance(Matrix3f &covariance, 
 			       const Vector6fPtrMatrix &points, const Vector2i &imgPoint,  
-			       MatrixAcc &integImage, MatrixXi &integMask, 
+			       MatrixVector9f &integImage, MatrixXi &integMask, 
 			       const Matrix3f &cameraMatrix, float r)
 {
     Vector2i p0i = imgPoint;
-    Vector6f p0 = *(points(imgPoint[0], imgPoint[1]));
+    Vector3f p0 = (*points(imgPoint[0], imgPoint[1])).head<3>();
     if(p0[0] == 0.0f && p0[1] == 0.0f && p0[2] == 0.0f)
     {
         return;
@@ -99,12 +99,12 @@ void computeIntegralCovariance(Matrix3f &covariance, float &curvature,
 	      r, p0i[1]);
 
     // Get region and mask.
-    VectorXf region(9);
-    int mask;
+    Vector9f region;
+    int mask = 0;
     int numValidPoint = 0;
     getRegion(region, mask, numValidPoint, 
 	      integImage, integMask, 
-	      offset, imgPoint);
+	      offset, p0i);
 
     // Check if there are enough points.
     int minPoints = 3;
@@ -148,7 +148,7 @@ void computeNormalAndCurvature(Vector3f normal, float &curvature,
 }
 
 // Compute integral images for the matrix diven in input.
-void computeIntegralImage(MatrixAcc &integImage, MatrixXi &integMask, 
+void computeIntegralImage(MatrixVector9f &integImage, MatrixXi &integMask, 
 			  const Vector6fPtrMatrix &points)
 {
     VectorXf acc(9);
@@ -214,19 +214,18 @@ void computeIntegralImage(MatrixAcc &integImage, MatrixXi &integMask,
 }
 
 // Computes the normals of 3D points.
-void computeNormals(Vector6fPtrMatrix &normals, MatrixXf &curvature, 
-		    const Vector6fPtrMatrix &points, const Matrix3f &cameraMatrix,
-		    float r, float d)
+void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, 
+		    const Matrix3f &cameraMatrix, float r, float d)
 {
     /*
     // Initialize mask putting 1 where there are (0.0, 0.0, 0.0) points.
-    char **visitedMask = new char*[points.rows()];
-    for(int i = 0; i < points.rows(); i++)
+    char **visitedMask = new char*[cloud.rows()];
+    for(int i = 0; i < cloud.rows(); i++)
     {
-        visitedMask[i] = new char[points.cols()];
-        for(int j = 0; j < points.cols(); j++)
+        visitedMask[i] = new char[cloud.cols()];
+        for(int j = 0; j < cloud.cols(); j++)
         {
-            if(points(i, j)[0] == 0.0f && points(i, j)[1] == 0.0f && points(i, j)[2] == 0.0f)
+            if(cloud(i, j)[0] == 0.0f && cloud(i, j)[1] == 0.0f && cloud(i, j)[2] == 0.0f)
                 visitedMask[i][j] = 1;
             else
                 visitedMask[i][j] = 0;
@@ -236,20 +235,21 @@ void computeNormals(Vector6fPtrMatrix &normals, MatrixXf &curvature,
     */
 
     // Compute integral image.
-    MatrixXi integralImageMask(points.rows(), points.cols());
-    MatrixAcc integralImage(points.rows(), points.cols());
+    MatrixXi integralImageMask(cloud.rows(), cloud.cols());
+    MatrixVector9f integralImage(cloud.rows(), cloud.cols());
     computeIntegralImage(integralImage, integralImageMask, 
-			 points);
+			 cloud);
 
     // Compute normals.
-    for(int i = 0; i < points.rows(); i++)
+    curvature = MatrixXf(cloud.rows(), cloud.cols());
+    for(int i = 0; i < cloud.rows(); i++)
     {
-        for(int j = 0; j < points.cols(); j++)
+        for(int j = 0; j < cloud.cols(); j++)
         {
             Vector2i pointCoord(i, j);
 	    Matrix3f covariance = Matrix3f::Zero();
             computeIntegralCovariance(covariance, 
-				      points, pointCoord, 
+				      cloud, pointCoord, 
 				      integralImage, integralImageMask,
 				      cameraMatrix, r);
 	    Vector3f norm = Vector3f::Zero();
@@ -266,7 +266,7 @@ void computeNormals(Vector6fPtrMatrix &normals, MatrixXf &curvature,
 
     /*
     // Delete mask.
-    for(int i = 0; i < points.rows(); i++)
+    for(int i = 0; i < cloud.rows(); i++)
         delete[] visitedMask[i];
     delete[] visitedMask;
     */
@@ -284,8 +284,8 @@ void getOffset(int &offset,
 }
 
 // Computes region value of an integral image and it's mask value for acc algorithm.
-void getRegion(VectorXf &region, int &regionMask, int &numValidPoints,
-	       const MatrixAcc &integImage, const MatrixXi &integMask, 
+void getRegion(Vector9f &region, int &regionMask, int &numValidPoints,
+	       const MatrixVector9f &integImage, const MatrixXi &integMask, 
 	       int offset, Vector2i p0i)
 {
     // Check if offset does not exceed image boundaries

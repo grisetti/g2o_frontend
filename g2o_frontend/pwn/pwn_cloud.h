@@ -1,17 +1,21 @@
 #ifndef PWN_CLOUD_H
 #define PWN_CLOUD_H
 
-#include<iostream>
+#include <iostream>
+#include <fstream>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
 #include <vector>
 #include "pwn_defs.h"
 
+#define HI(num) (((num) & 0x0000FF00) >> 8)
+#define LO(num) ((num) & 0x000000FF)
+
 typedef std::vector<Vector6f,Eigen::aligned_allocator<Vector6f> > Vector6fVector;
 typedef std::vector<Matrix6f,Eigen::aligned_allocator<Matrix6f> > Matrix6fVector;
 
-typedef Eigen::Matrix<unsigned short, Eigen::Dynamic, Eigen::Dynamic> MatrixXus;
+typedef Eigen::Matrix<short, Eigen::Dynamic, Eigen::Dynamic> MatrixXus;
 
 void cloud2mat(Vector6fPtrMatrix& pointsMat,
 	       Matrix6fPtrMatrix& informationMat,
@@ -35,7 +39,10 @@ void depth2img(MatrixXus& img, const Eigen::MatrixXf& depth, const Eigen::Matrix
 
 void img2depth(Eigen::MatrixXf& depth, const MatrixXus& img, const Eigen::Matrix3f& cameraMatrix);
 
-bool readPgm (MatrixXus& img, std::istream& is);
-bool writePgm(MatrixXus& img, std::ostream& is);
+bool readPgm(MatrixXus& img, FILE *pgmFile);
+
+bool writePgm(const MatrixXus& img, FILE *pgmFile);
+
+void skipComments(FILE *fp);
 
 #endif

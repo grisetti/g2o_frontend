@@ -88,67 +88,113 @@ void cloud2depth(MatrixXf& depth, const Vector6fVector& cloud, const Eigen::Matr
 
 void depth2img(MatrixXus& img, const Eigen::MatrixXf& depth, const Eigen::Matrix3f& cameraMatrix){
   img.resize(depth.rows(), depth.cols());
-  unsigned short* imptr = img.data();
+  //unsigned short* imptr = img.data();
+  short* imptr = img.data();
   const float* depthptr = depth.data();
   int s = img.cols() * img.rows();
   for (int i =0; i<s; i++, depthptr++, imptr++){
-    *imptr = (unsigned short) (1e3 * *depthptr);
+    //*imptr = (unsigned short) (1e3 * *depthptr);
+    *imptr = (short) (1e3 * *depthptr);
   }
 }
 
 void img2depth(Eigen::MatrixXf& depth, const MatrixXus& img, const Eigen::Matrix3f& cameraMatrix){
   depth.resize(img.rows(), img.cols());
-  const unsigned short* imptr = img.data();
+  //const unsigned short* imptr = img.data();
+  const short* imptr = img.data();
   float* depthptr = depth.data();
   int s = img.cols() * img.rows();
   for (int i =0; i<s; i++, depthptr++, imptr++){
     *depthptr = 1e-3 * (float)*imptr;
-  }
+  } 
 }
 
-const int max_line_dim = 1024;
+// Read and load an image from a .pgm file.
+bool readPgm(MatrixXus &image, FILE *pgmFile)
+{
+  char version[3];
+  int height, width;
+  int max_value;
+  int i, j;
+  int lo, hi;
+  char* fgetsRes;
+  int fscanfRes;
+  
+  if (pgmFile==NULL)
+    return false;
 
-bool readPgm (MatrixXus& img, istream& is){
-  char buf[4];
-  string s;
-  is >> s;
-  if (!is.good() || s != "P5")
+  // Check if it's a pgm image.
+  fgetsRes = fgets(version, sizeof(version), pgmFile);
+  if(strcmp(version, "P5"))
     return false;
-  // wkip comments
-  int width = -1, height = -1, max_val = -1;
-  do {
-    char buf[max_line_dim];
-    is.getline(buf, max_line_dim);
-    if (buf[0] && buf[0]=='#')
-      continue;
-    if (! is.good())
-      return 0;
-    int v;
-    is >> v;
-    if (! is.good())
-      return 0;
-    if (width<0)
-      width = v;
-    else if (height<0)
-      height = v;
-    else
-      max_val = v;
-  } while (max_val<0 && is.good());
-  int bpp;
-  if (max_val<=0xFF){
-    bpp = 1;
-    return 0; // unhandled 16 bit image
-  } else if (max_val<=0xFFFF){
-    bpp = 2;
-  } else return false;
-  int bsize = bpp*width*height;
-  img.resize(width,height);
-  is.read((char*)img.data(), bsize);
-  if (! is.good())
-    return false;
-  img = img.transpose();
+  
+  // Read (width, height) of the image and the max gray value for a pixel.
+  // Do this while skipping possible comments.
+  skipComments(pgmFile);
+  fscanfRes = fscanf(pgmFile, "%d", &width);
+  skipComments(pgmFile);
+  fscanfRes = fscanf(pgmFile, "%d", &height);
+  skipComments(pgmFile);
+  fscanfRes = fscanf(pgmFile, "%d", &max_value);
+  fgetc(pgmFile);
+  
+  // Read image data (expected 16 bit unsigned char).
+  image = MatrixXus(height, width);
+  int pixel;
+  for (i=0; i<height; ++i){
+    for (j=0; j<width; ++j){
+      hi = fgetc(pgmFile);
+      lo = fgetc(pgmFile);
+      pixel = (hi << 8) + lo;
+      image(i, j) = pixel;
+    }
+  }
+  
   return true;
 }
 
-bool writePgm(MatrixXus&, ostream& is){
+bool writePgm(const MatrixXus& img, FILE *pgmFile)
+{
+  int i, j;
+  int hi, lo;
+  unsigned int max_value = 0xFFFF;
+  
+  if (pgmFile==NULL)
+    return false;
+
+  // Write header for a .pgm file.
+  fprintf(pgmFile, "P5 ");
+  fprintf(pgmFile, "%d %d ", (int)img.cols(), (int)img.rows());
+  fprintf(pgmFile, "%d ", max_value);
+
+  // Write image data.
+  for (i=0; i<img.rows(); i++){
+    for (j=0; j<img.cols(); j++){
+      hi = HI(img(i, j));
+      lo = LO(img(i, j));
+      fputc(hi, pgmFile);
+      fputc(lo, pgmFile);
+    }
+  }
+  
+  return true;
+}
+
+
+// Skip possible comments when reading a file .pgm
+void skipComments(FILE *fp)
+{
+  int ch;
+  char line[1024];
+  char* fgetsRes;
+  
+  // Each comment begin with a '#', skip all lines
+  // that begin with a sharp.
+  while ((ch = fgetc(fp)) != EOF && isspace(ch));
+  if (ch=='#'){
+    fgetsRes = fgets(line, sizeof(line), fp);
+    skipComments(fp);
+  }
+  else
+    fseek(fp, -1, SEEK_CUR);
 }

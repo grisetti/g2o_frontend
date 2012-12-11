@@ -5,13 +5,16 @@ OBJS = 	pwn_cloud.o \
 CPPFLAGS = -I/usr/include/eigen3
 CXXFLAGS = -O3
 
-all: $(OBJS)
+all: fava $(OBJS)
 
 .phony:	clean all
 
 
 %.o : %.cpp %.h
 	$(CXX) -o $@ -c $(CPPFLAGS) $(CXXFLAGS) $<
+
+fava:	$(OBJS) main.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(OBJS) main.cpp -o fava
 
 clean:
 	rm -f *~ *.o
