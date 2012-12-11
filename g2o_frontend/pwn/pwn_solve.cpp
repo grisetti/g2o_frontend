@@ -123,4 +123,5 @@ int pwn_align(float& error,
     }
     if(inliers<minInliers)
         Xnew = Xcurrent;
+    return inliers;
 }
