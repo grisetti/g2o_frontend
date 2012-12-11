@@ -2,6 +2,7 @@
 #include <string>
 #include "pwn_cloud.h"
 #include "pwn_math.h"
+
 using namespace Eigen;
 using namespace std;
 
@@ -129,7 +130,7 @@ bool readPgm (MatrixXus& img, istream& is){
     if (width<0)
       width = v;
     else if (height<0)
-      height=v;
+      height = v;
     else
       max_val = v;
   } while (max_val<0 && is.good());
@@ -140,12 +141,12 @@ bool readPgm (MatrixXus& img, istream& is){
   } else if (max_val<=0xFFFF){
     bpp = 2;
   } else return false;
-  int bsize=bpp*width*height;
+  int bsize = bpp*width*height;
   img.resize(width,height);
   is.read((char*)img.data(), bsize);
   if (! is.good())
     return false;
-  img=img.transpose();
+  img = img.transpose();
   return true;
 }
 

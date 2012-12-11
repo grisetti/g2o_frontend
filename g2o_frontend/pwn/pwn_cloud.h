@@ -1,5 +1,6 @@
 #ifndef PWN_CLOUD_H
 #define PWN_CLOUD_H
+
 #include<iostream>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -9,9 +10,6 @@
 
 typedef std::vector<Vector6f,Eigen::aligned_allocator<Vector6f> > Vector6fVector;
 typedef std::vector<Matrix6f,Eigen::aligned_allocator<Matrix6f> > Matrix6fVector;
-
-typedef Eigen::Matrix<Vector6f*, Eigen::Dynamic, Eigen::Dynamic> Vector6fPtrMatrix;
-typedef Eigen::Matrix<Matrix6f*, Eigen::Dynamic, Eigen::Dynamic> Matrix6fPtrMatrix;
 
 typedef Eigen::Matrix<unsigned short, Eigen::Dynamic, Eigen::Dynamic> MatrixXus;
 

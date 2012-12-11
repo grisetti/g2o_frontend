@@ -1,5 +1,6 @@
 #ifndef PWN_SOLVE_H
 #define PWN_SOLVE_H
+
 #include "pwn_cloud.h"
 
 int pwn_iteration(float& error, Eigen::Isometry3f& Xnew,
