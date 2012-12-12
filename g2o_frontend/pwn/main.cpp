@@ -1,8 +1,6 @@
+#include <iostream>
 #include "pwn_normals.h"
 #include "pwn_cloud.h"
-// to remove
-//#include <pcl/features/integral_image_normal.h>
-//#include <pcl/visualization/cloud_viewer.h>
 
 using namespace std;
 
@@ -37,7 +35,7 @@ int main(int argc, char** argv)
    *  Read depth images.                                                              *
    *                                                                                  *
    ************************************************************************************/
-  MatrixXus depth0us, depth1us;
+  MatrixXus image0, image1;
   char imageFilename[50];
   string baseFilename(argv[1]);
   FILE *file;
@@ -45,23 +43,23 @@ int main(int argc, char** argv)
   baseFilename = baseFilename + "_rgbd_";
 
   sprintf(imageFilename, "%s%d_%05d_depth.pgm", &baseFilename[0], sensorId, numImage0);
-  file = fopen(imageFilename, "rb");
-  if (!readPgm(depth0us, file)){
+  file = fopen(&imageFilename[0], "rb");
+  if (!readPgm(image0, file)){
     cout << "Error while reading first depth image." << endl;
     exit(-1);
   }
   fclose(file);
   sprintf(imageFilename, "%s%d_%05d_depth.pgm", &baseFilename[0], sensorId, numImage1);
   file = fopen(&imageFilename[0], "rb");
-  if (!readPgm(depth1us, file)){
+  if (!readPgm(image1, file)){
     cout << "Error while reading second depth image." << endl;
     exit(-1);
   }
   fclose(file);
 
   // Get rows and columns for the input images.
-  int rows = depth0us.rows();
-  int cols = depth0us.cols();
+  int rows = image0.rows();
+  int cols = image0.cols();
 
   /************************************************************************************
    *                                                                                  *
@@ -70,43 +68,56 @@ int main(int argc, char** argv)
    ************************************************************************************/
   // Cast images to float type.
   MatrixXf depth0(rows, cols), depth1(rows, cols);
-  depth0 = depth0us.cast<float>() / 1000.0f;
-  depth1 = depth1us.cast<float>() / 1000.0f;
+  img2depth(depth0, image0);
+  img2depth(depth1, image1);
 
   // Create 3D point clouds with normals.
   Vector6fVector cloud0, cloud1;
   depth2cloud(cloud0, depth0, cameraMatrix);
   depth2cloud(cloud1, depth1, cameraMatrix);
-
+  
   /************************************************************************************
    *                                                                                  *
    *  Compute normals and curvature of the 3D points.                                 *
    *                                                                                  *
    ************************************************************************************/
-  MatrixXf curvature0, curvature1;
-  float r = 0.03f;
-  float d = 100.0f;
-    /*computeNormals(cloud0, curvature0, cameraMatrix, r, d);
-    computeNormals(cloud1, curvature1, cameraMatrix, r, d);
+  // Create matrices of pointers.
+  MatrixXf curvature0(rows, cols), curvature1(rows, cols);
+  MatrixXf zBuffer(rows, cols);
+  Vector6fPtrMatrix cloud0Ptr(rows, cols), cloud1Ptr(rows, cols);
+  cloud2mat(cloud0Ptr,
+            cloud0,
+            Isometry3f::Identity(), cameraMatrix,
+	    zBuffer);
+  cloud2mat(cloud1Ptr,
+            cloud1,
+            Isometry3f::Identity(), cameraMatrix,
+	    zBuffer);
+ 
+  // Compute normals.
+  float r = 0.05f;
+  float d = 100.0f; 
+  computeNormals(cloud0Ptr, curvature0, cameraMatrix, r, d);
+  computeNormals(cloud1Ptr, curvature1, cameraMatrix, r, d);
     
-    // Save curvature images.
-    MatrixXus curvature0Image(rows, cols), curvature1Image(rows, cols);
-    curvature0Image = (curvature0 * 65535.0f).cast<int>();
-    file = fopen("curvature0.pgm", "wb");
-    writePgm(curvature0Image, file);
-    fclose(file);
-    file = fopen("curvature0.pgm", "wb");
-    curvature1Image = (curvature1 * 65535.0f).cast<int>();
-    writePgm(curvature1Image, file);
-    fclose(file);
+  // Save curvature images.
+  MatrixXus curvature0Image(rows, cols), curvature1Image(rows, cols);
+  depth2img(curvature0Image, curvature0);
+  file = fopen("curvature0.pgm", "wb");
+  writePgm(curvature0Image, file);
+  fclose(file);
+  file = fopen("curvature1.pgm", "wb");
+  depth2img(curvature1Image, curvature1);
+  writePgm(curvature1Image, file);
+  fclose(file);
 
-    // Close file stream.
-    ifG2O.close();*/
+  // Close file stream.
+  ifG2O.close();
 
-    /**********************************************************
-    *                   TESTING UNITS                         *
-    *                                                         *
-    ***********************************************************/
+  /**********************************************************
+   *                   TESTING UNITS                         *
+   *                                                         *
+   ***********************************************************/
     /*Vector6fPtrMatrix pointsImage(rows, cols);
     Matrix6fPtrMatrix informationImage(rows, cols);
     Vector6fVector points;

@@ -1,5 +1,3 @@
-#include <sstream>
-#include <string>
 #include "pwn_cloud.h"
 #include "pwn_math.h"
 
@@ -86,22 +84,19 @@ void cloud2depth(MatrixXf& depth, const Vector6fVector& cloud, const Eigen::Matr
   }
 }
 
-void depth2img(MatrixXus& img, const Eigen::MatrixXf& depth, const Eigen::Matrix3f& cameraMatrix){
+void depth2img(MatrixXus& img, const Eigen::MatrixXf& depth){
   img.resize(depth.rows(), depth.cols());
-  //unsigned short* imptr = img.data();
-  short* imptr = img.data();
+  unsigned short* imptr = img.data();
   const float* depthptr = depth.data();
   int s = img.cols() * img.rows();
   for (int i =0; i<s; i++, depthptr++, imptr++){
-    //*imptr = (unsigned short) (1e3 * *depthptr);
-    *imptr = (short) (1e3 * *depthptr);
+    *imptr = (unsigned short) (1e3 * *depthptr);
   }
 }
 
-void img2depth(Eigen::MatrixXf& depth, const MatrixXus& img, const Eigen::Matrix3f& cameraMatrix){
+void img2depth(Eigen::MatrixXf& depth, const MatrixXus& img){
   depth.resize(img.rows(), img.cols());
-  //const unsigned short* imptr = img.data();
-  const short* imptr = img.data();
+  const unsigned short* imptr = img.data();
   float* depthptr = depth.data();
   int s = img.cols() * img.rows();
   for (int i =0; i<s; i++, depthptr++, imptr++){
@@ -117,42 +112,59 @@ bool readPgm(MatrixXus &image, FILE *pgmFile)
   int max_value;
   int i, j;
   int lo, hi;
-  char* fgetsRes;
+  char *fgetsRes;
   int fscanfRes;
-  
+ 
   if (pgmFile==NULL)
     return false;
-
+  
   // Check if it's a pgm image.
   fgetsRes = fgets(version, sizeof(version), pgmFile);
-  if(strcmp(version, "P5"))
+  if(fgetsRes && strcmp(version, "P5"))
     return false;
   
   // Read (width, height) of the image and the max gray value for a pixel.
   // Do this while skipping possible comments.
   skipComments(pgmFile);
   fscanfRes = fscanf(pgmFile, "%d", &width);
+  if (fscanfRes != 1)
+    return false;
   skipComments(pgmFile);
   fscanfRes = fscanf(pgmFile, "%d", &height);
+  if (fscanfRes != 1)
+    return false;
   skipComments(pgmFile);
   fscanfRes = fscanf(pgmFile, "%d", &max_value);
+  if (fscanfRes != 1)
+    return false;
   fgetc(pgmFile);
   
   // Read image data (expected 16 bit unsigned char).
   image = MatrixXus(height, width);
   int pixel;
-  for (i=0; i<height; ++i){
-    for (j=0; j<width; ++j){
-      hi = fgetc(pgmFile);
-      lo = fgetc(pgmFile);
-      pixel = (hi << 8) + lo;
-      image(i, j) = pixel;
+  if (max_value>0xFF){
+    for (i=0; i<height; ++i){
+      for (j=0; j<width; ++j){
+	hi = fgetc(pgmFile);
+	lo = fgetc(pgmFile);
+	pixel = (hi << 8) + lo;
+	image(i, j) = pixel;
+      }
+    }
+  }
+  else{
+    for (i=0; i<height; ++i){
+      for (j=0; j<width; ++j){
+	pixel = fgetc(pgmFile);
+	image(i, j) = pixel;
+      }
     }
   }
   
   return true;
 }
 
+// Write an image to a .pgm file.
 bool writePgm(const MatrixXus& img, FILE *pgmFile)
 {
   int i, j;
@@ -193,7 +205,8 @@ void skipComments(FILE *fp)
   while ((ch = fgetc(fp)) != EOF && isspace(ch));
   if (ch=='#'){
     fgetsRes = fgets(line, sizeof(line), fp);
-    skipComments(fp);
+    if(fgetsRes)
+      skipComments(fp);
   }
   else
     fseek(fp, -1, SEEK_CUR);
