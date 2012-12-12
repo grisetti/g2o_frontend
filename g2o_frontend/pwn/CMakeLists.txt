@@ -23,10 +23,10 @@ ADD_LIBRARY(pwn_viewer_library
 
 SET_TARGET_PROPERTIES(pwn_viewer_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}pwn_viewer)
 
-TARGET_LINK_LIBRARIES(pwn_viewer_library pwn_library ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES})
+TARGET_LINK_LIBRARIES(pwn_viewer_library pwn_library ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES})
 
 ADD_EXECUTABLE(test
 	main.cpp
 )
 
-TARGET_LINK_LIBRARIES(test pwn_library pwn_viewer_library glut)
+TARGET_LINK_LIBRARIES(test pwn_library pwn_viewer_library ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES})

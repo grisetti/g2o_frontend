@@ -1,6 +1,7 @@
 #include "pwn_qglviewer.h"
 #include "pwn_math.h"
 #include <GL/gl.h>
+#include "g2o/stuff/opengl_primitives.h"
 
 class StandardCamera : public qglviewer::Camera{
 public:
@@ -101,29 +102,24 @@ void PWNQGLViewer::draw() {
     glColor3f(1.0f, 0.0f, 0.0f);
     glPointSize(_pointSize*.5);
     glBegin(GL_LINES);
+    int threshold = 0.001;
     for (int i=0; i<_ellipsoids->rows(); i++){
-      for (int j=0; j<_ellipsoids->cols(); j++){
-	covarianceSVD covSVD = (*_ellipsoids)(i, j);
-	Eigen::Vector3f lambda = covSVD.lambda;
-	Eigen::Isometry3f I = covSVD.isometry;
-	if(covSVD.lambda == Eigen::Vector3f::Zero())
+      for (int j=0; j<_ellipsoids->cols(); j=j+10){
+	const covarianceSVD& covSVD = (*_ellipsoids)(i, j);
+	const Eigen::Vector3f& lambda = covSVD.lambda;
+	const Eigen::Isometry3f& I = covSVD.isometry;
+	if(covSVD.lambda.squaredNorm() < 1e-9)
 	  continue;
-	Eigen::Vector3f t = I.translation();
-	Eigen::Matrix3f R = I.linear();
-	Eigen::Vector3f v = mat2quat(R.transpose());
 	glPushMatrix();
-	glTranslatef(t[0], t[1], t[2]);
-	/*glRotatef(v[0]*180.0f/3.14f, 1.0f, 0.0f, 0.0f);
-	glRotatef(v[1]*180.0f/3.14f, 0.0f, 1.0f, 0.0f);
-	glRotatef(v[2]*180.0f/3.14f, 0.0f, 0.0f, 1.0f);*/
-	glBegin(GL_LINES);
-	glVertex3f(-lambda[0]*_ellipsoidsScale, 0.0f, 0.0f);
-	glVertex3f(lambda[0]*_ellipsoidsScale, 0.0f, 0.0f);
-	glVertex3f(0.0f, -lambda[1]*_ellipsoidsScale, 0.0f);
-	glVertex3f(0.0f, lambda[1]*_ellipsoidsScale, 0.0f);
-	glVertex3f(0.0f, 0.0f, -lambda[2]*_ellipsoidsScale);
-	glVertex3f(0.0f, 0.0f, lambda[2]*_ellipsoidsScale);
-	glEnd();
+	glMultMatrixf(I.data());
+	float sx = lambda[0]*_ellipsoidsScale;
+	sx = sx > threshold ? threshold : sx;
+	float sy = lambda[1]*_ellipsoidsScale;
+	sy = sy > threshold ? threshold : sy;
+	float sz = lambda[2]*_ellipsoidsScale;
+	sz = sz > threshold ? threshold : sz;
+	//g2o::opengl::drawEllipsoid(sx, sy, sz);
+	g2o::opengl::drawEllipsoid(threshold,threshold,threshold);
 	glPopMatrix();
       }
     }

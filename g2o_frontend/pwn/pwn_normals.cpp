@@ -2,6 +2,9 @@
 #include "pwn_math.h"
 #include <math.h>
 #include <Eigen/SVD>
+#include <iostream>
+
+using namespace std;
 
 // Computes normal of the input point considering a set of the points around it.
 void computeIterativeStats(Vector3f& mean, Matrix3f &covariance, 
@@ -143,11 +146,14 @@ void computeNormalAndCurvature(Vector3f &normal, float &curvature, covarianceSVD
   curvature = eigenValues[0] / (eigenValues[0] + eigenValues[1] + eigenValues[2]);    
 
   // Get matrix R and lambda vector.
-  Isometry3f T;
+  Isometry3f T = Isometry3f::Identity();
   T.linear() = eigenVectors;
   T.translation() = mean;
   covSVD.isometry = T;
+  //cerr << "L" << endl;
+  // cerr << T.matrix() << endl;1
   covSVD.lambda = eigenValues;
+  //cerr << covSVD.lambda.transpose() << endl;
 }
 
 // Compute integral images for the matrix diven in input.
@@ -213,7 +219,7 @@ void computeIntegralImage(MatrixVector9f &integImage, MatrixXi &integMask,
 
 // Computes the normals of 3D points.
 void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, MatrixCovarianceSVD &matrixCovSVD,
-		    const Matrix3f &cameraMatrix, float r, float d)
+		    const Matrix3f &cameraMatrix, float r, float /*d*/)
 {
   /*
   // Initialize mask putting 1 where there are (0.0, 0.0, 0.0) points.
@@ -254,7 +260,7 @@ void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, MatrixCovaria
       Vector3f norm = Vector3f::Zero();
       float curv = 0;
       covarianceSVD covSVD;
-      covSVD.isometry = Matrix3f::Zero();
+      covSVD.isometry = Eigen::Isometry3f::Identity();
       covSVD.lambda = Vector3f::Zero();
       if (covariance!=Matrix3f::Zero()){
 	computeNormalAndCurvature(norm, curv, covSVD, 
