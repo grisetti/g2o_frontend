@@ -1,7 +1,7 @@
 #include "pwn_normals.h"
+#include "pwn_math.h"
 #include <math.h>
 #include <Eigen/SVD>
-#include <iostream>
 
 // Computes normal of the input point considering a set of the points around it.
 void computeIterativeStats(Vector3f& mean, Matrix3f &covariance, 
@@ -121,7 +121,7 @@ void computeIntegralStats(Vector3f& mean, Matrix3f &covariance,
   covariance(2, 1) = covariance(1, 2);
 }
 
-void computeNormalAndCurvature(Vector3f& normal, float &curvature, 
+void computeNormalAndCurvature(Vector3f &normal, float &curvature, covarianceSVD &covSVD,
 			       const Vector3f& mean, const Matrix3f covariance)
 {
   // Extract eigenvectors and eigenvalues.
@@ -141,6 +141,13 @@ void computeNormalAndCurvature(Vector3f& normal, float &curvature,
   
   // Compute curvature.
   curvature = eigenValues[0] / (eigenValues[0] + eigenValues[1] + eigenValues[2]);    
+
+  // Get matrix R and lambda vector.
+  Isometry3f T;
+  T.linear() = eigenVectors;
+  T.translation() = mean;
+  covSVD.isometry = T;
+  covSVD.lambda = eigenValues;
 }
 
 // Compute integral images for the matrix diven in input.
@@ -205,7 +212,7 @@ void computeIntegralImage(MatrixVector9f &integImage, MatrixXi &integMask,
 }
 
 // Computes the normals of 3D points.
-void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, 
+void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, MatrixCovarianceSVD &matrixCovSVD,
 		    const Matrix3f &cameraMatrix, float r, float d)
 {
   /*
@@ -246,14 +253,15 @@ void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature,
 			   cameraMatrix, r);
       Vector3f norm = Vector3f::Zero();
       float curv = 0;
+      covarianceSVD covSVD;
+      covSVD.isometry = Matrix3f::Zero();
+      covSVD.lambda = Vector3f::Zero();
       if (covariance!=Matrix3f::Zero()){
-	computeNormalAndCurvature(norm, curv, 
+	computeNormalAndCurvature(norm, curv, covSVD, 
 				  mean, covariance);
 	cloud(i, j)->tail<3>() = norm;
-	//(*cloud(i, j))[3] = norm[0];
-	//(*cloud(i, j))[4] = norm[1];
-	//(*cloud(i, j))[5] = norm[2];
       }
+      matrixCovSVD(i, j) = covSVD;
       curvature(i, j) = curv;
     }
   }

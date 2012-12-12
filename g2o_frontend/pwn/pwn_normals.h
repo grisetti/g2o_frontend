@@ -23,11 +23,11 @@ void computeIntegralStats(Vector3f& mean, Matrix3f &covariance,
 			  const Vector6fPtrMatrix &points, const Vector2i &imgPoint,  
 			  MatrixVector9f &integImage, MatrixXi &integMask, 
 			  const Matrix3f &cameraMatrix, float r);
-void computeNormalAndCurvature(Vector3f& normal, float &curvature, 
+void computeNormalAndCurvature(Vector3f& normal, float &curvature, covarianceSVD &covSVD,
 			       const Vector3f& mean, const Matrix3f covariance);
 void computeIntegralImage(MatrixVector9f &integImage, MatrixXi &integMask, 
 			  const Vector6fPtrMatrix &points);
-void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, 
+void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, MatrixCovarianceSVD &matrixCovSVD,
 		    const Matrix3f &cameraMatrix, float r, float d);
 void getOffset(int &offset, 
 	       Vector3f point, const Matrix3f &cameraMatrix, 

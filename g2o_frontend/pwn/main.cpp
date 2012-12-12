@@ -86,6 +86,7 @@ int main(int argc, char** argv)
    *                                                                                  *
    ************************************************************************************/
   // Create matrices of pointers.
+  MatrixCovarianceSVD matrixCovSVD(rows, cols);
   MatrixXf curvature0(rows, cols), curvature1(rows, cols);
   MatrixXf zBuffer(rows, cols);
   Vector6fPtrMatrix cloud0Ptr(rows, cols), cloud1Ptr(rows, cols);
@@ -99,11 +100,11 @@ int main(int argc, char** argv)
 	    zBuffer);
  
   // Compute normals.
-  float r = 0.1f;
+  float r = 0.03f;
   float d = 100.0f; 
-  computeNormals(cloud0Ptr, curvature0, cameraMatrix, r, d);
-  computeNormals(cloud1Ptr, curvature1, cameraMatrix, r, d);
-
+  computeNormals(cloud0Ptr, curvature0, matrixCovSVD, cameraMatrix, r, d);
+  computeNormals(cloud1Ptr, curvature1, matrixCovSVD, cameraMatrix, r, d);
+  
   // Close file stream.
   ifG2O.close();
 
@@ -114,6 +115,7 @@ int main(int argc, char** argv)
    ************************************************************************************/
   PWNQGLViewer viewer;
   viewer.setPoints(&cloud0);
+  viewer.setEllipsoids(&matrixCovSVD);
   viewer.setWindowTitle("Viewer");
 
   // Make the viewer window visible on screen.
