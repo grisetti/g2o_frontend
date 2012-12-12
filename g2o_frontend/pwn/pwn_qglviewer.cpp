@@ -67,7 +67,7 @@ void PWNQGLViewer::init() {
 }
 
 void PWNQGLViewer::draw() {
-  QGLViewer::draw();
+  QGLViewer::draw();  
   if (! _points)
     return;
   if (_pointSize>0){
@@ -101,25 +101,20 @@ void PWNQGLViewer::draw() {
   if (_ellipsoids && _ellipsoidsScale>0){
     glColor3f(1.0f, 0.0f, 0.0f);
     glPointSize(_pointSize*.5);
-    glBegin(GL_LINES);
-    int threshold = 0.001;
     for (int i=0; i<_ellipsoids->rows(); i++){
-      for (int j=0; j<_ellipsoids->cols(); j=j+10){
+      for (int j=0; j<_ellipsoids->cols(); j+=20){
 	const covarianceSVD& covSVD = (*_ellipsoids)(i, j);
 	const Eigen::Vector3f& lambda = covSVD.lambda;
 	const Eigen::Isometry3f& I = covSVD.isometry;
-	if(covSVD.lambda.squaredNorm() < 1e-9)
+	if (covSVD.lambda.squaredNorm()==0.0f)
 	  continue;
 	glPushMatrix();
 	glMultMatrixf(I.data());
 	float sx = lambda[0]*_ellipsoidsScale;
-	sx = sx > threshold ? threshold : sx;
 	float sy = lambda[1]*_ellipsoidsScale;
-	sy = sy > threshold ? threshold : sy;
 	float sz = lambda[2]*_ellipsoidsScale;
-	sz = sz > threshold ? threshold : sz;
-	//g2o::opengl::drawEllipsoid(sx, sy, sz);
-	g2o::opengl::drawEllipsoid(threshold,threshold,threshold);
+	glColor3f(1.0f, 1.0f, 0.0f);
+	g2o::opengl::drawEllipsoid(sx, sy, sz);
 	glPopMatrix();
       }
     }

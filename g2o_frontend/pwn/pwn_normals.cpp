@@ -7,7 +7,7 @@
 using namespace std;
 
 // Computes normal of the input point considering a set of the points around it.
-void computeIterativeStats(Vector3f& mean, Matrix3f &covariance, 
+bool computeIterativeStats(Vector3f& mean, Matrix3f &covariance, 
 			   const Vector6fPtrMatrix &points, const Vector2i &imgPoint, 
 			   char **visitedMask, Vector2iVector &visited, 
 			   float rw2, int ri2)
@@ -16,7 +16,7 @@ void computeIterativeStats(Vector3f& mean, Matrix3f &covariance,
   Vector2i p0i = imgPoint;
   Vector6f *p0Ptr = points(p0i[0], p0i[1]);
   if (!p0Ptr)
-    return;
+    return false;
   Vector3f p0 = p0Ptr->head<3>();
 
   // Fill the queue with around point if they satisfy the distance constraints.
@@ -51,7 +51,7 @@ void computeIterativeStats(Vector3f& mean, Matrix3f &covariance,
 
   size_t minPoints = 3;
   if (visited.size()< minPoints)
-    return;
+    return false;;
 
   // Compute the mean and clear the mask.
   for (size_t k=0; k<visited.size(); k++){
@@ -74,10 +74,12 @@ void computeIterativeStats(Vector3f& mean, Matrix3f &covariance,
 
   // Clear the list of points.
   visited.clear();
+
+  return true;
 }
 
 // Computes curvature and normals using integral images.
-void computeIntegralStats(Vector3f& mean, Matrix3f &covariance, 
+bool computeIntegralStats(Vector3f& mean, Matrix3f &covariance, 
 			  const Vector6fPtrMatrix &points, const Vector2i &imgPoint,  
 			  MatrixVector9f &integImage, MatrixXi &integMask, 
 			  const Matrix3f &cameraMatrix, float r)
@@ -87,7 +89,7 @@ void computeIntegralStats(Vector3f& mean, Matrix3f &covariance,
   
   // Check if it is a valid point.
   if (!p0Ptr)
-    return;
+    return false;
   
   Vector3f p0 = p0Ptr->head<3>();
   // Get the side of the square to analyze.
@@ -107,7 +109,7 @@ void computeIntegralStats(Vector3f& mean, Matrix3f &covariance,
   // Check if there are enough points.
   int minPoints = 3;
   if(numValidPoint < minPoints)
-    return;
+    return false;
   region *= (1.0f / (float)numValidPoint);
   mean = region.tail<3>();
 
@@ -122,6 +124,8 @@ void computeIntegralStats(Vector3f& mean, Matrix3f &covariance,
   covariance(1, 0) = covariance(0, 1);
   covariance(2, 0) = covariance(0, 2);
   covariance(2, 1) = covariance(1, 2);
+
+  return true;
 }
 
 void computeNormalAndCurvature(Vector3f &normal, float &curvature, covarianceSVD &covSVD,
@@ -150,10 +154,7 @@ void computeNormalAndCurvature(Vector3f &normal, float &curvature, covarianceSVD
   T.linear() = eigenVectors;
   T.translation() = mean;
   covSVD.isometry = T;
-  //cerr << "L" << endl;
-  // cerr << T.matrix() << endl;1
   covSVD.lambda = eigenValues;
-  //cerr << covSVD.lambda.transpose() << endl;
 }
 
 // Compute integral images for the matrix diven in input.
@@ -249,20 +250,19 @@ void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, MatrixCovaria
       Vector2i pointCoord(i, j);
       Matrix3f covariance = Matrix3f::Zero();
       Vector3f mean = Vector3f::Zero();
-      /*computeIterativeStats(mean, covariance, 
-			    cloud, pointCoord, 
-			    visitedMask, visited, 
-			    r*r, d*d);*/
-      computeIntegralStats(mean, covariance, 
-			   cloud, pointCoord, 
-			   integralImage, integralImageMask,
-			   cameraMatrix, r);
       Vector3f norm = Vector3f::Zero();
       float curv = 0;
       covarianceSVD covSVD;
       covSVD.isometry = Eigen::Isometry3f::Identity();
       covSVD.lambda = Vector3f::Zero();
-      if (covariance!=Matrix3f::Zero()){
+      /*if (computeIterativeStats(mean, covariance, 
+				cloud, pointCoord, 
+				visitedMask, visited, 
+				r*r, d*d){*/
+      if (computeIntegralStats(mean, covariance, 
+			       cloud, pointCoord, 
+			       integralImage, integralImageMask,
+			       cameraMatrix, r)){
 	computeNormalAndCurvature(norm, curv, covSVD, 
 				  mean, covariance);
 	cloud(i, j)->tail<3>() = norm;

@@ -15,11 +15,11 @@ typedef Matrix<Vector9f, Dynamic, Dynamic> MatrixVector9f;
 typedef std::queue<Vector2i>  Vector2iQueue;
 typedef std::vector<Vector2i> Vector2iVector;
 
-void computeIterativeCovariance(Vector3f& mean, Matrix3f &covariance, 
+bool computeIterativeCovariance(Vector3f& mean, Matrix3f &covariance, 
 				const Vector6fPtrMatrix &points, const Vector2i &imgPoint, 
 				char **visitedMask, Vector2iVector &visited, 
 				float rw2, int ri2);
-void computeIntegralStats(Vector3f& mean, Matrix3f &covariance, 
+bool computeIntegralStats(Vector3f& mean, Matrix3f &covariance, 
 			  const Vector6fPtrMatrix &points, const Vector2i &imgPoint,  
 			  MatrixVector9f &integImage, MatrixXi &integMask, 
 			  const Matrix3f &cameraMatrix, float r);
