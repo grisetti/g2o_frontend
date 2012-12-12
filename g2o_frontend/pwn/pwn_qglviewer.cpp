@@ -70,10 +70,10 @@ void PWNQGLViewer::draw() {
   QGLViewer::draw();
 
   // create one display list
-  GLuint index = glGenLists(1);
+  GLuint ellipsoidList = glGenLists(1);
 
-  // compile the display list, store a triangle in it
-  glNewList(index, GL_COMPILE);
+  // compile the display list, store a sphere on it.
+  glNewList(ellipsoidList, GL_COMPILE);
   g2o::opengl::drawSphere(1.0f);
   glEndList();
   
@@ -124,8 +124,8 @@ void PWNQGLViewer::draw() {
 	glMultMatrixf(I.data());
 	glColor3f(1.0f, 0.647f, 0.0f);
 	glScalef(sx, sy, sz);
-	// draw the display list
-	glCallList(index);
+	// Draw the display list.
+	glCallList(ellipsoidList);
 	glPopMatrix();
       }
     }
