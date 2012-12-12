@@ -99,21 +99,10 @@ int main(int argc, char** argv)
 	    zBuffer);
  
   // Compute normals.
-  float r = 0.05f;
+  float r = 0.1f;
   float d = 100.0f; 
   computeNormals(cloud0Ptr, curvature0, cameraMatrix, r, d);
   computeNormals(cloud1Ptr, curvature1, cameraMatrix, r, d);
-    
-  // Save curvature images.
-  MatrixXus curvature0Image(rows, cols), curvature1Image(rows, cols);
-  depth2img(curvature0Image, curvature0);
-  file = fopen("curvature0.pgm", "wb");
-  writePgm(curvature0Image, file);
-  fclose(file);
-  file = fopen("curvature1.pgm", "wb");
-  depth2img(curvature1Image, curvature1);
-  writePgm(curvature1Image, file);
-  fclose(file);
 
   // Close file stream.
   ifG2O.close();

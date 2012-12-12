@@ -1,6 +1,7 @@
 #include "pwn_normals.h"
 #include <math.h>
 #include <Eigen/SVD>
+#include <iostream>
 
 // Computes normal of the input point considering a set of the points around it.
 void computeIterativeStats(Vector3f& mean, Matrix3f &covariance, 
@@ -10,13 +11,12 @@ void computeIterativeStats(Vector3f& mean, Matrix3f &covariance,
 {
   // Check if point is not (0.0, 0.0, 0.0).
   Vector2i p0i = imgPoint;
-  const Vector6f* p0Ptr = points(p0i[0], p0i[1]);
-  if (!p0Ptr)  
-    return; 
-  
-  
+  Vector6f *p0Ptr = points(p0i[0], p0i[1]);
+  if (!p0Ptr)
+    return;
+  Vector3f p0 = p0Ptr->head<3>();
+
   // Fill the queue with around point if they satisfy the distance constraints.
-  Vector3f p0 = (*p0Ptr).head<3>();
   Vector2iQueue q;
   q.push(p0i);
   visitedMask[p0i[0]][p0i[1]] = 1;
@@ -27,17 +27,17 @@ void computeIterativeStats(Vector3f& mean, Matrix3f &covariance,
     for(int xx=-1; xx<1; xx++){
       for(int yy=-1; yy<1; yy++){
 	Vector2i pNi(pki[0] + xx, pki[1] + yy);
-	const Vector6f* pNPtr = points(pNi[0], pNi[1]);
-	if (!pNPtr)
-	  continue;
-	Vector3f pN = (*pNPtr).head<3>();
 	if (pNi[0]<0 || pNi[1]<0 || pNi[0]>=points.rows() || pNi[1]>=points.cols())
 	  continue;
-       	if (xx==0 && yy==0)
+	Vector6f *pNPtr = points(pNi[0], pNi[1]);
+	if (!pNPtr)
+	  continue;
+	Vector3f pN = pNPtr->head<3>();
+	if (xx==0 && yy==0)
 	  continue;
 	if (visitedMask[pNi[0]][pNi[1]])
 	  continue;
-	if((pN - p0).squaredNorm()>rw2 || (pNi - p0i).squaredNorm()>ri2)
+	if ((pN - p0).squaredNorm()>rw2 || (pNi - p0i).squaredNorm()>ri2)
 	  continue;
 	q.push(pNi);
 	visitedMask[pNi[0]][pNi[1]] = 1;
@@ -47,35 +47,29 @@ void computeIterativeStats(Vector3f& mean, Matrix3f &covariance,
   }
 
   size_t minPoints = 3;
-  if (visited.size()<minPoints)
+  if (visited.size()< minPoints)
     return;
 
   // Compute the mean and clear the mask.
-  mean = Vector3f::Zero();
-  for(size_t k=0; k<visited.size(); k++){
+  for (size_t k=0; k<visited.size(); k++){
     Vector2i pNi = visited[k];
-    const Vector6f *pNPtr =points(pNi[0], pNi[1]);
-    if (!pNPtr)
-      continue;
-    const Vector3f& pN = (*pNPtr).head<3>();
+    Vector6f *pNPtr = points(pNi[0], pNi[1]);
+    Vector3f pN = pNPtr->head<3>();
     mean += pN;
     visitedMask[pNi[0]][pNi[1]] = 0;
   }
   mean *= (1.0f / (float)visited.size());
 
   // Compute covariance matrix.
-  covariance = Matrix3f::Zero();
-  for(size_t k=0; k<visited.size(); k++){
+  for (size_t k=0; k<visited.size(); k++){
     Vector2i pNi = visited[k];
-    const Vector6f* pNPtr =points(pNi[0], pNi[1]);
-    if (!pNPtr)
-      continue;
-    Vector3f pN = (*pNPtr).head<3>() - mean;
+    Vector6f *pNPtr = points(pNi[0], pNi[1]);
+    Vector3f pN = pNPtr->head<3>() - mean;
     covariance += (pN * pN.transpose());
   }
   covariance *= (1.0f / (float)visited.size());
 
-  // Clear the list of point.
+  // Clear the list of points.
   visited.clear();
 }
 
@@ -92,7 +86,7 @@ void computeIntegralStats(Vector3f& mean, Matrix3f &covariance,
   if (!p0Ptr)
     return;
   
-  Vector3f p0 = (*p0Ptr).head<3>();
+  Vector3f p0 = p0Ptr->head<3>();
   // Get the side of the square to analyze.
   int offset = 0;
   getOffset(offset, 
@@ -144,8 +138,7 @@ void computeNormalAndCurvature(Vector3f& normal, float &curvature,
   normal = Vector3f(minEigenVector[0], minEigenVector[1], minEigenVector[2]);
   if (normal.dot(mean) > 0.0f)
     normal = -normal;
-  // jacopo forgets the &
-  // cerr << normal[0] << " " << normal[1] << " " << normal[2] << endl;
+  
   // Compute curvature.
   curvature = eigenValues[0] / (eigenValues[0] + eigenValues[1] + eigenValues[2]);    
 }
@@ -221,8 +214,9 @@ void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature,
   for (int i=0; i<cloud.rows(); i++){
     visitedMask[i] = new char[cloud.cols()];
     for (int j=0; j<cloud.cols(); j++){
-      if(cloud(i, j)[0]==0.0f && cloud(i, j)[1]==0.0f && cloud(i, j)[2]==0.0f)
-        visitedMask[i][j] = 1;
+      Vector6f *pNPtr = cloud(i, j);
+      if(!pNPtr)
+	visitedMask[i][j] = 1;
       else
         visitedMask[i][j] = 0;
     }
@@ -234,7 +228,7 @@ void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature,
   MatrixXi integralImageMask(cloud.rows(), cloud.cols());
   MatrixVector9f integralImage(cloud.rows(), cloud.cols());
   computeIntegralImage(integralImage, integralImageMask, 
-		       cloud);
+  		       cloud);
 
   // Compute normals.
   for (int i=0; i<cloud.rows(); i++){
@@ -242,6 +236,10 @@ void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature,
       Vector2i pointCoord(i, j);
       Matrix3f covariance = Matrix3f::Zero();
       Vector3f mean = Vector3f::Zero();
+      /*computeIterativeStats(mean, covariance, 
+			    cloud, pointCoord, 
+			    visitedMask, visited, 
+			    r*r, d*d);*/
       computeIntegralStats(mean, covariance, 
 			   cloud, pointCoord, 
 			   integralImage, integralImageMask,
@@ -249,12 +247,14 @@ void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature,
       Vector3f norm = Vector3f::Zero();
       float curv = 0;
       if (covariance!=Matrix3f::Zero()){
-	computeNormalAndCurvature(norm, curv, mean, covariance);
-	(*cloud(i, j))[3] = norm[0];
-	(*cloud(i, j))[4] = norm[1];
-	(*cloud(i, j))[5] = norm[2];
-	curvature(i, j) = curv;
+	computeNormalAndCurvature(norm, curv, 
+				  mean, covariance);
+	cloud(i, j)->tail<3>() = norm;
+	//(*cloud(i, j))[3] = norm[0];
+	//(*cloud(i, j))[4] = norm[1];
+	//(*cloud(i, j))[5] = norm[2];
       }
+      curvature(i, j) = curv;
     }
   }
 
