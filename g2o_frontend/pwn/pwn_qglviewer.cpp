@@ -30,7 +30,7 @@ private:
 
 PWNQGLViewer::PWNQGLViewer(QWidget *parent, const QGLWidget *shareWidget, Qt::WFlags flags) :
   QGLViewer(parent, shareWidget, flags){
-  _normalLength = 0.0f;
+  _normalLength = 0.05f;
   _pointSize = 1.0f;
   _ellipsoidsScale = 0.05f;
 }
@@ -67,7 +67,16 @@ void PWNQGLViewer::init() {
 }
 
 void PWNQGLViewer::draw() {
-  QGLViewer::draw();  
+  QGLViewer::draw();
+
+  // create one display list
+  GLuint index = glGenLists(1);
+
+  // compile the display list, store a triangle in it
+  glNewList(index, GL_COMPILE);
+  g2o::opengl::drawSphere(1.0f);
+  glEndList();
+  
   if (! _points)
     return;
   if (_pointSize>0){
@@ -108,13 +117,15 @@ void PWNQGLViewer::draw() {
 	const Eigen::Isometry3f& I = covSVD.isometry;
 	if (covSVD.lambda.squaredNorm()==0.0f)
 	  continue;
-	glPushMatrix();
-	glMultMatrixf(I.data());
 	float sx = lambda[0]*_ellipsoidsScale;
 	float sy = lambda[1]*_ellipsoidsScale;
 	float sz = lambda[2]*_ellipsoidsScale;
-	glColor3f(1.0f, 1.0f, 0.0f);
-	g2o::opengl::drawEllipsoid(sx, sy, sz);
+	glPushMatrix();
+	glMultMatrixf(I.data());
+	glColor3f(1.0f, 0.647f, 0.0f);
+	glScalef(sx, sy, sz);
+	// draw the display list
+	glCallList(index);
 	glPopMatrix();
       }
     }
