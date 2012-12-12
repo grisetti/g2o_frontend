@@ -6,7 +6,7 @@
 
 class PWNQGLViewer: public QGLViewer{
 public:
-  PWNQGLViewer(QWidget *parent=0, const QGLWidget *shareWidget=0, Qt::WFlags flags=0);
+  PWNQGLViewer(QWidget* parent=0, const QGLWidget* shareWidget=0, Qt::WFlags flags=0);
   virtual void init();
   virtual void draw();
 

@@ -1,18 +1,72 @@
 #include "pwn_qglviewer.h"
 #include <GL/gl.h>
 
+class StandardCamera : public qglviewer::Camera{
+public:
+  StandardCamera() : _standard(true) {};
+
+  float zNear() const{
+    if (_standard) 
+      return 0.001f; 
+    else 
+      return Camera::zNear(); 
+  }
+
+  float zFar() const{  
+    if (_standard) 
+      return 10000.0f; 
+    else 
+      return Camera::zFar();
+  }
+
+  bool standard() const { return _standard; }
+  void setStandard(bool s) { _standard = s; }
+
+private:
+  bool _standard;
+};
+
 PWNQGLViewer::PWNQGLViewer(QWidget *parent, const QGLWidget *shareWidget, Qt::WFlags flags) :
   QGLViewer(parent, shareWidget, flags){
-  _normalLength = 0.;
-  _pointSize = 0.;
-  _ellipsoidsScale = 0;
+  _normalLength = 0.1f;
+  _pointSize = 1.0f;
+  _ellipsoidsScale = 0.f;
 }
 
 void PWNQGLViewer::init() {
-  glDisable(GL_LIGHTING);
+  QGLViewer::init();
+ 
+  setBackgroundColor(QColor::fromRgb(51, 51, 51));
+
+  // some default settings i like
+  glEnable(GL_LINE_SMOOTH);
+  glEnable(GL_BLEND); 
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_NORMALIZE);
+  glShadeModel(GL_FLAT);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  setAxisIsDrawn();
+
+  // don't save state
+  setStateFileName(QString::null);
+
+  // mouse bindings
+  setMouseBinding(Qt::RightButton, CAMERA, ZOOM);
+  setMouseBinding(Qt::MidButton, CAMERA, TRANSLATE);
+
+  // replace camera
+  qglviewer::Camera* oldcam = camera();
+  qglviewer::Camera* cam = new StandardCamera();
+  setCamera(cam);
+  cam->setPosition(qglviewer::Vec(0., 0., 75.));
+  cam->setUpVector(qglviewer::Vec(0., 1., 0.));
+  cam->lookAt(qglviewer::Vec(0., 0., 0.));
+  delete oldcam;
 }
 
 void PWNQGLViewer::draw() {
+  QGLViewer::draw();
   if (! _points)
     return;
   if (_pointSize>0){
@@ -28,6 +82,7 @@ void PWNQGLViewer::draw() {
     }
     glEnd();
   }
+  float nsum  = 0;
   if (_normalLength>0){
     glColor3f(0.3,0.3,0.3);
     glPointSize(_pointSize*.5);
@@ -35,6 +90,7 @@ void PWNQGLViewer::draw() {
     for (size_t i=0; i<_points->size(); i++){
       const Vector6f& p = (*_points)[i];
       glVertex3f(p[0],p[1], p[2]);
+      nsum += p.tail<3>().squaredNorm();
       glVertex3f(p[0]+p[3]*_normalLength,
 		 p[1]+p[4]*_normalLength, 
 		 p[2]+p[5]*_normalLength);

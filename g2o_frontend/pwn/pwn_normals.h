@@ -15,16 +15,16 @@ typedef Matrix<Vector9f, Dynamic, Dynamic> MatrixVector9f;
 typedef std::queue<Vector2i>  Vector2iQueue;
 typedef std::vector<Vector2i> Vector2iVector;
 
-void computeIterativeCovariance(Matrix3f &covariance, 
+void computeIterativeCovariance(Vector3f& mean, Matrix3f &covariance, 
 				const Vector6fPtrMatrix &points, const Vector2i &imgPoint, 
 				char **visitedMask, Vector2iVector &visited, 
 				float rw2, int ri2);
-void computeIntegralCovariance(Matrix3f &covariance, 
-			       const Vector6fPtrMatrix &points, const Vector2i &imgPoint,  
-			       MatrixVector9f &integImage, MatrixXi &integMask, 
-			       const Matrix3f &cameraMatrix, float r);
-void computeNormalAndCurvature(Vector3f normal, float &curvature, 
-			       const Matrix3f covariance);
+void computeIntegralStats(Vector3f& mean, Matrix3f &covariance, 
+			  const Vector6fPtrMatrix &points, const Vector2i &imgPoint,  
+			  MatrixVector9f &integImage, MatrixXi &integMask, 
+			  const Matrix3f &cameraMatrix, float r);
+void computeNormalAndCurvature(Vector3f& normal, float &curvature, 
+			       const Vector3f& mean, const Matrix3f covariance);
 void computeIntegralImage(MatrixVector9f &integImage, MatrixXi &integMask, 
 			  const Vector6fPtrMatrix &points);
 void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, 

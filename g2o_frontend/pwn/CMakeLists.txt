@@ -29,4 +29,4 @@ ADD_EXECUTABLE(test
 	main.cpp
 )
 
-TARGET_LINK_LIBRARIES(test pwn_library)
+TARGET_LINK_LIBRARIES(test pwn_library pwn_viewer_library)

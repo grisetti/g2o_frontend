@@ -3,16 +3,17 @@
 #include <Eigen/SVD>
 
 // Computes normal of the input point considering a set of the points around it.
-void computeIterativeCovariance(Matrix3f &covariance, 
-				const Vector6fPtrMatrix &points, const Vector2i &imgPoint, 
-				char **visitedMask, Vector2iVector &visited, 
-				float rw2, int ri2)
-{/*
+void computeIterativeStats(Vector3f& mean, Matrix3f &covariance, 
+			   const Vector6fPtrMatrix &points, const Vector2i &imgPoint, 
+			   char **visitedMask, Vector2iVector &visited, 
+			   float rw2, int ri2)
+{
   // Check if point is not (0.0, 0.0, 0.0).
   Vector2i p0i = imgPoint;
-  Vector6f *p0Ptr = points(p0i[0], p0i[1]);
-  if (!p0Ptr)
-    return;
+  const Vector6f* p0Ptr = points(p0i[0], p0i[1]);
+  if (!p0Ptr)  
+    return; 
+  
   
   // Fill the queue with around point if they satisfy the distance constraints.
   Vector3f p0 = (*p0Ptr).head<3>();
@@ -26,7 +27,7 @@ void computeIterativeCovariance(Matrix3f &covariance,
     for(int xx=-1; xx<1; xx++){
       for(int yy=-1; yy<1; yy++){
 	Vector2i pNi(pki[0] + xx, pki[1] + yy);
-	Vector6f pNPtr = points(pNi[0], pNi[1]);
+	const Vector6f* pNPtr = points(pNi[0], pNi[1]);
 	if (!pNPtr)
 	  continue;
 	Vector3f pN = (*pNPtr).head<3>();
@@ -50,10 +51,13 @@ void computeIterativeCovariance(Matrix3f &covariance,
     return;
 
   // Compute the mean and clear the mask.
-  Vector3f mean = Vector3f::Zero();
+  mean = Vector3f::Zero();
   for(size_t k=0; k<visited.size(); k++){
     Vector2i pNi = visited[k];
-    Vector3f pN = (*points(pNi[0], pNi[1])).head<3>();
+    const Vector6f *pNPtr =points(pNi[0], pNi[1]);
+    if (!pNPtr)
+      continue;
+    const Vector3f& pN = (*pNPtr).head<3>();
     mean += pN;
     visitedMask[pNi[0]][pNi[1]] = 0;
   }
@@ -63,20 +67,23 @@ void computeIterativeCovariance(Matrix3f &covariance,
   covariance = Matrix3f::Zero();
   for(size_t k=0; k<visited.size(); k++){
     Vector2i pNi = visited[k];
-    Vector3f pN = (*points(pNi[0], pNi[1])).head<3>() - mean;
+    const Vector6f* pNPtr =points(pNi[0], pNi[1]);
+    if (!pNPtr)
+      continue;
+    Vector3f pN = (*pNPtr).head<3>() - mean;
     covariance += (pN * pN.transpose());
   }
   covariance *= (1.0f / (float)visited.size());
 
   // Clear the list of point.
-  visited.clear();*/
+  visited.clear();
 }
 
 // Computes curvature and normals using integral images.
-void computeIntegralCovariance(Matrix3f &covariance, 
-			       const Vector6fPtrMatrix &points, const Vector2i &imgPoint,  
-			       MatrixVector9f &integImage, MatrixXi &integMask, 
-			       const Matrix3f &cameraMatrix, float r)
+void computeIntegralStats(Vector3f& mean, Matrix3f &covariance, 
+			  const Vector6fPtrMatrix &points, const Vector2i &imgPoint,  
+			  MatrixVector9f &integImage, MatrixXi &integMask, 
+			  const Matrix3f &cameraMatrix, float r)
 {
   Vector2i p0i = imgPoint;
   Vector6f *p0Ptr = points(p0i[0], p0i[1]);
@@ -105,6 +112,7 @@ void computeIntegralCovariance(Matrix3f &covariance,
   if(numValidPoint < minPoints)
     return;
   region *= (1.0f / (float)numValidPoint);
+  mean = region.tail<3>();
 
   // Compute covariance matrix.
   covariance = Matrix3f::Zero();
@@ -119,8 +127,8 @@ void computeIntegralCovariance(Matrix3f &covariance,
   covariance(2, 1) = covariance(1, 2);
 }
 
-void computeNormalAndCurvature(Vector3f normal, float &curvature, 
-			       const Matrix3f covariance)
+void computeNormalAndCurvature(Vector3f& normal, float &curvature, 
+			       const Vector3f& mean, const Matrix3f covariance)
 {
   // Extract eigenvectors and eigenvalues.
   SelfAdjointEigenSolver<Matrix3f> eigenSolver(covariance);
@@ -134,7 +142,10 @@ void computeNormalAndCurvature(Vector3f normal, float &curvature,
 
   // Extract normal to the point.
   normal = Vector3f(minEigenVector[0], minEigenVector[1], minEigenVector[2]);
-   
+  if (normal.dot(mean) > 0.0f)
+    normal = -normal;
+  // jacopo forgets the &
+  // cerr << normal[0] << " " << normal[1] << " " << normal[2] << endl;
   // Compute curvature.
   curvature = eigenValues[0] / (eigenValues[0] + eigenValues[1] + eigenValues[2]);    
 }
@@ -230,15 +241,15 @@ void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature,
     for (int j=0; j<cloud.cols(); j++){
       Vector2i pointCoord(i, j);
       Matrix3f covariance = Matrix3f::Zero();
-      computeIntegralCovariance(covariance, 
-				cloud, pointCoord, 
-				integralImage, integralImageMask,
-				cameraMatrix, r);
+      Vector3f mean = Vector3f::Zero();
+      computeIntegralStats(mean, covariance, 
+			   cloud, pointCoord, 
+			   integralImage, integralImageMask,
+			   cameraMatrix, r);
       Vector3f norm = Vector3f::Zero();
       float curv = 0;
       if (covariance!=Matrix3f::Zero()){
-	computeNormalAndCurvature(norm, curv, 
-				  covariance);
+	computeNormalAndCurvature(norm, curv, mean, covariance);
 	(*cloud(i, j))[3] = norm[0];
 	(*cloud(i, j))[4] = norm[1];
 	(*cloud(i, j))[5] = norm[2];
