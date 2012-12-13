@@ -18,16 +18,25 @@ SET_TARGET_PROPERTIES(pwn_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}pwn)
 
 ADD_LIBRARY(pwn_viewer_library 
 	pwn_qglviewer.cpp pwn_qglviewer.h
+	pwn_imageview.cpp pwn_imageview.h
 #   pwn_imageviewer.cpp pwn_imageviewer.h
 #   ${UI_HEADERS} ${UI_SOURCES}
  )
 
 SET_TARGET_PROPERTIES(pwn_viewer_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}pwn_viewer)
 
-TARGET_LINK_LIBRARIES(pwn_viewer_library pwn_library  ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES})
+TARGET_LINK_LIBRARIES(pwn_viewer_library pwn_library  ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_gl_LIBRARY})
 
 ADD_EXECUTABLE(pwn_test
   pwn_test.cpp
 )
 
-TARGET_LINK_LIBRARIES(pwn_test pwn_library pwn_viewer_library ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES})
+TARGET_LINK_LIBRARIES(pwn_test pwn_library pwn_viewer_library ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_gl_LIBRARY})
+
+ADD_EXECUTABLE(pwn_imageview_test
+  pwn_imageview_test.cpp
+)
+
+SET_TARGET_PROPERTIES(pwn_imageview_test PROPERTIES OUTPUT_NAME pwn_imageview)
+
+TARGET_LINK_LIBRARIES(pwn_imageview_test pwn_library pwn_viewer_library ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_gl_LIBRARY})
