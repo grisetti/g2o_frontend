@@ -12,7 +12,8 @@ void cloud2mat(Vector6fPtrMatrix& pointsMat,
 	       CovarianceSVDVector& svdVec,
 	       const Eigen::Isometry3f& X,
 	       const Eigen::Matrix3f& cameraMatrix,
-	       Eigen::MatrixXf& zBuffer /* temp zBuffer for working. Allocate it outside */) {
+	       Eigen::MatrixXf& zBuffer /* temp zBuffer for working. Allocate it outside */,
+	       bool acceptUndefined) {
   zBuffer.resize(pointsMat.rows(), pointsMat.cols());
   if(omegas.size())
     informationMat.fill(0);
@@ -38,12 +39,15 @@ void cloud2mat(Vector6fPtrMatrix& pointsMat,
        x < 0 || x >= pointsMat.cols())
       continue;
     if(zBuffer(y, x) > pt.z()) {
-      zBuffer(y, x) = pt.z();
-      pointsMat(y, x) = &p;
-      if(omegas.size())
-	informationMat(y, x) = &omegas[i];
-      if(svdVec.size())
-	svdMat(y, x) = &svdVec[i];
+      bool hasNormal = p.tail<3>().squaredNorm() > 1e-3;
+      if (hasNormal || acceptUndefined) {
+	zBuffer(y, x) = pt.z();
+	pointsMat(y, x) = &p;
+	if(omegas.size())
+	  informationMat(y, x) = &omegas[i];
+	if(svdVec.size())
+	  svdMat(y, x) = &svdVec[i];
+      }
     }
   }
 }
@@ -54,11 +58,12 @@ void cloud2mat(Vector6fPtrMatrix& pointsMat,
 	       Matrix6fVector& omegas,
 	       const Isometry3f& X,
 	       const Matrix3f& cameraMatrix,
-	       MatrixXf& zBuffer) {
+	       MatrixXf& zBuffer,
+	       bool acceptUndefined) {
   static CovarianceSVDVector dummy_svdVec;
   static CovarianceSVDPtrMatrix dummy_svdMat;
   cloud2mat(pointsMat, informationMat, dummy_svdMat,
-	    points, omegas, dummy_svdVec, X, cameraMatrix, zBuffer);
+	    points, omegas, dummy_svdVec, X, cameraMatrix, zBuffer, acceptUndefined);
 }
 
 
@@ -66,11 +71,55 @@ void cloud2mat(Vector6fPtrMatrix& pointsMat,
                Vector6fVector& points,
                const Isometry3f& X,
                const Matrix3f& cameraMatrix,
-               MatrixXf& zBuffer /* temp zBuffer for working. Allocate it outside*/) {
+               MatrixXf& zBuffer /* temp zBuffer for working. Allocate it outside*/,
+	       bool acceptUndefined) {
   static Matrix6fVector dummy_omegas;
   static Matrix6fPtrMatrix dummy_informationMat(0,0);
-  cloud2mat(pointsMat, dummy_informationMat, points, dummy_omegas, X, cameraMatrix, zBuffer );
+  cloud2mat(pointsMat, dummy_informationMat, points, dummy_omegas, X, cameraMatrix, zBuffer, acceptUndefined);
 }
+
+int mat2cloud(Vector6fVector& destPoints,
+	      Matrix6fVector& destOmegas,
+	      CovarianceSVDVector& destSVD,
+	      Vector6fPtrMatrix& srcPointsMat,
+	      Matrix6fPtrMatrix& srcOmegaMat,
+	      CovarianceSVDPtrMatrix& srcSvdMat){
+
+  bool addOmegas = srcOmegaMat.cols();
+  bool addSvd = srcSvdMat.cols();
+  int s = destPoints.size();
+  int howMany = srcPointsMat.cols() * srcPointsMat.rows();
+  destPoints.reserve(s + howMany);
+  if (addOmegas){
+    destOmegas.reserve(s+howMany);
+  }
+  if (addSvd){
+    destSVD.reserve(s+howMany);
+  }
+
+  int k = 0;
+  for (int i = 0; i<srcPointsMat.cols(); i++)
+    for (int j=0; j<srcPointsMat.rows(); j++){
+      if (! srcPointsMat(j,i))
+	continue;
+      const Vector6f& v=*srcPointsMat(j,i);
+      if (v.tail<3>().squaredNorm()>1e-3){
+	destPoints.push_back(v);
+	if (addOmegas)
+	  destOmegas.push_back(*srcOmegaMat(j,i));
+	if (addSvd)
+	  destSVD.push_back(*srcSvdMat(j,i));
+      }
+      k++;
+    }
+  destPoints.resize(s+k);
+  if (addOmegas)
+    destOmegas.resize(s+k);
+  if (addSvd)
+    destSVD.resize(s+k);
+  return k;
+}
+
 
 void depth2cloud(Vector6fVector& cloud, const MatrixXf& depth, const Eigen::Matrix3f& cameraMatrix){
   cloud.resize(depth.cols()*depth.rows());

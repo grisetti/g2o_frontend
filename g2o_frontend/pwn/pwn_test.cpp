@@ -11,6 +11,28 @@
 
 using namespace std;
 
+// struct PointsWithNormalPyramidLevel{
+//   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+//   PointsWithNormalPyramidLevel(int width_, int height_){
+//     _width = width_;
+//     _height = height_;
+//   }
+//   int width() const {return _width;}
+//   int height() const {return _height;}
+//   void setWidth(int width_) {_width = width_;}
+//   void setHeight(int height_) {_height = height_;}
+//   Vector6fVector points;
+//   CovarianceSVDVector svdCov;
+//   Matrix6fVector omegas;
+//   int _width;
+//   int _height;
+// };
+
+// void constructPyramid(PointsWithNormalPyramidLevel & newLevel, PointsWithNormalPyramidLevel & previousLevel, const Matrix3f& cameraMatrix){
+//   newLevel.width = previousLevel.width/2;
+//   newLevel.height = previousLevel.height/2;
+// }
+
 int main(int argc, char** argv)
 {
   g2o::CommandArgs arg;
@@ -128,7 +150,11 @@ int main(int argc, char** argv)
   cerr << "computing normals2... ";
   computeNormals(cloud1Ptr, curvature1, svd1Ptr, cameraMatrix, r, d, step, minPoints);
   cerr << "done !" << endl;
+
+  // construct the pyramids
+  // int nPyramids = 3;
   
+
   /************************************************************************************
    *                                                                                  *
    *  Compute the transformation.                                                     *
