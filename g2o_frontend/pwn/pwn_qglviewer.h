@@ -11,16 +11,26 @@ public:
 
   void setPoints(const Vector6fVector* points_) {_points = points_;}
   const Vector6fVector* points() {return _points;}
-  void setEllipsoids(const MatrixCovarianceSVD* ellipsoids_) {_ellipsoids = ellipsoids_;}
-  const MatrixCovarianceSVD* ellipsoids() {return _ellipsoids;}
+  void setEllipsoids(const CovarianceSVDVector* ellipsoids_) {_ellipsoids = ellipsoids_;}
+  const CovarianceSVDVector* ellipsoids() {return _ellipsoids;}
   
+  inline float normalLength() const { return _normalLength;}
+  inline void setNormalLength(float normalLength_) {_normalLength = normalLength_;}
+  inline float pointSize() const { return _pointSize;}
+  inline void setPointSize(float pointSize_) {_pointSize = pointSize_;}
+  inline float ellipsoidScale() const { return _ellipsoidScale;}
+  inline void setEllipsoidScale(float ellipsoidScale_) {_ellipsoidScale = ellipsoidScale_;}
+  inline float ellipsoidCrop() const { return _ellipsoidCrop;}
+  inline void setEllipsoidCrop(float ellipsoidCrop_) {_ellipsoidCrop = ellipsoidCrop_;}
+
 protected:
   float _normalLength;
   float _pointSize;
-  float _ellipsoidsScale;
-  
+  float _ellipsoidScale;
+  float _ellipsoidCrop;
+
   const Vector6fVector *_points;
-  const MatrixCovarianceSVD *_ellipsoids;
+  const CovarianceSVDVector *_ellipsoids;
 
 private:
   void drawParallelepipedon(float x, float y, float z);

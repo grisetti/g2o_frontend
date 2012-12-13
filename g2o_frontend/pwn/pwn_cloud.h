@@ -16,13 +16,24 @@ typedef std::vector<Matrix6f,Eigen::aligned_allocator<Matrix6f> > Matrix6fVector
 
 typedef Eigen::Matrix<unsigned short, Eigen::Dynamic, Eigen::Dynamic> MatrixXus;
 
+
+void cloud2mat(Vector6fPtrMatrix& pointsMat,
+	       Matrix6fPtrMatrix& informationMat,
+	       CovarianceSVDPtrMatrix& svdMat,
+	       Vector6fVector& points,
+	       Matrix6fVector& omegas,
+	       CovarianceSVDVector& svdVec,
+	       const Eigen::Isometry3f& X,
+	       const Eigen::Matrix3f& cameraMatrix,
+	       Eigen::MatrixXf& zBuffer /* temp zBuffer for working. Allocate it outside */);
+
 void cloud2mat(Vector6fPtrMatrix& pointsMat,
 	       Matrix6fPtrMatrix& informationMat,
 	       Vector6fVector& points,
 	       Matrix6fVector& omegas,
 	       const Eigen::Isometry3f& X,
 	       const Eigen::Matrix3f& cameraMatrix,
-	       Eigen::MatrixXf& zBuffer /* temp zBuffer for working. Allocate it outside */);
+	       Eigen::MatrixXf& zBuffer);
 
 void cloud2mat(Vector6fPtrMatrix& pointsMat,
                Vector6fVector& points,

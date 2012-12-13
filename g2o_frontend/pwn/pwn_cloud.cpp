@@ -6,14 +6,18 @@ using namespace std;
 
 void cloud2mat(Vector6fPtrMatrix& pointsMat,
 	       Matrix6fPtrMatrix& informationMat,
+	       CovarianceSVDPtrMatrix& svdMat,
 	       Vector6fVector& points,
 	       Matrix6fVector& omegas,
-	       const Isometry3f& X,
-	       const Matrix3f& cameraMatrix,
-	       MatrixXf& zBuffer /* temp zBuffer for working. Allocate it outside */) {
+	       CovarianceSVDVector& svdVec,
+	       const Eigen::Isometry3f& X,
+	       const Eigen::Matrix3f& cameraMatrix,
+	       Eigen::MatrixXf& zBuffer /* temp zBuffer for working. Allocate it outside */) {
   zBuffer.resize(pointsMat.rows(), pointsMat.cols());
   if(omegas.size())
     informationMat.fill(0);
+  if(svdVec.size())
+    svdMat.fill(0);
 
   pointsMat.fill(0);
   zBuffer.fill(std::numeric_limits<float>::max());
@@ -38,8 +42,23 @@ void cloud2mat(Vector6fPtrMatrix& pointsMat,
       pointsMat(y, x) = &p;
       if(omegas.size())
 	informationMat(y, x) = &omegas[i];
+      if(svdVec.size())
+	svdMat(y, x) = &svdVec[i];
     }
   }
+}
+
+void cloud2mat(Vector6fPtrMatrix& pointsMat,
+	       Matrix6fPtrMatrix& informationMat,
+	       Vector6fVector& points,
+	       Matrix6fVector& omegas,
+	       const Isometry3f& X,
+	       const Matrix3f& cameraMatrix,
+	       MatrixXf& zBuffer) {
+  static CovarianceSVDVector dummy_svdVec;
+  static CovarianceSVDPtrMatrix dummy_svdMat;
+  cloud2mat(pointsMat, informationMat, dummy_svdMat,
+	    points, omegas, dummy_svdVec, X, cameraMatrix, zBuffer);
 }
 
 

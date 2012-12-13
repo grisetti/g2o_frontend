@@ -7,7 +7,7 @@
 using namespace std;
 
 // Computes normal of the input point considering a set of the points around it.
-bool computeIterativeStats(Vector3f& mean, Matrix3f &covariance, 
+inline bool computeIterativeStats(Vector3f& mean, Matrix3f &covariance, 
 			   const Vector6fPtrMatrix &points, const Vector2i &imgPoint, 
 			   char **visitedMask, Vector2iVector &visited, 
 			   float rw2, int ri2)
@@ -79,10 +79,10 @@ bool computeIterativeStats(Vector3f& mean, Matrix3f &covariance,
 }
 
 // Computes curvature and normals using integral images.
-bool computeIntegralStats(Vector3f& mean, Matrix3f &covariance, 
+inline bool computeIntegralStats(Vector3f& mean, Matrix3f &covariance, 
 			  const Vector6fPtrMatrix &points, const Vector2i &imgPoint,  
 			  MatrixVector9f &integImage, MatrixXi &integMask, 
-			  const Matrix3f &cameraMatrix, float r)
+				 const Matrix3f &cameraMatrix, float r)
 {
   Vector2i p0i = imgPoint;
   Vector6f *p0Ptr = points(p0i[0], p0i[1]);
@@ -128,7 +128,7 @@ bool computeIntegralStats(Vector3f& mean, Matrix3f &covariance,
   return true;
 }
 
-void computeNormalAndCurvature(Vector3f &normal, float &curvature, covarianceSVD &covSVD,
+inline void computeNormalAndCurvature(Vector3f &normal, float &curvature, covarianceSVD &covSVD,
 			       const Vector3f& mean, const Matrix3f covariance)
 {
   // Extract eigenvectors and eigenvalues.
@@ -219,65 +219,84 @@ void computeIntegralImage(MatrixVector9f &integImage, MatrixXi &integMask,
 }
 
 // Computes the normals of 3D points.
-void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, MatrixCovarianceSVD &matrixCovSVD,
-		    const Matrix3f &cameraMatrix, float r, float /*d*/)
+void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, CovarianceSVDPtrMatrix &matrixCovSVD,
+		    const Matrix3f &cameraMatrix, float r, float d, int step)
 {
-  /*
   // Initialize mask putting 1 where there are (0.0, 0.0, 0.0) points.
-  char **visitedMask = new char*[cloud.rows()];
-  for (int i=0; i<cloud.rows(); i++){
-    visitedMask[i] = new char[cloud.cols()];
-    for (int j=0; j<cloud.cols(); j++){
-      Vector6f *pNPtr = cloud(i, j);
-      if(!pNPtr)
-	visitedMask[i][j] = 1;
-      else
-        visitedMask[i][j] = 0;
+  char **visitedMask = 0;
+  Vector2iVector visited;
+
+  if (d>0) { 
+    visitedMask =new char*[cloud.rows()];
+    for (int i=0; i<cloud.rows(); i++){
+      visitedMask[i] = new char[cloud.cols()];
+      for (int j=0; j<cloud.cols(); j++){
+	Vector6f *pNPtr = cloud(i, j);
+	if(!pNPtr)
+	  visitedMask[i][j] = 1;
+	else
+	  visitedMask[i][j] = 0;
+      }
     }
   }
-  Vector2iVector visited;
-  */
-
+  
   // Compute integral image.
   MatrixXi integralImageMask(cloud.rows(), cloud.cols());
   MatrixVector9f integralImage(cloud.rows(), cloud.cols());
   computeIntegralImage(integralImage, integralImageMask, 
   		       cloud);
 
-  // Compute normals.
+  // clear the results;
+  curvature.fill(0);    
   for (int i=0; i<cloud.rows(); i++){
     for (int j=0; j<cloud.cols(); j++){
+      if (cloud(i,j)){
+	cloud(i,j)->tail<3>().setZero();
+	matrixCovSVD(i, j)->setZero();
+      }
+    }
+  }
+  
+  // Compute normals.
+  for (int i=0; i<cloud.rows(); i+=step){
+    for (int j=0; j<cloud.cols(); j+=step){
+      if (! cloud(i,j))
+	continue;
       Vector2i pointCoord(i, j);
       Matrix3f covariance = Matrix3f::Zero();
       Vector3f mean = Vector3f::Zero();
       Vector3f norm = Vector3f::Zero();
       float curv = 0;
       covarianceSVD covSVD;
-      covSVD.isometry = Eigen::Isometry3f::Identity();
-      covSVD.lambda = Vector3f::Zero();
-      /*if (computeIterativeStats(mean, covariance, 
-				cloud, pointCoord, 
-				visitedMask, visited, 
-				r*r, d*d){*/
-      if (computeIntegralStats(mean, covariance, 
-			       cloud, pointCoord, 
-			       integralImage, integralImageMask,
-			       cameraMatrix, r)){
+      bool hasStats = false;
+      if (d>0) {
+	hasStats = computeIterativeStats(mean, covariance, 
+					 cloud, pointCoord, 
+					 visitedMask, visited, 
+					 r*r, d*d);
+      } else {
+	hasStats = computeIntegralStats(mean, covariance, 
+			     cloud, pointCoord, 
+			     integralImage, integralImageMask,
+			     cameraMatrix, r);
+      }
+      if (hasStats){
 	computeNormalAndCurvature(norm, curv, covSVD, 
 				  mean, covariance);
 	cloud(i, j)->tail<3>() = norm;
       }
-      matrixCovSVD(i, j) = covSVD;
+      *matrixCovSVD(i, j) = covSVD;
       curvature(i, j) = curv;
     }
   }
 
-  /*
+  
   // Delete mask.
-  for(int i = 0; i < cloud.rows(); i++)
-    delete[] visitedMask[i];
-  delete[] visitedMask;
-  */
+  if (visitedMask) {
+    for(int i = 0; i < cloud.rows(); i++)
+      delete[] visitedMask[i];
+    delete[] visitedMask;
+  }
 }
 
 // Return the half side of the square of image points to analize.

@@ -32,7 +32,8 @@ PWNQGLViewer::PWNQGLViewer(QWidget *parent, const QGLWidget *shareWidget, Qt::WF
   QGLViewer(parent, shareWidget, flags){
   _normalLength = 0.05f;
   _pointSize = 1.0f;
-  _ellipsoidsScale = 0.05f;
+  _ellipsoidScale = 0.05f;
+  _ellipsoidCrop = 0.1f;
 }
 
 void PWNQGLViewer::init() {
@@ -95,7 +96,7 @@ void PWNQGLViewer::draw() {
   float nsum  = 0;
   if (_normalLength>0){
     glColor3f(0.3,0.3,0.3);
-    glPointSize(_pointSize*.5);
+    glPointSize(1.);
     glBegin(GL_LINES);
     for (size_t i=0; i<_points->size(); i++){
       const Vector6f& p = (*_points)[i];
@@ -107,27 +108,26 @@ void PWNQGLViewer::draw() {
     }
     glEnd();
   }
-  if (_ellipsoids && _ellipsoidsScale>0){
+  if (_ellipsoids && _ellipsoidScale>0){
     glColor3f(1.0f, 0.0f, 0.0f);
     glPointSize(_pointSize*.5);
-    for (int i=0; i<_ellipsoids->rows(); i++){
-      for (int j=0; j<_ellipsoids->cols(); j+=20){
-	const covarianceSVD& covSVD = (*_ellipsoids)(i, j);
-	const Eigen::Vector3f& lambda = covSVD.lambda;
-	const Eigen::Isometry3f& I = covSVD.isometry;
-	if (covSVD.lambda.squaredNorm()==0.0f)
-	  continue;
-	float sx = lambda[0]*_ellipsoidsScale;
-	float sy = lambda[1]*_ellipsoidsScale;
-	float sz = lambda[2]*_ellipsoidsScale;
-	glPushMatrix();
-	glMultMatrixf(I.data());
-	glColor3f(1.0f, 0.647f, 0.0f);
-	glScalef(sx, sy, sz);
-	// Draw the display list.
-	glCallList(ellipsoidList);
-	glPopMatrix();
-      }
+    for (size_t i=0; i<_ellipsoids->size(); i++) {
+      const covarianceSVD& covSVD = _ellipsoids->at(i);
+      const Eigen::Vector3f& lambda = covSVD.lambda;
+      const Eigen::Isometry3f& I = covSVD.isometry;
+      if (covSVD.lambda.squaredNorm()==0.0f)
+	continue;
+      float sx = sqrt(lambda[0])*_ellipsoidScale;
+      float sy = sqrt(lambda[1])*_ellipsoidScale;
+      float sz = sqrt(lambda[2])*_ellipsoidScale;
+      glPushMatrix();
+      glMultMatrixf(I.data());
+      glColor3f(1.0f, 0.647f, 0.0f);
+      glScalef(sx, sy, sz);
+      // Draw the display list.
+      glCallList(ellipsoidList);
+      glPopMatrix();
     }
   }
+  
 }
