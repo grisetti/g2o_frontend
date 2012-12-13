@@ -3,6 +3,7 @@
 #include <qapplication.h>
 #include "pwn_normals.h"
 #include "pwn_cloud.h"
+#include "pwn_solve.h"
 #include "pwn_qglviewer.h"
 #include "g2o/stuff/command_args.h"
 
@@ -126,20 +127,37 @@ int main(int argc, char** argv)
   computeNormals(cloud1Ptr, curvature1, svd1Ptr, cameraMatrix, r, d, step, minPoints);
   cerr << "done !" << endl;
   
+  /************************************************************************************
+   *                                                                                  *
+   *  Compute the transformation.                                                     *
+   *                                                                                  *
+   ************************************************************************************/
   // Compute 6x6 omega matrices.
-  Matrix6fVector omega0, omega1;
-  svd2omega(omega0, svd0);
+  Matrix6fVector omega1;
+  cerr << "computing omega... ";
   svd2omega(omega1, svd1);
-  cerr << "Size: " << omega0.size();
-  for (size_t i=0; i<omega0.size(); i++)
-    cerr << "Omega: " << endl << omega0[i] << endl;
- 
+  cerr << "done !" << endl;
+
+  // Run least square method to compute the transformation.
+  float error = 0.0f;
+  Isometry3f transf = Isometry3f::Identity();
+  Isometry3f initialGuess = Isometry3f::Identity();
+  cerr << "computing solution... ";
+  pwn_align(error, transf, 
+	    cloud0, cloud1, omega1,
+	    initialGuess, cameraMatrix,
+	    rows, cols,
+	    rows*cols, 0,
+	    10, 10);
+  cerr << "done !" << endl;
+  cerr << "Result transformation: " << endl << transf.linear() << endl << transf.translation() << endl;
+
   /************************************************************************************
    *                                                                                  *
    *  Draw 3D points with normals.                                                    *
    *                                                                                  *
    ************************************************************************************/
-  PWNQGLViewer viewer;
+  /*PWNQGLViewer viewer;
   viewer.setPointSize(pointSize);
   viewer.setNormalLength(normalLength);
   viewer.setEllipsoidScale(ellipsoidScale);
@@ -151,7 +169,7 @@ int main(int argc, char** argv)
   viewer.show();
 
   // Run main loop.
-  return application.exec();
+  return application.exec();*/
     
   return 0;
 }

@@ -110,6 +110,7 @@ int pwn_align(float& error,
             inliers =  _pwn_iteration(iterationError, _xNew,
                                      refImage.data(), currImage.data(), currInformationImage.data(), size,
                                      Xcurrent, inlierThreshold, minInliers);
+	    error = iterationError;
             cerr << "\t\tinliers: " << inliers <<  " error:" << error << endl;
             if(inliers<minInliers)
             {
@@ -118,10 +119,10 @@ int pwn_align(float& error,
             }
             Xcurrent = _xNew;
             cerr << "\t\taccept! " << endl;
-            cerr << Xcurrent.linear() <<  " " << Xcurrent.translation() << endl;
+            cerr << Xcurrent.linear() <<  " " << endl << Xcurrent.translation() << endl;
         }
     }
-    if(inliers<minInliers)
+    if(inliers>minInliers)
         Xnew = Xcurrent;
     return inliers;
 }
