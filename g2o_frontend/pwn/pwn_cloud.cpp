@@ -123,6 +123,46 @@ void img2depth(Eigen::MatrixXf& depth, const MatrixXus& img){
   } 
 }
 
+// Compute list of 6x6 moegas matrices given the covariances of points.
+void svd2omega(Matrix6fVector &omega, const CovarianceSVDPtrMatrix &covariance){
+  float Kp = 1.0f;
+  float Kn = 1.0f;
+  int k = 0;
+  omega.resize(covariance.cols()*covariance.rows());
+  for (int i=0; i<covariance.rows(); i++){
+    for (int j=0; j<covariance.cols(); j++){
+      SVDMatrix3f *cov = covariance(i, j);
+      if (!cov)
+	continue;
+      float curvature = cov->lambda[0] / (cov->lambda[0] + cov->lambda[1] + cov->lambda[2]);
+      
+      // Compute points omega block.
+      Eigen::Matrix3f omegaP = Eigen::Matrix3f::Identity();
+      Eigen::Matrix3f R = cov->isometry.linear();
+      Diagonal3f lambda;
+      if (curvature>0.02f)
+	lambda = Diagonal3f(cov->lambda[0], cov->lambda[1], cov->lambda[2]);
+      else
+	lambda = Diagonal3f(1e-03, 0.05f, 0.05f);
+      omegaP = (R*lambda*R.transpose()).inverse();
+      omegaP *= Kp;
+
+      // Compute normals omega block.
+      Eigen::Matrix3f omegaN = Eigen::Matrix3f::Identity();
+      omegaN *= Kn * 1.0f / (curvature + 1e-09);
+
+      // Create final omega matrix
+      Matrix6f finalOmega = Matrix6f::Identity();
+      finalOmega.topLeftCorner(3, 3) = omegaP;
+      finalOmega.bottomRightCorner(3, 3) = omegaN;
+
+      // Add the computed omega to the list.
+      omega[k] = finalOmega;
+      k++;
+    }
+  }
+}
+
 // Read and load an image from a .pgm file.
 bool readPgm(MatrixXus &image, FILE *pgmFile)
 {
