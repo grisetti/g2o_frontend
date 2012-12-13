@@ -15,7 +15,6 @@ struct covarianceSVD{
 };
 
 typedef std::vector<covarianceSVD, Eigen::aligned_allocator<covarianceSVD> > CovarianceSVDVector; 
-typedef Eigen::Matrix<covarianceSVD, Eigen::Dynamic, Eigen::Dynamic> MatrixCovarianceSVD;
 typedef Eigen::Matrix<covarianceSVD*, Eigen::Dynamic, Eigen::Dynamic> CovarianceSVDPtrMatrix;
 
 typedef Eigen::Matrix<float, 6, 1> Vector6f;

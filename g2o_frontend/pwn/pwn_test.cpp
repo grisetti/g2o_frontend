@@ -88,7 +88,6 @@ int main(int argc, char** argv)
    *                                                                                  *
    ************************************************************************************/
   // Create matrices of pointers.
-  MatrixCovarianceSVD matrixCovSVD(rows, cols);
   MatrixXf curvature0(rows, cols), curvature1(rows, cols);
   MatrixXf zBuffer(rows, cols);
   Vector6fPtrMatrix cloud0Ptr(rows, cols), cloud1Ptr(rows, cols);
