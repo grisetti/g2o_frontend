@@ -36,11 +36,12 @@ void computeIntegralImage(MatrixVector9f &integImage, MatrixXi &integMask,
 			  const Vector6fPtrMatrix &points);
 
 void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, CovarianceSVDPtrMatrix &matrixCovSVD,
-		    const Matrix3f &cameraMatrix, float r, float d=0, int step=4);
+		    const Matrix3f &cameraMatrix, float r, float d=0, int step=4, int minPoints=3);
 
 void getOffset(int &offset, 
 	       Vector3f point, const Matrix3f &cameraMatrix, 
 	       float r, int col);
+
 void getRegion(Vector9f &region, int &regionMask, int &numValidPoints,
 	       const MatrixVector9f &integImage, const MatrixXi &integMask, 
 	       int offset, Vector2i p0i);

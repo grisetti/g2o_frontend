@@ -1,6 +1,6 @@
 #include "pwn_defs.h"
 
-covarianceSVD::covarianceSVD(){
+SVDMatrix3f::SVDMatrix3f() {
   isometry.setIdentity();
   lambda.setZero();
 }

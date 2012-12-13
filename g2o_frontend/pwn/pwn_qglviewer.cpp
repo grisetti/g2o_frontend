@@ -6,7 +6,7 @@
 class StandardCamera : public qglviewer::Camera{
 public:
   StandardCamera() : _standard(true) {};
-
+  
   float zNear() const{
     if (_standard) 
       return 0.001f; 
@@ -112,7 +112,7 @@ void PWNQGLViewer::draw() {
     glColor3f(1.0f, 0.0f, 0.0f);
     glPointSize(_pointSize*.5);
     for (size_t i=0; i<_ellipsoids->size(); i++) {
-      const covarianceSVD& covSVD = _ellipsoids->at(i);
+      const SVDMatrix3f& covSVD = _ellipsoids->at(i);
       const Eigen::Vector3f& lambda = covSVD.lambda;
       const Eigen::Isometry3f& I = covSVD.isometry;
       if (covSVD.lambda.squaredNorm()==0.0f)
@@ -120,14 +120,21 @@ void PWNQGLViewer::draw() {
       float sx = sqrt(lambda[0])*_ellipsoidScale;
       float sy = sqrt(lambda[1])*_ellipsoidScale;
       float sz = sqrt(lambda[2])*_ellipsoidScale;
+      float curvature = lambda[0] / (lambda[0] + lambda[1] + lambda[2]);
       glPushMatrix();
       glMultMatrixf(I.data());
-      glColor3f(1.0f, 0.647f, 0.0f);
+      if(curvature > 0.02f){
+	glColor3f(1.0f - curvature, 0.0f, 0.0f);
+      }
+      else{
+	glColor3f(0.0f, 1.0f - curvature, 0.0f);
+	sx = 1e-03;
+	sy = _ellipsoidScale;
+	sz = _ellipsoidScale;
+      }
       glScalef(sx, sy, sz);
-      // Draw the display list.
       glCallList(ellipsoidList);
       glPopMatrix();
     }
   }
-  
 }

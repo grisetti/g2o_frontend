@@ -6,16 +6,16 @@
 #include <Eigen/StdVector>
 #include <vector>
 
-struct covarianceSVD{
+struct SVDMatrix3f{
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Eigen::Isometry3f isometry;
   Eigen::Vector3f lambda;
-  covarianceSVD();
-  inline void setZero() {isometry.setIdentity(); lambda.setZero(); }
+  SVDMatrix3f();
+  inline void setZero() { isometry.setIdentity(); lambda.setZero(); }
 };
 
-typedef std::vector<covarianceSVD, Eigen::aligned_allocator<covarianceSVD> > CovarianceSVDVector; 
-typedef Eigen::Matrix<covarianceSVD*, Eigen::Dynamic, Eigen::Dynamic> CovarianceSVDPtrMatrix;
+typedef std::vector<SVDMatrix3f, Eigen::aligned_allocator<SVDMatrix3f> > CovarianceSVDVector; 
+typedef Eigen::Matrix<SVDMatrix3f*, Eigen::Dynamic, Eigen::Dynamic> CovarianceSVDPtrMatrix;
 
 typedef Eigen::Matrix<float, 6, 1> Vector6f;
 typedef Eigen::Matrix<float, 6, 6> Matrix6f;

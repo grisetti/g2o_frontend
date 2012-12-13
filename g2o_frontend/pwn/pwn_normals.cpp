@@ -8,9 +8,9 @@ using namespace std;
 
 // Computes normal of the input point considering a set of the points around it.
 inline bool computeIterativeStats(Vector3f& mean, Matrix3f &covariance, 
-			   const Vector6fPtrMatrix &points, const Vector2i &imgPoint, 
-			   char **visitedMask, Vector2iVector &visited, 
-			   float rw2, int ri2)
+				  const Vector6fPtrMatrix &points, const Vector2i &imgPoint, 
+				  char **visitedMask, Vector2iVector &visited, 
+				  float rw2, int ri2, int minPoints)
 {
   // Check if point is not (0.0, 0.0, 0.0).
   Vector2i p0i = imgPoint;
@@ -49,8 +49,7 @@ inline bool computeIterativeStats(Vector3f& mean, Matrix3f &covariance,
     }
   }
 
-  size_t minPoints = 3;
-  if (visited.size()< minPoints)
+  if ((int)visited.size()< minPoints)
     return false;;
 
   // Compute the mean and clear the mask.
@@ -82,7 +81,7 @@ inline bool computeIterativeStats(Vector3f& mean, Matrix3f &covariance,
 inline bool computeIntegralStats(Vector3f& mean, Matrix3f &covariance, 
 			  const Vector6fPtrMatrix &points, const Vector2i &imgPoint,  
 			  MatrixVector9f &integImage, MatrixXi &integMask, 
-				 const Matrix3f &cameraMatrix, float r)
+				 const Matrix3f &cameraMatrix, float r, int minPoints)
 {
   Vector2i p0i = imgPoint;
   Vector6f *p0Ptr = points(p0i[0], p0i[1]);
@@ -107,9 +106,10 @@ inline bool computeIntegralStats(Vector3f& mean, Matrix3f &covariance,
 	    offset, p0i);
 
   // Check if there are enough points.
-  int minPoints = 3;
-  if(numValidPoint < minPoints)
+  if(numValidPoint < minPoints) {
     return false;
+  } 
+
   region *= (1.0f / (float)numValidPoint);
   mean = region.tail<3>();
 
@@ -128,7 +128,7 @@ inline bool computeIntegralStats(Vector3f& mean, Matrix3f &covariance,
   return true;
 }
 
-inline void computeNormalAndCurvature(Vector3f &normal, float &curvature, covarianceSVD &covSVD,
+inline void computeNormalAndCurvature(Vector3f &normal, float &curvature, SVDMatrix3f &covSVD,
 			       const Vector3f& mean, const Matrix3f covariance)
 {
   // Extract eigenvectors and eigenvalues.
@@ -220,7 +220,7 @@ void computeIntegralImage(MatrixVector9f &integImage, MatrixXi &integMask,
 
 // Computes the normals of 3D points.
 void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, CovarianceSVDPtrMatrix &matrixCovSVD,
-		    const Matrix3f &cameraMatrix, float r, float d, int step)
+		    const Matrix3f &cameraMatrix, float r, float d, int step, int minPoints)
 {
   // Initialize mask putting 1 where there are (0.0, 0.0, 0.0) points.
   char **visitedMask = 0;
@@ -267,18 +267,18 @@ void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, CovarianceSVD
       Vector3f mean = Vector3f::Zero();
       Vector3f norm = Vector3f::Zero();
       float curv = 0;
-      covarianceSVD covSVD;
+      SVDMatrix3f covSVD;
       bool hasStats = false;
       if (d>0) {
 	hasStats = computeIterativeStats(mean, covariance, 
 					 cloud, pointCoord, 
 					 visitedMask, visited, 
-					 r*r, d*d);
+					 r*r, d*d, minPoints);
       } else {
 	hasStats = computeIntegralStats(mean, covariance, 
 			     cloud, pointCoord, 
 			     integralImage, integralImageMask,
-			     cameraMatrix, r);
+					cameraMatrix, r, minPoints);
       }
       if (hasStats){
 	computeNormalAndCurvature(norm, curv, covSVD, 

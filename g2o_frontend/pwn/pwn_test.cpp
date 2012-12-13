@@ -18,8 +18,12 @@ int main(int argc, char** argv)
   float ellipsoidScale;
   float r;
   float d; 
+  int minPoints;
+  int step;
   arg.param("r", r, 0.03f, "radius of the ball to compute the normals, in world coordinates");
   arg.param("d", d, 100.0f, "radius of the ball to compute the normals, in image coordinates (if =0 normal is computed on integral image)");
+  arg.param("mp", minPoints, 3, "min points to compiut de normal");
+  arg.param("step", step, 4, "compute the normal each x rows and col");
   arg.param("ps", pointSize, 1.0f, "point size"); 
   arg.param("nl", normalLength, 0.01f, "normal length"); 
   arg.param("es", ellipsoidScale, 0.05f, "ellipsoid scale"); 
@@ -113,12 +117,13 @@ int main(int argc, char** argv)
 	    zBuffer);
  
   // Compute normals.
+  cerr << "minPoints " <<  minPoints << endl;
   cerr << "computing normals1... ";
-  computeNormals(cloud0Ptr, curvature0, svd0Ptr, cameraMatrix, r, d);
+  computeNormals(cloud0Ptr, curvature0, svd0Ptr, cameraMatrix, r, d, step, minPoints);
   cerr << "done !" << endl;
 
   cerr << "computing normals2... ";
-  computeNormals(cloud1Ptr, curvature1, svd1Ptr, cameraMatrix, r, d);
+  computeNormals(cloud1Ptr, curvature1, svd1Ptr, cameraMatrix, r, d, step, minPoints);
   cerr << "done !" << endl;
   
   /************************************************************************************
