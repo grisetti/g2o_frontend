@@ -102,12 +102,19 @@ int main(int argc, char** argv)
   cerr << "computing normals1... ";
   computeNormals(cloud0Ptr, curvature0, svd0Ptr, cameraMatrix, r, d, step, minPoints);
   cerr << "done !" << endl;
+
+  Vector6fVector pointsWithNormal;
+  CovarianceSVDVector svdOfPointsWithNormals;
+  int k = mat2cloud(pointsWithNormal, _dummyOmega, svdOfPointsWithNormals, 
+		    cloud0Ptr, _dummyOmegaMat,  svd0Ptr);
+  
+  cerr << "resampled " << k << " points" << endl;
   
   Matrix3f cameraMatrix2 = cameraMatrix;
   cameraMatrix2.block<2,3>(0,0)*=scale;
 
   MatrixXf depth2((int)((float)image0.rows()*scale), (int) ((float)image0.cols()*scale));
-  cloud2depth(depth2, cloud0, cameraMatrix2);
+  cloud2depth(depth2, pointsWithNormal, cameraMatrix2);
   MatrixXus image2(depth2.rows(), depth2.cols());
   depth2img(image2, depth2);
   

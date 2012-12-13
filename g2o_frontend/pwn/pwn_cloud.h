@@ -25,7 +25,8 @@ void cloud2mat(Vector6fPtrMatrix& pointsMat,
 	       CovarianceSVDVector& svdVec,
 	       const Eigen::Isometry3f& X,
 	       const Eigen::Matrix3f& cameraMatrix,
-	       Eigen::MatrixXf& zBuffer /* temp zBuffer for working. Allocate it outside */);
+	       Eigen::MatrixXf& zBuffer, /* temp zBuffer for working. Allocate it outside */
+	       bool acceptUndefined = true);
 
 void cloud2mat(Vector6fPtrMatrix& pointsMat,
 	       Matrix6fPtrMatrix& informationMat,
@@ -33,13 +34,22 @@ void cloud2mat(Vector6fPtrMatrix& pointsMat,
 	       Matrix6fVector& omegas,
 	       const Eigen::Isometry3f& X,
 	       const Eigen::Matrix3f& cameraMatrix,
-	       Eigen::MatrixXf& zBuffer);
+	       Eigen::MatrixXf& zBuffer,
+	       bool acceptUndefined=true);
 
 void cloud2mat(Vector6fPtrMatrix& pointsMat,
                Vector6fVector& points,
                const Eigen::Isometry3f& X,
                const Eigen::Matrix3f& cameraMatrix,
-               Eigen::MatrixXf& zBuffer /* temp zBuffer for working. Allocate it outside*/);
+               Eigen::MatrixXf& zBuffer, /* temp zBuffer for working. Allocate it outside*/
+	       bool acceptUndefined=true);
+
+int mat2cloud(Vector6fVector& destPoints,
+	      Matrix6fVector& destOmegas,
+	      CovarianceSVDVector& destSVD,
+	      Vector6fPtrMatrix& srcPointsMat,
+	      Matrix6fPtrMatrix& srcOmegaMat,
+	      CovarianceSVDPtrMatrix& srcSvdMat);
 
 void depth2cloud(Vector6fVector& cloud, const Eigen::MatrixXf& depth, const Eigen::Matrix3f& cameraMatrix);
 
