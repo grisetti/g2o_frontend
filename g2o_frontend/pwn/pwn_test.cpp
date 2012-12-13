@@ -5,6 +5,8 @@
 #include "pwn_cloud.h"
 #include "pwn_solve.h"
 #include "pwn_qglviewer.h"
+#include "pwn_utils.h"
+#include "pwn_math.h"
 #include "g2o/stuff/command_args.h"
 
 using namespace std;
@@ -133,8 +135,9 @@ int main(int argc, char** argv)
    *                                                                                  *
    ************************************************************************************/
   // Compute 6x6 omega matrices.
-  Matrix6fVector omega1;
+  Matrix6fVector omega1, omega0;
   cerr << "computing omega... ";
+  svd2omega(omega0, svd0);
   svd2omega(omega1, svd1);
   cerr << "done !" << endl;
 
@@ -147,8 +150,8 @@ int main(int argc, char** argv)
 	    cloud0, cloud1, omega1,
 	    initialGuess, cameraMatrix,
 	    rows, cols,
-	    rows*cols, 0,
-	    10, 10);
+	    10000, 1000,
+	    5, 10);
   cerr << "done !" << endl;
   cerr << "Result transformation: " << endl << transf.linear() << endl << transf.translation() << endl;
 
@@ -157,11 +160,20 @@ int main(int argc, char** argv)
    *  Draw 3D points with normals.                                                    *
    *                                                                                  *
    ************************************************************************************/
-  /*PWNQGLViewer viewer;
+  Matrix4f T = transf.matrix();
+  for(size_t i=0; i<cloud1.size(); i++){
+    Vector6f tmp = cloud1[i];
+    Vector6f &point = cloud0[i];
+    point[0] = T(0, 0)*tmp[0] + T(0, 1)*tmp[1] + T(0, 2)*tmp[2] + T(0, 3)*tmp[3];
+    point[1] = T(1, 0)*tmp[0] + T(1, 1)*tmp[1] + T(1, 2)*tmp[2] + T(1, 3)*tmp[3];
+    point[2] = T(2, 0)*tmp[0] + T(2, 1)*tmp[1] + T(2, 2)*tmp[2] + T(2, 3)*tmp[3];
+  }
+  PWNQGLViewer viewer;
   viewer.setPointSize(pointSize);
   viewer.setNormalLength(normalLength);
   viewer.setEllipsoidScale(ellipsoidScale);
   viewer.setPoints(&cloud0);
+  viewer.setPoints2(&cloud1);
   viewer.setEllipsoids(&svd0);
   viewer.setWindowTitle("Viewer");
 
@@ -169,7 +181,7 @@ int main(int argc, char** argv)
   viewer.show();
 
   // Run main loop.
-  return application.exec();*/
+  return application.exec();
     
   return 0;
 }
