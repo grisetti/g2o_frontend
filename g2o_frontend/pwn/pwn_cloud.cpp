@@ -1,8 +1,9 @@
 #include "pwn_cloud.h"
 #include "pwn_math.h"
+#include <iostream>
+using namespace std;
 
 using namespace Eigen;
-using namespace std;
 
 void cloud2mat(Vector6fPtrMatrix& pointsMat,
 	       Matrix6fPtrMatrix& informationMat,
@@ -124,24 +125,23 @@ void img2depth(Eigen::MatrixXf& depth, const MatrixXus& img){
 }
 
 // Compute list of 6x6 moegas matrices given the covariances of points.
-void svd2omega(Matrix6fVector &omega, const CovarianceSVDPtrMatrix &covariance){
+void svd2omega(Matrix6fVector &omega, const CovarianceSVDVector &covariance){
   float Kp = 1.0f;
   float Kn = 1.0f;
-  int k = 0;
-  omega.resize(covariance.cols()*covariance.rows());
-  for (int i=0; i<covariance.rows(); i++){
-    for (int j=0; j<covariance.cols(); j++){
-      SVDMatrix3f *cov = covariance(i, j);
-      if (!cov)
+  omega.resize(covariance.size());
+  for (size_t i=0; i<omega.size(); i++){
+      const SVDMatrix3f &cov = covariance[i];
+      if (cov.lambda.squaredNorm()==0.0f)
 	continue;
-      float curvature = cov->lambda[0] / (cov->lambda[0] + cov->lambda[1] + cov->lambda[2]);
+      float curvature = cov.lambda[0] / (cov.lambda[0] + cov.lambda[1] + cov.lambda[2]);
       
       // Compute points omega block.
       Eigen::Matrix3f omegaP = Eigen::Matrix3f::Identity();
-      Eigen::Matrix3f R = cov->isometry.linear();
+      Eigen::Matrix3f R = cov.isometry.linear();
       Diagonal3f lambda;
+      //cerr << "Stats: " << curvature << " " << cov.lambda[0] << " " << cov.lambda[1] << " " << cov.lambda[2] << endl;
       if (curvature>0.02f)
-	lambda = Diagonal3f(cov->lambda[0], cov->lambda[1], cov->lambda[2]);
+	lambda = Diagonal3f(cov.lambda[0], cov.lambda[1], cov.lambda[2]);
       else
 	lambda = Diagonal3f(1e-03, 0.05f, 0.05f);
       omegaP = (R*lambda*R.transpose()).inverse();
@@ -149,7 +149,7 @@ void svd2omega(Matrix6fVector &omega, const CovarianceSVDPtrMatrix &covariance){
 
       // Compute normals omega block.
       Eigen::Matrix3f omegaN = Eigen::Matrix3f::Identity();
-      omegaN *= Kn * 1.0f / (curvature + 1e-09);
+      omegaN *= Kn * 1.0f * curvature / powf((curvature + 1e-03), 2);
 
       // Create final omega matrix
       Matrix6f finalOmega = Matrix6f::Identity();
@@ -157,9 +157,7 @@ void svd2omega(Matrix6fVector &omega, const CovarianceSVDPtrMatrix &covariance){
       finalOmega.bottomRightCorner(3, 3) = omegaN;
 
       // Add the computed omega to the list.
-      omega[k] = finalOmega;
-      k++;
-    }
+      omega[i] = finalOmega;
   }
 }
 

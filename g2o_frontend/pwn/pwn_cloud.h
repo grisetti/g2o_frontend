@@ -49,12 +49,12 @@ void depth2img(MatrixXus& img, const Eigen::MatrixXf& depth);
 
 void img2depth(Eigen::MatrixXf& depth, const MatrixXus& img);
 
+void svd2omega(Matrix6fVector &omega, const CovarianceSVDVector &covariance);
+
 bool readPgm(MatrixXus& img, FILE *pgmFile);
 
 bool writePgm(const MatrixXus& img, FILE *pgmFile);
 
 void skipComments(FILE *fp);
-
-void svd2omega(Matrix6fVector &omega, const CovarianceSVDPtrMatrix &covariance);
 
 #endif

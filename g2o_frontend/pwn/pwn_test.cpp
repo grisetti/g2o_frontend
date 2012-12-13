@@ -126,6 +126,14 @@ int main(int argc, char** argv)
   computeNormals(cloud1Ptr, curvature1, svd1Ptr, cameraMatrix, r, d, step, minPoints);
   cerr << "done !" << endl;
   
+  // Compute 6x6 omega matrices.
+  Matrix6fVector omega0, omega1;
+  svd2omega(omega0, svd0);
+  svd2omega(omega1, svd1);
+  cerr << "Size: " << omega0.size();
+  for (size_t i=0; i<omega0.size(); i++)
+    cerr << "Omega: " << endl << omega0[i] << endl;
+ 
   /************************************************************************************
    *                                                                                  *
    *  Draw 3D points with normals.                                                    *
