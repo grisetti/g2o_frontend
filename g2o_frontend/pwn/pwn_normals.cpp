@@ -276,15 +276,15 @@ void computeNormals(Vector6fPtrMatrix &cloud, MatrixXf &curvature, CovarianceSVD
 					 r*r, d*d, minPoints);
       } else {
 	hasStats = computeIntegralStats(mean, covariance, 
-			     cloud, pointCoord, 
-			     integralImage, integralImageMask,
+					cloud, pointCoord, 
+					integralImage, integralImageMask,
 					cameraMatrix, r, minPoints);
       }
       if (hasStats){
 	computeNormalAndCurvature(norm, curv, covSVD, 
 				  mean, covariance);
-	cloud(i, j)->tail<3>() = norm;
       }
+      cloud(i, j)->tail<3>() = norm;
       *matrixCovSVD(i, j) = covSVD;
       curvature(i, j) = curv;
     }
