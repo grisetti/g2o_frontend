@@ -213,7 +213,7 @@ int main(int argc, char** argv)
 			    omega1PtrScaled.data(),
 			    size,
 			    result,
-			    0.01f,
+			    numeric_limits<float>::max(),
 			    0);
     cout << "i: " << i << " " << inl << " " << error << " " << endl << t2v(result) << endl;
     cout << "Time elapsed: " << getMilliSecs() - start << " ms" << endl;
