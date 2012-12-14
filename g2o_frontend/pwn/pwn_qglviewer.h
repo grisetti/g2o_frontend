@@ -33,6 +33,7 @@ protected:
   const Vector6fVector *_points;
   const Vector6fVector *_points2;  
   const CovarianceSVDVector *_ellipsoids;
+  GLuint _ellipsoidList;
 };
 
 #endif

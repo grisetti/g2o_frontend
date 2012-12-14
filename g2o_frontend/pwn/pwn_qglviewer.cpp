@@ -2,6 +2,9 @@
 #include "pwn_math.h"
 #include <GL/gl.h>
 #include "g2o/stuff/opengl_primitives.h"
+#include <iostream>
+using namespace std;
+
 
 class StandardCamera : public qglviewer::Camera{
 public:
@@ -34,6 +37,7 @@ PWNQGLViewer::PWNQGLViewer(QWidget *parent, const QGLWidget *shareWidget, Qt::WF
   _pointSize = 1.0f;
   _ellipsoidScale = 0.05f;
   _ellipsoidCrop = 0.1f;
+  _ellipsoidList = -1;
 }
 
 void PWNQGLViewer::init() {
@@ -65,24 +69,23 @@ void PWNQGLViewer::init() {
   cam->setUpVector(qglviewer::Vec(0., 1., 0.));
   cam->lookAt(qglviewer::Vec(0., 0., 0.));
   delete oldcam;
+
+  // create one display list
+  _ellipsoidList = glGenLists(1);
+
+  // compile the display list, store a sphere on it.
+  glNewList(_ellipsoidList, GL_COMPILE);
+  g2o::opengl::drawSphere(1.0f);
+  glEndList();
+
 }
 
 void PWNQGLViewer::draw() {
   QGLViewer::draw();
-
-  // create one display list
-  GLuint ellipsoidList = glGenLists(1);
-
-  // compile the display list, store a sphere on it.
-  glNewList(ellipsoidList, GL_COMPILE);
-  g2o::opengl::drawSphere(1.0f);
-  glEndList();
-  
   if (! _points)
     return;
   if (_pointSize>0){
-    float rand = (random()%1000)/1000.0f;
-    glColor3f(rand, rand, rand);
+    glColor3f(0.5, 0.5, 0.5);
     glPointSize(_pointSize);
     glBegin(GL_POINTS);
     for (size_t i=0; i<_points->size(); i++){
@@ -94,24 +97,10 @@ void PWNQGLViewer::draw() {
     }
     glEnd();
   }
-  if (_pointSize>0){
-    float rand = (random()%1000)/1000.0f;
-    glColor3f(rand, rand, rand);
-    glPointSize(_pointSize);
-    glBegin(GL_POINTS);
-    for (size_t i=0; i<_points2->size(); i++){
-      const Vector6f& p = (*_points2)[i];
-      if (p.tail<3>().norm()>0.){
-	glNormal3f(p[3], p[4], p[5]);
-      }
-      glVertex3f(p[0], p[1], p[2]);
-    }
-    glEnd();
-  }
   float nsum  = 0;
   if (_normalLength>0){
     glColor3f(0.3, 0.3, 0.3);
-    glPointSize(1.);
+    glPointSize(.1);
     glBegin(GL_LINES);
     for (size_t i=0; i<_points->size(); i++){
       const Vector6f& p = (*_points)[i];
@@ -148,7 +137,7 @@ void PWNQGLViewer::draw() {
 	sz = _ellipsoidScale;
       }
       glScalef(sx, sy, sz);
-      glCallList(ellipsoidList);
+      glCallList(_ellipsoidList);
       glPopMatrix();
     }
   }

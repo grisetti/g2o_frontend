@@ -50,10 +50,10 @@ SET_TARGET_PROPERTIES(pwn_solve_test PROPERTIES OUTPUT_NAME pwn_solve)
 
 TARGET_LINK_LIBRARIES(pwn_solve_test pwn_library pwn_viewer_library ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_gl_LIBRARY})
 
-#ADD_EXECUTABLE(pwn_glviewer_test
-#  pwn_glviewer_test.cpp
-#)
+ADD_EXECUTABLE(pwn_glviewer_test
+ pwn_glviewer_test.cpp
+)
 
-#SET_TARGET_PROPERTIES(pwn_glviewer_test PROPERTIES OUTPUT_NAME pwn_glviewer)
+SET_TARGET_PROPERTIES(pwn_glviewer_test PROPERTIES OUTPUT_NAME pwn_glviewer)
 
-#TARGET_LINK_LIBRARIES(pwn_glviewer_test pwn_library pwn_viewer_library ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_gl_LIBRARY})
+TARGET_LINK_LIBRARIES(pwn_glviewer_test pwn_library pwn_viewer_library ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_gl_LIBRARY})
