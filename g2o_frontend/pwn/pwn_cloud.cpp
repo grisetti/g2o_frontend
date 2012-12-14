@@ -3,6 +3,31 @@
 
 using namespace Eigen;
 
+void remapCloud(Vector6fVector& destPoints,
+		Matrix6fVector& destOmegas,
+		CovarianceSVDVector& destSvdVec,
+		const Eigen::Isometry3f& X,
+		const Vector6fVector& srcPoints,
+		const Matrix6fVector& srcOmegas,
+		const CovarianceSVDVector& srcSvdVec){
+  destPoints.resize(srcPoints.size());
+  destOmegas.resize(srcOmegas.size());
+  destSvdVec.resize(srcSvdVec.size());
+  for (size_t i=0; i<destPoints.size(); i++){
+    destPoints[i] = remapPoint(X, srcPoints[i]);
+  }
+  for (size_t i=0; i<destOmegas.size(); i++){
+    destOmegas[i].setZero();
+    destOmegas[i].block<3,3>(0,0)= X.linear() * srcOmegas[i].block<3,3>(0,0) * X.linear().transpose();
+    destOmegas[i].block<3,3>(3,3)= X.linear() * srcOmegas[i].block<3,3>(3,3) * X.linear().transpose();
+  }
+  for (size_t i=0; i<destSvdVec.size(); i++){
+    destSvdVec[i].lambda = srcSvdVec[i].lambda;
+    destSvdVec[i].isometry = X*srcSvdVec[i].isometry;
+  }
+}
+
+
 void cloud2mat(Vector6fPtrMatrix& pointsMat,
 	       Matrix6fPtrMatrix& informationMat,
 	       CovarianceSVDPtrMatrix& svdMat,

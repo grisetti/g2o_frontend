@@ -17,6 +17,15 @@ typedef std::vector<Matrix6f,Eigen::aligned_allocator<Matrix6f> > Matrix6fVector
 typedef Eigen::Matrix<unsigned short, Eigen::Dynamic, Eigen::Dynamic> MatrixXus;
 typedef Eigen::DiagonalMatrix<float, 3, 3> Diagonal3f;
 
+
+void remapCloud(Vector6fVector& destPoints,
+		Matrix6fVector& destOmegas,
+		CovarianceSVDVector& destSvdVec,
+		const Eigen::Isometry3f& X,
+		const Vector6fVector& srcPoints,
+		const Matrix6fVector& srcOmegas,
+		const CovarianceSVDVector& srcSvdVec);
+
 void cloud2mat(Vector6fPtrMatrix& pointsMat,
 	       Matrix6fPtrMatrix& informationMat,
 	       CovarianceSVDPtrMatrix& svdMat,
