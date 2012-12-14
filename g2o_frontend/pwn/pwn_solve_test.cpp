@@ -10,6 +10,7 @@
 #include "g2o/stuff/command_args.h"
 
 using namespace std;
+using namespace Eigen;
 
 // struct PointsWithNormalPyramidLevel{
 //   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -110,9 +111,9 @@ int main(int argc, char** argv)
   CovarianceSVDVector svd0(cloud0.size());
   CovarianceSVDVector svd1(cloud1.size());
   
-  for (size_t i=0; i<cloud1.size(); i++){
-    Vector6f p = cloud1[i];
-    Vector6f &pRef = cloud1[i];
+  for (size_t i=0; i<cloud0.size(); i++){
+    Vector6f p = cloud0[i];
+    Vector6f &pRef = cloud0[i];
     pRef = remapPoint(T, p);
   }
   
@@ -134,7 +135,7 @@ int main(int argc, char** argv)
             cloud0,
 	    _dummyOmega,
 	    svd0,
-            Isometry3f::Identity(), 
+            T, 
 	    cameraMatrix,
 	    zBuffer);
 
@@ -169,7 +170,7 @@ int main(int argc, char** argv)
   // int nPyramids = 3;
 
   // Scale all.
-  float scale = 1.0f / 1.0f;
+  float scale = 1.0f / 4.0f;
   int _r=((float)image0.rows()*scale);
   int _c=((float)image0.cols()*scale);
 
@@ -194,10 +195,24 @@ int main(int argc, char** argv)
 	    Isometry3f::Identity(),
 	    cameraMatrixScaled,
 	    zBuffer);
+  {
+    MatrixXus img0(_r, _c);
+    depth2img(img0, zBuffer);
+    FILE* file;
+    file = fopen("cloud1.pgm", "wb");
+    if (!writePgm(img0, file)){
+      cout << "Error while reading first depth image." << endl;
+      exit(-1);
+    }
+    fclose(file);
+  }
 
-  int iterations;
+  Isometry3f T1_0 =Isometry3f::Identity();
+  CorrVector correspondences;
+
+
+  int iterations=0;
   for (int k=0; k<iterations; k++) {
-    Isometry3f T1_0 =Isometry3f::Identity();
     
     omega0PtrScaled.fill(0);
     cloud0PtrScaled.fill(0);
@@ -208,10 +223,20 @@ int main(int argc, char** argv)
 	      cloud0,
 	      omega0,
 	      svd0,
-	      T1_0,
+	      T1_0.inverse(),
 	      cameraMatrixScaled,
 	      zBuffer);
-    
+    char buf[1024];
+    sprintf (buf, "cloud0-%02d.png", k);
+    MatrixXus img0(_r, _c);
+    depth2img(img0, zBuffer);
+    FILE* file;
+    file = fopen(buf, "wb");
+    if (!writePgm(img0, file)){
+      cout << "Error while reading first depth image." << endl;
+      exit(-1);
+    }
+    fclose(file);
 
     corrOmegas1.fill(0);
     corrP0.fill(0);
@@ -219,35 +244,59 @@ int main(int argc, char** argv)
 
     float curvatureThreshold=0.02;
     float normalThreshold = M_PI/6;
-
-    CorrVector correspondences;
+    correspondences.clear();
+    int corrFound = 0;
     for (int i =0; i<cloud1PtrScaled.cols(); i++){
       for (int j =0; j<cloud1PtrScaled.rows(); j++){
-	if (! cloud0PtrScaled(j,i) || !cloud1PtrScaled(j,i) )
+	if (! cloud0PtrScaled(j,i) || !cloud1PtrScaled(j,i) ) {
+	   if (k==2) {
+	     cerr << "point" << endl;
+	   }
 	  continue;
+	}
 	Vector6f& p0 = *(cloud0PtrScaled(j,i));
 	Vector6f& p1 = *(cloud1PtrScaled(j,i));
-	if (p0.tail<3>().squaredNorm()<=1e-3 || p1.tail<3>().squaredNorm()<=1e-3)
+	if (p0.tail<3>().squaredNorm()<=1e-3 || p1.tail<3>().squaredNorm()<=1e-3){
+	   if (k==2) {
+	     cerr << "normals" << endl;
+	     cerr << p0 << endl;
+	   }
 	  continue;
+	}
 	SVDMatrix3f& svd0 = *svd0PtrScaled(j,i);
 	SVDMatrix3f& svd1 = *svd1PtrScaled(j,i);
 
 	float c0 = svd0.curvature();
 	float c1 = svd1.curvature();
       
-	if (c0>curvatureThreshold || c1>curvatureThreshold)
+	if (c0>curvatureThreshold || c1>curvatureThreshold) {
+	   if (k==2) {
+	     cerr << "curvature" << endl;
+	   }
 	  continue;
+	}
+	Vector6f p0Remapped = remapPoint(T1_0, p0);
+	Vector3f n0 = p0.tail<3>();
+	Vector3f n0Remapped = p0Remapped.tail<3>();
+	Vector3f n1 = p1.tail<3>();
 
-	if (p0.tail<3>().dot(p1.tail<3>()) <normalThreshold)
+	if (p0Remapped.tail<3>().dot(p1.tail<3>()) <normalThreshold) {
+	  if (k==2) {
+	    cerr << "n0" << n0.x() << " " << n0.y() << " " << n0.z() << endl;
+	    cerr << "n0Remapped" << n0Remapped.x() << " " << n0Remapped.y() << " " << n0Remapped.z() << endl;
+	    cerr << "n1" << n1.x() << " " << n1.y() << " " << n1.z() << endl;
+	  }
 	  continue;
+	}
 	correspondences.push_back(Corr(cloud0PtrScaled(j,i), cloud1PtrScaled(j,i)));
 	corrP0(j,i) = &p0;
 	corrP1(j,i) = &p1;
 	corrOmegas1(j,i) = omega0PtrScaled(j,i);
+	corrFound ++;
       }
     }
-
-    int size = rows*cols;
+    cerr << "found " << corrFound << " correspondences" << endl;
+    int size = _r*_c;
     // Compute transformation.
     Isometry3f result = Isometry3f::Identity();
     float error = 0.0f;
@@ -258,13 +307,15 @@ int main(int argc, char** argv)
 			      corrP1.data(),
 			      corrOmegas1.data(),
 			      size,
-			      result,
+			      T1_0,
 			      numeric_limits<float>::max(),
 			      0);
       cout << "i: " << i << " " << inl << " " << error << " " << endl << t2v(result) << endl;
       cout << "Time elapsed: " << getMilliSecs() - start << " ms" << endl;
       cout << "---------------------------------------------------------------" << endl;  
+      T1_0 = result;
     }
+      
 
   }
 
@@ -273,10 +324,10 @@ int main(int argc, char** argv)
    *  Draw 3D points with normals.                                                    *
    *                                                                                  *
    ************************************************************************************/;
-  for(size_t i=0; i<cloud1.size(); i++){
-    Vector6f pT = cloud1[i];
-    Vector6f &point = cloud1[i];
-    point = remapPoint(result, pT);
+  for(size_t i=0; i<cloud0.size(); i++){
+    Vector6f pT = cloud0[i];
+    Vector6f &point = cloud0[i];
+    point = remapPoint(T1_0, pT);
   }
   PWNQGLViewer viewer;
   viewer.setPointSize(pointSize);

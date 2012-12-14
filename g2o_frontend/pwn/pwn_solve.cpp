@@ -1,6 +1,7 @@
 #include "pwn_solve.h"
 #include "pwn_math.h"
 #include <iostream>
+#include <cassert>
 
 using namespace Eigen;
 using namespace std;
@@ -40,13 +41,13 @@ inline int _pwn_iteration(float& error, Isometry3f& Xnew,
         const Vector6f& pcurr = *currPoints[i];
         const Matrix6f& omega = *omegas[i];
 
-        Vector6f e = pref - remapPoint(X, pcurr);
+        Vector6f e = remapPoint(X, pref) - pcurr;
         float localError = e.transpose() * omega * e;
         if(localError > inlierThreshold)
             continue;
         error += localError;
         numInliers++;
-        Matrix6f J = -jacobian(X, pcurr);
+        Matrix6f J = jacobian(X, pcurr);
         b += J.transpose() * omega * e;
         H += J.transpose() * omega * J;
     }
@@ -84,6 +85,8 @@ int pwn_align(float& error,
                      int minInliers,
                      int innerIterations,
                      int outerIterations) {
+  assert("this function is wrong" && 0);
+  
     // allocate the reference images
     Vector6fPtrMatrix refImage(rows, cols);
 
