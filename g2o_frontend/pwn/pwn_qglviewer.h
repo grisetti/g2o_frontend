@@ -3,6 +3,14 @@
 #include "pwn_cloud.h"
 #include <QGLViewer/qglviewer.h>
 
+struct Corr{
+  Corr (const Vector6f* p1_, const Vector6f* p2_): p1(p1_), p2(p2_){
+  }
+  const Vector6f* p1, *p2;
+};
+
+typedef std::vector<Corr> CorrVector;
+
 class PWNQGLViewer: public QGLViewer{
 public:
   PWNQGLViewer(QWidget* parent=0, const QGLWidget* shareWidget=0, Qt::WFlags flags=0);
@@ -24,6 +32,9 @@ public:
   inline float ellipsoidCrop() const { return _ellipsoidCrop;}
   inline void setEllipsoidCrop(float ellipsoidCrop_) {_ellipsoidCrop = ellipsoidCrop_;}
 
+  inline const CorrVector* corrVector() const {return _corrVector;}
+  inline void setCorrVector(const CorrVector* c)  {_corrVector = c;}
+
 protected:
   float _normalLength;
   float _pointSize;
@@ -33,6 +44,8 @@ protected:
   const Vector6fVector *_points;
   const Vector6fVector *_points2;  
   const CovarianceSVDVector *_ellipsoids;
+  const CorrVector *_corrVector;
+
   GLuint _ellipsoidList;
 };
 

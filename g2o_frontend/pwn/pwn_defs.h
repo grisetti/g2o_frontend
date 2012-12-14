@@ -12,6 +12,11 @@ struct SVDMatrix3f{
   Eigen::Vector3f lambda;
   SVDMatrix3f();
   inline void setZero() { isometry.setIdentity(); lambda.setZero(); }
+  inline float curvature() const { 
+    if (lambda.squaredNorm()<1e-20) 
+      return -1.0f;
+    return lambda[0]/(lambda[0]+lambda[1]+lambda[2]);
+  }
 };
 
 typedef std::vector<SVDMatrix3f, Eigen::aligned_allocator<SVDMatrix3f> > CovarianceSVDVector; 

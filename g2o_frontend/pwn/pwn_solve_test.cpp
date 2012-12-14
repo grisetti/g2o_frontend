@@ -33,6 +33,8 @@ using namespace std;
 //   newLevel.height = previousLevel.height/2;
 // }
 
+
+
 int main(int argc, char** argv)
 {
   g2o::CommandArgs arg;
@@ -70,9 +72,8 @@ int main(int argc, char** argv)
   
   // Transformation init.
   Vector6f v;
-  v << 0.1f, 0.1f, -0.1f, 0.2f, 0.1f, -0.3f;
+  v << 0.1f, 0.1f, -0.2f, 0.1f, 0.05f, 0.05f;
   Isometry3f T = v2t(v);
-  Isometry3f T_1 = v2t(-v);
   
   /************************************************************************************
    *                                                                                  *
@@ -109,16 +110,10 @@ int main(int argc, char** argv)
   CovarianceSVDVector svd0(cloud0.size());
   CovarianceSVDVector svd1(cloud1.size());
   
-  // Change viewpoint for cloud1.
   for (size_t i=0; i<cloud1.size(); i++){
     Vector6f p = cloud1[i];
     Vector6f &pRef = cloud1[i];
     pRef = remapPoint(T, p);
-  }
-  for (size_t i=0; i<cloud1.size(); i++){
-    Vector6f p = cloud1[i];
-    Vector6f &pRef = cloud1[i];
-    pRef = remapPoint(T_1, p);
   }
   
   /************************************************************************************
@@ -201,6 +196,45 @@ int main(int argc, char** argv)
 	    Isometry3f::Identity(),
 	    cameraMatrixScaled,
 	    zBuffer);
+
+  float curvatureThreshold=0.02;
+  float normalThreshold = M_PI/6;
+
+  int _r=omega0PtrScaled.rows(), _c=omega0PtrScaled.cols();
+  Matrix6fPtrMatrix corrOmegas1(_r, _c);
+  corrOmegas1.fill(0);
+  Vector6fPtrMatrix corrP0(_r,_c);
+  corrP0.fill(0);
+  Vector6fPtrMatrix corrP1(_r,_c);
+  corrP1.fill(0);
+
+  CorrVector correspondences;
+  for (int i =0; i<cloud1PtrScaled.cols(); i++){
+    for (int j =0; j<cloud1PtrScaled.rows(); j++){
+      if (! cloud0PtrScaled(j,i) || !cloud1PtrScaled(j,i) )
+	continue;
+      Vector6f& p0 = *(cloud0PtrScaled(j,i));
+      Vector6f& p1 = *(cloud1PtrScaled(j,i));
+      if (p0.tail<3>().squaredNorm()<=1e-3 || p1.tail<3>().squaredNorm()<=1e-3)
+	continue;
+      SVDMatrix3f& svd0 = *svd0PtrScaled(j,i);
+      SVDMatrix3f& svd1 = *svd1PtrScaled(j,i);
+
+      float c0 = svd0.curvature();
+      float c1 = svd1.curvature();
+      
+      if (c0>curvatureThreshold || c1>curvatureThreshold)
+	continue;
+
+      if (p0.tail<3>().dot(p1.tail<3>()) <normalThreshold)
+	continue;
+      correspondences.push_back(Corr(cloud0PtrScaled(j,i), cloud1PtrScaled(j,i)));
+      corrP0(j,i) = &p0;
+      corrP1(j,i) = &p1;
+      corrOmegas1(j,i) = omega0PtrScaled(j,i);
+    }
+  }
+
   int size = rows*cols;
   // Compute transformation.
   Isometry3f result = Isometry3f::Identity();
@@ -208,9 +242,9 @@ int main(int argc, char** argv)
   for(int i=0; i<10; i++){
     clock_t start = getMilliSecs();
     int inl = pwn_iteration(error, result,
-			    cloud0PtrScaled.data(),
-			    cloud1PtrScaled.data(),
-			    omega1PtrScaled.data(),
+			    corrP0.data(),
+			    corrP1.data(),
+			    corrOmegas1.data(),
 			    size,
 			    result,
 			    numeric_limits<float>::max(),
@@ -225,11 +259,11 @@ int main(int argc, char** argv)
    *  Draw 3D points with normals.                                                    *
    *                                                                                  *
    ************************************************************************************/;
-  for(size_t i=0; i<cloud1.size(); i++){
-    Vector6f pT = cloud1[i];
-    Vector6f &point = cloud1[i];
-    point = remapPoint(result, pT);
-  }
+  // for(size_t i=0; i<cloud1.size(); i++){
+  //   Vector6f pT = cloud1[i];
+  //   Vector6f &point = cloud1[i];
+  //   point = remapPoint(result, pT);
+  // }
   PWNQGLViewer viewer;
   viewer.setPointSize(pointSize);
   viewer.setNormalLength(normalLength);
@@ -237,6 +271,7 @@ int main(int argc, char** argv)
   viewer.setPoints(&cloud0);
   viewer.setPoints2(&cloud1);
   viewer.setEllipsoids(&svd0);
+  viewer.setCorrVector(&correspondences);
   viewer.setWindowTitle("Viewer");
 
   // Make the viewer window visible on screen.
