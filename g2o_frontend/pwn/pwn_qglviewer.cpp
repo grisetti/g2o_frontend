@@ -81,7 +81,8 @@ void PWNQGLViewer::draw() {
   if (! _points)
     return;
   if (_pointSize>0){
-    glColor3f(0.5,0.5,0.5);
+    float rand = (random()%1000)/1000.0f;
+    glColor3f(rand, rand, rand);
     glPointSize(_pointSize);
     glBegin(GL_POINTS);
     for (size_t i=0; i<_points->size(); i++){
@@ -89,13 +90,27 @@ void PWNQGLViewer::draw() {
       if (p.tail<3>().norm()>0.){
 	glNormal3f(p[3], p[4], p[5]);
       }
-      glVertex3f(p[0],p[1], p[2]);
+      glVertex3f(p[0], p[1], p[2]);
+    }
+    glEnd();
+  }
+  if (_pointSize>0){
+    float rand = (random()%1000)/1000.0f;
+    glColor3f(rand, rand, rand);
+    glPointSize(_pointSize);
+    glBegin(GL_POINTS);
+    for (size_t i=0; i<_points2->size(); i++){
+      const Vector6f& p = (*_points2)[i];
+      if (p.tail<3>().norm()>0.){
+	glNormal3f(p[3], p[4], p[5]);
+      }
+      glVertex3f(p[0], p[1], p[2]);
     }
     glEnd();
   }
   float nsum  = 0;
   if (_normalLength>0){
-    glColor3f(0.3,0.3,0.3);
+    glColor3f(0.3, 0.3, 0.3);
     glPointSize(1.);
     glBegin(GL_LINES);
     for (size_t i=0; i<_points->size(); i++){

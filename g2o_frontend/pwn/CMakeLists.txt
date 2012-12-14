@@ -11,6 +11,7 @@ ADD_LIBRARY(pwn_library
   pwn_math.h
   pwn_normals.cpp  pwn_normals.h 
   pwn_solve.cpp pwn_solve.h
+  pwn_utils.cpp pwn_utils.h
 )
 
 SET_TARGET_PROPERTIES(pwn_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}pwn)
@@ -41,10 +42,18 @@ SET_TARGET_PROPERTIES(pwn_imageview_test PROPERTIES OUTPUT_NAME pwn_imageview)
 
 TARGET_LINK_LIBRARIES(pwn_imageview_test pwn_library pwn_viewer_library ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_gl_LIBRARY})
 
-# ADD_EXECUTABLE(pwn_glviewer_test
-#   pwn_glviewer_test.cpp
-# )
+ADD_EXECUTABLE(pwn_solve_test
+  pwn_solve_test.cpp
+)
 
-# SET_TARGET_PROPERTIES(pwn_glviewer_test PROPERTIES OUTPUT_NAME pwn_glviewer)
+SET_TARGET_PROPERTIES(pwn_solve_test PROPERTIES OUTPUT_NAME pwn_solve)
 
-# TARGET_LINK_LIBRARIES(pwn_glviewer_test pwn_library pwn_viewer_library ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_gl_LIBRARY})
+TARGET_LINK_LIBRARIES(pwn_solve_test pwn_library pwn_viewer_library ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_gl_LIBRARY})
+
+#ADD_EXECUTABLE(pwn_glviewer_test
+#  pwn_glviewer_test.cpp
+#)
+
+#SET_TARGET_PROPERTIES(pwn_glviewer_test PROPERTIES OUTPUT_NAME pwn_glviewer)
+
+#TARGET_LINK_LIBRARIES(pwn_glviewer_test pwn_library pwn_viewer_library ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_gl_LIBRARY})

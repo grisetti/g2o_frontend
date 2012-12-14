@@ -10,6 +10,7 @@ public:
   virtual void draw();
 
   void setPoints(const Vector6fVector* points_) {_points = points_;}
+  void setPoints2(const Vector6fVector* points_) {_points2 = points_;}
   const Vector6fVector* points() {return _points;}
   void setEllipsoids(const CovarianceSVDVector* ellipsoids_) {_ellipsoids = ellipsoids_;}
   const CovarianceSVDVector* ellipsoids() {return _ellipsoids;}
@@ -30,10 +31,8 @@ protected:
   float _ellipsoidCrop;
 
   const Vector6fVector *_points;
+  const Vector6fVector *_points2;  
   const CovarianceSVDVector *_ellipsoids;
-
-private:
-  void drawParallelepipedon(float x, float y, float z);
 };
 
 #endif

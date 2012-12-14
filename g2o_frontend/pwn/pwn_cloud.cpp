@@ -1,6 +1,7 @@
 #include "pwn_cloud.h"
 #include "pwn_math.h"
-
+#include <iostream>
+using namespace std;
 using namespace Eigen;
 
 void remapCloud(Vector6fVector& destPoints,
@@ -207,11 +208,11 @@ void svd2omega(Matrix6fVector &omega, const CovarianceSVDVector &covariance){
   omega.resize(covariance.size());
   for (size_t i=0; i<omega.size(); i++){
       const SVDMatrix3f &cov = covariance[i];
-      Matrix6f finalOmega=Matrix6f::Zero();
+      Matrix6f finalOmega=Matrix6f::Identity();
       if(cov.lambda.squaredNorm()>1e-09){
 	float curvature = cov.lambda[0] / (cov.lambda[0] + cov.lambda[1] + cov.lambda[2]);
 	// Compute points omega block.
-	Eigen::Matrix3f omegaP = Eigen::Matrix3f::Identity();
+	Eigen::Matrix3f omegaP = Eigen::Matrix3f::Zero();
 	Eigen::Matrix3f R = cov.isometry.linear();
 	Diagonal3f invLambda;
       	if (curvature>curvatureThreshold)
