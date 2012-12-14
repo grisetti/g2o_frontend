@@ -53,38 +53,37 @@ int main(int argc, char** argv)
   arg.param("nl", normalLength, 0.01f, "normal length"); 
   arg.param("es", ellipsoidScale, 0.05f, "ellipsoid scale"); 
   arg.param("i0", nameImage0, "", "first image");
-  arg.param("i1", nameImage1, "", "second image");
   arg.parseArgs(argc, argv);
   
-  if (nameImage0.length()==0 || nameImage1.length()==0){
+  if (nameImage0.length()==0){
     cerr << "no image provided" << endl;
     return 0;
   }
 
   QApplication application(argc, argv);
-
+  
   // Create camera matrix.
   Matrix3f cameraMatrix;
   cameraMatrix << 525.0f, 0.0f, 319.5f,
                   0.0f, 525.0f, 239.5f,
                   0.0f, 0.0f, 1.0f;
-
+  
+  // Transformation init.
+  Vector6f v;
+  v << 0.1f, 0.1f, -0.1f, 0.2f, 0.1f, -0.3f;
+  Isometry3f T = v2t(v);
+  Isometry3f T_1 = v2t(-v);
+  
   /************************************************************************************
    *                                                                                  *
-   *  Read depth images.                                                              *
+   *  Read depth image.                                                              *
    *                                                                                  *
    ************************************************************************************/
-  MatrixXus image0, image1;
+  MatrixXus image0;
   FILE* file;
   file = fopen(nameImage0.c_str(), "rb");
   if (!readPgm(image0, file)){
     cout << "Error while reading first depth image." << endl;
-    exit(-1);
-  }
-  fclose(file);
-  file = fopen(nameImage1.c_str(), "rb");
-  if (!readPgm(image1, file)){
-    cout << "Error while reading second depth image." << endl;
     exit(-1);
   }
   fclose(file);
@@ -101,7 +100,7 @@ int main(int argc, char** argv)
   // Cast images to float type.
   MatrixXf depth0(rows, cols), depth1(rows, cols);
   img2depth(depth0, image0);
-  img2depth(depth1, image1);
+  img2depth(depth1, image0);
 
   // Create 3D point clouds with normals.
   Vector6fVector cloud0, cloud1;
@@ -110,6 +109,17 @@ int main(int argc, char** argv)
   CovarianceSVDVector svd0(cloud0.size());
   CovarianceSVDVector svd1(cloud1.size());
   
+  // Change viewpoint for cloud1.
+  for (size_t i=0; i<cloud1.size(); i++){
+    Vector6f p = cloud1[i];
+    Vector6f &pRef = cloud1[i];
+    pRef = remapPoint(T, p);
+  }
+  for (size_t i=0; i<cloud1.size(); i++){
+    Vector6f p = cloud1[i];
+    Vector6f &pRef = cloud1[i];
+    pRef = remapPoint(T_1, p);
+  }
   
   /************************************************************************************
    *                                                                                  *
@@ -151,45 +161,20 @@ int main(int argc, char** argv)
   computeNormals(cloud1Ptr, curvature1, svd1Ptr, cameraMatrix, r, d, step, minPoints);
   cerr << "done !" << endl;
 
-  // construct the pyramids
-  // int nPyramids = 3;
-  
-
-  /************************************************************************************
-   *                                                                                  *
-   *  Compute the transformation.                                                     *
-   *                                                                                  *
-   ************************************************************************************/
-  // Compute 6x6 omega matrices.
-  Matrix6fVector omega1, omega0;
+  // Compute 6x6 omega matrix.
+  Matrix6fVector omega1;
   cerr << "computing omega... ";
   svd2omega(omega1, svd1);
   cerr << "done !" << endl;
 
-  // Run least square method to compute the transformation.
-  float error = 0.0f;
-  Isometry3f result = Isometry3f::Identity();
-  Isometry3f initialGuess = Isometry3f::Identity();
-  cerr << "computing solution... ";
-  pwn_align(error, result, 
-	    cloud0, cloud1, omega1,
-	    initialGuess, cameraMatrix,
-	    rows, cols,
-	    10000, 1000,
-	    5, 10);
-  cerr << "done !" << endl;
-  cerr << "Result transformation: " << endl << result.linear() << endl << result.translation() << endl;
+  // construct the pyramids
+  // int nPyramids = 3;
 
   /************************************************************************************
    *                                                                                  *
    *  Draw 3D points with normals.                                                    *
    *                                                                                  *
    ************************************************************************************/;
-  for(size_t i=0; i<cloud1.size(); i++){
-    Vector6f pT = cloud1[i];
-    Vector6f &point = cloud1[i];
-    point = remapPoint(result, pT);
-  }
   PWNQGLViewer viewer;
   viewer.setPointSize(pointSize);
   viewer.setNormalLength(normalLength);
