@@ -170,6 +170,13 @@ int main(int argc, char** argv)
   // construct the pyramids
   // int nPyramids = 3;
 
+  // Scale all.
+  float scale = 1.0f / 8.0f;
+  Matrix3f cameraMatrixScaled = cameraMatrix;
+  cameraMatrixScaled.block<2,3>(0, 0) *= scale;
+  MatrixXf depth0Scaled((int)((float)depth0.rows()*scale), (int) ((float)depth0.cols()*scale));
+  cloud2depth(depth0Scaled, cloud0, cameraMatrixScaled);
+
   /************************************************************************************
    *                                                                                  *
    *  Draw 3D points with normals.                                                    *
