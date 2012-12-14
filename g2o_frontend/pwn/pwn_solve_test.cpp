@@ -170,23 +170,21 @@ int main(int argc, char** argv)
 
   // Scale all.
   float scale = 1.0f / 1.0f;
-  Vector6fPtrMatrix cloud0PtrScaled((int)((float)image0.rows()*scale), (int) ((float)image0.cols()*scale));
-  Matrix6fPtrMatrix omega0PtrScaled((int)((float)image0.rows()*scale), (int) ((float)image0.cols()*scale));
-  CovarianceSVDPtrMatrix svd0PtrScaled((int)((float)image0.rows()*scale), (int) ((float)image0.cols()*scale));
-  Vector6fPtrMatrix cloud1PtrScaled((int)((float)image0.rows()*scale), (int) ((float)image0.cols()*scale));
-  Matrix6fPtrMatrix omega1PtrScaled((int)((float)image0.rows()*scale), (int) ((float)image0.cols()*scale));
-  CovarianceSVDPtrMatrix svd1PtrScaled((int)((float)image0.rows()*scale), (int) ((float)image0.cols()*scale));
+  int _r=((float)image0.rows()*scale);
+  int _c=((float)image0.cols()*scale);
+
+  Vector6fPtrMatrix cloud0PtrScaled(_r, _c);
+  Matrix6fPtrMatrix omega0PtrScaled(_r, _c);
+  CovarianceSVDPtrMatrix svd0PtrScaled(_r, _c);
+  Vector6fPtrMatrix cloud1PtrScaled(_r, _c);
+  Matrix6fPtrMatrix omega1PtrScaled(_r, _c);
+  CovarianceSVDPtrMatrix svd1PtrScaled(_r, _c);
   Matrix3f cameraMatrixScaled = cameraMatrix;
   cameraMatrixScaled.block<2,3>(0, 0) *= scale;
-  cloud2mat(cloud0PtrScaled,
-	    omega0PtrScaled,
-	    svd0PtrScaled,
-	    cloud0,
-	    omega0,
-	    svd0,
-	    Isometry3f::Identity(),
-	    cameraMatrixScaled,
-	    zBuffer);
+  Matrix6fPtrMatrix corrOmegas1(_r, _c);
+  Vector6fPtrMatrix corrP0(_r,_c);
+  Vector6fPtrMatrix corrP1(_r,_c);
+
   cloud2mat(cloud1PtrScaled,
 	    omega1PtrScaled,
 	    svd1PtrScaled,
@@ -197,61 +195,77 @@ int main(int argc, char** argv)
 	    cameraMatrixScaled,
 	    zBuffer);
 
-  float curvatureThreshold=0.02;
-  float normalThreshold = M_PI/6;
+  int iterations;
+  for (int k=0; k<iterations; k++) {
+    Isometry3f T1_0 =Isometry3f::Identity();
+    
+    omega0PtrScaled.fill(0);
+    cloud0PtrScaled.fill(0);
+    svd0PtrScaled.fill(0);
+    cloud2mat(cloud0PtrScaled,
+	      omega0PtrScaled,
+	      svd0PtrScaled,
+	      cloud0,
+	      omega0,
+	      svd0,
+	      T1_0,
+	      cameraMatrixScaled,
+	      zBuffer);
+    
 
-  int _r=omega0PtrScaled.rows(), _c=omega0PtrScaled.cols();
-  Matrix6fPtrMatrix corrOmegas1(_r, _c);
-  corrOmegas1.fill(0);
-  Vector6fPtrMatrix corrP0(_r,_c);
-  corrP0.fill(0);
-  Vector6fPtrMatrix corrP1(_r,_c);
-  corrP1.fill(0);
+    corrOmegas1.fill(0);
+    corrP0.fill(0);
+    corrP1.fill(0);
 
-  CorrVector correspondences;
-  for (int i =0; i<cloud1PtrScaled.cols(); i++){
-    for (int j =0; j<cloud1PtrScaled.rows(); j++){
-      if (! cloud0PtrScaled(j,i) || !cloud1PtrScaled(j,i) )
-	continue;
-      Vector6f& p0 = *(cloud0PtrScaled(j,i));
-      Vector6f& p1 = *(cloud1PtrScaled(j,i));
-      if (p0.tail<3>().squaredNorm()<=1e-3 || p1.tail<3>().squaredNorm()<=1e-3)
-	continue;
-      SVDMatrix3f& svd0 = *svd0PtrScaled(j,i);
-      SVDMatrix3f& svd1 = *svd1PtrScaled(j,i);
+    float curvatureThreshold=0.02;
+    float normalThreshold = M_PI/6;
 
-      float c0 = svd0.curvature();
-      float c1 = svd1.curvature();
+    CorrVector correspondences;
+    for (int i =0; i<cloud1PtrScaled.cols(); i++){
+      for (int j =0; j<cloud1PtrScaled.rows(); j++){
+	if (! cloud0PtrScaled(j,i) || !cloud1PtrScaled(j,i) )
+	  continue;
+	Vector6f& p0 = *(cloud0PtrScaled(j,i));
+	Vector6f& p1 = *(cloud1PtrScaled(j,i));
+	if (p0.tail<3>().squaredNorm()<=1e-3 || p1.tail<3>().squaredNorm()<=1e-3)
+	  continue;
+	SVDMatrix3f& svd0 = *svd0PtrScaled(j,i);
+	SVDMatrix3f& svd1 = *svd1PtrScaled(j,i);
+
+	float c0 = svd0.curvature();
+	float c1 = svd1.curvature();
       
-      if (c0>curvatureThreshold || c1>curvatureThreshold)
-	continue;
+	if (c0>curvatureThreshold || c1>curvatureThreshold)
+	  continue;
 
-      if (p0.tail<3>().dot(p1.tail<3>()) <normalThreshold)
-	continue;
-      correspondences.push_back(Corr(cloud0PtrScaled(j,i), cloud1PtrScaled(j,i)));
-      corrP0(j,i) = &p0;
-      corrP1(j,i) = &p1;
-      corrOmegas1(j,i) = omega0PtrScaled(j,i);
+	if (p0.tail<3>().dot(p1.tail<3>()) <normalThreshold)
+	  continue;
+	correspondences.push_back(Corr(cloud0PtrScaled(j,i), cloud1PtrScaled(j,i)));
+	corrP0(j,i) = &p0;
+	corrP1(j,i) = &p1;
+	corrOmegas1(j,i) = omega0PtrScaled(j,i);
+      }
     }
-  }
 
-  int size = rows*cols;
-  // Compute transformation.
-  Isometry3f result = Isometry3f::Identity();
-  float error = 0.0f;
-  for(int i=0; i<10; i++){
-    clock_t start = getMilliSecs();
-    int inl = pwn_iteration(error, result,
-			    corrP0.data(),
-			    corrP1.data(),
-			    corrOmegas1.data(),
-			    size,
-			    result,
-			    numeric_limits<float>::max(),
-			    0);
-    cout << "i: " << i << " " << inl << " " << error << " " << endl << t2v(result) << endl;
-    cout << "Time elapsed: " << getMilliSecs() - start << " ms" << endl;
-    cout << "---------------------------------------------------------------" << endl;  
+    int size = rows*cols;
+    // Compute transformation.
+    Isometry3f result = Isometry3f::Identity();
+    float error = 0.0f;
+    for(int i=0; i<10; i++){
+      clock_t start = getMilliSecs();
+      int inl = pwn_iteration(error, result,
+			      corrP0.data(),
+			      corrP1.data(),
+			      corrOmegas1.data(),
+			      size,
+			      result,
+			      numeric_limits<float>::max(),
+			      0);
+      cout << "i: " << i << " " << inl << " " << error << " " << endl << t2v(result) << endl;
+      cout << "Time elapsed: " << getMilliSecs() - start << " ms" << endl;
+      cout << "---------------------------------------------------------------" << endl;  
+    }
+
   }
 
   /************************************************************************************
@@ -259,11 +273,11 @@ int main(int argc, char** argv)
    *  Draw 3D points with normals.                                                    *
    *                                                                                  *
    ************************************************************************************/;
-  // for(size_t i=0; i<cloud1.size(); i++){
-  //   Vector6f pT = cloud1[i];
-  //   Vector6f &point = cloud1[i];
-  //   point = remapPoint(result, pT);
-  // }
+  for(size_t i=0; i<cloud1.size(); i++){
+    Vector6f pT = cloud1[i];
+    Vector6f &point = cloud1[i];
+    point = remapPoint(result, pT);
+  }
   PWNQGLViewer viewer;
   viewer.setPointSize(pointSize);
   viewer.setNormalLength(normalLength);
