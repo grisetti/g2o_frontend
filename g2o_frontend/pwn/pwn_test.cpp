@@ -175,7 +175,7 @@ int main(int argc, char** argv)
 	    cloud0, cloud1, omega1,
 	    initialGuess, cameraMatrix,
 	    rows, cols,
-	    1e-03, 0,
+	    1e-03, 100,
 	    5, 100);
   cerr << "done !" << endl;
   cerr << "Result transformation: " << endl << result.linear() << endl << result.translation() << endl;

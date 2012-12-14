@@ -139,7 +139,8 @@ int main(int argc, char** argv)
             cloud0,
 	    _dummyOmega,
 	    svd0,
-            Isometry3f::Identity(), cameraMatrix,
+            Isometry3f::Identity(), 
+	    cameraMatrix,
 	    zBuffer);
 
   cloud2mat(cloud1Ptr,
@@ -148,7 +149,8 @@ int main(int argc, char** argv)
             cloud1,
 	    _dummyOmega,
 	    svd1,
-            Isometry3f::Identity(), cameraMatrix,
+            Isometry3f::Identity(), 
+	    cameraMatrix,
 	    zBuffer);
  
   // Compute normals.
@@ -162,8 +164,9 @@ int main(int argc, char** argv)
   cerr << "done !" << endl;
 
   // Compute 6x6 omega matrix.
-  Matrix6fVector omega1;
+  Matrix6fVector omega1, omega0;
   cerr << "computing omega... ";
+  svd2omega(omega0, svd0);
   svd2omega(omega1, svd1);
   cerr << "done !" << endl;
 
@@ -171,17 +174,62 @@ int main(int argc, char** argv)
   // int nPyramids = 3;
 
   // Scale all.
-  float scale = 1.0f / 8.0f;
+  float scale = 1.0f / 1.0f;
+  Vector6fPtrMatrix cloud0PtrScaled((int)((float)image0.rows()*scale), (int) ((float)image0.cols()*scale));
+  Matrix6fPtrMatrix omega0PtrScaled((int)((float)image0.rows()*scale), (int) ((float)image0.cols()*scale));
+  CovarianceSVDPtrMatrix svd0PtrScaled((int)((float)image0.rows()*scale), (int) ((float)image0.cols()*scale));
+  Vector6fPtrMatrix cloud1PtrScaled((int)((float)image0.rows()*scale), (int) ((float)image0.cols()*scale));
+  Matrix6fPtrMatrix omega1PtrScaled((int)((float)image0.rows()*scale), (int) ((float)image0.cols()*scale));
+  CovarianceSVDPtrMatrix svd1PtrScaled((int)((float)image0.rows()*scale), (int) ((float)image0.cols()*scale));
   Matrix3f cameraMatrixScaled = cameraMatrix;
   cameraMatrixScaled.block<2,3>(0, 0) *= scale;
-  MatrixXf depth0Scaled((int)((float)depth0.rows()*scale), (int) ((float)depth0.cols()*scale));
-  cloud2depth(depth0Scaled, cloud0, cameraMatrixScaled);
+  cloud2mat(cloud0PtrScaled,
+	    omega0PtrScaled,
+	    svd0PtrScaled,
+	    cloud0,
+	    omega0,
+	    svd0,
+	    Isometry3f::Identity(),
+	    cameraMatrixScaled,
+	    zBuffer);
+  cloud2mat(cloud1PtrScaled,
+	    omega1PtrScaled,
+	    svd1PtrScaled,
+	    cloud1,
+	    omega1,
+	    svd1,
+	    Isometry3f::Identity(),
+	    cameraMatrixScaled,
+	    zBuffer);
+  int size = rows*cols;
+  // Compute transformation.
+  Isometry3f result = Isometry3f::Identity();
+  float error = 0.0f;
+  for(int i=0; i<10; i++){
+    clock_t start = getMilliSecs();
+    int inl = pwn_iteration(error, result,
+			    cloud0PtrScaled.data(),
+			    cloud1PtrScaled.data(),
+			    omega1PtrScaled.data(),
+			    size,
+			    result,
+			    0.01f,
+			    0);
+    cout << "i: " << i << " " << inl << " " << error << " " << endl << t2v(result) << endl;
+    cout << "Time elapsed: " << getMilliSecs() - start << " ms" << endl;
+    cout << "---------------------------------------------------------------" << endl;  
+  }
 
   /************************************************************************************
    *                                                                                  *
    *  Draw 3D points with normals.                                                    *
    *                                                                                  *
    ************************************************************************************/;
+  for(size_t i=0; i<cloud1.size(); i++){
+    Vector6f pT = cloud1[i];
+    Vector6f &point = cloud1[i];
+    point = remapPoint(result, pT);
+  }
   PWNQGLViewer viewer;
   viewer.setPointSize(pointSize);
   viewer.setNormalLength(normalLength);
