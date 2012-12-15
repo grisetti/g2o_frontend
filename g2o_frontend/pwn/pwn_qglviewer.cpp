@@ -124,6 +124,14 @@ void PWNQGLViewer::draw() {
 		 p[1]+p[4]*_normalLength, 
 		 p[2]+p[5]*_normalLength);
     }
+    for (size_t i=0; i<_points2->size(); i++){
+      const Vector6f& p = (*_points2)[i];
+      glVertex3f(p[0], p[1], p[2]);
+      nsum += p.tail<3>().squaredNorm();
+      glVertex3f(p[0]+p[3]*_normalLength,
+		 p[1]+p[4]*_normalLength, 
+		 p[2]+p[5]*_normalLength);
+    }
     glEnd();
   }
   if (_ellipsoids && _ellipsoidScale>0){
