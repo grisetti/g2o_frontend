@@ -78,7 +78,7 @@ int main(int argc, char** argv)
   
   /************************************************************************************
    *                                                                                  *
-   *  Read depth image.                                                              *
+   *  Read depth image.                                                               *
    *                                                                                  *
    ************************************************************************************/
   MatrixXus image0;
@@ -210,8 +210,7 @@ int main(int argc, char** argv)
   Isometry3f T1_0 =Isometry3f::Identity();
   CorrVector correspondences;
 
-
-  int iterations=0;
+  int iterations=1;
   for (int k=0; k<iterations; k++) {
     
     omega0PtrScaled.fill(0);
@@ -223,7 +222,7 @@ int main(int argc, char** argv)
 	      cloud0,
 	      omega0,
 	      svd0,
-	      T1_0.inverse(),
+	      T1_0,
 	      cameraMatrixScaled,
 	      zBuffer);
     char buf[1024];
@@ -315,8 +314,6 @@ int main(int argc, char** argv)
       cout << "---------------------------------------------------------------" << endl;  
       T1_0 = result;
     }
-      
-
   }
 
   /************************************************************************************
@@ -333,8 +330,8 @@ int main(int argc, char** argv)
   viewer.setPointSize(pointSize);
   viewer.setNormalLength(normalLength);
   viewer.setEllipsoidScale(ellipsoidScale);
-  viewer.setPoints(&cloud0);
-  viewer.setPoints2(&cloud1);
+  viewer.setPoints(&cloud1);
+  viewer.setPoints2(&cloud0);
   viewer.setEllipsoids(&svd0);
   viewer.setCorrVector(&correspondences);
   viewer.setWindowTitle("Viewer");

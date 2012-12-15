@@ -176,7 +176,7 @@ int main(int argc, char** argv)
 	    initialGuess, cameraMatrix,
 	    rows, cols,
 	    1e-03, 100,
-	    5, 100);
+	    3, 10);
   cerr << "done !" << endl;
   cerr << "Result transformation: " << endl << result.linear() << endl << result.translation() << endl;
 

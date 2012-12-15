@@ -86,7 +86,7 @@ void PWNQGLViewer::draw() {
   if (! _points)
     return;
   if (_pointSize>0){
-    glColor3f(0.0, 0.5, 0.0);
+    glColor4f(0.0f, 1.0f, 0.0f, 0.5f);
     glPointSize(_pointSize);
     glBegin(GL_POINTS);
     for (size_t i=0; i<_points->size(); i++){
@@ -99,7 +99,7 @@ void PWNQGLViewer::draw() {
     glEnd();
   }
   if (_pointSize>0){
-    glColor3f(0.5, 0.0, 0.0);
+    glColor4f(1.0f, 0.0f, 0.0f, 0.5f);
     glPointSize(_pointSize);
     glBegin(GL_POINTS);
     for (size_t i=0; i<_points2->size(); i++){
@@ -113,7 +113,7 @@ void PWNQGLViewer::draw() {
   }
   float nsum  = 0;
   if (_normalLength>0){
-    glColor3f(0.3, 0.3, 0.3);
+    glColor4f(1.0f, 0.0f, 1.0f, 0.5f);
     glPointSize(.1);
     glBegin(GL_LINES);
     for (size_t i=0; i<_points->size(); i++){
@@ -142,10 +142,10 @@ void PWNQGLViewer::draw() {
       glPushMatrix();
       glMultMatrixf(I.data());
       if(curvature > 0.02f){
-	glColor3f(1.0f - curvature, 0.0f, 0.0f);
+	glColor4f(1.0f - curvature, 0.0f, 0.0f, 0.5f);
       }
       else{
-	glColor3f(0.0f, 1.0f - curvature, 0.0f);
+	glColor4f(0.0f, 1.0f - curvature, 0.0f, 0.5f);
 	sx = 1e-03;
 	sy = _ellipsoidScale;
 	sz = _ellipsoidScale;
@@ -156,7 +156,8 @@ void PWNQGLViewer::draw() {
     }
   }
   if (_corrVector) {
-    glColor3f(0.1, 0.1, 0.5);
+    glColor4f(0.0f, 0.0f, 1.0f, 0.5f);
+    glLineWidth(3.0f);
     glBegin(GL_LINES);
     for (size_t i =0; i< _corrVector->size(); i++){
       const Vector6f& p1 = *(_corrVector->at(i).p1);
@@ -166,5 +167,4 @@ void PWNQGLViewer::draw() {
     }
     glEnd();
   }
-
 }
