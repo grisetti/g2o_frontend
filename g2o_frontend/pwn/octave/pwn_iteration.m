@@ -26,6 +26,6 @@ function [Xnew, err]= pwn_iteration(Pi, Pj, Omega, X)
     err += eij' * Omega * eij;
   endfor
   dx = -H\b;
-  dX = toExtended(dx);
+  dX = v2t(dx);
   Xnew  = X*dX;
 endfunction

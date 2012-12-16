@@ -7,7 +7,7 @@ function S = skew(t)
   tx = t(1);
   ty = t(2);
   tz = t(3);
-  S = [ 0      (2*tz)   (-2*ty);
-       (-2*tz) 0       (2*tx);
-       (2*ty)  (-2*tx)   0];
+  S = [ 0,      -tz,   ty;
+        tz,     0,     -tx;
+        -ty     tx,   0];
 end;

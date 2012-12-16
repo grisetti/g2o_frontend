@@ -12,7 +12,7 @@ endfor;
 
 #  generate a transform
 gtx = [100 200 300 .5 .5 .5]';
-gtX = toExtended(gtx);
+gtX = v2t(gtx);
 printf("the ground truth transform is:\n");
 disp(gtX);
 
@@ -56,7 +56,7 @@ for i = [1:size(nLevel)(2)]
   printf("\t final   transform\n");
   disp(results(:,:,iterations, i));
   printf("\t transform error\n");
-  disp(toMinimal(results(:,:,iterations, i)*gtX));
+  disp(t2v(results(:,:,iterations, i)*gtX));
 endfor
 
 
