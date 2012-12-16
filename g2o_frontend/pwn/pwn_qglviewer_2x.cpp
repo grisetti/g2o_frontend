@@ -51,7 +51,7 @@ void PWNQGLViewer2X::init() {
   glShadeModel(GL_FLAT);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  setAxisIsDrawn();
+  //setAxisIsDrawn();
 
   // don't save state
   setStateFileName(QString::null);
@@ -71,17 +71,27 @@ void PWNQGLViewer2X::init() {
 
   // create one display list
   _ellipsoidList = glGenLists(2);
+  _pyramidList = glGenLists(2);
   
-  
-  // compile the display lists, store a sphere on it.
+  // compile the display lists, store a sphere on it and a pyramid.
   glNewList(_ellipsoidList, GL_COMPILE);
   g2o::opengl::drawSphere(1.0f);
   glEndList();
 
+  glNewList(_pyramidList, GL_COMPILE);
+  g2o::opengl::drawPyramid(1.0f, 2.0f);
+  glEndList();
 }
 
 void PWNQGLViewer2X::draw() {
   QGLViewer::draw();
+
+  // Draw camera.
+  glPushMatrix();
+  glScalef(0.05f, 0.05f, 0.05f);
+  glColor4f(1.0f, 1.0f, 0.0f, 0.5f);
+  glCallList(_pyramidList);
+  glPopMatrix();
 
   if (_points0){
     if (_pointSize>0){

@@ -42,7 +42,10 @@ inline int _pwn_iteration(float& error, Isometry3f& Xnew,
         const Matrix6f& omega = *omegas[i];
 
         Vector6f e = remapPoint(X, pref) - pcurr;
-        float localError = e.transpose() * omega * e;
+        //cerr << "e: " << endl << e << endl;
+	//cerr << "Omega: " << endl << omega << endl;
+	float localError = e.transpose() * omega * e;
+	//cerr << "Local error: " << endl << localError << endl;
         if(localError > inlierThreshold)
             continue;
         error += localError;
@@ -53,6 +56,7 @@ inline int _pwn_iteration(float& error, Isometry3f& Xnew,
     }
     if(numInliers < minInliers)
         return numInliers;
+    //cerr << "H: " << endl << H << endl << "b: " << endl << b << endl; 
     Vector6f dx = H.ldlt().solve(-b);
     Xnew  = X*v2t(dx);
     return numInliers;

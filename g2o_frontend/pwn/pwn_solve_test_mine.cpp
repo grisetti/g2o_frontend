@@ -136,19 +136,18 @@ int main(int argc, char** argv){
   cerr << "computing omega0... ";
   svd2omega(omegas0, svd0);
   cerr << "done !" << endl;
-
   cerr << "computing omega1... ";
   svd2omega(omegas1, svd1);
   cerr << "done !" << endl;
-
+  
   /************************************************************************************
    *                                                                                  *
    *  Apply perturbation to first cloud.                                              *
    *                                                                                  *
    ************************************************************************************/
   // Create perturbation.
-  Vector6f v;
-  v << 0.0f, 0.0f, -0.2f, 0.0f, 0.00f, 0.00f;
+  Vector6f v, vBck;
+  v << 0.1f, -0.1f, -0.1f, 0.05f, 0.05f, -0.1f;
   Isometry3f T = v2t(v);
   
   // Apply perturbation to cloud0.
@@ -162,7 +161,7 @@ int main(int argc, char** argv){
 	     cloud0,
 	     omegas0,
 	     svd0);
-
+ 
   // Computes pointers matrices for the perturbed cloud.
   Vector6fPtrMatrix cloud0PtrPert(rows, cols);
   CovarianceSVDPtrMatrix svd0PtrPert(rows, cols);
@@ -183,7 +182,7 @@ int main(int argc, char** argv){
    *                                                                                  *
    ************************************************************************************/
   // Scale factors.
-  float scale = 1.0f / 4.0f;
+  float scale = 1.0f / 1.0f;
   Matrix3f cameraMatrixScaled = cameraMatrix;
   cameraMatrixScaled.block<2,3>(0, 0) *= scale;
   int _r = ((float)image0.rows()*scale);
@@ -218,84 +217,102 @@ int main(int argc, char** argv){
 	    Isometry3f::Identity(),
 	    cameraMatrixScaled,
 	    zBuffer);
-
-  /************************************************************************************
-   *                                                                                  *
-   *  Compute correspondances                                                         *
-   *                                                                                  *
-   ************************************************************************************/
+ 
   // Thresholds for normals matching.
   float curvatureThreshold = 0.02;
   float normalThreshold = M_PI/6;
-  
-  // Compute correspondances.
+  int iterations = 4;
+  Isometry3f T1_0 = Isometry3f::Identity();
   CorrVector correspondences;
-  Matrix6fPtrMatrix corrOmegas0Pert(_r, _c);
-  Vector6fPtrMatrix corrCloud0Pert(_r, _c);
-  Vector6fPtrMatrix corrCloud1(_r, _c);
-  correspondences.clear();
-  int corrFound = 0;
-  for (int i =0; i<cloud1PtrScaled.cols(); i++){
-    for (int j =0; j<cloud1PtrScaled.rows(); j++){
-      if (!cloud0PtrPertScaled(j, i) || !cloud1PtrScaled(j, i))
-	continue;
-      Vector6f& p0 = *(cloud0PtrPertScaled(j, i));
-      Vector6f& p1 = *(cloud1PtrScaled(j, i));
-      if (p0.tail<3>().squaredNorm()<=1e-3 || p1.tail<3>().squaredNorm()<=1e-3)
-	continue;
-      SVDMatrix3f& svd0 = *svd0PtrPertScaled(j,i);
-      SVDMatrix3f& svd1 = *svd1PtrScaled(j,i);
-      float c0 = svd0.curvature();
-      float c1 = svd1.curvature();
-      if (c0>curvatureThreshold || c1>curvatureThreshold)
-	continue;
-      Vector6f p0Remapped = p0;//remapPoint(T1_0, p0);
-      if (p0Remapped.tail<3>().dot(p1.tail<3>())<normalThreshold)
-	continue;
-      correspondences.push_back(Corr(cloud0PtrPertScaled(j, i), cloud1PtrScaled(j, i)));
-      corrCloud0Pert(j, i) = &p0;
-      corrCloud1(j, i) = &p1;
-      corrOmegas0Pert(j, i) = omegas0PtrPertScaled(j, i);
-      corrFound++;
+  for(int k=0; k<iterations; k++){    
+    cerr << "Outer Iteration: " << k << endl;
+    /************************************************************************************
+     *                                                                                  *
+     *  Compute correspondances.                                                        *
+     *                                                                                  *
+     ************************************************************************************/
+    // Compute correspondances.
+    correspondences.clear();
+    Matrix6fPtrMatrix corrOmegas0Pert(_r, _c);
+    Vector6fPtrMatrix corrCloud0Pert(_r, _c);
+    Vector6fPtrMatrix corrCloud1(_r, _c);
+    int corrFound = 0;
+    for (int i=0; i<cloud1PtrScaled.cols(); i++){
+      for (int j=0; j<cloud1PtrScaled.rows(); j++){
+	if (!cloud0PtrPertScaled(j, i) || !cloud1PtrScaled(j, i))
+	  continue;
+	Vector6f& p0 = *(cloud0PtrPertScaled(j, i));
+	Vector6f& p1 = *(cloud1PtrScaled(j, i));
+	if (p0.tail<3>().squaredNorm()<=1e-3 || p1.tail<3>().squaredNorm()<=1e-3)
+	  continue;
+	SVDMatrix3f& svd0 = *svd0PtrPertScaled(j, i);
+	SVDMatrix3f& svd1 = *svd1PtrScaled(j, i); 
+	float c0 = svd0.curvature();
+	float c1 = svd1.curvature();
+	if (c0>curvatureThreshold || c1>curvatureThreshold)
+	  continue;
+	Vector6f p0Remapped = p0;//remapPoint(T1_0, p0);
+	if (p0Remapped.tail<3>().dot(p1.tail<3>())<normalThreshold)
+	  continue;
+	correspondences.push_back(Corr(cloud0PtrPertScaled(j, i), cloud1PtrScaled(j, i)));
+	corrCloud0Pert(j, i) = &p0;
+	corrCloud1(j, i) = &p1;
+	corrOmegas0Pert(j, i) = omegas0PtrPertScaled(j, i);
+	corrFound++;
+      }
     }
-  }
-  cerr << "found " << corrFound << " correspondences" << endl;
+    cerr << "found " << corrFound << " correspondences" << endl;
 
-  /************************************************************************************
-   *                                                                                  *
-   *  Compute transformation                                                          *
-   *                                                                                  *
-   ************************************************************************************/
-  // Run optimization algorithm.
-  int size = _r*_c;
-  Isometry3f result = Isometry3f::Identity();
-  float error = 0.0f;
-  for(int i=0; i<10; i++){
-    clock_t start = getMilliSecs();
-    int inl = pwn_iteration(error, result,
-			    corrCloud0Pert.data(),
-			    corrCloud1.data(),
-			    corrOmegas0Pert.data(),
-			    size,
-			    Isometry3f::Identity(),
-			    numeric_limits<float>::max(),
-			    0);
-    cout << "i: " << i << " " << inl << " " << error << " " << endl << t2v(result) << endl;
-    cout << "Time elapsed: " << getMilliSecs() - start << " ms" << endl;
-    cout << "---------------------------------------------------------------" << endl;    
+    /************************************************************************************
+     *                                                                                  *
+     *  Compute transformation.                                                         *
+     *                                                                                  *
+     ************************************************************************************/
+    // Run optimization algorithm.
+    int size = _r*_c;
+    Isometry3f result = Isometry3f::Identity();
+    float error = 0.0f;
+    for(int i=0; i<8; i++){
+      clock_t start = getMilliSecs();
+      int inl = pwn_iteration(error, result,
+			      corrCloud0Pert.data(),
+			      corrCloud1.data(),
+			      corrOmegas0Pert.data(),
+			      size,
+			      T1_0.inverse(),//Isometry3f::Identity(),
+			      numeric_limits<float>::max(),
+			      0);
+      cout << "i: " << i << " " << inl << " " << error << " " << endl << t2v(result) << endl;
+      cout << "Time elapsed: " << getMilliSecs() - start << " ms" << endl;
+      cout << "---------------------------------------------------------------" << endl;
+      T1_0 = result;
+    }
+    
+    // Apply computed transformation.
+    Vector6fVector cloudTmp;
+    Matrix6fVector omegasTmp;
+    CovarianceSVDVector svdTmp;
+    remapCloud(cloudTmp,
+	       omegasTmp,
+	       svdTmp,
+	       T1_0,
+	       cloud0Pert,
+	       omegas0Pert,
+	       svd0Pert);
+    cloud0Pert = cloudTmp;
+    omegas0Pert = omegasTmp;
+    svd0Pert = svdTmp;
+    cloud2mat(cloud0PtrPertScaled,
+	      omegas0PtrPertScaled,
+	      svd0PtrPertScaled,
+	      cloud0Pert,
+	      omegas0Pert,
+	      svd0Pert,
+	      Isometry3f::Identity(),
+	      cameraMatrixScaled,
+	      zBuffer);
   }
-
-  /************************************************************************************
-   *                                                                                  *
-   *  Compute first cloud transformed.                                                *
-   *                                                                                  *
-   ************************************************************************************/
-  for(size_t i=0; i<cloud0Pert.size(); i++){
-    Vector6f pT = cloud0Pert[i];
-    Vector6f &point = cloud0Pert[i];
-    point = remapPoint(result, pT);
-  }
-
+ 
   /************************************************************************************
    *                                                                                  *
    *  Draw stuffs.                                                                    *
@@ -315,7 +332,6 @@ int main(int argc, char** argv){
   viewer.setEllipsoids1(&svd1);
   viewer.setCorrVector(&correspondences);
   viewer.setWindowTitle("Viewer");
-
   // Make the viewer window visible on screen.
   viewer.show();
 

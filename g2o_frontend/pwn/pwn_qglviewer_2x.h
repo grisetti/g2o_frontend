@@ -52,6 +52,7 @@ protected:
   const CorrVector *_corrVector;
 
   GLuint _ellipsoidList;
+  GLuint _pyramidList;
 };
 
 #endif
