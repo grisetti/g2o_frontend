@@ -76,4 +76,14 @@ bool writePgm(const MatrixXus& img, FILE *pgmFile);
 
 void skipComments(FILE *fp);
 
+void cloud2mat_d(Vector6fPtrMatrix& pointsMat,
+	       Matrix6fPtrMatrix& informationMat,
+	       CovarianceSVDPtrMatrix& svdMat,
+	       Vector6fVector& points,
+	       Matrix6fVector& omegas,
+	       CovarianceSVDVector& svdVec,
+	       const Eigen::Isometry3f& X,
+	       const Eigen::Matrix3f& cameraMatrix,
+	       Eigen::MatrixXf& zBuffer, /* temp zBuffer for working. Allocate it outside */
+	       bool acceptUndefined = true);
 #endif

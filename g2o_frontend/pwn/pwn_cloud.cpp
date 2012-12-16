@@ -18,9 +18,10 @@ void remapCloud(Vector6fVector& destPoints,
     destPoints[i] = remapPoint(X, srcPoints[i]);
   }
   for (size_t i=0; i<destOmegas.size(); i++){
-    destOmegas[i].setZero();
-    destOmegas[i].block<3,3>(0,0)= X.linear() * srcOmegas[i].block<3,3>(0,0) * X.linear().transpose();
-    destOmegas[i].block<3,3>(3,3)= X.linear() * srcOmegas[i].block<3,3>(3,3) * X.linear().transpose();
+    //destOmegas[i].setZero();
+    //destOmegas[i].block<3,3>(0,0)= X.linear() * srcOmegas[i].block<3,3>(0,0) * X.linear().transpose();
+    //destOmegas[i].block<3,3>(3,3)= X.linear() * srcOmegas[i].block<3,3>(3,3) * X.linear().transpose();
+    destOmegas[i] = srcOmegas[i];
   }
   for (size_t i=0; i<destSvdVec.size(); i++){
     destSvdVec[i].lambda = srcSvdVec[i].lambda;
@@ -68,8 +69,9 @@ void cloud2mat(Vector6fPtrMatrix& pointsMat,
       if (hasNormal || acceptUndefined) {
 	zBuffer(y, x) = pt.z();
 	pointsMat(y, x) = &p;
-	if(omegas.size())
+	if(omegas.size()){
 	  informationMat(y, x) = &omegas[i];
+	}
 	if(svdVec.size())
 	  svdMat(y, x) = &svdVec[i];
       }
@@ -339,4 +341,55 @@ void skipComments(FILE *fp)
   }
   else
     fseek(fp, -1, SEEK_CUR);
+}
+
+void cloud2mat_d(Vector6fPtrMatrix& pointsMat,
+	       Matrix6fPtrMatrix& informationMat,
+	       CovarianceSVDPtrMatrix& svdMat,
+	       Vector6fVector& points,
+	       Matrix6fVector& omegas,
+	       CovarianceSVDVector& svdVec,
+	       const Eigen::Isometry3f& X,
+	       const Eigen::Matrix3f& cameraMatrix,
+	       Eigen::MatrixXf& zBuffer /* temp zBuffer for working. Allocate it outside */,
+	       bool acceptUndefined) {
+  zBuffer.resize(pointsMat.rows(), pointsMat.cols());
+  if(omegas.size())
+    informationMat.fill(0);
+  if(svdVec.size())
+    svdMat.fill(0);
+
+  pointsMat.fill(0);
+  zBuffer.fill(std::numeric_limits<float>::max());
+
+  Isometry3f iX = X.inverse();
+  AffineCompact3f T;
+  T.setIdentity();
+  T.linear() = cameraMatrix*iX.linear();
+  T.affine() = cameraMatrix*iX.affine();
+
+  for (size_t i = 0; i < points.size(); i++) {
+    Vector6f& p = points[i];
+    Vector3f pt = T * p.head<3>();
+    Vector2f ip = pt.head<2>() * (1.f/pt(2));
+    int x = (int)ip(0);
+    int y = (int)ip(1);
+    if(y < 0 || y >= pointsMat.rows() ||
+       x < 0 || x >= pointsMat.cols())
+      continue;
+    if(zBuffer(y, x) > pt.z()) {
+      bool hasNormal = p.tail<3>().squaredNorm() > 1e-3;
+      if (hasNormal || acceptUndefined) {
+	zBuffer(y, x) = pt.z();
+	pointsMat(y, x) = &p;
+	if(omegas.size()){
+	  informationMat(y, x) = &omegas[i];
+	  //cerr << "Omega input: " << endl << omegas[i] << endl;
+	  //cerr << "Omega outpt: " << endl << *(informationMat(y, x)) << endl;
+	}
+	if(svdVec.size())
+	  svdMat(y, x) = &svdVec[i];
+      }
+    }
+  }
 }
