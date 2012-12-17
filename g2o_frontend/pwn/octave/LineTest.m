@@ -46,11 +46,11 @@ endfor;
 
 X=eye(4);
 
-Omega=eye(6);
+Omega=eye(5);
 Omega(1:3,1:3)*=1e-3;
-Omega(4:6,4:6)*=1000;
+Omega(4:5,4:5)*=1000;
 
-[Xs, es] = line_solve(Li, Lj, Omega, X, 1);
+[Xs, es] = line_solve(Li, Lj, Omega, X, 10);
 
 
 
