@@ -26,22 +26,34 @@ function [Xnew, err]= line_iteration(Li, Lj, Omega, X)
     # disp("ljremapped");
     # disp(ljRemapped');
     eij = li_ - ljRemapped;
+    eij = eij(1:5);
     # disp("eij");
     # disp(eij');
-    Jij_n = - line_jacobian_numeric(X, lj);
+    #Jij_n = - line_jacobian_numeric(X, lj);
     Jij_a = - line_jacobian(X, lj);
-    if (norm(Jij_n-Jij_a)>1e-9)
+
+    fJij_a = line_jacobian_full(X, lj);
+    fJij_n = line_jacobian_numeric_full(X, lj);
+
+    if (norm(fJij_n-fJij_a)>1)
       disp("************** difference ************** ");
       disp(" norm:");
-      disp(norm(Jij_n-Jij_a));
-      disp(" Jn:");
-      disp (Jij_n);
-      disp(" Ja:");
-      disp (Jij_a);
-      disp(" Jn-Ja:");
-      disp(Jij_n-Jij_a);
+      disp(norm(fJij_n-fJij_a));
+      disp(" lj:");
+      disp(lj');
+      disp(" changeDir:");
+      disp(lj(4:5)'*ljRemapped(4:5));
+      disp(" ljRemapped:");
+      disp(ljRemapped');
+      disp(" fJn:");
+      disp (fJij_n);
+      disp(" fJa:");
+      disp (fJij_a);
+      disp(" fJn-fJa:");
+      disp(fJij_n-fJij_a);
     endif;
-    Jij=Jij_n;
+
+    Jij=Jij_a;
     bij = Jij' * Omega * eij;
     Hij = Jij' * Omega * Jij;
     b += bij;

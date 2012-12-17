@@ -19,6 +19,8 @@ function [Xs, es] = line_solve(Li, Lj, Omega, X, n)
     [X, err_i] = line_iteration(Li, Lj, Omega, X);
     Xs(:,:, i) = X;
 
+    disp("e:");
+    disp(err_i);
     disp("X:");
     disp(X);
     es(i)=err_i;
