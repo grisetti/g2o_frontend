@@ -2,14 +2,18 @@
 #include "gl_parameter_points.h"
 
 DrawablePoints::DrawablePoints() {
-  _points = 0;
+  _transformation = Eigen::Isometry3f::Identity();
   GLParameterPoints* pointsParameter = new GLParameterPoints();
   _parameter = (GLParameter*)pointsParameter;
+  _dmQGLViewer = 0;
+  _points = 0;
 }
 
-DrawablePoints::DrawablePoints(Vector6fVector *points_, GLParameter *parameter_) {
-  _points = points_;
+DrawablePoints::DrawablePoints(Eigen::Isometry3f transformation_, GLParameter *parameter_, Vector6fVector *points_) {
+  _transformation = transformation_;
   setParameter(parameter_);
+  _dmQGLViewer = 0;
+  _points = points_;
 }
 
 bool DrawablePoints::setParameter(GLParameter *parameter_) {
