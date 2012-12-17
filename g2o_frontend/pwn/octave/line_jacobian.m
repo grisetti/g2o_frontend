@@ -10,7 +10,7 @@ function J = line_jacobian(X, pl)
   A(4:6, 4:6) = X(1:3,1:3);
   # compute the differential part (some math behind this)
   D = zeros(6,6);
-  D(1:3,1:3) = skew(pl(4:6));
+  D(1:3,1:3) = -skew(pl(4:6));
   D(1:3,4:6) = -2*skew(pl(1:3));
   D(4:6,4:6) = -2*skew(pl(4:6));
   J = A*D;

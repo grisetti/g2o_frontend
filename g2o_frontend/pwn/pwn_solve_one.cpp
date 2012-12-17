@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <qapplication.h>
+#include <qlayout.h>
 #include "pwn_normals.h"
 #include "pwn_cloud.h"
 #include "pwn_solve.h"
@@ -313,10 +314,11 @@ int main(int argc, char** argv)
     pRef = remapPoint(T1_0, p);
   }
 
-
-
-  // Run main loop.
-  return application.exec();
+  while (1) {
+    application.processEvents();
+    //
+    usleep(10000);
+  }
     
   return 0;
 }

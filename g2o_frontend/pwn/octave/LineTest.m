@@ -30,7 +30,7 @@ disp(tpl');
 disp ("pluecker->trnasform->transform-1");
 disp (pl - line_remapPluecker(inverse(gtX),tpl));
 
-np = 3;
+np = 100;
 tscale = 100;
 printf("Generating a sample set of %d lines with normal, distributed in a radius of %f meters\n\n", np, tscale);
 
@@ -50,7 +50,7 @@ Omega=eye(6);
 Omega(1:3,1:3)*=1e-3;
 Omega(4:6,4:6)*=1000;
 
-[Xs, es] = line_solve(Li, Lj, Omega, X, 10);
+[Xs, es] = line_solve(Li, Lj, Omega, X, 1);
 
 
 
