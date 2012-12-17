@@ -25,6 +25,9 @@ typedef Eigen::Matrix<SVDMatrix3f*, Eigen::Dynamic, Eigen::Dynamic> CovarianceSV
 typedef Eigen::Matrix<float, 6, 1> Vector6f;
 typedef Eigen::Matrix<float, 6, 6> Matrix6f;
 
+typedef std::vector<Vector6f,Eigen::aligned_allocator<Vector6f> > Vector6fVector;
+typedef std::vector<Matrix6f,Eigen::aligned_allocator<Matrix6f> > Matrix6fVector;
+
 typedef Eigen::Matrix<Vector6f*, Eigen::Dynamic, Eigen::Dynamic> Vector6fPtrMatrix;
 typedef Eigen::Matrix<Matrix6f*, Eigen::Dynamic, Eigen::Dynamic> Matrix6fPtrMatrix;
 

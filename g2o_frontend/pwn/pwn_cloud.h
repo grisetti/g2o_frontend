@@ -11,9 +11,6 @@
 #define HI(num) (((num) & 0x0000FF00) >> 8)
 #define LO(num) ((num) & 0x000000FF)
 
-typedef std::vector<Vector6f,Eigen::aligned_allocator<Vector6f> > Vector6fVector;
-typedef std::vector<Matrix6f,Eigen::aligned_allocator<Matrix6f> > Matrix6fVector;
-
 typedef Eigen::Matrix<unsigned short, Eigen::Dynamic, Eigen::Dynamic> MatrixXus;
 typedef Eigen::DiagonalMatrix<float, 3, 3> Diagonal3f;
 
