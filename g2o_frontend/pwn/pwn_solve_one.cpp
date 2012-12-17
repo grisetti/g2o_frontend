@@ -1,11 +1,11 @@
 #include <iostream>
 #include <string>
 #include <qapplication.h>
-#include <qlayout.h>
 #include "pwn_normals.h"
 #include "pwn_cloud.h"
 #include "pwn_solve.h"
-#include "pwn_qglviewer.h"
+//#include "pwn_qglviewer.h"
+#include "pwn_qglviewer_2x.h"
 #include "pwn_utils.h"
 #include "pwn_math.h"
 #include "g2o/stuff/command_args.h"
@@ -39,8 +39,10 @@ using namespace Eigen;
 
 int main(int argc, char** argv)
 {
+  clock_t begin = getMilliSecs();
   g2o::CommandArgs arg;
-  string imageName;
+  string imageName0;
+  string imageName1;
   float r;
   float d; 
   int minPoints;
@@ -58,14 +60,18 @@ int main(int argc, char** argv)
   arg.param("nl", normalLength, 0.01f, "normal length"); 
   arg.param("es", ellipsoidScale, 0.05f, "ellipsoid scale"); 
 
-  arg.paramLeftOver("image", imageName , "", "image", true);
+  arg.paramLeftOver("image0", imageName0 , "", "image0", true);
+  arg.paramLeftOver("image1", imageName1 , "", "image1", true);
   arg.parseArgs(argc, argv);
   
-  if (imageName.length()==0){
+  if (imageName0.length()==0){
     cerr << "no image provided" << endl;
     return 0;
   }
-
+  if (imageName1.length()==0){
+    cerr << "no image provided" << endl;
+    return 0;
+  }
   QApplication application(argc, argv);
 
   // Create camera matrix.
@@ -79,10 +85,16 @@ int main(int argc, char** argv)
    *  Read depth images.                                                              *
    *                                                                                  *
    ************************************************************************************/
-  MatrixXus image0;
+  MatrixXus image0, image1;
   FILE* file;
-  file = fopen(imageName.c_str(), "rb");
+  file = fopen(imageName0.c_str(), "rb");
   if (!readPgm(image0, file)){
+    cout << "Error while reading first depth image." << endl;
+    exit(-1);
+  }
+  fclose(file);
+  file = fopen(imageName1.c_str(), "rb");
+  if (!readPgm(image1, file)){
     cout << "Error while reading first depth image." << endl;
     exit(-1);
   }
@@ -98,27 +110,29 @@ int main(int argc, char** argv)
    *                                                                                  *
    ************************************************************************************/
   // Cast images to float type.
-  MatrixXf depth0(rows, cols);
+  MatrixXf depth0(rows, cols), depth1(rows, cols);
   img2depth(depth0, image0);
+  img2depth(depth1, image1);
 
   // Create 3D point clouds with normals.
-  Vector6fVector cloud0;
+  Vector6fVector cloud0, cloud1;
   depth2cloud(cloud0, depth0, cameraMatrix);
+  depth2cloud(cloud1, depth1, cameraMatrix);
   CovarianceSVDVector svd0(cloud0.size());
-  
-  
+  CovarianceSVDVector svd1(cloud1.size());
+    
   /************************************************************************************
    *                                                                                  *
    *  Compute normals and curvature of the 3D points.                                 *
    *                                                                                  *
    ************************************************************************************/
   // Create matrices of pointers.
-  MatrixXf curvature0(rows, cols);
+  MatrixXf curvature0(rows, cols), curvature1(rows, cols);
   MatrixXf zBuffer(rows, cols);
-  Vector6fPtrMatrix cloud0Ptr(rows, cols);
-  CovarianceSVDPtrMatrix svd0Ptr(rows, cols);
-  Matrix6fVector omega0;
-  Matrix6fPtrMatrix omega0Ptr(0,0);
+  Vector6fPtrMatrix cloud0Ptr(rows, cols), cloud1Ptr(rows, cols);
+  CovarianceSVDPtrMatrix svd0Ptr(rows, cols), svd1Ptr(rows, cols);
+  Matrix6fVector omega0, omega1;
+  Matrix6fPtrMatrix omega0Ptr(0, 0), omega1Ptr(0, 0);
   cloud2mat(cloud0Ptr,
 	    omega0Ptr,
 	    svd0Ptr,
@@ -127,15 +141,27 @@ int main(int argc, char** argv)
 	    svd0,
             Isometry3f::Identity(), cameraMatrix,
 	    zBuffer);
+  cloud2mat(cloud1Ptr,
+	    omega1Ptr,
+	    svd1Ptr,
+            cloud1,
+	    omega1,
+	    svd1,
+            Isometry3f::Identity(), cameraMatrix,
+	    zBuffer);
+  
   // Compute normals.
-  cerr << "minPoints " <<  minPoints << endl;
-  cerr << "computing normals1... ";
+  // cerr << "minPoints " <<  minPoints << endl;
+  cerr << "computing normals0... ";
   computeNormals(cloud0Ptr, curvature0, svd0Ptr, cameraMatrix, r, d, step, minPoints);
   svd2omega(omega0, svd0);
   cerr << "done !" << endl;
-
-
-  
+  // cerr << "minPoints " <<  minPoints << endl;
+  cerr << "computing normals1... ";
+  computeNormals(cloud1Ptr, curvature1, svd1Ptr, cameraMatrix, r, d, step, minPoints);
+  svd2omega(omega1, svd1);
+  cerr << "done !" << endl;
+  /*
   Vector6f x;
   x << 0.1f, 0.1f, -0.2f, 0.1f, 0.05f, 0.05f;
   Isometry3f X=v2t(x);
@@ -144,8 +170,7 @@ int main(int argc, char** argv)
   Matrix6fVector omega1;
   CovarianceSVDVector svd1;
   remapCloud(cloud1, omega1, svd1, X, cloud0, omega0, svd0);
- 
-
+  */
   // Scale all.
   //float scale = 1.0f / 4.0f;
   int _r=((float)image0.rows()*scale);
@@ -192,10 +217,22 @@ int main(int argc, char** argv)
    *                                                                                  *
    *  Draw 3D points with normals.                                                    *
    *                                                                                  *
-   ************************************************************************************/;
+   ************************************************************************************/
+  // Create and set viewer oprions.
+  PWNQGLViewer2X viewer;
+  viewer.setPointSize(pointSize);
+  viewer.setNormalLength(normalLength);
+  viewer.setEllipsoidScale(ellipsoidScale);
+  viewer.setPoints0(&cloud0);
+  viewer.setPoints1(&cloud1);
+  viewer.setEllipsoids0(&svd0);
+  viewer.setEllipsoids1(&svd1);
+  viewer.setCorrVector(&correspondences);
+  viewer.setWindowTitle("Viewer");
+  // Make the viewer window visible on screen.
+  viewer.show();
   
-
-  PWNQGLViewer viewer;
+  /*PWNQGLViewer viewer;
   viewer.setPointSize(pointSize);
   viewer.setNormalLength(normalLength);
   viewer.setEllipsoidScale(ellipsoidScale);
@@ -205,8 +242,7 @@ int main(int argc, char** argv)
   viewer.setCorrVector(&correspondences);
   viewer.setWindowTitle("Viewer");
   // Make the viewer window visible on screen.
-  viewer.show();
-
+  viewer.show();*/
   
   Vector6fVector  cloudT;
   CovarianceSVDVector svdT;
@@ -291,34 +327,35 @@ int main(int argc, char** argv)
     int inl; 
     for(int i=0; i<10; i++){
       inl = pwn_iteration(error, result,
-			      corrP0.data(),
-			      corrP1.data(),
-			      corrOmegas1.data(),
-			      size,
-			      T1_0,
-			      numeric_limits<float>::max(),
-			      0);
+			  corrP0.data(),
+			  corrP1.data(),
+			  corrOmegas1.data(),
+			  size,
+			  T1_0,
+			  numeric_limits<float>::max(),
+			  0);
       T1_0 = result;
     }
-    cout << "k: " << k << " " << inl << " " << error << " " << endl ;//<< t2v(result) << endl;
+    cout << "k: " << k << " " << inl << " " << error << " " << endl;
     cout << "Time optimization : " << getMilliSecs() - start << " ms" << endl;
     cout << "Time global iteration: " << getMilliSecs() - kstart << " ms" << endl;
     cout << "---------------------------------------------------------------" << endl;  
   }
-
-  cerr << "difference between the true and the computed transformation" << t2v(T1_0.inverse()*X) << endl;
-
+  cerr << "Totale time needed to compute the whole stuffs: " << getMilliSecs() - begin << " ms" << endl;
+  //cerr << "difference between the true and the computed transformation: " << t2v(T1_0.inverse()*X) << endl;
+  
   for (size_t i=0; i<cloud0.size(); i++){
     Vector6f p = cloud0[i];
     Vector6f &pRef = cloud0[i];
     pRef = remapPoint(T1_0, p);
   }
-
+  
+  // Run main loop.
   while (1) {
     application.processEvents();
-    //
+    // Polling
     usleep(10000);
   }
-    
+
   return 0;
 }
