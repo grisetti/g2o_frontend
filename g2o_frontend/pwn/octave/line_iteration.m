@@ -42,7 +42,7 @@ function [Xnew, err]= line_iteration(Li, Lj, Omega, X)
       disp(" lj:");
       disp(lj');
       disp(" changeDir:");
-      disp(lj(4:5)'*ljRemapped(4:5));
+      disp((lj(4:6)'*ljRemapped(4:6)));
       disp(" ljRemapped:");
       disp(ljRemapped');
       disp(" fJn:");

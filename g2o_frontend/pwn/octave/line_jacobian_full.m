@@ -26,12 +26,19 @@ function J = line_jacobian_full(X, pl)
   by = pl(5);
   bz = pl(6);
   ln = sqrt((bz+1)^2+by^2+bx^2);
+  # Jll= [1/ln,0,0,-(ax*bx)/ln^3,-(ax*by)/ln^3;
+  # 	0,1/ln,0,-(ay*bx)/ln^3,-(ay*by)/ln^3;
+  # 	0,0,1/ln,-(az*bx)/ln^3,-(az*by)/ln^3;
+  # 	0,0,0,(ln^2-bx^2)/ln^3,-(bx*by)/ln^3;
+  # 	0,0,0,-(bx*by)/ln^3,(ln^2-by^2)/ln^3;
+  # 	0,0,0,-(bx*bz+bx)/ln^3,-(by*bz+by)/ln^3];
   Jll= [1/ln,0,0,-(ax*bx)/ln^3,-(ax*by)/ln^3;
-	0,1/ln,0,-(ay*bx)/ln^3,-(ay*by)/ln^3;
-	0,0,1/ln,-(az*bx)/ln^3,-(az*by)/ln^3;
-	0,0,0,(ln^2-bx^2)/ln^3,-(bx*by)/ln^3;
-	0,0,0,-(bx*by)/ln^3,(ln^2-by^2)/ln^3;
-	0,0,0,-(bx*bz+bx)/ln^3,-(by*bz+by)/ln^3];
+  	0,1/ln,0,-(ay*bx)/ln^3,-(ay*by)/ln^3;
+  	0,0,1/ln,-(az*bx)/ln^3,-(az*by)/ln^3;
+  	0,0,0,(1./ln)-(bx^2)/ln^3,-(bx*by)/ln^3;
+  	0,0,0,-(bx*by)/ln^3,1./ln-(by^2)/ln^3;
+  	0,0,0,-(bx*bz+bx)/ln^3,-(by*bz+by)/ln^3];
+
   Jl=(A*Jll)(1:5,1:5);
   J=[Jp,Jl];
 endfunction
