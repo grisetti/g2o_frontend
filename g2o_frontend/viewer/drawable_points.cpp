@@ -7,16 +7,17 @@ DrawablePoints::DrawablePoints() {
   _parameter = (GLParameter*)pointsParameter;
 }
 
-DrawablePoints::DrawablePoints(Vector6fVector *points_) {
+DrawablePoints::DrawablePoints(Vector6fVector *points_, GLParameter *parameter_) {
   _points = points_;
-  GLParameterPoints* pointsParameter = new GLParameterPoints();
-  _parameter = (GLParameter*)pointsParameter;
+  setParameter(parameter_);
 }
 
 bool DrawablePoints::setParameter(GLParameter *parameter_) {
   GLParameterPoints* pointsParameter = dynamic_cast<GLParameterPoints*>(parameter_);
-  if (pointsParameter == 0)
+  if (pointsParameter == 0) {
+    _parameter = 0;
     return false;
+  }
   _parameter = parameter_;
   return true;
 }
@@ -34,7 +35,7 @@ void DrawablePoints::draw() {
 	glNormal3f(p[3], p[4], p[5]);
       glVertex3f(p[0], p[1], p[2]);
     }
+    glEnd();
+    glPopMatrix();
   }
-  glEnd();
-  glPopMatrix();
 }

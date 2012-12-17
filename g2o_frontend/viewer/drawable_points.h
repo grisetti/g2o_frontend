@@ -7,7 +7,7 @@
 class DrawablePoints : public Drawable {
  public:
   DrawablePoints();
-  DrawablePoints(Vector6fVector *points_);
+  DrawablePoints(Vector6fVector *points_, GLParameter *parameter_);
   virtual void setPoints(Vector6fVector *points_) { _points = points_; }
   virtual bool setParameter(GLParameter *parameter_);
   virtual Vector6fVector* points() { return _points; }
