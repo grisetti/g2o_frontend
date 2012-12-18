@@ -28,10 +28,11 @@ bool DrawablePoints::setParameter(GLParameter *parameter_) {
 
 // Drawing function of the class object.
 void DrawablePoints::draw() {
-  if (_points) {
+  GLParameterPoints* pointsParameter = dynamic_cast<GLParameterPoints*>(_parameter);
+  if (_points && pointsParameter->pointSize() > 0.0f) {
     glPushMatrix();
     glMultMatrixf(_transformation.data());
-    _parameter->applyGLParameter();
+    pointsParameter->applyGLParameter();
     glBegin(GL_POINTS);
     for (size_t i = 0; i < _points->size(); i++) {
       const Vector6f &p = (*_points)[i];

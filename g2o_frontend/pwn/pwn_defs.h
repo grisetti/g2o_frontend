@@ -31,4 +31,11 @@ typedef std::vector<Matrix6f,Eigen::aligned_allocator<Matrix6f> > Matrix6fVector
 typedef Eigen::Matrix<Vector6f*, Eigen::Dynamic, Eigen::Dynamic> Vector6fPtrMatrix;
 typedef Eigen::Matrix<Matrix6f*, Eigen::Dynamic, Eigen::Dynamic> Matrix6fPtrMatrix;
 
+struct Correspondance{
+  Correspondance (const Vector6f* p1_, const Vector6f* p2_): p1(p1_), p2(p2_) {}
+  const Vector6f* p1, *p2;
+};
+
+typedef std::vector<Correspondance> CorrespondanceVector;
+
 #endif

@@ -10,6 +10,8 @@ class DMQGLViewer : public QGLViewer {
   virtual void init();
   virtual void draw();
   virtual void addDrawable(Drawable *d);
+  GLuint ellipsoidDrawList() { return _ellipsoidDrawList; }
+  GLuint pyramidDrawList() { return _ellipsoidDrawList; }
  
  protected:
   // Number of draw lists.
