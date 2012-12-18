@@ -14,7 +14,9 @@ class Drawable {
   void setTransformation(Eigen::Isometry3f transformation_) { _transformation = transformation_; }
   virtual bool setParameter(GLParameter *parameter_) = 0;
   void setDMQGLViewer(DMQGLViewer *dmQGLViewer_) { _dmQGLViewer = dmQGLViewer_; }
+  void setStep(float step_) { _step = step_; }
   DMQGLViewer* dmQGLViewer() { return _dmQGLViewer; }
+  float step() { return _step; }
   Eigen::Isometry3f transformation() { return _transformation; }
   virtual GLParameter* parameter() = 0;
 
@@ -25,6 +27,8 @@ class Drawable {
   GLParameter *_parameter;
   // Pointer to the DMQGLViewer.
   DMQGLViewer *_dmQGLViewer;
+  // Draw stuffs reduction.
+  int _step;
 };
 
 #endif
