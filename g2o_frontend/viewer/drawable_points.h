@@ -7,15 +7,15 @@
 class DrawablePoints : public Drawable {
  public:
   DrawablePoints();
-  DrawablePoints(Vector6fVector *points_);
+  DrawablePoints(Eigen::Isometry3f transformation_, GLParameter *parameter_, Vector6fVector *points_);
   virtual void setPoints(Vector6fVector *points_) { _points = points_; }
   virtual bool setParameter(GLParameter *parameter_);
-  virtual Vector6fVector* points() { return _points; }
+  virtual const Vector6fVector* points() { return _points; }
   virtual GLParameter* parameter() { return _parameter; };
   virtual void draw();
 
  protected:
-  Vector6fVector *_points;
+  const Vector6fVector *_points;
 };  
 
 #endif

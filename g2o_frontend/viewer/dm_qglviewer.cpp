@@ -69,7 +69,7 @@ void DMQGLViewer::init() {
   _pyramidDrawList = glGenLists(_numDrawLists);
 
   // Compile draw lists.
-  // Ellipsod.
+  // Ellipsoid.
   glNewList(_ellipsoidDrawList, GL_COMPILE);
   g2o::opengl::drawSphere(1.0f);
   glEndList();
@@ -90,14 +90,16 @@ void DMQGLViewer::draw() {
   glCallList(_pyramidDrawList);
   glPopMatrix();
 
-  // Draw the vector of Drawable objects.
+  // Draw the vector of drawable objects.
   for (size_t i = 0; i < _drawableList.size(); i++) {
     _drawableList[i]->draw();
   }
 }
 
-// Function to add a Drawable objects to the viewer.
+// Function to add a drawable objects to the viewer.
 void DMQGLViewer::addDrawable(Drawable *d) {
+  // Set the viewer to the input drawable object.
+  d->setDMQGLViewer(this);
   // Add the input object to the vector.
   _drawableList.push_back(d);
 }
