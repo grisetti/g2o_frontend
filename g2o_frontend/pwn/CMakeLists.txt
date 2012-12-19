@@ -67,10 +67,10 @@ SET_TARGET_PROPERTIES(pwn_solve_one PROPERTIES OUTPUT_NAME pwn_solve_one)
 
 TARGET_LINK_LIBRARIES(pwn_solve_one pwn_library pwn_viewer_library ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_gl_LIBRARY})
 
-ADD_EXECUTABLE(pwn_dm_qglviewer
-  pwn_dm_qglviewer_test.cpp
-)
+#ADD_EXECUTABLE(pwn_dm_qglviewer
+#  pwn_dm_qglviewer_test.cpp
+#)
 
-SET_TARGET_PROPERTIES(pwn_dm_qglviewer PROPERTIES OUTPUT_NAME pwn_dm_qglviewer)
+#SET_TARGET_PROPERTIES(pwn_dm_qglviewer PROPERTIES OUTPUT_NAME pwn_dm_qglviewer)
 
-TARGET_LINK_LIBRARIES(pwn_dm_qglviewer pwn_library dm_viewer_library ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_gl_LIBRARY})
+#TARGET_LINK_LIBRARIES(pwn_dm_qglviewer pwn_library dm_viewer_library ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${QGLVIEWER_LIBRARY} ${QT_LIBRARIES} ${OPENGL_gl_LIBRARY})

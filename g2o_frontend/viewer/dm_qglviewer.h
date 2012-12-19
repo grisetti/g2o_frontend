@@ -10,6 +10,7 @@ class DMQGLViewer : public QGLViewer {
   virtual void init();
   virtual void draw();
   virtual void addDrawable(Drawable *d);
+  virtual void clearDrawableList() { _drawableList.clear(); }
   GLuint ellipsoidDrawList() { return _ellipsoidDrawList; }
   GLuint pyramidDrawList() { return _ellipsoidDrawList; }
  
