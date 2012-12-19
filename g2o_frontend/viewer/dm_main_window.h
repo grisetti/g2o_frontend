@@ -10,6 +10,7 @@ class DMMainWindow : public QMainWindow, public Ui::MainWindow {
   ~DMMainWindow();
   bool* initialGuess() { return &_initialGuess; }
   bool* optimize() { return &_optimize; }
+  int* stepByStep() { return &_stepByStep; }
   int* step() { return &_step[0]; }
   float* points() { return &_points[0]; }
   float* normals() { return &_normals[0]; }
@@ -23,6 +24,7 @@ class DMMainWindow : public QMainWindow, public Ui::MainWindow {
   void slotNormalsEnabled(bool newState) { _normals[0] = newState; }
   void slotCovariancesEnabled(bool newState) { _covariances[0] = newState; }
   void slotCorrespondencesEnabled(bool newState) { _correspondences[0] = newState; }
+  void slotStepByStepEnabled(bool newState) { _stepByStep = newState; }
   // Spinbox slots.
   void slotStepChangeValue(int newValue) { _step[1] = newValue; }
   void slotPointsChangeValue(double newValue) { _points[1] = newValue; }
@@ -30,12 +32,13 @@ class DMMainWindow : public QMainWindow, public Ui::MainWindow {
   void slotCovariancesChangeValue(double newValue) { _covariances[1] = newValue; }
   void slotCorrespondencesChangeValue(double newValue) { _correspondences[1] = newValue; } 
   // Pushbuttons slots.
-  void slotInitialGuessClicked() { _optimize = 0; _initialGuess = 1; }
-  void slotOptimizeClicked() { _initialGuess = 0; _optimize = 1; }
+  void slotInitialGuessClicked() { _initialGuess = 1; }//{ _optimize = 0; _initialGuess = 1; }
+  void slotOptimizeClicked() { _optimize = 1; }//{ _initialGuess = 0; _optimize = 1; }
 
  protected:
   bool _initialGuess;
   bool _optimize;
+  int _stepByStep;
   int _step[2];
   float _points[2];
   float _normals[2];

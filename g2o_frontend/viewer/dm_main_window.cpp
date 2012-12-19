@@ -6,6 +6,7 @@ DMMainWindow::DMMainWindow(QWidget *parent, Qt::WindowFlags flags) : QMainWindow
   // Variable initialization.
   _initialGuess = 1;
   _optimize = 0;
+  _stepByStep = 0;
   _step[0] = 1; _step[1] = 1;
   _points[0] = 1.0f; _points[1] = 1.0f;
   _normals[0] = 0.0f; _normals[1] = 0.0f;
@@ -23,6 +24,8 @@ DMMainWindow::DMMainWindow(QWidget *parent, Qt::WindowFlags flags) : QMainWindow
 		   this, SLOT(slotCovariancesEnabled(bool)));
   QObject::connect(checkBox_correspondences, SIGNAL(toggled(bool)),
 		   this, SLOT(slotCorrespondencesEnabled(bool)));
+  QObject::connect(checkBox_step_by_step, SIGNAL(toggled(bool)),
+		   this, SLOT(slotStepByStepEnabled(bool)));
   // Signals/Slots spinbox connections.
   QObject::connect(spinBox_step, SIGNAL(valueChanged(int)),
 		   this, SLOT(slotStepChangeValue(int)));

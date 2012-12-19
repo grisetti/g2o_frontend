@@ -206,9 +206,8 @@ if (imageName0.length() == 0) {
   QApplication qApplication(argc, argv);
   DMMainWindow dmMW;
   dmMW.show();
-  bool wasInitialGuess = true;
-  bool *initialGuess = 0, *optimize = 0;
-  int *stepViewer = 0;
+  bool *initialGuessViewer = 0, *optimizeViewer = 0;
+  int *stepViewer = 0, *stepByStepViewer = 0;
   float *pointsViewer = 0, *normalsViewer = 0, *covariancesViewer = 0, *correspondencesViewer = 0;
   GLParameterPoints *p0Param = new GLParameterPoints();
   GLParameterPoints *p1Param = new GLParameterPoints();
@@ -228,8 +227,9 @@ if (imageName0.length() == 0) {
     qApplication.processEvents();
     
     // Update state variables value.
-    initialGuess = dmMW.initialGuess();
-    optimize = dmMW.optimize();
+    initialGuessViewer = dmMW.initialGuess();
+    optimizeViewer = dmMW.optimize();
+    stepByStepViewer = dmMW.stepByStep();
     stepViewer = dmMW.step();
     pointsViewer = dmMW.points();
     normalsViewer = dmMW.normals();
@@ -237,11 +237,14 @@ if (imageName0.length() == 0) {
     correspondencesViewer = dmMW.correspondences();
     
     // Checking state variable value.
-    if(*initialGuess) {
-      wasInitialGuess = true;
+    // Initial guess.
+    if (*initialGuessViewer) {
+      *initialGuessViewer = 0;
       T1_0 = Isometry3f::Identity();
     }
-    if(*optimize && wasInitialGuess) {
+    // Registration.
+    else if(*optimizeViewer && !(*stepByStepViewer)) {
+      *optimizeViewer = 0;
       computeRegistration(T1_0, 
 			  cloud0, svd0, correspondences, 
 			  cloud0PtrScaled, cloud1PtrScaled,
@@ -250,8 +253,20 @@ if (imageName0.length() == 0) {
 			  corrOmegas1, corrP0, corrP1,
 			  omega0, zBuffer, cameraMatrixScaled,
 			  _r, _c,
-			  outerIterations, innerIterations);
-      wasInitialGuess = false;
+			  outerIterations, innerIterations);  
+    }
+    // Step by step registration.
+    else if(*optimizeViewer && *stepByStepViewer) {
+      *optimizeViewer = 0;
+      computeRegistration(T1_0, 
+			  cloud0, svd0, correspondences, 
+			  cloud0PtrScaled, cloud1PtrScaled,
+			  omega0PtrScaled,
+			  svd0PtrScaled, svd1PtrScaled,
+			  corrOmegas1, corrP0, corrP1,
+			  omega0, zBuffer, cameraMatrixScaled,
+			  _r, _c,
+			  1, innerIterations);
     }
     
     dp1->setTransformation(T1_0.inverse());
@@ -281,7 +296,7 @@ if (imageName0.length() == 0) {
       dmMW.viewer_3d->addDrawable((Drawable*)dn0);
       dmMW.viewer_3d->addDrawable((Drawable*)dn1);
     }
-    if(covariancesViewer[0]) {
+    if (covariancesViewer[0]) {
       c0Param->setEllipsoidScale(covariancesViewer[1]);
       c1Param->setEllipsoidScale(covariancesViewer[1]);
       if (stepViewer[0]) {
@@ -291,7 +306,7 @@ if (imageName0.length() == 0) {
       dmMW.viewer_3d->addDrawable((Drawable*)dc0);
       dmMW.viewer_3d->addDrawable((Drawable*)dc1);
     }
-    if(correspondencesViewer[0]) {
+    if (correspondencesViewer[0]) {
       corrParam->setLineWidth(correspondencesViewer[1]);
       if (stepViewer[0])
 	dcorr->setStep(stepViewer[1]);	
@@ -304,8 +319,18 @@ if (imageName0.length() == 0) {
  
   delete(p0Param);
   delete(p1Param);
+  delete(n0Param);
+  delete(n1Param);
+  delete(c0Param);
+  delete(c1Param);
+  delete(corrParam);
   delete(dp0);
   delete(dp1);
+  delete(dn0);
+  delete(dn1);
+  delete(dc0);
+  delete(dc1);
+  delete(dcorr);
 
   return 0;
 }
