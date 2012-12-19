@@ -247,7 +247,7 @@ if (imageName0.length() == 0) {
 
 	if (n0Remapped.dot(n1) < normalThreshold)
 	  continue;
-	correspondences.push_back(Correspondence(cloud0PtrScaled(j, i), cloud1PtrScaled(j, i)));
+	correspondences.push_back(Correspondence(cloud0PtrScaled(j, i), cloud1PtrScaled(j, i)));	
 	corrP0(j, i) = &p0;
 	corrP1(j, i) = &p1;
 	corrOmegas1(j, i) = omega0PtrScaled(j, i);
@@ -258,7 +258,7 @@ if (imageName0.length() == 0) {
     
     /************************************************************************************
      *                                                                                  *
-     *  Compute trasnformation.                                                         *
+     *  Compute transformation.                                                         *
      *                                                                                  *
      ************************************************************************************/
     // Run optimization algorithm.
@@ -295,10 +295,16 @@ if (imageName0.length() == 0) {
   GLParameterPoints *p1Param = new GLParameterPoints();
   GLParameterNormals *n0Param = new GLParameterNormals();
   GLParameterNormals *n1Param = new GLParameterNormals();
+  GLParameterCovariances *c0Param = new GLParameterCovariances();
+  GLParameterCovariances *c1Param = new GLParameterCovariances();
+  GLParameterCorrespondences *corrParam = new GLParameterCorrespondences();
   DrawablePoints* dp0 = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)p0Param, 1, &cloud0);
   DrawablePoints* dp1 = new DrawablePoints(T1_0.inverse(), (GLParameter*)p1Param, 1, &cloud1);
   DrawableNormals *dn0 = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)n0Param, 1, &cloud0);
   DrawableNormals *dn1 = new DrawableNormals(T1_0.inverse(), (GLParameter*)n0Param, 1, &cloud1);
+  DrawableCovariances *dc0 = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)c0Param, 1, &svd0);
+  DrawableCovariances *dc1 = new DrawableCovariances(T1_0.inverse(), (GLParameter*)c1Param, 1, &svd1);
+  DrawableCorrespondences* dcorr = new DrawableCorrespondences(T1_0.inverse(), (GLParameter*)corrParam, 1, &correspondences);
   while (true) {
     qApplication.processEvents();
     
@@ -332,9 +338,24 @@ if (imageName0.length() == 0) {
       dmMW.viewer_3d->addDrawable((Drawable*)dn0);
       dmMW.viewer_3d->addDrawable((Drawable*)dn1);
     }
+    if(covariancesViewer[0]) {
+      c0Param->setEllipsoidScale(covariancesViewer[1]);
+      c1Param->setEllipsoidScale(covariancesViewer[1]);
+      if (stepViewer[0]) {
+	dc0->setStep(stepViewer[1]);
+	dc1->setStep(stepViewer[1]);
+      }
+      dmMW.viewer_3d->addDrawable((Drawable*)dc0);
+      dmMW.viewer_3d->addDrawable((Drawable*)dc1);
+    }
+    if(correspondencesViewer[0]) {
+      corrParam->setLineWidth(correspondencesViewer[1]);
+      if (stepViewer[0])
+	dcorr->setStep(stepViewer[1]);	
+      dmMW.viewer_3d->addDrawable((Drawable*)dcorr);
+    }
     dmMW.viewer_3d->updateGL();
-    //if(covariancesViewer[0])
-    //if(correspondencesViewer[0])
+
     usleep(10000);
   }
   dmMW.viewer_3d->clearDrawableList();
