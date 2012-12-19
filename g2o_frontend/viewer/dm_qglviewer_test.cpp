@@ -318,7 +318,7 @@ if (imageName0.length() == 0) {
     // Checking state variable value.
     dmMW.viewer_3d->clearDrawableList();
     if (pointsViewer[0]) {
-      p0Param->setColor(Vector4f(1.0f, 1.0f, 0.0f, 0.5f));
+      p0Param->setColor(Vector4f(1.0f, 0.0f, 0.0f, 0.5f));
       p0Param->setPointSize(pointsViewer[1]);
       p1Param->setPointSize(pointsViewer[1]);
       if (stepViewer[0]) {
