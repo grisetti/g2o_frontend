@@ -8,6 +8,8 @@ class DMMainWindow : public QMainWindow, public Ui::MainWindow {
  public:
   DMMainWindow(QWidget *parent = 0, Qt::WindowFlags flags = 0);
   ~DMMainWindow();
+  bool* initialGuess() { return &_initialGuess; }
+  bool* optimize() { return &_optimize; }
   int* step() { return &_step[0]; }
   float* points() { return &_points[0]; }
   float* normals() { return &_normals[0]; }
@@ -27,8 +29,13 @@ class DMMainWindow : public QMainWindow, public Ui::MainWindow {
   void slotNormalsChangeValue(double newValue) { _normals[1] = newValue; }
   void slotCovariancesChangeValue(double newValue) { _covariances[1] = newValue; }
   void slotCorrespondencesChangeValue(double newValue) { _correspondences[1] = newValue; } 
-  
+  // Pushbuttons slots.
+  void slotInitialGuessClicked() { _optimize = 0; _initialGuess = 1; }
+  void slotOptimizeClicked() { _initialGuess = 0; _optimize = 1; }
+
  protected:
+  bool _initialGuess;
+  bool _optimize;
   int _step[2];
   float _points[2];
   float _normals[2];

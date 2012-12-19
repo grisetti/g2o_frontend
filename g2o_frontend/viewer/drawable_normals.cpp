@@ -29,6 +29,7 @@ void DrawableNormals::draw() {
     glPushMatrix();
     glMultMatrixf(_transformation.data());
     normalsParameter->applyGLParameter();
+    glLineWidth(1.0);
     float normalLength = normalsParameter->normalLength();
     glBegin(GL_LINES);
     for (size_t i = 0; i < _normals->size(); i += _step) {

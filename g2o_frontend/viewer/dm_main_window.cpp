@@ -4,6 +4,8 @@ DMMainWindow::DMMainWindow(QWidget *parent, Qt::WindowFlags flags) : QMainWindow
   setupUi(this);
 
   // Variable initialization.
+  _initialGuess = 1;
+  _optimize = 0;
   _step[0] = 0; _step[1] = 1;
   _points[0] = 0.0f; _points[1] = 0.0f;
   _normals[0] = 0.0f; _normals[1] = 0.0f;
@@ -32,6 +34,12 @@ DMMainWindow::DMMainWindow(QWidget *parent, Qt::WindowFlags flags) : QMainWindow
 		   this, SLOT(slotCovariancesChangeValue(double)));
   QObject::connect(doubleSpinBox_correspondences, SIGNAL(valueChanged(double)),
 		   this, SLOT(slotCorrespondencesChangeValue(double)));
+
+  // Signals/Slots pushbuttons connections.
+  QObject::connect(pushButton_initial_guess, SIGNAL(clicked()),
+		   this, SLOT(slotInitialGuessClicked()));
+  QObject::connect(pushButton_optimize, SIGNAL(clicked()),
+		   this, SLOT(slotOptimizeClicked()));
 }
 
 DMMainWindow::~DMMainWindow() {}

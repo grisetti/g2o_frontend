@@ -23,10 +23,19 @@
 using namespace std;
 using namespace Eigen;
 
+void computeRegistration(Isometry3f &T1_0, 
+			 Vector6fVector &cloud0, CovarianceSVDVector &svd0, CorrespondenceVector &correspondences, 
+			 Vector6fPtrMatrix &cloud0PtrScaled, Vector6fPtrMatrix &cloud1PtrScaled,
+			 Matrix6fPtrMatrix &omega0PtrScaled,
+			 CovarianceSVDPtrMatrix &svd0PtrScaled, CovarianceSVDPtrMatrix &svd1PtrScaled,
+			 Matrix6fPtrMatrix &corrOmegas1, Vector6fPtrMatrix &corrP0, Vector6fPtrMatrix &corrP1,
+			 Matrix6fVector &omega0, MatrixXf &zBuffer, Matrix3f &cameraMatrixScaled,
+			 int _r, int _c,
+			 int outerIterations, int innerIterations);
+
 int main(int argc, char** argv)
 {
   /**** REGISTRATION COMPUTING ****/
-  clock_t begin = getMilliSecs();
   g2o::CommandArgs arg;
   string imageName0;
   string imageName1;
@@ -177,23 +186,146 @@ if (imageName0.length() == 0) {
 	    Isometry3f::Identity(),
 	    cameraMatrixScaled,
 	    zBuffer);
+
   Isometry3f T1_0 =Isometry3f::Identity();
-
-  /************************************************************************************
-   *                                                                                  *
-   *  Compute registration.                                                           *
-   *                                                                                  *
-   ************************************************************************************/
-  int iterations=10;
   CorrespondenceVector correspondences;
-  Vector6fVector  cloudT;
-  CovarianceSVDVector svdT;
-  Matrix6fVector omegaT;
+  correspondences.clear();
+  int outerIterations = 10;
+  int innerIterations = 10;
+  /*computeRegistration(T1_0, 
+		      cloud0, svd0, correspondences, 
+		      cloud0PtrScaled, cloud1PtrScaled,
+		      omega0PtrScaled,
+		      svd0PtrScaled, svd1PtrScaled,
+		      corrOmegas1, corrP0, corrP1,
+		      omega0, zBuffer, cameraMatrixScaled,
+		      _r, _c,
+		      outerIterations, innerIterations);*/
 
+  /**** REGISTRATION VISUALIZATION****/
+  QApplication qApplication(argc, argv);
+  DMMainWindow dmMW;
+  dmMW.show();
+  bool wasInitialGuess = true;
+  bool *initialGuess = 0, *optimize = 0;
+  int *stepViewer = 0;
+  float *pointsViewer = 0, *normalsViewer = 0, *covariancesViewer = 0, *correspondencesViewer = 0;
+  GLParameterPoints *p0Param = new GLParameterPoints();
+  GLParameterPoints *p1Param = new GLParameterPoints();
+  GLParameterNormals *n0Param = new GLParameterNormals();
+  GLParameterNormals *n1Param = new GLParameterNormals();
+  GLParameterCovariances *c0Param = new GLParameterCovariances();
+  GLParameterCovariances *c1Param = new GLParameterCovariances();
+  GLParameterCorrespondences *corrParam = new GLParameterCorrespondences();
+  DrawablePoints* dp0 = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)p0Param, 1, &cloud0);
+  DrawablePoints* dp1 = new DrawablePoints(T1_0.inverse(), (GLParameter*)p1Param, 1, &cloud1);
+  DrawableNormals *dn0 = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)n0Param, 1, &cloud0);
+  DrawableNormals *dn1 = new DrawableNormals(T1_0.inverse(), (GLParameter*)n1Param, 1, &cloud1);
+  DrawableCovariances *dc0 = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)c0Param, 1, &svd0);
+  DrawableCovariances *dc1 = new DrawableCovariances(T1_0.inverse(), (GLParameter*)c1Param, 1, &svd1);
+  DrawableCorrespondences* dcorr = new DrawableCorrespondences(T1_0.inverse(), (GLParameter*)corrParam, 1, &correspondences);
+  while (true) {
+    qApplication.processEvents();
+    
+    // Update state variables value.
+    initialGuess = dmMW.initialGuess();
+    optimize = dmMW.optimize();
+    stepViewer = dmMW.step();
+    pointsViewer = dmMW.points();
+    normalsViewer = dmMW.normals();
+    covariancesViewer = dmMW.covariances();
+    correspondencesViewer = dmMW.correspondences();
+    
+    // Checking state variable value.
+    if(*initialGuess) {
+      wasInitialGuess = true;
+      T1_0 = Isometry3f::Identity();
+    }
+    if(*optimize && wasInitialGuess) {
+      computeRegistration(T1_0, 
+			  cloud0, svd0, correspondences, 
+			  cloud0PtrScaled, cloud1PtrScaled,
+			  omega0PtrScaled,
+			  svd0PtrScaled, svd1PtrScaled,
+			  corrOmegas1, corrP0, corrP1,
+			  omega0, zBuffer, cameraMatrixScaled,
+			  _r, _c,
+			  outerIterations, innerIterations);
+      wasInitialGuess = false;
+    }
+    
+    dp1->setTransformation(T1_0.inverse());
+    dn0->setTransformation(Isometry3f::Identity());
+    dn1->setTransformation(T1_0.inverse());
+    dc0->setTransformation(Isometry3f::Identity());
+    dc1->setTransformation(T1_0.inverse());
+    dcorr->setTransformation(T1_0.inverse());
+    
+    dmMW.viewer_3d->clearDrawableList();
+    if (pointsViewer[0]) {
+      p0Param->setColor(Vector4f(0.0f, 1.0f, 0.0f, 0.5f));
+      p0Param->setPointSize(pointsViewer[1]);
+      p1Param->setPointSize(pointsViewer[1]);
+      if (stepViewer[0]) {
+	dp0->setStep(stepViewer[1]);
+	dp1->setStep(stepViewer[1]);
+      }
+      dmMW.viewer_3d->addDrawable((Drawable*)dp0);
+      dmMW.viewer_3d->addDrawable((Drawable*)dp1);
+    }
+    if (normalsViewer[0]) {
+      n0Param->setNormalLength(normalsViewer[1]);
+      n1Param->setNormalLength(normalsViewer[1]);
+      if (stepViewer[0]) {
+	dn0->setStep(stepViewer[1]);
+	dn1->setStep(stepViewer[1]);
+      }
+      dmMW.viewer_3d->addDrawable((Drawable*)dn0);
+      dmMW.viewer_3d->addDrawable((Drawable*)dn1);
+    }
+    if(covariancesViewer[0]) {
+      c0Param->setEllipsoidScale(covariancesViewer[1]);
+      c1Param->setEllipsoidScale(covariancesViewer[1]);
+      if (stepViewer[0]) {
+	dc0->setStep(stepViewer[1]);
+	dc1->setStep(stepViewer[1]);
+      }
+      dmMW.viewer_3d->addDrawable((Drawable*)dc0);
+      dmMW.viewer_3d->addDrawable((Drawable*)dc1);
+    }
+    if(correspondencesViewer[0]) {
+      corrParam->setLineWidth(correspondencesViewer[1]);
+      if (stepViewer[0])
+	dcorr->setStep(stepViewer[1]);	
+      dmMW.viewer_3d->addDrawable((Drawable*)dcorr);
+    }
+    dmMW.viewer_3d->updateGL();
+    usleep(10000);
+  }
+  dmMW.viewer_3d->clearDrawableList();
+ 
+  delete(p0Param);
+  delete(p1Param);
+  delete(dp0);
+  delete(dp1);
+
+  return 0;
+}
+
+void computeRegistration(Isometry3f &T1_0, 
+			 Vector6fVector &cloud0, CovarianceSVDVector &svd0, CorrespondenceVector &correspondences, 
+			 Vector6fPtrMatrix &cloud0PtrScaled, Vector6fPtrMatrix &cloud1PtrScaled,
+			 Matrix6fPtrMatrix &omega0PtrScaled,
+			 CovarianceSVDPtrMatrix &svd0PtrScaled, CovarianceSVDPtrMatrix &svd1PtrScaled,
+			 Matrix6fPtrMatrix &corrOmegas1, Vector6fPtrMatrix &corrP0, Vector6fPtrMatrix &corrP1,
+			 Matrix6fVector &omega0, MatrixXf &zBuffer, Matrix3f &cameraMatrixScaled,
+			 int _r, int _c,
+			 int outerIterations, int innerIterations) {
   // Thresholds for normals matching.
-  float curvatureThreshold=0.02;
+  float curvatureThreshold = 0.02;
   float normalThreshold = M_PI/6;
-  for (int k = 0; k < iterations; k++) {
+  clock_t begin = getMilliSecs();
+  for (int k = 0; k < outerIterations; k++) {
     clock_t kstart = getMilliSecs();
     
     /**********************************************************************************
@@ -266,8 +398,8 @@ if (imageName0.length() == 0) {
     float error = 0.0f;
     int size = _r*_c;
     clock_t start = getMilliSecs();
-    int inl; 
-    for(int i=0; i<10; i++){
+    int inl = 0; 
+    for(int i=0; i<innerIterations; i++){
       inl = pwn_iteration(error, result,
 			  corrP0.data(),
 			  corrP1.data(),
@@ -284,86 +416,4 @@ if (imageName0.length() == 0) {
     cout << "---------------------------------------------------------------" << endl;  
   }
   cerr << "Total time needed to compute the whole stuffs: " << getMilliSecs() - begin << " ms" << endl;
-
-  /**** REGISTRATION VISUALIZATION****/
-  QApplication qApplication(argc, argv);
-  DMMainWindow dmMW;
-  dmMW.show();
-  int *stepViewer = 0;
-  float *pointsViewer = 0, *normalsViewer = 0, *covariancesViewer = 0, *correspondencesViewer = 0;
-  GLParameterPoints *p0Param = new GLParameterPoints();
-  GLParameterPoints *p1Param = new GLParameterPoints();
-  GLParameterNormals *n0Param = new GLParameterNormals();
-  GLParameterNormals *n1Param = new GLParameterNormals();
-  GLParameterCovariances *c0Param = new GLParameterCovariances();
-  GLParameterCovariances *c1Param = new GLParameterCovariances();
-  GLParameterCorrespondences *corrParam = new GLParameterCorrespondences();
-  DrawablePoints* dp0 = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)p0Param, 1, &cloud0);
-  DrawablePoints* dp1 = new DrawablePoints(T1_0.inverse(), (GLParameter*)p1Param, 1, &cloud1);
-  DrawableNormals *dn0 = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)n0Param, 1, &cloud0);
-  DrawableNormals *dn1 = new DrawableNormals(T1_0.inverse(), (GLParameter*)n0Param, 1, &cloud1);
-  DrawableCovariances *dc0 = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)c0Param, 1, &svd0);
-  DrawableCovariances *dc1 = new DrawableCovariances(T1_0.inverse(), (GLParameter*)c1Param, 1, &svd1);
-  DrawableCorrespondences* dcorr = new DrawableCorrespondences(T1_0.inverse(), (GLParameter*)corrParam, 1, &correspondences);
-  while (true) {
-    qApplication.processEvents();
-    
-    // Update state variables value.
-    stepViewer = dmMW.step();
-    pointsViewer = dmMW.points();
-    normalsViewer = dmMW.normals();
-    covariancesViewer = dmMW.covariances();
-    correspondencesViewer = dmMW.correspondences();
-    
-    // Checking state variable value.
-    dmMW.viewer_3d->clearDrawableList();
-    if (pointsViewer[0]) {
-      p0Param->setColor(Vector4f(1.0f, 0.0f, 0.0f, 0.5f));
-      p0Param->setPointSize(pointsViewer[1]);
-      p1Param->setPointSize(pointsViewer[1]);
-      if (stepViewer[0]) {
-	dp0->setStep(stepViewer[1]);
-	dp1->setStep(stepViewer[1]);
-      }
-      dmMW.viewer_3d->addDrawable((Drawable*)dp0);
-      dmMW.viewer_3d->addDrawable((Drawable*)dp1);
-    }
-    if (normalsViewer[0]) {
-      n0Param->setNormalLength(normalsViewer[1]);
-      n1Param->setNormalLength(normalsViewer[1]);
-      if (stepViewer[0]) {
-	dn0->setStep(stepViewer[1]);
-	dn1->setStep(stepViewer[1]);
-      }
-      dmMW.viewer_3d->addDrawable((Drawable*)dn0);
-      dmMW.viewer_3d->addDrawable((Drawable*)dn1);
-    }
-    if(covariancesViewer[0]) {
-      c0Param->setEllipsoidScale(covariancesViewer[1]);
-      c1Param->setEllipsoidScale(covariancesViewer[1]);
-      if (stepViewer[0]) {
-	dc0->setStep(stepViewer[1]);
-	dc1->setStep(stepViewer[1]);
-      }
-      dmMW.viewer_3d->addDrawable((Drawable*)dc0);
-      dmMW.viewer_3d->addDrawable((Drawable*)dc1);
-    }
-    if(correspondencesViewer[0]) {
-      corrParam->setLineWidth(correspondencesViewer[1]);
-      if (stepViewer[0])
-	dcorr->setStep(stepViewer[1]);	
-      dmMW.viewer_3d->addDrawable((Drawable*)dcorr);
-    }
-    dmMW.viewer_3d->updateGL();
-
-    usleep(10000);
-  }
-  dmMW.viewer_3d->clearDrawableList();
- 
-  delete(p0Param);
-  delete(p1Param);
-  delete(dp0);
-  delete(dp1);
-
-  return 0;
 }
