@@ -14,6 +14,5 @@ function J = line_jacobian(X, pl)
   D(1:3,1:3) = -skew(pl(4:6)) ;
   D(1:3,4:6) = -2*skew(pl(1:3));
   D(4:6,4:6) = -2*skew(pl(4:6));
-  J = A*D* sign(plRemapped(6));
-  J = J(1:5,1:6);
+  J = A*D;#* sign(plRemapped(6));
 endfunction;

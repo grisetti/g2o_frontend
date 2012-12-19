@@ -17,5 +17,4 @@ function J = line_jacobian_numeric(X, pl)
     Jl(:,i)=line_remapPluecker(X*v2t(dxl),pl);
   endfor
   J = (Ju-Jl)*iDelta;
-  J=J(1:5,1:6);
 endfunction;

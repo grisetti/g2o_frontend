@@ -6,7 +6,7 @@
 
 
 #  generate a transform
-gtx = [10 50 60 .5 .2 .3]';
+gtx = [1 5 6 .5 .2 .3]';
 gtX = v2t(gtx);
 printf("the ground truth transform is:\n");
 disp(gtX);
@@ -30,7 +30,7 @@ disp(tpl');
 disp ("pluecker->trnasform->transform-1");
 disp (pl - line_remapPluecker(inverse(gtX),tpl));
 
-np = 100;
+np = 5;
 tscale = 100;
 printf("Generating a sample set of %d lines with normal, distributed in a radius of %f meters\n\n", np, tscale);
 
@@ -46,9 +46,9 @@ endfor;
 
 X=eye(4);
 
-Omega=eye(5);
-Omega(1:3,1:3)*=1e-3;
-Omega(4:5,4:5)*=1000;
+Omega=eye(6);
+Omega(1:3,1:3)*=1000;
+Omega(4:6,4:6)*=1000;
 
 [Xs, es] = line_solve(Li, Lj, Omega, X, 10);
 

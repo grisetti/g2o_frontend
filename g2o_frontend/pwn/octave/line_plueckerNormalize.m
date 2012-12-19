@@ -3,5 +3,5 @@
 
 function npl = line_plueckerNormalize(pl)
   # normalize the direction to the unit vector
-  npl = pl* (1./norm(pl(4:6))) *sign(pl(6));
+  npl = pl* (1./norm(pl(4:6)));
 endfunction
