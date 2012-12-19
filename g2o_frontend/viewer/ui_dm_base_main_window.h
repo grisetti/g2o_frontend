@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'dm_base_main_window.ui'
 **
-** Created: Wed Dec 19 18:57:01 2012
+** Created: Wed Dec 19 22:56:48 2012
 **      by: Qt User Interface Compiler version 4.8.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -116,56 +116,67 @@ public:
         gridLayout->setObjectName(QString::fromUtf8("gridLayout"));
         checkBox_normals = new QCheckBox(centralwidget);
         checkBox_normals->setObjectName(QString::fromUtf8("checkBox_normals"));
+        checkBox_normals->setChecked(false);
 
         gridLayout->addWidget(checkBox_normals, 3, 0, 1, 1);
 
         spinBox_step = new QSpinBox(centralwidget);
         spinBox_step->setObjectName(QString::fromUtf8("spinBox_step"));
+        spinBox_step->setEnabled(true);
         spinBox_step->setMinimum(1);
 
         gridLayout->addWidget(spinBox_step, 1, 1, 1, 1);
 
         checkBox_correspondences = new QCheckBox(centralwidget);
         checkBox_correspondences->setObjectName(QString::fromUtf8("checkBox_correspondences"));
+        checkBox_correspondences->setEnabled(true);
 
         gridLayout->addWidget(checkBox_correspondences, 5, 0, 1, 1);
 
         checkBox_step = new QCheckBox(centralwidget);
         checkBox_step->setObjectName(QString::fromUtf8("checkBox_step"));
+        checkBox_step->setChecked(true);
 
         gridLayout->addWidget(checkBox_step, 1, 0, 1, 1);
 
         checkBox_points = new QCheckBox(centralwidget);
         checkBox_points->setObjectName(QString::fromUtf8("checkBox_points"));
+        checkBox_points->setChecked(true);
 
         gridLayout->addWidget(checkBox_points, 2, 0, 1, 1);
 
         checkBox_covariances = new QCheckBox(centralwidget);
         checkBox_covariances->setObjectName(QString::fromUtf8("checkBox_covariances"));
+        checkBox_covariances->setEnabled(true);
 
         gridLayout->addWidget(checkBox_covariances, 4, 0, 1, 1);
 
         doubleSpinBox_points = new QDoubleSpinBox(centralwidget);
         doubleSpinBox_points->setObjectName(QString::fromUtf8("doubleSpinBox_points"));
+        doubleSpinBox_points->setEnabled(true);
         doubleSpinBox_points->setSingleStep(0.25);
+        doubleSpinBox_points->setValue(1);
 
         gridLayout->addWidget(doubleSpinBox_points, 2, 1, 1, 1);
 
         doubleSpinBox_normals = new QDoubleSpinBox(centralwidget);
         doubleSpinBox_normals->setObjectName(QString::fromUtf8("doubleSpinBox_normals"));
+        doubleSpinBox_normals->setEnabled(false);
         doubleSpinBox_normals->setSingleStep(0.01);
 
         gridLayout->addWidget(doubleSpinBox_normals, 3, 1, 1, 1);
 
         doubleSpinBox_covariances = new QDoubleSpinBox(centralwidget);
         doubleSpinBox_covariances->setObjectName(QString::fromUtf8("doubleSpinBox_covariances"));
+        doubleSpinBox_covariances->setEnabled(false);
         doubleSpinBox_covariances->setSingleStep(0.01);
 
         gridLayout->addWidget(doubleSpinBox_covariances, 4, 1, 1, 1);
 
         doubleSpinBox_correspondences = new QDoubleSpinBox(centralwidget);
         doubleSpinBox_correspondences->setObjectName(QString::fromUtf8("doubleSpinBox_correspondences"));
-        doubleSpinBox_correspondences->setSingleStep(0.01);
+        doubleSpinBox_correspondences->setEnabled(false);
+        doubleSpinBox_correspondences->setSingleStep(0.25);
 
         gridLayout->addWidget(doubleSpinBox_correspondences, 5, 1, 1, 1);
 

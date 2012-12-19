@@ -45,10 +45,16 @@
           <property name="text">
            <string>Normals</string>
           </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
          </widget>
         </item>
         <item row="1" column="1">
          <widget class="QSpinBox" name="spinBox_step">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="minimum">
            <number>1</number>
           </property>
@@ -56,6 +62,9 @@
         </item>
         <item row="5" column="0">
          <widget class="QCheckBox" name="checkBox_correspondences">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="text">
            <string>Correspondences</string>
           </property>
@@ -66,6 +75,9 @@
           <property name="text">
            <string>Step</string>
           </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
          </widget>
         </item>
         <item row="2" column="0">
@@ -73,10 +85,16 @@
           <property name="text">
            <string>Points</string>
           </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
          </widget>
         </item>
         <item row="4" column="0">
          <widget class="QCheckBox" name="checkBox_covariances">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="text">
            <string>Covariances</string>
           </property>
@@ -84,13 +102,22 @@
         </item>
         <item row="2" column="1">
          <widget class="QDoubleSpinBox" name="doubleSpinBox_points">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="singleStep">
            <double>0.250000000000000</double>
+          </property>
+          <property name="value">
+           <double>1.000000000000000</double>
           </property>
          </widget>
         </item>
         <item row="3" column="1">
          <widget class="QDoubleSpinBox" name="doubleSpinBox_normals">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="singleStep">
            <double>0.010000000000000</double>
           </property>
@@ -98,6 +125,9 @@
         </item>
         <item row="4" column="1">
          <widget class="QDoubleSpinBox" name="doubleSpinBox_covariances">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="singleStep">
            <double>0.010000000000000</double>
           </property>
@@ -105,8 +135,11 @@
         </item>
         <item row="5" column="1">
          <widget class="QDoubleSpinBox" name="doubleSpinBox_correspondences">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="singleStep">
-           <double>0.010000000000000</double>
+           <double>0.250000000000000</double>
           </property>
          </widget>
         </item>

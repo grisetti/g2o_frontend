@@ -255,9 +255,7 @@ if (imageName0.length() == 0) {
     }
     
     dp1->setTransformation(T1_0.inverse());
-    dn0->setTransformation(Isometry3f::Identity());
     dn1->setTransformation(T1_0.inverse());
-    dc0->setTransformation(Isometry3f::Identity());
     dc1->setTransformation(T1_0.inverse());
     dcorr->setTransformation(T1_0.inverse());
     
