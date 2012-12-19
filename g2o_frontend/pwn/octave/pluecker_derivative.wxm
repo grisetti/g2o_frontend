@@ -2,15 +2,29 @@
 /* [ Created with wxMaxima version 11.08.0 ] */
 
 /* [wxMaxima: input   start ] */
-min2ext(l):=[l[1], l[2], l[3], l[4], l[5], sqrt(1-l[4]^2-l[5]^2)];
-normalize(l):= 1./sqrt(l[4]^2+l[5]^2+l[6]^2);
+normalize(l):= 1./sqrt(l[4]^2+l[5]^2+l[6]^2)$
+d_l:[d_ax, d_ay, d_az, d_bx, d_by, d_bz]$
+l:[ax, ay, az, bx, by, bz]$
+lpdl:append(normalize(l+d_l)*(l+d_l), [(l[4]+d_l[4])^2 + (l[5]+d_l[5])^2 + (l[6]+d_l[6])^2 - 1]);
 
-d_l:[d_ax, d_ay, d_az, d_bx, d_by]$
-l:[ax,ay,az,bx,by,bz]$
-lpdl:normalize(l+min2ext(d_l))*(l+min2ext(d_l))$
 J1:jacobian(lpdl,d_l)$
-J1_0:ev(J1,d_ax:0, d_ay:0,d_az:0, d_bx:0, d_by:0);
-ratsubst(ln,sqrt((bz+1)^2+by^2+bx^2),J1_0);
+J1_0:ev(J1,d_ax:0, d_ay:0,d_az:0, d_bx:0, d_by:0, d_bz:0)$
+ratsubst(ln,sqrt(bz^2+by^2+bx^2),J1_0);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+e:[(x^2+y^2+z^2-1)];
+Je:jacobian(e,[x,y,z]);
+H:transpose(Je).Je;
+b=-transpose(Je).e;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+kill(all);
 /* [wxMaxima: input   end   ] */
 
 /* Maxima can't load/batch files which end with a comment! */
