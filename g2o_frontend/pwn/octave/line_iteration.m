@@ -26,7 +26,6 @@ function [Xnew, err]= line_iteration(Li, Lj, Omega, X)
     # disp("ljremapped");
     # disp(ljRemapped');
     eij = li_ - ljRemapped;
-    eij = eij(1:5);
     # disp("eij");
     # disp(eij');
     #Jij_n = - line_jacobian_numeric(X, lj);
@@ -35,14 +34,12 @@ function [Xnew, err]= line_iteration(Li, Lj, Omega, X)
     fJij_a = line_jacobian_full(X, lj);
     fJij_n = line_jacobian_numeric_full(X, lj);
 
-    if (norm(fJij_n-fJij_a)>1)
+    if (norm((fJij_n-fJij_a)(6:6))>1)
       disp("************** difference ************** ");
       disp(" norm:");
       disp(norm(fJij_n-fJij_a));
       disp(" lj:");
       disp(lj');
-      disp(" changeDir:");
-      disp((lj(4:6)'*ljRemapped(4:6)));
       disp(" ljRemapped:");
       disp(ljRemapped');
       disp(" fJn:");
