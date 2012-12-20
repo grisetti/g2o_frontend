@@ -205,7 +205,7 @@ if (imageName0.length() == 0) {
   QApplication qApplication(argc, argv);
   QGraphicsScene *scn0, *scn1;
   ColorMap cmap;
-  cmap.compute(0, 3000, 0xff);
+  cmap.compute(0, 7000, 0xff);
   QString filename0 = "cloud0.pgm";
   QString filename1 = "cloud1.pgm";  
 
