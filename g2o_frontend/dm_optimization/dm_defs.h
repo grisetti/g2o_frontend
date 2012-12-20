@@ -1,5 +1,5 @@
-#ifndef PWN_DEFS_H
-#define PWN_DEFS_H
+#ifndef DM_DEFS_H
+#define DM_DEFS_H
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>

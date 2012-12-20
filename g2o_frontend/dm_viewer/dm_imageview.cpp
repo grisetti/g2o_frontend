@@ -1,4 +1,4 @@
-#include "pwn_imageview.h"
+#include "dm_imageview.h"
 
 ColorMap::ColorMap() {
   compute (0, 255, 0xff);

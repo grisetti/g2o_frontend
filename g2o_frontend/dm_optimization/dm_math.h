@@ -1,7 +1,7 @@
-#ifndef PWN_MATH_H
-#define PWN_MATH_H
+#ifndef DM_MATH_H
+#define DM_MATH_H
 
-#include "pwn_defs.h"
+#include "dm_defs.h"
 
 inline Eigen::Matrix3f quat2mat(const Eigen::Vector3f& q)
 {

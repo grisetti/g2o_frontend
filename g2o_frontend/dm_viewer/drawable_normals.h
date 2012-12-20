@@ -1,7 +1,7 @@
 #ifndef DRAWABLE_NORMALS
 #define DRAWABLE_NORMALS
 
-#include "../pwn/pwn_defs.h"
+#include "../dm_optimization/dm_defs.h"
 #include "drawable.h"
 
 class DrawableNormals : public Drawable {

@@ -29,7 +29,7 @@
 #include <QtGui/QStatusBar>
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QWidget>
-#include "dm_qglviewer.h"
+#include "../../dm_viewer/dm_qglviewer.h"
 
 QT_BEGIN_NAMESPACE
 

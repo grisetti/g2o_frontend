@@ -1,7 +1,7 @@
 #ifndef DRAWABLE_COVARIANCES
 #define DRAWABLE_COVARIANCES
 
-#include "../pwn/pwn_defs.h"
+#include "../dm_optimization/dm_defs.h"
 #include "drawable.h"
 
 class DrawableCovariances : public Drawable {

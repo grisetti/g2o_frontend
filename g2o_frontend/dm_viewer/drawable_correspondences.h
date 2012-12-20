@@ -1,7 +1,7 @@
 #ifndef DRAWABLE_CORRESPONDENCES
 #define DRAWABLE_CORRESPONDENCES
 
-#include "../pwn/pwn_defs.h"
+#include "../dm_optimization/dm_defs.h"
 #include "drawable.h"
 
 class DrawableCorrespondences : public Drawable {

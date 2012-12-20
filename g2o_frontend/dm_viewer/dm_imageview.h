@@ -1,6 +1,6 @@
-#ifndef _PWN_IMAGEVIEW_H_
-#define _PWN_IMAGEVIEW_H_
-#include "pwn_cloud.h"
+#ifndef DM_IMAGEVIEW_H_
+#define DM_IMAGEVIEW_H_
+#include "../dm_optimization/dm_cloud.h"
 #include <qimage.h>
 #include <qlabel.h>
 

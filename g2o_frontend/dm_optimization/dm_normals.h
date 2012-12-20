@@ -1,7 +1,7 @@
-#ifndef PWN_NORMALS_H
-#define PWN_NORMALS_H
+#ifndef DM_NORMALS_H
+#define DM_NORMALS_H
 
-#include "pwn_defs.h"
+#include "dm_defs.h"
 #include <Eigen/Dense>
 #include <vector>
 #include <queue>

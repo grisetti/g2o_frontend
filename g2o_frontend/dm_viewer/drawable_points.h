@@ -1,7 +1,7 @@
 #ifndef DRAWABLE_POINTS
 #define DRAWABLE_POINTS
 
-#include "../pwn/pwn_defs.h"
+#include "../dm_optimization/dm_defs.h"
 #include "drawable.h"
 
 class DrawablePoints : public Drawable {

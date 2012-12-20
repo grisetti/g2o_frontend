@@ -1,8 +1,7 @@
-#include "pwn_normals.h"
-#include "pwn_math.h"
+#include "dm_normals.h"
+#include "dm_math.h"
 #include <math.h>
 #include <Eigen/SVD>
-#include <iostream>
 
 using namespace std;
 

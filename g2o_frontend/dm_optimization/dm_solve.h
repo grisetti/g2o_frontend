@@ -1,7 +1,7 @@
-#ifndef PWN_SOLVE_H
-#define PWN_SOLVE_H
+#ifndef DM_SOLVE_H
+#define DM_SOLVE_H
 
-#include "pwn_cloud.h"
+#include "dm_cloud.h"
 
 int pwn_iteration(float& error, Eigen::Isometry3f& Xnew,
 		   const Vector6f* const * refPoints,
