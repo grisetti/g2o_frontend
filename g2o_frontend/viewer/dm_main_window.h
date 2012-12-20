@@ -8,6 +8,7 @@ class DMMainWindow : public QMainWindow, public Ui::MainWindow {
  public:
   DMMainWindow(QWidget *parent = 0, Qt::WindowFlags flags = 0);
   ~DMMainWindow();
+  bool* closing() { return &_closing; }
   bool* initialGuess() { return &_initialGuess; }
   bool* optimize() { return &_optimize; }
   int* stepByStep() { return &_stepByStep; }
@@ -18,6 +19,7 @@ class DMMainWindow : public QMainWindow, public Ui::MainWindow {
   float* correspondences() { return &_correspondences[0]; }
   QGraphicsScene* scene0() { return _scene0; }
   QGraphicsScene* scene1() { return _scene1; }
+  void closeEvent(QCloseEvent*) { _closing = 1; }
 
  private slots:
   // Checkbox slots.
@@ -41,6 +43,7 @@ class DMMainWindow : public QMainWindow, public Ui::MainWindow {
   // Scenes for graphicsview widgets.
   QGraphicsScene* _scene0, *_scene1;
   // State variables.
+  bool _closing;
   bool _initialGuess;
   bool _optimize;
   int _stepByStep;

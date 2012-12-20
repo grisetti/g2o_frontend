@@ -205,7 +205,7 @@ if (imageName0.length() == 0) {
   QApplication qApplication(argc, argv);
   QGraphicsScene *scn0, *scn1;
   ColorMap cmap;
-  cmap.compute(500, 3000, 0xff);
+  cmap.compute(0, 3000, 0xff);
   QString filename0 = "cloud0.pgm";
   QString filename1 = "cloud1.pgm";  
 
@@ -230,7 +230,7 @@ if (imageName0.length() == 0) {
   DrawableCovariances *dc0 = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)c0Param, 1, &svd0);
   DrawableCovariances *dc1 = new DrawableCovariances(T1_0.inverse(), (GLParameter*)c1Param, 1, &svd1);
   DrawableCorrespondences* dcorr = new DrawableCorrespondences(T1_0.inverse(), (GLParameter*)corrParam, 1, &correspondences);
-  while (true) {
+  while (!(*dmMW.closing())) {
     qApplication.processEvents();
     
     // Update state variables value.
@@ -267,8 +267,8 @@ if (imageName0.length() == 0) {
       QImage qImage1(filename1);
       toQImage(qImage0, img0, cmap);
       toQImage(qImage1, img1, cmap);
-      scn0->addPixmap(QPixmap::fromImage(qImage0));
-      scn1->addPixmap(QPixmap::fromImage(qImage1));
+      scn0->addPixmap((QPixmap::fromImage(qImage0)).scaled(QSize((int)_c/(scale*3), (int)(_r/(scale*3)))));
+      scn1->addPixmap((QPixmap::fromImage(qImage1)).scaled(QSize((int)_c/(scale*3), (int)(_r/(scale*3)))));
       dmMW.graphicsView1_2d->show();
       dmMW.graphicsView2_2d->show();
     }
@@ -290,8 +290,8 @@ if (imageName0.length() == 0) {
       QImage qImage1(filename1);
       toQImage(qImage0, img0, cmap);
       toQImage(qImage1, img1, cmap);
-      scn0->addPixmap(QPixmap::fromImage(qImage0));
-      scn1->addPixmap(QPixmap::fromImage(qImage1));
+      scn0->addPixmap((QPixmap::fromImage(qImage0)).scaled(QSize((int)_c/(scale*3), (int)(_r/(scale*3)))));
+      scn1->addPixmap((QPixmap::fromImage(qImage1)).scaled(QSize((int)_c/(scale*3), (int)(_r/(scale*3)))));
       dmMW.graphicsView1_2d->show();
       dmMW.graphicsView2_2d->show();
     }

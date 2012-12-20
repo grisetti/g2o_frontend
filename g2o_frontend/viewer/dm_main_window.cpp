@@ -8,8 +8,13 @@ DMMainWindow::DMMainWindow(QWidget *parent, Qt::WindowFlags flags) : QMainWindow
   _scene1 = new QGraphicsScene();
   graphicsView1_2d->setScene(_scene0);
   graphicsView2_2d->setScene(_scene1);
-
-  // Variable initialization.
+  /*graphicsView1_2d->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  graphicsView1_2d->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);  
+  graphicsView2_2d->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  graphicsView2_2d->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff); */
+  
+  // Variable initialization
+  _closing = 0;
   _initialGuess = 1;
   _optimize = 0;
   _stepByStep = 0;

@@ -1,7 +1,7 @@
 /********************************************************************************
-** Form generated from reading UI file 'dm_base_main_window.ui'
+** Form generated from reading UI file 'dm_base_main_window_test.ui'
 **
-** Created: Thu Dec 20 02:08:17 2012
+** Created: Thu Dec 20 10:26:54 2012
 **      by: Qt User Interface Compiler version 4.8.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -209,7 +209,7 @@ public:
 
         graphicsView1_2d = new QGraphicsView(centralwidget);
         graphicsView1_2d->setObjectName(QString::fromUtf8("graphicsView1_2d"));
-        QSizePolicy sizePolicy2(QSizePolicy::Minimum, QSizePolicy::Expanding);
+        QSizePolicy sizePolicy2(QSizePolicy::Minimum, QSizePolicy::Minimum);
         sizePolicy2.setHorizontalStretch(0);
         sizePolicy2.setVerticalStretch(0);
         sizePolicy2.setHeightForWidth(graphicsView1_2d->sizePolicy().hasHeightForWidth());
