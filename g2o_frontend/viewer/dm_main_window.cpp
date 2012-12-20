@@ -3,6 +3,12 @@
 DMMainWindow::DMMainWindow(QWidget *parent, Qt::WindowFlags flags) : QMainWindow(parent, flags) {
   setupUi(this);
 
+  // Create scenes for graphicsview widgets and set them.
+  _scene0 = new QGraphicsScene();
+  _scene1 = new QGraphicsScene();
+  graphicsView1_2d->setScene(_scene0);
+  graphicsView2_2d->setScene(_scene1);
+
   // Variable initialization.
   _initialGuess = 1;
   _optimize = 0;

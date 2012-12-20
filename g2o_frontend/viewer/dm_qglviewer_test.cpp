@@ -187,6 +187,14 @@ if (imageName0.length() == 0) {
 	    cameraMatrixScaled,
 	    zBuffer);
 
+  
+  MatrixXus img0(_r, _c);
+  depth2img(img0, zBuffer);
+  file = fopen("cloud1.pgm", "wb");
+  if (!writePgm(img0, file))
+    cout << "Error while writing cloud1." << endl;
+  fclose(file);
+
   Isometry3f T1_0 =Isometry3f::Identity();
   CorrespondenceVector correspondences;
   correspondences.clear();
@@ -204,8 +212,13 @@ if (imageName0.length() == 0) {
 
   /**** REGISTRATION VISUALIZATION****/
   QApplication qApplication(argc, argv);
+  QGraphicsScene *scn0, *scn1;
+  
+
   DMMainWindow dmMW;
   dmMW.show();
+  scn0 = dmMW.scene0();
+  scn1 = dmMW.scene1();
   bool *initialGuessViewer = 0, *optimizeViewer = 0;
   int *stepViewer = 0, *stepByStepViewer = 0;
   float *pointsViewer = 0, *normalsViewer = 0, *covariancesViewer = 0, *correspondencesViewer = 0;
@@ -245,7 +258,7 @@ if (imageName0.length() == 0) {
     // Registration.
     else if(*optimizeViewer && !(*stepByStepViewer)) {
       *optimizeViewer = 0;
-      computeRegistration(T1_0, 
+       computeRegistration(T1_0, 
 			  cloud0, svd0, correspondences, 
 			  cloud0PtrScaled, cloud1PtrScaled,
 			  omega0PtrScaled,
@@ -253,7 +266,15 @@ if (imageName0.length() == 0) {
 			  corrOmegas1, corrP0, corrP1,
 			  omega0, zBuffer, cameraMatrixScaled,
 			  _r, _c,
-			  outerIterations, innerIterations);  
+			  outerIterations, innerIterations);
+      scn0->clear();
+      scn1->clear();
+      QPixmap pix0("cloud0.pgm");
+      QPixmap pix1("cloud1.pgm");
+      scn0->addPixmap(pix0);
+      scn1->addPixmap(pix1);
+      dmMW.graphicsView1_2d->show();
+      dmMW.graphicsView2_2d->show();
     }
     // Step by step registration.
     else if(*optimizeViewer && *stepByStepViewer) {
@@ -267,13 +288,21 @@ if (imageName0.length() == 0) {
 			  omega0, zBuffer, cameraMatrixScaled,
 			  _r, _c,
 			  1, innerIterations);
+      scn0->clear();
+      scn1->clear();
+      QPixmap pix0("cloud0.pgm");
+      QPixmap pix1("cloud1.pgm");
+      scn0->addPixmap(pix0);
+      scn1->addPixmap(pix1);
+      dmMW.graphicsView1_2d->show();
+      dmMW.graphicsView2_2d->show();
     }
     
     dp1->setTransformation(T1_0.inverse());
     dn1->setTransformation(T1_0.inverse());
     dc1->setTransformation(T1_0.inverse());
     dcorr->setTransformation(T1_0.inverse());
-    
+
     dmMW.viewer_3d->clearDrawableList();
     if (pointsViewer[0]) {
       p0Param->setColor(Vector4f(0.0f, 1.0f, 0.0f, 0.5f));
@@ -368,6 +397,14 @@ void computeRegistration(Isometry3f &T1_0,
 	      T1_0.inverse(),
 	      cameraMatrixScaled,
 	      zBuffer);
+
+    MatrixXus img0(_r, _c);
+    depth2img(img0, zBuffer);
+    FILE* file;
+    file = fopen("cloud0.pgm", "wb");
+    if (!writePgm(img0, file))
+      cout << "Error while writing cloud1." << endl;
+    fclose(file);
 
     corrOmegas1.fill(0);
     corrP0.fill(0);

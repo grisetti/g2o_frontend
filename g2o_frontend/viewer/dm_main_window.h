@@ -16,6 +16,8 @@ class DMMainWindow : public QMainWindow, public Ui::MainWindow {
   float* normals() { return &_normals[0]; }
   float* covariances() { return &_covariances[0]; }
   float* correspondences() { return &_correspondences[0]; }
+  QGraphicsScene* scene0() { return _scene0; }
+  QGraphicsScene* scene1() { return _scene1; }
 
  private slots:
   // Checkbox slots.
@@ -36,6 +38,9 @@ class DMMainWindow : public QMainWindow, public Ui::MainWindow {
   void slotOptimizeClicked() { _optimize = 1; }//{ _initialGuess = 0; _optimize = 1; }
 
  protected:
+  // Scenes for graphicsview widgets.
+  QGraphicsScene* _scene0, *_scene1;
+  // State variables.
   bool _initialGuess;
   bool _optimize;
   int _stepByStep;
