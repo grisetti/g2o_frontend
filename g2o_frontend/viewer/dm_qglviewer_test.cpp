@@ -19,11 +19,12 @@
 #include "../pwn/pwn_solve.h"
 #include "../pwn/pwn_utils.h"
 #include "../pwn/pwn_math.h"
+#include "../pwn/pwn_imageview.h"
 
 using namespace std;
 using namespace Eigen;
 
-void computeRegistration(Isometry3f &T1_0, 
+void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
 			 Vector6fVector &cloud0, CovarianceSVDVector &svd0, CorrespondenceVector &correspondences, 
 			 Vector6fPtrMatrix &cloud0PtrScaled, Vector6fPtrMatrix &cloud1PtrScaled,
 			 Matrix6fPtrMatrix &omega0PtrScaled,
@@ -186,9 +187,8 @@ if (imageName0.length() == 0) {
 	    Isometry3f::Identity(),
 	    cameraMatrixScaled,
 	    zBuffer);
-
   
-  MatrixXus img0(_r, _c);
+  MatrixXus img0(_r, _c),img1(_r, _c);
   depth2img(img0, zBuffer);
   file = fopen("cloud1.pgm", "wb");
   if (!writePgm(img0, file))
@@ -200,20 +200,14 @@ if (imageName0.length() == 0) {
   correspondences.clear();
   int outerIterations = 10;
   int innerIterations = 10;
-  /*computeRegistration(T1_0, 
-		      cloud0, svd0, correspondences, 
-		      cloud0PtrScaled, cloud1PtrScaled,
-		      omega0PtrScaled,
-		      svd0PtrScaled, svd1PtrScaled,
-		      corrOmegas1, corrP0, corrP1,
-		      omega0, zBuffer, cameraMatrixScaled,
-		      _r, _c,
-		      outerIterations, innerIterations);*/
-
+  
   /**** REGISTRATION VISUALIZATION****/
   QApplication qApplication(argc, argv);
   QGraphicsScene *scn0, *scn1;
-  
+  ColorMap cmap;
+  cmap.compute(500, 3000, 0xff);
+  QString filename0 = "cloud0.pgm";
+  QString filename1 = "cloud1.pgm";  
 
   DMMainWindow dmMW;
   dmMW.show();
@@ -258,7 +252,7 @@ if (imageName0.length() == 0) {
     // Registration.
     else if(*optimizeViewer && !(*stepByStepViewer)) {
       *optimizeViewer = 0;
-       computeRegistration(T1_0, 
+      computeRegistration(T1_0, img1, 
 			  cloud0, svd0, correspondences, 
 			  cloud0PtrScaled, cloud1PtrScaled,
 			  omega0PtrScaled,
@@ -269,17 +263,19 @@ if (imageName0.length() == 0) {
 			  outerIterations, innerIterations);
       scn0->clear();
       scn1->clear();
-      QPixmap pix0("cloud0.pgm");
-      QPixmap pix1("cloud1.pgm");
-      scn0->addPixmap(pix0);
-      scn1->addPixmap(pix1);
+      QImage qImage0(filename0);
+      QImage qImage1(filename1);
+      toQImage(qImage0, img0, cmap);
+      toQImage(qImage1, img1, cmap);
+      scn0->addPixmap(QPixmap::fromImage(qImage0));
+      scn1->addPixmap(QPixmap::fromImage(qImage1));
       dmMW.graphicsView1_2d->show();
       dmMW.graphicsView2_2d->show();
     }
     // Step by step registration.
     else if(*optimizeViewer && *stepByStepViewer) {
       *optimizeViewer = 0;
-      computeRegistration(T1_0, 
+      computeRegistration(T1_0, img1,
 			  cloud0, svd0, correspondences, 
 			  cloud0PtrScaled, cloud1PtrScaled,
 			  omega0PtrScaled,
@@ -290,10 +286,12 @@ if (imageName0.length() == 0) {
 			  1, innerIterations);
       scn0->clear();
       scn1->clear();
-      QPixmap pix0("cloud0.pgm");
-      QPixmap pix1("cloud1.pgm");
-      scn0->addPixmap(pix0);
-      scn1->addPixmap(pix1);
+      QImage qImage0(filename0);
+      QImage qImage1(filename1);
+      toQImage(qImage0, img0, cmap);
+      toQImage(qImage1, img1, cmap);
+      scn0->addPixmap(QPixmap::fromImage(qImage0));
+      scn1->addPixmap(QPixmap::fromImage(qImage1));
       dmMW.graphicsView1_2d->show();
       dmMW.graphicsView2_2d->show();
     }
@@ -364,7 +362,7 @@ if (imageName0.length() == 0) {
   return 0;
 }
 
-void computeRegistration(Isometry3f &T1_0, 
+void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
 			 Vector6fVector &cloud0, CovarianceSVDVector &svd0, CorrespondenceVector &correspondences, 
 			 Vector6fPtrMatrix &cloud0PtrScaled, Vector6fPtrMatrix &cloud1PtrScaled,
 			 Matrix6fPtrMatrix &omega0PtrScaled,
@@ -398,11 +396,10 @@ void computeRegistration(Isometry3f &T1_0,
 	      cameraMatrixScaled,
 	      zBuffer);
 
-    MatrixXus img0(_r, _c);
-    depth2img(img0, zBuffer);
+    depth2img(img1, zBuffer);
     FILE* file;
     file = fopen("cloud0.pgm", "wb");
-    if (!writePgm(img0, file))
+    if (!writePgm(img1, file))
       cout << "Error while writing cloud1." << endl;
     fclose(file);
 

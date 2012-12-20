@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'dm_base_main_window.ui'
 **
-** Created: Wed Dec 19 22:56:48 2012
+** Created: Thu Dec 20 02:08:17 2012
 **      by: Qt User Interface Compiler version 4.8.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
