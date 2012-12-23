@@ -5,7 +5,7 @@
 function ncl = line_cartesianNormalize(cl)
   # normalize the direction to the unit vector
   ncl=zeros(6,1);
-  ncl(4:6) = cl(4:6)/norm(cl(4:6))*sign(cl(6));
+  ncl(4:6) = cl(4:6)/norm(cl(4:6));
   # set p0 to the point closest to the origin
   ncl(1:3) = cl(1:3) - ncl(4:6) * dot(ncl(4:6),cl(1:3));
 endfunction

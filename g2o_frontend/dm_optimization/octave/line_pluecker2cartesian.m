@@ -5,6 +5,5 @@ function cartesian = line_pluecker2cartesian(pluecker)
   cartesian=zeros(6,1);
   cartesian(4:6) = pluecker(4:6)*(1./norm(pluecker(4:6)));
   A=-skew(pluecker(4:6));
-  cartesian(1:3) = pinv(A)*pluecker(1:3); #this does the pseudo inversion to find the minimum norm v
-  #cartesian = line_cartesianNormalize(cartesian);
+  cartesian(1:3) = (A'*A + eye(3)*1e-9)\(A'*pluecker(1:3)); #this does the pseudo inversion to find the minimum norm v
 end

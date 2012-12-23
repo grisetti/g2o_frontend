@@ -50,7 +50,9 @@ Omega=eye(6);
 Omega(1:3,1:3)*=1000;
 Omega(4:6,4:6)*=1000;
 
-[Xs, es] = line_solve(Li, Lj, Omega, X, 10);
+[Xs, es] = line_solve(Li, Lj, Omega, X, 10)
+
+[Xs2, es2] = line_linearSolve(Li, Lj, Omega, X)
 
 
 
