@@ -177,6 +177,16 @@ if (imageName0.length() == 0) {
   Vector6fPtrMatrix corrP0(_r,_c);
   Vector6fPtrMatrix corrP1(_r,_c);
 
+  // Scale cloud0.
+  cloud2mat(cloud0PtrScaled,
+	    omega0PtrScaled,
+	    svd0PtrScaled,
+	    cloud0,
+	    omega0,
+	    svd0,
+	    Isometry3f::Identity(),
+	    cameraMatrixScaled,
+	    zBuffer);
   // Scale cloud1.
   cloud2mat(cloud1PtrScaled,
 	    omega1PtrScaled,
