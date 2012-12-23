@@ -206,7 +206,7 @@ void svd2omega(Matrix6fVector &omega, const CovarianceSVDVector &covariance){
   float Kn = 1e3f;
   float curvatureThreshold = 0.02f;
   float curvatureOffset = 1e-5;
-  Diagonal3f flatOmegaDiagonal(1e6, 1e-9, 1e-9);
+  Diagonal3f flatOmegaDiagonal(1e12, 1e-6, 1e-6);
   omega.resize(covariance.size());
   for (size_t i=0; i<omega.size(); i++){
       const SVDMatrix3f &cov = covariance[i];
