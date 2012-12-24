@@ -18,10 +18,9 @@ void remapCloud(Vector6fVector& destPoints,
     destPoints[i] = remapPoint(X, srcPoints[i]);
   }
   for (size_t i=0; i<destOmegas.size(); i++){
-    //destOmegas[i].setZero();
-    //destOmegas[i].block<3,3>(0,0)= X.linear() * srcOmegas[i].block<3,3>(0,0) * X.linear().transpose();
-    //destOmegas[i].block<3,3>(3,3)= X.linear() * srcOmegas[i].block<3,3>(3,3) * X.linear().transpose();
-    destOmegas[i] = srcOmegas[i];
+    destOmegas[i].setZero();
+    destOmegas[i].block<3,3>(0,0)= X.linear() * srcOmegas[i].block<3,3>(0,0) * X.linear().transpose();
+    destOmegas[i].block<3,3>(3,3)= X.linear() * srcOmegas[i].block<3,3>(3,3) * X.linear().transpose();
   }
   for (size_t i=0; i<destSvdVec.size(); i++){
     destSvdVec[i].lambda = srcSvdVec[i].lambda;
@@ -206,7 +205,7 @@ void svd2omega(Matrix6fVector &omega, const CovarianceSVDVector &covariance){
   float Kn = 1e3f;
   float curvatureThreshold = 0.02f;
   float curvatureOffset = 1e-5;
-  Diagonal3f flatOmegaDiagonal(1e12, 1e-6, 1e-6);
+  Diagonal3f flatOmegaDiagonal(1e6, 1e-12, 1e-12);
   omega.resize(covariance.size());
   for (size_t i=0; i<omega.size(); i++){
       const SVDMatrix3f &cov = covariance[i];

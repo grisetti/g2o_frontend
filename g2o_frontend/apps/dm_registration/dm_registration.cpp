@@ -162,9 +162,9 @@ if (imageName0.length() == 0) {
    ************************************************************************************/
   // Scale factors.
   Matrix3f cameraMatrixScaled = cameraMatrix;
-  cameraMatrixScaled.block<2,3>(0, 0) *= scale;
-  int _r=((float)image0.rows()*scale);
-  int _c=((float)image0.cols()*scale);
+  cameraMatrixScaled.block<2, 3>(0, 0) *= scale;
+  int _r = ((float)image0.rows() * scale);
+  int _c = ((float)image0.cols() * scale);
 
   // Create scaled clouds variables.
   Vector6fPtrMatrix cloud0PtrScaled(_r, _c);
@@ -174,8 +174,8 @@ if (imageName0.length() == 0) {
   Matrix6fPtrMatrix omega1PtrScaled(_r, _c);
   CovarianceSVDPtrMatrix svd1PtrScaled(_r, _c);
   Matrix6fPtrMatrix corrOmegas1(_r, _c);
-  Vector6fPtrMatrix corrP0(_r,_c);
-  Vector6fPtrMatrix corrP1(_r,_c);
+  Vector6fPtrMatrix corrP0(_r, _c);
+  Vector6fPtrMatrix corrP1(_r, _c);
 
   // Scale cloud0.
   cloud2mat(cloud0PtrScaled,

@@ -38,4 +38,7 @@ struct Correspondence{
 
 typedef std::vector<Correspondence> CorrespondenceVector;
 
+typedef Eigen::Matrix<unsigned short, Eigen::Dynamic, Eigen::Dynamic> MatrixXus;
+typedef Eigen::DiagonalMatrix<float, 3, 3> Diagonal3f;
+
 #endif
