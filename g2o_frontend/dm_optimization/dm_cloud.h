@@ -11,10 +11,6 @@
 #define HI(num) (((num) & 0x0000FF00) >> 8)
 #define LO(num) ((num) & 0x000000FF)
 
-typedef Eigen::Matrix<unsigned short, Eigen::Dynamic, Eigen::Dynamic> MatrixXus;
-typedef Eigen::DiagonalMatrix<float, 3, 3> Diagonal3f;
-
-
 void remapCloud(Vector6fVector& destPoints,
 		Matrix6fVector& destOmegas,
 		CovarianceSVDVector& destSvdVec,

@@ -18,10 +18,9 @@ void remapCloud(Vector6fVector& destPoints,
     destPoints[i] = remapPoint(X, srcPoints[i]);
   }
   for (size_t i=0; i<destOmegas.size(); i++){
-    //destOmegas[i].setZero();
-    //destOmegas[i].block<3,3>(0,0)= X.linear() * srcOmegas[i].block<3,3>(0,0) * X.linear().transpose();
-    //destOmegas[i].block<3,3>(3,3)= X.linear() * srcOmegas[i].block<3,3>(3,3) * X.linear().transpose();
-    destOmegas[i] = srcOmegas[i];
+    destOmegas[i].setZero();
+    destOmegas[i].block<3,3>(0,0)= X.linear() * srcOmegas[i].block<3,3>(0,0) * X.linear().transpose();
+    destOmegas[i].block<3,3>(3,3)= X.linear() * srcOmegas[i].block<3,3>(3,3) * X.linear().transpose();
   }
   for (size_t i=0; i<destSvdVec.size(); i++){
     destSvdVec[i].lambda = srcSvdVec[i].lambda;
