@@ -60,7 +60,7 @@ typedef std::vector<CorrespondenceValidator*> CorrespondenceValidatorPtrVector;
 
   typedef AlignmentAlgorithm<Eigen::Isometry3d,g2o::VertexPointXYZ> AlignmentAlgorithmSE3PointXYZ;
   typedef AlignmentAlgorithm<Eigen::Isometry3d,g2o::VertexSE3>      AlignmentAlgorithmSE3SE3;
-  //typedef AlignmentAlgorithm<Eigen::Isometry3d,g2o::VertexLine3D>   AlignmentAlgorithmSE3Line3D;
+  typedef AlignmentAlgorithm<Eigen::Isometry3d,Slam3dAddons::VertexLine3D>   AlignmentAlgorithmSE3Line3D;
 
   
 class BaseGeneralizedRansac{
