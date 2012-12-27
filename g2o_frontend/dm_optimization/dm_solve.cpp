@@ -18,20 +18,16 @@ inline Matrix6f jacobian(const Eigen::Isometry3f& X, const Vector6f& p)
     return J;
 }
 
-inline int _pwn_iteration(float& error, Isometry3f& Xnew,
-                         const Vector6f* const * refPoints,
-                         const Vector6f* const * currPoints,
-                         const Matrix6f* const * omegas,
-                         size_t n,
-                         const Isometry3f& X,
-                         float inlierThreshold, /*inlier threshold*/
-                         int minInliers)
-{
-    Vector6f b = Vector6f::Zero();
-    Matrix6f H = Matrix6f::Zero();
+inline int _pwn_linearize(Matrix6f& H, Vector6f& b, float& error,
+			  const Vector6f* const * refPoints,
+			  const Vector6f* const * currPoints,
+			  const Matrix6f* const * omegas,
+			  size_t n,
+			  const Isometry3f& X,
+			  float inlierThreshold){
+    b = Vector6f::Zero();
+    H = Matrix6f::Zero();
     error = 0;
-    Xnew = X;
-
     int numInliers = 0;
     for(size_t i = 0; i < n; i++)
     {
@@ -45,17 +41,59 @@ inline int _pwn_iteration(float& error, Isometry3f& Xnew,
 	float localError = e.transpose() * omega * e;
         if(localError > inlierThreshold)
             continue;
-        error += localError;
         numInliers++;
+	error += localError;
         Matrix6f J = jacobian(X, pcurr);
         b += J.transpose() * omega * e;
         H += J.transpose() * omega * J;
     }
-    if(numInliers < minInliers)
-        return numInliers;
-    Vector6f dx = H.ldlt().solve(-b);
-    Xnew  = X*v2t(dx);
     return numInliers;
+}
+
+
+inline int _pwn_iteration(float& error, Isometry3f& Xnew,
+                         const Vector6f* const * refPoints,
+                         const Vector6f* const * currPoints,
+                         const Matrix6f* const * omegas,
+                         size_t n,
+                         const Isometry3f& X,
+                         float inlierThreshold, /*inlier threshold*/
+			 int minInliers, float lambda=0)
+{
+
+    Vector6f b = Vector6f::Zero();
+    Matrix6f H = Matrix6f::Zero();
+    
+    float initialError;
+    int initialInliers = _pwn_linearize(H, b, initialError,
+					refPoints, currPoints, omegas,
+					n, X, inlierThreshold);
+    if(initialInliers < minInliers)
+        return initialInliers;
+
+    
+    Matrix6f H2 = H +Matrix6f::Identity()*lambda;
+    Vector6f dx = H2.ldlt().solve(-b);
+    Xnew  = X*v2t(dx);
+    
+    error = 0;
+    int inliers = 0;
+    // now compute the error
+    for(size_t i = 0; i < n; i++) {
+      if(!refPoints[i] || !currPoints[i])
+	continue;
+      const Vector6f& pref  = *refPoints[i];
+      const Vector6f& pcurr = *currPoints[i];
+      const Matrix6f& omega = *omegas[i];
+      
+      Vector6f e = remapPoint(Xnew, pref) - pcurr;
+      float localError = e.transpose() * omega * e;
+      if(localError > inlierThreshold)
+            continue;
+      error += localError;
+      inliers++;
+    }
+    return inliers;
 }
 
 int pwn_iteration(float& error, Isometry3f& Xnew,

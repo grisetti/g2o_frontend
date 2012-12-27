@@ -10,7 +10,7 @@ int pwn_iteration(float& error, Eigen::Isometry3f& Xnew,
 		   size_t n,
 		  const Eigen::Isometry3f& X,
 		   float inlierThreshold, /*inlier threshold*/
-		   int minInliers);
+		  int minInliers);
 
 int pwn_align(float& error,
 	      Eigen::Isometry3f& Xnew,

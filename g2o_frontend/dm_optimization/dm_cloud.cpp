@@ -204,9 +204,10 @@ void svd2omega(Matrix6fVector &omega, const CovarianceSVDVector &covariance){
   
   float Kp = 1.0f;
   float Kn = 1e3f;
+  float nonFlatGain = 1.;
   float curvatureThreshold = 0.02f;
   float curvatureOffset = 1e-5;
-  Diagonal3f flatOmegaDiagonal(1e12, 1e-6, 1e-6);
+  Diagonal3f flatOmegaDiagonal(1e3, 1, 1);
   omega.resize(covariance.size());
   for (size_t i=0; i<omega.size(); i++){
       const SVDMatrix3f &cov = covariance[i];
@@ -218,7 +219,7 @@ void svd2omega(Matrix6fVector &omega, const CovarianceSVDVector &covariance){
 	Eigen::Matrix3f R = cov.isometry.linear();
 	Diagonal3f invLambda;
       	if (curvature>curvatureThreshold)
-	  invLambda = Diagonal3f(1.0f/cov.lambda[0], 1.0f/cov.lambda[1], 1.0f/cov.lambda[2]);
+	  invLambda = Diagonal3f(nonFlatGain/cov.lambda[0], nonFlatGain/cov.lambda[1], nonFlatGain/cov.lambda[2]);
 	else
 	  invLambda = flatOmegaDiagonal;
 	omegaP = R*invLambda*R.transpose();

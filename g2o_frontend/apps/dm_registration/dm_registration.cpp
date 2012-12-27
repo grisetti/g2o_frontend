@@ -146,6 +146,8 @@ if (imageName0.length() == 0) {
 	    zBuffer);
   
   // Compute normals.
+  
+  clock_t tNormals = getMilliSecs();
   cerr << "computing normals0... ";
   computeNormals(cloud0Ptr, curvature0, svd0Ptr, cameraMatrix, r, d, step, minPoints);
   svd2omega(omega0, svd0);
@@ -153,7 +155,7 @@ if (imageName0.length() == 0) {
   cerr << "computing normals1... ";
   computeNormals(cloud1Ptr, curvature1, svd1Ptr, cameraMatrix, r, d, step, minPoints);
   svd2omega(omega1, svd1);
-  cerr << "done !" << endl;
+  cerr << "done in " <<getMilliSecs()-tNormals << " ms" << endl;
   
   /************************************************************************************
    *                                                                                  *
@@ -209,7 +211,7 @@ if (imageName0.length() == 0) {
   CorrespondenceVector correspondences;
   correspondences.clear();
   int outerIterations = 10;
-  int innerIterations = 10;
+  int innerIterations = 3;
   
   /**** REGISTRATION VISUALIZATION****/
   QApplication qApplication(argc, argv);
@@ -405,13 +407,12 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
 	      T1_0.inverse(),
 	      cameraMatrixScaled,
 	      zBuffer);
-
     depth2img(img1, zBuffer);
-    FILE* file;
-    file = fopen("cloud0.pgm", "wb");
-    if (!writePgm(img1, file))
-      cout << "Error while writing cloud1." << endl;
-    fclose(file);
+    // FILE* file;
+    // file = fopen("cloud0.pgm", "wb");
+    // if (!writePgm(img1, file))
+    //   cout << "Error while writing cloud1." << endl;
+    // fclose(file);
 
     corrOmegas1.fill(0);
     corrP0.fill(0);
@@ -423,7 +424,11 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
      *                                                                                *
      **********************************************************************************/
     correspondences.clear();
+    correspondences.reserve(cloud1PtrScaled.cols()*cloud1PtrScaled.rows());
     int corrFound = 0;
+    float logRatioMax = .2;
+    float dmax = .5*.5;
+    int curved = 0;
     for (int i = 0; i < cloud1PtrScaled.cols(); i++) {
       for (int j = 0; j < cloud1PtrScaled.rows(); j++) {
 	if (! cloud0PtrScaled(j, i) || !cloud1PtrScaled(j, i))
@@ -438,14 +443,25 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
 	float c0 = svd0.curvature();
 	float c1 = svd1.curvature();
       
-	if (c0 > curvatureThreshold || c1 > curvatureThreshold)
+	float epsilon = 1e-9;
+	float ratio = log(c0+epsilon)-log(c1+epsilon);
+	if (c0 < curvatureThreshold && c1 < curvatureThreshold)
+	  ratio = 0;
+	if ((c0 > curvatureThreshold) != (c1 > curvatureThreshold))
+	  ratio = 10;
+	if (fabs(ratio)>logRatioMax)
 	  continue;
+	curved += (ratio !=0);
 	Vector6f p0Remapped = remapPoint(T1_0, p0);
 	Vector3f n0Remapped = p0Remapped.tail<3>();
 	Vector3f n1 = p1.tail<3>();
 
 	if (n0Remapped.dot(n1) < normalThreshold)
 	  continue;
+	Vector3f dp=p0Remapped.head<3>() - p1.head<3>();
+	if (dp.dot(dp)>dmax)
+	  continue;
+
 	correspondences.push_back(Correspondence(cloud0PtrScaled(j, i), cloud1PtrScaled(j, i)));	
 	corrP0(j, i) = &p0;
 	corrP1(j, i) = &p1;
@@ -453,7 +469,7 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
 	corrFound ++;
       }
     }
-    cerr << "found " << corrFound << " correspondences" << endl;
+    cerr << "found " << corrFound << " correspondences, curved:" << curved << endl;
     
     /************************************************************************************
      *                                                                                  *
@@ -473,9 +489,10 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
 			  corrOmegas1.data(),
 			  size,
 			  T1_0,
-			  numeric_limits<float>::max(),
+			  1e3,
 			  0);
       T1_0 = result;
+      cout << "\te: " << error/inl << " inl: " << inl << endl;
     }
     cout << "k: " << k << " " << inl << " " << error << " " << endl;
     cout << "Time optimization : " << getMilliSecs() - start << " ms" << endl;

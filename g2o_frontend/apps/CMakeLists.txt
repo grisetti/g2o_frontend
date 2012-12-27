@@ -1,2 +1,2 @@
-ADD_SUBDIRECTORY(dm_mapping)
+#ADD_SUBDIRECTORY(dm_mapping)
 ADD_SUBDIRECTORY(dm_registration)

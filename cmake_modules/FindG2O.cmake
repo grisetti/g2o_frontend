@@ -101,6 +101,8 @@ FIND_G2O_LIBRARY(G2O_TYPES_SCLAM2D types_sclam2d)
 FIND_G2O_LIBRARY(G2O_TYPES_SIM3 types_sim3)
 FIND_G2O_LIBRARY(G2O_TYPES_SLAM2D types_slam2d)
 FIND_G2O_LIBRARY(G2O_TYPES_SLAM3D types_slam3d)
+FIND_G2O_LIBRARY(G2O_TYPES_SLAM2D_ADDONS types_slam2d_addons)
+FIND_G2O_LIBRARY(G2O_TYPES_SLAM3D_ADDONS types_slam3d_addons)
 
 # G2O solvers declared found if we found at least one solver
 SET(G2O_SOLVERS_FOUND "NO")
