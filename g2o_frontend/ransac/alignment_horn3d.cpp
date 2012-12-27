@@ -16,7 +16,7 @@ namespace g2o_frontend{
 
     for (size_t i=0; i<indices.size(); i++){
       const Correspondence& c = correspondences[indices[i]];
-      const EdgeSE2* edge = static_cast<const g2o::EdgeSE2*>(c.edge());
+      const EdgePointXYZ* edge = static_cast<const g2o::EdgePointXYZ*>(c.edge());
       const VertexPointXYZ* v1 = static_cast<const g2o::VertexPointXYZ*>(edge->vertex(0));
       const VertexPointXYZ* v2 = static_cast<const g2o::VertexPointXYZ*>(edge->vertex(1));
       mean1 +=v1->estimate();
@@ -30,7 +30,7 @@ namespace g2o_frontend{
     Eigen::Matrix3d M=Eigen::Matrix3d::Zero();
     for (size_t i=0; i<indices.size(); i++){
       const Correspondence& c = correspondences[indices[i]];
-      const EdgeSE2* edge = static_cast<const g2o::EdgeSE2*>(c.edge());
+      const EdgePointXYZ* edge = static_cast<const g2o::EdgePointXYZ*>(c.edge());
       const VertexPointXYZ* v1 = static_cast<const g2o::VertexPointXYZ*>(edge->vertex(0));
       const VertexPointXYZ* v2 = static_cast<const g2o::VertexPointXYZ*>(edge->vertex(1));
       PointEstimateType p1 =v1->estimate()-mean1;

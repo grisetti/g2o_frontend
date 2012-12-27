@@ -2,6 +2,8 @@ ADD_LIBRARY(ransac ${G2O_FRONTEND_LIB_TYPE}
   ransac.cpp ransac.h
   alignment_horn2d.cpp alignment_horn2d.h
   alignment_horn3d.cpp alignment_horn3d.h
+  alignment_se2.cpp alignment_se2.h
+  alignment_se3.cpp alignment_se3.h
 )
 
 SET_TARGET_PROPERTIES(ransac PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_ransac)
