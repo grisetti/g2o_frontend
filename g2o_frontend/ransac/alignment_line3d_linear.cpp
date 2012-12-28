@@ -1,7 +1,9 @@
-#include "alignment_line3d.h"
+#include "alignment_line3d_linear.h"
 #include <Eigen/SVD>
 #include <Eigen/Cholesky>
 
+#include <iostream>
+using namespace std;
 
 namespace g2o_frontend{
   using namespace g2o;
@@ -31,19 +33,19 @@ namespace g2o_frontend{
 
   inline Vector12d matrix2vector(const Matrix4d& transform){
     Vector12d x;
-    x.block<1,3>(0,0)=transform.block<1,3>(0,0).transpose();
-    x.block<1,3>(0,3)=transform.block<1,3>(1,0).transpose();
-    x.block<1,3>(0,6)=transform.block<1,3>(2,0).transpose();
-    x.block<1,3>(0,9)=transform.block<3,1>(0,3);
+    x.block<3,1>(0,0)=transform.block<1,3>(0,0).transpose();
+    x.block<3,1>(3,0)=transform.block<1,3>(1,0).transpose();
+    x.block<3,1>(6,0)=transform.block<1,3>(2,0).transpose();
+    x.block<3,1>(9,0)=transform.block<3,1>(0,3);
     return x;
   }
   
   inline Matrix4d vector2matrix(const Vector12d x){
     Isometry3d transform=Isometry3d::Identity();
-    transform.matrix().block<1,3>(0,0)=x.block<1,3>(0,0).transpose();
-    transform.matrix().block<1,3>(1,0)=x.block<1,3>(0,3).transpose();
-    transform.matrix().block<1,3>(2,0)=x.block<1,3>(0,6).transpose();
-    transform.translation()=x.block<1,3>(0,9);
+    transform.matrix().block<1,3>(0,0)=x.block<3,1>(0,0).transpose();
+    transform.matrix().block<1,3>(1,0)=x.block<3,1>(3,0).transpose();
+    transform.matrix().block<1,3>(2,0)=x.block<3,1>(6,0).transpose();
+    transform.translation()=x.block<3,1>(9,0);
     return transform.matrix();
   }
 
@@ -53,6 +55,7 @@ namespace g2o_frontend{
   bool AlignmentAlgorithmLine3DLinear::operator()(AlignmentAlgorithmLine3DLinear::TransformType& transform, const CorrespondenceVector& correspondences, const IndexVector& indices){
     if ((int)indices.size()<minimalSetSize())
       return false;
+    transform = Isometry3d::Identity();
     Vector12d x=matrix2vector(transform.matrix());
         
     Matrix12d H;
@@ -63,7 +66,7 @@ namespace g2o_frontend{
     for (size_t i=0; i<indices.size(); i++){
       A.setZero();
       const Correspondence& c = correspondences[indices[i]];
-      const EdgeSE2* edge = static_cast<const g2o::EdgeSE2*>(c.edge()); // HACK
+      const EdgeLine3D* edge = static_cast<const EdgeLine3D*>(c.edge()); 
       const VertexLine3D* v1 = static_cast<const VertexLine3D*>(edge->vertex(0));
       const VertexLine3D* v2 = static_cast<const VertexLine3D*>(edge->vertex(1));
       const AlignmentAlgorithmLine3DLinear::PointEstimateType& li= v1->estimate();
@@ -81,7 +84,7 @@ namespace g2o_frontend{
       b+=A.transpose()*ek;
     }
     x=H.ldlt().solve(b); // using a LDLT factorizationldlt;
-
+    
     Matrix4d _X = transform.matrix()+vector2matrix(x);
     
     // recondition the rotation 
@@ -96,7 +99,7 @@ namespace g2o_frontend{
 
     for (size_t i=0; i<indices.size(); i++){
       const Correspondence& c = correspondences[indices[i]];
-      const EdgeSE2* edge = static_cast<const g2o::EdgeSE2*>(c.edge()); // HACK
+      const EdgeLine3D* edge = static_cast<const EdgeLine3D*>(c.edge()); 
       const VertexLine3D* v1 = static_cast<const VertexLine3D*>(edge->vertex(0));
       const VertexLine3D* v2 = static_cast<const VertexLine3D*>(edge->vertex(1));
       const AlignmentAlgorithmLine3DLinear::PointEstimateType& li= v1->estimate();

@@ -75,6 +75,9 @@ public:
   inline const CorrespondenceValidatorPtrVector& correspondenceValidators() const {return _correspondenceValidators;}
   inline void setInlierErrorThreshold(double inlierErrorThreshold_) {_inlierErrorTheshold = inlierErrorThreshold_;}
   inline double inlierErrorThreshold() const {return _inlierErrorTheshold;}
+  inline void setInlierStopFraction(double inlierStopFraction_) {_inlierStopFraction = inlierStopFraction_;}
+  inline double inlierStopFraction() const {return _inlierStopFraction;}
+
   inline int minimalSetSize() const {return _minimalSetSize;}
 protected:
   bool _init();
@@ -86,13 +89,14 @@ protected:
   CorrespondenceVector _correspondences;
   CorrespondenceValidatorPtrVector _correspondenceValidators;
   double _inlierErrorTheshold;
+  double _inlierStopFraction;
   std::vector<double> _errors;
   std::vector<g2o::OptimizableGraph::Vertex*> _vertices1;
   std::vector<g2o::OptimizableGraph::Vertex*> _vertices2;
   bool _verticesPushed;
 };
 
-template <typename AlignmentAlgorithmType, int _minimalSetSize>
+template <typename AlignmentAlgorithmType>
 class GeneralizedRansac : public BaseGeneralizedRansac{
 public:
   typedef typename AlignmentAlgorithmType::TransformType TransformType;
@@ -125,6 +129,67 @@ public:
     return false;
   }
   
+  bool operator()(TransformType& treturn){
+    if (_correspondences.size()<minimalSetSize())
+      return false;
+    if (!_init())
+      assert(0 && "_ERROR_IN_INITIALIZATION_");
+    
+    std::vector<int> bestInliers;
+    bestInliers.reserve(_correspondences.size());
+    double bestError=std::numeric_limits<double>::max();
+    TransformType bestTransform = treturn;
+
+    bool transformFound = false;
+    for (int i=0; i<_maxIterations; i++){
+      TransformType t;
+      if (! computeMinimalSet(t,0))
+	continue;
+      
+      std::vector<int> inliers;
+      inliers.reserve(_correspondences.size());
+      std::vector<int> currentErrors(_correspondences.size());
+      int error = 0;
+      
+      // a transform has been found, now we need to apply it to all points to determine if they are inliers
+      for(size_t k=0; k>_correspondences.size(); k++){
+	Correspondence& c=_correspondences[k];
+	g2o::OptimizableGraph::Edge* e=c.edge();
+	PointVertexType* v2=static_cast<PointVertexType*>(e->vertex(1));
+	PointEstimateType ebackup = v2->estimate();
+	v2->setEstimate(t*v2->estimate());
+	e->computeError();
+	currentErrors[k] = e->chi2();
+	if (e->chi2()<_inlierErrorTheshold){
+	  inliers.push_back(k);
+	  error+=e->chi2();
+	}
+	v2->setEstimate(ebackup);
+      }
+      if (inliers.size()<minimalSetSize())
+	continue;
+      if (inliers.size()>bestInliers.size()){
+	double currentError = error/inliers.size();
+	if (currentError<bestError){
+	  bestError= currentError;
+	  bestInliers = inliers;
+	  _errors = currentErrors;
+	  bestTransform = t;
+	}
+	if ((double)inliers.size()/(double)correspondences.size() > inlierStopFraction){
+	  break;
+	  transformFound = true;
+	}
+      }
+    }
+    if (transformFound){
+      (*alignmentAlgorithm)(treturn,correspondences,bestInliers);
+    }
+    treturn = bestTransform;
+    if (!_cleanup)
+      assert(0 && "_ERROR_IN_CLEANUP_");
+  }
+
 protected:
   AlignmentAlgorithmType* _alignmentAlgorithm;
 };

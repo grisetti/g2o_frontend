@@ -24,7 +24,7 @@ namespace g2o_frontend{
       const EdgeSE3* edge = static_cast<const g2o::EdgeSE3*>(c.edge());
       const VertexSE3* v1 = static_cast<const g2o::VertexSE3*>(edge->vertex(0));
       const VertexSE3* v2 = static_cast<const g2o::VertexSE3*>(edge->vertex(1));
-      Isometry3d xi = v2->estimate()*v1->estimate().inverse();
+      Isometry3d xi = v2->estimate()*(v1->estimate().inverse());
       mean1 += v1->estimate().translation();
       mean2 += v2->estimate().translation();
       if (i==0){
@@ -42,16 +42,24 @@ namespace g2o_frontend{
     deltaRSum*=icount;
     mean1*=icount;
     mean2*=icount;
-    // cerr << "mean1" << endl;
-    // cerr << mean1 << endl;
-    // cerr << "mean2" << endl;
-    // cerr << mean2 << endl;
+    cerr << "mean1" << endl;
+    cerr << mean1 << endl;
+    cerr << "mean2" << endl;
+    cerr << mean2 << endl;
 
 
-    AngleAxisd dR(deltaRSum.norm(), deltaRSum.normalized());
+    double epsilon = 1e-9;
+    Vector3d axis(0,0,1);
+    double angle = deltaRSum.norm();
+    if (fabs(angle)>epsilon){
+      axis = deltaRSum.normalized();
+    } else {
+      angle = 0;
+    }
+    AngleAxisd dR(angle, axis);
     transform.linear() = x0.linear()*dR.matrix();
-    // cerr << "mean1 remapped" << endl;
-    // cerr << transform.linear()*mean1 << endl;
+    cerr << "mean1 remapped" << endl;
+    cerr << transform.linear()*mean1 << endl;
 
     transform.translation() = mean2-transform.linear()*mean1;
     transform = transform.inverse();

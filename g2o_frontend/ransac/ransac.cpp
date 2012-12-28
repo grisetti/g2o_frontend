@@ -1,4 +1,8 @@
 #include "ransac.h"
+#include "alignment_horn2d.h"
+#include "alignment_horn3d.h"
+#include "alignment_se2.h"
+#include "alignment_se3.h"
 
 namespace g2o_frontend {
   using namespace g2o;
@@ -71,6 +75,23 @@ namespace g2o_frontend {
     }
   }
 
+
+
+  class RansacPointXY: public GeneralizedRansac<AlignmentAlgorithmHorn2D> {
+    RansacPointXY(): GeneralizedRansac<AlignmentAlgorithmHorn2D>(2){}
+  };
+
+  class RansacPointXYZ: public GeneralizedRansac<AlignmentAlgorithmHorn2D> {
+    RansacPointXYZ(): GeneralizedRansac<AlignmentAlgorithmHorn2D>(3){}
+  };
+
+  class RansacSE2    : public GeneralizedRansac<AlignmentAlgorithmSE2> {
+    RansacSE2(): GeneralizedRansac<AlignmentAlgorithmSE2>(1){}
+  };
+
+  class RansacSE3    : public GeneralizedRansac<AlignmentAlgorithmSE3> {
+    RansacSE3(): GeneralizedRansac<AlignmentAlgorithmSE3>(1){}
+  };
 
 }
 
