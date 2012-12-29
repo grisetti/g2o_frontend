@@ -5,6 +5,7 @@ namespace g2o_frontend{
   using namespace g2o;
   using namespace Eigen;
 
+
   AlignmentAlgorithmHorn2D::AlignmentAlgorithmHorn2D(): AlignmentAlgorithmSE2PointXY(2) {
   }
 
@@ -49,15 +50,12 @@ namespace g2o_frontend{
     transform.setTranslation(mean1 - R*mean2);
     return true;
   }
+
+  DistanceCorrespondenceValidatorPointXY::DistanceCorrespondenceValidatorPointXY():
+    DistanceCorrespondenceValidator<VertexPointXY>(2){
+  }
   
-
-  // AlignmentAlgorithmHorn3D::AlignmentAlgorithmHorn3D(): AlignmentAlgorithmSE3PointXYZ(3){
-  // }
-
-  // bool AlignmentAlgorithmHorn3D::operator()(AlignmentAlgorithmHorn3D::TransformType& transform, const CorrespondenceVector& correspondences, const IndexVector& indices){
-  //   if (indices.size()<minimalSetSize())
-  //     return false;
-  // }
-
+  RansacHorn2D::RansacHorn2D(): GeneralizedRansac<AlignmentAlgorithmHorn2D>(2){
+  }
 
 }

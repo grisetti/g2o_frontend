@@ -5,10 +5,6 @@
 #include <assert.h>
 #include <Eigen/Geometry>
 #include "g2o/core/optimizable_graph.h"
-#include "g2o/types/slam2d/types_slam2d.h"
-#include "g2o/types/slam2d_addons/types_slam2d_addons.h"
-#include "g2o/types/slam3d/types_slam3d.h"
-#include "g2o/types/slam3d_addons/types_slam3d_addons.h"
 
 
 namespace g2o_frontend {
@@ -54,13 +50,8 @@ typedef std::vector<CorrespondenceValidator*> CorrespondenceValidatorPtrVector;
     int _minimalSetSize;
   };
   
-  typedef AlignmentAlgorithm<g2o::SE2,g2o::VertexPointXY> AlignmentAlgorithmSE2PointXY;
-  typedef AlignmentAlgorithm<g2o::SE2,g2o::VertexLine2D>  AlignmentAlgorithmSE2Line2D;
-  typedef AlignmentAlgorithm<g2o::SE2,g2o::VertexSE2>     AlignmentAlgorithmSE2SE2;
-
-  typedef AlignmentAlgorithm<Eigen::Isometry3d,g2o::VertexPointXYZ> AlignmentAlgorithmSE3PointXYZ;
-  typedef AlignmentAlgorithm<Eigen::Isometry3d,g2o::VertexSE3>      AlignmentAlgorithmSE3SE3;
-  typedef AlignmentAlgorithm<Eigen::Isometry3d,Slam3dAddons::VertexLine3D>   AlignmentAlgorithmSE3Line3D;
+  //typedef AlignmentAlgorithm<g2o::SE2,g2o::VertexLine2D>  AlignmentAlgorithmSE2Line2D;
+  //typedef AlignmentAlgorithm<Eigen::Isometry3d,Slam3dAddons::VertexLine3D>   AlignmentAlgorithmSE3Line3D;
 
   
 class BaseGeneralizedRansac{
@@ -116,15 +107,17 @@ public:
 
   bool computeMinimalSet(TransformType& t, int k){
     assert(_alignmentAlgorithm && "YOU_MUST_SET_AN_ALIGNMENT_ALGORITHM");
-    if (k==minimalSetSize()){
-      if (validateCorrespondences(k))
-	if ((*_alignmentAlgorithm)(t,_correspondences,_indices))
-	  return true;
-    }
+
     for (; _indices[k]<(int)_correspondences.size()-k; _indices[k]++){
-      _indices[k+1] = _indices[k] + 1;
-      if (validateCorrespondences(k) && computeMinimalSet(t,k+1))
-	return true;
+      if (k==minimalSetSize()-1){
+	if (validateCorrespondences(k))
+	  if ((*_alignmentAlgorithm)(t,_correspondences,_indices))
+	    return true;
+      } else {
+	_indices[k+1] = _indices[k] + 1;
+	if (validateCorrespondences(k) && computeMinimalSet(t,k+1))
+	  return true;
+      }
     }
     return false;
   }

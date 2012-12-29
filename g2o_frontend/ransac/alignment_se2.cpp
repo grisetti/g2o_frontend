@@ -47,4 +47,6 @@ namespace g2o_frontend{
     return true;
   }
 
+
+  RansacSE2::RansacSE2(): GeneralizedRansac<AlignmentAlgorithmSE2>(1){}
 }

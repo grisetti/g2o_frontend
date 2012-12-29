@@ -49,16 +49,6 @@ namespace g2o_frontend{
 
   };
 
-  class DistanceCorrespondenceValidatorPointXY: public DistanceCorrespondenceValidator<g2o::VertexPointXY>{
-  public:
-    DistanceCorrespondenceValidatorPointXY();
-  };
-
-  class DistanceCorrespondenceValidatorPointXYZ: public DistanceCorrespondenceValidator<g2o::VertexPointXYZ>{
-  public:
-    DistanceCorrespondenceValidatorPointXYZ();
-  };
-
 }
 
 #endif

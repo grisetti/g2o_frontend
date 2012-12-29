@@ -66,4 +66,6 @@ namespace g2o_frontend{
     return true;
   }
 
+  RansacSE3::RansacSE3(): GeneralizedRansac<AlignmentAlgorithmSE3SE3>(1){}
+
 }

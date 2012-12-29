@@ -116,4 +116,8 @@ namespace g2o_frontend{
     return true;
   }
 
+
+  RansacLine3DLinear::RansacLine3DLinear():  GeneralizedRansac<AlignmentAlgorithmLine3DLinear>(2){
+  }
+
 }

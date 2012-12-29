@@ -5,6 +5,8 @@ namespace g2o_frontend{
   using namespace g2o;
   using namespace Eigen;
 
+  typedef AlignmentAlgorithm<Eigen::Isometry3d,g2o::VertexPointXYZ> AlignmentAlgorithmSE3PointXYZ;
+  
   AlignmentAlgorithmHorn3D::AlignmentAlgorithmHorn3D(): AlignmentAlgorithmSE3PointXYZ(3) {
   }
 
@@ -50,6 +52,13 @@ namespace g2o_frontend{
     return true;
   }
   
+  DistanceCorrespondenceValidatorPointXYZ::DistanceCorrespondenceValidatorPointXYZ():
+    DistanceCorrespondenceValidator<VertexPointXYZ>(2){
+  }
+  
+  RansacHorn3D::RansacHorn3D(): GeneralizedRansac<AlignmentAlgorithmHorn3D>(3){
+  }
+
 
 
 }
