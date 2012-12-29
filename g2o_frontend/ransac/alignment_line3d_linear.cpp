@@ -83,12 +83,17 @@ namespace g2o_frontend{
       H+=A.transpose()*A;
       b+=A.transpose()*ek;
     }
-    x=H.ldlt().solve(b); // using a LDLT factorizationldlt;
+    LDLT<Matrix12d> ldlt(H);
+    if (ldlt.isNegative())
+      return false;
+    x=ldlt.solve(b); // using a LDLT factorizationldlt;
     
     Matrix4d _X = transform.matrix()+vector2matrix(x);
     
     // recondition the rotation 
     JacobiSVD<Matrix3d> svd(_X.block<3,3>(0,0), Eigen::ComputeThinU | Eigen::ComputeThinV);
+    if (svd.singularValues()(0)<.5)
+      return false;
     Matrix3d R=svd.matrixU()*svd.matrixV().transpose();
     Isometry3d X = Isometry3d::Identity();
     X.linear()=R;
@@ -113,6 +118,8 @@ namespace g2o_frontend{
     dt = H2.ldlt().solve(b2);
     X.translation()+=dt;
     transform = X;
+    cerr << "transform: " << endl;
+    cerr << g2o::internal::toVectorMQT(transform) << endl;;
     return true;
   }
 

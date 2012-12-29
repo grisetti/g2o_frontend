@@ -13,7 +13,8 @@ namespace g2o_frontend{
 
   };
 
-  class RansacSE3    : public GeneralizedRansac<AlignmentAlgorithmSE3SE3> {
+  class RansacSE3    : public GeneralizedRansac<AlignmentAlgorithmSE3> {
+  public:
     RansacSE3();
   };
 

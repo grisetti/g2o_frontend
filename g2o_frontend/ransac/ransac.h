@@ -6,8 +6,11 @@
 #include <Eigen/Geometry>
 #include "g2o/core/optimizable_graph.h"
 
+#include <iostream>
 
 namespace g2o_frontend {
+
+  using namespace std;
 
 struct Correspondence {
   Correspondence(g2o::OptimizableGraph::Edge* edge_, double score_=0):  _edge(edge_), _score(score_){}
@@ -70,6 +73,9 @@ public:
   inline double inlierStopFraction() const {return _inlierStopFraction;}
 
   inline int minimalSetSize() const {return _minimalSetSize;}
+  int maxIterations() const {return _maxIterations;}
+  void setMaxIterations(double maxIterations_) { _maxIterations = maxIterations_;}
+  
 protected:
   bool _init();
   bool _cleanup();
@@ -90,6 +96,7 @@ protected:
 template <typename AlignmentAlgorithmType>
 class GeneralizedRansac : public BaseGeneralizedRansac{
 public:
+  typedef AlignmentAlgorithmType AlignerType;
   typedef typename AlignmentAlgorithmType::TransformType TransformType;
   typedef typename AlignmentAlgorithmType::PointVertexType PointVertexType;
   typedef typename AlignmentAlgorithmType::PointVertexType::EstimateType PointEstimateType;
@@ -102,28 +109,48 @@ public:
 
   inline AlignmentAlgorithmType* alignmentAlgorithm() {return _alignmentAlgorithm;}
 
-  inline static int minimalSetSize() {return AlignmentAlgorithmType::minimalSetSize();}
-
+  ostream& pindex(ostream& os, const std::vector<int> v, size_t k) {
+    for (size_t i=0; i<=k && i<v.size(); i++){
+      os << v[i] << " " ;
+    }
+    os << endl;
+    return os;
+  }
 
   bool computeMinimalSet(TransformType& t, int k){
-    assert(_alignmentAlgorithm && "YOU_MUST_SET_AN_ALIGNMENT_ALGORITHM");
-
-    for (; _indices[k]<(int)_correspondences.size()-k; _indices[k]++){
-      if (k==minimalSetSize()-1){
-	if (validateCorrespondences(k))
-	  if ((*_alignmentAlgorithm)(t,_correspondences,_indices))
-	    return true;
+    // base step
+    bool transformFound = false;
+    int maxIndex =_correspondences.size();
+    while (_indices[k]<maxIndex && ! transformFound){
+      bool validated = validateCorrespondences(k);
+      if (! validated) {
+	_indices[k] ++;
+	continue;
       } else {
-	_indices[k+1] = _indices[k] + 1;
-	if (validateCorrespondences(k) && computeMinimalSet(t,k+1))
-	  return true;
+	if (k==minimalSetSize()-1){
+	  transformFound = (*_alignmentAlgorithm)(t,_correspondences,_indices);
+	  // cerr << "Inner Iteration (" << k << ") : ";
+	  // pindex(cerr, _indices, k);
+	  // cerr << endl;
+	  _indices[k]++;
+	} else {
+	  if (_indices[k+1]<_indices[k])
+	    _indices[k+1]=_indices[k]+1;
+
+	  transformFound = computeMinimalSet(t,k+1);
+
+	  if(_indices[k+1]>maxIndex-((int)_indices.size()-k)){
+	    _indices[k]++;
+	    _indices[k+1]=_indices[k]+1;
+	  }
+	}
       }
     }
-    return false;
+    return transformFound;
   }
   
-  bool operator()(TransformType& treturn){
-    if (_correspondences.size()<minimalSetSize())
+  bool operator()(TransformType& treturn, bool debug = false){
+    if ((int)_correspondences.size()<minimalSetSize())
       return false;
     if (!_init())
       assert(0 && "_ERROR_IN_INITIALIZATION_");
@@ -134,53 +161,87 @@ public:
     TransformType bestTransform = treturn;
 
     bool transformFound = false;
-    for (int i=0; i<_maxIterations; i++){
+    for (int i=0; i<_maxIterations && !(_indices[0]>(int)_correspondences.size()-(int)_indices.size());  i++){
       TransformType t;
-      if (! computeMinimalSet(t,0))
+      cerr << "iteration: " << i << endl;
+      if (! computeMinimalSet(t,0)) {
+	cerr << "FAIL" << endl;
 	continue;
-      
+      }
+      cerr << "OK" << endl;
       std::vector<int> inliers;
       inliers.reserve(_correspondences.size());
-      std::vector<int> currentErrors(_correspondences.size());
-      int error = 0;
+      std::vector<double> currentErrors(_correspondences.size());
+      double error = 0;
       
       // a transform has been found, now we need to apply it to all points to determine if they are inliers
-      for(size_t k=0; k>_correspondences.size(); k++){
+      for(size_t k=0; k<_correspondences.size(); k++){
 	Correspondence& c=_correspondences[k];
 	g2o::OptimizableGraph::Edge* e=c.edge();
+	PointVertexType* v1=static_cast<PointVertexType*>(e->vertex(0));
 	PointVertexType* v2=static_cast<PointVertexType*>(e->vertex(1));
 	PointEstimateType ebackup = v2->estimate();
-	v2->setEstimate(t*v2->estimate());
+ 	v2->setEstimate(t*ebackup);
 	e->computeError();
 	currentErrors[k] = e->chi2();
+	//cerr << "e: " << e->chi2() << endl;
 	if (e->chi2()<_inlierErrorTheshold){
+	  if (0&&debug) {
+	    cerr << "**************** INLIER ****************" << endl;
+	    cerr << "v1 ";
+	    v1->write(cerr);
+	    cerr << endl;
+	    v2->setEstimate(ebackup);
+	    cerr << "v2 ";
+	    v2->write(cerr);
+	    cerr << endl;
+	    v2->setEstimate(t*ebackup);
+	    cerr << "remappedV2 ";
+	    v2->write(cerr);
+	    cerr << endl;
+	    cerr << "chi2: " << e->chi2() << endl;
+	    cerr << "error: " << error << endl;
+	  }
 	  inliers.push_back(k);
 	  error+=e->chi2();
 	}
 	v2->setEstimate(ebackup);
       }
-      if (inliers.size()<minimalSetSize())
+
+      cerr << "transformFound:" << (int) transformFound << endl;
+      cerr << "inliers:" << inliers.size() << endl;
+      if ((int)inliers.size()<minimalSetSize()) {
+	cerr << "too few inliers: " << (int)inliers.size() <<  endl;
 	continue;
+      }
+      cerr << "error:" << error/inliers.size() << endl;
+
       if (inliers.size()>bestInliers.size()){
+	cerr << "enough inliers: " << (int)inliers.size() <<  endl;
 	double currentError = error/inliers.size();
 	if (currentError<bestError){
+	  cerr << "good error: " << currentError <<  endl;
 	  bestError= currentError;
 	  bestInliers = inliers;
 	  _errors = currentErrors;
 	  bestTransform = t;
-	}
-	if ((double)inliers.size()/(double)correspondences.size() > inlierStopFraction){
-	  break;
 	  transformFound = true;
+	}
+	if ((double)inliers.size()/(double)_correspondences.size() > _inlierStopFraction){
+	  transformFound = true;
+	  cerr << "excellent inlier fraction: " 
+	       << 1e2 *(double)inliers.size()/(double)_correspondences.size() <<"%"  <<endl;
+	  break;
 	}
       }
     }
     if (transformFound){
-      (*alignmentAlgorithm)(treturn,correspondences,bestInliers);
+      (*_alignmentAlgorithm)(bestTransform,_correspondences,bestInliers);
     }
     treturn = bestTransform;
-    if (!_cleanup)
+    if (!_cleanup())
       assert(0 && "_ERROR_IN_CLEANUP_");
+    return transformFound;
   }
 
 protected:

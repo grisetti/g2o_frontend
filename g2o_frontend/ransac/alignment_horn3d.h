@@ -21,6 +21,7 @@ namespace g2o_frontend{
   };
 
   class RansacHorn3D: public GeneralizedRansac<AlignmentAlgorithmHorn3D> {
+  public:
     RansacHorn3D();
   };
 

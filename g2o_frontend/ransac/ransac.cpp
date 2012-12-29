@@ -39,7 +39,8 @@ namespace g2o_frontend {
   bool BaseGeneralizedRansac::_init() {
     assert (!_verticesPushed && "ATTEMPT_TO_INITIALIZE_THINGS_TWICE");
     if (!_verticesPushed && (int)_correspondences.size()>=minimalSetSize()) {
-      std::fill(_indices.begin(), _indices.end(), 0);
+      for (size_t i=0; i<_indices.size(); i++)
+	_indices[i] = i;
       std::sort(_correspondences.begin(), _correspondences.end());
       // push all the vertices in the stack
       for (size_t i =0; i<_vertices2.size(); i++){

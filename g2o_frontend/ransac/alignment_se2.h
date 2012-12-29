@@ -15,6 +15,7 @@ namespace g2o_frontend{
   };
 
   class RansacSE2    : public GeneralizedRansac<AlignmentAlgorithmSE2> {
+  public:
     RansacSE2();
   };
 

@@ -42,11 +42,6 @@ namespace g2o_frontend{
     deltaRSum*=icount;
     mean1*=icount;
     mean2*=icount;
-    cerr << "mean1" << endl;
-    cerr << mean1 << endl;
-    cerr << "mean2" << endl;
-    cerr << mean2 << endl;
-
 
     double epsilon = 1e-9;
     Vector3d axis(0,0,1);
@@ -58,14 +53,12 @@ namespace g2o_frontend{
     }
     AngleAxisd dR(angle, axis);
     transform.linear() = x0.linear()*dR.matrix();
-    cerr << "mean1 remapped" << endl;
-    cerr << transform.linear()*mean1 << endl;
 
     transform.translation() = mean2-transform.linear()*mean1;
     transform = transform.inverse();
     return true;
   }
 
-  RansacSE3::RansacSE3(): GeneralizedRansac<AlignmentAlgorithmSE3SE3>(1){}
+  RansacSE3::RansacSE3(): GeneralizedRansac<AlignmentAlgorithmSE3>(1){}
 
 }

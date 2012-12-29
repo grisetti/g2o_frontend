@@ -10,8 +10,10 @@ namespace g2o_frontend{
   }
 
   bool AlignmentAlgorithmHorn2D::operator()(AlignmentAlgorithmHorn2D::TransformType& transform, const CorrespondenceVector& correspondences, const IndexVector& indices){
-    if ((int)indices.size()<minimalSetSize())
+    if ((int)indices.size()<minimalSetSize()){
+      cerr << "! minimal set" << endl;
       return false;
+    }
     Eigen::Vector2d mean1=Eigen::Vector2d::Zero();
     Eigen::Vector2d mean2=Eigen::Vector2d::Zero();
 
@@ -41,9 +43,11 @@ namespace g2o_frontend{
     
     JacobiSVD<Matrix2d> svd(M, Eigen::ComputeThinU | Eigen::ComputeThinV);
     double svdThreshold = 1e-2;
-    if (svd.singularValues()(1)/svd.singularValues()(0)<svdThreshold)
+    if (0 && svd.singularValues()(1)/svd.singularValues()(0)<svdThreshold) {
+      cerr << "! svd" << endl;
+      cerr << svd.singularValues()(1) << " " << svd.singularValues()(0) << endl;
       return false; 
-      
+    }
     Eigen::Rotation2Dd R(0.);
     R.fromRotationMatrix(svd.matrixU()*svd.matrixV().transpose());
     transform.setRotation(R);
@@ -55,7 +59,7 @@ namespace g2o_frontend{
     DistanceCorrespondenceValidator<VertexPointXY>(2){
   }
   
-  RansacHorn2D::RansacHorn2D(): GeneralizedRansac<AlignmentAlgorithmHorn2D>(2){
+  RansacHorn2D::RansacHorn2D(): GeneralizedRansac<AlignmentAlgorithmHorn2D>(3){
   }
 
 }
