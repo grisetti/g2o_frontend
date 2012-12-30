@@ -16,7 +16,7 @@ namespace g2o_frontend{
     double intraFrameMinimalDistance() const {return _intraFrameMinimalDistance;}
 
     virtual bool operator()(const CorrespondenceVector& correspondences, const IndexVector& indices, int k){
-      if (k>=minimalSetSize())
+      if (k>minimalSetSize())
 	return true;
       assert(indices.size()>=k && "VALIDATION_INDEX_OUT_OF_BOUND");
       assert(correspondences.size()>=indices[k] && "VALIDATION_CORRESPONDENCE_INDEX_OUT_OF_BOUND");
@@ -34,12 +34,15 @@ namespace g2o_frontend{
 	
 	double d1 = (ek1-e1).norm();
 	double d2 = (ek2-e2).norm();
-	if (d1<_intraFrameMinimalDistance)
+	if (d1<_intraFrameMinimalDistance){
 	  return false;
-	if (d2<_intraFrameMinimalDistance)
+	}
+	if (d2<_intraFrameMinimalDistance){
 	  return false;
-	if (fabs(d1-d2)>_intraFrameDistanceDifference)
+	}
+	if (fabs(d1-d2)>_intraFrameDistanceDifference) {
 	  return false;
+	}
       }
       return true;
     }

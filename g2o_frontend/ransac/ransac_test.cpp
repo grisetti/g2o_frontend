@@ -78,6 +78,7 @@ bool testRansac(typename RansacType::TransformType& result,
 		const std::vector<double>& offsets,
 		const std::vector<double>& noises,
 		const std::vector<double>& omegas,
+		CorrespondenceValidatorPtrVector& validators,
 		double outlierFraction=0.2,
 		bool debug = false){
   
@@ -153,9 +154,8 @@ bool testRansac(typename RansacType::TransformType& result,
     correspondences.push_back(c);
     indices[i]=i;
   }
-  AlignerType aligner;
   RansacType ransac;
-  ransac.setAlignmentAlgorithm(&aligner);
+  ransac.correspondenceValidators()=validators;
   ransac.setCorrespondences(correspondences);
   ransac.setMaxIterations(1000);
   ransac.setInlierErrorThreshold(1.);
@@ -180,7 +180,15 @@ int main(int , char** ){
 
     SE2 t0(100, 50, M_PI/4);
     SE2 tresult;
-    bool result = testRansac<VectorMapping<2>, RansacHorn2D, EdgePointXY>(tresult, 50, t0, scales, offsets, noises, omegas);
+    CorrespondenceValidatorPtrVector validators;
+    DistanceCorrespondenceValidator<VertexPointXY>* val1= new DistanceCorrespondenceValidator<VertexPointXY>(3);
+    val1->setIntraFrameDistanceDifference(.5);
+    val1->setIntraFrameMinimalDistance(5);
+    validators.push_back(val1);
+    bool result = testRansac<VectorMapping<2>, RansacHorn2D, EdgePointXY>(tresult, 50, t0, 
+									  scales, offsets, noises, omegas, 
+									  validators,
+									  0.5);
     if (result){
       cerr << "ground truth: " <<endl;
       cerr << t0.toVector() << endl;
@@ -209,7 +217,15 @@ int main(int , char** ){
     _t << 100, 50, 20, .3, .3, .3;
     Isometry3d t0=g2o::internal::fromVectorMQT(_t);
     Isometry3d tresult;
-    bool result = testRansac<VectorMapping<3>, RansacHorn3D, EdgePointXYZ>(tresult, 50, t0, scales, offsets, noises, omegas);
+    CorrespondenceValidatorPtrVector validators;
+    DistanceCorrespondenceValidator<VertexPointXYZ>* val1=new DistanceCorrespondenceValidator<VertexPointXYZ>(4);
+    val1->setIntraFrameDistanceDifference(.5);
+    val1->setIntraFrameMinimalDistance(5);
+    validators.push_back(val1);
+    bool result = testRansac<VectorMapping<3>, RansacHorn3D, EdgePointXYZ>(tresult, 100, t0, 
+									   scales, offsets, noises, omegas, 
+									   validators,
+									   0.3);
     if (result){
       cerr << "ground truth: " <<endl;
       cerr << g2o::internal::toVectorMQT(t0)  << endl;
@@ -244,7 +260,11 @@ int main(int , char** ){
 
     SE2 t0(100, 50, M_PI/4);
     SE2 tresult;
-    bool result = testRansac<SE2Mapping, RansacSE2, EdgeSE2>(tresult, 100, t0, scales, offsets, noises, omegas);
+    CorrespondenceValidatorPtrVector validators;
+    bool result = testRansac<SE2Mapping, RansacSE2, EdgeSE2>(tresult, 100, t0, 
+							     scales, offsets, noises, omegas, 
+							     validators,
+							     0.3);
     if (result){
       cerr << "ground truth: " <<endl;
       cerr << t0.toVector() << endl;
@@ -282,7 +302,11 @@ int main(int , char** ){
     Isometry3d t0=g2o::internal::fromVectorMQT(_t);
 
     Isometry3d tresult;
-    bool result = testRansac<SE3Mapping, RansacSE3, EdgeSE3>(tresult, 100, t0, scales, offsets, noises, omegas);
+    CorrespondenceValidatorPtrVector validators;
+    bool result = testRansac<SE3Mapping, RansacSE3, EdgeSE3>(tresult, 100, t0, 
+							     scales, offsets, noises, omegas, 
+							     validators,
+							     0.4);
     if (result){
       cerr << "ground truth: " <<endl;
       cerr << g2o::internal::toVectorMQT(t0)  << endl;
@@ -321,7 +345,11 @@ int main(int , char** ){
     Isometry3d t0=g2o::internal::fromVectorMQT(_t);
 
     Isometry3d tresult;
-    bool result = testRansac<Line3DMapping, RansacLine3DLinear, EdgeLine3D>(tresult, 100, t0, scales, offsets, noises, omegas, 0.2);
+    CorrespondenceValidatorPtrVector validators;
+    bool result = testRansac<Line3DMapping, RansacLine3DLinear, EdgeLine3D>(tresult, 100, t0, 
+									    scales, offsets, noises, omegas, 
+									    validators,
+									    0.4);
     if (result){
       cerr << "ground truth: " <<endl;
       cerr << g2o::internal::toVectorMQT(t0)  << endl;

@@ -102,12 +102,11 @@ public:
   typedef typename AlignmentAlgorithmType::PointVertexType::EstimateType PointEstimateType;
  
   GeneralizedRansac(int minimalSetSize_) :BaseGeneralizedRansac(minimalSetSize_){
-    _alignmentAlgorithm = 0;
   }
 
-  inline void setAlignmentAlgorithm(AlignmentAlgorithmType* alignmentAlgorithm_) {_alignmentAlgorithm = alignmentAlgorithm_;}
 
-  inline AlignmentAlgorithmType* alignmentAlgorithm() {return _alignmentAlgorithm;}
+  inline AlignmentAlgorithmType& alignmentAlgorithm() {return _alignmentAlgorithm;}
+  inline const AlignmentAlgorithmType& alignmentAlgorithm() const {return _alignmentAlgorithm;}
 
   ostream& pindex(ostream& os, const std::vector<int> v, size_t k) {
     for (size_t i=0; i<=k && i<v.size(); i++){
@@ -128,7 +127,7 @@ public:
 	continue;
       } else {
 	if (k==minimalSetSize()-1){
-	  transformFound = (*_alignmentAlgorithm)(t,_correspondences,_indices);
+	  transformFound = _alignmentAlgorithm(t,_correspondences,_indices);
 	  // cerr << "Inner Iteration (" << k << ") : ";
 	  // pindex(cerr, _indices, k);
 	  // cerr << endl;
@@ -236,7 +235,7 @@ public:
       }
     }
     if (transformFound){
-      (*_alignmentAlgorithm)(bestTransform,_correspondences,bestInliers);
+      _alignmentAlgorithm(bestTransform,_correspondences,bestInliers);
     }
     treturn = bestTransform;
     if (!_cleanup())
@@ -245,7 +244,7 @@ public:
   }
 
 protected:
-  AlignmentAlgorithmType* _alignmentAlgorithm;
+  AlignmentAlgorithmType _alignmentAlgorithm;
 };
 
 }
