@@ -65,4 +65,48 @@ inline Vector6f remapPoint(const Eigen::Isometry3f& X, const Vector6f p)
     return p2;
 }
 
+typedef Eigen::Matrix<double, 12, 12> Matrix12d;
+typedef Eigen::Matrix<double, 6, 12>  Matrix6x12d;
+typedef Eigen::Matrix<double, 12, 1> Vector12d;
+
+inline Vector12d homogeneous2vector(const Eigen::Matrix4d& transform){
+  Vector12d x;
+  x.block<3,1>(0,0)=transform.block<1,3>(0,0).transpose();
+  x.block<3,1>(3,0)=transform.block<1,3>(1,0).transpose();
+  x.block<3,1>(6,0)=transform.block<1,3>(2,0).transpose();
+  x.block<3,1>(9,0)=transform.block<3,1>(0,3);
+  return x;
+}
+  
+inline Eigen::Matrix4d vector2homogeneous(const Vector12d x){
+  Eigen::Isometry3d transform=Eigen::Isometry3d::Identity();
+  transform.matrix().block<1,3>(0,0)=x.block<3,1>(0,0).transpose();
+  transform.matrix().block<1,3>(1,0)=x.block<3,1>(3,0).transpose();
+  transform.matrix().block<1,3>(2,0)=x.block<3,1>(6,0).transpose();
+  transform.translation()=x.block<3,1>(9,0);
+  return transform.matrix();
+}
+
+typedef Eigen::Matrix<float, 12, 12> Matrix12f;
+typedef Eigen::Matrix<float, 6, 12>  Matrix6x12f;
+typedef Eigen::Matrix<float, 12, 1> Vector12f;
+
+inline Vector12f homogeneous2vector(const Eigen::Matrix4f& transform){
+  Vector12f x;
+  x.block<3,1>(0,0)=transform.block<1,3>(0,0).transpose();
+  x.block<3,1>(3,0)=transform.block<1,3>(1,0).transpose();
+  x.block<3,1>(6,0)=transform.block<1,3>(2,0).transpose();
+  x.block<3,1>(9,0)=transform.block<3,1>(0,3);
+  return x;
+}
+  
+inline Eigen::Matrix4f vector2homogeneous(const Vector12f x){
+  Eigen::Isometry3f transform=Eigen::Isometry3f::Identity();
+  transform.matrix().block<1,3>(0,0)=x.block<3,1>(0,0).transpose();
+  transform.matrix().block<1,3>(1,0)=x.block<3,1>(3,0).transpose();
+  transform.matrix().block<1,3>(2,0)=x.block<3,1>(6,0).transpose();
+  transform.translation()=x.block<3,1>(9,0);
+  return transform.matrix();
+}
+
 #endif

@@ -61,7 +61,7 @@ int main(int argc, char** argv)
   arg.paramLeftOver("image1", imageName1 , "", "image1", true);
   arg.parseArgs(argc, argv);
   
-if (imageName0.length() == 0) {
+  if (imageName0.length() == 0) {
     cerr << "no image provided" << endl;
     return 0;
   }
@@ -482,6 +482,7 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
     int size = _r*_c;
     clock_t start = getMilliSecs();
     int inl = 0; 
+    /*
     for(int i=0; i<innerIterations; i++){
       inl = pwn_iteration(error, result,
 			  corrP0.data(),
@@ -494,6 +495,18 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
       T1_0 = result;
       cout << "\te: " << error/inl << " inl: " << inl << endl;
     }
+    */
+    inl = pwn_solveLinear(error, result,
+			  corrP0.data(),
+			  corrP1.data(),
+			  corrOmegas1.data(),
+			  size,
+			  T1_0,
+			  1e3,
+			  0);
+    T1_0 = result;
+    cout << "\te: " << error/inl << " inl: " << inl << endl;
+
     cout << "k: " << k << " " << inl << " " << error << " " << endl;
     cout << "Time optimization : " << getMilliSecs() - start << " ms" << endl;
     cout << "Time global iteration: " << getMilliSecs() - kstart << " ms" << endl;

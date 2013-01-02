@@ -58,3 +58,17 @@ TARGET_LINK_LIBRARIES(ransac_test
   ${G2O_CORE_LIBRARY} 
   )
 SET_TARGET_PROPERTIES(ransac_test PROPERTIES OUTPUT_NAME g2o_ransac_test${EXE_POSTFIX})
+
+
+ADD_EXECUTABLE(ellipse_descriptor   ellipse_descriptor.cpp)
+
+TARGET_LINK_LIBRARIES(ellipse_descriptor
+  ransac
+  ${G2O_TYPES_SLAM2D}
+  ${G2O_TYPES_SLAM3D}
+  ${G2O_TYPES_SLAM2D_ADDONS}
+  ${G2O_TYPES_SLAM3D_ADDONS}
+  ${G2O_STUFF_LIBRARY} 
+  ${G2O_CORE_LIBRARY} 
+  )
+SET_TARGET_PROPERTIES(ellipse_descriptor PROPERTIES OUTPUT_NAME g2o_ellipse_descriptor${EXE_POSTFIX})

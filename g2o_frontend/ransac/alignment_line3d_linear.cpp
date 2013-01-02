@@ -1,3 +1,4 @@
+#include "g2o_frontend/dm_optimization/dm_math.h"
 #include "alignment_line3d_linear.h"
 #include <Eigen/SVD>
 #include <Eigen/Cholesky>
@@ -27,27 +28,6 @@ namespace g2o_frontend{
   }
 
 
-  typedef Eigen::Matrix<double, 12, 12> Matrix12d;
-  typedef Eigen::Matrix<double, 6, 12>  Matrix6x12d;
-  typedef Eigen::Matrix<double, 12, 1> Vector12d;
-
-  inline Vector12d matrix2vector(const Matrix4d& transform){
-    Vector12d x;
-    x.block<3,1>(0,0)=transform.block<1,3>(0,0).transpose();
-    x.block<3,1>(3,0)=transform.block<1,3>(1,0).transpose();
-    x.block<3,1>(6,0)=transform.block<1,3>(2,0).transpose();
-    x.block<3,1>(9,0)=transform.block<3,1>(0,3);
-    return x;
-  }
-  
-  inline Matrix4d vector2matrix(const Vector12d x){
-    Isometry3d transform=Isometry3d::Identity();
-    transform.matrix().block<1,3>(0,0)=x.block<3,1>(0,0).transpose();
-    transform.matrix().block<1,3>(1,0)=x.block<3,1>(3,0).transpose();
-    transform.matrix().block<1,3>(2,0)=x.block<3,1>(6,0).transpose();
-    transform.translation()=x.block<3,1>(9,0);
-    return transform.matrix();
-  }
 
   AlignmentAlgorithmLine3DLinear::AlignmentAlgorithmLine3DLinear(): AlignmentAlgorithmSE3Line3D(2) {
   }
@@ -56,7 +36,7 @@ namespace g2o_frontend{
     if ((int)indices.size()<minimalSetSize())
       return false;
     transform = Isometry3d::Identity();
-    Vector12d x=matrix2vector(transform.matrix());
+    Vector12d x=homogeneous2vector(transform.matrix());
         
     Matrix12d H;
     H.setZero();
@@ -88,7 +68,7 @@ namespace g2o_frontend{
       return false;
     x=ldlt.solve(b); // using a LDLT factorizationldlt;
     
-    Matrix4d _X = transform.matrix()+vector2matrix(x);
+    Matrix4d _X = transform.matrix()+vector2homogeneous(x);
     
     // recondition the rotation 
     JacobiSVD<Matrix3d> svd(_X.block<3,3>(0,0), Eigen::ComputeThinU | Eigen::ComputeThinV);
@@ -109,7 +89,7 @@ namespace g2o_frontend{
       const VertexLine3D* v2 = static_cast<const VertexLine3D*>(edge->vertex(1));
       const AlignmentAlgorithmLine3DLinear::PointEstimateType& li= v1->estimate();
       const AlignmentAlgorithmLine3DLinear::PointEstimateType& lj= v2->estimate();
-      Matrix3d A2=-skew(R*lj.d());
+      Matrix3d A2=-_skew(R*lj.d());
       Vector3d ek = li.w()-R*lj.w()-A2*X.translation();
       H2+=A2.transpose()*A2;
       b2+=A2.transpose()*ek;

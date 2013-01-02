@@ -12,6 +12,16 @@ int pwn_iteration(float& error, Eigen::Isometry3f& Xnew,
 		   float inlierThreshold, /*inlier threshold*/
 		  int minInliers);
 
+int pwn_solveLinear(float& error,
+		    Eigen::Isometry3f& Xnew,
+		    const Vector6f* const * refPoints,
+		    const Vector6f* const * currPoints,
+		    const Matrix6f* const * omegas,
+		    size_t n,
+		    const Eigen::Isometry3f& X,
+		    float inlierThreshold, 
+		    int minInliers);
+
 int pwn_align(float& error,
 	      Eigen::Isometry3f& Xnew,
 	      Vector6fVector& refPoints,
