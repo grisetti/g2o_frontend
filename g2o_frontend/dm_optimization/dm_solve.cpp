@@ -61,7 +61,8 @@ int pwn_solveLinear(float& error,
 		    size_t n,
 		    const Isometry3f& X,
 		    float inlierThreshold, 
-		    int minInliers){
+		    int minInliers,
+		    float lambda){
 
   Vector12f b = Vector12f::Zero();
   Matrix12f H = Matrix12f::Zero();
@@ -93,30 +94,39 @@ int pwn_solveLinear(float& error,
     J.block<1,3>(4,3)=J.block<1,3>(3,0);
     J.block<1,3>(5,6)=J.block<1,3>(3,0);
     
-    b += J.transpose() * omega * e;
+    b += -J.transpose() * omega * e;
     H += J.transpose() * omega * J;
   }
+  cerr << "Linear! initial error: " << error << " initial inliers:" << numInliers << endl;
   if (numInliers<minInliers)
     return numInliers;
+  H+=Matrix12f::Identity()*lambda;
   LDLT<Matrix12f> ldlt(H);
   if (ldlt.isNegative())
     return 0;
-
+ 
   x=ldlt.solve(b); // using a LDLT factorizationldlt;
   Matrix4f _X = X.matrix()+vector2homogeneous(x);
     
   // recondition the rotation 
   JacobiSVD<Matrix3f> svd(_X.block<3,3>(0,0), Eigen::ComputeThinU | Eigen::ComputeThinV);
+  cerr << "singular values" 
+       << svd.singularValues()(0) << " "
+       << svd.singularValues()(1) << " "
+       << svd.singularValues()(2) << endl;
   if (svd.singularValues()(0)<.5)
     return false;
   Matrix3f R=svd.matrixU()*svd.matrixV().transpose();
+
   Isometry3f X1 = Isometry3f::Identity();
   X1.linear()=R;
   X1.translation() = _X.block<3,1>(0,3);
-  
+
   // recompute the translation
   Vector3f bt=Vector3f::Zero();
   Matrix3f Ht=Matrix3f::Zero();
+  error =0;
+  numInliers = 0;
   for(size_t i = 0; i < n; i++) {
     if(!refPoints[i] || !currPoints[i])
       continue;
@@ -124,21 +134,46 @@ int pwn_solveLinear(float& error,
     const Vector6f& pcurr = *currPoints[i];
     const Matrix6f& omega = *omegas[i];
     
-    Vector3f e=R*pref.head<3>()+X1.translation()-pcurr.head<3>();
-    float localError = e.transpose() * omega.block<3,3>(0,0) * e;
+    Vector6f e = remapPoint(X1, pref) - pcurr;
+    float localError = e.transpose() * omega * e;
     if(localError > inlierThreshold)
       continue;
     numInliers++;
     error += localError;
-    bt += omega.block<3,3>(0,0) * e;
+    bt += -omega.block<3,3>(0,0) * e.head<3>();
     Ht += omega.block<3,3>(0,0);
   }
+  cerr << "Linear! errorAfterRot: " << error << " inliersAfterRot:" << numInliers << endl;
   if (numInliers<minInliers)
     return numInliers;
+
   Vector3f dt;
+  Ht+=Matrix3f::Identity()*lambda;
   dt = Ht.ldlt().solve(bt);
   X1.translation()+=dt;
+
   Xnew = X1;
+  error = 0;
+  numInliers = 0;
+  for(size_t i = 0; i < n; i++) {
+    if(!refPoints[i] || !currPoints[i])
+      continue;
+    const Vector6f& pref  = *refPoints[i];
+    const Vector6f& pcurr = *currPoints[i];
+    const Matrix6f& omega = *omegas[i];
+    
+    Vector6f e = remapPoint(Xnew, pref) - pcurr;
+    float localError = e.transpose() * omega * e;
+    if(localError > inlierThreshold)
+      continue;
+    numInliers++;
+    error += localError;
+  }
+  cerr << "Linear! errorAfterT: " << error << " inliersAfterT:" << numInliers << endl;
+  if (numInliers<minInliers)
+    return numInliers;
+
+
   return numInliers;
 }
 
@@ -156,12 +191,14 @@ inline int _pwn_iteration(float& error, Isometry3f& Xnew,
     Vector6f b = Vector6f::Zero();
     Matrix6f H = Matrix6f::Zero();
     
-    float initialError;
+    float initialError=0;
     int initialInliers = _pwn_linearize(H, b, initialError,
 					refPoints, currPoints, omegas,
 					n, X, inlierThreshold);
     if(initialInliers < minInliers)
         return initialInliers;
+
+    cerr << "NonLinear! initial error: " << initialError << " initial inliers:" << initialInliers << endl;
 
     
     Matrix6f H2 = H +Matrix6f::Identity()*lambda;
@@ -185,6 +222,10 @@ inline int _pwn_iteration(float& error, Isometry3f& Xnew,
       error += localError;
       inliers++;
     }
+    cerr << "NonLinear! finalError: " << error << " finalInlier:" << inliers << endl;
+    if (inliers<minInliers) {
+      Xnew = X;
+    }
     return inliers;
 }
 
@@ -197,10 +238,11 @@ int pwn_iteration(float& error, Isometry3f& Xnew,
 		  size_t n,
 		  const Isometry3f& X,
 		  float inlierThreshold, /*inlier threshold*/
-		  int minInliers){
+		  int minInliers,
+		  float lambda){
   return _pwn_iteration(error, Xnew,
 			refPoints, currPoints, omegas,
-			n, X, inlierThreshold, minInliers);
+			n, X, inlierThreshold, minInliers, lambda=0);
 }
 
 int pwn_align(float& error,

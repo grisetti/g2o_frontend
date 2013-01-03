@@ -32,7 +32,7 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
 			 Matrix6fPtrMatrix &corrOmegas1, Vector6fPtrMatrix &corrP0, Vector6fPtrMatrix &corrP1,
 			 Matrix6fVector &omega0, MatrixXf &zBuffer, Matrix3f &cameraMatrixScaled,
 			 int _r, int _c,
-			 int outerIterations, int innerIterations);
+			 int outerIterations, int innerIterations, bool doLinear);
 
 int main(int argc, char** argv)
 {
@@ -48,6 +48,9 @@ int main(int argc, char** argv)
   float normalLength;
   float ellipsoidScale;
   float scale;
+  int innerIterations;  
+  int outerIterations;  
+  bool doLinear;
   arg.param("r", r, 0.1f, "radius of the ball to compute the normals, in world coordinates");
   arg.param("d", d, 0.0f, "radius of the ball to compute the normals, in image coordinates (if =0 normal is computed on integral image)");
   arg.param("mp", minPoints, 50, "min points to compiut de normal");
@@ -56,6 +59,10 @@ int main(int argc, char** argv)
   arg.param("ps", pointSize, 1.0f, "point size"); 
   arg.param("nl", normalLength, 0.01f, "normal length"); 
   arg.param("es", ellipsoidScale, 0.05f, "ellipsoid scale"); 
+  arg.param("r", r, 0.1f, "radius of the ball to compute the normals, in world coordinates");
+  arg.param("ii", innerIterations, 0, "inner itreations (if >0 the nonliner approach is selected)"); 
+  arg.param("oi", outerIterations, 10, "outer iterations");
+  arg.param("linear", doLinear, false, "do a linear aligment step");
   
   arg.paramLeftOver("image0", imageName0 , "", "image0", true);
   arg.paramLeftOver("image1", imageName1 , "", "image1", true);
@@ -210,8 +217,6 @@ int main(int argc, char** argv)
   Isometry3f T1_0 =Isometry3f::Identity();
   CorrespondenceVector correspondences;
   correspondences.clear();
-  int outerIterations = 10;
-  int innerIterations = 3;
   
   /**** REGISTRATION VISUALIZATION****/
   QApplication qApplication(argc, argv);
@@ -272,7 +277,7 @@ int main(int argc, char** argv)
 			  corrOmegas1, corrP0, corrP1,
 			  omega0, zBuffer, cameraMatrixScaled,
 			  _r, _c,
-			  outerIterations, innerIterations);
+			  outerIterations, innerIterations, doLinear);
       scn0->clear();
       scn1->clear();
       QImage qImage0(filename0);
@@ -295,7 +300,7 @@ int main(int argc, char** argv)
 			  corrOmegas1, corrP0, corrP1,
 			  omega0, zBuffer, cameraMatrixScaled,
 			  _r, _c,
-			  1, innerIterations);
+			  1, innerIterations, doLinear);
       scn0->clear();
       scn1->clear();
       QImage qImage0(filename0);
@@ -374,6 +379,119 @@ int main(int argc, char** argv)
   return 0;
 }
 
+struct Frame {
+  MatrixXus image;
+  Vector6fVector points;
+  Matrix6fVector omegas;
+  CovarianceSVDVector svd;
+  Matrix3f cameraMatrix;
+  Isometry3f cameraPose;
+};
+
+struct FrameFiller{
+  FrameFiller(){
+    r=0.1;
+    d=0;
+    minPoints = 50;
+    step = 1;
+    scale = 0.5;
+    cameraMatrix << 525.0f, 0.0f, 319.5f,
+      0.0f, 525.0f, 239.5f,
+      0.0f, 0.0f, 1.0f;
+  }
+
+  void fillFrame(Frame& f){
+    int rows = f.image.rows();
+    int cols = f.image.cols();
+    MatrixXf depth(rows,cols);
+    img2depth(depth, f.image);
+    depth2cloud(f.points, depth, cameraMatrix);
+    MatrixXf curvature(rows, cols);
+    MatrixXf zBuffer(rows, cols);
+
+    f.svd.resize(f.points.size());
+    f.omegas.clear();
+    
+      
+    Vector6fPtrMatrix cloudPtr(rows, cols);
+    Matrix6fPtrMatrix omegaPtr(0,0);
+    CovarianceSVDPtrMatrix svdPtr(rows, cols);
+    
+    cloud2mat(cloudPtr,
+	      omegaPtr,
+	      svdPtr,
+	      f.points,
+	      f.omegas,
+	      f.svd,
+	      Isometry3f::Identity(), cameraMatrix,
+	      zBuffer);
+
+    cerr << "computing normals... ";
+    computeNormals(cloudPtr, curvature, svdPtr, cameraMatrix, r, d, step, minPoints);
+    svd2omega(f.omegas, f.svd);
+  }
+
+  int registerFrames(Isometry3f &T1_0){
+    Matrix3f cameraMatrixScaled = cameraMatrix;
+    cameraMatrixScaled.block<2, 3>(0, 0) *= scale;
+    int _r = ((float)image0.rows() * scale);
+    int _c = ((float)image0.cols() * scale);
+
+    // Create scaled clouds variables.
+    Vector6fPtrMatrix cloud0PtrScaled(_r, _c);
+    Matrix6fPtrMatrix omega0PtrScaled(_r, _c);
+    CovarianceSVDPtrMatrix svd0PtrScaled(_r, _c);
+    Vector6fPtrMatrix cloud1PtrScaled(_r, _c);
+    Matrix6fPtrMatrix omega1PtrScaled(_r, _c);
+    CovarianceSVDPtrMatrix svd1PtrScaled(_r, _c);
+    Matrix6fPtrMatrix corrOmegas1(_r, _c);
+    Vector6fPtrMatrix corrP0(_r, _c);
+    Vector6fPtrMatrix corrP1(_r, _c);
+    MatrixXf zBuffer(_r, _c);
+
+    // Scale cloud0.
+    cloud2mat(cloud0PtrScaled,
+	      omega0PtrScaled,
+	      svd0PtrScaled,
+	      f1.points,
+	      f1.omegas,
+	      f1.svd,
+	      Isometry3f::Identity(),
+	      cameraMatrixScaled,
+	      zBuffer);
+
+
+    // Scale cloud1.
+    cloud2mat(cloud1PtrScaled,
+	      omega1PtrScaled,
+	      svd1PtrScaled,
+	      f2.points,
+	      f2.omegas,
+	      f2.svd,
+	      Isometry3f::Identity(),
+	      cameraMatrixScaled,
+	      zBuffer);
+
+    return 0;
+  }
+
+  Matrix3f cameraMatrix;
+
+  // normal computation
+  float r, d;
+  int step, minPoints;
+
+  // frame to frame registration
+  int outerIterations;
+  int innerIterations;
+  bool doLinear;
+  float scale;
+
+  float curvatureThreshold = 0.02;
+  float normalThreshold = cos(M_PI/6);
+
+};
+
 void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
 			 Vector6fVector &cloud0, CovarianceSVDVector &svd0, CorrespondenceVector &correspondences, 
 			 Vector6fPtrMatrix &cloud0PtrScaled, Vector6fPtrMatrix &cloud1PtrScaled,
@@ -382,11 +500,14 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
 			 Matrix6fPtrMatrix &corrOmegas1, Vector6fPtrMatrix &corrP0, Vector6fPtrMatrix &corrP1,
 			 Matrix6fVector &omega0, MatrixXf &zBuffer, Matrix3f &cameraMatrixScaled,
 			 int _r, int _c,
-			 int outerIterations, int innerIterations) {
+			 int outerIterations, int innerIterations, bool doLinear) {
   // Thresholds for normals matching.
   float curvatureThreshold = 0.02;
-  float normalThreshold = M_PI/6;
+  float normalThreshold = cos(M_PI/6);
   clock_t begin = getMilliSecs();
+  float logRatioMax =.2;
+  float dmax = .5*.5;
+  correspondences.reserve(cloud1PtrScaled.cols()*cloud1PtrScaled.rows());
   for (int k = 0; k < outerIterations; k++) {
     clock_t kstart = getMilliSecs();
     
@@ -424,11 +545,9 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
      *                                                                                *
      **********************************************************************************/
     correspondences.clear();
-    correspondences.reserve(cloud1PtrScaled.cols()*cloud1PtrScaled.rows());
     int corrFound = 0;
-    float logRatioMax = .2;
-    float dmax = .5*.5;
     int curved = 0;
+    double davg = 0;
     for (int i = 0; i < cloud1PtrScaled.cols(); i++) {
       for (int j = 0; j < cloud1PtrScaled.rows(); j++) {
 	if (! cloud0PtrScaled(j, i) || !cloud1PtrScaled(j, i))
@@ -461,7 +580,7 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
 	Vector3f dp=p0Remapped.head<3>() - p1.head<3>();
 	if (dp.dot(dp)>dmax)
 	  continue;
-
+	davg+=dp.norm();
 	correspondences.push_back(Correspondence(cloud0PtrScaled(j, i), cloud1PtrScaled(j, i)));	
 	corrP0(j, i) = &p0;
 	corrP1(j, i) = &p1;
@@ -469,8 +588,9 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
 	corrFound ++;
       }
     }
-    cerr << "found " << corrFound << " correspondences, curved:" << curved << endl;
-    
+    davg/=corrFound;
+    cerr << "found " << corrFound << " correspondences, curved:" << curved <<  " davg: " << davg <<  endl;
+      
     /************************************************************************************
      *                                                                                  *
      *  Compute transformation.                                                         *
@@ -478,11 +598,24 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
      ************************************************************************************/
     // Run optimization algorithm.
     Isometry3f result = Isometry3f::Identity();
+    T1_0 = result;
     float error = 0.0f;
     int size = _r*_c;
     clock_t start = getMilliSecs();
     int inl = 0; 
-    /*
+    if (doLinear){
+      inl = pwn_solveLinear(error, result,
+			    corrP0.data(),
+			    corrP1.data(),
+			    corrOmegas1.data(),
+			    size,
+			    T1_0,
+			    1e4,
+			    10,
+			    1e3*corrFound);
+      cout << "\tlinear: " << error/inl << " inl: " << inl << endl;
+      T1_0 = result;
+    }
     for(int i=0; i<innerIterations; i++){
       inl = pwn_iteration(error, result,
 			  corrP0.data(),
@@ -490,22 +623,12 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
 			  corrOmegas1.data(),
 			  size,
 			  T1_0,
-			  1e3,
-			  0);
+			  1e4,
+			  10,
+			  1e3*corrFound);
       T1_0 = result;
       cout << "\te: " << error/inl << " inl: " << inl << endl;
     }
-    */
-    inl = pwn_solveLinear(error, result,
-			  corrP0.data(),
-			  corrP1.data(),
-			  corrOmegas1.data(),
-			  size,
-			  T1_0,
-			  1e3,
-			  0);
-    T1_0 = result;
-    cout << "\te: " << error/inl << " inl: " << inl << endl;
 
     cout << "k: " << k << " " << inl << " " << error << " " << endl;
     cout << "Time optimization : " << getMilliSecs() - start << " ms" << endl;
