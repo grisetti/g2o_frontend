@@ -3,5 +3,6 @@
 // Get current time.
 clock_t getMilliSecs()
 {
-  return 1000.0f * (float)clock() / CLOCKS_PER_SEC;
+  return 1000.0f * ((float)clock() / (float)CLOCKS_PER_SEC)
+;
 }

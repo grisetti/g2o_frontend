@@ -398,6 +398,9 @@ struct FrameFiller{
     cameraMatrix << 525.0f, 0.0f, 319.5f,
       0.0f, 525.0f, 239.5f,
       0.0f, 0.0f, 1.0f;
+
+    curvatureThreshold = 0.02;
+    normalThreshold = cos(M_PI/6);
   }
 
   void fillFrame(Frame& f){
@@ -431,11 +434,11 @@ struct FrameFiller{
     svd2omega(f.omegas, f.svd);
   }
 
-  int registerFrames(Isometry3f &T1_0){
+  int registerFrames(Isometry3f &T1_0, Frame& f1, Frame& f2){
     Matrix3f cameraMatrixScaled = cameraMatrix;
     cameraMatrixScaled.block<2, 3>(0, 0) *= scale;
-    int _r = ((float)image0.rows() * scale);
-    int _c = ((float)image0.cols() * scale);
+    int _r = ((float)f1.image.rows() * scale);
+    int _c = ((float)f1.image.cols() * scale);
 
     // Create scaled clouds variables.
     Vector6fPtrMatrix cloud0PtrScaled(_r, _c);
@@ -487,8 +490,8 @@ struct FrameFiller{
   bool doLinear;
   float scale;
 
-  float curvatureThreshold = 0.02;
-  float normalThreshold = cos(M_PI/6);
+  float curvatureThreshold;
+  float normalThreshold;
 
 };
 
