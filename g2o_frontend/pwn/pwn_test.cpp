@@ -2,6 +2,7 @@
 #include "depthimage.h"
 #include "pointwithnormal.h"
 #include "pointwithnormalstatsgenerator.h"
+#include "pointwithnormalaligner.h"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -36,7 +37,7 @@ int
   /***********************************************************************************/
   cout << "Test 1 Depth Image load" << endl;
   DepthImage depthImage0;
-  bool result = depthImage0.load(imageName0.c_str());
+  int result = depthImage0.load(imageName0.c_str());
   if (! result){
     cout << "load failed" << endl;
     return 0;
@@ -158,9 +159,9 @@ int
 
   double nStart = g2o::get_time();
   PointWithNormalStatistcsGenerator normalGenerator;
-  int cycles = 100;
+  int cycles = 10;
+  PointWithNormalSVDVector svds0(points0.size());
   for (int i=0; i<cycles; i++){
-    PointWithNormalSVDVector svds0(points0.size());
     normalGenerator.computeNormalsAndSVD(points0, svds0, indexImage, cameraMatrix);
     cerr << ".";
   }
@@ -174,7 +175,26 @@ int
   os.close();
   
   /***********************************************************************************/
-  // now need to do the alignment....
-
-  
+  cout << "Test 8 aligment";
+  PointWithNormalAligner aligner;
+  aligner.setImageSize(indexImage.rows(), indexImage.cols());
+  aligner.setScale(.25);
+  aligner.setReferenceCloud(&points0, &svds0);
+  aligner.setCurrentCloud(&points0, &svds0);
+  aligner.setOuterIterations(3);
+  aligner.setLinearIterations(1);
+  aligner.setNonLinearIterations(1);
+  aligner.setLambda(1e3);
+  aligner.setDebug(false);
+  Eigen::Isometry3f X;
+  X.setIdentity();
+  X.translation() = Vector3f(.1, .1, -.1);
+  float error = 0;
+  double ostart = get_time();
+  result = aligner.align(error, X);
+  cerr << "result=" << result << endl;
+  cerr << "transform: " << endl;
+  cerr << X.matrix() << endl;
+  double oend = get_time();
+  cerr << "alignment took: " << oend-ostart << " sec." << endl;
 }

@@ -637,6 +637,8 @@ void computeRegistration(Isometry3f &T1_0, MatrixXus &img1,
     cout << "Time optimization : " << getMilliSecs() - start << " ms" << endl;
     cout << "Time global iteration: " << getMilliSecs() - kstart << " ms" << endl;
     cout << "---------------------------------------------------------------" << endl;  
+    cerr << "transform:" << endl;
+    cerr << T1_0.matrix() << endl;
   }
   cerr << "Total time needed to compute the whole stuffs: " << getMilliSecs() - begin << " ms" << endl;
 }

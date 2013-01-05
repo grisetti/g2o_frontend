@@ -9,6 +9,7 @@
 
 typedef Eigen::Matrix<float, 6, 1> Vector6f;
 typedef Eigen::Matrix<float, 6, 6> Matrix6f;
+typedef  std::vector<Matrix6f, Eigen::aligned_allocator<Matrix6f> > Matrix6fVector;
 
 struct PointWithNormal: public Vector6f {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
