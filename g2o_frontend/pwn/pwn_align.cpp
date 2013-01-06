@@ -1,31 +1,77 @@
+#include <dirent.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <set>
+
 #include "g2o/stuff/command_args.h"
 #include "depthimage.h"
 #include "pointwithnormal.h"
 #include "pointwithnormalstatsgenerator.h"
 #include "pointwithnormalaligner.h"
-#include <iostream>
-#include <fstream>
-#include <string>
 #include "g2o/stuff/timeutil.h"
 
 using namespace Eigen;
 using namespace g2o;
 using namespace std;
 
-void savegnuplot(ostream& os, const PointWithNormalVector& points, float scale= 0.1, int step=1) {
-  for (size_t i =0; i<points.size(); i+=step) {
-    const PointWithNormal & pwn=points[i];
-    Vector3f v = pwn.point();
-    if (pwn.normal().squaredNorm() > 0.1) {
-      os << v.x() <<  " " <<  v.y() << " " << v.z() << endl;
-      v+=pwn.normal()*scale;
-      os << v.x() <<  " " <<  v.y() << " " << v.z() << endl;
-      os << endl;
-      os << endl;
-    }
-
+set<string> readDir(std::string dir){
+  DIR *dp;
+  struct dirent *dirp;
+  struct stat filestat;
+  std::set<std::string> filenames;
+  dp = opendir( dir.c_str() );
+  if (dp == NULL){
+    return filenames;
   }
+  
+  while ((dirp = readdir( dp ))) {
+    string filepath = dir + "/" + dirp->d_name;
+
+    // If the file is a directory (or is in some way invalid) we'll skip it 
+    if (stat( filepath.c_str(), &filestat )) continue;
+    if (S_ISDIR( filestat.st_mode ))         continue;
+
+    filenames.insert(filepath);
+  }
+
+  closedir( dp );
+  return filenames;
 }
+
+struct Frame{
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  
+  DepthImage depthImage;
+  MatrixXi indexImage;
+  PointWithNormalVector points;
+  PointWithNormalSVDVector svds;
+  MatrixXf zBuffer;
+  
+
+  bool load(std::string filename) {
+    return depthImage.load(filename.c_str());
+  }
+  void computeStats(PointWithNormalStatistcsGenerator & generator, const Matrix3f& cameraMatrix){
+    zBuffer.resize(depthImage.rows(), depthImage.cols());
+    points.fromDepthImage(depthImage,cameraMatrix,Isometry3f::Identity());
+    indexImage.resize(depthImage.rows(), depthImage.cols());
+    points.toIndexImage(indexImage, zBuffer, cameraMatrix, Eigen::Isometry3f::Identity(), 10);
+    cerr << "points: " << points.size() << endl; 
+    svds.resize(points.size());
+    generator.computeNormalsAndSVD(points, svds, indexImage, cameraMatrix);
+  }
+  void setAligner(PointWithNormalAligner& aligner, bool isRef){
+    if (isRef) {
+      aligner.setReferenceCloud(&points, &svds);
+    } else {
+      aligner.setCurrentCloud(&points, &svds);
+    }
+  }
+};
 
 int
  main(int argc, char** argv){
@@ -73,11 +119,24 @@ int
   arg.param("al_lambda", al_lambda, aligner.lambda(), "damping factor for the transformation update, the higher the smaller the step");
   arg.param("al_debug", al_debug, aligner.debug(), "prints lots of stuff");
 
+
+  std::vector<string> fileNames;
+
   arg.paramLeftOver("image0", imageName0, "", "image0", true);
   arg.paramLeftOver("image1", imageName1, "", "image1", true);
   arg.parseArgs(argc, argv);
 
-
+  std::vector<string> filenames;
+  if (imageName0 == "sequence") {
+    std::set<string> filenamesset = readDir(imageName1);
+    for(set<string>::const_iterator it =filenamesset.begin(); it!=filenamesset.end(); it++) {
+      filenames.push_back(*it);
+   }
+  } else {
+    filenames.push_back(imageName0);
+    filenames.push_back(imageName1);
+  }
+  
   normalGenerator.setStep(ng_step);
   normalGenerator.setMinPoints(ng_minPoints);
   normalGenerator.setImageRadius(ng_imageRadius);
@@ -97,79 +156,53 @@ int
   aligner.setLambda(al_lambda);
   aligner.setDebug(al_debug);
 
-  if (! imageName0.length()){
-    cerr << "no image provided" << endl;
-    return 0;
-  }
 
-  if (! imageName0.length()){
-    cerr << "no second image provided" << endl;
-    return  0;
-  }
-    
-  DepthImage image0, image1;
-  bool loadIm0 = image0.load(imageName0.c_str());
-  if (! loadIm0) {
-    cerr <<  "failure in loading image: " << imageName0 << endl;
-    return 0;
-  }
+  Frame* referenceFrame= 0;
 
-  bool loadIm1 = image1.load(imageName1.c_str());
-  if (! loadIm1) {
-    cerr <<  "failure in loading image: " << imageName1 << endl;
-    return 0;
-  }
-  
-  if (! image0.cols()==image1.cols() || image0.rows()!=image1.rows()){
-    cerr << "images must have the same size, this is not the case" << endl;
-    return 0;
-  }
-  
   Eigen::Matrix3f cameraMatrix;
   cameraMatrix << 
     525.0f, 0.0f, 319.5f,
     0.0f, 525.0f, 239.5f,
     0.0f, 0.0f, 1.0f;
 
-  // compute the points
-  PointWithNormalVector points0;
-  points0.fromDepthImage(image0,cameraMatrix,Isometry3f::Identity());
-  PointWithNormalVector points1;
-  points1.fromDepthImage(image1,cameraMatrix,Isometry3f::Identity());
-  
-  cerr << "points0: " << points0.size();
-  cerr << "points1: " << points1.size();
+  ofstream ts("trajectory.dat");
+  cerr << "there are " << filenames.size() << " files  in the pool" << endl; 
+  bool previousIsGood = false;
+  Isometry3f trajectory;
+  trajectory.setIdentity();
+  for (size_t i=0; i<filenames.size(); i++){
+    cerr << "proecessing image" << filenames[i] << endl;
+    Frame* currentFrame= new Frame();
+    if(!currentFrame->load(filenames[i])) {
+      cerr << "failure in loading image: " << filenames[i] << ", skipping" << endl;
+      continue;
+    }
+    currentFrame->computeStats(normalGenerator,cameraMatrix);
+    if (referenceFrame) {
+      referenceFrame->setAligner(aligner, true);
+      currentFrame->setAligner(aligner, false);
 
-
-  // compute the index images
-  MatrixXi indexImage0(image0.rows(), image0.cols());
-  Eigen::MatrixXf zBuffer0(image0.rows(), image0.cols());
-  points0.toIndexImage(indexImage0, zBuffer0, cameraMatrix, Eigen::Isometry3f::Identity(), 10);
-
-  MatrixXi indexImage1(image1.rows(), image1.cols());
-  Eigen::MatrixXf zBuffer1(image1.rows(), image1.cols());
-  points1.toIndexImage(indexImage1, zBuffer1, cameraMatrix, Eigen::Isometry3f::Identity(), 10);
-
-  // compute the normals for the two images
-  PointWithNormalSVDVector svds0(points0.size());
-  PointWithNormalSVDVector svds1(points1.size());
-  normalGenerator.computeNormalsAndSVD(points0, svds0, indexImage0, cameraMatrix);
-  normalGenerator.computeNormalsAndSVD(points1, svds1, indexImage1, cameraMatrix);
-
-  aligner.setImageSize(image1.rows(), image1.cols());
-  aligner.setReferenceCloud(&points0, &svds0);
-  aligner.setCurrentCloud(&points1, &svds1);
-  Eigen::Isometry3f X;
-  X.setIdentity();
-  double ostart = get_time();
-  float error;
-  int result = aligner.align(error, X);
-  cerr << "result=" << result << endl;
-  cerr << "transform: " << endl;
-  cerr << X.inverse().matrix() << endl;
-  double oend = get_time();
-  cerr << "alignment took: " << oend-ostart << " sec." << endl;
-
-  cerr << "aligner scaled image size: " << aligner.scaledImageRows() << " " << aligner.scaledImageCols() << endl;
+      aligner.setImageSize(currentFrame->depthImage.rows(), currentFrame->depthImage.cols());
+      Eigen::Isometry3f X;
+      X.setIdentity();
+      double ostart = get_time();
+      float error;
+      int result = aligner.align(error, X);
+      cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
+      cerr << "transform: " << endl;
+      cerr << X.inverse().matrix() << endl;
+      trajectory=trajectory*X;
+      double oend = get_time();
+      cerr << "alignment took: " << oend-ostart << " sec." << endl;
+      
+      cerr << "aligner scaled image size: " << aligner.scaledImageRows() << " " << aligner.scaledImageCols() << endl;
+      
+    }
+    Vector6f t=t2v(trajectory);
+    ts << t.transpose() << endl;
+    if (referenceFrame)
+      delete referenceFrame;
+    referenceFrame = currentFrame;
+  }
   
 }
