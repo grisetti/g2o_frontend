@@ -8,7 +8,7 @@ PointWithNormalStatistcsGenerator::PointWithNormalStatistcsGenerator(){
   _worldRadius = 0.1;
   _imageRadius = 100;
   _minPoints = 50;
-  _maxCurvature = 0.2f;
+  _maxCurvature = 0.5f;
   _cameraMatrix <<   
     525.0f, 0.0f, 319.5f,
     0.0f, 525.0f, 239.5f,

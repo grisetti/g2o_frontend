@@ -167,7 +167,6 @@ int
 
   ofstream ts("trajectory.dat");
   cerr << "there are " << filenames.size() << " files  in the pool" << endl; 
-  bool previousIsGood = false;
   Isometry3f trajectory;
   trajectory.setIdentity();
   for (size_t i=0; i<filenames.size(); i++){
@@ -189,19 +188,31 @@ int
       float error;
       int result = aligner.align(error, X);
       cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
-      cerr << "transform: " << endl;
+      cerr << "localTransform : " << endl;
       cerr << X.inverse().matrix() << endl;
       trajectory=trajectory*X;
+      cerr << "globaltransform: " << endl;
+      cerr << trajectory.matrix() << endl;
       double oend = get_time();
       cerr << "alignment took: " << oend-ostart << " sec." << endl;
-      
       cerr << "aligner scaled image size: " << aligner.scaledImageRows() << " " << aligner.scaledImageCols() << endl;
-      
+
     }
     Vector6f t=t2v(trajectory);
     ts << t.transpose() << endl;
     if (referenceFrame)
       delete referenceFrame;
+
+    char buf [1024];
+    int fnum = (int) i;
+    sprintf(buf, "in-%05d.dat", fnum);
+    currentFrame->points.save(buf, 50);
+    cerr << "saving " << currentFrame->points.size() << " in file " <<  buf << endl;
+    sprintf(buf, "out-%05d.dat", fnum);
+    PointWithNormalVector pv2 = trajectory*currentFrame->points;
+    pv2.save(buf, 50);
+    cerr << "saving " << pv2.size() << " in file " <<  buf << endl;
+    
     referenceFrame = currentFrame;
   }
   

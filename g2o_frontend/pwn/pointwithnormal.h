@@ -51,6 +51,8 @@ public:
 
 };
 
+PointWithNormalVector operator*(Eigen::Isometry3f t, const PointWithNormalVector& points);
+
 typedef PointWithNormal* PointWithNormalPtr;
 
 

@@ -29,8 +29,8 @@ PointWithNormalAligner::PointWithNormalAligner()
   _lambda = 1e3;
   _scale = 0.5;
   _inlierNormalAngularThreshold = cos(M_PI/6);
-  _inlierDistanceThreshold = .5;
-  _inlierMaxChi2 = 1e4;
+  _inlierDistanceThreshold = 3.;
+  _inlierMaxChi2 = 9e3;
   _flatCurvatureThreshold = 0.02;
   _flatOmegaDiagonal << 1e3 , 1, 1;
   _outerIterations = 1;
@@ -87,8 +87,8 @@ void PointWithNormalAligner::_updateOmegas() {
   }
   assert (_currPoints->size() == _currSVDs->size() && "size of currPoints and theit svd should match");
   _currOmegas.resize(_currPoints->size());
-  float flatKn = 1e3;
-  float nonFlatKn = 1;
+  float flatKn = 1e2;
+  float nonFlatKn = 1.;
   float nonFlatKp = 1.;
   Diagonal3f flatOmegaP(_flatOmegaDiagonal.x(), _flatOmegaDiagonal.y(), _flatOmegaDiagonal.z());
   Diagonal3f flatOmegaN(flatKn, flatKn, flatKn);

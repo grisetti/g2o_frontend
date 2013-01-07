@@ -93,6 +93,7 @@ bool PointWithNormalVector::save(const char* filename, int step) const{
       os << point(k) << " ";
     os << endl;
   }
+  os.flush();
   os.close();
   return true;
 }
@@ -117,4 +118,12 @@ bool PointWithNormalVector::load(const char* filename){
     push_back(p);
   }
   return is.good();
+}
+
+PointWithNormalVector operator*(Eigen::Isometry3f t, const PointWithNormalVector& points){
+  PointWithNormalVector ret(points.size());
+  for (size_t i = 0 ; i<points.size(); i++){
+    ret[i]=t*points[i];
+  }
+  return ret;
 }
