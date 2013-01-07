@@ -3,6 +3,13 @@
 #include "Eigen/SVD"
 using namespace std;
 
+void PointWithNormalSVD::updateCurvature() {
+  if (_singularValues.squaredNorm()==0) 
+    _curvature = -1; 
+  else
+    _curvature = _singularValues(0)/(_singularValues(0) + _singularValues(1) + _singularValues(2) );
+}
+
 PointWithNormalStatistcsGenerator::PointWithNormalStatistcsGenerator(){
   _step = 1;
   _worldRadius = 0.1;
@@ -40,8 +47,10 @@ void PointWithNormalStatistcsGenerator::computeNormalsAndSVD(PointWithNormalVect
       if (dy>_imageRadius)
 	dy = _imageRadius;
       PointAccumulator acc = _integralImage.getRegion(c-dx, c+dx, r-dy, r+dy);
+      svd._mean=point.point();
       if (acc.n()>_minPoints){
 	Eigen::Vector3f mean = acc.mean();
+	svd._mean = mean;
 	Eigen::Matrix3f cov  = acc.covariance();
 	eigenSolver.compute(cov);
 	svd._U=eigenSolver.eigenvectors();
@@ -58,6 +67,7 @@ void PointWithNormalStatistcsGenerator::computeNormalsAndSVD(PointWithNormalVect
 	if (normal.dot(mean) > 0.0f)
 	  normal =-normal;
 	point.setNormal(normal);
+	svd.updateCurvature();
 	//cerr << "n(" << index << ") c:"  << svd.curvature() << endl << point.tail<3>() << endl;
 	if (svd.curvature()>_maxCurvature){
 	  //cerr << "region: " << c-dx << " " <<  c+dx << " " <<  r-dx << " " << r+dx << " points: " << acc.n() << endl;
