@@ -1,6 +1,6 @@
 #include "drawable_covariances.h"
 #include "gl_parameter_covariances.h"
-#include "dm_qglviewer.h"
+#include "pwn_qglviewer.h"
 
 DrawableCovariances::DrawableCovariances() : Drawable() {
   GLParameterCovariances* covariancesParameter = new GLParameterCovariances();

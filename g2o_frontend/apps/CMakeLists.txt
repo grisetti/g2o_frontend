@@ -1,3 +1,4 @@
 #ADD_SUBDIRECTORY(dm_mapping)
 ADD_SUBDIRECTORY(dm_registration)
+#ADD_SUBDIRECTORY(pwn_gui)
 #ADD_SUBDIRECTORY(dm_test)
