@@ -3,7 +3,7 @@
 GLParameterNormals::GLParameterNormals() {
   _pointSize = 0.1f;
   _color = Eigen::Vector4f(0.0f, 0.0f, 1.0f, 0.5f);
-  _normalLength = 0.03f;
+  _normalLength = 0.02f;
 }
 
 GLParameterNormals::GLParameterNormals(float pointSize_, Eigen::Vector4f color_, float normalLength_) {

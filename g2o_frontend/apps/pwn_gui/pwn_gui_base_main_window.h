@@ -1,14 +1,14 @@
 /********************************************************************************
 ** Form generated from reading UI file 'pwn_gui_base_main_window.ui'
 **
-** Created: Wed Jan 9 09:33:41 2013
+** Created: Wed Jan 9 19:56:56 2013
 **      by: Qt User Interface Compiler version 4.8.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/
 
-#ifndef UI_PWN_GUI_BASE_MAIN_WINDOW_H
-#define UI_PWN_GUI_BASE_MAIN_WINDOW_H
+#ifndef PWN_GUI_BASE_MAIN_WINDOW_H
+#define PWN_GUI_BASE_MAIN_WINDOW_H
 
 #include <QtCore/QVariant>
 #include <QtGui/QAction>
@@ -20,6 +20,7 @@
 #include <QtGui/QGridLayout>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QHeaderView>
+#include <QtGui/QListWidget>
 #include <QtGui/QMainWindow>
 #include <QtGui/QMenu>
 #include <QtGui/QMenuBar>
@@ -29,7 +30,7 @@
 #include <QtGui/QStatusBar>
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QWidget>
-#include "QGLViewer/qglviewer.h"
+#include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -45,6 +46,8 @@ public:
     QAction *actionAbout;
     QAction *actionMinimize;
     QAction *actionMaximize;
+    QAction *actionQuit_2;
+    QAction *actionLoad;
     QWidget *centralwidget;
     QHBoxLayout *horizontalLayout;
     QVBoxLayout *verticalLayout;
@@ -59,14 +62,17 @@ public:
     QDoubleSpinBox *doubleSpinBox_normals;
     QDoubleSpinBox *doubleSpinBox_covariances;
     QDoubleSpinBox *doubleSpinBox_correspondences;
+    QHBoxLayout *horizontalLayout_3;
     QCheckBox *checkBox_step_by_step;
+    QPushButton *pushButton_add_cloud;
+    QListWidget *listWidget;
     QPushButton *pushButton_initial_guess;
     QPushButton *pushButton_optimize;
     QGraphicsView *graphicsView1_2d;
     QGraphicsView *graphicsView2_2d;
     QVBoxLayout *verticalLayout_2;
     QSpacerItem *horizontalSpacer;
-    QGLViewer *viewer_3d;
+    PWNQGLViewer *viewer_3d;
     QMenuBar *menubar;
     QMenu *menuFile;
     QMenu *menuView;
@@ -102,6 +108,10 @@ public:
         actionMinimize->setObjectName(QString::fromUtf8("actionMinimize"));
         actionMaximize = new QAction(PWNGuiBaseMainWindow);
         actionMaximize->setObjectName(QString::fromUtf8("actionMaximize"));
+        actionQuit_2 = new QAction(PWNGuiBaseMainWindow);
+        actionQuit_2->setObjectName(QString::fromUtf8("actionQuit_2"));
+        actionLoad = new QAction(PWNGuiBaseMainWindow);
+        actionLoad->setObjectName(QString::fromUtf8("actionLoad"));
         centralwidget = new QWidget(PWNGuiBaseMainWindow);
         centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
         sizePolicy.setHeightForWidth(centralwidget->sizePolicy().hasHeightForWidth());
@@ -183,18 +193,31 @@ public:
 
         verticalLayout->addLayout(gridLayout);
 
+        horizontalLayout_3 = new QHBoxLayout();
+        horizontalLayout_3->setObjectName(QString::fromUtf8("horizontalLayout_3"));
         checkBox_step_by_step = new QCheckBox(centralwidget);
         checkBox_step_by_step->setObjectName(QString::fromUtf8("checkBox_step_by_step"));
-        QSizePolicy sizePolicy1(QSizePolicy::Minimum, QSizePolicy::Fixed);
-        sizePolicy1.setHorizontalStretch(0);
-        sizePolicy1.setVerticalStretch(0);
-        sizePolicy1.setHeightForWidth(checkBox_step_by_step->sizePolicy().hasHeightForWidth());
-        checkBox_step_by_step->setSizePolicy(sizePolicy1);
 
-        verticalLayout->addWidget(checkBox_step_by_step);
+        horizontalLayout_3->addWidget(checkBox_step_by_step);
+
+        pushButton_add_cloud = new QPushButton(centralwidget);
+        pushButton_add_cloud->setObjectName(QString::fromUtf8("pushButton_add_cloud"));
+
+        horizontalLayout_3->addWidget(pushButton_add_cloud);
+
+
+        verticalLayout->addLayout(horizontalLayout_3);
+
+        listWidget = new QListWidget(centralwidget);
+        listWidget->setObjectName(QString::fromUtf8("listWidget"));
+
+        verticalLayout->addWidget(listWidget);
 
         pushButton_initial_guess = new QPushButton(centralwidget);
         pushButton_initial_guess->setObjectName(QString::fromUtf8("pushButton_initial_guess"));
+        QSizePolicy sizePolicy1(QSizePolicy::Minimum, QSizePolicy::Fixed);
+        sizePolicy1.setHorizontalStretch(0);
+        sizePolicy1.setVerticalStretch(0);
         sizePolicy1.setHeightForWidth(pushButton_initial_guess->sizePolicy().hasHeightForWidth());
         pushButton_initial_guess->setSizePolicy(sizePolicy1);
 
@@ -233,7 +256,7 @@ public:
 
         verticalLayout_2->addItem(horizontalSpacer);
 
-        viewer_3d = new QGLViewer(centralwidget);
+        viewer_3d = new PWNQGLViewer(centralwidget);
         viewer_3d->setObjectName(QString::fromUtf8("viewer_3d"));
         QSizePolicy sizePolicy3(QSizePolicy::Expanding, QSizePolicy::Expanding);
         sizePolicy3.setHorizontalStretch(0);
@@ -291,12 +314,15 @@ public:
         actionAbout->setText(QApplication::translate("PWNGuiBaseMainWindow", "About DM Viewer", 0, QApplication::UnicodeUTF8));
         actionMinimize->setText(QApplication::translate("PWNGuiBaseMainWindow", "Minimize", 0, QApplication::UnicodeUTF8));
         actionMaximize->setText(QApplication::translate("PWNGuiBaseMainWindow", "Maximize", 0, QApplication::UnicodeUTF8));
+        actionQuit_2->setText(QApplication::translate("PWNGuiBaseMainWindow", "Quit", 0, QApplication::UnicodeUTF8));
+        actionLoad->setText(QApplication::translate("PWNGuiBaseMainWindow", "Load", 0, QApplication::UnicodeUTF8));
         checkBox_normals->setText(QApplication::translate("PWNGuiBaseMainWindow", "Normals", 0, QApplication::UnicodeUTF8));
         checkBox_correspondences->setText(QApplication::translate("PWNGuiBaseMainWindow", "Correspondences", 0, QApplication::UnicodeUTF8));
         checkBox_step->setText(QApplication::translate("PWNGuiBaseMainWindow", "Step", 0, QApplication::UnicodeUTF8));
         checkBox_points->setText(QApplication::translate("PWNGuiBaseMainWindow", "Points", 0, QApplication::UnicodeUTF8));
         checkBox_covariances->setText(QApplication::translate("PWNGuiBaseMainWindow", "Covariances", 0, QApplication::UnicodeUTF8));
         checkBox_step_by_step->setText(QApplication::translate("PWNGuiBaseMainWindow", "Step-By-Step", 0, QApplication::UnicodeUTF8));
+        pushButton_add_cloud->setText(QApplication::translate("PWNGuiBaseMainWindow", "Add Cloud", 0, QApplication::UnicodeUTF8));
         pushButton_initial_guess->setText(QApplication::translate("PWNGuiBaseMainWindow", "Initial Guess", 0, QApplication::UnicodeUTF8));
         pushButton_optimize->setText(QApplication::translate("PWNGuiBaseMainWindow", "Optimize", 0, QApplication::UnicodeUTF8));
         menuFile->setTitle(QApplication::translate("PWNGuiBaseMainWindow", "File", 0, QApplication::UnicodeUTF8));
@@ -313,4 +339,4 @@ namespace Ui {
 
 QT_END_NAMESPACE
 
-#endif // UI_PWN_GUI_BASE_MAIN_WINDOW_H
+#endif // PWN_GUI_BASE_MAIN_WINDOW_H

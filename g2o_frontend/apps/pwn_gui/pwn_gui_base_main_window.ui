@@ -146,17 +146,25 @@
        </layout>
       </item>
       <item>
-       <widget class="QCheckBox" name="checkBox_step_by_step">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Step-By-Step</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QCheckBox" name="checkBox_step_by_step">
+          <property name="text">
+           <string>Step-By-Step</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_add_cloud">
+          <property name="text">
+           <string>Add Cloud</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QListWidget" name="listWidget"/>
       </item>
       <item>
        <widget class="QPushButton" name="pushButton_initial_guess">
@@ -317,6 +325,16 @@
   <action name="actionMaximize">
    <property name="text">
     <string>Maximize</string>
+   </property>
+  </action>
+  <action name="actionQuit_2">
+   <property name="text">
+    <string>Quit</string>
+   </property>
+  </action>
+  <action name="actionLoad">
+   <property name="text">
+    <string>Load</string>
    </property>
   </action>
  </widget>

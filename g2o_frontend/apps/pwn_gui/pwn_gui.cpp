@@ -19,8 +19,11 @@
 #include "g2o_frontend/pwn_viewer/drawable_normals.h"
 #include "g2o_frontend/pwn_viewer/drawable_covariances.h"
 #include "g2o_frontend/pwn_viewer/drawable_correspondences.h"
-#include "g2o_frontend/pwn_viewer/pwn_gui_main_window.h"
-
+#include "g2o_frontend/pwn_viewer/gl_parameter.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_points.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_normals.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_covariances.h"
+#include "pwn_gui_main_window.h"
 
 using namespace Eigen;
 using namespace g2o;
@@ -52,7 +55,7 @@ set<string> readDir(std::string dir){
 
 struct Frame{
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  Frame(){
+  Frame() {
     transform.setIdentity();
   }
 
@@ -61,7 +64,7 @@ struct Frame{
   PointWithNormalVector points;
   PointWithNormalSVDVector svds;
   MatrixXf zBuffer;
-  Eigen::Isometry3f& transform;
+  Eigen::Isometry3f transform;
 
   bool load(std::string filename) {
     return depthImage.load(filename.c_str());
@@ -101,8 +104,7 @@ std::vector<Frame*> loadFrames(const vector<string>& filenames, PointWithNormalS
   return fpv;
 }
 
-int
- main(int argc, char** argv){
+int main(int argc, char** argv){
   string imageName0;
   string imageName1;
   int ng_step;
@@ -138,7 +140,7 @@ int
   arg.param("al_inlierCurvatureRatio", al_inlierCurvatureRatio, aligner.inlierCurvatureRatioThreshold(), "max metric distance between two points to regard them as iniliers");
   arg.param("al_inlierNormalAngle", al_inlierNormalAngle, aligner.inlierNormalAngularThreshold(), "max metric distance between two points to regard them as iniliers");
   arg.param("al_inlierMaxChi2", al_inlierMaxChi2, aligner.inlierMaxChi2(), "max metric distance between two points to regard them as iniliers");
-  arg.param("al_minInliers", al_minInliers, aligner.minInliers(), "minimum numver of inliers to do the matching");
+  arg.param("al_minInliers", al_minInliers, aligner.minInliers(), "minimum number of inliers to do the matching");
   arg.param("al_scale", al_scale, aligner.scale(), "scale of the range image for the alignment");
   arg.param("al_flatCurvatureThreshold", al_flatCurvatureThreshold, aligner.flatCurvatureThreshold(), "curvature above which the patches are not considered planar");
   arg.param("al_outerIterations", al_outerIterations, aligner.outerIterations(), "outer interations (incl. data association)");
@@ -147,28 +149,28 @@ int
   arg.param("al_lambda", al_lambda, aligner.lambda(), "damping factor for the transformation update, the higher the smaller the step");
   arg.param("al_debug", al_debug, aligner.debug(), "prints lots of stuff");
 
-
   std::vector<string> fileNames;
 
   arg.paramLeftOver("image0", imageName0, "", "image0", true);
   arg.paramLeftOver("image1", imageName1, "", "image1", true);
   arg.parseArgs(argc, argv);
 
+  QApplication qApplication(argc, argv);
+  PWNGuiMainWindow pwnGMW;
+
   std::vector<string> filenames;
   if (imageName0 == "sequence") {
     std::set<string> filenamesset = readDir(imageName1);
     for(set<string>::const_iterator it =filenamesset.begin(); it!=filenamesset.end(); it++) {
-      filenames.push_back(*it);
-   }
+      filenames.push_back(*it);      
+      QString listItem(&(*it)[0]);
+      pwnGMW.listWidget->addItem(listItem);
+    }
   } else {
     filenames.push_back(imageName0);
     filenames.push_back(imageName1);
   }
 
-  QApplication qApplication(argc, argv);
-  QGraphicsScene *scn0, *scn1;
-
-  
   normalGenerator.setStep(ng_step);
   normalGenerator.setMinPoints(ng_minPoints);
   normalGenerator.setImageRadius(ng_imageRadius);
@@ -188,126 +190,180 @@ int
   aligner.setLambda(al_lambda);
   aligner.setDebug(al_debug);
 
-
-
-  std::vector<Frame*> frames;
-  Frame* referenceFrame= 0;
-
-  for (size_t i=0; i<filenames.size(); i++){
-    cerr << "proecessing image" << filenames[i] << endl;
-    Frame* currentFrame= new Frame();
-    if(!currentFrame->load(filenames[i])) {
-      cerr << "failure in loading image: " << filenames[i] << ", skipping" << endl;
-      continue;
-    }
-
   Eigen::Matrix3f cameraMatrix;
   cameraMatrix << 
     525.0f, 0.0f, 319.5f,
     0.0f, 525.0f, 239.5f,
     0.0f, 0.0f, 1.0f;
-
-  cerr << "there are " << filenames.size() << " files  in the pool" << endl; 
-  FramePtrVector frames=loadFrames(filenames,normalGenerator,cameraMatrix);
-
+  
   Isometry3f trajectory;
   trajectory.setIdentity();
-  for (size_t i=0; i<filenames.size(); i++){
-    cerr << "proecessing image" << filenames[i] << endl;
-    Frame* currentFrame= new Frame();
-    if(!currentFrame->load(filenames[i])) {
-      cerr << "failure in loading image: " << filenames[i] << ", skipping" << endl;
-      continue;
-    }
-    currentFrame->computeStats(normalGenerator,cameraMatrix);
-    if (referenceFrame) {
-      referenceFrame->setAligner(aligner, true);
-      currentFrame->setAligner(aligner, false);
-
-      aligner.setImageSize(currentFrame->depthImage.rows(), currentFrame->depthImage.cols());
-      Eigen::Isometry3f X;
-      X.setIdentity();
-      double ostart = get_time();
-      float error;
-      int result = aligner.align(error, X);
-      cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
-      cerr << "localTransform : " << endl;
-      cerr << X.inverse().matrix() << endl;
-      trajectory=trajectory*X;
-      cerr << "globaltransform: " << endl;
-      cerr << trajectory.matrix() << endl;
-      double oend = get_time();
-      cerr << "alignment took: " << oend-ostart << " sec." << endl;
-      cerr << "aligner scaled image size: " << aligner.scaledImageRows() << " " << aligner.scaledImageCols() << endl;
-
-    }
-    Vector6f t=t2v(trajectory);
-    ts << t.transpose() << endl;
-    if (referenceFrame)
-      delete referenceFrame;
-
-    char buf [1024];
-    int fnum = (int) i;
-    sprintf(buf, "in-%05d.dat", fnum);
-    currentFrame->points.save(buf, 50);
-    cerr << "saving " << currentFrame->points.size() << " in file " <<  buf << endl;
-    sprintf(buf, "out-%05d.dat", fnum);
-    PointWithNormalVector pv2 = trajectory*currentFrame->points;
-    pv2.save(buf, 50);
-    cerr << "saving " << pv2.size() << " in file " <<  buf << endl;
-    
-    referenceFrame = currentFrame;
-  }
-
-  return 0;
 
   
+  pwnGMW.show();
+  bool *addCloud = 0, *initialGuessViewer = 0, *optimizeViewer = 0;
+  int *stepViewer = 0, *stepByStepViewer = 0;
+  float *pointsViewer = 0, *normalsViewer = 0, *covariancesViewer = 0, *correspondencesViewer = 0;
+  QListWidgetItem* itemList = 0;
+  GLParameterPoints *pParam = new GLParameterPoints();
+  GLParameterNormals *nParam = new GLParameterNormals(0.1f, Vector4f(0.0f, 0.0f, 1.0f, 0.5f), 0.0f);
+  GLParameterCovariances *cParam = new GLParameterCovariances(0.5f, 
+							      Vector4f(0.0f, 1.0f, 0.0f, 0.5f), Vector4f(1.0f, 0.0f, 0.0f, 0.5f),
+							      0.02f, 0.0f);
+  Isometry3f tmp = Isometry3f::Identity(), startingTraj = Isometry3f::Identity();
+  Frame *referenceFrame = 0, *currentFrame = 0;
+  bool firstCloudAdded = true, wasInitialGuess = true;
+  while (!(*pwnGMW.closing())) {
+    qApplication.processEvents();
+
+    // Update state variables value.
+    initialGuessViewer = pwnGMW.initialGuess();
+    optimizeViewer = pwnGMW.optimize();
+    stepByStepViewer = pwnGMW.stepByStep();
+    stepViewer = pwnGMW.step();
+    pointsViewer = pwnGMW.points();
+    normalsViewer = pwnGMW.normals();
+    covariancesViewer = pwnGMW.covariances();
+    correspondencesViewer = pwnGMW.correspondences();
+    addCloud = pwnGMW.addCloud();
+    itemList = pwnGMW.itemList();
+
+    // Handle cloud insert.
+    if(*addCloud) {
+      if(itemList) {
+	if(!firstCloudAdded)
+	  referenceFrame = currentFrame;
+	else
+	  firstCloudAdded = false;
+	// Load cloud.
+	currentFrame = new Frame();
+	if(!currentFrame->load(itemList->text().toStdString())) {
+	  cerr << "failure in loading image: " << itemList->text().toStdString() << ", skipping" << endl;
+	  *addCloud = 0;
+	  continue;
+	}
+	currentFrame->computeStats(normalGenerator, cameraMatrix);
+	DrawablePoints* dp = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, 1, &(*currentFrame).points);
+	DrawableNormals *dn = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)nParam, 1, &(*currentFrame).points);
+	DrawableCovariances *dc = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)cParam, 1, &(*currentFrame).svds);
+  	pwnGMW.viewer_3d->addDrawable((Drawable*)dp);
+	pwnGMW.viewer_3d->addDrawable((Drawable*)dn);
+	pwnGMW.viewer_3d->addDrawable((Drawable*)dc);
+	startingTraj = trajectory;
+	//wasInitialGuess = true;
+      }
+      *addCloud = 0;
+    }
+    
+    // Check feature visualization options.
+    vector<Drawable*> drawableList = pwnGMW.viewer_3d->drawableList();  
+    for(size_t i = 0; i < drawableList.size(); i++) {
+      if(stepViewer[0])
+	drawableList[i]->setStep(stepViewer[1]);
+    }
+  
+    if(pointsViewer[0])
+      pParam->setPointSize(pointsViewer[1]);
+    else
+      pParam->setPointSize(0.0f);
+    if(normalsViewer[0])
+      nParam->setNormalLength(normalsViewer[1]);
+    else
+      nParam->setNormalLength(0.0f);
+    if(covariancesViewer[0])
+      cParam->setEllipsoidScale(covariancesViewer[1]);
+    else
+      cParam->setEllipsoidScale(0.0f);
+
+    if(*initialGuessViewer) {
+      *initialGuessViewer = 0;
+      if(referenceFrame) {
+	drawableList[drawableList.size()-1]->setTransformation(Isometry3f::Identity());
+	drawableList[drawableList.size()-2]->setTransformation(Isometry3f::Identity());
+	drawableList[drawableList.size()-3]->setTransformation(Isometry3f::Identity());
+	wasInitialGuess = true;
+      }
+    }
+    else if(*optimizeViewer && !(*stepByStepViewer)) {
+      *optimizeViewer = 0;
+      if(referenceFrame) {
+	aligner.setOuterIterations(al_outerIterations);
+	referenceFrame->setAligner(aligner, true);
+	currentFrame->setAligner(aligner, false);
+	aligner.setImageSize(currentFrame->depthImage.rows(), currentFrame->depthImage.cols());
+	Eigen::Isometry3f X;
+	X.setIdentity();
+	double ostart = get_time();
+	float error;
+	int result = aligner.align(error, X);
+	cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
+	cerr << "localTransform : " << endl;
+	cerr << X.inverse().matrix() << endl;
+	if(wasInitialGuess) {
+	  trajectory = startingTraj;
+	  wasInitialGuess = false;
+	}
+	trajectory=startingTraj*X;
+	cerr << "globaltransform: " << endl;
+	cerr << trajectory.matrix() << endl;
+	double oend = get_time();
+	cerr << "alignment took: " << oend-ostart << " sec." << endl;
+	cerr << "aligner scaled image size: " << aligner.scaledImageRows() << " " << aligner.scaledImageCols() << endl;
+	drawableList[drawableList.size()-1]->setTransformation(trajectory);
+	drawableList[drawableList.size()-2]->setTransformation(trajectory);
+	drawableList[drawableList.size()-3]->setTransformation(trajectory);
+      }
+    }
+    else if(*optimizeViewer && *stepByStepViewer) {
+      *optimizeViewer = 0;
+      if(referenceFrame) {
+	aligner.setOuterIterations(1);
+	referenceFrame->setAligner(aligner, true);
+	currentFrame->setAligner(aligner, false);
+	aligner.setImageSize(currentFrame->depthImage.rows(), currentFrame->depthImage.cols());
+	Eigen::Isometry3f X;
+	if(wasInitialGuess) {
+	  trajectory = startingTraj;
+	  X.setIdentity();
+	  wasInitialGuess = false;
+	}
+	else
+	  X = tmp;
+	double ostart = get_time();
+	float error;
+	int result = aligner.align(error, X);
+	tmp = X;
+	cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
+	cerr << "localTransform : " << endl;
+	cerr << X.inverse().matrix() << endl;
+	trajectory=startingTraj*X;
+	cerr << "globaltransform: " << endl;
+	cerr << trajectory.matrix() << endl;
+	double oend = get_time();
+	cerr << "alignment took: " << oend-ostart << " sec." << endl;
+	cerr << "aligner scaled image size: " << aligner.scaledImageRows() << " " << aligner.scaledImageCols() << endl;
+	drawableList[drawableList.size()-1]->setTransformation(trajectory);
+	drawableList[drawableList.size()-2]->setTransformation(trajectory);
+	drawableList[drawableList.size()-3]->setTransformation(trajectory);
+      }
+    }
+
+    pwnGMW.viewer_3d->updateGL();
+
+    usleep(10000);
+  }
+  return 0;  
 }
 
-
-#if 0
-
-  /**** REGISTRATION VISUALIZATION****/
-  QApplication qApplication(argc, argv);
-  QGraphicsScene *scn0, *scn1;
+/*
   ColorMap cmap;
   cmap.compute(0, 7000, 0xff);
   QString filename0 = "cloud0.pgm";
   QString filename1 = "cloud1.pgm";  
 
-  DMMainWindow dmMW;
-  dmMW.show();
-  scn0 = dmMW.scene0();
-  scn1 = dmMW.scene1();
-  bool *initialGuessViewer = 0, *optimizeViewer = 0;
-  int *stepViewer = 0, *stepByStepViewer = 0;
-  float *pointsViewer = 0, *normalsViewer = 0, *covariancesViewer = 0, *correspondencesViewer = 0;
-  GLParameterPoints *p0Param = new GLParameterPoints();
-  GLParameterPoints *p1Param = new GLParameterPoints();
-  GLParameterNormals *n0Param = new GLParameterNormals();
-  GLParameterNormals *n1Param = new GLParameterNormals();
-  GLParameterCovariances *c0Param = new GLParameterCovariances();
-  GLParameterCovariances *c1Param = new GLParameterCovariances();
   GLParameterCorrespondences *corrParam = new GLParameterCorrespondences();
-  DrawablePoints* dp0 = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)p0Param, 1, &cloud0);
-  DrawablePoints* dp1 = new DrawablePoints(T1_0.inverse(), (GLParameter*)p1Param, 1, &cloud1);
-  DrawableNormals *dn0 = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)n0Param, 1, &cloud0);
-  DrawableNormals *dn1 = new DrawableNormals(T1_0.inverse(), (GLParameter*)n1Param, 1, &cloud1);
-  DrawableCovariances *dc0 = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)c0Param, 1, &svd0);
-  DrawableCovariances *dc1 = new DrawableCovariances(T1_0.inverse(), (GLParameter*)c1Param, 1, &svd1);
   DrawableCorrespondences* dcorr = new DrawableCorrespondences(T1_0.inverse(), (GLParameter*)corrParam, 1, &correspondences);
   while (!(*dmMW.closing())) {
-    qApplication.processEvents();
-    
-    // Update state variables value.
-    initialGuessViewer = dmMW.initialGuess();
-    optimizeViewer = dmMW.optimize();
-    stepByStepViewer = dmMW.stepByStep();
-    stepViewer = dmMW.step();
-    pointsViewer = dmMW.points();
-    normalsViewer = dmMW.normals();
-    covariancesViewer = dmMW.covariances();
-    correspondencesViewer = dmMW.correspondences();
     
     // Checking state variable value.
     // Initial guess.
@@ -424,5 +480,4 @@ int
   delete(dc0);
   delete(dc1);
   delete(dcorr);
-
-#endif
+*/

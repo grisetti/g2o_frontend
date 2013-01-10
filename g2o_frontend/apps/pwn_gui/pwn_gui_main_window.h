@@ -11,6 +11,7 @@ class PWNGuiMainWindow : public QMainWindow, public Ui::PWNGuiBaseMainWindow {
   bool* closing() { return &_closing; }
   bool* initialGuess() { return &_initialGuess; }
   bool* optimize() { return &_optimize; }
+  bool* addCloud() { return &_addCloud; }
   int* stepByStep() { return &_stepByStep; }
   int* step() { return &_step[0]; }
   float* points() { return &_points[0]; }
@@ -20,6 +21,7 @@ class PWNGuiMainWindow : public QMainWindow, public Ui::PWNGuiBaseMainWindow {
   QGraphicsScene* scene0() { return _scene0; }
   QGraphicsScene* scene1() { return _scene1; }
   void closeEvent(QCloseEvent*) { _closing = 1; }
+  QListWidgetItem* itemList() {return _itemList; }
 
  private slots:
   // Checkbox slots.
@@ -36,22 +38,27 @@ class PWNGuiMainWindow : public QMainWindow, public Ui::PWNGuiBaseMainWindow {
   void slotCovariancesChangeValue(double newValue) { _covariances[1] = newValue; }
   void slotCorrespondencesChangeValue(double newValue) { _correspondences[1] = newValue; } 
   // Pushbuttons slots.
-  void slotInitialGuessClicked() { _initialGuess = 1; }//{ _optimize = 0; _initialGuess = 1; }
-  void slotOptimizeClicked() { _optimize = 1; }//{ _initialGuess = 0; _optimize = 1; }
+  void slotInitialGuessClicked() { _initialGuess = 1; }
+  void slotOptimizeClicked() { _optimize = 1; }
+  void slotAddCloudClicked() { _addCloud = 1; }
+  // List widget slot.
+  void slotCloudSelected(QListWidgetItem *itemList_) { _itemList = itemList_; };
 
  protected:
   // Scenes for graphicsview widgets.
-  QGraphicsScene* _scene0, *_scene1;
+  QGraphicsScene *_scene0, *_scene1;
   // State variables.
   bool _closing;
   bool _initialGuess;
   bool _optimize;
+  bool _addCloud;
   int _stepByStep;
   int _step[2];
   float _points[2];
   float _normals[2];
   float _covariances[2];
   float _correspondences[2];
+  QListWidgetItem *_itemList;
 };
 
 #endif

@@ -60,8 +60,8 @@ void DepthRegisteredData::update()
   {
     _intensityImage = new cv::Mat();
     _depthImage = new cv::Mat();
-    *_intensityImage = cv::imread((_baseFilename + "_intensity.pgm") .c_str(), -1);
-    *_depthImage = cv::imread((_baseFilename + "_depth.pgm") .c_str(), -1);
+    *_intensityImage = cv::imread((_baseFilename + "-intensity.pgm") .c_str(), -1);
+    *_depthImage = cv::imread((_baseFilename + "-depth.pgm") .c_str(), -1);
   }
 }
 

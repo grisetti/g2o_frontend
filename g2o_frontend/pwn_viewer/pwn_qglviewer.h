@@ -11,6 +11,7 @@ class PWNQGLViewer : public QGLViewer {
   virtual void draw();
   virtual void addDrawable(Drawable *d);
   virtual void clearDrawableList() { _drawableList.clear(); }
+  virtual std::vector<Drawable*> drawableList() { return _drawableList; }   
   GLuint ellipsoidDrawList() { return _ellipsoidDrawList; }
   GLuint pyramidDrawList() { return _ellipsoidDrawList; }
  

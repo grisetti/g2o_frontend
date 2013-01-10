@@ -1,11 +1,12 @@
 INCLUDE(${QT_USE_FILE})
 
 QT4_WRAP_UI(UI_HEADERS pwn_gui_base_main_window.ui)
-QT4_WRAP_CPP(UI_SOURCES pwn_gui_base_main_window.h)
+QT4_WRAP_CPP(UI_SOURCES pwn_gui_main_window.h)
 
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${QGLVIEWER_INCLUDE_DIR} ${QT_INCLUDES})
 
 ADD_EXECUTABLE(pwn_gui
+  pwn_gui.cpp  
   pwn_gui_main_window.cpp	
   ${UI_HEADERS}
   ${UI_SOURCES}

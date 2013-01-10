@@ -13,12 +13,14 @@ PWNGuiMainWindow::PWNGuiMainWindow(QWidget *parent, Qt::WindowFlags flags) : QMa
   _closing = 0;
   _initialGuess = 1;
   _optimize = 0;
+  _addCloud = 0;
   _stepByStep = 0;
   _step[0] = 1; _step[1] = 1;
   _points[0] = 1.0f; _points[1] = 1.0f;
   _normals[0] = 0.0f; _normals[1] = 0.0f;
   _covariances[0] = 0.0f; _covariances[1] = 0.0f;
   _correspondences[0] = 0.0f; _correspondences[1] = 0.0f;
+  _itemList = 0;
 
   // Signals/Slots checkbox connections.
   QObject::connect(checkBox_step, SIGNAL(toggled(bool)),
@@ -33,7 +35,7 @@ PWNGuiMainWindow::PWNGuiMainWindow(QWidget *parent, Qt::WindowFlags flags) : QMa
 		   this, SLOT(slotCorrespondencesEnabled(bool)));
   QObject::connect(checkBox_step_by_step, SIGNAL(toggled(bool)),
 		   this, SLOT(slotStepByStepEnabled(bool)));
-  // Signals/Slots spinbox connections.
+
   QObject::connect(spinBox_step, SIGNAL(valueChanged(int)),
 		   this, SLOT(slotStepChangeValue(int)));
   QObject::connect(doubleSpinBox_points, SIGNAL(valueChanged(double)),
@@ -50,6 +52,12 @@ PWNGuiMainWindow::PWNGuiMainWindow(QWidget *parent, Qt::WindowFlags flags) : QMa
 		   this, SLOT(slotInitialGuessClicked()));
   QObject::connect(pushButton_optimize, SIGNAL(clicked()),
 		   this, SLOT(slotOptimizeClicked()));
+  QObject::connect(pushButton_add_cloud, SIGNAL(clicked()),
+		   this, SLOT(slotAddCloudClicked()));
+
+  // Signals/Slots list widget connections.
+  QObject::connect(listWidget, SIGNAL(itemClicked(QListWidgetItem*)),
+		   this, SLOT(slotCloudSelected(QListWidgetItem*)));
 }
 
 PWNGuiMainWindow::~PWNGuiMainWindow() {}
