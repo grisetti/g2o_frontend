@@ -174,14 +174,14 @@ ELSE(G2O_FOUND)
   SET(G2O_FRONTEND_G2O_INCLUDE "" CACHE PATH "Directory of G2O include")
 ENDIF(G2O_FOUND)
 
-# # Find PCL
-# set(PCL_DIR $ENV{PCL_ROOT})
-# find_package(PCL 1.6 REQUIRED COMPONENTS common io registration filters keypoints visualization)
-# IF(PCL_FOUND)
-#   include_directories(${PCL_INCLUDE_DIRS})
-#   link_directories(${PCL_LIBRARY_DIRS})
-#   add_definitions(${PCL_DEFINITIONS})
-# ENDIF(PCL_FOUND)
+# Find PCL
+set(PCL_DIR $ENV{PCL_ROOT})
+find_package(PCL 1.6 REQUIRED COMPONENTS common io registration filters keypoints visualization)
+IF(PCL_FOUND)
+  include_directories(${PCL_INCLUDE_DIRS})
+  link_directories(${PCL_LIBRARY_DIRS})
+  add_definitions(${PCL_DEFINITIONS})
+ENDIF(PCL_FOUND)
 
 FIND_PACKAGE( OpenCV 2.4.2 REQUIRED )
 
