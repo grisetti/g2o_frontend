@@ -51,6 +51,7 @@ void PointWithNormalStatistcsGenerator::computeNormalsAndSVD(PointWithNormalVect
       if (acc.n()>_minPoints){
 	Eigen::Vector3f mean = acc.mean();
 	svd._mean = mean;
+	svd._n = acc.n();
 	Eigen::Matrix3f cov  = acc.covariance();
 	eigenSolver.compute(cov);
 	svd._U=eigenSolver.eigenvectors();
