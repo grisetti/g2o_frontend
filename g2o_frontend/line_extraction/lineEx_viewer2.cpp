@@ -24,147 +24,16 @@
 #include "g2o_frontend/thesis/LaserRobotData.h"
 
 #include <qapplication.h>
-#include "opencv2/opencv.hpp"
 #include <qobject.h>
-#include "viewer/viewerGUI.h"
+#include "viewerGUI.h"
 
 using namespace std;
 using namespace g2o;
-using namespace cv;
 
-//fro Images
-#define fx_d 5.9421434211923247e+02
-#define fy_d 5.9104053696870778e+02
-#define cx_d 3.3930780975300314e+02
-#define cy_d 2.4273913761751615e+02
-#define k1_d -2.6386489753128833e-01
-#define k2_d 9.9966832163729757e-01
-#define p1_d -7.6275862143610667e-04
-#define p2_d 5.0350940090814270e-03
-#define k3_d -1.3053628089976321e+00
-
-vector<Vec3f> cloud;
-vector<Vec3f> cloudOriginal;
-Mat tmp;
-int allPoints;
-int skippedPoints;
 
 //for laser points data
 LaserRobotData::Point2DVector pointsLine;
 LaserRobotData::Point2DVector pointsOriginal;
-
-// void dumpEdges(ostream& os, BaseFrameSet& fset, 
-// 	       bool writeOdometry = true, 
-// 	       bool writeLandmarks = true, 
-// 	       bool writeIntraFrame = false) {
-// 
-//    GraphItemSelector graphSelector;
-//   graphSelector.compute(fset);
-//   HyperGraph::EdgeSet& eset=graphSelector.selectedEdges();
-//   OptimizableGraph::VertexSet& vset=graphSelector.selectedVertices();
-//   
-//   os << "set size ratio -1" << endl;
-//   os << "plot ";
-//   if (writeOdometry) {
-//     os << "'-' w l lw 0.5, ";
-//   }
-//   if (writeIntraFrame) {
-//     os << "'-' w l lw 0.5, ";
-//   }
-//   if (writeLandmarks) {
-//     os << "'-' w p ps 0.5,";
-//   }
-//   os << "'-' w p ps 1.5" << endl;
-// 
-//   if (writeOdometry){
-//     for (HyperGraph::EdgeSet::iterator it = eset.begin(); it!=eset.end(); it++){
-//       const EdgeSE2* e = dynamic_cast<const EdgeSE2*>(*it);
-//       if (! e)
-// 	continue;
-//       const VertexSE2* v1 = dynamic_cast<const VertexSE2*>(e->vertices()[0]);
-//       const VertexSE2* v2 = dynamic_cast<const VertexSE2*>(e->vertices()[1]);
-//       os << v1->estimate().translation().x() << " " << v1->estimate().translation().y() << endl;
-//       os << v2->estimate().translation().x() << " " << v2->estimate().translation().y() << endl;
-//       os << endl;
-//     }
-//     os << "e" << endl;
-//   }
-// 
-//   if (writeIntraFrame) {
-//     for (BaseFrameSet::iterator it = fset.begin(); it!=fset.end(); it++){
-//       BaseFrame* f = *it;
-//       const VertexSE2* v1 = f->vertex<const VertexSE2*>();
-//       if (!v1)
-// 	continue;
-//       for (BaseFrameSet::iterator iit = f->neighbors().begin(); iit!=f->neighbors().end(); iit++){
-// 	BaseFrame* f2 = *iit;
-// 	if (! fset.count(f2))
-// 	  continue;
-// 	const VertexSE2* v2 = f2->vertex<const VertexSE2*>();
-// 	if (! v2)
-// 	  continue;
-// 	os << v1->estimate().translation().x() << " " << v1->estimate().translation().y() << " " << v1->estimate().rotation().angle() << endl;
-// 	os << v2->estimate().translation().x() << " " << v2->estimate().translation().y() << " " << v2->estimate().rotation().angle() << endl;
-// 	os << endl;
-//       }
-//     }
-//     os << "e" << endl;
-//   }
-// 
-//   // write the landmarks
-//   if (writeLandmarks) {
-//     for (OptimizableGraph::VertexSet::iterator it = vset.begin(); it!=vset.end(); it++){
-//       const VertexPointXY* v = dynamic_cast<const VertexPointXY*>(*it);
-//       if (! v)
-// 	continue;
-//       os << v->estimate().x() << " " << v->estimate().y() <<  endl;
-//     }
-//     os << "e" << endl;
-//   }
-//   
-//   for (OptimizableGraph::VertexSet::iterator it = vset.begin(); it!=vset.end(); it++){
-//     const VertexSE2* v = dynamic_cast<const VertexSE2*>(*it);
-//     if (! v)
-//       continue;
-//     os << v->estimate().translation().x() << " " << v->estimate().translation().y() << " " << v->estimate().rotation().angle() << endl;
-//   }
-//   os << "e" << endl;
-//   os << endl;
-// }
-
-
-// void dumpEdges(ostream& os, MapperState* mapperState) {
-//   GraphItemSelector graphSelector;
-//   BaseFrameSet fset;
-//   for (VertexFrameMap::iterator it = mapperState->frames().begin(); it!=mapperState->frames().end(); it++){
-//     fset.insert(it->second);
-//   }
-//   dumpEdges(os, fset, true, true, false);
-// }
-
-
-// void saveThings(string filename , MapperState* mapperState, int seqNum = -1)  {
-//   if (seqNum>-1) {
-//     string baseFilename = filename.substr(0,filename.find_last_of("."));
-//     char seqNumStr[10];
-//     sprintf(seqNumStr, "%04d", seqNum);
-//     filename = baseFilename + "-" + seqNumStr + ".g2o";
-//   }
-// 
-//   OptimizableGraph::VertexSet vset;
-//   HyperGraph::EdgeSet eset;
-//   GraphItemSelector graphSelector;
-//   BaseFrameSet fset;
-//   for (VertexFrameMap::iterator it = mapperState->frames().begin(); it!=mapperState->frames().end(); it++){
-//     fset.insert(it->second);
-//   }
-//   graphSelector.compute(fset);
-//   eset=graphSelector.selectedEdges();
-//   vset=graphSelector.selectedVertices();
-// 
-//   ofstream os(filename.c_str());
-//   mapperState->graph()->saveSubset(os, eset);
-// }
 
 
 //to be deleted?
@@ -180,61 +49,6 @@ void sigquit_handler(int sig)
     }
   }
 }
-
-//for image
-void reproject(Mat &image)
-{
-	int rows=image.rows;
-	int cols=image.cols;
-	unsigned short * dptra=tmp.ptr<unsigned short>(0);
-	for(int i = 0; i < rows; i++)
-	{
-
-		for(int j = 0; j < cols; j++)
-		{
-			unsigned short d = *dptra;
-			if(d != 0)
-			{
-				//float x=(j-cx_d)*d/fx_d;
-				//float y=(i-cy_d)*d/fy_d;
-				//float z=d;
-				Vec3f p;
-				p[0]=(double)((double)j-(double)cx_d)*(double)d/(double)fx_d;
-				p[1]=(double)((double)i-(double)cy_d)*(double)d/(double)fy_d;
-				p[2]=(double)d;
-				
-				cloud.push_back(p);
-				
-				cloudOriginal.push_back(p);
-			}
-			dptra++;
-		}
-	}
-	cout <<" Reprojection done!"<<endl;
-}
-
-
-//creating a cloud from laser data
-void cloudPopulation(LaserRobotData* ldata)
-{
-	LaserRobotData::Point2DVector points = ldata->cartesian();
-	cout << "points: " << points[0].x() << ", " <<points[0].y() << endl;
-	Vec3f v;
-	
-	cout << "cloud prima" << cloud.size() << endl;
-	for (size_t i = 0; i < points.size(); i++)
-	{
-		v[0] = (float)points[i].x();
-		v[1] = (float)points[i].y();
-		v[2] = 0.f;
-		
-		cloud.push_back(v);
-		cloudOriginal.push_back(v);
-	}
-	cout << "cloud fine" << cloud.size() << endl;
-	cout <<" Population done!"<<endl;
-}
-
 
 int main(int argc, char**argv){
   hasToStop = false;

@@ -23,6 +23,7 @@ struct Line2D: public Vector4f{
   void setD(const Vector2f& d_)  { tail<2>()=d_;}
 
   void normalize(){
+    tail<2>().normalize();
     head<2>()-=tail<2>()*(tail<2>().dot(head<2>()));
   }
   void fromPoints(const Vector2f& p0_, const Vector2f& p1_){
@@ -75,6 +76,11 @@ public:
   
   void compute();
 
+  float _splitThreshold;
+  int _minPointsInLine;
+  int _maxPointDistance;
+  float _rhoMergeThreshold;
+  float _normalMergeThreshold;
 protected:
   void initializeFromIndices(Line2D& l, int i0, int i1);
   bool split(int i);
@@ -86,8 +92,6 @@ protected:
   
   int maxDistanceIndex(const Line2D& l);
   
-  float _splitThreshold;
-  float _minPointsInLine;
   
   
   

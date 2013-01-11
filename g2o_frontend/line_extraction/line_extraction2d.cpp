@@ -1,4 +1,6 @@
+#include <cmath>
 #include "line_extraction2d.h"
+#include <fstream>
 using namespace std;
 
 void Point2DClusterer::compute() {
@@ -22,8 +24,11 @@ void Point2DClusterer::compute() {
 Line2DExtractor::Line2DExtractor()
 {
 
-  _splitThreshold = 0.2;
-
+  _splitThreshold = 0.05*0.05;
+  _maxPointDistance = 3;
+  _minPointsInLine = 10;
+  _normalMergeThreshold = ::cos(M_PI/360);
+  _rhoMergeThreshold = 0.05;
 }
 
 Line2DExtractor::~Line2DExtractor()
@@ -39,14 +44,22 @@ bool Line2DExtractor::split(int k) {
   // seek for the point with the larest distance between the indices contained in the line
   
   int imax= maxDistanceIndex(line);
-  if (imax == -1 || imax == line.p1Index-1){
+  cerr<< "\t\t imax: " << imax << endl;
+  if (imax <0  || imax == line.p1Index-1){
     return false;
   }
+  const Vector2f& v = _points[imax];
+  cerr<< "\t\t d: " << line.squaredDistance(v) << endl;
+  
+
   std::pair<IntLineMap::iterator, bool> insertResult= _lines.insert(make_pair(imax, Line2D()));
   assert (insertResult.second && "FAILURE IN MAP INSERTION");;
+
   Line2D& newLine = insertResult.first->second;
   initializeFromIndices(newLine, imax, line.p1Index);
-  initializeFromIndices(line, line.p1Index, imax);
+  initializeFromIndices(line, line.p0Index, imax);
+  cerr << "\tfirstLine: " << line.p0Index << " " << line.p1Index << endl;
+  cerr << "\tseconLine: " << newLine.p0Index << " " << newLine.p1Index << endl;
   return true;
 }
 
@@ -64,22 +77,42 @@ int Line2DExtractor::maxDistanceIndex(const Line2D& line){
 }
 
 bool Line2DExtractor::merge(int k) {
-  assert (_lines.find(k)!=_lines.end() && "LINE NOT IN THE SET");
-  Line2D& line1 = _lines[k];
-  assert (_lines.find(k+1)!=_lines.end() && "LINE NOT IN THE SET");
-  Line2D& line2 = _lines[k+1];
+  IntLineMap::iterator it = _lines.find(k);
+  assert (it==_lines.end() && "LINE NOT IN THE SET");
+  Line2D& line1 = it->second;
+  if (k == _lines.rbegin()->first)
+    return false;
+  
+  it++;
+  Line2D& line2 = it->second;;
+  if (line2.p0Index-line1.p1Index > _maxPointDistance)
+    return false;
+  
+  float normalAngleCos = line2.d().dot(line1.d());
+  if (normalAngleCos > _normalMergeThreshold){
+    return false;
+  }
+  float rho1 = line1.p().norm();
+  float rho2 = line2.p().norm();
+  if (fabs (rho1-rho2)>_rhoMergeThreshold){
+    return false;
+  }
 
   Line2D line;
   initializeFromIndices(line, line1.p0Index, line2.p1Index);
+  
+  // int imax= maxDistanceIndex(line);
+  // if (imax <0  || imax == line.p1Index-1){
+  //   return false;
+  // }
 
-  int imax= maxDistanceIndex(line);
-  if (imax == -1){
-    return false;
-  }
-  _lines.erase(k+1);
+  _lines.erase(it);
   line1 = line;
   return true;
 }
+
+ofstream os("lines.dat");
+ofstream os2("linesMerged.dat");
 
 void Line2DExtractor::initializeFromIndices(Line2D& line, int i0, int i1){
   line.p0Index = i0;
@@ -94,13 +127,56 @@ void Line2DExtractor::compute(){
     return;
   Line2D firstLine;
   initializeFromIndices(firstLine,0,_points.size()-1);
+  _lines.insert(make_pair(0, firstLine));
   //bool hasSplitted = true;
   IntLineMap::iterator it = _lines.begin();
   while (it!=_lines.end()){
-    /*bool splitResult=*/ split(it->first);
-    it++;
+    const Line2D& l=it->second;
+    bool splitResult= split(it->first);
+    cerr << "\tsplit" << l.p0Index << " " << l.p1Index;
+    if (splitResult) {
+      cerr << "split done" << endl;
+    } else 
+      cerr << "split nope" << endl;
+    if (! splitResult)
+      it++;
   }
-    cerr << "I split " << _lines.size() << " times";
+  cerr << "\tI split " << _lines.size() << " times";
+  for (IntLineMap::iterator it=_lines.begin(); it!=_lines.end(); it++){
+    const Line2D& l = it->second;
+    const Vector2f & p0 = _points[l.p0Index];
+    const Vector2f & p1 = _points[l.p1Index];
+    os << p0.transpose() << endl;
+    os << p1.transpose() << endl;
+    os << endl;
+    os << endl;
+  }
+  os.flush();
+
+  it = _lines.begin();
+  while (it!=_lines.end()){
+    const Line2D& l=it->second;
+    bool mergeResult= merge(it->first);
+    cerr << "\tmerge" << l.p0Index << " " << l.p1Index;
+    if (mergeResult) {
+      cerr << "merge done" << endl;
+    } else 
+      cerr << "merge nope" << endl;
+    if (!mergeResult)
+      it++;
+  }
+  cerr << "\tI merge " << _lines.size() << " times";
+  for (IntLineMap::iterator it=_lines.begin(); it!=_lines.end(); it++){
+    const Line2D& l = it->second;
+    const Vector2f & p0 = _points[l.p0Index];
+    const Vector2f & p1 = _points[l.p1Index];
+    os2 << p0.transpose() << endl;
+    os2 << p1.transpose() << endl;
+    os2 << endl;
+    os2 << endl;
+  }
+  os2.flush();
+
 }
 
 // bool Line2DExtractor::compute(Vector2fVector& /*points*/ ,
