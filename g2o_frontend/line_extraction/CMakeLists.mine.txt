@@ -1,0 +1,137 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+
+PROJECT(line_extraction)
+
+# The library prefix
+# SET(LIB_PREFIX line_extraction)
+
+# default built type
+IF(NOT CMAKE_BUILD_TYPE)
+  SET(CMAKE_BUILD_TYPE Release CACHE STRING
+      "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
+      FORCE)
+ENDIF(NOT CMAKE_BUILD_TYPE)
+
+# Set the output directory for the build executables and libraries
+#SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${g2o_frontend_SOURCE_DIR}/lib)
+#SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${g2o_frontend_SOURCE_DIR}/bin)
+#IF(WIN32)
+#  SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${g2o_frontend_SOURCE_DIR}/bin)
+#ELSE(WIN32)
+#  SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${g2o_frontend_SOURCE_DIR}/lib)
+#ENDIF(WIN32)
+
+#set the default path for built executables to the "bin" directory
+set(EXECUTABLE_OUTPUT_PATH ${line_extraction_SOURCE_DIR}/bin)
+#set the default path for built libraries to the "lib" directory
+set(LIBRARY_OUTPUT_PATH ${line_extraction_SOURCE_DIR}/lib)
+
+# Set search directory for looking for our custom CMake scripts to
+# look for SuiteSparse, QGLViewer, and Eigen3.
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${line_extraction_SOURCE_DIR}/cmake_modules)
+
+FIND_PACKAGE( OpenCV 2.4.2 REQUIRED )
+
+#find eigen3
+FIND_PACKAGE(Eigen3 REQUIRED)
+IF(EIGEN3_FOUND)
+	INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
+  MESSAGE("Eigen3 library found.")
+ELSE(EIGEN3_FOUND)
+  MESSAGE("Eigen3 library NOT found.")
+ENDIF(EIGEN3_FOUND)
+
+# Find PCL
+# set(PCL_DIR $ENV{PCL_ROOT}) -- COMPONENTS common io registration filters keypoints visualization
+FIND_PACKAGE(PCL 1.6 REQUIRED)
+IF(PCL_FOUND)
+  include_directories(${PCL_INCLUDE_DIRS})
+  link_directories(${PCL_LIBRARY_DIRS})
+  add_definitions(${PCL_DEFINITIONS})
+ENDIF(PCL_FOUND)
+
+# OpenGL is used in the draw actions 
+FIND_PACKAGE(OpenGL)
+IF (OPENGL_FOUND)
+  INCLUDE_DIRECTORIES(${OPENGL_INCLUDE})
+  MESSAGE(STATUS "Compiling with OpenGL support")
+ENDIF(OPENGL_FOUND)
+
+# For building the GUI
+FIND_PACKAGE(QGLViewer)
+IF (QGLVIEWER_FOUND)
+  INCLUDE_DIRECTORIES(${QGLVIEWER_INCLUDE_DIR})
+  MESSAGE(STATUS "using QGLViewer support")
+ENDIF(QGLVIEWER_FOUND)
+
+#INCLUDE(${QT_USE_FILE})
+# this command finds Qt4 libraries and sets all required variables
+FIND_PACKAGE( Qt4 REQUIRED )
+IF (QT_FOUND)
+#	SET(QT_VERSION "4.8.1")
+  INCLUDE_DIRECTORIES(${QT_INCLUDE_DIR} ${QT_INCLUDE_DIR}/Qt ${QT_INCLUDE_DIR}/QtCore 
+							${QT_INCLUDE_DIR}/QtXml ${QT_INCLUDE_DIR}/QtOpenGL ${QT_INCLUDE_DIR}/QtGui)
+  MESSAGE(STATUS "qt4 found")
+ELSE(QT_FOUND)
+  MESSAGE("qt4 library NOT found.")
+ENDIF(QT_FOUND)
+
+# For building the CHOLMOD / CSPARSE solvers
+FIND_PACKAGE(SuiteSparse)
+IF(CSPARSE_FOUND)
+  SET(BUILD_CSPARSE OFF CACHE BOOL "Build local CSparse library")
+ELSE(CSPARSE_FOUND)
+  SET(BUILD_CSPARSE ON CACHE BOOL "Build local CSparse library")
+  SET(CSPARSE_FOUND TRUE)
+ENDIF(CSPARSE_FOUND)
+
+#find g2o
+FIND_PACKAGE(G2O REQUIRED)
+IF(G2O_FOUND)
+  SET(${PROJECT_NAME}_G2O_INCLUDE ${G2O_INCLUDE_DIR} CACHE PATH "Directory of G2O include")
+  SET(${PROJECT_NAME}_G2O_LIBRARY_PATH ${G2O_LIBRARY_PATH} CACHE PATH "Directory of G2O libraries")
+  MESSAGE("g2o library found.")
+ELSE(G2O_FOUND)
+  SET(${PROJECT_NAME}_G2O_INCLUDE "" CACHE PATH "Directory of G2O include")
+  MESSAGE("g2o library NOT found.")
+ENDIF(G2O_FOUND)
+
+#set the path for g2o_frontend
+set(G2O_FRONTEND $ENV{G2O_FRONTEND_ROOT})
+MESSAGE("g2o_frontend found in: " ${G2O_FRONTEND})
+
+include_directories(${G2O_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} ${G2O_FRONTEND} ${CSPARSE_INCLUDE_DIR})
+link_directories(${G2O_FRONTEND}/lib)
+
+
+ADD_LIBRARY(lineOperations
+src/utilities/Edge.cpp
+src/utilities/IEdgesExtractor.cpp
+src/utilities/RansacEE.cpp
+src/utilities/SplitMergeEE.cpp
+src/utilities/line_extraction2d.cpp)
+
+ADD_LIBRARY(viewer
+src/viewer/leQGLViewer.cpp 
+src/viewer/viewerGUI.cpp
+src/viewer/moc_viewerGUI.cpp)
+TARGET_LINK_LIBRARIES(viewer ${QGLVIEWER_LIBRARY} ${QT_QT_LIBRARY} ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} lineOperations)
+
+# ADD_EXECUTABLE(lineEx_viewer src/lineEx_viewer.cpp)
+# TARGET_LINK_LIBRARIES(lineEx_viewer ${OpenCV_LIBS} ${OPENGL_gl_LIBRARY} ${PCL_LIBRARIES} cloudOperations viewer)
+
+ADD_EXECUTABLE(lineEx_viewer src/lineEx_viewer.cpp)
+TARGET_LINK_LIBRARIES(lineEx_viewer 
+	g2o_frontend_thesis 
+	${G2O_TYPES_SLAM3D}
+	${G2O_TYPES_SLAM2D}
+	${G2O_TYPES_DATA}
+	${G2O_CORE_LIBRARY}
+	${G2O_STUFF_LIBRARY}
+	${G2O_SOLVER_CSPARSE}
+	${G2O_SOLVER_CSPARSE_EXTENSION}
+	${CSPARSE_LIBRARY}
+	${OpenCV_LIBS} 
+	${OPENGL_gl_LIBRARY} 
+	${PCL_LIBRARIES} 	
+	viewer)
