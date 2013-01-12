@@ -93,27 +93,39 @@ void PointWithNormalAligner::_updateOmegas() {
   Diagonal3f flatOmegaP(_flatOmegaDiagonal.x(), _flatOmegaDiagonal.y(), _flatOmegaDiagonal.z());
   Diagonal3f flatOmegaN(flatKn, flatKn, flatKn);
   Diagonal3f nonFlatOmegaN(nonFlatKn, nonFlatKn, nonFlatKn);
-
+  float fB = (0.075*_cameraMatrix(0,0)); // kinect baseline * focal lenght;
+  
+  float zvarmin = 1e9;
+  float zvarmax = 0;
   for (size_t i=0; i<_currPoints->size(); i++){
     const PointWithNormal& point = _currPoints->at(i);
     const PointWithNormalSVD& svd = _currSVDs->at(i);
+    float z = svd.z();
     _currOmegas[i].setZero();
     if (point.normal().squaredNorm()<1e-3) {
       // the point has no normal;
       continue;
     }
+    float zVariation = (fB+4*z)/(z*z);
+    zVariation *= zVariation;
+    zvarmin = (zvarmin < zVariation) ? zvarmin : zVariation;
+    zvarmax = (zvarmax > zVariation) ? zvarmax : zVariation;
+    
     float curvature = svd.curvature();
     if (curvature<_flatCurvatureThreshold){
-      _currOmegas[i].block<3,3>(0,0) = svd.U() * flatOmegaP * svd.U().transpose();
+      _currOmegas[i].block<3,3>(0,0) = svd.U() * flatOmegaP * svd.U().transpose() *zVariation;
       _currOmegas[i].block<3,3>(3,3) = flatOmegaN;
     } else {
       _currOmegas[i].block<3,3>(0,0) = svd.U() * 
 	Diagonal3f(nonFlatKp/svd.singularValues()(0),
 		   nonFlatKp/svd.singularValues()(1), 
-		   nonFlatKp/svd.singularValues()(2)) * svd.U().transpose();
+		   nonFlatKp/svd.singularValues()(2)) * svd.U().transpose() * zVariation;
       _currOmegas[i].block<3,3>(3,3) = nonFlatOmegaN;
     }
   }
+  cerr << "zVariation, min" << zvarmin << endl;
+  cerr << "zVariation, max" << zvarmax << endl;
+
   _omegasSet=true;
 }
 
@@ -139,8 +151,8 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X){
     
     for (int c=0; c<_refIndexImage.cols(); c++) {
       for (int r=0; r<_refIndexImage.rows(); r++) {
-	int& refIndex = _refIndexImage(c,r);
-	int currIndex = _currIndexImage(c,r);
+	int& refIndex = _refIndexImage(r,c);
+	int currIndex = _currIndexImage(r,c);
 	if (refIndex<0 || currIndex<0) {
 	  nNoPoint++;
 	  continue;
@@ -187,6 +199,10 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X){
 	_numCorrespondences ++;
 	nGoodPoints++;
       }
+    }
+    for (size_t k=_numCorrespondences; k<_correspondences.size(); k++){
+	_correspondences[_numCorrespondences].i1=-1;
+	_correspondences[_numCorrespondences].i2=-1;
     }
     if (_debug) {
       cerr << "goodPoints: " << nGoodPoints << endl;

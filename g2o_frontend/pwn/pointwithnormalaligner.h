@@ -7,8 +7,8 @@
 #include "g2o_frontend/dm_optimization/dm_math.h"
 
 class PointWithNormalAligner{
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   struct Correspondence{
     Correspondence(int i1_=-1, int i2_=-1) {
       i1=i1_;
@@ -33,6 +33,12 @@ public:
   void setReferenceCloud(const PointWithNormalVector*  refPoints, const PointWithNormalSVDVector* refSVDs); 
   // sets the cloud and conditions tthe covariances accordingly
   void setCurrentCloud(const PointWithNormalVector*  currentPoints, const PointWithNormalSVDVector* currentSVDs); 
+
+  const PointWithNormalVector* referenceCloud() const {return _refPoints;}
+  const PointWithNormalSVDVector* referenceSVDs() const {return _refSVDs;}
+  const PointWithNormalVector* currentCloud() const {return _currPoints;}
+  const PointWithNormalSVDVector* currentSVDs() const {return _currSVDs;}
+
   
   inline float scale() const {return _scale;}
   inline void setScale(float scale_) {_scale = scale_; _cameraSet = false;}
