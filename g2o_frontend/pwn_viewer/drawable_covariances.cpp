@@ -29,7 +29,6 @@ void DrawableCovariances::draw() {
   if (_covariances && covariancesParameter && covariancesParameter->ellipsoidScale() > 0.0f) {
     glPushMatrix();
     glMultMatrixf(_transformation.data());
-    
     covariancesParameter->applyGLParameter();
     float ellipsoidScale = covariancesParameter->ellipsoidScale();
     Eigen::Vector4f colorLowCurvature = covariancesParameter->colorLowCurvature();
@@ -50,7 +49,7 @@ void DrawableCovariances::draw() {
       glPushMatrix();
       glMultMatrixf(I.data());
       if (curvature > curvatureThreshold) {
-	glColor4f(colorHighCurvature[0] - curvature, colorHighCurvature[1], colorHighCurvature[2], colorHighCurvature[3]);
+	glColor4f(colorHighCurvature[0] - curvature, colorHighCurvature[1], colorHighCurvature[2], colorHighCurvature[3]);	
       }
       else {
 	glColor4f(colorLowCurvature[0], colorLowCurvature[1] - curvature, colorLowCurvature[2], colorLowCurvature[3]);

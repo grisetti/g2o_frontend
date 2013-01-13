@@ -29,10 +29,12 @@ public:
   inline int scaledImageCols() const { return _refZbuffer.cols();}
   inline int scaledImageRows() const { return _refZbuffer.rows();}
 
-// sets the cloud and conditions tthe covariances accordingly
+  // sets the cloud and conditions the covariances accordingly
   void setReferenceCloud(const PointWithNormalVector*  refPoints, const PointWithNormalSVDVector* refSVDs); 
-  // sets the cloud and conditions tthe covariances accordingly
+  const PointWithNormalVector* refPoints() const {return _refPoints;}
+  // sets the cloud and conditions the covariances accordingly
   void setCurrentCloud(const PointWithNormalVector*  currentPoints, const PointWithNormalSVDVector* currentSVDs); 
+  const PointWithNormalVector* currPoints() const {return _currPoints;}
   
   inline float scale() const {return _scale;}
   inline void setScale(float scale_) {_scale = scale_; _cameraSet = false;}
@@ -78,6 +80,10 @@ public:
 
   inline int minInliers() const {return _minInliers;}
   inline void setMinInliers(int minInliers_) {_minInliers = minInliers_;}
+
+  inline DepthImage refZBuffer() const {return _refZbuffer;}
+  inline DepthImage currZBuffer() const {return _currZbuffer;}
+	
 protected:
   // size of the original image
   int _rows,  _cols;
