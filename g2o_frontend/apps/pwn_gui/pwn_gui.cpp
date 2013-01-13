@@ -6,7 +6,7 @@
 #include <fstream>
 #include <string>
 #include <set>
-
+#include <qapplication.h>
 #include "g2o/stuff/command_args.h"
 #include "g2o_frontend/pwn/depthimage.h"
 #include "g2o_frontend/pwn/pointwithnormal.h"
@@ -158,6 +158,7 @@ int main(int argc, char** argv){
 
   QApplication qApplication(argc, argv);
   PWNGuiMainWindow pwnGMW;
+  QGraphicsScene *refScn, *currScn;
 
   std::vector<string> filenames;
   if (imageName0 == "sequence") {
@@ -200,8 +201,9 @@ int main(int argc, char** argv){
   Isometry3f trajectory;
   trajectory.setIdentity();
 
-
   pwnGMW.show();
+  refScn = pwnGMW.scene0();
+  currScn = pwnGMW.scene1();
   bool *addCloud = 0, *initialGuessViewer = 0, *optimizeViewer = 0;
   int *stepViewer = 0, *stepByStepViewer = 0;
   float *pointsViewer = 0, *normalsViewer = 0, *covariancesViewer = 0, *correspondencesViewer = 0;
@@ -211,12 +213,7 @@ int main(int argc, char** argv){
   GLParameterCovariances *cParam = new GLParameterCovariances(0.5f, 
 							      Vector4f(0.0f, 1.0f, 0.0f, 0.5f), Vector4f(1.0f, 0.0f, 0.0f, 0.5f),
 							      0.02f, 0.0f);
-
-  GLParameterCorrespondences* corrParam = new GLParameterCorrespondences(1.0f, Vector4f(1.0f, 0.0f, 0.0f, 0.5f), 1.0f);
-  DrawableCorrespondences *dcorr = new DrawableCorrespondences(Isometry3f::Identity(), (GLParameter*)corrParam, 1, &aligner->correspondences());
-  pwnGMW.viewer_3d->addDrawable((Drawable*)dcorr);
-
-
+  GLParameterCorrespondences *corrParam = new GLParameterCorrespondences(0.1f, Vector4f(1.0f, 0.0f, 1.0f, 0.5f), 0.0f);
   Isometry3f tmp = Isometry3f::Identity(), startingTraj = Isometry3f::Identity();
   Frame *referenceFrame = 0, *currentFrame = 0;
   bool firstCloudAdded = true, wasInitialGuess = true;
@@ -234,6 +231,7 @@ int main(int argc, char** argv){
     correspondencesViewer = pwnGMW.correspondences();
     addCloud = pwnGMW.addCloud();
     itemList = pwnGMW.itemList();
+    vector<Drawable*> drawableList = pwnGMW.viewer_3d->drawableList();  
 
     // Handle cloud insert.
     if(*addCloud) {
@@ -253,17 +251,25 @@ int main(int argc, char** argv){
 	DrawablePoints* dp = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, 1, &(*currentFrame).points);
 	DrawableNormals *dn = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)nParam, 1, &(*currentFrame).points);
 	DrawableCovariances *dc = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)cParam, 1, &(*currentFrame).svds);
-  	pwnGMW.viewer_3d->addDrawable((Drawable*)dp);
+  	DrawableCorrespondences* dcorr = new DrawableCorrespondences(Isometry3f::Identity(), (GLParameter*)corrParam, 1, 0, 0);
+	if(drawableList.size() != 0) {
+	  DrawableCorrespondences* dcorr = (DrawableCorrespondences*)drawableList[drawableList.size()-1];
+	  dcorr->setPoints1(0);
+	  dcorr->setPoints2(0);
+	  dcorr->setCorrespondences(0);
+	  dcorr->setNumCorrespondences(0);
+	}
+	pwnGMW.viewer_3d->addDrawable((Drawable*)dp);
 	pwnGMW.viewer_3d->addDrawable((Drawable*)dn);
 	pwnGMW.viewer_3d->addDrawable((Drawable*)dc);
+	pwnGMW.viewer_3d->addDrawable((Drawable*)dcorr);
+	
 	startingTraj = trajectory;
-	//wasInitialGuess = true;
       }
       *addCloud = 0;
     }
-    
+
     // Check feature visualization options.
-    vector<Drawable*> drawableList = pwnGMW.viewer_3d->drawableList();  
     for(size_t i = 0; i < drawableList.size(); i++) {
       if(stepViewer[0])
 	drawableList[i]->setStep(stepViewer[1]);
@@ -274,30 +280,30 @@ int main(int argc, char** argv){
     else
       pParam->setPointSize(0.0f);
     if(normalsViewer[0])
-      nParam->setNormalLength(normalsViewer[1]);
+         nParam->setNormalLength(normalsViewer[1]);
     else
       nParam->setNormalLength(0.0f);
     if(covariancesViewer[0])
       cParam->setEllipsoidScale(covariancesViewer[1]);
     else
       cParam->setEllipsoidScale(0.0f);
-    if(correspondencesViewer[0])
+    if (correspondencesViewer[0])
       corrParam->setLineWidth(correspondencesViewer[1]);
     else
       corrParam->setLineWidth(0.0f);
 
-
+    // Initial guess pressed.
     if(*initialGuessViewer) {
       *initialGuessViewer = 0;
-      dcorr->setPoints1(0);
-      dcorr->setPoints2(0);
       if(referenceFrame) {
 	drawableList[drawableList.size()-1]->setTransformation(Isometry3f::Identity());
 	drawableList[drawableList.size()-2]->setTransformation(Isometry3f::Identity());
 	drawableList[drawableList.size()-3]->setTransformation(Isometry3f::Identity());
+	drawableList[drawableList.size()-4]->setTransformation(Isometry3f::Identity());
 	wasInitialGuess = true;
       }
     }
+    // Optimize pressed no step by step mode.
     else if(*optimizeViewer && !(*stepByStepViewer)) {
       *optimizeViewer = 0;
       if(referenceFrame) {
@@ -310,8 +316,6 @@ int main(int argc, char** argv){
 	double ostart = get_time();
 	float error;
 	int result = aligner->align(error, X);
-	dcorr->setPoints1(aligner->referenceCloud());
-	dcorr->setTransformation(startingTraj);
 	
 	cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
 	cerr << "localTransform : " << endl;
@@ -322,19 +326,38 @@ int main(int argc, char** argv){
 	}
 	trajectory=startingTraj*X;
 
-	dcorr->setPoints2(aligner->currentCloud());
-	dcorr->_points2Transform = X;
-
+	
 	cerr << "globaltransform: " << endl;
 	cerr << trajectory.matrix() << endl;
 	double oend = get_time();
 	cerr << "alignment took: " << oend-ostart << " sec." << endl;
 	cerr << "aligner scaled image size: " << aligner->scaledImageRows() << " " << aligner->scaledImageCols() << endl;
+	DrawableCorrespondences* dcorr = (DrawableCorrespondences*)drawableList[drawableList.size()-1];
+	dcorr->setPoints1(aligner->refPoints());
+	dcorr->setPoints2(aligner->currPoints());
+	dcorr->setCorrespondences(&aligner->correspondences());
+	dcorr->setNumCorrespondences(aligner->numCorrespondences());
 	drawableList[drawableList.size()-1]->setTransformation(trajectory);
 	drawableList[drawableList.size()-2]->setTransformation(trajectory);
 	drawableList[drawableList.size()-3]->setTransformation(trajectory);
+	drawableList[drawableList.size()-4]->setTransformation(trajectory);	
+	// Show zBuffers.
+	int _r = aligner->scaledImageRows();
+	int _c = aligner->scaledImageCols();
+	refScn->clear();
+	currScn->clear();
+	QImage refQImage;
+	QImage currQImage;
+	DepthImageView div;
+	div.convertToQImage(refQImage, aligner->refZBuffer()); 
+	div.convertToQImage(currQImage, aligner->currZBuffer());
+	refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)_c/(aligner->scale()*3), (int)(_r/(aligner->scale()*3)))));
+	currScn->addPixmap((QPixmap::fromImage(currQImage)).scaled(QSize((int)_c/(aligner->scale()*3), (int)(_r/(aligner->scale()*3)))));
+	pwnGMW.graphicsView1_2d->show();
+	pwnGMW.graphicsView2_2d->show();
       }
     }
+    // Optimize pressed with step by step mode.
     else if(*optimizeViewer && *stepByStepViewer) {
       *optimizeViewer = 0;
       if(referenceFrame) {
@@ -353,25 +376,41 @@ int main(int argc, char** argv){
 	double ostart = get_time();
 	float error;
 	int result = aligner->align(error, X);
-	dcorr->setPoints1(aligner->referenceCloud());
-	dcorr->setTransformation(startingTraj);
-
+	
 	tmp = X;
 	cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
 	cerr << "localTransform : " << endl;
 	cerr << X.inverse().matrix() << endl;
 	trajectory=startingTraj*X;
-	dcorr->setPoints2(aligner->currentCloud());
-	dcorr->_points2Transform = X;
-
+	
 	cerr << "globaltransform: " << endl;
 	cerr << trajectory.matrix() << endl;
 	double oend = get_time();
 	cerr << "alignment took: " << oend-ostart << " sec." << endl;
 	cerr << "aligner scaled image size: " << aligner->scaledImageRows() << " " << aligner->scaledImageCols() << endl;
+	DrawableCorrespondences* dcorr = (DrawableCorrespondences*)drawableList[drawableList.size()-1];
+	dcorr->setPoints1(aligner->refPoints());
+	dcorr->setPoints2(aligner->currPoints());
+	dcorr->setCorrespondences(&aligner->correspondences());
+	dcorr->setNumCorrespondences(aligner->numCorrespondences());
 	drawableList[drawableList.size()-1]->setTransformation(trajectory);
 	drawableList[drawableList.size()-2]->setTransformation(trajectory);
 	drawableList[drawableList.size()-3]->setTransformation(trajectory);
+	drawableList[drawableList.size()-4]->setTransformation(trajectory);
+	// Show zBuffers.
+	int _r = aligner->scaledImageRows();
+	int _c = aligner->scaledImageCols();
+	refScn->clear();
+	currScn->clear();
+	QImage refQImage;
+	QImage currQImage;
+	DepthImageView div;
+	div.convertToQImage(refQImage, aligner->refZBuffer()); 
+	div.convertToQImage(currQImage, aligner->currZBuffer());
+	refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)_c/(aligner->scale()*3), (int)(_r/(aligner->scale()*3)))));
+	currScn->addPixmap((QPixmap::fromImage(currQImage)).scaled(QSize((int)_c/(aligner->scale()*3), (int)(_r/(aligner->scale()*3)))));
+	pwnGMW.graphicsView1_2d->show();
+	pwnGMW.graphicsView2_2d->show();
       }
     }
 
@@ -381,130 +420,3 @@ int main(int argc, char** argv){
   }
   return 0;  
 }
-
-/*
-  ColorMap cmap;
-  cmap.compute(0, 7000, 0xff);
-  QString filename0 = "cloud0.pgm";
-  QString filename1 = "cloud1.pgm";  
-
-  GLParameterCorrespondences *corrParam = new GLParameterCorrespondences();
-  DrawableCorrespondences* dcorr = new DrawableCorrespondences(T1_0.inverse(), (GLParameter*)corrParam, 1, &correspondences);
-  while (!(*dmMW.closing())) {
-    
-    // Checking state variable value.
-    // Initial guess.
-    if (*initialGuessViewer) {
-      *initialGuessViewer = 0;
-      T1_0 = Isometry3f::Identity();
-    }
-    // Registration.
-    else if(*optimizeViewer && !(*stepByStepViewer)) {
-      *optimizeViewer = 0;
-      computeRegistration(T1_0, img1, 
-			  cloud0, svd0, correspondences, 
-			  cloud0PtrScaled, cloud1PtrScaled,
-			  omega0PtrScaled,
-			  svd0PtrScaled, svd1PtrScaled,
-			  corrOmegas1, corrP0, corrP1,
-			  omega0, zBuffer, cameraMatrixScaled,
-			  _r, _c,
-			  outerIterations, innerIterations, doLinear);
-      scn0->clear();
-      scn1->clear();
-      QImage qImage0(filename0);
-      QImage qImage1(filename1);
-      toQImage(qImage0, img0, cmap);
-      toQImage(qImage1, img1, cmap);
-      scn0->addPixmap((QPixmap::fromImage(qImage0)).scaled(QSize((int)_c/(scale*3), (int)(_r/(scale*3)))));
-      scn1->addPixmap((QPixmap::fromImage(qImage1)).scaled(QSize((int)_c/(scale*3), (int)(_r/(scale*3)))));
-      dmMW.graphicsView1_2d->show();
-      dmMW.graphicsView2_2d->show();
-    }
-    // Step by step registration.
-    else if(*optimizeViewer && *stepByStepViewer) {
-      *optimizeViewer = 0;
-      computeRegistration(T1_0, img1,
-			  cloud0, svd0, correspondences, 
-			  cloud0PtrScaled, cloud1PtrScaled,
-			  omega0PtrScaled,
-			  svd0PtrScaled, svd1PtrScaled,
-			  corrOmegas1, corrP0, corrP1,
-			  omega0, zBuffer, cameraMatrixScaled,
-			  _r, _c,
-			  1, innerIterations, doLinear);
-      scn0->clear();
-      scn1->clear();
-      QImage qImage0(filename0);
-      QImage qImage1(filename1);
-      toQImage(qImage0, img0, cmap);
-      toQImage(qImage1, img1, cmap);
-      scn0->addPixmap((QPixmap::fromImage(qImage0)).scaled(QSize((int)_c/(scale*3), (int)(_r/(scale*3)))));
-      scn1->addPixmap((QPixmap::fromImage(qImage1)).scaled(QSize((int)_c/(scale*3), (int)(_r/(scale*3)))));
-      dmMW.graphicsView1_2d->show();
-      dmMW.graphicsView2_2d->show();
-    }
-    
-    dp1->setTransformation(T1_0.inverse());
-    dn1->setTransformation(T1_0.inverse());
-    dc1->setTransformation(T1_0.inverse());
-    dcorr->setTransformation(T1_0.inverse());
-
-    dmMW.viewer_3d->clearDrawableList();
-    if (pointsViewer[0]) {
-      p0Param->setColor(Vector4f(0.0f, 1.0f, 0.0f, 0.5f));
-      p0Param->setPointSize(pointsViewer[1]);
-      p1Param->setPointSize(pointsViewer[1]);
-      if (stepViewer[0]) {
-	dp0->setStep(stepViewer[1]);
-	dp1->setStep(stepViewer[1]);
-      }
-      dmMW.viewer_3d->addDrawable((Drawable*)dp0);
-      dmMW.viewer_3d->addDrawable((Drawable*)dp1);
-    }
-    if (normalsViewer[0]) {
-      n0Param->setNormalLength(normalsViewer[1]);
-      n1Param->setNormalLength(normalsViewer[1]);
-      if (stepViewer[0]) {
-	dn0->setStep(stepViewer[1]);
-	dn1->setStep(stepViewer[1]);
-      }
-      dmMW.viewer_3d->addDrawable((Drawable*)dn0);
-      dmMW.viewer_3d->addDrawable((Drawable*)dn1);
-    }
-    if (covariancesViewer[0]) {
-      c0Param->setEllipsoidScale(covariancesViewer[1]);
-      c1Param->setEllipsoidScale(covariancesViewer[1]);
-      if (stepViewer[0]) {
-	dc0->setStep(stepViewer[1]);
-	dc1->setStep(stepViewer[1]);
-      }
-      dmMW.viewer_3d->addDrawable((Drawable*)dc0);
-      dmMW.viewer_3d->addDrawable((Drawable*)dc1);
-    }
-    if (correspondencesViewer[0]) {
-      corrParam->setLineWidth(correspondencesViewer[1]);
-      if (stepViewer[0])
-	dcorr->setStep(stepViewer[1]);	
-      dmMW.viewer_3d->addDrawable((Drawable*)dcorr);
-    }
-    dmMW.viewer_3d->updateGL();
-    usleep(10000);
-  }
-  dmMW.viewer_3d->clearDrawableList();
- 
-  delete(p0Param);
-  delete(p1Param);
-  delete(n0Param);
-  delete(n1Param);
-  delete(c0Param);
-  delete(c1Param);
-  delete(corrParam);
-  delete(dp0);
-  delete(dp1);
-  delete(dn0);
-  delete(dn1);
-  delete(dc0);
-  delete(dc1);
-  delete(dcorr);
-*/

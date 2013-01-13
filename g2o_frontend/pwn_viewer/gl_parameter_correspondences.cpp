@@ -2,7 +2,7 @@
 
 GLParameterCorrespondences::GLParameterCorrespondences() {
   _pointSize = 0.1f;
-  _color = Eigen::Vector4f(1.0f, 0.0f, 0.0f, 0.5f);
+  _color = Eigen::Vector4f(0.0f, 0.0f, 1.0f, 0.5f);
   _lineWidth = 3.0f;
 }
 
