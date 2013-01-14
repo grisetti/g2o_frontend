@@ -24,12 +24,15 @@ class DrawableCorrespondences : public Drawable {
   virtual bool setParameter(GLParameter *parameter_);
   virtual GLParameter* parameter() { return _parameter; };
   virtual void draw();
+ 
+  Eigen::Isometry3f _points2Transform;
 
  protected:
   int _numCorrespondences;
   const PointWithNormalAligner::CorrespondenceVector *_correspondences;
   const PointWithNormalVector *_points1;
   const PointWithNormalVector *_points2;
+ 
 };  
 
 #endif

@@ -1,5 +1,7 @@
 #include "drawable_correspondences.h"
 #include "gl_parameter_correspondences.h"
+#include <iostream>
+using namespace std;
 
 DrawableCorrespondences::DrawableCorrespondences() : Drawable() {
   GLParameterCorrespondences* correspondencesParameter = new GLParameterCorrespondences();
@@ -8,12 +10,16 @@ DrawableCorrespondences::DrawableCorrespondences() : Drawable() {
   _numCorrespondences = 0;
   _points1 = 0;
   _points2 = 0;
+  _points2Transform.setIdentity();
 }
 
 DrawableCorrespondences::DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_, int step_, int numCorrespondences_, PointWithNormalAligner::CorrespondenceVector *correspondences_) : Drawable(transformation_, step_) {
   setParameter(parameter_);
   _numCorrespondences = numCorrespondences_;
   _correspondences = correspondences_;
+  _points1 = 0;
+  _points2 = 0;
+  _points2Transform.setIdentity();
 }
 
 bool DrawableCorrespondences::setParameter(GLParameter *parameter_) {
@@ -29,7 +35,14 @@ bool DrawableCorrespondences::setParameter(GLParameter *parameter_) {
 // Drawing function of the class object.
 void DrawableCorrespondences::draw() {
   GLParameterCorrespondences* correspondencesParameter = (GLParameterCorrespondences*)_parameter;
-   if (_correspondences && correspondencesParameter && correspondencesParameter->lineWidth() > 0.0f) {
+   if (_points1 && 
+       _points2 && 
+       _correspondences && 
+       correspondencesParameter && 
+       correspondencesParameter->lineWidth() > 0.0f) {
+    
+     Eigen::Isometry3f p2transform = _transformation * _points2Transform;
+    
     glPushMatrix();
     correspondencesParameter->applyGLParameter();
     glBegin(GL_LINES);

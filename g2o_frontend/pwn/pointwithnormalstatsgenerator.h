@@ -11,6 +11,7 @@ struct PointWithNormalSVD{
     _singularValues(Eigen::Vector3f::Zero()),
     _U(Eigen::Matrix3f::Zero()),
     _curvature(-1),
+    _z(0),
     _n(0)
   {}
   inline const Eigen::Vector3f& singularValues() const {return _singularValues;}
@@ -18,12 +19,14 @@ struct PointWithNormalSVD{
   inline const Eigen::Vector3f& mean() const {return _mean;}
   inline int n() const {return _n;}
   inline float curvature() const {return _curvature;}
+  inline float z() const {return _z;}
 protected:
   inline void updateCurvature();
   Eigen::Vector3f _mean;
   Eigen::Vector3f _singularValues;
   Eigen::Matrix3f _U;
   float _curvature;
+  float _z;
   int _n;
 };
 

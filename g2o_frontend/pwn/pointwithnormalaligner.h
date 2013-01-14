@@ -7,8 +7,8 @@
 #include "g2o_frontend/dm_optimization/dm_math.h"
 
 class PointWithNormalAligner{
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   struct Correspondence{
     Correspondence(int i1_=-1, int i2_=-1) {
       i1=i1_;
@@ -22,6 +22,8 @@ public:
   PointWithNormalAligner();
 
   int align(float& error, Eigen::Isometry3f& X);
+  int align(float& error, Eigen::Isometry3f& X, 
+	    Vector6f& mean, Matrix6f& omega, float& translationalEigenRatio, float& rotationalEigenRatio);
 
   inline void setImageSize(int r, int c) {_rows = r; _cols = c; _cameraSet=false;}
   inline int imageCols() const { return _cols;}
@@ -34,6 +36,10 @@ public:
   const PointWithNormalVector* refPoints() const {return _refPoints;}
   // sets the cloud and conditions the covariances accordingly
   void setCurrentCloud(const PointWithNormalVector*  currentPoints, const PointWithNormalSVDVector* currentSVDs); 
+  const PointWithNormalVector* referenceCloud() const {return _refPoints;}
+  const PointWithNormalSVDVector* referenceSVDs() const {return _refSVDs;}
+  const PointWithNormalVector* currentCloud() const {return _currPoints;}
+  const PointWithNormalSVDVector* currentSVDs() const {return _currSVDs;}
   const PointWithNormalVector* currPoints() const {return _currPoints;}
   
   inline float scale() const {return _scale;}
@@ -75,6 +81,12 @@ public:
   inline float lambda()  const {return _lambda;}
   inline void setLambda(float lambda_)  {_lambda=lambda_;}
 
+  inline float translationalMinEigenRatio()  const {return _translationalMinEigenRatio;}
+  inline void setTranslationalMinEigenRatio(float translationalMinEigenRatio_)  {_translationalMinEigenRatio=translationalMinEigenRatio_;}
+
+  inline float rotationalMinEigenRatio()  const {return _rotationalMinEigenRatio;}
+  inline void setRotationalMinEigenRatio(float rotationalMinEigenRatio_)  {_rotationalMinEigenRatio=rotationalMinEigenRatio_;}
+
   inline void setDebug( bool debug_) {_debug = debug_;}
   inline bool debug() const {return _debug;}
 
@@ -91,13 +103,14 @@ protected:
   void _updateCamera();
   void _updateOmegas();
 
-  int _computeErrorAndInliers(float& error) const;
+  int _computeStatistics(float& error, Vector6f& mean, Matrix6f& Omega, 
+			 float& translationalRatio, float& rotationalRatio, bool onlyFlat = 0) const;
   int _nonLinearUpdate(float& error);
   int _linearUpdate(float& error);
 
-  int _constructLinearSystemQT(Matrix6f& H, Vector6f&b, float& error);
-  int _constructLinearSystemRT(Matrix12f& H, Vector12f&b, float& error);
-  int _constructLinearSystemT(Eigen::Matrix3f& H, Eigen::Vector3f&b, float& error);
+  int _constructLinearSystemQT(Matrix6f& H, Vector6f&b, float& error, bool onlyFlat=false) const;
+  int _constructLinearSystemRT(Matrix12f& H, Vector12f&b, float& error, bool onlyFlat=0) const;
+  int _constructLinearSystemT(Eigen::Matrix3f& H, Eigen::Vector3f&b, float& error, bool onlyFlat=0) const;
   // parameters for data association
   float _scale;
   float _inlierNormalAngularThreshold;
@@ -118,12 +131,17 @@ protected:
   Eigen::Matrix3f _cameraMatrix;
   Eigen::Matrix3f _scaledCameraMatrix;
   
+  //parameters to check the quality of the solution
+  float _translationalMinEigenRatio;
+  float _rotationalMinEigenRatio;
+
+
   bool _cameraSet;
   bool _omegasSet;
 
   const PointWithNormalVector *_refPoints, *_currPoints;
   const PointWithNormalSVDVector *_refSVDs, *_currSVDs;
-  Matrix6fVector _currOmegas;
+  Matrix6fVector _currOmegas, _currFlatOmegas;
 
   DepthImage _refZbuffer, _currZbuffer;
   Eigen::MatrixXi _refIndexImage, _currIndexImage;

@@ -39,9 +39,9 @@ void DrawableCovariances::draw() {
       const Eigen::Vector3f& lambda = covSVD.singularValues();
       Eigen::Isometry3f I=Eigen::Isometry3f::Identity();
       I.linear() =  covSVD.U();
-      I.translation() = covSVD.mean();
       if (covSVD.n() == 0 )
 	continue;
+      I.translation() = covSVD.mean();
       float sx = sqrt(lambda[0])*ellipsoidScale;
       float sy = sqrt(lambda[1])*ellipsoidScale;
       float sz = sqrt(lambda[2])*ellipsoidScale;

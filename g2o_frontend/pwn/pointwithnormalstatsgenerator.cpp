@@ -39,6 +39,8 @@ void PointWithNormalStatistcsGenerator::computeNormalsAndSVD(PointWithNormalVect
       PointWithNormal& point = points[index];
       PointWithNormalSVD& svd = svds[index];
       Eigen::Vector3f coord = cameraMatrix * (point.point()+Eigen::Vector3f(_worldRadius, _worldRadius, 0));
+      svd._z=point(2);
+
       coord.head<2>()*=(1./coord(2));
       int dx = abs(c - coord[0]);
       int dy = abs(r - coord[1]);
@@ -64,6 +66,8 @@ void PointWithNormalStatistcsGenerator::computeNormalsAndSVD(PointWithNormalVect
 	//cerr << "\t svd.curvature():" << svd.curvature() << endl;
 	
 	*/
+	
+
 	Eigen::Vector3f normal = eigenSolver.eigenvectors().col(0).normalized();
 	if (normal.dot(mean) > 0.0f)
 	  normal =-normal;

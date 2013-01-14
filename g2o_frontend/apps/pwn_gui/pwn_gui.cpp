@@ -127,28 +127,28 @@ int main(int argc, char** argv){
   float al_lambda;
   float al_debug;
 
-  PointWithNormalStatistcsGenerator normalGenerator;
-  PointWithNormalAligner aligner;
+  PointWithNormalStatistcsGenerator* normalGenerator =  new PointWithNormalStatistcsGenerator;
+  PointWithNormalAligner* aligner = new PointWithNormalAligner;
 
   g2o::CommandArgs arg;
-  arg.param("ng_step",ng_step,normalGenerator.step(),"compute a normal each x pixels") ;
-  arg.param("ng_minPoints",ng_minPoints,normalGenerator.minPoints(),"minimum number of points in a region to compute the normal");
-  arg.param("ng_imageRadius",ng_imageRadius,normalGenerator.imageRadius(), "radius of a ball in the works where to compute the normal for a pixel");
-  arg.param("ng_worldRadius",ng_worldRadius,  normalGenerator.worldRadius(), "radius of a ball in the works where to compute the normal for a pixel");
-  arg.param("ng_maxCurvature",ng_maxCurvature, normalGenerator.maxCurvature(), "above this threshold the normal is not computed");
+  arg.param("ng_step",ng_step,normalGenerator->step(),"compute a normal each x pixels") ;
+  arg.param("ng_minPoints",ng_minPoints,normalGenerator->minPoints(),"minimum number of points in a region to compute the normal");
+  arg.param("ng_imageRadius",ng_imageRadius,normalGenerator->imageRadius(), "radius of a ball in the works where to compute the normal for a pixel");
+  arg.param("ng_worldRadius",ng_worldRadius,  normalGenerator->worldRadius(), "radius of a ball in the works where to compute the normal for a pixel");
+  arg.param("ng_maxCurvature",ng_maxCurvature, normalGenerator->maxCurvature(), "above this threshold the normal is not computed");
   
-  arg.param("al_inlierDistance", al_inlierDistance, aligner.inlierDistanceThreshold(),  "max metric distance between two points to regard them as iniliers");
-  arg.param("al_inlierCurvatureRatio", al_inlierCurvatureRatio, aligner.inlierCurvatureRatioThreshold(), "max metric distance between two points to regard them as iniliers");
-  arg.param("al_inlierNormalAngle", al_inlierNormalAngle, aligner.inlierNormalAngularThreshold(), "max metric distance between two points to regard them as iniliers");
-  arg.param("al_inlierMaxChi2", al_inlierMaxChi2, aligner.inlierMaxChi2(), "max metric distance between two points to regard them as iniliers");
-  arg.param("al_minInliers", al_minInliers, aligner.minInliers(), "minimum number of inliers to do the matching");
-  arg.param("al_scale", al_scale, aligner.scale(), "scale of the range image for the alignment");
-  arg.param("al_flatCurvatureThreshold", al_flatCurvatureThreshold, aligner.flatCurvatureThreshold(), "curvature above which the patches are not considered planar");
-  arg.param("al_outerIterations", al_outerIterations, aligner.outerIterations(), "outer interations (incl. data association)");
-  arg.param("al_linearIterations", al_linearIterations, aligner.linearIterations(), "linear iterations for each outer one (uses R,t)");
-  arg.param("al_nonLinearIterations", al_nonLinearIterations, aligner.nonLinearIterations(), "nonlinear iterations for each outer one (uses q,t)");
-  arg.param("al_lambda", al_lambda, aligner.lambda(), "damping factor for the transformation update, the higher the smaller the step");
-  arg.param("al_debug", al_debug, aligner.debug(), "prints lots of stuff");
+  arg.param("al_inlierDistance", al_inlierDistance, aligner->inlierDistanceThreshold(),  "max metric distance between two points to regard them as iniliers");
+  arg.param("al_inlierCurvatureRatio", al_inlierCurvatureRatio, aligner->inlierCurvatureRatioThreshold(), "max metric distance between two points to regard them as iniliers");
+  arg.param("al_inlierNormalAngle", al_inlierNormalAngle, aligner->inlierNormalAngularThreshold(), "max metric distance between two points to regard them as iniliers");
+  arg.param("al_inlierMaxChi2", al_inlierMaxChi2, aligner->inlierMaxChi2(), "max metric distance between two points to regard them as iniliers");
+  arg.param("al_minInliers", al_minInliers, aligner->minInliers(), "minimum number of inliers to do the matching");
+  arg.param("al_scale", al_scale, aligner->scale(), "scale of the range image for the alignment");
+  arg.param("al_flatCurvatureThreshold", al_flatCurvatureThreshold, aligner->flatCurvatureThreshold(), "curvature above which the patches are not considered planar");
+  arg.param("al_outerIterations", al_outerIterations, aligner->outerIterations(), "outer interations (incl. data association)");
+  arg.param("al_linearIterations", al_linearIterations, aligner->linearIterations(), "linear iterations for each outer one (uses R,t)");
+  arg.param("al_nonLinearIterations", al_nonLinearIterations, aligner->nonLinearIterations(), "nonlinear iterations for each outer one (uses q,t)");
+  arg.param("al_lambda", al_lambda, aligner->lambda(), "damping factor for the transformation update, the higher the smaller the step");
+  arg.param("al_debug", al_debug, aligner->debug(), "prints lots of stuff");
 
   std::vector<string> fileNames;
 
@@ -174,24 +174,24 @@ int main(int argc, char** argv){
     filenames.push_back(imageName1);
   }
 
-  normalGenerator.setStep(ng_step);
-  normalGenerator.setMinPoints(ng_minPoints);
-  normalGenerator.setImageRadius(ng_imageRadius);
-  normalGenerator.setWorldRadius(ng_worldRadius);
-  normalGenerator.setMaxCurvature(ng_maxCurvature);
+  normalGenerator->setStep(ng_step);
+  normalGenerator->setMinPoints(ng_minPoints);
+  normalGenerator->setImageRadius(ng_imageRadius);
+  normalGenerator->setWorldRadius(ng_worldRadius);
+  normalGenerator->setMaxCurvature(ng_maxCurvature);
   
-  aligner.setInlierDistanceThreshold(al_inlierDistance);
-  aligner.setInlierCurvatureRatioThreshold(al_inlierCurvatureRatio);
-  aligner.setInlierNormalAngularThreshold(al_inlierNormalAngle);
-  aligner.setInlierMaxChi2(al_inlierMaxChi2);
-  aligner.setMinInliers(al_minInliers);
-  aligner.setScale(al_scale);
-  aligner.setFlatCurvatureThreshold(al_flatCurvatureThreshold);
-  aligner.setOuterIterations(al_outerIterations);
-  aligner.setLinearIterations(al_linearIterations);
-  aligner.setNonLinearIterations(al_nonLinearIterations);
-  aligner.setLambda(al_lambda);
-  aligner.setDebug(al_debug);
+  aligner->setInlierDistanceThreshold(al_inlierDistance);
+  aligner->setInlierCurvatureRatioThreshold(al_inlierCurvatureRatio);
+  aligner->setInlierNormalAngularThreshold(al_inlierNormalAngle);
+  aligner->setInlierMaxChi2(al_inlierMaxChi2);
+  aligner->setMinInliers(al_minInliers);
+  aligner->setScale(al_scale);
+  aligner->setFlatCurvatureThreshold(al_flatCurvatureThreshold);
+  aligner->setOuterIterations(al_outerIterations);
+  aligner->setLinearIterations(al_linearIterations);
+  aligner->setNonLinearIterations(al_nonLinearIterations);
+  aligner->setLambda(al_lambda);
+  aligner->setDebug(al_debug);
 
   Eigen::Matrix3f cameraMatrix;
   cameraMatrix << 
@@ -250,7 +250,7 @@ int main(int argc, char** argv){
 	  *addCloud = 0;
 	  continue;
 	}
-	currentFrame->computeStats(normalGenerator, cameraMatrix);
+	currentFrame->computeStats(*normalGenerator, cameraMatrix);
 	DrawablePoints* dp = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, 1, &(*currentFrame).points);
 	DrawableNormals *dn = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)nParam, 1, &(*currentFrame).points);
 	DrawableCovariances *dc = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)cParam, 1, &(*currentFrame).svds);
@@ -309,15 +309,16 @@ int main(int argc, char** argv){
     else if(*optimizeViewer && !(*stepByStepViewer)) {
       *optimizeViewer = 0;
       if(referenceFrame) {
-	aligner.setOuterIterations(al_outerIterations);
-	referenceFrame->setAligner(aligner, true);
-	currentFrame->setAligner(aligner, false);
-	aligner.setImageSize(currentFrame->depthImage.rows(), currentFrame->depthImage.cols());
+	aligner->setOuterIterations(al_outerIterations);
+	referenceFrame->setAligner(*aligner, true);
+	currentFrame->setAligner(*aligner, false);
+	aligner->setImageSize(currentFrame->depthImage.rows(), currentFrame->depthImage.cols());
 	Eigen::Isometry3f X;
 	X.setIdentity();
 	double ostart = get_time();
 	float error;
-	int result = aligner.align(error, X);
+	int result = aligner->align(error, X);
+	
 	cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
 	cerr << "localTransform : " << endl;
 	cerr << X.inverse().matrix() << endl;
@@ -326,32 +327,34 @@ int main(int argc, char** argv){
 	  wasInitialGuess = false;
 	}
 	trajectory=startingTraj*X;
+
+	
 	cerr << "globaltransform: " << endl;
 	cerr << trajectory.matrix() << endl;
 	double oend = get_time();
 	cerr << "alignment took: " << oend-ostart << " sec." << endl;
-	cerr << "aligner scaled image size: " << aligner.scaledImageRows() << " " << aligner.scaledImageCols() << endl;
+	cerr << "aligner scaled image size: " << aligner->scaledImageRows() << " " << aligner->scaledImageCols() << endl;
 	DrawableCorrespondences* dcorr = (DrawableCorrespondences*)drawableList[drawableList.size()-1];
-	dcorr->setPoints1(aligner.refPoints());
-	dcorr->setPoints2(aligner.currPoints());
-	dcorr->setCorrespondences(&aligner.correspondences());
-	dcorr->setNumCorrespondences(aligner.numCorrespondences());
+	dcorr->setPoints1(aligner->refPoints());
+	dcorr->setPoints2(aligner->currPoints());
+	dcorr->setCorrespondences(&aligner->correspondences());
+	dcorr->setNumCorrespondences(aligner->numCorrespondences());
 	drawableList[drawableList.size()-1]->setTransformation(trajectory);
 	drawableList[drawableList.size()-2]->setTransformation(trajectory);
 	drawableList[drawableList.size()-3]->setTransformation(trajectory);
 	drawableList[drawableList.size()-4]->setTransformation(trajectory);	
 	// Show zBuffers.
-	int _r = aligner.scaledImageRows();
-	int _c = aligner.scaledImageCols();
+	int _r = aligner->scaledImageRows();
+	int _c = aligner->scaledImageCols();
 	refScn->clear();
 	currScn->clear();
 	QImage refQImage;
 	QImage currQImage;
 	DepthImageView div;
-	div.convertToQImage(refQImage, aligner.refZBuffer()); 
-	div.convertToQImage(currQImage, aligner.currZBuffer());
-	refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)_c/(aligner.scale()*3), (int)(_r/(aligner.scale()*3)))));
-	currScn->addPixmap((QPixmap::fromImage(currQImage)).scaled(QSize((int)_c/(aligner.scale()*3), (int)(_r/(aligner.scale()*3)))));
+	div.convertToQImage(refQImage, aligner->refZBuffer()); 
+	div.convertToQImage(currQImage, aligner->currZBuffer());
+	refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)_c/(aligner->scale()*3), (int)(_r/(aligner->scale()*3)))));
+	currScn->addPixmap((QPixmap::fromImage(currQImage)).scaled(QSize((int)_c/(aligner->scale()*3), (int)(_r/(aligner->scale()*3)))));
 	pwnGMW.graphicsView1_2d->show();
 	pwnGMW.graphicsView2_2d->show();
       }
@@ -360,10 +363,10 @@ int main(int argc, char** argv){
     else if(*optimizeViewer && *stepByStepViewer) {
       *optimizeViewer = 0;
       if(referenceFrame) {
-	aligner.setOuterIterations(1);
-	referenceFrame->setAligner(aligner, true);
-	currentFrame->setAligner(aligner, false);
-	aligner.setImageSize(currentFrame->depthImage.rows(), currentFrame->depthImage.cols());
+	aligner->setOuterIterations(1);
+	referenceFrame->setAligner(*aligner, true);
+	currentFrame->setAligner(*aligner, false);
+	aligner->setImageSize(currentFrame->depthImage.rows(), currentFrame->depthImage.cols());
 	Eigen::Isometry3f X;
 	if(wasInitialGuess) {
 	  trajectory = startingTraj;
@@ -374,38 +377,40 @@ int main(int argc, char** argv){
 	  X = tmp;
 	double ostart = get_time();
 	float error;
-	int result = aligner.align(error, X);
+	int result = aligner->align(error, X);
+	
 	tmp = X;
 	cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
 	cerr << "localTransform : " << endl;
 	cerr << X.inverse().matrix() << endl;
 	trajectory=startingTraj*X;
+	
 	cerr << "globaltransform: " << endl;
 	cerr << trajectory.matrix() << endl;
 	double oend = get_time();
 	cerr << "alignment took: " << oend-ostart << " sec." << endl;
-	cerr << "aligner scaled image size: " << aligner.scaledImageRows() << " " << aligner.scaledImageCols() << endl;
+	cerr << "aligner scaled image size: " << aligner->scaledImageRows() << " " << aligner->scaledImageCols() << endl;
 	DrawableCorrespondences* dcorr = (DrawableCorrespondences*)drawableList[drawableList.size()-1];
-	dcorr->setPoints1(aligner.refPoints());
-	dcorr->setPoints2(aligner.currPoints());
-	dcorr->setCorrespondences(&aligner.correspondences());
-	dcorr->setNumCorrespondences(aligner.numCorrespondences());
+	dcorr->setPoints1(aligner->refPoints());
+	dcorr->setPoints2(aligner->currPoints());
+	dcorr->setCorrespondences(&aligner->correspondences());
+	dcorr->setNumCorrespondences(aligner->numCorrespondences());
 	drawableList[drawableList.size()-1]->setTransformation(trajectory);
 	drawableList[drawableList.size()-2]->setTransformation(trajectory);
 	drawableList[drawableList.size()-3]->setTransformation(trajectory);
 	drawableList[drawableList.size()-4]->setTransformation(trajectory);
 	// Show zBuffers.
-	int _r = aligner.scaledImageRows();
-	int _c = aligner.scaledImageCols();
+	int _r = aligner->scaledImageRows();
+	int _c = aligner->scaledImageCols();
 	refScn->clear();
 	currScn->clear();
 	QImage refQImage;
 	QImage currQImage;
 	DepthImageView div;
-	div.convertToQImage(refQImage, aligner.refZBuffer()); 
-	div.convertToQImage(currQImage, aligner.currZBuffer());
-	refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)_c/(aligner.scale()*3), (int)(_r/(aligner.scale()*3)))));
-	currScn->addPixmap((QPixmap::fromImage(currQImage)).scaled(QSize((int)_c/(aligner.scale()*3), (int)(_r/(aligner.scale()*3)))));
+	div.convertToQImage(refQImage, aligner->refZBuffer()); 
+	div.convertToQImage(currQImage, aligner->currZBuffer());
+	refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)_c/(aligner->scale()*3), (int)(_r/(aligner->scale()*3)))));
+	currScn->addPixmap((QPixmap::fromImage(currQImage)).scaled(QSize((int)_c/(aligner->scale()*3), (int)(_r/(aligner->scale()*3)))));
 	pwnGMW.graphicsView1_2d->show();
 	pwnGMW.graphicsView2_2d->show();
       }

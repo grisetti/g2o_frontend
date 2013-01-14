@@ -6,6 +6,7 @@
 #include <fstream>
 #include <string>
 #include <set>
+#include <sstream>
 
 #include "g2o/stuff/command_args.h"
 #include "depthimage.h"
@@ -75,8 +76,8 @@ struct Frame{
 
 int
  main(int argc, char** argv){
-  string imageName0;
-  string imageName1;
+  string dirname;
+  string graphFilename;
   int ng_step;
   int ng_minPoints;
   int ng_imageRadius;
@@ -118,23 +119,20 @@ int
   arg.param("al_nonLinearIterations", al_nonLinearIterations, aligner.nonLinearIterations(), "nonlinear iterations for each outer one (uses q,t)");
   arg.param("al_lambda", al_lambda, aligner.lambda(), "damping factor for the transformation update, the higher the smaller the step");
   arg.param("al_debug", al_debug, aligner.debug(), "prints lots of stuff");
+  
 
-
+  
   std::vector<string> fileNames;
 
-  arg.paramLeftOver("image0", imageName0, "", "image0", true);
-  arg.paramLeftOver("image1", imageName1, "", "image1", true);
+  arg.paramLeftOver("dirname", dirname, "", "", true);
+  arg.paramLeftOver("graph-file", graphFilename, "out.g2o", "graph-file", true);
   arg.parseArgs(argc, argv);
+  cerr << "dirname " << dirname << endl;
 
   std::vector<string> filenames;
-  if (imageName0 == "sequence") {
-    std::set<string> filenamesset = readDir(imageName1);
-    for(set<string>::const_iterator it =filenamesset.begin(); it!=filenamesset.end(); it++) {
-      filenames.push_back(*it);
-   }
-  } else {
-    filenames.push_back(imageName0);
-    filenames.push_back(imageName1);
+  std::set<string> filenamesset = readDir(dirname);
+  for(set<string>::const_iterator it =filenamesset.begin(); it!=filenamesset.end(); it++) {
+    filenames.push_back(*it);
   }
   
   normalGenerator.setStep(ng_step);
@@ -165,10 +163,16 @@ int
     0.0f, 525.0f, 239.5f,
     0.0f, 0.0f, 1.0f;
 
-  ofstream ts("trajectory.dat");
+  ostringstream os(graphFilename.c_str());
+  
+
   cerr << "there are " << filenames.size() << " files  in the pool" << endl; 
   Isometry3f trajectory;
   trajectory.setIdentity();
+  int previousIndex=-1;
+  int graphNum=0;
+  int nFrames = 0;
+  string baseFilename = graphFilename.substr( 0, graphFilename.find_last_of( '.' ) +1 );
   for (size_t i=0; i<filenames.size(); i++){
     cerr << endl << endl << endl;
     cerr << ">>>>>>>>>>>>>>>>>>>>>>>> PROCESSING " << filenames[i] << " <<<<<<<<<<<<<<<<<<<<" <<  endl;
@@ -177,17 +181,43 @@ int
       cerr << "failure in loading image: " << filenames[i] << ", skipping" << endl;
       continue;
     }
+    nFrames ++;
+    if (! referenceFrame ){
+      os << "PARAMS_CAMERACALIB 0 0 0 0 0 0 0 1 525 525 319.5 239.5"<< endl;
+      trajectory.setIdentity();
+    }
+    {
+      // write the vertex frame
+      Vector6f x = t2v(trajectory);
+      Vector3f t = x.head<3>();
+      Vector3f mq = x.tail<3>();
+      float w = mq.squaredNorm();
+      if (w>1){
+	mq.setZero();
+	w = 1.0f;
+      } else {
+	w = sqrt(1-w);
+      }
+      
+      os << "VERTEX_SE3:QUAT " << i << " " << t.transpose() << " " << mq.transpose() << " " << w << endl;
+      os << "DEPTH_IMAGE_DATA 0 " << filenames[i] << " 0 0 " << endl;
+    }
+    
     currentFrame->computeStats(normalGenerator,cameraMatrix);
     if (referenceFrame) {
       referenceFrame->setAligner(aligner, true);
       currentFrame->setAligner(aligner, false);
 
+      Matrix6f omega;
+      Vector6f mean;
+      float tratio;
+      float rratio;
       aligner.setImageSize(currentFrame->depthImage.rows(), currentFrame->depthImage.cols());
       Eigen::Isometry3f X;
       X.setIdentity();
       double ostart = get_time();
       float error;
-      int result = aligner.align(error, X);
+      int result = aligner.align(error, X, mean, omega, tratio, rratio);
       cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
       cerr << "localTransform : " << endl;
       cerr << X.inverse().matrix() << endl;
@@ -197,24 +227,58 @@ int
       double oend = get_time();
       cerr << "alignment took: " << oend-ostart << " sec." << endl;
       cerr << "aligner scaled image size: " << aligner.scaledImageRows() << " " << aligner.scaledImageCols() << endl;
+      
+      if(rratio < 100 && tratio < 100) {
+	// write the edge frame
+	Vector6f x = mean;
+	Vector3f t = x.head<3>();
+	Vector3f mq = x.tail<3>();
+	float w = mq.squaredNorm();
+	if (w>1){
+	  mq.setZero();
+	  w = 1.0f;
+	} else {
+	  w = sqrt(1-w);
+	}
+	
+	os << "EDGE_SE3:QUAT " << i << " " << previousIndex << " ";
+	os << t.transpose() << " " << mq.transpose() << " " << w <<  " ";
+	for (int r=0; r<6; r++){
+	  for (int c=r; c<6; c++){
+	    os << omega(r,c) << " ";
+	  }
+	} 
+	os << endl;
+      } else {
+	if (nFrames >10) {
+	  char buf[1024];
+	  sprintf(buf, "%s-%03d.g2o", baseFilename.c_str(), graphNum);	
+	  ofstream gs(buf);
+	  gs << os.str();
+	  gs.close();
+	}
+	os.str("");
+	os.clear();
+	if (referenceFrame)
+	  delete referenceFrame;
+	referenceFrame = 0;
+	graphNum ++;
+	nFrames = 0;
+      }
 
     }
-    Vector6f t=t2v(trajectory);
-    ts << t.transpose() << endl;
+    previousIndex = i;
     if (referenceFrame)
       delete referenceFrame;
-
-    char buf [1024];
-    int fnum = (int) i;
-    sprintf(buf, "in-%05d.dat", fnum);
-    currentFrame->points.save(buf, 50);
-    cerr << "saving " << currentFrame->points.size() << " in file " <<  buf << endl;
-    sprintf(buf, "out-%05d.dat", fnum);
-    PointWithNormalVector pv2 = trajectory*currentFrame->points;
-    pv2.save(buf, 50);
-    cerr << "saving " << pv2.size() << " in file " <<  buf << endl;
-    
     referenceFrame = currentFrame;
   }
+
+  char buf[1024];
+  sprintf(buf, "%s-%03d.g2o", baseFilename.c_str(), graphNum);	
+  ofstream gs(buf);
+  gs << os.str();
+  os.str("");
+  os.clear();
+  gs.close();
   
 }

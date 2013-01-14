@@ -1,6 +1,6 @@
 #include "pointwithnormalaligner.h"
 #include <iostream>
-
+#include "g2o/stuff/unscented.h"
 using namespace Eigen;
 using namespace std;
 
@@ -44,6 +44,8 @@ PointWithNormalAligner::PointWithNormalAligner()
   _numCorrespondences = 0;
   _inlierCurvatureRatioThreshold = 0.2;
   _T = Eigen::Isometry3f::Identity();
+  _rotationalMinEigenRatio = 50;
+  _translationalMinEigenRatio = 50;
   _debug = false;
 }
 
@@ -87,13 +89,19 @@ void PointWithNormalAligner::_updateOmegas() {
   }
   assert (_currPoints->size() == _currSVDs->size() && "size of currPoints and theit svd should match");
   _currOmegas.resize(_currPoints->size());
+  _currFlatOmegas.resize(_currPoints->size());
   float flatKn = 1e2;
   float nonFlatKn = 1.;
   float nonFlatKp = 1.;
-  Diagonal3f flatOmegaP(_flatOmegaDiagonal.x(), _flatOmegaDiagonal.y(), _flatOmegaDiagonal.z());
+  
+  Diagonal3f flatOmegaP(_flatOmegaDiagonal.x(), _flatOmegaDiagonal.y(), _flatOmegaDiagonal.z());    
   Diagonal3f flatOmegaN(flatKn, flatKn, flatKn);
   Diagonal3f nonFlatOmegaN(nonFlatKn, nonFlatKn, nonFlatKn);
-
+  Diagonal3f errorFlatOmegaP(1.0, 0.0, 0.0);
+  Eigen::Matrix3f inverseCameraMatrix(_cameraMatrix.inverse());
+  //float fB = (0.075*_cameraMatrix(0,0)); // kinect baseline * focal lenght;
+  Eigen::Matrix3f covarianceJacobian(Eigen::Matrix3f::Zero());
+   
   for (size_t i=0; i<_currPoints->size(); i++){
     const PointWithNormal& point = _currPoints->at(i);
     const PointWithNormalSVD& svd = _currSVDs->at(i);
@@ -102,10 +110,25 @@ void PointWithNormalAligner::_updateOmegas() {
       // the point has no normal;
       continue;
     }
+
+    // float z = svd.z();
+    // float zVariation = (fB+z)/(z*z);
+    // zVariation *= zVariation;
+    // Diagonal3f imageCovariance(1.0f, 1.0f, zVariation);
+    // covarianceJacobian <<
+    //   z, 0, (float)c,
+    //   0, z, (float)r,
+    //   0, 0, 1;
+    // covarianceJacobian = inverseCameraMatrix*covarianceJacobian;
+    // Eigen::Matrix3f worldCovariance = covarianceJacobian * imageCovariance * covarianceJacobian.transpose();
+    
     float curvature = svd.curvature();
+    _currFlatOmegas[i].setZero();
     if (curvature<_flatCurvatureThreshold){
       _currOmegas[i].block<3,3>(0,0) = svd.U() * flatOmegaP * svd.U().transpose();
       _currOmegas[i].block<3,3>(3,3) = flatOmegaN;
+      _currFlatOmegas[i].block<3,3>(0,0) = svd.U() * errorFlatOmegaP * svd.U().transpose();
+      _currFlatOmegas[i].block<3,3>(3,3).setIdentity();
     } else {
       _currOmegas[i].block<3,3>(0,0) = svd.U() * 
 	Diagonal3f(nonFlatKp/svd.singularValues()(0),
@@ -114,11 +137,22 @@ void PointWithNormalAligner::_updateOmegas() {
       _currOmegas[i].block<3,3>(3,3) = nonFlatOmegaN;
     }
   }
+
   _omegasSet=true;
 }
 
 
 int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X){
+  Vector6f mean;
+  Matrix6f omega; 
+  float translationalEigenRatio;
+  float rotationalEigenRatio;
+  return align(error, X, mean, omega, translationalEigenRatio, rotationalEigenRatio);
+  
+}
+
+int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X, 
+				  Vector6f& mean, Matrix6f& omega, float& translationalEigenRatio, float& rotationalEigenRatio){
   _updateOmegas();
   _updateCamera();
   
@@ -139,8 +173,8 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X){
     
     for (int c=0; c<_refIndexImage.cols(); c++) {
       for (int r=0; r<_refIndexImage.rows(); r++) {
-	int& refIndex = _refIndexImage(c,r);
-	int currIndex = _currIndexImage(c,r);
+	int& refIndex = _refIndexImage(r,c);
+	int currIndex = _currIndexImage(r,c);
 	if (refIndex<0 || currIndex<0) {
 	  nNoPoint++;
 	  continue;
@@ -188,6 +222,10 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X){
 	nGoodPoints++;
       }
     }
+    for (size_t k=_numCorrespondences; k<_correspondences.size(); k++){
+	_correspondences[_numCorrespondences].i1=-1;
+	_correspondences[_numCorrespondences].i2=-1;
+    }
     if (_debug) {
       cerr << "goodPoints: " << nGoodPoints << endl;
       cerr << "noPoint: " << nNoPoint << endl;
@@ -216,7 +254,25 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X){
     }
     
   }
-  inliers = _computeErrorAndInliers(error);
+  inliers = _computeStatistics(error, mean, omega, translationalEigenRatio, rotationalEigenRatio, false);
+
+  if (rotationalEigenRatio > _rotationalMinEigenRatio || translationalEigenRatio > _translationalMinEigenRatio) {
+    cerr << "************** WARNING SOLUTION MIGHT BE INVALID (eigenratio failure) **************" << endl;
+    cerr << "tr: " << translationalEigenRatio << " rr: " << rotationalEigenRatio << endl;
+    cerr << "************************************************************************************" << endl;
+  } else {
+    cerr << "************** I FOUND SOLUTION VALID SOLUTION   (eigenratio ok) *******************" << endl;
+    cerr << "tr: " << translationalEigenRatio << " rr: " << rotationalEigenRatio << endl;
+    cerr << "************************************************************************************" << endl;
+  }
+
+  if (_debug) {
+    cerr << "Solution statistics in (t, mq)" << endl;
+    cerr << "mean: " << mean.transpose() << endl;
+    cerr << "Omega: " << endl;
+    cerr << omega << endl;
+  }
+
   if (inliers < _minInliers)
     return -4;
     
@@ -224,7 +280,7 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X){
   return inliers;
 }
   
-int PointWithNormalAligner::_constructLinearSystemQT(Matrix6f& H, Vector6f&b, float& error){
+int PointWithNormalAligner::_constructLinearSystemQT(Matrix6f& H, Vector6f&b, float& error, bool onlyFlat) const{
     b = Vector6f::Zero();
     H = Matrix6f::Zero();
     error = 0;
@@ -233,16 +289,20 @@ int PointWithNormalAligner::_constructLinearSystemQT(Matrix6f& H, Vector6f&b, fl
     // cerr << "refPoints.size(): " << _refPoints->size() << endl;
     // cerr << "currPoints.size(): " << _currPoints->size() << endl;
     // cerr << "omegas.size(): " << _currOmegas.size() << endl;
-
+    const Matrix6fVector& omegas = (onlyFlat)? _currFlatOmegas : _currOmegas;
+  
     for(int i = 0; i < _numCorrespondences; i++){
       //cerr << "corr[" << i << "]: ";
       const Correspondence& corr = _correspondences[i];
       const PointWithNormal& pref  = _refPoints->at(corr.i1);
       const PointWithNormal& pcurr = _currPoints->at(corr.i2);
       //cerr << corr.i1 << " " << corr.i2 << endl;
-      const Matrix6f& omega = _currOmegas.at(corr.i2);
-	
+      const Matrix6f& omega = omegas.at(corr.i2);
+      if (omega.squaredNorm()==0)
+	continue;
+    	
       Vector6f e = _T*pref - pcurr;
+      
       float localError = e.transpose() * omega * e;
       if(localError > _inlierMaxChi2)
 	continue;
@@ -255,19 +315,23 @@ int PointWithNormalAligner::_constructLinearSystemQT(Matrix6f& H, Vector6f&b, fl
     return numInliers;
 }
 
-int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, float& error){
+int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, float& error, bool onlyFlat) const{
   b.setZero();
   H.setZero();
   error = 0;
   int numInliers = 0;
   Matrix6x12f J;
+  const Matrix6fVector& omegas = (onlyFlat)? _currFlatOmegas : _currOmegas;
   for(int i = 0; i < _numCorrespondences; i++){
     const Correspondence& corr = _correspondences[i];
     const PointWithNormal& pref  = _refPoints->at(corr.i1);
     const PointWithNormal& pcurr = _currPoints->at(corr.i2);
-    const Matrix6f& omega = _currOmegas.at(corr.i2);
+    const Matrix6f& omega = omegas.at(corr.i2);
+    if (omega.squaredNorm()==0)
+      continue;
     
     Vector6f e = _T*pref - pcurr;
+
     float localError = e.transpose() * omega * e;
     if(localError > _inlierMaxChi2)
       continue;
@@ -290,17 +354,20 @@ int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, 
   return numInliers;
 }
 
-int PointWithNormalAligner::_constructLinearSystemT(Matrix3f& H, Vector3f&b, float& error){
+int PointWithNormalAligner::_constructLinearSystemT(Matrix3f& H, Vector3f&b, float& error, bool onlyFlat) const{
   b.setZero();
   H.setZero();
   error = 0;
   int numInliers = 0;
   Matrix6x12f J;
+  const Matrix6fVector& omegas = (onlyFlat)? _currFlatOmegas : _currOmegas;
   for(int i = 0; i < _numCorrespondences; i++){
     const Correspondence& corr = _correspondences[i];
     const PointWithNormal& pref  = _refPoints->at(corr.i1);
     const PointWithNormal& pcurr = _currPoints->at(corr.i2);
-    const Matrix6f& omega = _currOmegas.at(corr.i2);
+    const Matrix6f& omega = omegas.at(corr.i2);
+    if (omega.squaredNorm()==0)
+      continue;
     
     Vector6f e = _T*pref - pcurr;
     float localError = e.transpose() * omega * e;
@@ -314,22 +381,65 @@ int PointWithNormalAligner::_constructLinearSystemT(Matrix3f& H, Vector3f&b, flo
   return numInliers;
 }
 
-int PointWithNormalAligner::_computeErrorAndInliers(float& error) const{
+int PointWithNormalAligner::_computeStatistics(float& error, Vector6f& mean, Matrix6f& Omega, 
+					       float& translationalRatio, float& rotationalRatio,
+					       bool onlyFlat) const{
+  typedef g2o::SigmaPoint<Vector6f> MySigmaPoint;
+  typedef std::vector<MySigmaPoint, Eigen::aligned_allocator<MySigmaPoint> > MySigmaPointVector;
+
+  
+  Vector6f b;
+  Matrix6f H;
+  
+  translationalRatio = std::numeric_limits<float>::max();
+  rotationalRatio = std::numeric_limits<float>::max();
+
   error = 0;
-  int numInliers = 0;
-  for(int i = 0; i < _numCorrespondences; i++){
-    const Correspondence& corr = _correspondences[i];
-    const PointWithNormal& pref  = _refPoints->at(corr.i1);
-    const PointWithNormal& pcurr = _currPoints->at(corr.i2);
-    const Matrix6f& omega = _currOmegas.at(corr.i2);
-    Vector6f e = _T*pref - pcurr;
-    float localError = e.transpose() * omega * e;
-    if(localError > _inlierMaxChi2)
-      continue;
-    numInliers++;
-    error += localError;
+  int inliers = _constructLinearSystemQT(H,b,error, onlyFlat);
+  if(inliers < _minInliers){
+    return inliers;
   }
-  return numInliers;
+
+  JacobiSVD<Matrix6f> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  // if (_debug)
+  //   cerr << "singularValues = " << svd.singularValues().transpose() << endl;
+  // //TODO: check the ratio of the singular values to see if the solution makes sense
+  // float ratio = svd.singularValues()(0)/svd.singularValues()(5);
+  // if (_debug)
+  //   cerr << "singularValuesRatio = " << ratio << endl;
+
+  Matrix6f localSigma = svd.solve(Matrix6f::Identity());
+  MySigmaPointVector sigmaPoints;
+  Vector6f localMean = Vector6f::Zero();
+  g2o::sampleUnscented(sigmaPoints, localMean, localSigma);
+  
+  // remap each of the sigma points to their original position
+  for(size_t i=0; i<sigmaPoints.size(); i++){
+    MySigmaPoint& p = sigmaPoints[i];
+    p._sample = t2v(_T*v2t(p._sample));
+  }
+  
+  // reconstruct the gaussian 
+  g2o::reconstructGaussian(mean,localSigma, sigmaPoints);
+
+  // compute the information matrix from the covariance
+  Omega = localSigma.inverse();
+  
+  // have a look at the svd of the rotational and the translational part;
+  JacobiSVD<Matrix3f> partialSVD;
+  partialSVD.compute(Omega.block<3,3>(0,0));
+  translationalRatio = partialSVD.singularValues()(0)/partialSVD.singularValues()(2);
+  if (_debug){
+    cerr << "singular values of the Omega_t: " << partialSVD.singularValues().transpose() << endl;
+    cerr << "translational_ratio: " <<  translationalRatio << endl;
+  } 
+  partialSVD.compute(Omega.block<3,3>(3,3));
+  rotationalRatio = partialSVD.singularValues()(0)/partialSVD.singularValues()(2);
+  if (_debug) {
+    cerr << "singular values of the Omega_r: " << partialSVD.singularValues().transpose() << endl; 
+    cerr << "rotational_ratio: " << rotationalRatio << endl;
+  }
+  return inliers;
 }
 
 int PointWithNormalAligner::_nonLinearUpdate(float& error){
