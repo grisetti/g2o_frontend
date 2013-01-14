@@ -423,12 +423,12 @@ int main(int argc, char** argv){
       *clearAll = 0;
     }
     else if(*clearLast) {
-      cout << "Size before: " << drawableList.size() << endl;
-      pwnGMW.viewer_3d->popBack();
-      pwnGMW.viewer_3d->popBack();
-      pwnGMW.viewer_3d->popBack();
-      pwnGMW.viewer_3d->popBack();
-      cout << "Size after: " << drawableList.size() << endl;
+      if(drawableList.size() >= 4) {	
+        pwnGMW.viewer_3d->popBack();
+        pwnGMW.viewer_3d->popBack();
+        pwnGMW.viewer_3d->popBack();
+        pwnGMW.viewer_3d->popBack();
+      }
       *clearLast = 0;
     }
     pwnGMW.viewer_3d->updateGL();
