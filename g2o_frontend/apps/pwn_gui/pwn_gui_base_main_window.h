@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'pwn_gui_base_main_window.ui'
 **
-** Created: Wed Jan 9 19:56:56 2013
+** Created: Mon Jan 14 11:37:14 2013
 **      by: Qt User Interface Compiler version 4.8.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -66,8 +66,11 @@ public:
     QCheckBox *checkBox_step_by_step;
     QPushButton *pushButton_add_cloud;
     QListWidget *listWidget;
+    QGridLayout *gridLayout_2;
     QPushButton *pushButton_initial_guess;
     QPushButton *pushButton_optimize;
+    QPushButton *pushButton_clear_last;
+    QPushButton *pushButton_clear_all;
     QGraphicsView *graphicsView1_2d;
     QGraphicsView *graphicsView2_2d;
     QVBoxLayout *verticalLayout_2;
@@ -213,37 +216,45 @@ public:
 
         verticalLayout->addWidget(listWidget);
 
+        gridLayout_2 = new QGridLayout();
+        gridLayout_2->setObjectName(QString::fromUtf8("gridLayout_2"));
         pushButton_initial_guess = new QPushButton(centralwidget);
         pushButton_initial_guess->setObjectName(QString::fromUtf8("pushButton_initial_guess"));
-        QSizePolicy sizePolicy1(QSizePolicy::Minimum, QSizePolicy::Fixed);
-        sizePolicy1.setHorizontalStretch(0);
-        sizePolicy1.setVerticalStretch(0);
-        sizePolicy1.setHeightForWidth(pushButton_initial_guess->sizePolicy().hasHeightForWidth());
-        pushButton_initial_guess->setSizePolicy(sizePolicy1);
 
-        verticalLayout->addWidget(pushButton_initial_guess);
+        gridLayout_2->addWidget(pushButton_initial_guess, 0, 0, 1, 1);
 
         pushButton_optimize = new QPushButton(centralwidget);
         pushButton_optimize->setObjectName(QString::fromUtf8("pushButton_optimize"));
-        sizePolicy1.setHeightForWidth(pushButton_optimize->sizePolicy().hasHeightForWidth());
-        pushButton_optimize->setSizePolicy(sizePolicy1);
 
-        verticalLayout->addWidget(pushButton_optimize);
+        gridLayout_2->addWidget(pushButton_optimize, 1, 0, 1, 1);
+
+        pushButton_clear_last = new QPushButton(centralwidget);
+        pushButton_clear_last->setObjectName(QString::fromUtf8("pushButton_clear_last"));
+
+        gridLayout_2->addWidget(pushButton_clear_last, 0, 1, 1, 1);
+
+        pushButton_clear_all = new QPushButton(centralwidget);
+        pushButton_clear_all->setObjectName(QString::fromUtf8("pushButton_clear_all"));
+
+        gridLayout_2->addWidget(pushButton_clear_all, 1, 1, 1, 1);
+
+
+        verticalLayout->addLayout(gridLayout_2);
 
         graphicsView1_2d = new QGraphicsView(centralwidget);
         graphicsView1_2d->setObjectName(QString::fromUtf8("graphicsView1_2d"));
-        QSizePolicy sizePolicy2(QSizePolicy::Minimum, QSizePolicy::Expanding);
-        sizePolicy2.setHorizontalStretch(0);
-        sizePolicy2.setVerticalStretch(0);
-        sizePolicy2.setHeightForWidth(graphicsView1_2d->sizePolicy().hasHeightForWidth());
-        graphicsView1_2d->setSizePolicy(sizePolicy2);
+        QSizePolicy sizePolicy1(QSizePolicy::Minimum, QSizePolicy::Expanding);
+        sizePolicy1.setHorizontalStretch(0);
+        sizePolicy1.setVerticalStretch(0);
+        sizePolicy1.setHeightForWidth(graphicsView1_2d->sizePolicy().hasHeightForWidth());
+        graphicsView1_2d->setSizePolicy(sizePolicy1);
 
         verticalLayout->addWidget(graphicsView1_2d);
 
         graphicsView2_2d = new QGraphicsView(centralwidget);
         graphicsView2_2d->setObjectName(QString::fromUtf8("graphicsView2_2d"));
-        sizePolicy2.setHeightForWidth(graphicsView2_2d->sizePolicy().hasHeightForWidth());
-        graphicsView2_2d->setSizePolicy(sizePolicy2);
+        sizePolicy1.setHeightForWidth(graphicsView2_2d->sizePolicy().hasHeightForWidth());
+        graphicsView2_2d->setSizePolicy(sizePolicy1);
 
         verticalLayout->addWidget(graphicsView2_2d);
 
@@ -258,11 +269,11 @@ public:
 
         viewer_3d = new PWNQGLViewer(centralwidget);
         viewer_3d->setObjectName(QString::fromUtf8("viewer_3d"));
-        QSizePolicy sizePolicy3(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        sizePolicy3.setHorizontalStretch(0);
-        sizePolicy3.setVerticalStretch(0);
-        sizePolicy3.setHeightForWidth(viewer_3d->sizePolicy().hasHeightForWidth());
-        viewer_3d->setSizePolicy(sizePolicy3);
+        QSizePolicy sizePolicy2(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        sizePolicy2.setHorizontalStretch(0);
+        sizePolicy2.setVerticalStretch(0);
+        sizePolicy2.setHeightForWidth(viewer_3d->sizePolicy().hasHeightForWidth());
+        viewer_3d->setSizePolicy(sizePolicy2);
 
         verticalLayout_2->addWidget(viewer_3d);
 
@@ -325,6 +336,8 @@ public:
         pushButton_add_cloud->setText(QApplication::translate("PWNGuiBaseMainWindow", "Add Cloud", 0, QApplication::UnicodeUTF8));
         pushButton_initial_guess->setText(QApplication::translate("PWNGuiBaseMainWindow", "Initial Guess", 0, QApplication::UnicodeUTF8));
         pushButton_optimize->setText(QApplication::translate("PWNGuiBaseMainWindow", "Optimize", 0, QApplication::UnicodeUTF8));
+        pushButton_clear_last->setText(QApplication::translate("PWNGuiBaseMainWindow", "Clear Last", 0, QApplication::UnicodeUTF8));
+        pushButton_clear_all->setText(QApplication::translate("PWNGuiBaseMainWindow", "Clear All", 0, QApplication::UnicodeUTF8));
         menuFile->setTitle(QApplication::translate("PWNGuiBaseMainWindow", "File", 0, QApplication::UnicodeUTF8));
         menuView->setTitle(QApplication::translate("PWNGuiBaseMainWindow", "View", 0, QApplication::UnicodeUTF8));
         menuHelp->setTitle(QApplication::translate("PWNGuiBaseMainWindow", "Help", 0, QApplication::UnicodeUTF8));

@@ -166,7 +166,8 @@ int main(int argc, char** argv){
     for(set<string>::const_iterator it =filenamesset.begin(); it!=filenamesset.end(); it++) {
       filenames.push_back(*it);      
       QString listItem(&(*it)[0]);
-      pwnGMW.listWidget->addItem(listItem);
+      if(listItem.endsWith("depth.pgm",Qt::CaseInsensitive))
+	pwnGMW.listWidget->addItem(listItem);
     }
   } else {
     filenames.push_back(imageName0);
@@ -204,7 +205,7 @@ int main(int argc, char** argv){
   pwnGMW.show();
   refScn = pwnGMW.scene0();
   currScn = pwnGMW.scene1();
-  bool *addCloud = 0, *initialGuessViewer = 0, *optimizeViewer = 0;
+  bool *addCloud = 0, *initialGuessViewer = 0, *optimizeViewer = 0, *clearLast = 0, *clearAll = 0;
   int *stepViewer = 0, *stepByStepViewer = 0;
   float *pointsViewer = 0, *normalsViewer = 0, *covariancesViewer = 0, *correspondencesViewer = 0;
   QListWidgetItem* itemList = 0;
@@ -223,6 +224,8 @@ int main(int argc, char** argv){
     // Update state variables value.
     initialGuessViewer = pwnGMW.initialGuess();
     optimizeViewer = pwnGMW.optimize();
+    clearLast = pwnGMW.clearLast();    
+    clearAll = pwnGMW.clearAll();
     stepByStepViewer = pwnGMW.stepByStep();
     stepViewer = pwnGMW.step();
     pointsViewer = pwnGMW.points();
@@ -262,8 +265,7 @@ int main(int argc, char** argv){
 	pwnGMW.viewer_3d->addDrawable((Drawable*)dp);
 	pwnGMW.viewer_3d->addDrawable((Drawable*)dn);
 	pwnGMW.viewer_3d->addDrawable((Drawable*)dc);
-	pwnGMW.viewer_3d->addDrawable((Drawable*)dcorr);
-	
+	pwnGMW.viewer_3d->addDrawable((Drawable*)dcorr);	
 	startingTraj = trajectory;
       }
       *addCloud = 0;
@@ -408,7 +410,22 @@ int main(int argc, char** argv){
 	pwnGMW.graphicsView2_2d->show();
       }
     }
-
+    // clear buttons pressed.
+    else if(*clearAll) {
+      pwnGMW.viewer_3d->clearDrawableList();
+      trajectory = Isometry3f::Identity();
+      startingTraj = trajectory;
+      *clearAll = 0;
+    }
+    else if(*clearLast) {
+      cout << "Size before: " << drawableList.size() << endl;
+      pwnGMW.viewer_3d->popBack();
+      pwnGMW.viewer_3d->popBack();
+      pwnGMW.viewer_3d->popBack();
+      pwnGMW.viewer_3d->popBack();
+      cout << "Size after: " << drawableList.size() << endl;
+      *clearLast = 0;
+    }
     pwnGMW.viewer_3d->updateGL();
 
     usleep(10000);

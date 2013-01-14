@@ -13,6 +13,8 @@ PWNGuiMainWindow::PWNGuiMainWindow(QWidget *parent, Qt::WindowFlags flags) : QMa
   _closing = 0;
   _initialGuess = 1;
   _optimize = 0;
+  _clearLast = 0;
+  _clearAll = 0;
   _addCloud = 0;
   _stepByStep = 0;
   _step[0] = 1; _step[1] = 1;
@@ -54,6 +56,10 @@ PWNGuiMainWindow::PWNGuiMainWindow(QWidget *parent, Qt::WindowFlags flags) : QMa
 		   this, SLOT(slotOptimizeClicked()));
   QObject::connect(pushButton_add_cloud, SIGNAL(clicked()),
 		   this, SLOT(slotAddCloudClicked()));
+  QObject::connect(pushButton_clear_last, SIGNAL(clicked()),
+		   this, SLOT(slotClearLastClicked()));
+  QObject::connect(pushButton_clear_all, SIGNAL(clicked()),
+		   this, SLOT(slotClearAllClicked()));
 
   // Signals/Slots list widget connections.
   QObject::connect(listWidget, SIGNAL(itemClicked(QListWidgetItem*)),
