@@ -11,7 +11,7 @@
 #include "SplitMergeEE.h"
 
 #define MIN_POINTS_IN_LINES 10
-#define SPLIT_THRESHOLD 0.04*0.04
+#define SPLIT_THRESHOLD 0.05*0.05
 #define CLUSTER_SQUARED_DISTANCE 0.3*0.3
 
 using namespace std;
@@ -214,8 +214,8 @@ ViewerGUI::ViewerGUI(LaserRobotData* theLaserData, Vector2fVector* theLinesPoint
 {
   setupUi(this);
   QObject::connect(horizontalSlider, SIGNAL(sliderMoved(int)), this, SLOT(updateVal1(int)));
-  QObject::connect(horizontalSlider_2, SIGNAL(sliderMoved(int)), this, SLOT(updateVal2(int)));
-  QObject::connect(horizontalSlider_3, SIGNAL(sliderMoved(int)), this, SLOT(updateVal3(int)));
+  QObject::connect(horizontalSlider_2, SIGNAL(sliderMoved(int)), this, SLOT(updateVal2(float)));
+  QObject::connect(horizontalSlider_3, SIGNAL(sliderMoved(int)), this, SLOT(updateVal3(float)));
   QObject::connect(pushButton, SIGNAL(clicked()), this, SLOT(lineExtraction()));
   QObject::connect(pushButton_2, SIGNAL(clicked()), this, SLOT(showOriginal()));
   QObject::connect(checkBox, SIGNAL(clicked(bool)),this, SLOT(setAlgorithm()));

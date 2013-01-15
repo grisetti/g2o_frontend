@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'viewer.ui'
 **
-** Created: Tue Jan 8 00:21:04 2013
+** Created: Tue Jan 15 13:06:07 2013
 **      by: Qt User Interface Compiler version 4.8.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -112,29 +112,29 @@ public:
         groupBox_2->setObjectName(QString::fromUtf8("groupBox_2"));
         label = new QLabel(groupBox_2);
         label->setObjectName(QString::fromUtf8("label"));
-        label->setGeometry(QRect(0, 29, 71, 31));
+        label->setGeometry(QRect(0, 29, 161, 31));
         QFont font;
         font.setItalic(false);
         label->setFont(font);
         horizontalSlider = new QSlider(groupBox_2);
         horizontalSlider->setObjectName(QString::fromUtf8("horizontalSlider"));
-        horizontalSlider->setGeometry(QRect(80, 30, 141, 29));
+        horizontalSlider->setGeometry(QRect(30, 60, 141, 29));
         horizontalSlider->setOrientation(Qt::Horizontal);
         label_2 = new QLabel(groupBox_2);
         label_2->setObjectName(QString::fromUtf8("label_2"));
-        label_2->setGeometry(QRect(0, 70, 71, 31));
+        label_2->setGeometry(QRect(0, 80, 161, 31));
         label_2->setFont(font);
         horizontalSlider_2 = new QSlider(groupBox_2);
         horizontalSlider_2->setObjectName(QString::fromUtf8("horizontalSlider_2"));
-        horizontalSlider_2->setGeometry(QRect(80, 70, 141, 29));
+        horizontalSlider_2->setGeometry(QRect(30, 110, 141, 29));
         horizontalSlider_2->setOrientation(Qt::Horizontal);
         label_3 = new QLabel(groupBox_2);
         label_3->setObjectName(QString::fromUtf8("label_3"));
-        label_3->setGeometry(QRect(0, 100, 71, 41));
+        label_3->setGeometry(QRect(0, 130, 161, 41));
         label_3->setFont(font);
         horizontalSlider_3 = new QSlider(groupBox_2);
         horizontalSlider_3->setObjectName(QString::fromUtf8("horizontalSlider_3"));
-        horizontalSlider_3->setGeometry(QRect(80, 110, 141, 29));
+        horizontalSlider_3->setGeometry(QRect(30, 160, 141, 29));
         horizontalSlider_3->setOrientation(Qt::Horizontal);
 
         verticalLayout->addWidget(groupBox_2);
@@ -193,9 +193,9 @@ public:
         checkBox->setText(QApplication::translate("MainWindow", "Ransac", 0, QApplication::UnicodeUTF8));
         checkBox_2->setText(QApplication::translate("MainWindow", "Split-Merge", 0, QApplication::UnicodeUTF8));
         groupBox_2->setTitle(QApplication::translate("MainWindow", "Optimization params", 0, QApplication::UnicodeUTF8));
-        label->setText(QApplication::translate("MainWindow", "Min Points in line: ", 0, QApplication::UnicodeUTF8));
-        label_2->setText(QApplication::translate("MainWindow", "Split threshold: ", 0, QApplication::UnicodeUTF8));
-        label_3->setText(QApplication::translate("MainWindow", "Clusterer squared distance: ", 0, QApplication::UnicodeUTF8));
+        label->setText(QApplication::translate("MainWindow", "Min points in line:", 0, QApplication::UnicodeUTF8));
+        label_2->setText(QApplication::translate("MainWindow", "Split threshold:", 0, QApplication::UnicodeUTF8));
+        label_3->setText(QApplication::translate("MainWindow", "Clusterer threshold:", 0, QApplication::UnicodeUTF8));
         pushButton_2->setText(QApplication::translate("MainWindow", "Show Original", 0, QApplication::UnicodeUTF8));
         pushButton->setText(QApplication::translate("MainWindow", "Line Detection", 0, QApplication::UnicodeUTF8));
     } // retranslateUi
