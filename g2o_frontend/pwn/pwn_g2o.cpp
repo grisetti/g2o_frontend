@@ -179,6 +179,7 @@ int
     Frame* currentFrame= new Frame();
     if(!currentFrame->load(filenames[i])) {
       cerr << "failure in loading image: " << filenames[i] << ", skipping" << endl;
+      delete currentFrame;
       continue;
     }
     nFrames ++;
@@ -275,10 +276,11 @@ int
 
   char buf[1024];
   sprintf(buf, "%s-%03d.g2o", baseFilename.c_str(), graphNum);	
+  cerr << "saving final frames, n: " << nFrames << " in file [" << buf << "]" << endl;
+  cerr << "filesize:" << os.str().length() << endl; 
   ofstream gs(buf);
   gs << os.str();
-  os.str("");
-  os.clear();
+  cout << os.str();
   gs.close();
   
 }

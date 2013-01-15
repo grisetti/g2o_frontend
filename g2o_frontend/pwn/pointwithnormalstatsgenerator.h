@@ -64,6 +64,7 @@ protected:
   float _maxCurvature;
   Eigen::Matrix3f _cameraMatrix;
   IntegralPointImage _integralImage;
+  int _numThreads;
 };
 
 #endif
