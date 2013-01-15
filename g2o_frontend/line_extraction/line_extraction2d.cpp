@@ -25,7 +25,7 @@ Line2DExtractor::Line2DExtractor()
 {
   _splitThreshold = 0.03*0.03;  
   _minPointsInLine = 6;
-	_maxPointDistance = 3;
+  _maxPointDistance = 3;
   _normalMergeThreshold = ::cos(M_PI/360);
   _rhoMergeThreshold = 0.05;
 }
@@ -111,8 +111,11 @@ bool Line2DExtractor::merge(int k) {
   return true;
 }
 
-// ofstream os("lines.dat");
-// ofstream os2("linesMerged.dat");
+#if 0
+ofstream os("lines.dat");
+ofstream osp("points.dat");
+#endif
+
 
 void Line2DExtractor::initializeFromIndices(Line2D& line, int i0, int i1){
   line.p0Index = i0;
@@ -169,17 +172,24 @@ void Line2DExtractor::compute(){
       it++;
   }
   cerr << "\tI merge " << _lines.size() << " times";
-//   for (IntLineMap::iterator it=_lines.begin(); it!=_lines.end(); it++){
-//     const Line2D& l = it->second;
-//     const Vector2f & p0 = _points[l.p0Index];
-//     const Vector2f & p1 = _points[l.p1Index];
-//     os2 << p0.transpose() << endl;
-//     os2 << p1.transpose() << endl;
-//     os2 << endl;
-//     os2 << endl;
-//   }
-//   os2.flush();
 
+#if 0
+  for (IntLineMap::iterator it=_lines.begin(); it!=_lines.end(); it++){
+    const Line2D& l = it->second;
+    const Vector2f & p0 = _points[l.p0Index];
+    const Vector2f & p1 = _points[l.p1Index];
+    os << p0.transpose() << endl;
+    os << p1.transpose() << endl;
+    os << endl;
+    os << endl;
+  }
+  os.flush();
+
+  for (size_t i =0; i<_points.size(); i++){
+    osp << _points[i].transpose() << endl;
+  }
+  osp.flush();
+#endif
 }
 
 // bool Line2DExtractor::compute(Vector2fVector& /*points*/ ,

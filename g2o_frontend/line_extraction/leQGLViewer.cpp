@@ -63,7 +63,7 @@ void leQGLViewer::draw()
 	drawAxis();
 	glPointSize(4.f);
 	// draw all the points
-	if(!lineFound) 
+	//if(!lineFound) 
 	{
 		for (int i=0;i<(int)data->size();i+=beamsDownsampling)
 		{
@@ -77,8 +77,8 @@ void leQGLViewer::draw()
 		}
 	}
 	//draw the point belonging to the lines found
-	else 
-	{
+	//else 
+	if(lineFound) {
 		glBegin(GL_LINES);
 		
 		//cout << "line found!" << endl;

@@ -56,7 +56,7 @@ public:
   inline const Cluster& cluster(int i) const {return _clusters[i];}
   inline int numClusters() const {return _clusters.size();};
   inline const Vector2fVector& points() const {return _points;}
-  inline void setPoints(Vector2fVector& points_) {_points=points_;}
+  inline void setPoints(const Vector2fVector& points_) {_points=points_;}
   void compute();
   
   Vector2fVector _points;
@@ -72,7 +72,7 @@ public:
   virtual ~Line2DExtractor();
 
   inline const Vector2fVector& points() const {return _points;}
-  inline void setPoints(Vector2fVector& points_) {_points=points_;}
+  inline void setPoints(const Vector2fVector& points_) {_points=points_;}
   inline const IntLineMap& lines() const { return _lines;}
   
   void compute();
@@ -87,7 +87,7 @@ public:
 	
 protected:
   void initializeFromIndices(Line2D& l, int i0, int i1);
-	int maxDistanceIndex(const Line2D& l);  
+  int maxDistanceIndex(const Line2D& l);  
   bool split(int i);
   bool merge(int i);
 //   bool step(Vector2fVector& /*points*/ ,

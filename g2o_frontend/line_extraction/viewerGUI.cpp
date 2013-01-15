@@ -30,18 +30,20 @@ void ViewerGUI::updateVal1(int val)
 	this->viewer->updateGL();
 }
 
-void ViewerGUI::updateVal2(float val)
+void ViewerGUI::updateVal2(int val)
 {
 	cout << "Split threshold: " << slider2value << endl;
-	lineExtractor->_splitThreshold = val;
+	float dist = 0.005 * slider2value;
+	lineExtractor->_splitThreshold = dist*dist;
 	this->lineExtraction();
 	this->viewer->updateGL();
 }
 
-void ViewerGUI::updateVal3(float val)
+void ViewerGUI::updateVal3(int val)
 {
 	cout << "Cluster squared distance: " << slider3value << endl;
-	clusterer->_squaredDistance = val;
+	float dist = 0.005 * slider3value;
+	clusterer->_squaredDistance = dist*dist;
 	this->lineExtraction();
 	this->viewer->updateGL();
 }
@@ -214,8 +216,8 @@ ViewerGUI::ViewerGUI(LaserRobotData* theLaserData, Vector2fVector* theLinesPoint
 {
   setupUi(this);
   QObject::connect(horizontalSlider, SIGNAL(sliderMoved(int)), this, SLOT(updateVal1(int)));
-  QObject::connect(horizontalSlider_2, SIGNAL(sliderMoved(int)), this, SLOT(updateVal2(float)));
-  QObject::connect(horizontalSlider_3, SIGNAL(sliderMoved(int)), this, SLOT(updateVal3(float)));
+  QObject::connect(horizontalSlider_2, SIGNAL(sliderMoved(int)), this, SLOT(updateVal2(int)));
+  QObject::connect(horizontalSlider_3, SIGNAL(sliderMoved(int)), this, SLOT(updateVal3(int)));
   QObject::connect(pushButton, SIGNAL(clicked()), this, SLOT(lineExtraction()));
   QObject::connect(pushButton_2, SIGNAL(clicked()), this, SLOT(showOriginal()));
   QObject::connect(checkBox, SIGNAL(clicked(bool)),this, SLOT(setAlgorithm()));

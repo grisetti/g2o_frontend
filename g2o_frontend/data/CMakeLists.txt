@@ -1,4 +1,3 @@
-find_package(PCL 1.2 REQUIRED PATHS /usr NO_DEFAULT_PATH)
 include_directories(${PCL_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS} ${OpenCV_LIBRARY_DIRS})
 

@@ -44,8 +44,8 @@ class ViewerGUI : public QMainWindow, public Ui::MainWindow
 
 	public slots:
 	 void updateVal1(int val);
-	 void updateVal2(float val);
-	 void updateVal3(float val);
+	 void updateVal2(int val);
+	 void updateVal3(int val);
 	 void showOriginal();
 	 void lineExtraction();
 	 void setAlgorithm();

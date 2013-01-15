@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'viewerGUI.h'
 **
-** Created: Tue Jan 15 13:08:38 2013
+** Created: Tue Jan 15 15:58:25 2013
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -33,17 +33,17 @@ static const uint qt_meta_data_ViewerGUI[] = {
  // slots: signature, parameters, type, tag, flags
       15,   11,   10,   10, 0x0a,
       31,   11,   10,   10, 0x0a,
-      49,   11,   10,   10, 0x0a,
-      67,   10,   10,   10, 0x0a,
-      82,   10,   10,   10, 0x0a,
-      99,   10,   10,   10, 0x0a,
+      47,   11,   10,   10, 0x0a,
+      63,   10,   10,   10, 0x0a,
+      78,   10,   10,   10, 0x0a,
+      95,   10,   10,   10, 0x0a,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_ViewerGUI[] = {
     "ViewerGUI\0\0val\0updateVal1(int)\0"
-    "updateVal2(float)\0updateVal3(float)\0"
+    "updateVal2(int)\0updateVal3(int)\0"
     "showOriginal()\0lineExtraction()\0"
     "setAlgorithm()\0"
 };
@@ -55,8 +55,8 @@ void ViewerGUI::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
         ViewerGUI *_t = static_cast<ViewerGUI *>(_o);
         switch (_id) {
         case 0: _t->updateVal1((*reinterpret_cast< int(*)>(_a[1]))); break;
-        case 1: _t->updateVal2((*reinterpret_cast< float(*)>(_a[1]))); break;
-        case 2: _t->updateVal3((*reinterpret_cast< float(*)>(_a[1]))); break;
+        case 1: _t->updateVal2((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 2: _t->updateVal3((*reinterpret_cast< int(*)>(_a[1]))); break;
         case 3: _t->showOriginal(); break;
         case 4: _t->lineExtraction(); break;
         case 5: _t->setAlgorithm(); break;

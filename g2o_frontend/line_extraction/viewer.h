@@ -128,6 +128,8 @@ public:
         horizontalSlider_2->setObjectName(QString::fromUtf8("horizontalSlider_2"));
         horizontalSlider_2->setGeometry(QRect(30, 110, 141, 29));
         horizontalSlider_2->setOrientation(Qt::Horizontal);
+        horizontalSlider_2->setRange(0,100);
+
         label_3 = new QLabel(groupBox_2);
         label_3->setObjectName(QString::fromUtf8("label_3"));
         label_3->setGeometry(QRect(0, 130, 161, 41));
@@ -136,6 +138,7 @@ public:
         horizontalSlider_3->setObjectName(QString::fromUtf8("horizontalSlider_3"));
         horizontalSlider_3->setGeometry(QRect(30, 160, 141, 29));
         horizontalSlider_3->setOrientation(Qt::Horizontal);
+        horizontalSlider_3->setRange(0,100);
 
         verticalLayout->addWidget(groupBox_2);
 
