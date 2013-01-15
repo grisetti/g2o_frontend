@@ -193,9 +193,9 @@ public:
         checkBox->setText(QApplication::translate("MainWindow", "Ransac", 0, QApplication::UnicodeUTF8));
         checkBox_2->setText(QApplication::translate("MainWindow", "Split-Merge", 0, QApplication::UnicodeUTF8));
         groupBox_2->setTitle(QApplication::translate("MainWindow", "Optimization params", 0, QApplication::UnicodeUTF8));
-        label->setText(QApplication::translate("MainWindow", "TextLabel", 0, QApplication::UnicodeUTF8));
-        label_2->setText(QApplication::translate("MainWindow", "TextLabel", 0, QApplication::UnicodeUTF8));
-        label_3->setText(QApplication::translate("MainWindow", "TextLabel", 0, QApplication::UnicodeUTF8));
+        label->setText(QApplication::translate("MainWindow", "Min Points in line: ", 0, QApplication::UnicodeUTF8));
+        label_2->setText(QApplication::translate("MainWindow", "Split threshold: ", 0, QApplication::UnicodeUTF8));
+        label_3->setText(QApplication::translate("MainWindow", "Clusterer squared distance: ", 0, QApplication::UnicodeUTF8));
         pushButton_2->setText(QApplication::translate("MainWindow", "Show Original", 0, QApplication::UnicodeUTF8));
         pushButton->setText(QApplication::translate("MainWindow", "Line Detection", 0, QApplication::UnicodeUTF8));
     } // retranslateUi

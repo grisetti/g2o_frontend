@@ -43,7 +43,7 @@ struct Line2D: public Vector4f{
 
 typedef std::vector<Line2D, Eigen::aligned_allocator<Line2D> > Line2DVector; //Vector of line
 typedef std::vector<Vector2f, Eigen::aligned_allocator<Vector2f> > Vector2fVector; //vector of original points
-typedef std::vector<Vector2fVector, Eigen::aligned_allocator<Vector2f> > VectorOfSubsetsPoints; // vector of substets of points
+// typedef std::vector<Vector2fVector, Eigen::aligned_allocator<Vector2f> > VectorOfSubsetsPoints; // vector of substets of points
 	
 
 class Point2DClusterer {
@@ -52,6 +52,7 @@ public:
   typedef std::pair<int, int> Cluster;
   typedef std::vector<Cluster> ClusterVector;
 
+	Point2DClusterer() {}
   inline const Cluster& cluster(int i) const {return _clusters[i];}
   inline int numClusters() const {return _clusters.size();};
   inline const Vector2fVector& points() const {return _points;}
@@ -76,25 +77,22 @@ public:
   
   void compute();
 
+	//split thresholds
   float _splitThreshold;
   int _minPointsInLine;
+	//merge thresholds
   int _maxPointDistance;
   float _rhoMergeThreshold;
   float _normalMergeThreshold;
+	
 protected:
   void initializeFromIndices(Line2D& l, int i0, int i1);
+	int maxDistanceIndex(const Line2D& l);  
   bool split(int i);
   bool merge(int i);
-  
-  bool step(Vector2fVector& /*points*/ ,
-	    VectorOfSubsetsPoints& /*subset*/, 
-	    Line2DVector& /*lines*/);
-  
-  int maxDistanceIndex(const Line2D& l);
-  
-  
-  
-  
+//   bool step(Vector2fVector& /*points*/ ,
+// 	    VectorOfSubsetsPoints& /*subset*/, 
+// 	    Line2DVector& /*lines*/);
   Vector2fVector _points;
   IntLineMap _lines;
 };

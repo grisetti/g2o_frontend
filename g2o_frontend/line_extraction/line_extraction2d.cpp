@@ -23,13 +23,13 @@ void Point2DClusterer::compute() {
 
 Line2DExtractor::Line2DExtractor()
 {
-
-  _splitThreshold = 0.05*0.05;
-  _maxPointDistance = 3;
-  _minPointsInLine = 10;
+  _splitThreshold = 0.03*0.03;  
+  _minPointsInLine = 6;
+	_maxPointDistance = 3;
   _normalMergeThreshold = ::cos(M_PI/360);
   _rhoMergeThreshold = 0.05;
 }
+
 
 Line2DExtractor::~Line2DExtractor()
 {
@@ -41,15 +41,15 @@ bool Line2DExtractor::split(int k) {
   Line2D& line = _lines[k];
   if (line.p1Index - line.p0Index < _minPointsInLine)
     return false;
+	
   // seek for the point with the larest distance between the indices contained in the line
-  
   int imax= maxDistanceIndex(line);
-  cerr<< "\t\t imax: " << imax << endl;
+//   cerr<< "\t\t imax: " << imax << endl;
   if (imax <0  || imax == line.p1Index-1){
     return false;
   }
   const Vector2f& v = _points[imax];
-  cerr<< "\t\t d: " << line.squaredDistance(v) << endl;
+//   cerr<< "\t\t d: " << line.squaredDistance(v) << endl;
   
 
   std::pair<IntLineMap::iterator, bool> insertResult= _lines.insert(make_pair(imax, Line2D()));
@@ -58,8 +58,8 @@ bool Line2DExtractor::split(int k) {
   Line2D& newLine = insertResult.first->second;
   initializeFromIndices(newLine, imax, line.p1Index);
   initializeFromIndices(line, line.p0Index, imax);
-  cerr << "\tfirstLine: " << line.p0Index << " " << line.p1Index << endl;
-  cerr << "\tseconLine: " << newLine.p0Index << " " << newLine.p1Index << endl;
+//   cerr << "\tfirstLine: " << line.p0Index << " " << line.p1Index << endl;
+//   cerr << "\tseconLine: " << newLine.p0Index << " " << newLine.p1Index << endl;
   return true;
 }
 
@@ -111,8 +111,8 @@ bool Line2DExtractor::merge(int k) {
   return true;
 }
 
-ofstream os("lines.dat");
-ofstream os2("linesMerged.dat");
+// ofstream os("lines.dat");
+// ofstream os2("linesMerged.dat");
 
 void Line2DExtractor::initializeFromIndices(Line2D& line, int i0, int i1){
   line.p0Index = i0;
@@ -121,43 +121,46 @@ void Line2DExtractor::initializeFromIndices(Line2D& line, int i0, int i1){
 }
 
 void Line2DExtractor::compute(){
-  assert(_points.size() && "you should have some point");
+  assert(_points.size() && "you should have some points");
+	
   _lines.clear();
-  if (_points.size() < _minPointsInLine)
-    return;
+  if (_points.size() < _minPointsInLine) return;
+	
   Line2D firstLine;
   initializeFromIndices(firstLine,0,_points.size()-1);
   _lines.insert(make_pair(0, firstLine));
-  //bool hasSplitted = true;
+	
   IntLineMap::iterator it = _lines.begin();
   while (it!=_lines.end()){
+		
     const Line2D& l=it->second;
     bool splitResult= split(it->first);
-    cerr << "\tsplit" << l.p0Index << " " << l.p1Index;
+//     cerr << "\tsplit" << l.p0Index << " " << l.p1Index;
     if (splitResult) {
       cerr << "split done" << endl;
     } else 
       cerr << "split nope" << endl;
-    if (! splitResult)
-      it++;
+			if (! splitResult)
+				it++;
+		
   }
   cerr << "\tI split " << _lines.size() << " times";
-  for (IntLineMap::iterator it=_lines.begin(); it!=_lines.end(); it++){
-    const Line2D& l = it->second;
-    const Vector2f & p0 = _points[l.p0Index];
-    const Vector2f & p1 = _points[l.p1Index];
-    os << p0.transpose() << endl;
-    os << p1.transpose() << endl;
-    os << endl;
-    os << endl;
-  }
-  os.flush();
+//   for (IntLineMap::iterator it=_lines.begin(); it!=_lines.end(); it++){
+//     const Line2D& l = it->second;
+//     const Vector2f & p0 = _points[l.p0Index];
+//     const Vector2f & p1 = _points[l.p1Index];
+//     os << p0.transpose() << endl;
+//     os << p1.transpose() << endl;
+//     os << endl;
+//     os << endl;
+//   }
+//   os.flush();
 
   it = _lines.begin();
   while (it!=_lines.end()){
     const Line2D& l=it->second;
     bool mergeResult= merge(it->first);
-    cerr << "\tmerge" << l.p0Index << " " << l.p1Index;
+//     cerr << "\tmerge" << l.p0Index << " " << l.p1Index;
     if (mergeResult) {
       cerr << "merge done" << endl;
     } else 
@@ -166,29 +169,26 @@ void Line2DExtractor::compute(){
       it++;
   }
   cerr << "\tI merge " << _lines.size() << " times";
-  for (IntLineMap::iterator it=_lines.begin(); it!=_lines.end(); it++){
-    const Line2D& l = it->second;
-    const Vector2f & p0 = _points[l.p0Index];
-    const Vector2f & p1 = _points[l.p1Index];
-    os2 << p0.transpose() << endl;
-    os2 << p1.transpose() << endl;
-    os2 << endl;
-    os2 << endl;
-  }
-  os2.flush();
+//   for (IntLineMap::iterator it=_lines.begin(); it!=_lines.end(); it++){
+//     const Line2D& l = it->second;
+//     const Vector2f & p0 = _points[l.p0Index];
+//     const Vector2f & p1 = _points[l.p1Index];
+//     os2 << p0.transpose() << endl;
+//     os2 << p1.transpose() << endl;
+//     os2 << endl;
+//     os2 << endl;
+//   }
+//   os2.flush();
 
 }
 
 // bool Line2DExtractor::compute(Vector2fVector& /*points*/ ,
-// 			     VectorOfSubsetsPoints& /*subset*/, 
+// 			     /*VectorOfSubsetsPoints& subset*/, 
 // 			     Line2DVector& /*lines*/)
 // {
 // 	//divide the entire set of points in subsets of points
-//   return true;
-	
-	
-	
 // 	//for each set of points split()
+//   return true;
 
 // }
 

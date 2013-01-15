@@ -117,8 +117,6 @@ src/viewer/viewerGUI.cpp
 src/viewer/moc_viewerGUI.cpp)
 TARGET_LINK_LIBRARIES(viewer ${QGLVIEWER_LIBRARY} ${QT_QT_LIBRARY} ${QT_QTCORE_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} lineOperations)
 
-# ADD_EXECUTABLE(lineEx_viewer src/lineEx_viewer.cpp)
-# TARGET_LINK_LIBRARIES(lineEx_viewer ${OpenCV_LIBS} ${OPENGL_gl_LIBRARY} ${PCL_LIBRARIES} cloudOperations viewer)
 
 ADD_EXECUTABLE(lineEx_viewer src/lineEx_viewer.cpp)
 TARGET_LINK_LIBRARIES(lineEx_viewer 

@@ -7,7 +7,7 @@
 
 #include "leQGLViewer.h"
 
-leQGLViewer::leQGLViewer(QWidget *parent): QGLViewer(parent), data(NULL), lineFound(false), lineContainer(NULL)
+leQGLViewer::leQGLViewer(QWidget *parent): QGLViewer(parent), data(NULL), lineFound(false), lContainer(NULL)
 {
 	setAxisIsDrawn(false);
 } 
@@ -82,31 +82,24 @@ void leQGLViewer::draw()
 		glBegin(GL_LINES);
 		
 		//cout << "line found!" << endl;
-		for(int i  = 0; i < lineContainer->size(); ++i)
+		for(int i  = 0; i < lContainer->size(); ++i)
 		{
 			glPointSize(4.f);
-			glColor3f((*lineContainer)[i].rgbColors[0], 
-								(*lineContainer)[i].rgbColors[1], 
-								(*lineContainer)[i].rgbColors[2]);
-			//cout << "lineVertices size is: " << (*lineContainer)[i].lineVertices.size() << endl;
-			//for cicle useless, I know that lineVertices.size() is 2..TODO
-			for(int j = 0; j<(*lineContainer)[i].lineVertices.size(); ++j)
-			{
-				//there are only 2 vertices, the start and the end of the line, j is useless TODO
-				glVertex3f((*lineContainer)[i].lineVertices[0].x(), 
-									 (*lineContainer)[i].lineVertices[0].y(), 
-									 0.f);
-				glVertex3f((*lineContainer)[i].lineVertices[1].x(), 
-									 (*lineContainer)[i].lineVertices[1].y(), 
-									 0.f);
-			}
+			glColor3f(0.f, 1.f, 0.f);
+			//cout << "lineVertices size is: " << (*lineContainer)[i]->size() << endl;
+// 			for(int j = 0; j<(*lContainer)[i].size(); ++j)
+// 			{
+				Vector2fVector line = (*lContainer)[i];
+				glVertex3f(line[0].x(), line[0].y(), 0.f);
+				glVertex3f(line[1].x(), line[1].y(), 0.f);
+// 			}
 		}
 		glEnd();
 	}
 	glColor3f(1,1,1);
 }
 
-void leQGLViewer::setDataPointer(LaserRobotData::Point2DVector* p)
+void leQGLViewer::setDataPointer(LaserRobotData::Vector2fVector* p)
 {
 	data = p;
 }

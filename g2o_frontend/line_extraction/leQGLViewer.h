@@ -1,10 +1,11 @@
 #ifndef LEDQGLVIEWER_H
 #define LEDQGLVIEWER_H
 
-#include <QGLViewer/qglviewer.h>
+#include <QGLViewer/qglviewer.h>/*
 #include "opencv2/opencv.hpp"
-#include "opencv2/core/core.hpp"
+#include "opencv2/core/core.hpp"*/
 #include "g2o_frontend/thesis/LaserRobotData.h"
+#include "line_extraction2d.h"
 //PCL
 // #include <pcl/point_cloud.h>
 // #include <pcl/point_types.h>
@@ -46,23 +47,8 @@
       bool _standard;
   };
 
-#ifndef LINE3d
-#define LINE3d
-struct line3d
-{
-	//vector<vector2d> to represent start and end points belonging to the line found
-	LaserRobotData::Point2DVector lineVertices;
-	//random color for the points
- 	cv::Vec3f rgbColors;
- 	line3d() {
-				this->rgbColors[0]= 0.f; //((float)rand())/RAND_MAX;
-				this->rgbColors[1]= 1.f;
-				this->rgbColors[2]= 0.f;
-	}
-};
+typedef std::vector<Vector2fVector> lineContainer;
 
-typedef std::vector<line3d> l3dContainer;
-#endif
 
 class leQGLViewer: public QGLViewer
 {
@@ -72,10 +58,12 @@ class leQGLViewer: public QGLViewer
 		virtual void draw();
 // 		void setDataPointer(std::vector<Vec3f>*);
 // 		std::vector<Vec3f>* dataptr;
-		void setDataPointer(LaserRobotData::Point2DVector*);
-		LaserRobotData::Point2DVector* data;
+		void setDataPointer(LaserRobotData::Vector2fVector*);
+		LaserRobotData::Vector2fVector* data;
 		bool lineFound;
-		l3dContainer* lineContainer;
+		//TODO
+		Line2DExtractor::IntLineMap* lineContainerSM;
+		lineContainer* lContainer;
 };
 
 #endif // LEDQGLVIEWER_H
