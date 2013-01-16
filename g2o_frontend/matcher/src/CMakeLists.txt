@@ -1,5 +1,0 @@
-add_subdirectory(grid_map)
-add_subdirectory(matching)
-add_subdirectory(math)
-add_subdirectory(stuff)
-add_subdirectory(test)

@@ -1,7 +1,7 @@
 #include <fstream>
 #include <iostream>
-#include "matching/scanMatcher.h"
-#include "stuff/logReader.h"
+#include "g2o_frontend/matcher/matching/scanMatcher.h"
+#include "g2o_frontend/matcher/utils/logReader.h"
 
 
 using namespace std;

@@ -2,7 +2,7 @@
 #define __SCAN_MATCHER_H__
 
 #include "matcher.h"
-#include "grid_map/gridmap.h"
+#include "g2o_frontend/matcher/structures/gridmap.h"
 
 
 

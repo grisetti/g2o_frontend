@@ -4,8 +4,7 @@
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
 #include <iostream>
-#include "stuff/array_allocator.h"
-
+#include "g2o_frontend/matcher/utils/array_allocator.h"
 
 
 /**Generic grid map class.

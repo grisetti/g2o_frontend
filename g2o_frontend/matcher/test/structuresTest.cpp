@@ -1,8 +1,8 @@
 #include <iostream>
 #include <fstream>
-#include "matching/gradientMatcher.h"
-#include "matching/correlativeMatcher.h"
-#include "stuff/logReader.h"
+#include "g2o_frontend/matcher/matching/gradientMatcher.h"
+#include "g2o_frontend/matcher/matching/correlativeMatcher.h"
+#include "g2o_frontend/matcher/utils/logReader.h"
 
 using namespace std;
 using namespace Eigen;
