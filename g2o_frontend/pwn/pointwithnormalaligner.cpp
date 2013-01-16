@@ -5,6 +5,7 @@
 #include <omp.h>
 #include <Eigen/Dense>
 
+#define _USE_SEQ_BLOCKING
 using namespace Eigen;
 using namespace std;
 using namespace g2o;
@@ -51,7 +52,7 @@ PointWithNormalAligner::PointWithNormalAligner()
   _rotationalMinEigenRatio = 50;
   _translationalMinEigenRatio = 50;
   _debug = false;
-  _numThreads = 1;
+  _numThreads = 4;
 }
 
 
@@ -327,7 +328,14 @@ int PointWithNormalAligner::_constructLinearSystemQT(Matrix6f& H, Vector6f&b, fl
     // cerr << "omegas.size(): " << _currOmegas.size() << endl;
     const Matrix6fVector& omegas = (onlyFlat)? _currFlatOmegas : _currOmegas;
     
-    for(int i = threadNum; i < _numCorrespondences; i+=numThreads){
+#ifdef _USE_SEQ_BLOCKING
+    int n = _numCorrespondences/numThreads;
+    int imin = threadNum *n;
+    int imax = (threadNum == numThreads -1) ? _numCorrespondences : threadNum *(n+1);
+    for(int i = imin; i < imax; i++){
+#else   
+    for(int i = threadNum; i < _numCorrespondences; i+=numThreads) {
+#endif      
       //cerr << "corr[" << i << "]: ";
       const Correspondence& corr = _correspondences[i];
       const PointWithNormal& pref  = _refPoints->at(corr.i1);
@@ -358,30 +366,38 @@ int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, 
   int numInliers = 0;
   Matrix6x12f J;
   const Matrix6fVector& omegas = (onlyFlat)? _currFlatOmegas : _currOmegas;
-  for(int i = threadNum; i < _numCorrespondences; i+=numThreads){
-    const Correspondence& corr = _correspondences[i];
-    const PointWithNormal& pref  = _refPoints->at(corr.i1);
-    const PointWithNormal& pcurr = _currPoints->at(corr.i2);
-    const Matrix6f& omega = omegas.at(corr.i2);
-    if (omega.squaredNorm()==0)
-      continue;
-    
-    Vector6f e = _T*pref - pcurr;
 
-    float localError = e.transpose() * omega * e;
-    if(localError > _inlierMaxChi2)
-      continue;
-    numInliers++;
-    error += localError;
-    J.setZero();
-    Vector3f t=pref.block<3,1>(0,0);
-    Vector3f n=pref.block<3,1>(3,0);
-    J.block<1,3>(0,0)=t.transpose();
-    J.block<1,3>(1,3)=J.block<1,3>(0,0);
-    J.block<1,3>(2,6)=J.block<1,3>(0,0);
-    J.block<3,3>(0,9)=Matrix3f::Identity();
-    J.block<1,3>(3,0)=n.transpose();
-    J.block<1,3>(4,3)=J.block<1,3>(3,0);
+#ifdef _USE_SEQ_BLOCKING
+    int n = _numCorrespondences/numThreads;
+    int imin = threadNum *n;
+    int imax = (threadNum == numThreads -1) ? _numCorrespondences : threadNum *(n+1);
+    for(int i = imin; i < imax; i++){
+#else   
+    for(int i = threadNum; i < _numCorrespondences; i+=numThreads) {
+#endif
+      const Correspondence& corr = _correspondences[i];
+      const PointWithNormal& pref  = _refPoints->at(corr.i1);
+      const PointWithNormal& pcurr = _currPoints->at(corr.i2);
+      const Matrix6f& omega = omegas.at(corr.i2);
+      if (omega.squaredNorm()==0)
+	continue;
+    
+      Vector6f e = _T*pref - pcurr;
+      
+      float localError = e.transpose() * omega * e;
+      if(localError > _inlierMaxChi2)
+	continue;
+      numInliers++;
+      error += localError;
+      J.setZero();
+      Vector3f t=pref.block<3,1>(0,0);
+      Vector3f n=pref.block<3,1>(3,0);
+      J.block<1,3>(0,0)=t.transpose();
+      J.block<1,3>(1,3)=J.block<1,3>(0,0);
+      J.block<1,3>(2,6)=J.block<1,3>(0,0);
+      J.block<3,3>(0,9)=Matrix3f::Identity();
+      J.block<1,3>(3,0)=n.transpose();
+      J.block<1,3>(4,3)=J.block<1,3>(3,0);
     J.block<1,3>(5,6)=J.block<1,3>(3,0);
     
     b += -J.transpose() * omega * e;
@@ -397,7 +413,17 @@ int PointWithNormalAligner::_constructLinearSystemT(Matrix3f& H, Vector3f&b, flo
   int numInliers = 0;
   Matrix6x12f J;
   const Matrix6fVector& omegas = (onlyFlat)? _currFlatOmegas : _currOmegas;
-  for(int i = threadNum; i < _numCorrespondences; i+=numThreads){
+
+
+#ifdef _USE_SEQ_BLOCKING
+  int n = _numCorrespondences/numThreads;
+  int imin = threadNum *n;
+  int imax = (threadNum == numThreads -1) ? _numCorrespondences : threadNum *(n+1);
+  for(int i = imin; i < imax; i++){
+#else   
+    for(int i = threadNum; i < _numCorrespondences; i+=numThreads) {
+#endif
+
     const Correspondence& corr = _correspondences[i];
     const PointWithNormal& pref  = _refPoints->at(corr.i1);
     const PointWithNormal& pcurr = _currPoints->at(corr.i2);
