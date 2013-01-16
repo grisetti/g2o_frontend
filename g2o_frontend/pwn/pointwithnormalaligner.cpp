@@ -1,12 +1,13 @@
 #include "pointwithnormalaligner.h"
 #include <iostream>
 #include "g2o/stuff/unscented.h"
+#include "g2o/stuff/timeutil.h"
 #include <omp.h>
 #include <Eigen/Dense>
 
 using namespace Eigen;
 using namespace std;
-
+using namespace g2o;
 
 inline Matrix6f jacobian(const Eigen::Isometry3f& X, const Vector6f& p)
 {
@@ -50,7 +51,7 @@ PointWithNormalAligner::PointWithNormalAligner()
   _rotationalMinEigenRatio = 50;
   _translationalMinEigenRatio = 50;
   _debug = false;
-  _numThreads = 4;
+  _numThreads = 1;
 }
 
 
@@ -106,7 +107,8 @@ void PointWithNormalAligner::_updateOmegas() {
   //float fB = (0.075*_cameraMatrix(0,0)); // kinect baseline * focal lenght;
   Eigen::Matrix3f covarianceJacobian(Eigen::Matrix3f::Zero());
    
-  for (size_t i=0; i<_currPoints->size(); i++){
+#pragma omp parallel num_threads(_numThreads)
+  for (size_t i=omp_get_thread_num(); i<_currPoints->size(); i+=_numThreads){
     const PointWithNormal& point = _currPoints->at(i);
     const PointWithNormalSVD& svd = _currSVDs->at(i);
     _currOmegas[i].setZero();
@@ -165,8 +167,15 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
   _currPoints->toIndexImage(_currIndexImage, (MatrixXf&)_currZbuffer, _scaledCameraMatrix, Isometry3f::Identity(), 15.0f);
   float squaredThreshold = _inlierDistanceThreshold*_inlierDistanceThreshold;
   int inliers=0;
+  double tRemap=0;
+  double tCorr = 0;
+  double tLinear = 0;
+  double tNonLinear = 0;
+  double tStats = 0;
   for (int i = 0; i<_outerIterations; i++){
+    double tRemapStart = get_time();
     _refPoints->toIndexImage(_refIndexImage, _refZbuffer, _scaledCameraMatrix, _T.inverse(), 15);
+    tRemap += get_time() - tRemapStart;
     _numCorrespondences = 0;
     int nGoodPoints = 0;
     int nNoPoint = 0;
@@ -174,6 +183,7 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
     int nTooDistant = 0;
     int nNormalAngleFail = 0;
     int nCurvatureBad = 0;
+    double _tCorr = get_time();
     #pragma omp parallel num_threads(_numThreads)
     for (int c=omp_get_thread_num(); c<_refIndexImage.cols(); c+=_numThreads) {
       for (int r=0; r<_refIndexImage.rows(); r++) {
@@ -236,6 +246,7 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
 	}
       }
     }
+    tCorr += get_time() - _tCorr;
     for (size_t k=_numCorrespondences; k<_correspondences.size(); k++){
 	_correspondences[_numCorrespondences].i1=-1;
 	_correspondences[_numCorrespondences].i2=-1;
@@ -252,6 +263,7 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
       _numCorrespondences = 0;
       return -1;
     }
+    double _tLinear = get_time();
     float error;
     for (int li=0; li<_linearIterations; li++){
       inliers = _linearUpdate(error);
@@ -259,16 +271,26 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
 	return -2;
       }
     }
-
+    tLinear += get_time() - _tLinear;
+    double _tNonLinear = get_time();
     for (int nli=0; nli<_nonLinearIterations; nli++){
       int inliers = _nonLinearUpdate(error);
       if (inliers < _minInliers){
 	return -3;
       }
     }
-    
+    tNonLinear += get_time() - _tNonLinear;
   }
+  tStats = get_time();
   inliers = _computeStatistics(error, mean, omega, translationalEigenRatio, rotationalEigenRatio, false);
+  tStats = get_time() - tStats;
+  
+  cerr << "*** TIMINGS ***" << endl;
+  cerr << "tRemap: " << tRemap << endl;
+  cerr << "tCorr: " << tCorr << endl;
+  cerr << "tLinear: " << tLinear << endl;
+  cerr << "tNonLinear: " << tNonLinear << endl;
+  cerr << "tStats: " << tStats << endl;
 
   if (rotationalEigenRatio > _rotationalMinEigenRatio || translationalEigenRatio > _translationalMinEigenRatio) {
     cerr << "************** WARNING SOLUTION MIGHT BE INVALID (eigenratio failure) **************" << endl;

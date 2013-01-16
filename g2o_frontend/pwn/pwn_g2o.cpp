@@ -63,7 +63,10 @@ struct Frame{
     points.toIndexImage(indexImage, zBuffer, cameraMatrix, Eigen::Isometry3f::Identity(), 10);
     cerr << "points: " << points.size() << endl; 
     svds.resize(points.size());
+    double tNormalStart = get_time();
     generator.computeNormalsAndSVD(points, svds, indexImage, cameraMatrix);
+    double tNormalEnd = get_time();
+    cerr << "Normal Extraction took " << tNormalEnd - tNormalStart << " sec." << endl;
   }
   void setAligner(PointWithNormalAligner& aligner, bool isRef){
     if (isRef) {
