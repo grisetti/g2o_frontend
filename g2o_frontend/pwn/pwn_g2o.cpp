@@ -81,12 +81,14 @@ int
  main(int argc, char** argv){
   string dirname;
   string graphFilename;
+  float numThreads;
+
   int ng_step;
   int ng_minPoints;
   int ng_imageRadius;
   float ng_worldRadius;
   float ng_maxCurvature;
-
+  
   float al_inlierDistance;
   float al_inlierCurvatureRatio;
   float al_inlierNormalAngle;
@@ -122,8 +124,11 @@ int
   arg.param("al_nonLinearIterations", al_nonLinearIterations, aligner.nonLinearIterations(), "nonlinear iterations for each outer one (uses q,t)");
   arg.param("al_lambda", al_lambda, aligner.lambda(), "damping factor for the transformation update, the higher the smaller the step");
   arg.param("al_debug", al_debug, aligner.debug(), "prints lots of stuff");
+  arg.param("numThreads", numThreads, 1, "numver of threads for openmp");
   
 
+  if (numThreads<1)
+    numThreads = 1;
   
   std::vector<string> fileNames;
 
@@ -143,7 +148,8 @@ int
   normalGenerator.setImageRadius(ng_imageRadius);
   normalGenerator.setWorldRadius(ng_worldRadius);
   normalGenerator.setMaxCurvature(ng_maxCurvature);
-  
+  normalGenerator.setNumThreads(numThreads);
+
   aligner.setInlierDistanceThreshold(al_inlierDistance);
   aligner.setInlierCurvatureRatioThreshold(al_inlierCurvatureRatio);
   aligner.setInlierNormalAngularThreshold(al_inlierNormalAngle);
@@ -156,6 +162,7 @@ int
   aligner.setNonLinearIterations(al_nonLinearIterations);
   aligner.setLambda(al_lambda);
   aligner.setDebug(al_debug);
+  aligner.setNumThreads(numThreads);
 
 
   Frame* referenceFrame= 0;
