@@ -112,8 +112,8 @@ bool Line2DExtractor::merge(int k) {
 }
 
 #if 0
-ofstream os("lines.dat");
-ofstream osp("points.dat");
+			ofstream osp0("points0.dat");
+			ofstream os0("lines0.dat");
 #endif
 
 
@@ -147,17 +147,20 @@ void Line2DExtractor::compute(){
 				it++;
 		
   }
-  cerr << "\tI split " << _lines.size() << " times";
-//   for (IntLineMap::iterator it=_lines.begin(); it!=_lines.end(); it++){
-//     const Line2D& l = it->second;
-//     const Vector2f & p0 = _points[l.p0Index];
-//     const Vector2f & p1 = _points[l.p1Index];
-//     os << p0.transpose() << endl;
-//     os << p1.transpose() << endl;
-//     os << endl;
-//     os << endl;
-//   }
-//   os.flush();
+  cerr << "\tI split " << _lines.size() << " times" << endl;
+	
+#if 0
+  for (IntLineMap::iterator it=_lines.begin(); it!=_lines.end(); it++){
+    const Line2D& l = it->second;
+    const Vector2f & p0 = _points[l.p0Index];
+    const Vector2f & p1 = _points[l.p1Index];
+    os0 << p0.transpose() << endl;
+    os0 << p1.transpose() << endl;
+    os0 << endl;
+    os0 << endl;
+  }
+  os0.flush();
+#endif
 
   it = _lines.begin();
   while (it!=_lines.end()){
@@ -171,24 +174,13 @@ void Line2DExtractor::compute(){
     if (!mergeResult)
       it++;
   }
-  cerr << "\tI merge " << _lines.size() << " times";
+  cerr << "\tI merge " << _lines.size() << " times" << endl;
 
 #if 0
-  for (IntLineMap::iterator it=_lines.begin(); it!=_lines.end(); it++){
-    const Line2D& l = it->second;
-    const Vector2f & p0 = _points[l.p0Index];
-    const Vector2f & p1 = _points[l.p1Index];
-    os << p0.transpose() << endl;
-    os << p1.transpose() << endl;
-    os << endl;
-    os << endl;
-  }
-  os.flush();
-
   for (size_t i =0; i<_points.size(); i++){
-    osp << _points[i].transpose() << endl;
+    osp0 << _points[i].transpose() << endl;
   }
-  osp.flush();
+  osp0.flush();
 #endif
 }
 

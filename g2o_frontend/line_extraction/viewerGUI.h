@@ -28,7 +28,7 @@ class ViewerGUI : public QMainWindow, public Ui::MainWindow
 	 Q_OBJECT
 
 	public:
-		ViewerGUI(LaserRobotData* theLaserData, Vector2fVector* theLinesPoints, Vector2fVector* theOriginalPoints, QWidget *parent=0);
+		ViewerGUI(LaserRobotData* theLaserData/*, Vector2fVector* theLinesPoints*/, Vector2fVector* theOriginalPoints, QWidget *parent=0);
 		int slider1value;
 		int slider2value;
 		int slider3value;
@@ -37,10 +37,11 @@ class ViewerGUI : public QMainWindow, public Ui::MainWindow
 		IEdgesExtractor* edgeExtr;
 		Line2DExtractor* lineExtractor;
 		Point2DClusterer* clusterer;
-		LaserRobotData* laserData;
-		Vector2fVector* linesFoundPoints;
+		LaserRobotData* laserData;/*
+		Vector2fVector* linesFoundPoints;*/
 		Vector2fVector* originalPoints;
 		lineContainer lc;
+// 		Line2DExtractor::IntLineMap lm;
 
 	public slots:
 	 void updateVal1(int val);

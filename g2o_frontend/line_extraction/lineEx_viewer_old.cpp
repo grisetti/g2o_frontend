@@ -353,7 +353,7 @@ int main(int argc, char**argv){
 	cout << "File ended!" << endl;
 
 	QApplication app(argc, argv);
-	ViewerGUI *dialog = new ViewerGUI(ldata,&pointsLine, &pointsOriginal);
+	ViewerGUI *dialog = new ViewerGUI(ldata,/*&pointsLine,*/ &pointsOriginal);
 	dialog->viewer->setDataPointer(&pointsLine);
 	dialog->show();
 	return app.exec();

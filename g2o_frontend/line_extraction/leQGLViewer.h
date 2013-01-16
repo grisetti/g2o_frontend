@@ -1,11 +1,12 @@
 #ifndef LEDQGLVIEWER_H
 #define LEDQGLVIEWER_H
 
-#include <QGLViewer/qglviewer.h>/*
-#include "opencv2/opencv.hpp"
-#include "opencv2/core/core.hpp"*/
+#include <QGLViewer/qglviewer.h>
 #include "g2o_frontend/thesis/LaserRobotData.h"
 #include "line_extraction2d.h"
+
+// #include "opencv2/opencv.hpp"
+// #include "opencv2/core/core.hpp"
 //PCL
 // #include <pcl/point_cloud.h>
 // #include <pcl/point_types.h>
@@ -56,13 +57,10 @@ class leQGLViewer: public QGLViewer
 		leQGLViewer(QWidget *parent);
 		virtual void init();
 		virtual void draw();
-// 		void setDataPointer(std::vector<Vec3f>*);
-// 		std::vector<Vec3f>* dataptr;
 		void setDataPointer(LaserRobotData::Vector2fVector*);
 		LaserRobotData::Vector2fVector* data;
 		bool lineFound;
-		//TODO
-		Line2DExtractor::IntLineMap* lineContainerSM;
+// 		Line2DExtractor::IntLineMap* lineContainerSM;
 		lineContainer* lContainer;
 };
 

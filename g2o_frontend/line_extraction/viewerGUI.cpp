@@ -10,6 +10,8 @@
 #include "RansacEE.h"
 #include "SplitMergeEE.h"
 
+#include <fstream>
+
 #define MIN_POINTS_IN_LINES 10
 #define SPLIT_THRESHOLD 0.05*0.05
 #define CLUSTER_SQUARED_DISTANCE 0.3*0.3
@@ -33,8 +35,12 @@ void ViewerGUI::updateVal1(int val)
 void ViewerGUI::updateVal2(int val)
 {
 	cout << "Split threshold: " << slider2value << endl;
-	float dist = 0.005 * slider2value;
-	lineExtractor->_splitThreshold = dist*dist;
+	float dist = (float)val * 0.0005;
+	if (dist > 0.f) {
+		lineExtractor->_splitThreshold = dist*dist;
+	}
+	else cerr << "Split threshold is 0! Try to move the slider a bit more.." << endl;
+	
 	this->lineExtraction();
 	this->viewer->updateGL();
 }
@@ -42,8 +48,12 @@ void ViewerGUI::updateVal2(int val)
 void ViewerGUI::updateVal3(int val)
 {
 	cout << "Cluster squared distance: " << slider3value << endl;
-	float dist = 0.005 * slider3value;
-	clusterer->_squaredDistance = dist*dist;
+	float dist = (float)val * 0.005;
+	if (dist > 0.f) {
+		clusterer->_squaredDistance = dist*dist;
+	}
+	else cerr << "Distance for clustering the points is 0! Try to move the slider a bit more.." << endl;
+	
 	this->lineExtraction();
 	this->viewer->updateGL();
 }
@@ -58,7 +68,11 @@ void ViewerGUI::showOriginal()
   this->viewer->updateGL();
 
 }
-
+#if 0
+					ofstream osp1PrimaC("points1PrimaC.dat");
+					ofstream osp1("points1.dat");
+					ofstream os1("lines1.dat");
+#endif
 void ViewerGUI::lineExtraction()
 {
   if (algotype == noType) {
@@ -76,15 +90,18 @@ void ViewerGUI::lineExtraction()
 			cout << "Starting extraction with: " << algotype << endl;
 			cout << "#------------------------------------------------#" << endl;			
 			
-// 			Point2DClusterer clusterer;
-			
 			clusterer->_squaredDistance = CLUSTER_SQUARED_DISTANCE;
 			Vector2fVector cartesianPoints = laserData->floatCartesian();
+			
+#if 0				
+				for (size_t i =0; i<cartesianPoints.size(); i++){
+					osp1PrimaC << cartesianPoints[i].transpose() << endl;
+				}
+				osp1PrimaC.flush();
+#endif
 			clusterer->setPoints(cartesianPoints);
 			clusterer->compute();
 			cerr << "I found " << clusterer->numClusters() << " clusters in the pool" << endl;
-			
-// 			Line2DExtractor lineExtractor;
 			
 			for (int i =0; i<clusterer->numClusters(); i++){
 				const Point2DClusterer::Cluster& cluster = clusterer->cluster(i);
@@ -92,13 +109,20 @@ void ViewerGUI::lineExtraction()
 				cerr << "processing cluster: " << i << " npoints: " << cluster.second - cluster.first;
 				
 				if (clusterSize < minPointsCluster) {
-					cerr << "IGNORE" << endl;
+					cerr << " IGNORE" << endl;
 					continue;
 				}
-				cerr << "ACCEPT" << endl;
+				cerr << " ACCEPT" << endl;
 				Vector2fVector::const_iterator first = cartesianPoints.begin() + cluster.first;
 				Vector2fVector::const_iterator last = cartesianPoints.begin() + cluster.second;
 				Vector2fVector currentPoints(first, last);
+				
+#if 0				
+				for (size_t i =0; i<currentPoints.size(); i++){
+					osp1 << currentPoints[i].transpose() << endl;
+				}
+				osp1.flush();
+#endif
 				
 				lineExtractor->setPoints(currentPoints);
 // 				lineExtractor->_minPointsInLine = MIN_POINTS_IN_LINES;
@@ -115,15 +139,25 @@ void ViewerGUI::lineExtraction()
 					const Line2D& line = it->second;
 					const Vector2f& p0 = lineExtractor->points()[line.p0Index];
 					const Vector2f& p1 = lineExtractor->points()[line.p1Index];
-					
 					linePoints.push_back(Eigen::Vector2f(p0.x(), p0.y()));					
 					linePoints.push_back(Eigen::Vector2f(p1.x(), p1.y()));
 					
+#if 0
+// 					os1 << p0.transpose() << endl;
+// 					os1 << p1.transpose() << endl;
+					// or
+					os1 << linePoints[0].x() << " " << linePoints[0].y() << endl;
+					os1 << linePoints[1].x() << " " << linePoints[1].y() << endl;
+					os1 << endl;
+					os1 << endl;
+#endif
 // 					cout << "***NEW LINE FOUND!*** " << p0.x() << ", " << p0.y() << " to "  << p1.x() << ", " << p1.y() << endl;
-					
 					this->lc.push_back(linePoints);
 					linePoints.clear();
 				}
+#if 0
+					os.flush();
+#endif
 			}
 			cout << "Drawning is starting....." << endl;
 			this->viewer->lineFound = true;			
@@ -212,7 +246,7 @@ void ViewerGUI::setAlgorithm()
 }
 
 
-ViewerGUI::ViewerGUI(LaserRobotData* theLaserData, Vector2fVector* theLinesPoints, Vector2fVector* theOriginalPoints, QWidget* parent)
+ViewerGUI::ViewerGUI(LaserRobotData* theLaserData/*, Vector2fVector* theLinesPoints*/, Vector2fVector* theOriginalPoints, QWidget* parent)
 {
   setupUi(this);
   QObject::connect(horizontalSlider, SIGNAL(sliderMoved(int)), this, SLOT(updateVal1(int)));
@@ -231,7 +265,7 @@ ViewerGUI::ViewerGUI(LaserRobotData* theLaserData, Vector2fVector* theLinesPoint
 	lineExtractor = 0;
 	clusterer = 0;
   laserData = theLaserData;
-  linesFoundPoints = theLinesPoints;
+//   linesFoundPoints = theLinesPoints;
   originalPoints = theOriginalPoints;
 	
 }
