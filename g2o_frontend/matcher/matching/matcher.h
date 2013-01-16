@@ -61,8 +61,10 @@ class Matcher
     
     inline double getMilliSecs() const {return g2o::get_time();}
     inline const ResultContainer& getMatches() const {return _matchResults;}
-    inline VertexContainer currentVerteces(VertexContainer& cv) {return _currentVerteces;}
-    inline VertexContainer referenceVerteces(VertexContainer& rv) {return _referenceVerteces;}
+    inline const VertexContainer currentVerteces() const {return _currentVerteces;}
+    inline const VertexContainer referenceVerteces() const {return _referenceVerteces;}
+    inline VertexContainer currentVerteces() {return _currentVerteces;}
+    inline VertexContainer referenceVerteces() {return _referenceVerteces;}
     inline const g2o::OptimizableGraph::Vertex* getCurrentGauge() const {return _currentGauge;}
     inline const g2o::OptimizableGraph::Vertex* getReferenceGauge() const {return _referenceGauge;}
     inline g2o::OptimizableGraph::Vertex* getCurrentGauge() {return _currentGauge;}
