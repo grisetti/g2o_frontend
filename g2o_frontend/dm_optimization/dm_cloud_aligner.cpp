@@ -193,6 +193,8 @@ bool DMCloudAligner::alignCloud() {
 			      size, _transformation, 
 			      numeric_limits<float>::max(), 0);
     }
+    if(inliers < 50)
+      return false;
     cout << "k: " << k << " " << inliers << " " << _error << " " << endl;
     cout << "Time optimization : " << getMilliSecs() - start << " ms" << endl;
     cout << "Time global iteration: " << getMilliSecs() - oStart << " ms" << endl;

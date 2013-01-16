@@ -184,6 +184,22 @@ LaserRobotData::Point2DVector LaserRobotData::cartesian() const
   return points;
 }
 
+LaserRobotData::Vector2fVector LaserRobotData::floatCartesian() const
+{
+  Vector2fVector points;
+  points.reserve(_ranges.size());
+  float angularStep = _fov / _ranges.size();
+  float alpha=_firstBeamAngle;
+  for (size_t i = 0; i < _ranges.size(); ++i) {
+    const float& r = _ranges[i];
+    if (r < _maxRange) {
+      points.push_back(Eigen::Vector2f(cos(alpha) * r, sin(alpha) * r));
+    }
+    alpha+=angularStep;
+  }
+  return points;
+}
+
 
 
 bool LaserRobotDataDrawAction::refreshPropertyPtrs(g2o::HyperGraphElementAction::Parameters* params_)

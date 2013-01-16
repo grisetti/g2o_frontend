@@ -15,6 +15,8 @@
 #endif
 #endif
 
+#include <iostream>
+
 using namespace g2o;
 using namespace std;
 
@@ -34,6 +36,7 @@ bool PointCloudData::write(std::ostream& os) const {
 
 void PointCloudData::update(){
   if (!cloudMsg) {
+    std::cerr << "Ci sono: " << _cloudFilename << std::endl;
     sensor_msgs::PointCloud2* cloud_blob=new sensor_msgs::PointCloud2();
     pcl::io::loadPCDFile (_cloudFilename, *cloud_blob);
     cloudMsg=sensor_msgs::PointCloud2Ptr(cloud_blob);

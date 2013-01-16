@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-ADD_LIBRARY(thesis ${G2O_FRONTEND_LIB_THESIS}
+ADD_LIBRARY(thesis_library 
 	DataQueue.cpp DataQueue.h
 	Mutexed.cpp Mutexed.h
 	PriorityDataQueue.cpp PriorityDataQueue.h
@@ -18,10 +18,10 @@ ADD_LIBRARY(thesis ${G2O_FRONTEND_LIB_THESIS}
 	SensorLaserRobot.cpp SensorLaserRobot.h
 )
 
-SET_TARGET_PROPERTIES(thesis PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_thesis)
+SET_TARGET_PROPERTIES(thesis_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_thesis_library)
 
 IF(CMAKE_BUILD_TYPE MATCHES Release)
-  TARGET_LINK_LIBRARIES(thesis
+  TARGET_LINK_LIBRARIES(thesis_library
     ${G2O_TYPES_DATA}
     ${G2O_TYPES_SLAM2D}
     ${G2O_TYPES_SLAM3D}
@@ -30,11 +30,12 @@ IF(CMAKE_BUILD_TYPE MATCHES Release)
     ${PCL_LIBRARIES}
     ${OpenCV_LIBS}
     ${OPENGL_gl_LIBRARY}
+    pthread
   )
 ENDIF(CMAKE_BUILD_TYPE MATCHES Release)
 
 IF(CMAKE_BUILD_TYPE MATCHES Debug)
-  TARGET_LINK_LIBRARIES(thesis
+  TARGET_LINK_LIBRARIES(thesis_library
     ${G2O_TYPES_DATA_DEBUG}
     ${G2O_TYPES_SLAM2D_DEBUG}
     ${G2O_TYPES_SLAM3D_DEBUG}
@@ -43,6 +44,7 @@ IF(CMAKE_BUILD_TYPE MATCHES Debug)
     ${PCL_LIBRARIES}
     ${OpenCV_LIBS}
     ${OPENGL_gl_LIBRARY}
+    pthread
   )
 ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
 

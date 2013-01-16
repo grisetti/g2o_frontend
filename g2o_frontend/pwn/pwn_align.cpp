@@ -170,7 +170,8 @@ int
   Isometry3f trajectory;
   trajectory.setIdentity();
   for (size_t i=0; i<filenames.size(); i++){
-    cerr << "proecessing image" << filenames[i] << endl;
+    cerr << endl << endl << endl;
+    cerr << ">>>>>>>>>>>>>>>>>>>>>>>> PROCESSING " << filenames[i] << " <<<<<<<<<<<<<<<<<<<<" <<  endl;
     Frame* currentFrame= new Frame();
     if(!currentFrame->load(filenames[i])) {
       cerr << "failure in loading image: " << filenames[i] << ", skipping" << endl;

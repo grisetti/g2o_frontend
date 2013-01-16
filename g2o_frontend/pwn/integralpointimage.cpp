@@ -1,6 +1,6 @@
 #include "integralpointimage.h"
 
-IntegralPointImage::IntegralPointImage(): Eigen::Matrix<PointAccumulator, Eigen::Dynamic, Eigen::Dynamic>(0.,0.){
+IntegralPointImage::IntegralPointImage(): Eigen::Matrix<PointAccumulator, Eigen::Dynamic, Eigen::Dynamic>(0,0){
 }
 
 void IntegralPointImage::compute(const Eigen::MatrixXi indices, const PointWithNormalVector& points){

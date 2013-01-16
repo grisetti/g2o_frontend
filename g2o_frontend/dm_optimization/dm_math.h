@@ -5,25 +5,28 @@
 
 inline Eigen::Matrix3f quat2mat(const Eigen::Vector3f& q)
 {
-    const float& qx = q.x();
-    const float& qy = q.y();
-    const float& qz = q.z();
-    float qw = sqrt(1.f - q.squaredNorm());
-    Eigen::Matrix3f R;
-    R << qw*qw + qx*qx - qy*qy - qz*qz, 2*(qx*qy - qw*qz) , 2*(qx*qz + qw*qy),
-         2*(qx*qy + qz*qw) , qw*qw - qx*qx + qy*qy - qz*qz, 2*(qy*qz - qx*qw),
-         2*(qx*qz - qy*qw) , 2*(qy*qz + qx*qw), qw*qw - qx*qx - qy*qy + qz*qz;
+  const float& qx = q.x();
+  const float& qy = q.y();
+  const float& qz = q.z();
+  float qw = sqrt(1.f - q.squaredNorm());
+  Eigen::Matrix3f R;
+  R << qw*qw + qx*qx - qy*qy - qz*qz, 2*(qx*qy - qw*qz) , 2*(qx*qz + qw*qy),
+    2*(qx*qy + qz*qw) , qw*qw - qx*qx + qy*qy - qz*qz, 2*(qy*qz - qx*qw),
+    2*(qx*qz - qy*qw) , 2*(qy*qz + qx*qw), qw*qw - qx*qx - qy*qy + qz*qz;
 
     return R;
 }
 
 inline Eigen::Vector3f mat2quat(const Eigen::Matrix3f& R)
 {
-    float n = 1./(2*sqrt(1 + R(0, 0) + R(1, 1) + R(2, 2)));
-
-    return Eigen::Vector3f(n*(R(2, 1) - R(1, 2)),
-                    n*(R(0, 2) - R(2, 0)),
-                    n*(R(1, 0) - R(0, 1)));
+  Eigen::Quaternionf q(R); 
+  q.normalize();
+  Eigen::Vector3f rq;
+  rq << q.x(), q.y(), q.z();
+  if (q.w()<0){
+    rq = -rq;
+  }
+  return rq;
 }
 
 inline Eigen::Isometry3f v2t(const Vector6f& x)

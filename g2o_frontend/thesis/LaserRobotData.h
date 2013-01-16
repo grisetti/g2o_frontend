@@ -41,6 +41,7 @@ class LaserRobotData: public SensorData {
 public:
 	
 	typedef std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d> > Point2DVector;
+	typedef std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > Vector2fVector;
 	
 	LaserRobotData();
 	virtual ~LaserRobotData();
@@ -61,6 +62,8 @@ public:
 	* @return a vector with the points of the scan in cartesian coordinates.
 	*/
 	Point2DVector cartesian() const;
+	Vector2fVector floatCartesian() const;
+
 	const std::vector<float>& ranges() const {return _ranges;}
 	std::vector<float>& ranges() {return _ranges;}	
 	const std::vector<float>& intensities() const {return _intensities;}
