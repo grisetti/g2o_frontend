@@ -64,7 +64,13 @@ void ViewerGUI::showOriginal()
   cout << "Original LaserRobotData points." << endl;
   cout << "#----------------------------------#" << endl;
   this->viewer->lineFound = false;
-  this->viewer->setDataPointer(originalPoints);
+//   this->viewer->setDataPointer(originalPoints);
+	
+	
+		LaserDataVector::iterator it = ldvector->begin();
+		LaserData ld = *(it+numIteration);
+		this->viewer->setDataPointer(&ld.second);
+// 	this->viewer->setDataPointer(&(ldvector->front().second)); // TODO front deve diventare un indice
   this->viewer->updateGL();
 
 }
@@ -84,6 +90,10 @@ void ViewerGUI::lineExtraction()
 		this->lc.clear();
 		int minPointsCluster = 10;
 		Vector2fVector linePoints;
+		LaserDataVector::iterator it = ldvector->begin();
+		LaserData ld = *(it+numIteration);
+		LaserRobotData* laserData =  ld.first;
+// 		LaserRobotData* laserData = ldvector->front().first; // TODO front dev diventare un indice
 		
 		if (algotype == splitMergeType){
 			cout << "#----------------------------------------------#" << endl;
@@ -91,7 +101,8 @@ void ViewerGUI::lineExtraction()
 			cout << "#------------------------------------------------#" << endl;			
 			
 			clusterer->_squaredDistance = CLUSTER_SQUARED_DISTANCE;
-			Vector2fVector cartesianPoints = laserData->floatCartesian();
+			
+			Vector2fVector cartesianPoints = ld.second; //front deve diventare un indice
 			
 #if 0				
 				for (size_t i =0; i<cartesianPoints.size(); i++){
@@ -245,17 +256,25 @@ void ViewerGUI::setAlgorithm()
   }
 }
 
+void ViewerGUI::setIdIteration()
+{
+	numIteration+=1;
+	this->showOriginal();
+}
 
-ViewerGUI::ViewerGUI(LaserRobotData* theLaserData/*, Vector2fVector* theLinesPoints*/, Vector2fVector* theOriginalPoints, QWidget* parent)
+
+ViewerGUI::ViewerGUI(LaserDataVector* theLdVector, QWidget* parent)
 {
   setupUi(this);
   QObject::connect(horizontalSlider, SIGNAL(sliderMoved(int)), this, SLOT(updateVal1(int)));
   QObject::connect(horizontalSlider_2, SIGNAL(sliderMoved(int)), this, SLOT(updateVal2(int)));
   QObject::connect(horizontalSlider_3, SIGNAL(sliderMoved(int)), this, SLOT(updateVal3(int)));
   QObject::connect(pushButton, SIGNAL(clicked()), this, SLOT(lineExtraction()));
-  QObject::connect(pushButton_2, SIGNAL(clicked()), this, SLOT(showOriginal()));
+  QObject::connect(pushButton_2, SIGNAL(clicked()), this, SLOT(showOriginal()));	
+  QObject::connect(pushButton_3, SIGNAL(clicked()), this, SLOT(setIdIteration()));
   QObject::connect(checkBox, SIGNAL(clicked(bool)),this, SLOT(setAlgorithm()));
   QObject::connect(checkBox_2, SIGNAL(clicked(bool)),this, SLOT(setAlgorithm()));
+
 	
   slider1value = 0;
   slider2value = 0;
@@ -264,10 +283,30 @@ ViewerGUI::ViewerGUI(LaserRobotData* theLaserData/*, Vector2fVector* theLinesPoi
   edgeExtr = 0;
 	lineExtractor = 0;
 	clusterer = 0;
-  laserData = theLaserData;
-//   linesFoundPoints = theLinesPoints;
-  originalPoints = theOriginalPoints;
-	
+	ldvector = theLdVector;
+	numIteration = 0;
+
 }
 
-
+// ViewerGUI::ViewerGUI(LaserRobotData* theLaserData/*, Vector2fVector* theLinesPoints*/, Vector2fVector* theOriginalPoints, QWidget* parent)
+// {
+//   setupUi(this);
+//   QObject::connect(horizontalSlider, SIGNAL(sliderMoved(int)), this, SLOT(updateVal1(int)));
+//   QObject::connect(horizontalSlider_2, SIGNAL(sliderMoved(int)), this, SLOT(updateVal2(int)));
+//   QObject::connect(horizontalSlider_3, SIGNAL(sliderMoved(int)), this, SLOT(updateVal3(int)));
+//   QObject::connect(pushButton, SIGNAL(clicked()), this, SLOT(lineExtraction()));
+//   QObject::connect(pushButton_2, SIGNAL(clicked()), this, SLOT(showOriginal()));
+//   QObject::connect(checkBox, SIGNAL(clicked(bool)),this, SLOT(setAlgorithm()));
+//   QObject::connect(checkBox_2, SIGNAL(clicked(bool)),this, SLOT(setAlgorithm()));
+// 	
+//   slider1value = 0;
+//   slider2value = 0;
+//   slider3value = 0;
+//   algotype = noType;
+//   edgeExtr = 0;
+// 	lineExtractor = 0;
+// 	clusterer = 0;
+//   laserData = theLaserData;
+// //   linesFoundPoints = theLinesPoints;
+//   originalPoints = theOriginalPoints;
+// }
