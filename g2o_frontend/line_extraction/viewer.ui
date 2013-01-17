@@ -24,11 +24,18 @@
     <item>
      <layout class="QVBoxLayout" name="verticalLayout">
       <property name="spacing">
-       <number>1</number>
+       <number>5</number>
       </property>
       <property name="bottomMargin">
-       <number>75</number>
+       <number>10</number>
       </property>
+      <item>
+       <widget class="QPushButton" name="pushButton_3">
+        <property name="text">
+         <string>Next Iteration</string>
+        </property>
+       </widget>
+      </item>
       <item>
        <widget class="Line" name="line">
         <property name="orientation">

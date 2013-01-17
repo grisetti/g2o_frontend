@@ -35,7 +35,6 @@ using namespace g2o;
 LaserRobotData::Vector2fVector pointsOriginal;
 // LaserRobotData::Vector2fVector pointsLine;
 
-
 //to be deleted?
 volatile bool hasToStop;
 void sigquit_handler(int sig)
@@ -136,7 +135,9 @@ int main(int argc, char**argv){
 	
 	int numVertex = 0;
 	LaserRobotData* ldata = 0;
-	for (size_t i=0; i<vertexIds.size() && ! hasToStop && numVertex < 1; i++){
+	LaserDataVector ldvector;
+	for (size_t i=0; i<vertexIds.size() && ! hasToStop /*&& numVertex < 1*/; i++){
+		
     OptimizableGraph::Vertex* _v=graph->vertex(vertexIds[i]);
     VertexSE3* v=dynamic_cast<VertexSE3*>(_v);
 		
@@ -145,7 +146,6 @@ int main(int argc, char**argv){
     
 		//read laser data from the graph constructed given the graph.g2o as filename
     OptimizableGraph::Data* d = v->userData();	
-		int numLaserData = 0;
     while(d){			
 			//TODO FOR THE ENTIRE FILE
 			ldata = dynamic_cast<LaserRobotData*>(d);
@@ -156,29 +156,32 @@ int main(int argc, char**argv){
 // 			glMultMatrixd(offset.data());
       if (ldata) {
 				pointsOriginal = ldata->floatCartesian();
+				if (pointsOriginal.size()==0) 
+					return 0;
+				ldvector.push_back(make_pair(ldata,pointsOriginal));
 				//pointsLine = ldata->floatCartesian();
 				//cout <<" Cartesian Laser data read: "<< pointsOriginal[0].x() << ", " << pointsOriginal[0].y() << endl;
+				cout << "LaserDataVector size is "<< ldvector.size() << "\tthe last reading has " << ldvector[i].second.size() << " points." << endl;
       }
-			numLaserData++; 
-			cout << "Lettura laser "<< i << ", numero punti: " << numLaserData << endl;	
 		}
-		//to read just the first lasera data ranges. change the number inside the for conditions
+		//to read just the first laser data ranges. change the number inside the for conditions
 		numVertex++;
 	}
 	cout << "File ended!" << endl;
 
 #if 0
 			ofstream osp("points.dat");
-			for (size_t i =0; i<pointsLine.size(); i++){
-					osp << pointsLine[i].transpose() << endl;
+			for (size_t i =0; i<pointsOriginal.size(); i++){
+					osp << pointsOriginal[i].transpose() << endl;
 			}
 			osp.flush();
 #endif
 	
 	
 	QApplication app(argc, argv);
-	ViewerGUI *dialog = new ViewerGUI(ldata/*,&pointsLine*/, &pointsOriginal);
-	dialog->viewer->setDataPointer(&pointsOriginal);
+// 	ViewerGUI *dialog = new ViewerGUI(ldata/*,&pointsLine*/, &pointsOriginal);
+	ViewerGUI *dialog = new ViewerGUI(&ldvector);
+	dialog->viewer->setDataPointer(&(ldvector[0].second));
 	dialog->show();
 	return app.exec();
 }
