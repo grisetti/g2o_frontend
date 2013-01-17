@@ -1,0 +1,19 @@
+ADD_EXECUTABLE(correlativeTest correlativeTest.cpp)
+SET_TARGET_PROPERTIES(correlativeTest PROPERTIES OUTPUT_NAME correlativeTest)
+TARGET_LINK_LIBRARIES(correlativeTest matching_library reader_library ${G2O_STUFF_LIBRARY})
+
+ADD_EXECUTABLE(gradientTest gradientTest.cpp)
+SET_TARGET_PROPERTIES(gradientTest PROPERTIES OUTPUT_NAME correlativeTest)
+TARGET_LINK_LIBRARIES(gradientTest matching_library reader_library ${G2O_STUFF_LIBRARY})
+
+ADD_EXECUTABLE(hierarchicalTest hierarchicalTest.cpp)
+SET_TARGET_PROPERTIES(hierarchicalTest PROPERTIES OUTPUT_NAME hierarchicalTest)
+TARGET_LINK_LIBRARIES(hierarchicalTest matching_library reader_library ${G2O_STUFF_LIBRARY})
+
+ADD_EXECUTABLE(structuresTest structuresTest.cpp)
+SET_TARGET_PROPERTIES(structuresTest PROPERTIES OUTPUT_NAME structuresTest)
+TARGET_LINK_LIBRARIES(structuresTest matching_library reader_library ${G2O_STUFF_LIBRARY})
+
+ADD_EXECUTABLE(subSamplerTest subSamplerTest.cpp)
+SET_TARGET_PROPERTIES(subSamplerTest PROPERTIES OUTPUT_NAME subSamplerTest)
+TARGET_LINK_LIBRARIES(subSamplerTest matching_library reader_library ${G2O_STUFF_LIBRARY})
