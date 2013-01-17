@@ -1,7 +1,9 @@
 #include <iostream>
 #include "pointwithnormalstatsgenerator.h"
 #include "Eigen/SVD"
+#ifdef _PWN_USE_OPENMP_
 #include <omp.h>
+#endif //_PWN_USE_OPENMP_
 
 using namespace std;
 
@@ -22,7 +24,7 @@ PointWithNormalStatistcsGenerator::PointWithNormalStatistcsGenerator(){
     525.0f, 0.0f, 319.5f,
     0.0f, 525.0f, 239.5f,
     0.0f, 0.0f, 1.0f;
-  _numThreads = 4;
+  _numThreads = 1;
 }
 
 
@@ -34,8 +36,17 @@ void PointWithNormalStatistcsGenerator::computeNormalsAndSVD(PointWithNormalVect
   int outerStep = _numThreads * _step;
   #pragma omp parallel
   {
-    for (int c=omp_get_thread_num(); c<indices.cols(); c+=outerStep) {
+#ifdef _PWN_USE_OPENMP_
+    int threadNum = omp_get_thread_num();
+#else // _PWN_USE_OPENMP_
+    int threadNum = 0; 
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigenSolver;
+#endif // _PWN_USE_OPENMP_
+
+    for (int c=threadNum; c<indices.cols(); c+=outerStep) {
+#ifdef _PWN_USE_OPENMP_
       Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigenSolver;
+#endif // _PWN_USE_OPENMP_
       for (int r=0; r<indices.rows(); r+=_step, q++){
 	int index  = indices(r,c);
 	//cerr << "index("  << r <<"," << c << ")=" << index <<  endl;

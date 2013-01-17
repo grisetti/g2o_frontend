@@ -166,7 +166,7 @@ int main(int argc, char** argv){
     for(set<string>::const_iterator it =filenamesset.begin(); it!=filenamesset.end(); it++) {
       filenames.push_back(*it);      
       QString listItem(&(*it)[0]);
-      if(listItem.endsWith("depth.pgm",Qt::CaseInsensitive))
+      if(listItem.endsWith("pgm",Qt::CaseInsensitive))
 	pwnGMW.listWidget->addItem(listItem);
     }
   } else {

@@ -96,8 +96,10 @@ public:
   inline DepthImage refZBuffer() const {return _refZbuffer;}
   inline DepthImage currZBuffer() const {return _currZbuffer;}
 
+#ifdef _PWN_USE_OPENMP_
   inline int numThreads() const { return _numThreads; }
   inline void setNumThreads(int numThreads_)  { _numThreads = numThreads_; }
+#endif //_PWN_USE_OPENMP_
 
 
 protected:
@@ -158,6 +160,7 @@ protected:
 
   // parallelization
   int _numThreads;
+
 };
 
 #endif
