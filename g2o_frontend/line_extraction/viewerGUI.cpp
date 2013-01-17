@@ -68,7 +68,7 @@ void ViewerGUI::showOriginal()
 
 	LaserDataVector::iterator it = ldvector->begin();
 	ld = *(it+numIteration);
-	/*this->viewer->setDataPointer(&(ldvector->front().second)); //  this->viewer->setDataPointer(originalPoints);*/
+	/*this->viewer->setDataPointer(&(ldvector->front().second));*/
 	this->viewer->setDataPointer(&(ld.second));
 	this->viewer->updateGL();
 }
@@ -135,8 +135,6 @@ void ViewerGUI::lineExtraction()
 				
 				const Line2DExtractor::IntLineMap& linesMap = lineExtractor->lines();
 				for (Line2DExtractor::IntLineMap::const_iterator it=linesMap.begin(); it!=linesMap.end(); it++) {
-					
-// 					cout << "creating linecontainer: " << endl;
 					
 					const Line2D& line = it->second;
 					const Vector2f& p0 = lineExtractor->points()[line.p0Index];
@@ -209,8 +207,6 @@ void ViewerGUI::lineExtraction()
 			 
 			  for (int i = 0; i < (int)edges.size(); i++) {
 					
-// 				cout << "creating linecontainer: " << endl;
-					
 				linePoints.push_back(Eigen::Vector2f(edges[i]->getVertexFrom().x(),
 																							edges[i]->getVertexFrom().y()));
 				linePoints.push_back(Eigen::Vector2f(edges[i]->getVertexTo().x(),
@@ -279,26 +275,3 @@ ViewerGUI::ViewerGUI(LaserDataVector* theLdVector, QWidget* parent)
 	numIteration = 0;
 
 }
-
-// ViewerGUI::ViewerGUI(LaserRobotData* theLaserData/*, Vector2fVector* theLinesPoints*/, Vector2fVector* theOriginalPoints, QWidget* parent)
-// {
-//   setupUi(this);
-//   QObject::connect(horizontalSlider, SIGNAL(sliderMoved(int)), this, SLOT(updateVal1(int)));
-//   QObject::connect(horizontalSlider_2, SIGNAL(sliderMoved(int)), this, SLOT(updateVal2(int)));
-//   QObject::connect(horizontalSlider_3, SIGNAL(sliderMoved(int)), this, SLOT(updateVal3(int)));
-//   QObject::connect(pushButton, SIGNAL(clicked()), this, SLOT(lineExtraction()));
-//   QObject::connect(pushButton_2, SIGNAL(clicked()), this, SLOT(showOriginal()));
-//   QObject::connect(checkBox, SIGNAL(clicked(bool)),this, SLOT(setAlgorithm()));
-//   QObject::connect(checkBox_2, SIGNAL(clicked(bool)),this, SLOT(setAlgorithm()));
-// 	
-//   slider1value = 0;
-//   slider2value = 0;
-//   slider3value = 0;
-//   algotype = noType;
-//   edgeExtr = 0;
-// 	lineExtractor = 0;
-// 	clusterer = 0;
-//   laserData = theLaserData;
-// //   linesFoundPoints = theLinesPoints;
-//   originalPoints = theOriginalPoints;
-// }

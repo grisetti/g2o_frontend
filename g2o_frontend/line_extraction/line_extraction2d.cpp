@@ -42,7 +42,7 @@ bool Line2DExtractor::split(int k) {
   if (line.p1Index - line.p0Index < _minPointsInLine)
     return false;
 	
-  // seek for the point with the larest distance between the indices contained in the line
+  /** seek for the point with the larest distance between the indices contained in the line**/
   int imax= maxDistanceIndex(line);
 //   cerr<< "\t\t imax: " << imax << endl;
   if (imax <0  || imax == line.p1Index-1){
@@ -183,16 +183,6 @@ void Line2DExtractor::compute(){
   osp0.flush();
 #endif
 }
-
-// bool Line2DExtractor::compute(Vector2fVector& /*points*/ ,
-// 			     /*VectorOfSubsetsPoints& subset*/, 
-// 			     Line2DVector& /*lines*/)
-// {
-// 	//divide the entire set of points in subsets of points
-// 	//for each set of points split()
-//   return true;
-
-// }
 
 
 

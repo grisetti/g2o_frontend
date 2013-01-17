@@ -33,7 +33,6 @@ using namespace g2o;
 
 //for laser points data
 LaserRobotData::Vector2fVector pointsOriginal;
-// LaserRobotData::Vector2fVector pointsLine;
 
 //to be deleted?
 volatile bool hasToStop;
@@ -133,7 +132,7 @@ int main(int argc, char**argv){
 
   std::sort(vertexIds.begin(), vertexIds.end());
 	
-	int numVertex = 0;
+	//int numVertex = 0;
 	LaserRobotData* ldata = 0;
 	LaserDataVector ldvector;
 	for (size_t i=0; i<vertexIds.size() && ! hasToStop /*&& numVertex < 1*/; i++){
@@ -146,8 +145,7 @@ int main(int argc, char**argv){
     
 		//read laser data from the graph constructed given the graph.g2o as filename
     OptimizableGraph::Data* d = v->userData();	
-    while(d){			
-			//TODO FOR THE ENTIRE FILE
+    while(d){
 			ldata = dynamic_cast<LaserRobotData*>(d);
 			d=d->next();
 // 			const Parameter* p = graph->parameters().getParameter(ldata->paramIndex());
@@ -159,8 +157,6 @@ int main(int argc, char**argv){
 				if (pointsOriginal.size()==0) 
 					return 0;
 				ldvector.push_back(make_pair(ldata,pointsOriginal));
-				//pointsLine = ldata->floatCartesian();
-				//cout <<" Cartesian Laser data read: "<< pointsOriginal[0].x() << ", " << pointsOriginal[0].y() << endl;
 				cout << "LaserDataVector size is "<< ldvector.size() << "\tthe last reading has " << ldvector[i].second.size() << " points." << endl;
       }
 		}
@@ -179,7 +175,6 @@ int main(int argc, char**argv){
 	
 	
 	QApplication app(argc, argv);
-// 	ViewerGUI *dialog = new ViewerGUI(ldata/*,&pointsLine*/, &pointsOriginal);
 	ViewerGUI *dialog = new ViewerGUI(&ldvector);
 	dialog->viewer->setDataPointer(&(ldvector[0].second));
 	dialog->show();

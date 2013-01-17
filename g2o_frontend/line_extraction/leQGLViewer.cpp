@@ -63,8 +63,6 @@ void leQGLViewer::init()
 
 void leQGLViewer::draw()
 {	
-	int beamsDownsampling = 1;
-
 	drawAxis();
 	// draw all the points
 	if(!lineFound) 
@@ -76,16 +74,12 @@ void leQGLViewer::draw()
 				}
 				osp2.flush();
 #endif
-				cout <<   "aaaaaaaaaaa" <<  data << " " << data->size() << endl;
 				
-		for (size_t i=0; i<data->size(); i+=beamsDownsampling)
+		for (size_t i=0; i<data->size(); i++)
 		{				
 			glPointSize(3.f);
 			glBegin(GL_POINTS);
-			//for depth image points
-			//if((*dataptr)[i][2]!=0)
-				//glVertex3f((*dataptr)[i][0]/1000, (*dataptr)[i][1]/1000, (*dataptr)[i][2]/1000);
-			glColor4f(1.f,0.f,0.f,0.5f);
+			glColor4f(0.f,1.f,0.f,0.5f);
 			glVertex3f((*data)[i].x(), (*data)[i].y(), 0.f);
 			glEnd();
 		}
@@ -111,8 +105,7 @@ void leQGLViewer::draw()
 		//cout << "line found!" << endl;
 		for(int i=0; i<lContainer->size(); i++)
 		{
-			glColor4f(0.f, 1.f, 0.f, 0.5f);
-			//cout << "lineVertices size is: " << (*lineContainer)[i]->size() << endl;
+			glColor4f(1.f, 1.f, 0.f, 0.5f);
 			Vector2fVector line = (*lContainer)[i];
 			glVertex3f(line[0].x(), line[0].y(), 0.f);
 			glVertex3f(line[1].x(), line[1].y(), 0.f);
