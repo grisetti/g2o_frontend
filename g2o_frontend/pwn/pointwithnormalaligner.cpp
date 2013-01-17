@@ -2,10 +2,10 @@
 #include <iostream>
 #include "g2o/stuff/unscented.h"
 #include "g2o/stuff/timeutil.h"
-#include <omp.h>
 #include <Eigen/Dense>
 
-#define _USE_SEQ_BLOCKING
+#include <omp.h>
+
 using namespace Eigen;
 using namespace std;
 using namespace g2o;
@@ -185,14 +185,19 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
     int nNormalAngleFail = 0;
     int nCurvatureBad = 0;
     double _tCorr = get_time();
-    #pragma omp parallel num_threads(_numThreads)
-    for (int c=omp_get_thread_num(); c<_refIndexImage.cols(); c+=_numThreads) {
+#pragma omp parallel num_threads(_numThreads) 
+    {
+    int threadCols = _refIndexImage.cols()/_numThreads;
+    int threadId = omp_get_thread_num();
+    int cMin = threadCols * threadId;
+    int cMax = (threadId == _numThreads-1) ? _refIndexImage.cols() : threadCols * (threadId+1);
+    for (int c=cMin; c<cMax; c++) {
       for (int r=0; r<_refIndexImage.rows(); r++) {
 	int& refIndex = _refIndexImage(r,c);
 	int currIndex = _currIndexImage(r,c);
 	if (refIndex<0 || currIndex<0) {
-	  #pragma omp critical
-	    nNoPoint++;
+#pragma omp critical
+	  nNoPoint++;
 	  continue;
 	}
 	// compare euclidean distance and angle for the normals in the remapped frame
@@ -200,23 +205,23 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
 	const PointWithNormal& pCurr =_currPoints->at(currIndex);
 	if (pRef.normal().squaredNorm()==0 || pCurr.normal().squaredNorm()==0){
 	  refIndex = -refIndex;
-	  #pragma omp critical
-	    nNoNormal++;
+#pragma omp critical
+	  nNoNormal++;
 	  continue;
 	}
 	
 	Vector3f dp =pCurr.point()-pRef.point();
 	if (dp.squaredNorm()>squaredThreshold){
 	  refIndex = -refIndex;
-	  #pragma omp critical
-	    nTooDistant ++;
+#pragma omp critical
+	  nTooDistant ++;
 	  continue;
 	}
 
 	if (pCurr.normal().dot(pRef.normal()) < _inlierNormalAngularThreshold) {
 	  refIndex = -refIndex;
-	  #pragma omp critical
-	    nNormalAngleFail++;
+#pragma omp critical
+	  nNormalAngleFail++;
 	  continue;
 	}
 
@@ -232,13 +237,13 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
 	float logRatio = log(refCurvature +1e-5) - log(currCurvature + 1e-5);
 	if (fabs(logRatio)>_inlierCurvatureRatioThreshold){
 	  refIndex = -refIndex;
-	  #pragma omp critical
+#pragma omp critical
 	  {
 	    nCurvatureBad++;
 	  }
 	  continue;
 	}
-	#pragma omp critical
+#pragma omp critical
 	{
 	  _correspondences[_numCorrespondences].i1=refIndex;
 	  _correspondences[_numCorrespondences].i2=currIndex;
@@ -247,6 +252,7 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
 	}
       }
     }
+  }
     tCorr += get_time() - _tCorr;
     for (size_t k=_numCorrespondences; k<_correspondences.size(); k++){
 	_correspondences[_numCorrespondences].i1=-1;
@@ -328,14 +334,10 @@ int PointWithNormalAligner::_constructLinearSystemQT(Matrix6f& H, Vector6f&b, fl
     // cerr << "omegas.size(): " << _currOmegas.size() << endl;
     const Matrix6fVector& omegas = (onlyFlat)? _currFlatOmegas : _currOmegas;
     
-#ifdef _USE_SEQ_BLOCKING
     int n = _numCorrespondences/numThreads;
     int imin = threadNum *n;
     int imax = (threadNum == numThreads -1) ? _numCorrespondences : threadNum *(n+1);
     for(int i = imin; i < imax; i++){
-#else   
-    for(int i = threadNum; i < _numCorrespondences; i+=numThreads) {
-#endif      
       //cerr << "corr[" << i << "]: ";
       const Correspondence& corr = _correspondences[i];
       const PointWithNormal& pref  = _refPoints->at(corr.i1);
@@ -367,14 +369,10 @@ int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, 
   Matrix6x12f J;
   const Matrix6fVector& omegas = (onlyFlat)? _currFlatOmegas : _currOmegas;
 
-#ifdef _USE_SEQ_BLOCKING
     int n = _numCorrespondences/numThreads;
     int imin = threadNum *n;
     int imax = (threadNum == numThreads -1) ? _numCorrespondences : threadNum *(n+1);
     for(int i = imin; i < imax; i++){
-#else   
-    for(int i = threadNum; i < _numCorrespondences; i+=numThreads) {
-#endif
       const Correspondence& corr = _correspondences[i];
       const PointWithNormal& pref  = _refPoints->at(corr.i1);
       const PointWithNormal& pcurr = _currPoints->at(corr.i2);
@@ -415,15 +413,10 @@ int PointWithNormalAligner::_constructLinearSystemT(Matrix3f& H, Vector3f&b, flo
   const Matrix6fVector& omegas = (onlyFlat)? _currFlatOmegas : _currOmegas;
 
 
-#ifdef _USE_SEQ_BLOCKING
   int n = _numCorrespondences/numThreads;
   int imin = threadNum *n;
   int imax = (threadNum == numThreads -1) ? _numCorrespondences : threadNum *(n+1);
   for(int i = imin; i < imax; i++){
-#else   
-    for(int i = threadNum; i < _numCorrespondences; i+=numThreads) {
-#endif
-
     const Correspondence& corr = _correspondences[i];
     const PointWithNormal& pref  = _refPoints->at(corr.i1);
     const PointWithNormal& pcurr = _currPoints->at(corr.i2);

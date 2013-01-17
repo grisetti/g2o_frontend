@@ -95,7 +95,11 @@ public:
 
   inline DepthImage refZBuffer() const {return _refZbuffer;}
   inline DepthImage currZBuffer() const {return _currZbuffer;}
-	
+
+  inline int numThreads() const { return _numThreads; }
+  inline void setNumThreads(int numThreads_)  { _numThreads = numThreads_; }
+
+
 protected:
   // size of the original image
   int _rows,  _cols;

@@ -2,6 +2,7 @@
 #include "pointwithnormalstatsgenerator.h"
 #include "Eigen/SVD"
 #include <omp.h>
+
 using namespace std;
 
 void PointWithNormalSVD::updateCurvature() {
