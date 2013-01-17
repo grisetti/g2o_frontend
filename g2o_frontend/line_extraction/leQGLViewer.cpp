@@ -60,7 +60,7 @@ void leQGLViewer::init()
 				ofstream osp2("points2.dat");
 				ofstream os2("lines2.dat");
 #endif
-	
+
 void leQGLViewer::draw()
 {	
 	int beamsDownsampling = 1;
@@ -76,6 +76,7 @@ void leQGLViewer::draw()
 				}
 				osp2.flush();
 #endif
+				cout <<   "aaaaaaaaaaa" <<  data << " " << data->size() << endl;
 				
 		for (size_t i=0; i<data->size(); i+=beamsDownsampling)
 		{				

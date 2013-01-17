@@ -63,16 +63,14 @@ void ViewerGUI::showOriginal()
   cout << "#----------------------------------#" << endl;
   cout << "Original LaserRobotData points." << endl;
   cout << "#----------------------------------#" << endl;
+	
   this->viewer->lineFound = false;
-//   this->viewer->setDataPointer(originalPoints);
-	
-	
-		LaserDataVector::iterator it = ldvector->begin();
-		LaserData ld = *(it+numIteration);
-		this->viewer->setDataPointer(&ld.second);
-// 	this->viewer->setDataPointer(&(ldvector->front().second)); // TODO front deve diventare un indice
-  this->viewer->updateGL();
 
+	LaserDataVector::iterator it = ldvector->begin();
+	ld = *(it+numIteration);
+	/*this->viewer->setDataPointer(&(ldvector->front().second)); //  this->viewer->setDataPointer(originalPoints);*/
+	this->viewer->setDataPointer(&(ld.second));
+	this->viewer->updateGL();
 }
 #if 0
 					ofstream osp1PrimaC("points1PrimaC.dat");
@@ -91,19 +89,14 @@ void ViewerGUI::lineExtraction()
 		int minPointsCluster = 10;
 		Vector2fVector linePoints;
 		LaserDataVector::iterator it = ldvector->begin();
-		LaserData ld = *(it+numIteration);
-		LaserRobotData* laserData =  ld.first;
-// 		LaserRobotData* laserData = ldvector->front().first; // TODO front dev diventare un indice
+		ld = *(it+numIteration);
 		
 		if (algotype == splitMergeType){
 			cout << "#----------------------------------------------#" << endl;
 			cout << "Starting extraction with: " << algotype << endl;
 			cout << "#------------------------------------------------#" << endl;			
 			
-			clusterer->_squaredDistance = CLUSTER_SQUARED_DISTANCE;
-			
-			Vector2fVector cartesianPoints = ld.second; //front deve diventare un indice
-			
+			Vector2fVector cartesianPoints = ld.second;
 #if 0				
 				for (size_t i =0; i<cartesianPoints.size(); i++){
 					osp1PrimaC << cartesianPoints[i].transpose() << endl;
@@ -136,8 +129,6 @@ void ViewerGUI::lineExtraction()
 #endif
 				
 				lineExtractor->setPoints(currentPoints);
-// 				lineExtractor->_minPointsInLine = MIN_POINTS_IN_LINES;
-// 				lineExtractor->_splitThreshold = SPLIT_THRESHOLD;
 				lineExtractor->compute();
 				
 				cout << "*** End of extraction: the number of lines found is " << lineExtractor->lines().size() << " ***" << endl;
@@ -178,7 +169,8 @@ void ViewerGUI::lineExtraction()
 			cout << "#----------------------------------------------#" << endl;
 			cout << "Starting extraction with: " << algotype << endl;
 			cout << "#------------------------------------------------#" << endl;
-			
+			LaserRobotData* laserData = ld.first;
+// 		LaserRobotData* laserData = ldvector->front().first;
 			double maxRangeFinderLimit = laserData->maxRange();
 			float angularStep = laserData->fov() / laserData->ranges().size();
 			float angle = laserData->firstBeamAngle();

@@ -50,6 +50,7 @@ class ViewerGUI : public QMainWindow, public Ui::MainWindow
 		LaserDataVector* ldvector;
 		lineContainer lc;
 		int numIteration;
+		LaserData ld;
 
 	public slots:
 	 void updateVal1(int val);

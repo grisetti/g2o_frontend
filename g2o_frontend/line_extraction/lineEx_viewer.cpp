@@ -165,7 +165,7 @@ int main(int argc, char**argv){
       }
 		}
 		//to read just the first laser data ranges. change the number inside the for conditions
-		numVertex++;
+		//numVertex++;
 	}
 	cout << "File ended!" << endl;
 
