@@ -45,6 +45,7 @@ struct RGBDImageData: public g2o::OptimizableGraph::Data{
   void release();
   const std::string& baseFilename() const {return _baseFilename;}
   void  setBaseFilename(const std::string baseFilename_) {_baseFilename = baseFilename_;}
+  const g2o::ParameterStereoCamera* cameraParams() const { return _cameraParams;}
  protected:
   std::string _baseFilename;
   g2o::ParameterStereoCamera* _cameraParams;

@@ -68,11 +68,19 @@ int main(int argc, char**argv){
 
 
   
-  int planeNum = 0;
+  
+  int vertexNum = 0;
   if (vertexIds.size())
-    planeNum = *vertexIds.rbegin() + 1;
+    vertexNum = *vertexIds.rbegin() + 1;
+
   cerr << "loaded graph, now processing planes" << endl;
   signal(SIGINT, sigquit_handler);
+
+  VertexSE3* vparam = new VertexSE3;
+  vparam->setId(vertexNum++);
+  graph->addVertex(vparam);
+
+  const ParameterStereoCamera* camParam = 0;
 
   for (size_t i=0; i<vertexIds.size() && ! hasToStop; i++){
     OptimizableGraph::Vertex* _v=graph->vertex(vertexIds[i]);
@@ -86,14 +94,30 @@ int main(int argc, char**argv){
       RGBDImageData* imageData = dynamic_cast<RGBDImageData*>(d);
       d=d->next();
       if (imageData) {
+	// extract plane
 	cerr << "image found" << endl;
+	
+	Plane3D p; // extracted plane
+
+	if (! camParam){
+	  camParam = imageData->cameraParams();
+	  vparam->setEstimate(camParam->offset());
+	} 
+	Isometry3d sensorAndRobot = v->estimate() * vparam->estimate();
+
 	VertexPlane* vplane = new VertexPlane();
-	vplane->setId(planeNum);
-	double a=0, b=1, c=0, d=2;
-	Vector4d coeffs;
-	coeffs << a,b,c,d;
-	vplane->setEstimate(Plane3D(coeffs));
+	vplane->setId(vertexNum);
+	vplane->setEstimate(sensorAndRobot*p);
 	graph->addVertex(vplane);
+
+	EdgeSE3PlaneSensorCalib* edge= new EdgeSE3PlaneSensorCalib();
+	edge->setVertex(0,v);
+	edge->setVertex(1,vplane);
+	edge->setVertex(2,vparam);
+	edge->setMeasurement(p);
+	edge->setInformation(Matrix3d::Identity());
+	graph->addEdge(edge);
+	vertexNum++;
       }
       
     }
