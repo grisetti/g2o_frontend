@@ -1,24 +1,29 @@
 #include "pointwithnormalaligner.h"
 #include <iostream>
 #include "g2o/stuff/unscented.h"
+#include "g2o/stuff/timeutil.h"
+#include <Eigen/Dense>
+
+#ifdef _PWN_USE_OPENMP_
+#include <omp.h>
+#endif // _PWN_USE_OPENMP_
+
 using namespace Eigen;
 using namespace std;
+using namespace g2o;
 
-
-inline Matrix6f jacobian(const Eigen::Isometry3f& X, const Vector6f& p)
-{
-    Matrix6f J = Matrix6f::Zero();
-    const Matrix3f& R = X.linear();
-    const Vector3f& t = p.head<3>();
-    const Vector3f& n = p.tail<3>();
-    J.block<3, 3>(0, 0) = R;
-    J.block<3, 3>(0, 3) = R * skew(t);
-    J.block<3, 3>(3, 3) = R * skew(n);
-    return J;
+inline Matrix6f jacobian(const Eigen::Isometry3f& X, const Vector6f& p) {
+  Matrix6f J = Matrix6f::Zero();
+  const Matrix3f& R = X.linear();
+  const Vector3f& t = p.head<3>();
+  const Vector3f& n = p.tail<3>();
+  J.block<3, 3>(0, 0) = R;
+  J.block<3, 3>(0, 3) = R * skew(t);
+  J.block<3, 3>(3, 3) = R * skew(n);
+  return J;
 }
 
-PointWithNormalAligner::PointWithNormalAligner()
-{
+PointWithNormalAligner::PointWithNormalAligner() {
   _cameraMatrix <<
     525.0f, 0.0f, 319.5f,
     0.0f, 525.0f, 239.5f,
@@ -47,6 +52,7 @@ PointWithNormalAligner::PointWithNormalAligner()
   _rotationalMinEigenRatio = 50;
   _translationalMinEigenRatio = 50;
   _debug = false;
+  _numThreads = 1;
 }
 
 
@@ -54,7 +60,7 @@ void PointWithNormalAligner::setReferenceCloud(const PointWithNormalVector*  ref
   _refPoints = refPoints;
   _refSVDs = refSVDs;
 }
-  // sets the cloud and conditions tthe covariances accordingly
+// sets the cloud and conditions tthe covariances accordingly
 
 void PointWithNormalAligner::setCurrentCloud(const PointWithNormalVector*  currentPoints, const PointWithNormalSVDVector* currentSVDs){
   _currPoints = currentPoints;
@@ -102,6 +108,7 @@ void PointWithNormalAligner::_updateOmegas() {
   //float fB = (0.075 * _cameraMatrix(0, 0)); // kinect baseline * focal lenght;
   Eigen::Matrix3f covarianceJacobian(Eigen::Matrix3f::Zero());
    
+<<<<<<< HEAD
   for (size_t i=0; i<_currPoints->size(); i++){
     const PointWithNormal& point = _currPoints->at(i);
     const PointWithNormalSVD& svd = _currSVDs->at(i);
@@ -121,23 +128,57 @@ void PointWithNormalAligner::_updateOmegas() {
       0, 0, 1;
     covarianceJacobian = inverseCameraMatrix*covarianceJacobian;
     Eigen::Matrix3f worldCovariance = covarianceJacobian * imageCovariance * covarianceJacobian.transpose();*/
+=======
+
+#ifdef _PWN_USE_OPENMP_
+#pragma omp parallel num_threads(_numThreads) 
+#endif// _PWN_USE_OPENMP_
+  {
+
+#ifdef _PWN_USE_OPENMP_
+    int threadId = omp_get_thread_num();
+#else // _PWN_USE_OPENMP_
+    int threadId = 0;
+#endif// _PWN_USE_OPENMP_
+
+    for (size_t i=threadId; i<_currPoints->size(); i+=_numThreads){
+      const PointWithNormal& point = _currPoints->at(i);
+      const PointWithNormalSVD& svd = _currSVDs->at(i);
+      _currOmegas[i].setZero();
+      if (point.normal().squaredNorm()<1e-3) {
+	// the point has no normal;
+	continue;
+      }
     
-    float curvature = svd.curvature();
-    _currFlatOmegas[i].setZero();
-    if (curvature<_flatCurvatureThreshold){
-      _currOmegas[i].block<3,3>(0,0) = svd.U() * flatOmegaP * svd.U().transpose();
-      _currOmegas[i].block<3,3>(3,3) = flatOmegaN;
-      _currFlatOmegas[i].block<3,3>(0,0) = svd.U() * errorFlatOmegaP * svd.U().transpose();
-      _currFlatOmegas[i].block<3,3>(3,3).setIdentity();
-    } else {
-      _currOmegas[i].block<3,3>(0,0) = svd.U() * 
-	Diagonal3f(nonFlatKp/svd.singularValues()(0),
-		   nonFlatKp/svd.singularValues()(1), 
-		   nonFlatKp/svd.singularValues()(2)) * svd.U().transpose();
-      _currOmegas[i].block<3,3>(3,3) = nonFlatOmegaN;
+  
+    // float z = svd.z();
+    // float zVariation = (fB+z)/(z*z);
+    // zVariation *= zVariation;
+    // Diagonal3f imageCovariance(1.0f, 1.0f, zVariation);
+    // covarianceJacobian <<
+    //   z, 0, (float)c,
+    //   0, z, (float)r,
+    //   0, 0, 1;
+    // covarianceJacobian = inverseCameraMatrix*covarianceJacobian;
+    // Eigen::Matrix3f worldCovariance = covarianceJacobian * imageCovariance * covarianceJacobian.transpose();
+>>>>>>> 68af1a45806ec6b3bce870b5b498cc12f5fe0d60
+    
+      float curvature = svd.curvature();
+      _currFlatOmegas[i].setZero();
+      if (curvature<_flatCurvatureThreshold){
+	_currOmegas[i].block<3,3>(0,0) = svd.U() * flatOmegaP * svd.U().transpose();
+	_currOmegas[i].block<3,3>(3,3) = flatOmegaN;
+	_currFlatOmegas[i].block<3,3>(0,0) = svd.U() * errorFlatOmegaP * svd.U().transpose();
+	_currFlatOmegas[i].block<3,3>(3,3).setIdentity();
+      } else {
+	_currOmegas[i].block<3,3>(0,0) = svd.U() * 
+	  Diagonal3f(nonFlatKp/svd.singularValues()(0),
+		     nonFlatKp/svd.singularValues()(1), 
+		     nonFlatKp/svd.singularValues()(2)) * svd.U().transpose();
+	_currOmegas[i].block<3,3>(3,3) = nonFlatOmegaN;
+      }
     }
   }
-
   _omegasSet=true;
 }
 
@@ -161,8 +202,15 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
   _currPoints->toIndexImage(_currIndexImage, (MatrixXf&)_currZbuffer, _scaledCameraMatrix, Isometry3f::Identity(), 15.0f);
   float squaredThreshold = _inlierDistanceThreshold*_inlierDistanceThreshold;
   int inliers=0;
+  double tRemap=0;
+  double tCorr = 0;
+  double tLinear = 0;
+  double tNonLinear = 0;
+  double tStats = 0;
   for (int i = 0; i<_outerIterations; i++){
+    double tRemapStart = get_time();
     _refPoints->toIndexImage(_refIndexImage, _refZbuffer, _scaledCameraMatrix, _T.inverse(), 15);
+    tRemap += get_time() - tRemapStart;
     _numCorrespondences = 0;
     int nGoodPoints = 0;
     int nNoPoint = 0;
@@ -170,61 +218,105 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
     int nTooDistant = 0;
     int nNormalAngleFail = 0;
     int nCurvatureBad = 0;
-    
-    for (int c=0; c<_refIndexImage.cols(); c++) {
-      for (int r=0; r<_refIndexImage.rows(); r++) {
-	int& refIndex = _refIndexImage(r,c);
-	int currIndex = _currIndexImage(r,c);
-	if (refIndex<0 || currIndex<0) {
-	  nNoPoint++;
-	  continue;
-	}
-	// compare euclidean distance and angle for the normals in the remapped frame
-	PointWithNormal pRef=_T*_refPoints->at(refIndex);
-	const PointWithNormal& pCurr =_currPoints->at(currIndex);
-	if (pRef.normal().squaredNorm()==0 || pCurr.normal().squaredNorm()==0){
-	  refIndex = -refIndex;
-	  nNoNormal++;
-	  continue;
-	}
+    double _tCorr = get_time();
+    int threadCorrStartIndex[_numThreads];
+    int threadCorrEndIndex[_numThreads];
+
+#ifdef _PWN_USE_OPENMP_
+#pragma omp parallel num_threads(_numThreads) 
+#endif //_PWN_USE_OPENMP_
+    {
+      int threadCols = _refIndexImage.cols()/_numThreads;
+#ifdef _PWN_USE_OPENMP_
+      int threadId = omp_get_thread_num();
+#else //_PWN_USE_OPENMP_
+      int threadId = 0;
+#endif //_PWN_USE_OPENMP_
+
+      int cMin = threadCols * threadId;
+      int cMax = (threadId == _numThreads-1) ? _refIndexImage.cols() : threadCols * (threadId+1);
+      int corrBlockSize = threadCols * _refIndexImage.rows();
+      int _localNGoodPoints = 0;
+      int _localNNoPoint = 0;
+      int _localNNoNormal = 0;
+      int _localNTooDistant = 0;
+      int _localNNormalAngleFail = 0;
+      int _localNCurvatureBad = 0;
+
+      threadCorrStartIndex[threadId] = threadId*corrBlockSize;
+      threadCorrEndIndex[threadId] = threadCorrStartIndex[threadId];
+
+      for (int c=cMin; c<cMax; c++) {
+	for (int r=0; r<_refIndexImage.rows(); r++) {
+	  int& refIndex = _refIndexImage(r,c);
+	  int currIndex = _currIndexImage(r,c);
+	  if (refIndex<0 || currIndex<0) {
+	    _localNNoPoint++;
+	    continue;
+	  }
+	  // compare euclidean distance and angle for the normals in the remapped frame
+	  PointWithNormal pRef=_T*_refPoints->at(refIndex);
+	  const PointWithNormal& pCurr =_currPoints->at(currIndex);
+	  if (pRef.normal().squaredNorm()==0 || pCurr.normal().squaredNorm()==0){
+	    refIndex = -refIndex;
+	    _localNNoNormal++;
+	    continue;
+	  }
 	
-	Vector3f dp =pCurr.point()-pRef.point();
-	if (dp.squaredNorm()>squaredThreshold){
-	  refIndex = -refIndex;
-	  nTooDistant ++;
-	  continue;
-	}
+	  Vector3f dp =pCurr.point()-pRef.point();
+	  if (dp.squaredNorm()>squaredThreshold){
+	    refIndex = -refIndex;
+	    _localNTooDistant ++;
+	    continue;
+	  }
 
-	if (pCurr.normal().dot(pRef.normal()) < _inlierNormalAngularThreshold) {
-	  refIndex = -refIndex;
-	  nNormalAngleFail++;
-	  continue;
-	}
+	  if (pCurr.normal().dot(pRef.normal()) < _inlierNormalAngularThreshold) {
+	    refIndex = -refIndex;
+	    _localNNormalAngleFail++;
+	    continue;
+	  }
 
-	const PointWithNormalSVD& refSVD = _refSVDs->at(refIndex);
-	const PointWithNormalSVD& currSVD = _currSVDs->at(currIndex);
-	float refCurvature = refSVD.curvature();
-	float currCurvature = currSVD.curvature();
-	if (refCurvature < _flatCurvatureThreshold)
-	  refCurvature = _flatCurvatureThreshold;
-	if (currCurvature < _flatCurvatureThreshold)
-	  currCurvature = _flatCurvatureThreshold;
+	  const PointWithNormalSVD& refSVD = _refSVDs->at(refIndex);
+	  const PointWithNormalSVD& currSVD = _currSVDs->at(currIndex);
+	  float refCurvature = refSVD.curvature();
+	  float currCurvature = currSVD.curvature();
+	  if (refCurvature < _flatCurvatureThreshold)
+	    refCurvature = _flatCurvatureThreshold;
+	  if (currCurvature < _flatCurvatureThreshold)
+	    currCurvature = _flatCurvatureThreshold;
 
-	float logRatio = log(refCurvature +1e-5) - log(currCurvature + 1e-5);
-	if (fabs(logRatio)>_inlierCurvatureRatioThreshold){
-	  refIndex = -refIndex;
-	  nCurvatureBad++;
-	  continue;
+	  float logRatio = log(refCurvature +1e-5) - log(currCurvature + 1e-5);
+	  if (fabs(logRatio)>_inlierCurvatureRatioThreshold){
+	    refIndex = -refIndex;
+	    _localNCurvatureBad++;
+	    continue;
+	  }
+	  _localNGoodPoints++;
+	  int& corrIndex=threadCorrEndIndex[threadId];
+	  _correspondences[corrIndex].i1=refIndex;
+	  _correspondences[corrIndex].i2=currIndex;
+	  corrIndex ++;
 	}
-	_correspondences[_numCorrespondences].i1=refIndex;
-	_correspondences[_numCorrespondences].i2=currIndex;
-	_numCorrespondences ++;
-	nGoodPoints++;
+      }
+      nGoodPoints += _localNGoodPoints;
+      nNoPoint += _localNNoPoint;
+      nNoNormal += _localNNoNormal;
+      nTooDistant += _localNTooDistant;
+      nNormalAngleFail += _localNNormalAngleFail;
+      nCurvatureBad += _localNCurvatureBad;
+    }
+    // now pack the resulting correspondences
+    for(int t=0; t<_numThreads; t++){
+      int cstart = threadCorrStartIndex[t];
+      int cend = threadCorrEndIndex[t];
+      for (int k = cstart; k<cend; k++, _numCorrespondences++){
+	_correspondences[_numCorrespondences] = _correspondences[k];
       }
     }
+    tCorr += get_time() - _tCorr;
     for (size_t k=_numCorrespondences; k<_correspondences.size(); k++){
-	_correspondences[_numCorrespondences].i1=-1;
-	_correspondences[_numCorrespondences].i2=-1;
+      _correspondences[_numCorrespondences].i1=-1;
+      _correspondences[_numCorrespondences].i2=-1;
     }
     if (_debug) {
       cerr << "goodPoints: " << nGoodPoints << endl;
@@ -238,6 +330,7 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
       _numCorrespondences = 0;
       return -1;
     }
+    double _tLinear = get_time();
     float error;
     for (int li=0; li<_linearIterations; li++){
       inliers = _linearUpdate(error);
@@ -245,16 +338,28 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
 	return -2;
       }
     }
-
+    
+    tLinear += get_time() - _tLinear;
+    double _tNonLinear = get_time();
     for (int nli=0; nli<_nonLinearIterations; nli++){
       int inliers = _nonLinearUpdate(error);
       if (inliers < _minInliers){
 	return -3;
       }
     }
-    
+
+    tNonLinear += get_time() - _tNonLinear;
   }
+  tStats = get_time();
   inliers = _computeStatistics(error, mean, omega, translationalEigenRatio, rotationalEigenRatio, false);
+  tStats = get_time() - tStats;
+  
+  cerr << "*** TIMINGS ***" << endl;
+  cerr << "tRemap: " << tRemap << endl;
+  cerr << "tCorr: " << tCorr << endl;
+  cerr << "tLinear: " << tLinear << endl;
+  cerr << "tNonLinear: " << tNonLinear << endl;
+  cerr << "tStats: " << tStats << endl;
 
   if (rotationalEigenRatio > _rotationalMinEigenRatio || translationalEigenRatio > _translationalMinEigenRatio) {
     cerr << "************** WARNING SOLUTION MIGHT BE INVALID (eigenratio failure) **************" << endl;
@@ -280,49 +385,56 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
   return inliers;
 }
   
-int PointWithNormalAligner::_constructLinearSystemQT(Matrix6f& H, Vector6f&b, float& error, bool onlyFlat) const{
-    b = Vector6f::Zero();
-    H = Matrix6f::Zero();
-    error = 0;
-    int numInliers = 0;
-    // cerr << "correspondence.size(): " << _correspondences.size() << endl;
-    // cerr << "refPoints.size(): " << _refPoints->size() << endl;
-    // cerr << "currPoints.size(): " << _currPoints->size() << endl;
-    // cerr << "omegas.size(): " << _currOmegas.size() << endl;
-    const Matrix6fVector& omegas = (onlyFlat)? _currFlatOmegas : _currOmegas;
-  
-    for(int i = 0; i < _numCorrespondences; i++){
-      //cerr << "corr[" << i << "]: ";
-      const Correspondence& corr = _correspondences[i];
-      const PointWithNormal& pref  = _refPoints->at(corr.i1);
-      const PointWithNormal& pcurr = _currPoints->at(corr.i2);
-      //cerr << corr.i1 << " " << corr.i2 << endl;
-      const Matrix6f& omega = omegas.at(corr.i2);
-      if (omega.squaredNorm()==0)
-	continue;
+int PointWithNormalAligner::_constructLinearSystemQT(Matrix6f& H, Vector6f&b, float& error, bool onlyFlat, int numThreads, int threadNum) const{
+  b = Vector6f::Zero();
+  H = Matrix6f::Zero();
+  error = 0;
+  int numInliers = 0;
+  // cerr << "correspondence.size(): " << _correspondences.size() << endl;
+  // cerr << "refPoints.size(): " << _refPoints->size() << endl;
+  // cerr << "currPoints.size(): " << _currPoints->size() << endl;
+  // cerr << "omegas.size(): " << _currOmegas.size() << endl;
+  const Matrix6fVector& omegas = (onlyFlat)? _currFlatOmegas : _currOmegas;
+    
+  int n = _numCorrespondences/numThreads;
+  int imin = threadNum *n;
+  int imax = (threadNum == numThreads -1) ? _numCorrespondences : (threadNum+1) *n;
+  for(int i = imin; i < imax; i++){
+    //cerr << "corr[" << i << "]: ";
+    const Correspondence& corr = _correspondences[i];
+    const PointWithNormal& pref  = _refPoints->at(corr.i1);
+    const PointWithNormal& pcurr = _currPoints->at(corr.i2);
+    //cerr << corr.i1 << " " << corr.i2 << endl;
+    const Matrix6f& omega = omegas.at(corr.i2);
+    if (omega.squaredNorm()==0)
+      continue;
     	
-      Vector6f e = _T*pref - pcurr;
+    Vector6f e = _T*pref - pcurr;
       
-      float localError = e.transpose() * omega * e;
-      if(localError > _inlierMaxChi2)
-	continue;
-      numInliers++;
-      error += localError;
-      Matrix6f J = jacobian(_T, pcurr);
-      b += J.transpose() * omega * e;
-      H += J.transpose() * omega * J;
-    }
-    return numInliers;
+    float localError = e.transpose() * omega * e;
+    if(localError > _inlierMaxChi2)
+      continue;
+    numInliers++;
+    error += localError;
+    Matrix6f J = jacobian(_T, pcurr);
+    b += J.transpose() * omega * e;
+    H += J.transpose() * omega * J;
+  }
+  return numInliers;
 }
 
-int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, float& error, bool onlyFlat) const{
+int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, float& error, bool onlyFlat, int numThreads, int threadNum) const{
   b.setZero();
   H.setZero();
   error = 0;
   int numInliers = 0;
   Matrix6x12f J;
   const Matrix6fVector& omegas = (onlyFlat)? _currFlatOmegas : _currOmegas;
-  for(int i = 0; i < _numCorrespondences; i++){
+
+  int n = _numCorrespondences/numThreads;
+  int imin = threadNum *n;
+  int imax = (threadNum == numThreads -1) ? _numCorrespondences : (threadNum+1) *n;
+  for(int i = imin; i < imax; i++){
     const Correspondence& corr = _correspondences[i];
     const PointWithNormal& pref  = _refPoints->at(corr.i1);
     const PointWithNormal& pcurr = _currPoints->at(corr.i2);
@@ -331,7 +443,7 @@ int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, 
       continue;
     
     Vector6f e = _T*pref - pcurr;
-
+      
     float localError = e.transpose() * omega * e;
     if(localError > _inlierMaxChi2)
       continue;
@@ -354,14 +466,19 @@ int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, 
   return numInliers;
 }
 
-int PointWithNormalAligner::_constructLinearSystemT(Matrix3f& H, Vector3f&b, float& error, bool onlyFlat) const{
+int PointWithNormalAligner::_constructLinearSystemT(Matrix3f& H, Vector3f&b, float& error, bool onlyFlat, int numThreads, int threadNum) const{
   b.setZero();
   H.setZero();
   error = 0;
   int numInliers = 0;
   Matrix6x12f J;
   const Matrix6fVector& omegas = (onlyFlat)? _currFlatOmegas : _currOmegas;
-  for(int i = 0; i < _numCorrespondences; i++){
+
+
+  int n = _numCorrespondences/numThreads;
+  int imin = threadNum *n;
+  int imax = (threadNum == numThreads -1) ? _numCorrespondences : (threadNum+1) *n;
+  for(int i = imin; i < imax; i++){
     const Correspondence& corr = _correspondences[i];
     const PointWithNormal& pref  = _refPoints->at(corr.i1);
     const PointWithNormal& pcurr = _currPoints->at(corr.i2);
@@ -390,12 +507,40 @@ int PointWithNormalAligner::_computeStatistics(float& error, Vector6f& mean, Mat
   
   Vector6f b;
   Matrix6f H;
-  
+  b.setZero();
+  H.setZero();
+
   translationalRatio = std::numeric_limits<float>::max();
   rotationalRatio = std::numeric_limits<float>::max();
 
   error = 0;
-  int inliers = _constructLinearSystemQT(H,b,error, onlyFlat);
+  int inliers = 0;
+#ifdef _PWN_USE_OPENMP_
+#pragma omp parallel num_threads(_numThreads) 
+#endif //_PWN_USE_OPENMP_
+  {
+    float tempError;
+    Vector6f tempb;
+    Matrix6f tempH;
+    
+#ifdef _PWN_USE_OPENMP_
+    int threadId = omp_get_thread_num();
+#else
+    int threadId = 0;
+#endif //_PWN_USE_OPENMP_
+
+    int tempInliers = _constructLinearSystemQT(tempH,tempb,tempError, onlyFlat, _numThreads, threadId);
+#ifdef _PWN_USE_OPENMP_
+#pragma omp critical 
+#endif //_PWN_USE_OPENMP_
+    {
+      inliers += tempInliers;
+      error += tempError;
+      b+= tempb;
+      H+= tempH;
+    }
+  }
+
   if(inliers < _minInliers){
     return inliers;
   }
@@ -444,10 +589,38 @@ int PointWithNormalAligner::_computeStatistics(float& error, Vector6f& mean, Mat
 
 int PointWithNormalAligner::_nonLinearUpdate(float& error){
   Vector6f b;
+  b.setZero();
   Matrix6f H;
-    
+  H.setZero();
+
   error = 0;
-  int inliers = _constructLinearSystemQT(H,b,error);
+  int inliers = 0;
+#ifdef _PWN_USE_OPENMP_
+#pragma omp parallel num_threads(_numThreads)
+#endif //_PWN_USE_OPENMP_
+  {
+    float tempError;
+    Vector6f tempb;
+    Matrix6f tempH;
+
+#ifdef _PWN_USE_OPENMP_
+    int threadId = omp_get_thread_num();
+#else
+    int threadId = 0;
+#endif //_PWN_USE_OPENMP_
+
+    int tempInliers = _constructLinearSystemQT(tempH,tempb,tempError, false, _numThreads, threadId);
+#ifdef _PWN_USE_OPENMP_
+#pragma omp critical 
+#endif //_PWN_USE_OPENMP_
+    {
+      inliers += tempInliers;
+      error += tempError;
+      b+= tempb;
+      H+= tempH;
+    }
+  }
+
   if(inliers < _minInliers){
     return inliers;
   }
@@ -464,8 +637,35 @@ int PointWithNormalAligner::_linearUpdate(float& error){
   Vector12f bRt;
   Matrix12f HRt;
     
+  bRt.setZero();
+  HRt.setZero();
   error = 0;
-  int inliers = _constructLinearSystemRT(HRt,bRt,error);
+  int inliers = 0;
+#ifdef _PWN_USE_OPENMP_
+#pragma omp parallel num_threads(_numThreads) 
+#endif //_PWN_USE_OPENMP_
+  {
+    float tempError;
+    Vector12f tempB;
+    Matrix12f tempH;
+#ifdef _PWN_USE_OPENMP_
+    int threadId = omp_get_thread_num();
+#else
+    int threadId = 0;
+#endif //_PWN_USE_OPENMP_
+
+    int tempInliers = _constructLinearSystemRT(tempH, tempB,tempError, false, _numThreads, threadId);
+#ifdef _PWN_USE_OPENMP_
+#pragma omp critical 
+#endif //_PWN_USE_OPENMP_
+    {
+      inliers += tempInliers;
+      error += tempError;
+      bRt+= tempB;
+      HRt+= tempH;
+    }
+  }
+
   if (_debug){
     cerr << "Linear! initial error: " << error << " initial inliers:" << inliers << endl;
   }
@@ -495,9 +695,36 @@ int PointWithNormalAligner::_linearUpdate(float& error){
 
   // recompute the translation
   Matrix3f Ht;
+  Ht.setZero();
   Vector3f bt;
-  
-  inliers = _constructLinearSystemT(Ht, bt, error);
+  bt.setZero();
+  error = 0;
+  inliers = 0;
+#ifdef _PWN_USE_OPENMP_
+#pragma omp parallel num_threads(_numThreads) 
+#endif //_PWN_USE_OPENMP_
+  {
+    float tempError;
+    Vector3f tempB;
+    Matrix3f tempH;
+#ifdef _PWN_USE_OPENMP_
+    int threadId = omp_get_thread_num();
+#else
+    int threadId = 0;
+#endif //_PWN_USE_OPENMP_
+
+    int tempInliers =  _constructLinearSystemT(tempH, tempB,tempError, false, _numThreads, threadId);
+#ifdef _PWN_USE_OPENMP_
+#pragma omp critical 
+#endif //_PWN_USE_OPENMP_
+    {
+      inliers += tempInliers;
+      error += tempError;
+      bt+= tempB;
+      Ht+= tempH;
+    }
+  }
+
   if (_debug) {
     cerr << "Linear! errorAfterRot: " << error << " inliersAfterRot:" << inliers << endl;
   }

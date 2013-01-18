@@ -7,10 +7,8 @@
 #include <vector>
 #include <map>
 
-
 using namespace Eigen;
 
-//typedef Eigen::Matrix<double, 4, 1> Vector4f;
 
 struct Line2D: public Vector4f{
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -43,7 +41,6 @@ struct Line2D: public Vector4f{
 
 typedef std::vector<Line2D, Eigen::aligned_allocator<Line2D> > Line2DVector; //Vector of line
 typedef std::vector<Vector2f, Eigen::aligned_allocator<Vector2f> > Vector2fVector; //vector of original points
-// typedef std::vector<Vector2fVector, Eigen::aligned_allocator<Vector2f> > VectorOfSubsetsPoints; // vector of substets of points
 	
 
 class Point2DClusterer {
@@ -56,7 +53,7 @@ public:
   inline const Cluster& cluster(int i) const {return _clusters[i];}
   inline int numClusters() const {return _clusters.size();};
   inline const Vector2fVector& points() const {return _points;}
-  inline void setPoints(Vector2fVector& points_) {_points=points_;}
+  inline void setPoints(const Vector2fVector& points_) {_points=points_;}
   void compute();
   
   Vector2fVector _points;
@@ -72,7 +69,7 @@ public:
   virtual ~Line2DExtractor();
 
   inline const Vector2fVector& points() const {return _points;}
-  inline void setPoints(Vector2fVector& points_) {_points=points_;}
+  inline void setPoints(const Vector2fVector& points_) {_points=points_;}
   inline const IntLineMap& lines() const { return _lines;}
   
   void compute();
@@ -87,12 +84,9 @@ public:
 	
 protected:
   void initializeFromIndices(Line2D& l, int i0, int i1);
-	int maxDistanceIndex(const Line2D& l);  
+  int maxDistanceIndex(const Line2D& l);  
   bool split(int i);
   bool merge(int i);
-//   bool step(Vector2fVector& /*points*/ ,
-// 	    VectorOfSubsetsPoints& /*subset*/, 
-// 	    Line2DVector& /*lines*/);
   Vector2fVector _points;
   IntLineMap _lines;
 };

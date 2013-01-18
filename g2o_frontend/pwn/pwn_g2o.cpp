@@ -63,7 +63,10 @@ struct Frame{
     points.toIndexImage(indexImage, zBuffer, cameraMatrix, Eigen::Isometry3f::Identity(), 10);
     cerr << "points: " << points.size() << endl; 
     svds.resize(points.size());
+    double tNormalStart = get_time();
     generator.computeNormalsAndSVD(points, svds, indexImage, cameraMatrix);
+    double tNormalEnd = get_time();
+    cerr << "Normal Extraction took " << tNormalEnd - tNormalStart << " sec." << endl;
   }
   void setAligner(PointWithNormalAligner& aligner, bool isRef){
     if (isRef) {
@@ -78,12 +81,14 @@ int
  main(int argc, char** argv){
   string dirname;
   string graphFilename;
+  float numThreads;
+
   int ng_step;
   int ng_minPoints;
   int ng_imageRadius;
   float ng_worldRadius;
   float ng_maxCurvature;
-
+  
   float al_inlierDistance;
   float al_inlierCurvatureRatio;
   float al_inlierNormalAngle;
@@ -119,8 +124,11 @@ int
   arg.param("al_nonLinearIterations", al_nonLinearIterations, aligner.nonLinearIterations(), "nonlinear iterations for each outer one (uses q,t)");
   arg.param("al_lambda", al_lambda, aligner.lambda(), "damping factor for the transformation update, the higher the smaller the step");
   arg.param("al_debug", al_debug, aligner.debug(), "prints lots of stuff");
+  arg.param("numThreads", numThreads, 1, "numver of threads for openmp");
   
 
+  if (numThreads<1)
+    numThreads = 1;
   
   std::vector<string> fileNames;
 
@@ -140,7 +148,8 @@ int
   normalGenerator.setImageRadius(ng_imageRadius);
   normalGenerator.setWorldRadius(ng_worldRadius);
   normalGenerator.setMaxCurvature(ng_maxCurvature);
-  
+  normalGenerator.setNumThreads(numThreads);
+
   aligner.setInlierDistanceThreshold(al_inlierDistance);
   aligner.setInlierCurvatureRatioThreshold(al_inlierCurvatureRatio);
   aligner.setInlierNormalAngularThreshold(al_inlierNormalAngle);
@@ -153,6 +162,7 @@ int
   aligner.setNonLinearIterations(al_nonLinearIterations);
   aligner.setLambda(al_lambda);
   aligner.setDebug(al_debug);
+  aligner.setNumThreads(numThreads);
 
 
   Frame* referenceFrame= 0;
@@ -179,6 +189,7 @@ int
     Frame* currentFrame= new Frame();
     if(!currentFrame->load(filenames[i])) {
       cerr << "failure in loading image: " << filenames[i] << ", skipping" << endl;
+      delete currentFrame;
       continue;
     }
     nFrames ++;
@@ -275,10 +286,11 @@ int
 
   char buf[1024];
   sprintf(buf, "%s-%03d.g2o", baseFilename.c_str(), graphNum);	
+  cerr << "saving final frames, n: " << nFrames << " in file [" << buf << "]" << endl;
+  cerr << "filesize:" << os.str().length() << endl; 
   ofstream gs(buf);
   gs << os.str();
-  os.str("");
-  os.clear();
+  cout << os.str();
   gs.close();
   
 }

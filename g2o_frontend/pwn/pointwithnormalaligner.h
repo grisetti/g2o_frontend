@@ -95,7 +95,13 @@ public:
 
   inline DepthImage refZBuffer() const {return _refZbuffer;}
   inline DepthImage currZBuffer() const {return _currZbuffer;}
-	
+
+#ifdef _PWN_USE_OPENMP_
+  inline int numThreads() const { return _numThreads; }
+  inline void setNumThreads(int numThreads_)  { _numThreads = numThreads_; }
+#endif //_PWN_USE_OPENMP_
+
+
 protected:
   // size of the original image
   int _rows,  _cols;
@@ -103,14 +109,15 @@ protected:
   void _updateCamera();
   void _updateOmegas();
 
-  int _computeStatistics(float& error, Vector6f& mean, Matrix6f& Omega, 
-			 float& translationalRatio, float& rotationalRatio, bool onlyFlat = 0) const;
   int _nonLinearUpdate(float& error);
   int _linearUpdate(float& error);
 
-  int _constructLinearSystemQT(Matrix6f& H, Vector6f&b, float& error, bool onlyFlat=false) const;
-  int _constructLinearSystemRT(Matrix12f& H, Vector12f&b, float& error, bool onlyFlat=0) const;
-  int _constructLinearSystemT(Eigen::Matrix3f& H, Eigen::Vector3f&b, float& error, bool onlyFlat=0) const;
+  int _computeStatistics(float& error, Vector6f& mean, Matrix6f& Omega, 
+			 float& translationalRatio, float& rotationalRatio, bool onlyFlat = 0) const;
+
+  int _constructLinearSystemQT(Matrix6f& H, Vector6f&b, float& error, bool onlyFlat=false, int numThreads=1, int threadNum = 0 ) const;
+  int _constructLinearSystemRT(Matrix12f& H, Vector12f&b, float& error, bool onlyFlat=false, int numThreads=1, int threadNum = 0) const;
+  int _constructLinearSystemT(Eigen::Matrix3f& H, Eigen::Vector3f&b, float& error, bool onlyFlat=false, int numThreads=1, int threadNum = 0) const;
   // parameters for data association
   float _scale;
   float _inlierNormalAngularThreshold;
@@ -150,6 +157,10 @@ protected:
 
   Eigen::Isometry3f _T;
   bool _debug;
+
+  // parallelization
+  int _numThreads;
+
 };
 
 #endif

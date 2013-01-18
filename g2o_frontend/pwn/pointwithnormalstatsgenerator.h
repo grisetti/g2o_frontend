@@ -63,6 +63,11 @@ public:
   inline const Eigen::Matrix3f& cameraMatrix() const {return _cameraMatrix;}
   inline void setCameraMatrix(Eigen::Matrix3f cameraMatrix_)  {_cameraMatrix=cameraMatrix_;}
 
+#ifdef _PWN_USE_OPENMP_
+  inline int numThreads() const { return _numThreads; }
+  inline void setNumThreads(int numThreads_)  { _numThreads = numThreads_; }
+#endif //_PWN_USE_OPENMP_
+
 protected:
   Eigen::Vector2i _range(int r, int c) const;
 
@@ -73,6 +78,7 @@ protected:
   float _maxCurvature;
   Eigen::Matrix3f _cameraMatrix;
   IntegralPointImage _integralImage;
+  int _numThreads;
 };
 
 #endif

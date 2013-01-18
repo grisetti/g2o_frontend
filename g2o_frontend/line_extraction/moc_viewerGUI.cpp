@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'viewerGUI.h'
 **
-** Created: Tue Jan 15 01:06:39 2013
+** Created: Thu Jan 17 11:16:37 2013
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -23,7 +23,7 @@ static const uint qt_meta_data_ViewerGUI[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-       6,   14, // methods
+       7,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -33,19 +33,20 @@ static const uint qt_meta_data_ViewerGUI[] = {
  // slots: signature, parameters, type, tag, flags
       15,   11,   10,   10, 0x0a,
       31,   11,   10,   10, 0x0a,
-      49,   11,   10,   10, 0x0a,
-      67,   10,   10,   10, 0x0a,
-      82,   10,   10,   10, 0x0a,
-      99,   10,   10,   10, 0x0a,
+      47,   11,   10,   10, 0x0a,
+      63,   10,   10,   10, 0x0a,
+      78,   10,   10,   10, 0x0a,
+      95,   10,   10,   10, 0x0a,
+     110,   10,   10,   10, 0x0a,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_ViewerGUI[] = {
     "ViewerGUI\0\0val\0updateVal1(int)\0"
-    "updateVal2(float)\0updateVal3(float)\0"
+    "updateVal2(int)\0updateVal3(int)\0"
     "showOriginal()\0lineExtraction()\0"
-    "setAlgorithm()\0"
+    "setAlgorithm()\0setIdIteration()\0"
 };
 
 void ViewerGUI::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -55,11 +56,12 @@ void ViewerGUI::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
         ViewerGUI *_t = static_cast<ViewerGUI *>(_o);
         switch (_id) {
         case 0: _t->updateVal1((*reinterpret_cast< int(*)>(_a[1]))); break;
-        case 1: _t->updateVal2((*reinterpret_cast< float(*)>(_a[1]))); break;
-        case 2: _t->updateVal3((*reinterpret_cast< float(*)>(_a[1]))); break;
+        case 1: _t->updateVal2((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 2: _t->updateVal3((*reinterpret_cast< int(*)>(_a[1]))); break;
         case 3: _t->showOriginal(); break;
         case 4: _t->lineExtraction(); break;
         case 5: _t->setAlgorithm(); break;
+        case 6: _t->setIdIteration(); break;
         default: ;
         }
     }
@@ -99,9 +101,9 @@ int ViewerGUI::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 6)
+        if (_id < 7)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 6;
+        _id -= 7;
     }
     return _id;
 }

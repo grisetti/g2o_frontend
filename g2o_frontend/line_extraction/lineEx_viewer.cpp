@@ -32,9 +32,7 @@ using namespace g2o;
 
 
 //for laser points data
-LaserRobotData::Vector2fVector pointsLine;
 LaserRobotData::Vector2fVector pointsOriginal;
-
 
 //to be deleted?
 volatile bool hasToStop;
@@ -134,42 +132,51 @@ int main(int argc, char**argv){
 
   std::sort(vertexIds.begin(), vertexIds.end());
 	
+	//int numVertex = 0;
 	LaserRobotData* ldata = 0;
-	for (size_t i=0; i<vertexIds.size() && ! hasToStop; i++){
+	LaserDataVector ldvector;
+	for (size_t i=0; i<vertexIds.size() && ! hasToStop /*&& numVertex < 1*/; i++){
+		
     OptimizableGraph::Vertex* _v=graph->vertex(vertexIds[i]);
     VertexSE3* v=dynamic_cast<VertexSE3*>(_v);
+		
     if (!v)
       continue;
     
 		//read laser data from the graph constructed given the graph.g2o as filename
-    OptimizableGraph::Data* d = v->userData();
-    k = 0;
-		
+    OptimizableGraph::Data* d = v->userData();	
     while(d){
-			
-			//TODO FOR THE ENTIRE FILE
 			ldata = dynamic_cast<LaserRobotData*>(d);
 			d=d->next();
 // 			const Parameter* p = graph->parameters().getParameter(ldata->paramIndex());
 // 			const ParameterSE3Offset* param = dynamic_cast<const ParameterSE3Offset*> (p);
 // 			const Eigen::Isometry3d& offset = param->offset();
 // 			glMultMatrixd(offset.data());
-      if (ldata && k==0) {
-				//cout <<" Laser data read: "<< ldata->ranges().front() << endl;
-				//cloudPopulation(ldata);
+      if (ldata) {
 				pointsOriginal = ldata->floatCartesian();
-				pointsLine = ldata->floatCartesian();
-				//cout <<" Cartesian Laser data read: "<< pointsOriginal[0].x() << ", " << pointsOriginal[0].y() << endl;
+				if (pointsOriginal.size()==0) 
+					return 0;
+				ldvector.push_back(make_pair(ldata,pointsOriginal));
+				cout << "LaserDataVector size is "<< ldvector.size() << "\tthe last reading has " << ldvector[i].second.size() << " points." << endl;
       }
-			k++; //cout << k << endl;
-			
 		}
+		//to read just the first laser data ranges. change the number inside the for conditions
+		//numVertex++;
 	}
 	cout << "File ended!" << endl;
 
+#if 0
+			ofstream osp("points.dat");
+			for (size_t i =0; i<pointsOriginal.size(); i++){
+					osp << pointsOriginal[i].transpose() << endl;
+			}
+			osp.flush();
+#endif
+	
+	
 	QApplication app(argc, argv);
-	ViewerGUI *dialog = new ViewerGUI(ldata,&pointsLine, &pointsOriginal);
-	dialog->viewer->setDataPointer(&pointsLine);
+	ViewerGUI *dialog = new ViewerGUI(&ldvector);
+	dialog->viewer->setDataPointer(&(ldvector[0].second));
 	dialog->show();
 	return app.exec();
 }

@@ -6,6 +6,7 @@
  */
 
 #include "leQGLViewer.h"
+#include <fstream>
 
 leQGLViewer::leQGLViewer(QWidget *parent): QGLViewer(parent), data(NULL), lineFound(false), lContainer(NULL)
 {
@@ -55,23 +56,30 @@ void leQGLViewer::init()
   cam->lookAt(qglviewer::Vec(0., 0., 0.));
   delete oldcam;
 }
+#if 1
+				ofstream osp2("points2.dat");
+				ofstream os2("lines2.dat");
+#endif
 
 void leQGLViewer::draw()
 {	
-	int beamsDownsampling = 1;
-
 	drawAxis();
-	glPointSize(4.f);
 	// draw all the points
 	if(!lineFound) 
 	{
-		for (int i=0;i<(int)data->size();i+=beamsDownsampling)
-		{
-			//for depth image points
-			//if((*dataptr)[i][2]!=0)
-				//glVertex3f((*dataptr)[i][0]/1000, (*dataptr)[i][1]/1000, (*dataptr)[i][2]/1000);
+		
+#if 0
+				for (size_t j =0; j<data->size(); j++){
+					osp2 << (*data)[j].transpose() << endl;
+				}
+				osp2.flush();
+#endif
+				
+		for (size_t i=0; i<data->size(); i++)
+		{				
+			glPointSize(3.f);
 			glBegin(GL_POINTS);
-			glColor4f(1.f,0.f,0.f,0.5f);
+			glColor4f(0.f,1.f,0.f,0.5f);
 			glVertex3f((*data)[i].x(), (*data)[i].y(), 0.f);
 			glEnd();
 		}
@@ -79,20 +87,28 @@ void leQGLViewer::draw()
 	//draw the point belonging to the lines found
 	else 
 	{
+#if 0
+		for(int i=0; i<lContainer->size(); i++)
+		{
+			Vector2fVector line = (*lContainer)[i];
+			os2 << line[0].x() << " " << line[0].y() << endl;
+			os2 << line[1].x() << " " << line[1].y() << endl;
+			os2 << endl;
+			os2 << endl;
+		}
+			os2.flush();
+#endif
+		
+		glLineWidth(3.f);
 		glBegin(GL_LINES);
 		
 		//cout << "line found!" << endl;
-		for(int i  = 0; i < lContainer->size(); ++i)
+		for(int i=0; i<lContainer->size(); i++)
 		{
-			glPointSize(4.f);
-			glColor3f(0.f, 1.f, 0.f);
-			//cout << "lineVertices size is: " << (*lineContainer)[i]->size() << endl;
-// 			for(int j = 0; j<(*lContainer)[i].size(); ++j)
-// 			{
-				Vector2fVector line = (*lContainer)[i];
-				glVertex3f(line[0].x(), line[0].y(), 0.f);
-				glVertex3f(line[1].x(), line[1].y(), 0.f);
-// 			}
+			glColor4f(1.f, 1.f, 0.f, 0.5f);
+			Vector2fVector line = (*lContainer)[i];
+			glVertex3f(line[0].x(), line[0].y(), 0.f);
+			glVertex3f(line[1].x(), line[1].y(), 0.f);
 		}
 		glEnd();
 	}
