@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'pwn_gui_base_main_window.ui'
 **
-** Created: Mon Jan 14 11:37:14 2013
+** Created: Fri Jan 18 14:30:16 2013
 **      by: Qt User Interface Compiler version 4.8.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -71,6 +71,8 @@ public:
     QPushButton *pushButton_optimize;
     QPushButton *pushButton_clear_last;
     QPushButton *pushButton_clear_all;
+    QPushButton *pushButton_unmerge;
+    QPushButton *pushButton_merge;
     QGraphicsView *graphicsView1_2d;
     QGraphicsView *graphicsView2_2d;
     QVBoxLayout *verticalLayout_2;
@@ -238,6 +240,16 @@ public:
 
         gridLayout_2->addWidget(pushButton_clear_all, 1, 1, 1, 1);
 
+        pushButton_unmerge = new QPushButton(centralwidget);
+        pushButton_unmerge->setObjectName(QString::fromUtf8("pushButton_unmerge"));
+
+        gridLayout_2->addWidget(pushButton_unmerge, 2, 1, 1, 1);
+
+        pushButton_merge = new QPushButton(centralwidget);
+        pushButton_merge->setObjectName(QString::fromUtf8("pushButton_merge"));
+
+        gridLayout_2->addWidget(pushButton_merge, 2, 0, 1, 1);
+
 
         verticalLayout->addLayout(gridLayout_2);
 
@@ -338,6 +350,8 @@ public:
         pushButton_optimize->setText(QApplication::translate("PWNGuiBaseMainWindow", "Optimize", 0, QApplication::UnicodeUTF8));
         pushButton_clear_last->setText(QApplication::translate("PWNGuiBaseMainWindow", "Clear Last", 0, QApplication::UnicodeUTF8));
         pushButton_clear_all->setText(QApplication::translate("PWNGuiBaseMainWindow", "Clear All", 0, QApplication::UnicodeUTF8));
+        pushButton_unmerge->setText(QApplication::translate("PWNGuiBaseMainWindow", "Unmerge", 0, QApplication::UnicodeUTF8));
+        pushButton_merge->setText(QApplication::translate("PWNGuiBaseMainWindow", "Merge", 0, QApplication::UnicodeUTF8));
         menuFile->setTitle(QApplication::translate("PWNGuiBaseMainWindow", "File", 0, QApplication::UnicodeUTF8));
         menuView->setTitle(QApplication::translate("PWNGuiBaseMainWindow", "View", 0, QApplication::UnicodeUTF8));
         menuHelp->setTitle(QApplication::translate("PWNGuiBaseMainWindow", "Help", 0, QApplication::UnicodeUTF8));

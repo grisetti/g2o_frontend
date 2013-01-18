@@ -148,7 +148,9 @@ int
   normalGenerator.setImageRadius(ng_imageRadius);
   normalGenerator.setWorldRadius(ng_worldRadius);
   normalGenerator.setMaxCurvature(ng_maxCurvature);
+#ifdef _PWN_USE_OPENMP_
   normalGenerator.setNumThreads(numThreads);
+#endif //_PWN_USE_OPENMP_
 
   aligner.setInlierDistanceThreshold(al_inlierDistance);
   aligner.setInlierCurvatureRatioThreshold(al_inlierCurvatureRatio);
@@ -162,7 +164,9 @@ int
   aligner.setNonLinearIterations(al_nonLinearIterations);
   aligner.setLambda(al_lambda);
   aligner.setDebug(al_debug);
+#ifdef _PWN_USE_OPENMP_
   aligner.setNumThreads(numThreads);
+#endif //_PWN_USE_OPENMP_
 
 
   Frame* referenceFrame= 0;

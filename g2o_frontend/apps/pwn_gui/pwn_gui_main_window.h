@@ -14,6 +14,8 @@ class PWNGuiMainWindow : public QMainWindow, public Ui::PWNGuiBaseMainWindow {
   bool* clearLast() { return &_clearLast; }
   bool* clearAll() { return &_clearAll; }
   bool* addCloud() { return &_addCloud; }
+  bool* merge() { return &_merge; }
+  bool* unmerge() { return &_unmerge; }
   int* stepByStep() { return &_stepByStep; }
   int* step() { return &_step[0]; }
   float* points() { return &_points[0]; }
@@ -45,6 +47,8 @@ class PWNGuiMainWindow : public QMainWindow, public Ui::PWNGuiBaseMainWindow {
   void slotAddCloudClicked() { _addCloud = 1; }
   void slotClearLastClicked() { _clearLast = 1; }
   void slotClearAllClicked() { _clearAll = 1; }
+  void slotMergeClicked() { _merge = 1; }
+  void slotUnmergeClicked() { _unmerge = 1; }
   // List widget slot.
   void slotCloudSelected(QListWidgetItem *itemList_) { _itemList = itemList_; };
 
@@ -58,6 +62,8 @@ class PWNGuiMainWindow : public QMainWindow, public Ui::PWNGuiBaseMainWindow {
   bool _clearLast;
   bool _clearAll;
   bool _addCloud;
+  bool _merge;
+  bool _unmerge;
   int _stepByStep;
   int _step[2];
   float _points[2];

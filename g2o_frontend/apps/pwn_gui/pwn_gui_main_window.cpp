@@ -17,6 +17,8 @@ PWNGuiMainWindow::PWNGuiMainWindow(QWidget *parent, Qt::WindowFlags flags) : QMa
   _clearAll = 0;
   _addCloud = 0;
   _stepByStep = 0;
+  _merge = 0;
+  _unmerge = 0;
   _step[0] = 1; _step[1] = 1;
   _points[0] = 1.0f; _points[1] = 1.0f;
   _normals[0] = 0.0f; _normals[1] = 0.0f;
@@ -60,6 +62,10 @@ PWNGuiMainWindow::PWNGuiMainWindow(QWidget *parent, Qt::WindowFlags flags) : QMa
 		   this, SLOT(slotClearLastClicked()));
   QObject::connect(pushButton_clear_all, SIGNAL(clicked()),
 		   this, SLOT(slotClearAllClicked()));
+  QObject::connect(pushButton_merge, SIGNAL(clicked()),
+		   this, SLOT(slotMergeClicked()));
+  QObject::connect(pushButton_unmerge, SIGNAL(clicked()),
+		   this, SLOT(slotUnmergeClicked()));
 
   // Signals/Slots list widget connections.
   QObject::connect(listWidget, SIGNAL(itemClicked(QListWidgetItem*)),
