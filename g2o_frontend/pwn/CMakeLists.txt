@@ -7,6 +7,7 @@ ADD_LIBRARY(pwn_library
   integralpointimage.cpp integralpointimage.h
   pointwithnormalstatsgenerator.cpp pointwithnormalstatsgenerator.h
   pointwithnormalaligner.cpp pointwithnormalaligner.h
+  pointwithnormalmerger.cpp pointwithnormalmerger.h
 )
 
 

@@ -6,6 +6,7 @@
 struct PointWithNormalSVD{
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   friend class PointWithNormalStatistcsGenerator;
+  friend class PointWithNormalMerger;
   PointWithNormalSVD(): 
     _mean(Eigen::Vector3f::Zero()),
     _singularValues(Eigen::Vector3f::Zero()),
@@ -14,14 +15,22 @@ struct PointWithNormalSVD{
     _z(0),
     _n(0)
   {}
+	
   inline const Eigen::Vector3f& singularValues() const {return _singularValues;}
   inline const Eigen::Matrix3f& U() const {return _U;}
   inline const Eigen::Vector3f& mean() const {return _mean;}
   inline int n() const {return _n;}
   inline float curvature() const {return _curvature;}
   inline float z() const {return _z;}
+
 protected:
-  inline void updateCurvature();
+  inline void updateCurvature() {
+    if (_singularValues.squaredNorm()==0) 
+      _curvature = -1; 
+    else
+      _curvature = _singularValues(0)/(_singularValues(0) + _singularValues(1) + _singularValues(2) );
+  }	
+
   Eigen::Vector3f _mean;
   Eigen::Vector3f _singularValues;
   Eigen::Matrix3f _U;

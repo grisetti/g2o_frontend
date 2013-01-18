@@ -26,6 +26,8 @@
 #include "g2o_frontend/pwn_viewer/gl_parameter_correspondences.h"
 #include "pwn_gui_main_window.h"
 
+#include "g2o_frontend/pwn/pointwithnormalmerger.h"
+
 using namespace Eigen;
 using namespace g2o;
 using namespace std;
@@ -63,8 +65,7 @@ struct Frame{
   DepthImage depthImage;
   MatrixXi indexImage;
   PointWithNormalVector points;
-  PointWithNormalSVDVector svds;
-  MatrixXf zBuffer;
+  PointWithNormalSVDVector svds;  MatrixXf zBuffer;
   Eigen::Isometry3f transform;
 
   bool load(std::string filename) {
@@ -166,7 +167,7 @@ int main(int argc, char** argv){
     for(set<string>::const_iterator it =filenamesset.begin(); it!=filenamesset.end(); it++) {
       filenames.push_back(*it);      
       QString listItem(&(*it)[0]);
-      if(listItem.endsWith("depth.pgm",Qt::CaseInsensitive))
+      if(listItem.endsWith(".pgm",Qt::CaseInsensitive))
 	pwnGMW.listWidget->addItem(listItem);
     }
   } else {
@@ -218,6 +219,8 @@ int main(int argc, char** argv){
   Isometry3f tmp = Isometry3f::Identity(), startingTraj = Isometry3f::Identity();
   Frame *referenceFrame = 0, *currentFrame = 0;
   bool firstCloudAdded = true, wasInitialGuess = true;
+
+  PointWithNormalMerger pwnm;
   while (!(*pwnGMW.closing())) {
     qApplication.processEvents();
 
@@ -251,10 +254,16 @@ int main(int argc, char** argv){
 	  continue;
 	}
 	currentFrame->computeStats(*normalGenerator, cameraMatrix);
+	pwnm.addCloud(Isometry3f::Identity(), currentFrame->points);
+	pwnm.computeAccumulator();
+	pwnm.extractMergedCloud();
+	//PointWithNormalSVDVector *svdsapp= pwnm.svds();
 	DrawablePoints* dp = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, 1, &(*currentFrame).points);
 	DrawableNormals *dn = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)nParam, 1, &(*currentFrame).points);
 	DrawableCovariances *dc = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)cParam, 1, &(*currentFrame).svds);
+	//DrawableCovariances *dc = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)cParam, 1, svdsapp);
   	DrawableCorrespondences* dcorr = new DrawableCorrespondences(Isometry3f::Identity(), (GLParameter*)corrParam, 1, 0, 0);
+	
 	if(drawableList.size() != 0) {
 	  DrawableCorrespondences* dcorr = (DrawableCorrespondences*)drawableList[drawableList.size()-1];
 	  dcorr->setPoints1(0);

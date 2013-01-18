@@ -99,7 +99,7 @@ void PointWithNormalAligner::_updateOmegas() {
   Diagonal3f nonFlatOmegaN(nonFlatKn, nonFlatKn, nonFlatKn);
   Diagonal3f errorFlatOmegaP(1.0, 0.0, 0.0);
   Eigen::Matrix3f inverseCameraMatrix(_cameraMatrix.inverse());
-  //float fB = (0.075*_cameraMatrix(0,0)); // kinect baseline * focal lenght;
+  //float fB = (0.075 * _cameraMatrix(0, 0)); // kinect baseline * focal lenght;
   Eigen::Matrix3f covarianceJacobian(Eigen::Matrix3f::Zero());
    
   for (size_t i=0; i<_currPoints->size(); i++){
@@ -110,17 +110,17 @@ void PointWithNormalAligner::_updateOmegas() {
       // the point has no normal;
       continue;
     }
-
-    // float z = svd.z();
-    // float zVariation = (fB+z)/(z*z);
-    // zVariation *= zVariation;
-    // Diagonal3f imageCovariance(1.0f, 1.0f, zVariation);
-    // covarianceJacobian <<
-    //   z, 0, (float)c,
-    //   0, z, (float)r,
-    //   0, 0, 1;
-    // covarianceJacobian = inverseCameraMatrix*covarianceJacobian;
-    // Eigen::Matrix3f worldCovariance = covarianceJacobian * imageCovariance * covarianceJacobian.transpose();
+    /*float alpha = 1.0f;	
+    float z = svd.z();
+    float zVariation = (alpha*z*z)/(fB+z*alpha);
+    zVariation *= zVariation;
+    Diagonal3f imageCovariance(1.0f, 1.0f, zVariation);
+    covarianceJacobian <<
+      z, 0, (float)c,
+      0, z, (float)r,
+      0, 0, 1;
+    covarianceJacobian = inverseCameraMatrix*covarianceJacobian;
+    Eigen::Matrix3f worldCovariance = covarianceJacobian * imageCovariance * covarianceJacobian.transpose();*/
     
     float curvature = svd.curvature();
     _currFlatOmegas[i].setZero();

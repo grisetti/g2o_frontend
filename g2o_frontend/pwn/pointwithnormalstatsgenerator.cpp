@@ -3,13 +3,6 @@
 #include "Eigen/SVD"
 using namespace std;
 
-void PointWithNormalSVD::updateCurvature() {
-  if (_singularValues.squaredNorm()==0) 
-    _curvature = -1; 
-  else
-    _curvature = _singularValues(0)/(_singularValues(0) + _singularValues(1) + _singularValues(2) );
-}
-
 PointWithNormalStatistcsGenerator::PointWithNormalStatistcsGenerator(){
   _step = 1;
   _worldRadius = 0.1;

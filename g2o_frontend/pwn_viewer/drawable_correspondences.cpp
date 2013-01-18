@@ -41,7 +41,7 @@ void DrawableCorrespondences::draw() {
        correspondencesParameter && 
        correspondencesParameter->lineWidth() > 0.0f) {
     
-     Eigen::Isometry3f p2transform = _transformation * _points2Transform;
+     //Eigen::Isometry3f p2transform = _transformation * _points2Transform;
     
     glPushMatrix();
     correspondencesParameter->applyGLParameter();

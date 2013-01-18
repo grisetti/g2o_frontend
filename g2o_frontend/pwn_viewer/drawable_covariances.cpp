@@ -48,6 +48,8 @@ void DrawableCovariances::draw() {
       float curvature = covSVD.curvature();
       glPushMatrix();
       glMultMatrixf(I.data());
+      
+      //glColor4f(0.0f, 1.0f, 0.0f, 0.5f);
       if (curvature > curvatureThreshold) {
 	glColor4f(colorHighCurvature[0] - curvature, colorHighCurvature[1], colorHighCurvature[2], colorHighCurvature[3]);	
       }
