@@ -111,6 +111,5 @@ void PointWithNormalMerger::extractMergedCloud() {
     pointMean = _covariancesAccumulator[i]._omegaAcc.inverse()*_covariancesAccumulator[i]._pointsAcc;
     _mergedPoints[i].setPoint(pointMean);
     _mergedPoints[i].setNormal(Vector3f::Zero());
-    std::cout << "New Point: " << _mergedPoints[i].transpose() << std::endl;
   }
 }

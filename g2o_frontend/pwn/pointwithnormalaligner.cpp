@@ -105,56 +105,45 @@ void PointWithNormalAligner::_updateOmegas() {
   Diagonal3f nonFlatOmegaN(nonFlatKn, nonFlatKn, nonFlatKn);
   Diagonal3f errorFlatOmegaP(1.0, 0.0, 0.0);
   Eigen::Matrix3f inverseCameraMatrix(_cameraMatrix.inverse());
-  //float fB = (0.075 * _cameraMatrix(0, 0)); // kinect baseline * focal lenght;
   Eigen::Matrix3f covarianceJacobian(Eigen::Matrix3f::Zero());
-   
-  for (size_t i=0; i<_currPoints->size(); i++){
-    const PointWithNormal& point = _currPoints->at(i);
-    const PointWithNormalSVD& svd = _currSVDs->at(i);
-    _currOmegas[i].setZero();
-    if (point.normal().squaredNorm()<1e-3) {
-      // the point has no normal;
-      continue;
-    }
     
 #ifdef _PWN_USE_OPENMP_
 #pragma omp parallel num_threads(_numThreads) 
 #endif// _PWN_USE_OPENMP_
-    {
+  {
       
 #ifdef _PWN_USE_OPENMP_
-      int threadId = omp_get_thread_num();
+    int threadId = omp_get_thread_num();
 #else // _PWN_USE_OPENMP_
-      int threadId = 0;
+    int threadId = 0;
 #endif// _PWN_USE_OPENMP_
       
-      for (size_t i=threadId; i<_currPoints->size(); i+=_numThreads){
-	const PointWithNormal& point = _currPoints->at(i);
-	const PointWithNormalSVD& svd = _currSVDs->at(i);
-	_currOmegas[i].setZero();
-	if (point.normal().squaredNorm()<1e-3) {
-	  // the point has no normal;
-	  continue;
-	}
+    for (size_t i=threadId; i<_currPoints->size(); i+=_numThreads){
+	    const PointWithNormal& point = _currPoints->at(i);
+			const PointWithNormalSVD& svd = _currSVDs->at(i);
+			_currOmegas[i].setZero();
+			if (point.normal().squaredNorm()<1e-3) {
+	  		// the point has no normal;
+	  		continue;
+			}
 	
-	float curvature = svd.curvature();
-	_currFlatOmegas[i].setZero();
-	if (curvature<_flatCurvatureThreshold){
-	  _currOmegas[i].block<3,3>(0,0) = svd.U() * flatOmegaP * svd.U().transpose();
-	  _currOmegas[i].block<3,3>(3,3) = flatOmegaN;
-	  _currFlatOmegas[i].block<3,3>(0,0) = svd.U() * errorFlatOmegaP * svd.U().transpose();
-	  _currFlatOmegas[i].block<3,3>(3,3).setIdentity();
-	} else {
-	  _currOmegas[i].block<3,3>(0,0) = svd.U() * 
-	    Diagonal3f(nonFlatKp/svd.singularValues()(0),
-		       nonFlatKp/svd.singularValues()(1), 
-		       nonFlatKp/svd.singularValues()(2)) * svd.U().transpose();
-	  _currOmegas[i].block<3,3>(3,3) = nonFlatOmegaN;
-	}
-      }
+			float curvature = svd.curvature();
+			_currFlatOmegas[i].setZero();
+			if (curvature<_flatCurvatureThreshold){
+	  		_currOmegas[i].block<3,3>(0,0) = svd.U() * flatOmegaP * svd.U().transpose();
+	  		_currOmegas[i].block<3,3>(3,3) = flatOmegaN;
+	  		_currFlatOmegas[i].block<3,3>(0,0) = svd.U() * errorFlatOmegaP * svd.U().transpose();
+	  		_currFlatOmegas[i].block<3,3>(3,3).setIdentity();
+			} else {
+	  		_currOmegas[i].block<3,3>(0,0) = svd.U() * 
+	    																	 Diagonal3f(nonFlatKp/svd.singularValues()(0),
+		   	    														 nonFlatKp/svd.singularValues()(1), 
+		   	    														 nonFlatKp/svd.singularValues()(2)) * svd.U().transpose();
+	  		_currOmegas[i].block<3,3>(3,3) = nonFlatOmegaN;
+			}
     }
-    _omegasSet=true;
   }
+  _omegasSet=true;
 }
 
 int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X){

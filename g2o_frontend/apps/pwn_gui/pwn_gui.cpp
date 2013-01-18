@@ -207,6 +207,7 @@ int main(int argc, char** argv){
   refScn = pwnGMW.scene0();
   currScn = pwnGMW.scene1();
   bool *addCloud = 0, *initialGuessViewer = 0, *optimizeViewer = 0, *clearLast = 0, *clearAll = 0;
+  bool *merge = 0;
   int *stepViewer = 0, *stepByStepViewer = 0;
   float *pointsViewer = 0, *normalsViewer = 0, *covariancesViewer = 0, *correspondencesViewer = 0;
   QListWidgetItem* itemList = 0;
@@ -229,6 +230,7 @@ int main(int argc, char** argv){
     optimizeViewer = pwnGMW.optimize();
     clearLast = pwnGMW.clearLast();    
     clearAll = pwnGMW.clearAll();
+    merge = pwnGMW.merge();
     stepByStepViewer = pwnGMW.stepByStep();
     stepViewer = pwnGMW.step();
     pointsViewer = pwnGMW.points();
@@ -254,9 +256,6 @@ int main(int argc, char** argv){
 	  continue;
 	}
 	currentFrame->computeStats(*normalGenerator, cameraMatrix);
-	pwnm.addCloud(Isometry3f::Identity(), currentFrame->points);
-	pwnm.computeAccumulator();
-	pwnm.extractMergedCloud();
 	//PointWithNormalSVDVector *svdsapp= pwnm.svds();
 	DrawablePoints* dp = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, 1, &(*currentFrame).points);
 	DrawableNormals *dn = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)nParam, 1, &(*currentFrame).points);
@@ -280,7 +279,18 @@ int main(int argc, char** argv){
       *addCloud = 0;
     }
 
-    // Check feature visualization options.
+    if(*merge) {
+      *merge = 0;
+      pwnm.computeAccumulator();
+      pwnm.extractMergedCloud();
+      pwnGMW.viewer_3d->clearDrawableList();
+      trajectory = Isometry3f::Identity();
+      startingTraj = trajectory;
+      DrawablePoints* dp = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, 1, pwnm.mergedPoints());
+      pwnGMW.viewer_3d->addDrawable((Drawable*)dp);
+    }
+
+     // Check feature visualization options.
     for(size_t i = 0; i < drawableList.size(); i++) {
       if(stepViewer[0])
 	drawableList[i]->setStep(stepViewer[1]);
@@ -328,6 +338,8 @@ int main(int argc, char** argv){
 	float error;
 	int result = aligner->align(error, X);
 	
+	pwnm.addCloud(X, currentFrame->points);
+
 	cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
 	cerr << "localTransform : " << endl;
 	cerr << X.inverse().matrix() << endl;

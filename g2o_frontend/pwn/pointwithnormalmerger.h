@@ -29,13 +29,13 @@ class PointWithNormalMerger {
   inline void setCameraMatrix(Eigen::Matrix3f cameraMatrix_) { _cameraMatrix = cameraMatrix_; }
   inline float alpha() const { return _alpha; }
   inline float baseLine() const { return _baseLine; }
-  inline Eigen::Matrix3f cameraMatrix() const { return _cameraMatrix; }
-  inline const Eigen::MatrixXi* indexImage() const { return &_indexImage; }
-  inline const Eigen::MatrixXf* depthImage() const { return &_depthImage; }
-  inline const PointWithNormalVector* points() const { return &_points; }
-  inline const PointWithNormalVector* mergedPoints() const { return &_mergedPoints; }
+  inline Eigen::Matrix3f cameraMatrix() { return _cameraMatrix; }
+  inline Eigen::MatrixXi* indexImage() { return &_indexImage; }
+  inline Eigen::MatrixXf* depthImage() { return &_depthImage; }
+  inline PointWithNormalVector* points() { return &_points; }
+  inline PointWithNormalVector* mergedPoints() { return &_mergedPoints; }
   //inline PointWithNormalSVDVector* svds() { return &_covariancesSVDsVector; }
-  inline int size() const { return _points.size(); }
+  inline int size() { return _points.size(); }
   void addCloud(Eigen::Isometry3f t, const PointWithNormalVector points_);
   void computeAccumulator();
   void extractMergedCloud();
