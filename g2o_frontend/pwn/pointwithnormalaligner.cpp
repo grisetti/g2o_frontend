@@ -184,6 +184,20 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
     double _tCorr = get_time();
     int threadCorrStartIndex[_numThreads];
     int threadCorrEndIndex[_numThreads];
+    int threadNGoodPoints[_numThreads];
+    int threadNNoPoint[_numThreads];
+    int threadNNoNormal[_numThreads];
+    int threadNTooDistant[_numThreads];
+    int threadNNormalAngleFail[_numThreads];
+    int threadNCurvatureBad[_numThreads];
+    for (int t=0; t<_numThreads; t++){
+      threadNGoodPoints[t] = 0;
+      threadNNoPoint[t] = 0;
+      threadNNoNormal[t] = 0;
+      threadNTooDistant[t] = 0;
+      threadNNormalAngleFail[t] = 0;
+      threadNCurvatureBad[t] = 0;
+    }
 
 #ifdef _PWN_USE_OPENMP_
 #pragma omp parallel num_threads(_numThreads) 
@@ -199,12 +213,6 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
       int cMin = threadCols * threadId;
       int cMax = (threadId == _numThreads-1) ? _refIndexImage.cols() : threadCols * (threadId+1);
       int corrBlockSize = threadCols * _refIndexImage.rows();
-      int _localNGoodPoints = 0;
-      int _localNNoPoint = 0;
-      int _localNNoNormal = 0;
-      int _localNTooDistant = 0;
-      int _localNNormalAngleFail = 0;
-      int _localNCurvatureBad = 0;
 
       threadCorrStartIndex[threadId] = threadId*corrBlockSize;
       threadCorrEndIndex[threadId] = threadCorrStartIndex[threadId];
@@ -214,7 +222,7 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
 	  int& refIndex = _refIndexImage(r,c);
 	  int currIndex = _currIndexImage(r,c);
 	  if (refIndex<0 || currIndex<0) {
-	    _localNNoPoint++;
+	    threadNNoPoint[threadId]++;
 	    continue;
 	  }
 	  // compare euclidean distance and angle for the normals in the remapped frame
@@ -222,20 +230,20 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
 	  const PointWithNormal& pCurr =_currPoints->at(currIndex);
 	  if (pRef.normal().squaredNorm()==0 || pCurr.normal().squaredNorm()==0){
 	    refIndex = -refIndex;
-	    _localNNoNormal++;
+	    threadNNoNormal[threadId]++;
 	    continue;
 	  }
 	
 	  Vector3f dp =pCurr.point()-pRef.point();
 	  if (dp.squaredNorm()>squaredThreshold){
 	    refIndex = -refIndex;
-	    _localNTooDistant ++;
+	    threadNTooDistant[threadId]++;
 	    continue;
 	  }
 
 	  if (pCurr.normal().dot(pRef.normal()) < _inlierNormalAngularThreshold) {
 	    refIndex = -refIndex;
-	    _localNNormalAngleFail++;
+	    threadNNormalAngleFail[threadId]++;
 	    continue;
 	  }
 
@@ -251,25 +259,25 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
 	  float logRatio = log(refCurvature +1e-5) - log(currCurvature + 1e-5);
 	  if (fabs(logRatio)>_inlierCurvatureRatioThreshold){
 	    refIndex = -refIndex;
-	    _localNCurvatureBad++;
+	    threadNCurvatureBad[threadId]++;
 	    continue;
 	  }
-	  _localNGoodPoints++;
+	  threadNGoodPoints[threadId]++;
 	  int& corrIndex=threadCorrEndIndex[threadId];
 	  _correspondences[corrIndex].i1=refIndex;
 	  _correspondences[corrIndex].i2=currIndex;
 	  corrIndex ++;
 	}
       }
-      nGoodPoints += _localNGoodPoints;
-      nNoPoint += _localNNoPoint;
-      nNoNormal += _localNNoNormal;
-      nTooDistant += _localNTooDistant;
-      nNormalAngleFail += _localNNormalAngleFail;
-      nCurvatureBad += _localNCurvatureBad;
     }
     // now pack the resulting correspondences
     for(int t=0; t<_numThreads; t++){
+      nGoodPoints += threadNGoodPoints[t];
+      nNoPoint += threadNNoPoint[t];
+      nNoNormal += threadNNoNormal[t];
+      nTooDistant += threadNTooDistant[t];
+      nNormalAngleFail += threadNNormalAngleFail[t];
+      nCurvatureBad += threadNCurvatureBad[t];
       int cstart = threadCorrStartIndex[t];
       int cend = threadCorrEndIndex[t];
       for (int k = cstart; k<cend; k++, _numCorrespondences++){
@@ -524,9 +532,9 @@ int PointWithNormalAligner::_computeStatistics(float& error, Vector6f& mean, Mat
   // remap each of the sigma points to their original position
   for(size_t i=0; i<sigmaPoints.size(); i++){
     MySigmaPoint& p = sigmaPoints[i];
-    p._sample = t2v(_T*v2t(p._sample));
+    p._sample = t2v((_T*v2t(p._sample)).inverse());
   }
-  
+  mean = t2v(v2t(mean).inverse());
   // reconstruct the gaussian 
   g2o::reconstructGaussian(mean,localSigma, sigmaPoints);
 

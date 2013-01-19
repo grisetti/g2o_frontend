@@ -256,7 +256,7 @@ int
 	  w = sqrt(1-w);
 	}
 	
-	os << "EDGE_SE3:QUAT " << i << " " << previousIndex << " ";
+	os << "EDGE_SE3:QUAT " << previousIndex << " " << i << " ";
 	os << t.transpose() << " " << mq.transpose() << " " << w <<  " ";
 	for (int r=0; r<6; r++){
 	  for (int c=r; c<6; c++){
