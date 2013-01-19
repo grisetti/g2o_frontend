@@ -7,6 +7,7 @@
 
 using namespace std;
 
+
 PointWithNormalStatistcsGenerator::PointWithNormalStatistcsGenerator(){
   _step = 1;
   _worldRadius = 0.1;
@@ -19,7 +20,6 @@ PointWithNormalStatistcsGenerator::PointWithNormalStatistcsGenerator(){
     0.0f, 0.0f, 1.0f;
   _numThreads = 1;
 }
-
 
   // void PointWithNormalStatistcsGenerator::computeNormals(PointWithNormalVector& points, const Eigen::MatrixXi indices, const Eigen::Matrix3f& cameraMatrix);
 

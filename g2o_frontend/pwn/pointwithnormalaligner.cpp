@@ -49,6 +49,7 @@ PointWithNormalAligner::PointWithNormalAligner() {
   _numCorrespondences = 0;
   _inlierCurvatureRatioThreshold = 0.2;
   _T = Eigen::Isometry3f::Identity();
+  _initialT = Eigen::Isometry3f::Identity();
   _rotationalMinEigenRatio = 50;
   _translationalMinEigenRatio = 50;
   _debug = false;
@@ -159,9 +160,9 @@ int PointWithNormalAligner::align(float& error, Eigen::Isometry3f& X,
 				  Vector6f& mean, Matrix6f& omega, float& translationalEigenRatio, float& rotationalEigenRatio){
   _updateOmegas();
   _updateCamera();
-  
   // compute the current image and the current imeg
   _T=X.inverse();
+  _initialT = _T;
   _currPoints->toIndexImage(_currIndexImage, (MatrixXf&)_currZbuffer, _scaledCameraMatrix, Isometry3f::Identity(), 15.0f);
   float squaredThreshold = _inlierDistanceThreshold*_inlierDistanceThreshold;
   int inliers=0;
@@ -387,7 +388,7 @@ int PointWithNormalAligner::_constructLinearSystemQT(Matrix6f& H, Vector6f&b, fl
       continue;
     numInliers++;
     error += localError;
-    Matrix6f J = jacobian(_T, pcurr);
+    Matrix6f J = jacobian(_T, pref);
     b += J.transpose() * omega * e;
     H += J.transpose() * omega * J;
   }
@@ -426,11 +427,12 @@ int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, 
     J.block<1,3>(0,0)=t.transpose();
     J.block<1,3>(1,3)=J.block<1,3>(0,0);
     J.block<1,3>(2,6)=J.block<1,3>(0,0);
-    J.block<3,3>(0,9)=Matrix3f::Identity();
+    J.block<3,3>(0,9)=Eigen::Matrix3f::Identity();
     J.block<1,3>(3,0)=n.transpose();
     J.block<1,3>(4,3)=J.block<1,3>(3,0);
     J.block<1,3>(5,6)=J.block<1,3>(3,0);
-    
+    J.block<3,12>(0,0)=_T.linear() * J.block<3,12>(0,0);
+    J.block<3,12>(3,0)=_T.linear() * J.block<3,12>(3,0);
     b += -J.transpose() * omega * e;
     H += J.transpose() * omega * J;
   }
@@ -529,12 +531,20 @@ int PointWithNormalAligner::_computeStatistics(float& error, Vector6f& mean, Mat
   Vector6f localMean = Vector6f::Zero();
   g2o::sampleUnscented(sigmaPoints, localMean, localSigma);
   
+  Eigen::Isometry3f dT = _initialT*_T.inverse();  // transform from current to reference
+  if (_debug) {
+    cerr << "computed offset: " << t2v(dT).transpose() << endl;
+    cerr << "hDet(): " << H.determinant() << endl;
+    cerr << "localH: " <<endl << H << endl;
+    cerr << "localSigma: " <<endl << localSigma << endl;
+    cerr << "localSigma * localH" << endl << localSigma * H << endl;
+  }
   // remap each of the sigma points to their original position
   for(size_t i=0; i<sigmaPoints.size(); i++){
     MySigmaPoint& p = sigmaPoints[i];
-    p._sample = t2v((_T*v2t(p._sample)).inverse());
+    p._sample = t2v(v2t(p._sample).inverse()*dT);
   }
-  mean = t2v(v2t(mean).inverse());
+  //mean = t2v(v2t(mean).inverse());
   // reconstruct the gaussian 
   g2o::reconstructGaussian(mean,localSigma, sigmaPoints);
 
@@ -644,14 +654,14 @@ int PointWithNormalAligner::_linearUpdate(float& error){
     return inliers;
   }
 
-  Vector12f x=homogeneous2vector(_T.matrix());
+  Matrix4f _X = Matrix4f::Identity();
+  Vector12f x=homogeneous2vector(_X);
   HRt+=Matrix12f::Identity()*_lambda;
   LDLT<Matrix12f> ldlt(HRt);
   if (ldlt.isNegative())
     return 0;
   x=ldlt.solve(bRt); // using a LDLT factorizationldlt;
-  Matrix4f _X = _T.matrix()+vector2homogeneous(x);
-    
+  _X += vector2homogeneous(x);
   // recondition the rotation 
   JacobiSVD<Matrix3f> svd(_X.block<3,3>(0,0), Eigen::ComputeThinU | Eigen::ComputeThinV);
   if (_debug) {
@@ -661,8 +671,12 @@ int PointWithNormalAligner::_linearUpdate(float& error){
     return false;
 
   Matrix3f R=svd.matrixU()*svd.matrixV().transpose();
-  _T.linear()=R;
-  _T.translation() = _X.block<3,1>(0,3);
+  Eigen::Isometry3f dX;
+  dX.setIdentity();
+  dX.linear()=R;
+  dX.translation()=_X.block<3,1>(0,3);
+  _T = _T*dX;
+
 
   // recompute the translation
   Matrix3f Ht;

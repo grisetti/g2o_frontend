@@ -1,3 +1,4 @@
+
 FIND_PACKAGE(OpenMP)
 
 if(OPENMP_FOUND)
@@ -32,6 +33,14 @@ TARGET_LINK_LIBRARIES( pwn_align pwn_library  ${G2O_STUFF_LIBRARY} )
 ADD_EXECUTABLE(pwn_g2o pwn_g2o.cpp)
 SET_TARGET_PROPERTIES(pwn_g2o PROPERTIES OUTPUT_NAME pwn_g2o)
 TARGET_LINK_LIBRARIES( pwn_g2o pwn_library  ${G2O_STUFF_LIBRARY} )
+
+ADD_EXECUTABLE(pwn_g2o_localmap pwn_g2o_localmap.cpp)
+SET_TARGET_PROPERTIES(pwn_g2o_localmap PROPERTIES OUTPUT_NAME pwn_g2o_localmap)
+TARGET_LINK_LIBRARIES( pwn_g2o_localmap pwn_library  ${G2O_STUFF_LIBRARY} )
+
+ADD_EXECUTABLE(pwn_g2o_movingRef pwn_g2o_movingRef.cpp)
+SET_TARGET_PROPERTIES(pwn_g2o_movingRef PROPERTIES OUTPUT_NAME pwn_g2o_movingRef)
+TARGET_LINK_LIBRARIES( pwn_g2o_movingRef pwn_library  ${G2O_STUFF_LIBRARY} )
 
 
 
