@@ -197,10 +197,7 @@ int
     }
     nFrames ++;
     if (! referenceFrame ){
-      os << "PARAMS_CAMERACALIB 0 0 0 0 0 0 0 1 525 525 319.5 239.5"<< endl;
-      Vector6f t0;
-      t0 << 0,0,0,0.5, 0.5, 0.5;
-      trajectory= v2t(t0);
+      trajectory.setIdentity();
     }
     {
       // write the vertex frame

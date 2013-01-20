@@ -367,28 +367,28 @@ int PointWithNormalAligner::_constructLinearSystemQT(Matrix6f& H, Vector6f&b, fl
   // cerr << "currPoints.size(): " << _currPoints->size() << endl;
   // cerr << "omegas.size(): " << _currOmegas.size() << endl;
   const Matrix6fVector& omegas = (onlyFlat)? _currFlatOmegas : _currOmegas;
-    
+  
   int n = _numCorrespondences/numThreads;
   int imin = threadNum *n;
   int imax = (threadNum == numThreads -1) ? _numCorrespondences : (threadNum+1) *n;
   for(int i = imin; i < imax; i++){
     //cerr << "corr[" << i << "]: ";
     const Correspondence& corr = _correspondences[i];
-    const PointWithNormal& pref  = _refPoints->at(corr.i1);
+    PointWithNormal pref  = _T*_refPoints->at(corr.i1);
     const PointWithNormal& pcurr = _currPoints->at(corr.i2);
     //cerr << corr.i1 << " " << corr.i2 << endl;
     const Matrix6f& omega = omegas.at(corr.i2);
     if (omega.squaredNorm()==0)
       continue;
     	
-    Vector6f e = _T*pref - pcurr;
+    Vector6f e = pref - pcurr;
       
     float localError = e.transpose() * omega * e;
     if(localError > _inlierMaxChi2)
       continue;
     numInliers++;
     error += localError;
-    Matrix6f J = jacobian(_T, pref);
+    Matrix6f J = jacobian(Eigen::Isometry3f::Identity(), pref);
     b += J.transpose() * omega * e;
     H += J.transpose() * omega * J;
   }
@@ -408,14 +408,13 @@ int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, 
   int imax = (threadNum == numThreads -1) ? _numCorrespondences : (threadNum+1) *n;
   for(int i = imin; i < imax; i++){
     const Correspondence& corr = _correspondences[i];
-    const PointWithNormal& pref  = _refPoints->at(corr.i1);
+    PointWithNormal pref  = _T*_refPoints->at(corr.i1);
     const PointWithNormal& pcurr = _currPoints->at(corr.i2);
     const Matrix6f& omega = omegas.at(corr.i2);
     if (omega.squaredNorm()==0)
       continue;
     
-    Vector6f e = _T*pref - pcurr;
-      
+    Vector6f e = pref - pcurr;
     float localError = e.transpose() * omega * e;
     if(localError > _inlierMaxChi2)
       continue;
@@ -431,8 +430,8 @@ int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, 
     J.block<1,3>(3,0)=n.transpose();
     J.block<1,3>(4,3)=J.block<1,3>(3,0);
     J.block<1,3>(5,6)=J.block<1,3>(3,0);
-    J.block<3,12>(0,0)=_T.linear() * J.block<3,12>(0,0);
-    J.block<3,12>(3,0)=_T.linear() * J.block<3,12>(3,0);
+    //J.block<3,12>(0,0)=_T.linear() * J.block<3,12>(0,0);
+    //J.block<3,12>(3,0)=_T.linear() * J.block<3,12>(3,0);
     b += -J.transpose() * omega * e;
     H += J.transpose() * omega * J;
   }
@@ -453,13 +452,13 @@ int PointWithNormalAligner::_constructLinearSystemT(Matrix3f& H, Vector3f&b, flo
   int imax = (threadNum == numThreads -1) ? _numCorrespondences : (threadNum+1) *n;
   for(int i = imin; i < imax; i++){
     const Correspondence& corr = _correspondences[i];
-    const PointWithNormal& pref  = _refPoints->at(corr.i1);
+    PointWithNormal pref  = _T*_refPoints->at(corr.i1);
     const PointWithNormal& pcurr = _currPoints->at(corr.i2);
     const Matrix6f& omega = omegas.at(corr.i2);
     if (omega.squaredNorm()==0)
       continue;
     
-    Vector6f e = _T*pref - pcurr;
+    Vector6f e = pref - pcurr;
     float localError = e.transpose() * omega * e;
     if(localError > _inlierMaxChi2)
       continue;
@@ -542,7 +541,7 @@ int PointWithNormalAligner::_computeStatistics(float& error, Vector6f& mean, Mat
   // remap each of the sigma points to their original position
   for(size_t i=0; i<sigmaPoints.size(); i++){
     MySigmaPoint& p = sigmaPoints[i];
-    p._sample = t2v(v2t(p._sample).inverse()*dT);
+    p._sample = t2v(dT*v2t(p._sample).inverse());
   }
   //mean = t2v(v2t(mean).inverse());
   // reconstruct the gaussian 
@@ -610,7 +609,8 @@ int PointWithNormalAligner::_nonLinearUpdate(float& error){
   }
   Matrix6f H2 = H +Matrix6f::Identity()*_lambda;
   Vector6f dx = H2.ldlt().solve(-b);
-  _T  = _T*v2t(dx);
+  Eigen::Isometry3f dT=v2t(dx);
+  _T  = dT*_T;
   return inliers;
 }
 
@@ -654,28 +654,27 @@ int PointWithNormalAligner::_linearUpdate(float& error){
     return inliers;
   }
 
-  Matrix4f _X = Matrix4f::Identity();
-  Vector12f x=homogeneous2vector(_X);
+  Eigen::Isometry3f dT = Eigen::Isometry3f::Identity();
+  Vector12f dx=homogeneous2vector(dT.matrix());
   HRt+=Matrix12f::Identity()*_lambda;
   LDLT<Matrix12f> ldlt(HRt);
   if (ldlt.isNegative())
     return 0;
-  x=ldlt.solve(bRt); // using a LDLT factorizationldlt;
-  _X += vector2homogeneous(x);
+  dx=ldlt.solve(bRt); // using a LDLT factorizationldlt;
+  dT.matrix() += vector2homogeneous(dx);
   // recondition the rotation 
-  JacobiSVD<Matrix3f> svd(_X.block<3,3>(0,0), Eigen::ComputeThinU | Eigen::ComputeThinV);
+  JacobiSVD<Matrix3f> svd(dT.linear(), Eigen::ComputeThinU | Eigen::ComputeThinV);
   if (_debug) {
     cerr << "singular values: " << svd.singularValues().transpose() << endl;
   }
   if (svd.singularValues()(0)<.5)
     return false;
-
+  
   Matrix3f R=svd.matrixU()*svd.matrixV().transpose();
-  Eigen::Isometry3f dX;
-  dX.setIdentity();
-  dX.linear()=R;
-  dX.translation()=_X.block<3,1>(0,3);
-  _T = _T*dX;
+  dT.linear()=R;
+  dT.translation().setZero();
+  //dT.translation()=_X.block<3,1>(0,3);
+  _T = dT * _T;
 
 
   // recompute the translation
@@ -717,11 +716,9 @@ int PointWithNormalAligner::_linearUpdate(float& error){
     return inliers;
   }
 
-  Vector3f dt;
   Ht+=Matrix3f::Identity()*_lambda;
-  dt = Ht.ldlt().solve(bt);
+  Vector3f dt = Ht.ldlt().solve(bt);
   _T.translation()+=dt;
-
 
   return inliers;
 }
