@@ -68,13 +68,13 @@ void ViewerGUI::showOriginal()
 
 	LaserDataVector::iterator it = ldvector->begin();
 	ld = *(it+numIteration);
-	/*this->viewer->setDataPointer(&(ldvector->front().second));*/
 	this->viewer->setDataPointer(&(ld.second));
 	this->viewer->updateGL();
 }
+
 #if 0
-					ofstream osp1PrimaC("points1PrimaC.dat");
-					ofstream osp1("points1.dat");
+// 					ofstream osp1PrimaC("points1PrimaC.dat");
+// 					ofstream osp1("points1.dat");
 					ofstream os1("lines1.dat");
 #endif
 void ViewerGUI::lineExtraction()
@@ -107,20 +107,23 @@ void ViewerGUI::lineExtraction()
 			clusterer->compute();
 			cerr << "I found " << clusterer->numClusters() << " clusters in the pool" << endl;
 			
-			for (int i =0; i<clusterer->numClusters(); i++){
+			/**for adjacent lines**/
+			LinesAdjacent la;				
+			int num = 0;
+			
+			for (int i =0; i< clusterer->numClusters(); ++i){
 				const Point2DClusterer::Cluster& cluster = clusterer->cluster(i);
 				int clusterSize = cluster.second - cluster.first;
-				cerr << "processing cluster: " << i << " npoints: " << cluster.second - cluster.first;
+				cerr << "processing cluster: " << i << ", npoints: " << cluster.second - cluster.first;
 				
 				if (clusterSize < minPointsCluster) {
-					cerr << " IGNORE" << endl;
+					cerr << ": IGNORE" << endl;
 					continue;
 				}
-				cerr << " ACCEPT" << endl;
+				cerr << ": ACCEPT" << endl;
 				Vector2fVector::const_iterator first = cartesianPoints.begin() + cluster.first;
-				Vector2fVector::const_iterator last = cartesianPoints.begin() + cluster.second;
-				Vector2fVector currentPoints(first, last);
-				
+				Vector2fVector::const_iterator last = cartesianPoints.begin() + cluster.second + 1;
+				Vector2fVector currentPoints(first, last);				
 #if 0				
 				for (size_t i =0; i<currentPoints.size(); i++){
 					osp1 << currentPoints[i].transpose() << endl;
@@ -130,18 +133,26 @@ void ViewerGUI::lineExtraction()
 				
 				lineExtractor->setPoints(currentPoints);
 				lineExtractor->compute();
-				
+				cout << endl; 
+				cout << endl;
+				cout << "***********************************************************************************" << endl;
 				cout << "*** End of extraction: the number of lines found is " << lineExtractor->lines().size() << " ***" << endl;
+				cout << "***********************************************************************************" << endl;
 				
 				const Line2DExtractor::IntLineMap& linesMap = lineExtractor->lines();
 				for (Line2DExtractor::IntLineMap::const_iterator it=linesMap.begin(); it!=linesMap.end(); it++) {
 					
-					const Line2D& line = it->second;
+					const Line2D& line = it->second;					
 					const Vector2f& p0 = lineExtractor->points()[line.p0Index];
 					const Vector2f& p1 = lineExtractor->points()[line.p1Index];
+					
+					//saving some information about the lines etracted
+					linesInfoExtraction(it, linesMap, currentPoints);
+					
+					//creating structure to draw lines
 					linePoints.push_back(Eigen::Vector2f(p0.x(), p0.y()));					
 					linePoints.push_back(Eigen::Vector2f(p1.x(), p1.y()));
-					
+// 				cout << "***NEW LINE FOUND!*** " << p0.x() << ", " << p0.y() << " to "  << p1.x() << ", " << p1.y() << endl;
 #if 0
 // 					os1 << p0.transpose() << endl;
 // 					os1 << p1.transpose() << endl;
@@ -151,15 +162,64 @@ void ViewerGUI::lineExtraction()
 					os1 << endl;
 					os1 << endl;
 #endif
-// 					cout << "***NEW LINE FOUND!*** " << p0.x() << ", " << p0.y() << " to "  << p1.x() << ", " << p1.y() << endl;
 					this->lc.push_back(linePoints);
 					linePoints.clear();
+					
+					/**saving vector of adjacent lines**/					
+// 					if (it!=linesMap.begin()){
+// 						Line2DExtractor::IntLineMap::const_iterator tmpIt = it;
+// 						const Line2D& linePrev = (--tmpIt)->second;
+// 						
+// 						if (line.p0Index == linePrev.p1Index){
+// 							cout << "It has an adjacent line with in common its left vertex: " << p0.x() << ", " << p0.y() << endl;
+// 							num++;
+// 						}
+// 						else{
+// 							if(num==0) {
+// 								la.push_back(line);
+// 								cout << "A" << endl;
+// 							}
+// 							else{
+// 								for(int i = 0; i <= num; --i){
+// 									Line2DExtractor::IntLineMap::const_iterator leftIt = it;
+// 									const Line2D& lineLeft = (--leftIt)->second;
+// 									la.push_back(lineLeft);
+// 									cout << "B" << endl;
+// 								}
+// 							}
+// 							num = 0;
+// 							lAdjacentVector->push_back(la);
+// 							cout << "Vettore Linee adiacenti: " <<  lAdjacentVector->size() << endl;
+// 							la.clear();
+// 						}												
+// 					}
+// OR
+// 					Line2DExtractor::IntLineMap::const_iterator tmpit = it;
+// 					if ((++tmpit)!=linesMap.end())
+// 					{
+// 						cout << "c" << endl;
+// 						la.push_back(line); //ERRORE: COSI INSERISCO DUE VOLTE LA STESSA LINEA.....
+// 						const Line2D& lineRight = (++tmpit)->second;
+// 						if (line.p1Index == lineRight.p0Index){
+// 							cout << "It has an adjacent line with in common its right vertex: " << p1.x() << ", " << p1.y() << endl;
+// 							la.push_back(lineRight);
+// 						}
+// 						else 
+// 						{
+// 							lAdjacentVector->push_back(la);
+// 							//cout << "Vettore Linee adiacenti: " <<  lAdjacentVector->size() << endl;
+// 							la.clear();
+// 						}
+// 					}
 				}
-#if 0
-					os.flush();
-#endif
+				
+// 				//alternativa: stesso ciclo saltando le linee già inserite
+// 				for(Line2DExtractor::IntLineMap::const_iterator it=linesMap.begin(); it!=linesMap.end(); it++) {
+// 				}
+				cout << endl; 
+				cout << endl;
 			}
-			cout << "Drawning is starting....." << endl;
+			cout << "Drawing is starting....." << endl;
 			this->viewer->lineFound = true;			
 		}
 		else if (algotype == ransacType) 
@@ -168,7 +228,6 @@ void ViewerGUI::lineExtraction()
 			cout << "Starting extraction with: " << algotype << endl;
 			cout << "#------------------------------------------------#" << endl;
 			LaserRobotData* laserData = ld.first;
-// 		LaserRobotData* laserData = ldvector->front().first;
 			double maxRangeFinderLimit = laserData->maxRange();
 			float angularStep = laserData->fov() / laserData->ranges().size();
 			float angle = laserData->firstBeamAngle();
@@ -216,7 +275,7 @@ void ViewerGUI::lineExtraction()
 				this->lc.push_back(linePoints);
 				linePoints.clear();
 			  }
-			cout << "Drawning is starting....." << endl;
+			cout << "Drawing is starting....." << endl;
 			this->viewer->lineFound = true;
 			}
 		}
@@ -224,6 +283,66 @@ void ViewerGUI::lineExtraction()
 		this->viewer->updateGL();
 	}
 }
+
+
+/**FOR EACH line
+	* save coordinates of the point with max distance from the line;
+	* save p0 as right extreme;
+	* save p1 as left extreme;
+	* save num points in line;
+	* save maxerror (line.max dist(p));
+	* save vector<line2d> adiacent; TODO
+**/
+void ViewerGUI::linesInfoExtraction(Line2DExtractor::IntLineMap::const_iterator it, const Line2DExtractor::IntLineMap& linesMap, Vector2fVector& currentPoints) const
+{
+	const Line2D& line = it->second;					
+	const Vector2f& p0 = lineExtractor->points()[line.p0Index];
+	const Vector2f& p1 = lineExtractor->points()[line.p1Index];
+	Vector2fVector::const_iterator f = currentPoints.begin() + line.p0Index;
+	Vector2fVector::const_iterator l = currentPoints.begin() + line.p1Index + 1;
+	Vector2fVector tmpPoints(f, l);
+	int imax=-1;
+	float maxDistance=-1;
+	Vector2f& v = tmpPoints[0];
+	for (int i = 0; i< tmpPoints.size(); i++){
+		float d = line.squaredDistance(tmpPoints[i]);
+		if (d>maxDistance){
+				imax = i; 
+				maxDistance = d;
+				v = tmpPoints[imax];
+		}
+	}
+	
+	int numPointsInLine = (line.p1Index - line.p0Index) + 1; //tmpPoints.size();
+	cout << "NEW LINE! Point with max distance from the line:"  <<  v.x() << " ," << v.y() << endl;
+	cout << "------------------" << endl;
+	cout << "Line extreme points: " << endl;
+	cout << "\tRIGHT: " << p0.x() << ", " << p0.y() << endl; cout << "\tLEFT: " << p1.x() << ", " << p1.y() << endl;
+	cout << "------------------" << endl;
+	cout << "Number of points in line: " << numPointsInLine <<endl;
+	cout << "------------------" << endl;
+	cout << "Line max Error: " << maxDistance << endl;		
+	cout << "------------------" << endl;
+	Line2DExtractor::IntLineMap::const_iterator tmpit = it;
+	if (it!=linesMap.begin()){
+		const Line2D& lineLeft = (--tmpit)->second;
+		if (line.p0Index == lineLeft.p1Index){
+			cout << "It has an adjacent line with in common its left vertex: " << p0.x() << ", " << p0.y() << endl;
+		}
+		else cout << "No adjacent line on the left" << endl;
+	}
+	if ((++tmpit)!=linesMap.end()){
+		const Line2D& lineRight = (++tmpit)->second;
+		if (line.p1Index == lineRight.p0Index){
+			cout << "It has an adjacent line with in common its right vertex: " << p1.x() << ", " << p1.y() << endl;
+		}
+		else cout << "No adjacent line on the right" << endl;
+	}
+	cout << "***********************************************************************************" << endl;
+	cout << "***********************************************************************************" << endl;
+	cout << "***********************************************************************************" << endl;
+}
+
 
 void ViewerGUI::setAlgorithm()
 {
@@ -273,5 +392,6 @@ ViewerGUI::ViewerGUI(LaserDataVector* theLdVector, QWidget* parent)
 	clusterer = 0;
 	ldvector = theLdVector;
 	numIteration = 0;
+	lAdjacentVector = 0;
 
 }
