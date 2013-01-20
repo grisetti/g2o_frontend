@@ -696,10 +696,8 @@ int PointWithNormalAligner::_linearUpdate(float& error){
   if (svd.singularValues()(0)<.5)
     return false;
   
-  Matrix3f R=svd.matrixU()*svd.matrixV().transpose();
-  dT.linear()=R;
-  dT.translation().setZero();
-  //dT.translation()=_X.block<3,1>(0,3);
+  dT.linear()=svd.matrixU()*svd.matrixV().transpose();
+  //dT.translation().setZero();
   _T = dT * _T;
 
 
@@ -743,9 +741,10 @@ int PointWithNormalAligner::_linearUpdate(float& error){
   }
 
   Ht+=Matrix3f::Identity()*_lambda;
-  Vector3f dt = Ht.ldlt().solve(bt);
-  _T.translation()+=dt;
-
+  dT = Eigen::Isometry3f::Identity();
+  dT.translation() = Ht.ldlt().solve(bt);
+  _T = dT*_T;
+  //_T.translation() += dT.translation();
   return inliers;
 }
 
