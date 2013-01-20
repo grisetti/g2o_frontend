@@ -18,7 +18,7 @@ typedef std::pair<LaserRobotData*, LaserRobotData::Vector2fVector> LaserData;
 typedef std::vector<LaserData> LaserDataVector;
 /**for adjacent lines**/
 typedef std::vector<Line2D, Eigen::aligned_allocator<Line2D> > LinesAdjacent;
-typedef std::vector<LinesAdjacent> LinesAdjacentVector;
+typedef std::vector<LinesAdjacent/*, Eigen::aligned_allocator<std::vector<Line2D> > */> LinesAdjacentVector;
 
 
 
@@ -45,7 +45,7 @@ class ViewerGUI : public QMainWindow, public Ui::MainWindow
 		lineContainer lc;
 		int numIteration;
 		LaserData ld;
-		LinesAdjacentVector* lAdjacentVector;
+		LinesAdjacentVector lAdjacentVector;
 
 	public slots:
 	 void updateVal1(int val);
