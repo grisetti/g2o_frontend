@@ -220,8 +220,11 @@ int main(int argc, char** argv){
   Isometry3f tmp = Isometry3f::Identity(), startingTraj = Isometry3f::Identity();
   Frame *referenceFrame = 0, *currentFrame = 0;
   bool firstCloudAdded = true, wasInitialGuess = true;
-
+  bool addToMerge = true;
   PointWithNormalMerger pwnm;
+  PointWithNormalSVDVector mergedSvds;
+  MatrixXi mergedIndexImage;
+  MatrixXf mergedZBuffer;
   while (!(*pwnGMW.closing())) {
     qApplication.processEvents();
 
@@ -256,11 +259,9 @@ int main(int argc, char** argv){
 	  continue;
 	}
 	currentFrame->computeStats(*normalGenerator, cameraMatrix);
-	//PointWithNormalSVDVector *svdsapp= pwnm.svds();
 	DrawablePoints* dp = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, 1, &(*currentFrame).points);
 	DrawableNormals *dn = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)nParam, 1, &(*currentFrame).points);
 	DrawableCovariances *dc = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)cParam, 1, &(*currentFrame).svds);
-	//DrawableCovariances *dc = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)cParam, 1, svdsapp);
   	DrawableCorrespondences* dcorr = new DrawableCorrespondences(Isometry3f::Identity(), (GLParameter*)corrParam, 1, 0, 0);
 	
 	if(drawableList.size() != 0) {
@@ -275,6 +276,11 @@ int main(int argc, char** argv){
 	pwnGMW.viewer_3d->addDrawable((Drawable*)dc);
 	pwnGMW.viewer_3d->addDrawable((Drawable*)dcorr);	
 	startingTraj = trajectory;
+
+	if(addToMerge) {
+	  pwnm.addCloud(Isometry3f::Identity(), currentFrame->points);
+	  addToMerge = false;
+	}
       }
       *addCloud = 0;
     }
@@ -327,7 +333,6 @@ int main(int argc, char** argv){
 	float error;
 	int result = aligner->align(error, X);
 	
-	pwnm.addCloud(X, currentFrame->points);
 
 	cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
 	cerr << "localTransform : " << endl;
@@ -337,7 +342,7 @@ int main(int argc, char** argv){
 	  wasInitialGuess = false;
 	}
 	trajectory=startingTraj*X;
-
+	pwnm.addCloud(trajectory, currentFrame->points);
 	
 	cerr << "globaltransform: " << endl;
 	cerr << trajectory.matrix() << endl;
@@ -432,16 +437,25 @@ int main(int argc, char** argv){
       pwnGMW.viewer_3d->clearDrawableList();
       trajectory = Isometry3f::Identity();
       startingTraj = trajectory;
-      DrawablePoints* dp = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, 1, pwnm.points());
-      pwnGMW.viewer_3d->addDrawable((Drawable*)dp);
+      mergedIndexImage.resize(pwnm.indexImage()->rows(), pwnm.indexImage()->cols());
+      pwnm.mergedPoints()->toIndexImage(mergedIndexImage, mergedZBuffer, cameraMatrix, Eigen::Isometry3f::Identity(), 10);
+      mergedSvds.resize(pwnm.mergedPoints()->size());
+      normalGenerator->computeNormalsAndSVD(*(pwnm.mergedPoints()), mergedSvds, mergedIndexImage, cameraMatrix);
+      DrawablePoints* dp0 = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, 1, pwnm.mergedPoints());
+      
+      pwnGMW.viewer_3d->addDrawable((Drawable*)dp0);
       *merge = 0;
     }
     // clear buttons pressed.
     else if(*clearAll) {
       pwnGMW.viewer_3d->clearDrawableList();
+      pwnm.clearAll();
       trajectory = Isometry3f::Identity();
       startingTraj = trajectory;
       *clearAll = 0;
+      firstCloudAdded = true;
+      wasInitialGuess = true;
+      addToMerge = true;
     }
     else if(*clearLast) {
       if(drawableList.size() >= 4) {	

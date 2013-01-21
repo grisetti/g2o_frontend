@@ -13,12 +13,20 @@ PointWithNormalMerger::PointWithNormalMerger() {
     525.0f, 0.0f, 319.5f,
     0.0f, 525.0f, 239.5f,
     0.0f, 0.0f, 1.0f;
+  _scale = 2.0f;
   _indexImage.fill(-1);
   _depthImage.fill(std::numeric_limits<float>::max());
   _points.clear();
   _mergedPoints.clear();
-  _covariancesAccumulator.clear();
-  //_covariancesSVDsVector.clear();
+  _covariances = CovarianceAccumulatorMatrix(480, 640);
+}
+
+void PointWithNormalMerger::clearAll() {
+  _indexImage.fill(-1);
+  _depthImage.fill(std::numeric_limits<float>::max());
+  _points.clear();
+  _mergedPoints.clear();
+  _covariances = CovarianceAccumulatorMatrix(480, 640);
 }
 
 void PointWithNormalMerger::addCloud(Eigen::Isometry3f t, const PointWithNormalVector points_) {
@@ -28,27 +36,25 @@ void PointWithNormalMerger::addCloud(Eigen::Isometry3f t, const PointWithNormalV
 
 void PointWithNormalMerger::computeAccumulator() {
   // Compute skin.
-  //_depthImage.resize(480, 640);
-  _indexImage.resize(480*0.5, 640*0.5);
-  _points.toIndexImage(_indexImage, _depthImage, _cameraMatrix, Isometry3f::Identity());
+  _indexImage.resize(480*_scale, 640*_scale);
+  Matrix3f _scaledCameraMatrix = _cameraMatrix;
+  _scaledCameraMatrix.block<2, 3>(0, 0) *= _scale;
+  _points.toIndexImage(_indexImage, _depthImage, _scaledCameraMatrix, Isometry3f::Identity());
   
   // Compute sigma for each point and create image accumulator.
   PixelMapper pm;
-  pm.setCameraMatrix(_cameraMatrix);
+  pm.setCameraMatrix(_scaledCameraMatrix);
   pm.setTransform(Isometry3f::Identity());
-  Matrix3f inverseCameraMatrix = _cameraMatrix.inverse();
-  float fB = (_baseLine * _cameraMatrix(0, 0)); // kinect baseline * focal lenght;
-  CovarianceAccumulator covAcc; 
-  _covariancesAccumulator.resize(_points.size());
-  fill(_covariancesAccumulator.begin(), _covariancesAccumulator.end(), covAcc);
-  //_covariancesSVDsVector.resize(_points.size());
-  //SelfAdjointEigenSolver<Matrix3f> eigenSolver;
+  Matrix3f inverseCameraMatrix = _scaledCameraMatrix.inverse();
+  float fB = (_baseLine * _scaledCameraMatrix(0, 0)); // kinect baseline * focal lenght;
+  CovarianceAccumulator covAcc;
+  _covariances.resize(480*_scale, 640*_scale);
+  _covariances.fill(covAcc);
   for(size_t i = 0; i < _points.size(); i++ ) {
     PointWithNormal &p = _points[i];
     Vector2i coord = pm.imageCoords(pm.projectPoint(p.point()));
-    if(coord[0] < 0 || coord[0] >= _depthImage.cols())
-      continue;
-    if(coord[1] < 0 || coord[1] >= _depthImage.rows())
+    if(coord[0] < 0 || coord[0] >= _depthImage.cols() ||
+       coord[1] < 0 || coord[1] >= _depthImage.rows())
       continue;
     int index = _indexImage(coord[1], coord[0]);
     float skinZ = _depthImage(coord[1], coord[0]);
@@ -69,27 +75,40 @@ void PointWithNormalMerger::computeAccumulator() {
       0, 0, 1;
     covarianceJacobian = inverseCameraMatrix*covarianceJacobian;
     Matrix3f worldCovariance = covarianceJacobian * imageCovariance * covarianceJacobian.transpose();
-    _covariancesAccumulator[index]._omegaAcc += worldCovariance.inverse();
-    _covariancesAccumulator[index]._pointsAcc += worldCovariance.inverse()*p.point();
+    _covariances(coord[1], coord[0])._omegaAcc += worldCovariance.inverse();
+    _covariances(coord[1], coord[0])._pointsAcc += worldCovariance.inverse()*p.point();
+    _covariances(coord[1], coord[0])._used = true;
   }
 }
 
 void PointWithNormalMerger::extractMergedCloud() {
-  //_mergedPoints.resize(_covariancesAccumulator.size());
   Vector3f pointMean;
-  //fill(_points.begin(), _points.end(), Vector6f::Zero());
-  for(size_t i = 0; i < _covariancesAccumulator.size(); i++) {
-    if(_covariancesAccumulator[i]._omegaAcc == Matrix3f::Zero()) {
-      //_mergedPoints[i].setPoint(Vector3f::Zero());
-      //_mergedPoints[i].setNormal(Vector3f::Zero());
-      _points[i].setPoint(Vector3f::Zero());
-      _points[i].setNormal(Vector3f::Zero());
-      continue;
+  PointWithNormal p;
+  for(int x = 0; x < _covariances.rows(); x++) {
+    for(int y = 0; y < _covariances.cols(); y++) {
+      CovarianceAccumulator &current = _covariances(x, y);
+      if(current.used()) {
+	pointMean = current._omegaAcc.inverse()*current._pointsAcc;
+	p.setPoint(pointMean);
+	p.setNormal(Vector3f::Zero());
+	_mergedPoints.push_back(p);
+      }
     }
-    pointMean = _covariancesAccumulator[i]._omegaAcc.inverse()*_covariancesAccumulator[i]._pointsAcc;
-    //_mergedPoints[i].setPoint(pointMean);
-    //_mergedPoints[i].setNormal(Vector3f::Zero());
-    _points[i].setPoint(pointMean);
-    _points[i].setNormal(Vector3f::Zero());
   }
+  
+  Matrix3f _scaledCameraMatrix = _cameraMatrix;
+  _scaledCameraMatrix.block<2, 3>(0, 0) *= _scale;
+  _points.toIndexImage(_indexImage, _depthImage, _scaledCameraMatrix, Isometry3f::Identity());
+  PixelMapper pm;
+  pm.setCameraMatrix(_scaledCameraMatrix);
+  pm.setTransform(Isometry3f::Identity());
+  for(size_t i = 0; i < _points.size(); i++) {
+    PointWithNormal &p = _points[i];
+    Vector2i coord = pm.imageCoords(pm.projectPoint(p.point()));
+    if(coord[0] > 0 && coord[0] < _depthImage.cols() &&
+       coord[1] > 0 && coord[1] < _depthImage.rows())
+      continue;
+    _mergedPoints.push_back(p);
+  }
+  std::cout << "Dimensions before and after: " << _points.size() << " " << _mergedPoints.size() << std::endl; 
 }
