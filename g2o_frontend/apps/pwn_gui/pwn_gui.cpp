@@ -279,17 +279,6 @@ int main(int argc, char** argv){
       *addCloud = 0;
     }
 
-    if(*merge) {
-      *merge = 0;
-      pwnm.computeAccumulator();
-      pwnm.extractMergedCloud();
-      pwnGMW.viewer_3d->clearDrawableList();
-      trajectory = Isometry3f::Identity();
-      startingTraj = trajectory;
-      DrawablePoints* dp = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, 1, pwnm.mergedPoints());
-      pwnGMW.viewer_3d->addDrawable((Drawable*)dp);
-    }
-
      // Check feature visualization options.
     for(size_t i = 0; i < drawableList.size(); i++) {
       if(stepViewer[0])
@@ -435,6 +424,16 @@ int main(int argc, char** argv){
 	pwnGMW.graphicsView1_2d->show();
 	pwnGMW.graphicsView2_2d->show();
       }
+    }
+    else if(*merge) {
+      pwnm.computeAccumulator();
+      pwnm.extractMergedCloud();
+      pwnGMW.viewer_3d->clearDrawableList();
+      trajectory = Isometry3f::Identity();
+      startingTraj = trajectory;
+      DrawablePoints* dp = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, 1, pwnm.points());
+      pwnGMW.viewer_3d->addDrawable((Drawable*)dp);
+      *merge = 0;
     }
     // clear buttons pressed.
     else if(*clearAll) {
