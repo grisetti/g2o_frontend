@@ -7,6 +7,7 @@ struct PointWithNormalSVD{
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   friend class PointWithNormalStatistcsGenerator;
   friend class PointWithNormalMerger;
+  friend PointWithNormalSVD operator * (const Eigen::Isometry3f& t, const PointWithNormalSVD& svd_);
   PointWithNormalSVD(): 
     _mean(Eigen::Vector3f::Zero()),
     _singularValues(Eigen::Vector3f::Zero()),
@@ -38,6 +39,13 @@ protected:
   float _z;
   int _n;
 };
+
+inline PointWithNormalSVD operator * (const Eigen::Isometry3f& t, const PointWithNormalSVD& svd_){
+  PointWithNormalSVD rsvd(svd_);
+  rsvd._mean = t*svd_.mean();
+  rsvd._U = t.linear() * svd_._U;
+  return rsvd;
+}
 
 typedef std::vector<PointWithNormalSVD, Eigen::aligned_allocator<PointWithNormalSVD> > PointWithNormalSVDVector;
 

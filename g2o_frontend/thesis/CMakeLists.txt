@@ -18,7 +18,7 @@ ADD_LIBRARY(thesis_library
 	SensorLaserRobot.cpp SensorLaserRobot.h
 )
 
-SET_TARGET_PROPERTIES(thesis_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_thesis_library)
+SET_TARGET_PROPERTIES(thesis_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_thesis)
 
 IF(CMAKE_BUILD_TYPE MATCHES Release)
   TARGET_LINK_LIBRARIES(thesis_library

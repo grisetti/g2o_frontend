@@ -39,7 +39,6 @@ struct Line2D: public Vector4f{
 };
 	
 
-typedef std::vector<Line2D, Eigen::aligned_allocator<Line2D> > Line2DVector; //Vector of line
 typedef std::vector<Vector2f, Eigen::aligned_allocator<Vector2f> > Vector2fVector; //vector of original points
 	
 

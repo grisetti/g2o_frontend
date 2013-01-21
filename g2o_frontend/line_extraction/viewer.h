@@ -126,6 +126,8 @@ public:
         horizontalSlider->setObjectName(QString::fromUtf8("horizontalSlider"));
         horizontalSlider->setGeometry(QRect(30, 60, 141, 29));
         horizontalSlider->setOrientation(Qt::Horizontal);
+				horizontalSlider->setRange(6,50);
+				
         label_2 = new QLabel(groupBox_2);
         label_2->setObjectName(QString::fromUtf8("label_2"));
         label_2->setGeometry(QRect(0, 80, 161, 31));

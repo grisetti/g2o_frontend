@@ -156,6 +156,7 @@ protected:
   int _numCorrespondences;
 
   Eigen::Isometry3f _T;
+  Eigen::Isometry3f _initialT;
   bool _debug;
 
   // parallelization

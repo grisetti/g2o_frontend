@@ -19,6 +19,10 @@ RGBDImageData::RGBDImageData(){
   _ts_usec=0;
 }
 
+RGBDImageData::~RGBDImageData(){
+  release();
+}
+
 bool RGBDImageData::read(std::istream& is) {
   int _paramIndex;
   is >> _paramIndex >> _baseFilename;

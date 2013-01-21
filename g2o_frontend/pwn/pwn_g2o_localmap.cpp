@@ -75,6 +75,22 @@ struct Frame{
       aligner.setCurrentCloud(&points, &svds);
     }
   }
+
+  void add(const Frame& otherFrame, const Eigen::Isometry3f& t){
+    size_t k=points.size();
+    points.insert(points.end(), otherFrame.points.begin(), otherFrame.points.end());
+    svds.insert(svds.end(), otherFrame.svds.begin(), otherFrame.svds.end());
+    for (; k<points.size(); k++){
+      points[k] = t*points[k];
+      svds[k] = t*svds[k];
+    }
+  }
+  void clear(){
+    depthImage.resize(0,0);
+    indexImage.resize(0,0);
+    points.clear();
+    svds.clear();
+  }
 };
 
 int
@@ -86,6 +102,8 @@ int
   int ng_step;
   int ng_minPoints;
   int ng_imageRadius;
+  int eachN;
+  int framesInLocalMap;
   float ng_worldRadius;
   float ng_maxCurvature;
   
@@ -125,6 +143,8 @@ int
   arg.param("al_lambda", al_lambda, aligner.lambda(), "damping factor for the transformation update, the higher the smaller the step");
   arg.param("al_debug", al_debug, aligner.debug(), "prints lots of stuff");
   arg.param("numThreads", numThreads, 1, "numver of threads for openmp");
+  arg.param("eachN", eachN, 1, "process each X images");
+  arg.param("framesInLocalMap", framesInLocalMap, 5, "keep a local map of at least X frames");
   
 
   if (numThreads<1)
@@ -170,7 +190,7 @@ int
 
 
   Frame* referenceFrame= 0;
-
+  Frame* cumFrame= new Frame();
   Eigen::Matrix3f cameraMatrix;
   cameraMatrix << 
     525.0f, 0.0f, 319.5f,
@@ -187,7 +207,7 @@ int
   int graphNum=0;
   int nFrames = 0;
   string baseFilename = graphFilename.substr( 0, graphFilename.find_last_of( '.' ) +1 );
-  for (size_t i=0; i<filenames.size(); i++){
+  for (size_t i=0; i<filenames.size(); i+=eachN){
     cerr << endl << endl << endl;
     cerr << ">>>>>>>>>>>>>>>>>>>>>>>> PROCESSING " << filenames[i] << " <<<<<<<<<<<<<<<<<<<<" <<  endl;
     Frame* currentFrame= new Frame();
@@ -220,7 +240,7 @@ int
     
     currentFrame->computeStats(normalGenerator,cameraMatrix);
     if (referenceFrame) {
-      referenceFrame->setAligner(aligner, true);
+      cumFrame->setAligner(aligner, true);
       currentFrame->setAligner(aligner, false);
 
       Matrix6f omega;
@@ -229,17 +249,22 @@ int
       float rratio;
       aligner.setImageSize(currentFrame->depthImage.rows(), currentFrame->depthImage.cols());
       Eigen::Isometry3f X;
-      X.setIdentity();
+      //X.setIdentity();
+      X=trajectory;
       double ostart = get_time();
       float error;
       int result = aligner.align(error, X, mean, omega, tratio, rratio);
+      Eigen::Isometry3f dX = trajectory.inverse()*X;
+      trajectory=X;
+      
       cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
       cerr << "localTransform : " << endl;
-      cerr << X.inverse().matrix() << endl;
-      trajectory=trajectory*X;
+      cerr << dX.matrix() << endl;
+      //trajectory=trajectory*X;
       cerr << "globaltransform: " << endl;
       cerr << trajectory.matrix() << endl;
       double oend = get_time();
+      cerr << "cumulative frame points: " <<  cumFrame->points.size() << endl;
       cerr << "alignment took: " << oend-ostart << " sec." << endl;
       cerr << "aligner scaled image size: " << aligner.scaledImageRows() << " " << aligner.scaledImageCols() << endl;
       
@@ -271,6 +296,7 @@ int
 	  ofstream gs(buf);
 	  gs << os.str();
 	  gs.close();
+	  cumFrame->clear();
 	}
 	os.str("");
 	os.clear();
@@ -283,8 +309,16 @@ int
 
     }
     previousIndex = i;
-    if (referenceFrame)
+    if (referenceFrame) {
       delete referenceFrame;
+    } else {
+      cumFrame->clear();
+    }
+    cumFrame->add(*currentFrame,trajectory);
+    if (cumFrame->points.size()>framesInLocalMap*currentFrame->depthImage.rows()*currentFrame->depthImage.cols()){
+      cumFrame->points.erase(cumFrame->points.begin(), cumFrame->points.begin() + (cumFrame->points.size() - framesInLocalMap*currentFrame->depthImage.rows()*currentFrame->depthImage.cols()));
+      cumFrame->svds.erase(cumFrame->svds.begin(), cumFrame->svds.begin() + (cumFrame->svds.size() - framesInLocalMap*currentFrame->depthImage.rows()*currentFrame->depthImage.cols()));
+    }
     referenceFrame = currentFrame;
   }
 
@@ -294,7 +328,6 @@ int
   cerr << "filesize:" << os.str().length() << endl; 
   ofstream gs(buf);
   gs << os.str();
-  cout << os.str();
   gs.close();
   
 }

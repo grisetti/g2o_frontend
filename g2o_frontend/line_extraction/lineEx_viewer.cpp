@@ -26,6 +26,7 @@
 #include <qapplication.h>
 #include <qobject.h>
 #include "viewerGUI.h"
+// #include <GL/glut.h>
 
 using namespace std;
 using namespace g2o;
@@ -132,10 +133,9 @@ int main(int argc, char**argv){
 
   std::sort(vertexIds.begin(), vertexIds.end());
 	
-	//int numVertex = 0;
 	LaserRobotData* ldata = 0;
 	LaserDataVector ldvector;
-	for (size_t i=0; i<vertexIds.size() && ! hasToStop /*&& numVertex < 1*/; i++){
+	for (size_t i=0; i<vertexIds.size() && ! hasToStop; i++){
 		
     OptimizableGraph::Vertex* _v=graph->vertex(vertexIds[i]);
     VertexSE3* v=dynamic_cast<VertexSE3*>(_v);
@@ -154,14 +154,14 @@ int main(int argc, char**argv){
 // 			glMultMatrixd(offset.data());
       if (ldata) {
 				pointsOriginal = ldata->floatCartesian();
-				if (pointsOriginal.size()==0) 
+				if (pointsOriginal.size()==0) {
+					cerr << "WARNING! No laser ranges detected, the g2o file you are using is wrong" << endl;
 					return 0;
+				}
 				ldvector.push_back(make_pair(ldata,pointsOriginal));
-				cout << "LaserDataVector size is "<< ldvector.size() << "\tthe last reading has " << ldvector[i].second.size() << " points." << endl;
+// 				cout << "LaserDataVector size is "<< ldvector.size() << "\tthe last reading has " << ldvector[i].second.size() << " points." << endl;
       }
 		}
-		//to read just the first laser data ranges. change the number inside the for conditions
-		//numVertex++;
 	}
 	cout << "File ended!" << endl;
 
@@ -175,6 +175,7 @@ int main(int argc, char**argv){
 	
 	
 	QApplication app(argc, argv);
+// 	glutInit(&argc, argv);
 	ViewerGUI *dialog = new ViewerGUI(&ldvector);
 	dialog->viewer->setDataPointer(&(ldvector[0].second));
 	dialog->show();

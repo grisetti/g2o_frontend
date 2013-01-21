@@ -7,6 +7,20 @@
 
 #include "leQGLViewer.h"
 #include <fstream>
+// #include <GL/glut.h>
+
+void drawCircle(double radius, float x, float y, float z, int segments, int arc){
+	float increment = (float)arc/(float)segments;
+	float angle = 0;
+	for(int i = 0; i<segments;i++) {
+		glBegin(GL_TRIANGLES);
+		glVertex3f(x, y, z);
+		glVertex3f(x+radius*cos(angle), y+radius*sin(angle), z);
+		glVertex3f(x+radius*cos(angle+increment), y+radius*sin(angle+increment), z);
+		glEnd();
+		angle+=increment;		
+	}
+}
 
 leQGLViewer::leQGLViewer(QWidget *parent): QGLViewer(parent), data(NULL), lineFound(false), lContainer(NULL)
 {
@@ -25,6 +39,7 @@ void leQGLViewer::init()
 
   // some default settings i like
   glEnable(GL_LINE_SMOOTH);
+	glEnable(GL_POINT_SMOOTH);
   glEnable(GL_BLEND); 
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_NORMALIZE);
@@ -32,6 +47,7 @@ void leQGLViewer::init()
   glShadeModel(GL_FLAT);
   //glShadeModel(GL_SMOOTH);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+// 	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGBA | GLUT_MULTISAMPLE );
 	
 	setAxisIsDrawn(false);
 
@@ -62,24 +78,22 @@ void leQGLViewer::init()
 #endif
 
 void leQGLViewer::draw()
-{	
-	drawAxis();
+{drawAxis();
+	glNormal3f(0.f, 0.f, 1.f);
 	// draw all the points
 	if(!lineFound) 
 	{
-		
 #if 0
 				for (size_t j =0; j<data->size(); j++){
 					osp2 << (*data)[j].transpose() << endl;
 				}
 				osp2.flush();
 #endif
-				
 		for (size_t i=0; i<data->size(); i++)
 		{				
 			glPointSize(3.f);
 			glBegin(GL_POINTS);
-			glColor4f(0.f,1.f,0.f,0.5f);
+			glColor4f(1.f,0.f,0.f,0.5f);
 			glVertex3f((*data)[i].x(), (*data)[i].y(), 0.f);
 			glEnd();
 		}
@@ -100,17 +114,28 @@ void leQGLViewer::draw()
 #endif
 		
 		glLineWidth(3.f);
-		glBegin(GL_LINES);
-		
 		//cout << "line found!" << endl;
 		for(int i=0; i<lContainer->size(); i++)
 		{
-			glColor4f(1.f, 1.f, 0.f, 0.5f);
 			Vector2fVector line = (*lContainer)[i];
+			
+			glBegin(GL_LINES);
+			glColor4f(0.f, 1.f, 0.f, 0.5f);			
 			glVertex3f(line[0].x(), line[0].y(), 0.f);
 			glVertex3f(line[1].x(), line[1].y(), 0.f);
+			
+// 			glPushMatrix();
+// 			glTranslatef(line[0].x(),line[0].y(), 0.f);
+// 			glColor4f(0.f, 0.f, 1.f, 0.5f);
+// 			glutSolidSphere(0.5f,20, 20);
+// 			glPopMatrix();
+			
+			glColor4f(0.f, 0.f, 1.f, 0.5f);
+			drawCircle(0.08f,line[0].x(), line[0].y(), 0.f, 60, 360);
+			glColor4f(1.f, 0.f, 0.f, 0.5f);
+			drawCircle(0.08f,line[1].x(), line[1].y(), 0.f, 60, 360);
+			glEnd();
 		}
-		glEnd();
 	}
 	glColor3f(1,1,1);
 }

@@ -361,6 +361,7 @@ int main(int argc, char** argv){
 	QImage refQImage;
 	QImage currQImage;
 	DepthImageView div;
+	div.computeColorMap(300,3000,128);
 	div.convertToQImage(refQImage, aligner->refZBuffer()); 
 	div.convertToQImage(currQImage, aligner->currZBuffer());
 	refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)_c/(aligner->scale()*3), (int)(_r/(aligner->scale()*3)))));

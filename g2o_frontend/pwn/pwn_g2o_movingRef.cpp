@@ -182,7 +182,6 @@ int
 
   cerr << "there are " << filenames.size() << " files  in the pool" << endl; 
   Isometry3f trajectory;
-  trajectory.setIdentity();
   int previousIndex=-1;
   int graphNum=0;
   int nFrames = 0;
@@ -198,7 +197,6 @@ int
     }
     nFrames ++;
     if (! referenceFrame ){
-      os << "PARAMS_CAMERACALIB 0 0 0 0 0 0 0 1 525 525 319.5 239.5"<< endl;
       trajectory.setIdentity();
     }
     {
@@ -228,15 +226,17 @@ int
       float tratio;
       float rratio;
       aligner.setImageSize(currentFrame->depthImage.rows(), currentFrame->depthImage.cols());
-      Eigen::Isometry3f X;
-      X.setIdentity();
+      Eigen::Isometry3f Xold = trajectory;
+      Eigen::Isometry3f X=Xold;
+      //X.setIdentity();
       double ostart = get_time();
       float error;
       int result = aligner.align(error, X, mean, omega, tratio, rratio);
+      Eigen::Isometry3f dX = Xold.inverse()*X;;
       cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
       cerr << "localTransform : " << endl;
-      cerr << X.inverse().matrix() << endl;
-      trajectory=trajectory*X;
+      cerr << dX.matrix() << endl;
+      trajectory=X;
       cerr << "globaltransform: " << endl;
       cerr << trajectory.matrix() << endl;
       double oend = get_time();
@@ -286,6 +286,10 @@ int
     if (referenceFrame)
       delete referenceFrame;
     referenceFrame = currentFrame;
+    for (size_t k=0; k<currentFrame->points.size(); k++){
+      currentFrame->points[k] = trajectory * currentFrame->points[k];
+      currentFrame->svds[k] = trajectory * currentFrame->svds[k];
+    }
   }
 
   char buf[1024];
