@@ -42,7 +42,7 @@ bool Line2DExtractor::split(int k) {
   if (line.p1Index - line.p0Index < _minPointsInLine)
     return false;
 	
-  /** seek for the point with the larest distance between the indices contained in the line**/
+  /** seek for the point with the largest distance between the indices contained in the line**/
   int imax= maxDistanceIndex(line);
 //   cerr<< "\t\t imax: " << imax << endl;
   if (imax <0  || imax == line.p1Index-1){
@@ -111,11 +111,6 @@ bool Line2DExtractor::merge(int k) {
   return true;
 }
 
-#if 0
-			ofstream osp0("points0.dat");
-			ofstream os0("lines0.dat");
-#endif
-
 
 void Line2DExtractor::initializeFromIndices(Line2D& line, int i0, int i1){
   line.p0Index = i0;
@@ -134,6 +129,8 @@ void Line2DExtractor::compute(){
   _lines.insert(make_pair(0, firstLine));
 	
   IntLineMap::iterator it = _lines.begin();
+	
+	/** Split step **/
   while (it!=_lines.end()){
 		
     const Line2D& l=it->second;
@@ -149,19 +146,7 @@ void Line2DExtractor::compute(){
   }
   cerr << "\tI split " << _lines.size() << " times" << endl;
 	
-#if 0
-  for (IntLineMap::iterator it=_lines.begin(); it!=_lines.end(); it++){
-    const Line2D& l = it->second;
-    const Vector2f & p0 = _points[l.p0Index];
-    const Vector2f & p1 = _points[l.p1Index];
-    os0 << p0.transpose() << endl;
-    os0 << p1.transpose() << endl;
-    os0 << endl;
-    os0 << endl;
-  }
-  os0.flush();
-#endif
-
+	/** Merge step **/
   it = _lines.begin();
   while (it!=_lines.end()){
     const Line2D& l=it->second;
@@ -175,13 +160,6 @@ void Line2DExtractor::compute(){
       it++;
   }
   cerr << "\tI merge " << _lines.size() << " times" << endl;
-
-#if 0
-  for (size_t i =0; i<_points.size(); i++){
-    osp0 << _points[i].transpose() << endl;
-  }
-  osp0.flush();
-#endif
 }
 
 

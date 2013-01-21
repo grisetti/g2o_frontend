@@ -11,14 +11,17 @@ struct CovarianceAccumulator {
   CovarianceAccumulator() {
     _omegaAcc = Eigen::Matrix3f::Zero();
     _pointsAcc = Eigen::Vector3f::Zero();
+    _used = false;
   }
   inline Eigen::Matrix3f omegaAcc() const { return _omegaAcc; }
   inline Eigen::Vector3f pointsAcc() const { return _pointsAcc; }
+  inline bool used() const { return _used; }
   Eigen::Matrix3f _omegaAcc;
   Eigen::Vector3f _pointsAcc;
+  bool _used;
 };
 
-typedef std::vector<CovarianceAccumulator> CovarianceAccumulatorVector;
+typedef Eigen::Matrix<CovarianceAccumulator, Eigen::Dynamic, Eigen::Dynamic> CovarianceAccumulatorMatrix;
 
 class PointWithNormalMerger {
  public:
@@ -34,8 +37,8 @@ class PointWithNormalMerger {
   inline Eigen::MatrixXf* depthImage() { return &_depthImage; }
   inline PointWithNormalVector* points() { return &_points; }
   inline PointWithNormalVector* mergedPoints() { return &_mergedPoints; }
-  //inline PointWithNormalSVDVector* svds() { return &_covariancesSVDsVector; }
   inline int size() { return _points.size(); }
+  void clearAll();
   void addCloud(Eigen::Isometry3f t, const PointWithNormalVector points_);
   void computeAccumulator();
   void extractMergedCloud();
@@ -43,13 +46,13 @@ class PointWithNormalMerger {
  protected:
   float _alpha;
   float _baseLine;
+  float _scale;
   Eigen::Matrix3f _cameraMatrix;
   Eigen::MatrixXi _indexImage;
   Eigen::MatrixXf _depthImage;
   PointWithNormalVector _points;
   PointWithNormalVector _mergedPoints;
-  CovarianceAccumulatorVector _covariancesAccumulator;
-  //PointWithNormalSVDVector _covariancesSVDsVector;
+  CovarianceAccumulatorMatrix _covariances;
 };
 
 #endif

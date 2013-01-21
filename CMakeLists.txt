@@ -179,7 +179,7 @@ ENDIF(G2O_FOUND)
 
 # Find PCL
 set(PCL_DIR $ENV{PCL_ROOT})
-find_package(PCL 1.6 REQUIRED COMPONENTS common io registration filters keypoints visualization)
+find_package(PCL 1.6 REQUIRED) #test malcom
 IF(PCL_FOUND)
   include_directories(${PCL_INCLUDE_DIRS})
   link_directories(${PCL_LIBRARY_DIRS})
