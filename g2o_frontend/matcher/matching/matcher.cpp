@@ -1,7 +1,7 @@
 #include "matcher.h"
 
 
-const float MatcherResult::matchingScore() const
+float MatcherResult::matchingScore() const
 {
   return _matchingScore;
 }

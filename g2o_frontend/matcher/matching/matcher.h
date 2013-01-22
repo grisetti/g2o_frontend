@@ -17,7 +17,7 @@ class MatcherResult
   friend class Matcher;
   friend class Comparator;
   public:
-    virtual const float matchingScore() const;
+    virtual float matchingScore() const;
     virtual ~MatcherResult();
     
     Eigen::Vector3f _transformation;

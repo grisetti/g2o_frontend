@@ -214,9 +214,9 @@ _GridMap<T>::_GridMap(const Eigen::Vector2i& s, const Eigen::Vector2f& off, cons
   _lowerLeft = off;
   _upperRight = Eigen::Vector2f(s.x(), s.y()) + _lowerLeft;
 
-  for(unsigned int i = 0; i < size().x(); ++i)
+  for(int i = 0; i < size().x(); ++i)
   {
-    for(unsigned int j=0; j < size().y(); ++j)
+    for(int j=0; j < size().y(); ++j)
     {
       _allocator[i][j] = unknownCell;
     }
@@ -319,9 +319,9 @@ void _GridMap<T>::saveAsPPM(std::ostream& os, bool equalize) const
   float max=1.;
   if(equalize)
   {
-    for(unsigned int i = 1; i <= height; ++i)
+    for(int i = 1; i <= height; ++i)
     {
-      for(unsigned int x = 0; x < width; ++x)
+      for(int x = 0; x < width; ++x)
       {
 	int y = height-i;
 	float k = cell(Eigen::Vector2i(x,y));
@@ -339,9 +339,9 @@ void _GridMap<T>::saveAsPPM(std::ostream& os, bool equalize) const
     }
   }
 
-  for(unsigned int i = 1; i <= height; ++i)
+  for(int i = 1; i <= height; ++i)
   {
-    for(unsigned int x = 0; x < width; ++x)
+    for(int x = 0; x < width; ++x)
     {
       int y = height-i;
       float fo = cell(Eigen::Vector2i(x,y));

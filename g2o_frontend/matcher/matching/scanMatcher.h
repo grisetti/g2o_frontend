@@ -60,7 +60,7 @@ class ScanMatcherResult : public MatcherResult
 {
   public:
     friend class ScanMatcher;
-    virtual const float matchingScore() const;
+    virtual float matchingScore() const;
     virtual ~ScanMatcherResult();
 };
 
