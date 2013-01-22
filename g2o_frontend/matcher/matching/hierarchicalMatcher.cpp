@@ -7,7 +7,7 @@ using namespace Eigen;
 
 
 
-const float HierarchicalMatcherResult::matchingScore() const
+float HierarchicalMatcherResult::matchingScore() const
 {
   return _matchingScore;
 }

@@ -51,7 +51,7 @@ class CorrelativeMatcherResult : public ScanMatcherResult
 {
   friend class CorrelativeMatcher;
   public:
-    virtual const float matchingScore() const;
+    virtual float matchingScore() const;
     virtual ~CorrelativeMatcherResult();
 };
 

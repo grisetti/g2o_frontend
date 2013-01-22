@@ -5,7 +5,7 @@ using namespace Eigen;
 
 
 
-const float ScanMatcherResult::matchingScore() const
+float ScanMatcherResult::matchingScore() const
 {
   return _matchingScore;
 }
@@ -39,9 +39,9 @@ ScanMatcher::ScanMatcher(const _GridMap<float>& inputGrid, const int& kernelSize
 //   _rasterIndices.reserve(size*size);
 //   _convolvedIndices.reserve(size*size);
   
-  for(unsigned int x = 0; x < inputGrid.size().x(); ++x)
+  for(int x = 0; x < inputGrid.size().x(); ++x)
   {
-    for(unsigned int y = 0; y < inputGrid.size().y(); ++y)
+    for(int y = 0; y < inputGrid.size().y(); ++y)
     {
       Vector2i currentIndices(x,y);
       if(inputGrid.cell(currentIndices) > 0)
@@ -67,7 +67,7 @@ ScanMatcher::~ScanMatcher()
 void ScanMatcher::clear()
 {
   int sizeCC = _convolvedCells.size();
-  for(unsigned int i = 0; i < sizeCC; ++i)
+  for(int i = 0; i < sizeCC; ++i)
   {
     *(_convolvedCells[i]) = 0.5;
   }
@@ -75,7 +75,7 @@ void ScanMatcher::clear()
   _convolvedIndices.clear();  
   
   int sizeRC = _rasterCells.size();
-  for(unsigned int j = 0; j < sizeRC; ++j)
+  for(int j = 0; j < sizeRC; ++j)
   {
     *(_rasterCells[j]) = 0;
   }
@@ -100,12 +100,12 @@ void ScanMatcher::convolveGrid(const _GridMap<float>& g)
     Vector2i ip = *it;
     int r = ip.x();
     int c = ip.y();
-    for(unsigned int i = 0; i < kRows; ++i)
+    for(int i = 0; i < kRows; ++i)
     {
       int iOut = r+i-center;
       if((iOut >= 0) && (iOut < oRows))
       {
-	for(unsigned int j = 0; j < kCols; ++j)
+	for(int j = 0; j < kCols; ++j)
 	{
 	  int jOut = c+j-center;
 	  if((jOut >= 0) && (jOut < oCols))
@@ -151,12 +151,12 @@ void ScanMatcher::convolveScan(const ScanMatcher::Vector2fVector& ns, const Isom
     Vector2i ip = this->_scanGrid.world2grid(transformedPoint);    
     int r = ip.x();
     int c = ip.y();
-    for(unsigned int i = 0; i < kRows; ++i)
+    for(int i = 0; i < kRows; ++i)
     {
       int iOut = r+i-center;
       if((iOut >= 0) && (iOut < oRows))
       {
-	for(unsigned int j = 0; j < kCols; ++j)
+	for(int j = 0; j < kCols; ++j)
 	{
 	  int jOut = c+j-center;
 	  if((jOut >= 0) && (jOut < oCols))
