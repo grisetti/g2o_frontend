@@ -12,10 +12,16 @@
 #include "IEdgesExtractor.h"
 #include "line_extraction2d.h"
 #include <Qt/qapplication.h>
-// 
 
-typedef std::pair<LaserRobotData*, LaserRobotData::Vector2fVector> LaserData;
-typedef std::vector<LaserData> LaserDataVector;
+#include "g2o_frontend/thesis/LaserRobotData.h"
+
+//changing this..
+// typedef std::pair<LaserRobotData*, LaserRobotData::Vector2fVector> LaserData;
+// typedef std::vector<LaserData> LaserDataVector;
+//..in this
+typedef std::pair<g2o::VertexSE3*, LaserRobotData::Vector2fVector> VertexData;
+typedef std::vector<VertexData> VertexDataVector;
+
 /**for adjacent lines**/
 typedef std::vector<Line2D, Eigen::aligned_allocator<Line2D> > LinesAdjacent;
 typedef std::vector<LinesAdjacent/*, Eigen::aligned_allocator<std::vector<Line2D> > */> LinesAdjacentVector;
@@ -27,8 +33,10 @@ class ViewerGUI : public QMainWindow, public Ui::MainWindow
 	 Q_OBJECT
 
 	public:
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 // 		ViewerGUI(LaserRobotData* theLaserData, Vector2fVector* theOriginalPoints, QWidget *parent=0);
-		ViewerGUI(LaserDataVector* TheLdvector, QWidget *parent=0);
+// 		ViewerGUI(LaserDataVector* TheLdvector, QWidget *parent=0);
+		ViewerGUI(VertexDataVector* TheVLdvector, const Eigen::Isometry3d TheOffset, QWidget *parent=0);
 
 		void linesInfoExtraction(Line2DExtractor::IntLineMap::const_iterator it_, const Line2DExtractor::IntLineMap& linesMap_, Vector2fVector& currentPoints_) const;
 		int slider1value;
@@ -41,10 +49,20 @@ class ViewerGUI : public QMainWindow, public Ui::MainWindow
 		Point2DClusterer* clusterer;
 // 		LaserRobotData* laserData;		
 // 		Vector2fVector* originalPoints;
-		LaserDataVector* ldvector;
+		
+		//changing this..
+// 		LaserDataVector* ldvector;
+// 		LaserData ld;
+		//in this..
+		VertexDataVector* vldvector;
+		VertexData vld;
+		
+		/*to calculate the offset of the laser data, taking into account the odometry of the robot*/
+		Eigen::Isometry3d offset;
+		
 		lineContainer lc;
 		int numIteration;
-		LaserData ld;
+		/*vector of adajcent lines*/
 		LinesAdjacentVector lAdjacentVector;
 
 	public slots:

@@ -1,3 +1,9 @@
+/*
+ * line_extraction2d.h
+ *
+ *  Created on: Jan 15, 2013
+ *      Author: Martina
+ */
 #ifndef LINE2DEXTRACTOR_H
 #define LINE2DEXTRACTOR_H
 

@@ -66,16 +66,21 @@ void ViewerGUI::showOriginal()
 	
   this->viewer->lineFound = false;
 
-	LaserDataVector::iterator it = ldvector->begin();
-	ld = *(it+numIteration);
-	this->viewer->setDataPointer(&(ld.second));
+	//changing this....
+// 	LaserDataVector::iterator it = ldvector->begin();
+// 	ld = *(it+numIteration);
+// 	this->viewer->setDataPointer(&(ld.second));
+	//in this...
+	VertexDataVector::iterator it = vldvector->begin();
+	vld = *(it+numIteration);
+	this->viewer->setDataPointer(&(vld.second));
 	this->viewer->updateGL();
 }
 
-#if 0
+#if 1
 // 					ofstream osp1PrimaC("points1PrimaC.dat");
 // 					ofstream osp1("points1.dat");
-					ofstream os1("lines1.dat");
+						ofstream os("myLines.dat");
 #endif
 void ViewerGUI::lineExtraction()
 {
@@ -90,15 +95,24 @@ void ViewerGUI::lineExtraction()
 		
 		int minPointsCluster = 10;
 		Vector2fVector linePoints;
-		LaserDataVector::iterator it = ldvector->begin();
-		ld = *(it+numIteration);
+		//changing this..
+// 		LaserDataVector::iterator it = ldvector->begin();
+// 		ld = *(it+numIteration);	
+		//in this..
+		VertexDataVector::iterator it = vldvector->begin();
+		vld = *(it+numIteration);
+		g2o::VertexSE3* v = vld.first;
+		Eigen::Isometry3d T = v->estimate()*offset;
 		
 		if (algotype == splitMergeType){
 			cout << "#----------------------------------------------#" << endl;
 			cout << "Starting extraction with: " << algotype << endl;
 			cout << "#------------------------------------------------#" << endl;			
 			
-			Vector2fVector cartesianPoints = ld.second;
+			//changing this...
+			//Vector2fVector cartesianPoints = ld.second;
+			//in this..
+			Vector2fVector cartesianPoints = vld.second;
 #if 0				
 				for (size_t i =0; i<cartesianPoints.size(); i++){
 					osp1PrimaC << cartesianPoints[i].transpose() << endl;
@@ -109,10 +123,8 @@ void ViewerGUI::lineExtraction()
 			clusterer->compute();
 			cerr << "I found " << clusterer->numClusters() << " clusters in the pool" << endl;
 			
-			/**for adjacent lines**/
-			LinesAdjacent la;				
-			int num = 0;
-			
+			//for adjacent lines
+			LinesAdjacent la;			
 			for (int i =0; i< clusterer->numClusters(); ++i){
 				const Point2DClusterer::Cluster& cluster = clusterer->cluster(i);
 				int clusterSize = cluster.second - cluster.first;
@@ -132,7 +144,6 @@ void ViewerGUI::lineExtraction()
 				}
 				osp1.flush();
 #endif
-				
 				lineExtractor->setPoints(currentPoints);
 				lineExtractor->compute();
 				cout << endl; 
@@ -142,36 +153,36 @@ void ViewerGUI::lineExtraction()
 				cout << "***********************************************************************************" << endl;
 				
 				const Line2DExtractor::IntLineMap& linesMap = lineExtractor->lines();
-				for (Line2DExtractor::IntLineMap::const_iterator it=linesMap.begin(); it!=linesMap.end(); it++) {
-					
+				for (Line2DExtractor::IntLineMap::const_iterator it=linesMap.begin(); it!=linesMap.end(); it++) {					
 					const Line2D& line = it->second;					
 					const Vector2f& p0 = lineExtractor->points()[line.p0Index];
 					const Vector2f& p1 = lineExtractor->points()[line.p1Index];
 					
-					//saving some information about the lines etracted
-					linesInfoExtraction(it, linesMap, currentPoints);
-					
 					//creating structure to draw lines
 					linePoints.push_back(Eigen::Vector2f(p0.x(), p0.y()));					
 					linePoints.push_back(Eigen::Vector2f(p1.x(), p1.y()));
-// 				cout << "***NEW LINE FOUND!*** " << p0.x() << ", " << p0.y() << " to "  << p1.x() << ", " << p1.y() << endl;
-#if 0
-// 					os1 << p0.transpose() << endl;
-// 					os1 << p1.transpose() << endl;
-					// or
-					os1 << linePoints[0].x() << " " << linePoints[0].y() << endl;
-					os1 << linePoints[1].x() << " " << linePoints[1].y() << endl;
-					os1 << endl;
-					os1 << endl;
+					
+#if 1
+					Vector3d p0_3(p0.x(), p0.y(), 0.f);
+					Vector3d p1_3(p1.x(), p1.y(), 0.f);
+					p0_3 = T*p0_3;
+					p1_3 = T*p1_3;
+					os << p0_3.transpose() << endl;
+					os << p1_3.transpose() << endl;
+					os << endl;
+					os << endl;
+					os.flush();
 #endif
 					this->lc.push_back(linePoints);
 					linePoints.clear();
 				}
-				/**saving vector of adjacent lines**/	
+				
+				/* saving some information about the line extracted and its line adjacent, if exists*/	
 				Line2DExtractor::IntLineMap::const_iterator bit=linesMap.begin();
 				la.push_back(bit->second);
 				while(bit != linesMap.end()) {
 					const Line2D& line = bit->second;
+					linesInfoExtraction(bit, linesMap, currentPoints);
 					Line2DExtractor::IntLineMap::const_iterator tmp = bit;
 					if((++tmp) != linesMap.end()) {
 						const Line2D& lineRight = tmp->second;
@@ -182,14 +193,13 @@ void ViewerGUI::lineExtraction()
 						}
 						else {
 							lAdjacentVector.push_back(la);
-							cout << "Vettore Linee adiacenti: " <<  lAdjacentVector.size() << endl;
 							la.clear();
 							bit++;
 						}
 					}
 					else {
 						lAdjacentVector.push_back(la);
-						cout << "Vettore Linee adiacenti: " <<  lAdjacentVector.size() << endl;
+						cout << "Number of lines adjacent set: " << lAdjacentVector.size() << endl;
 						la.clear();
 						bit++;
 					}
@@ -205,7 +215,12 @@ void ViewerGUI::lineExtraction()
 			cout << "#----------------------------------------------#" << endl;
 			cout << "Starting extraction with: " << algotype << endl;
 			cout << "#------------------------------------------------#" << endl;
-			LaserRobotData* laserData = ld.first;
+			//changing this...
+// 			LaserRobotData* laserData = ld.first;
+			//in this...
+			g2o::OptimizableGraph::Data* d = v->userData();			
+			LaserRobotData* laserData = dynamic_cast<LaserRobotData*>(d);
+			
 			double maxRangeFinderLimit = laserData->maxRange();
 			float angularStep = laserData->fov() / laserData->ranges().size();
 			float angle = laserData->firstBeamAngle();
@@ -221,13 +236,10 @@ void ViewerGUI::lineExtraction()
 			  map_vertex.insert(pair<int,Vertex*>(i,v));
 				
 			  angle+=angularStep;
-			}
-			
+			}	
 // 			cout << "map_vertices dim: " << map_vertex.size() << endl;
 			Edges edges; //edges ia a vector of Edge
 			Edges satEdges;
-			
-			
 			edgeExtr->purgeBoundaryVertices(map_vertex, satEdges, maxRangeFinderLimit);
 			edgeExtr->step(map_vertex, edges);
 			//edgeExtr->mergeCollinearSegments(edges);
@@ -239,19 +251,13 @@ void ViewerGUI::lineExtraction()
 			  cout << "WARNING! The algorithm you used haven't found any lines.." << endl;
 			}
 			else {
-				
 			  //create the linecontainer structure from the edges inside the vector of edges
-			 
 			  for (int i = 0; i < (int)edges.size(); i++) {
-					
-				linePoints.push_back(Eigen::Vector2f(edges[i]->getVertexFrom().x(),
-																							edges[i]->getVertexFrom().y()));
-				linePoints.push_back(Eigen::Vector2f(edges[i]->getVertexTo().x(),
-																							edges[i]->getVertexTo().y()));
-					
-// 				cout << "***NEW LINE FOUND!*** " << edges[i]->getVertexFrom().x() << ", " << edges[i]->getVertexFrom().y() << " to "  << edges[i]->getVertexTo().x() << ", " << edges[i]->getVertexTo().y() << endl;
-				this->lc.push_back(linePoints);
-				linePoints.clear();
+					linePoints.push_back(Eigen::Vector2f(edges[i]->getVertexFrom().x(),	edges[i]->getVertexFrom().y()));
+					linePoints.push_back(Eigen::Vector2f(edges[i]->getVertexTo().x(), edges[i]->getVertexTo().y()));
+	// 				cout << "***NEW LINE FOUND!*** " << edges[i]->getVertexFrom().x() << ", " << edges[i]->getVertexFrom().y() << " to "  << edges[i]->getVertexTo().x() << ", " << edges[i]->getVertexTo().y() << endl;
+					this->lc.push_back(linePoints);
+					linePoints.clear();
 			  }
 			cout << "Drawing is starting....." << endl;
 			this->viewer->lineFound = true;
@@ -261,7 +267,6 @@ void ViewerGUI::lineExtraction()
 		this->viewer->updateGL();
 	}
 }
-
 
 /**FOR EACH line
 	* save coordinates of the point with max distance from the line;
@@ -347,8 +352,7 @@ void ViewerGUI::setIdIteration()
 	this->showOriginal();
 }
 
-
-ViewerGUI::ViewerGUI(LaserDataVector* theLdVector, QWidget* parent)
+ViewerGUI::ViewerGUI(VertexDataVector* theVLdVector, Eigen::Isometry3d TheOffset, QWidget* parent)
 {
   setupUi(this);
   QObject::connect(horizontalSlider, SIGNAL(sliderMoved(int)), this, SLOT(updateVal1(int)));
@@ -368,7 +372,33 @@ ViewerGUI::ViewerGUI(LaserDataVector* theLdVector, QWidget* parent)
   edgeExtr = 0;
 	lineExtractor = 0;
 	clusterer = 0;
-	ldvector = theLdVector;
+	vldvector = theVLdVector;
+	offset = TheOffset;
 	numIteration = 0;
 
 }
+
+// ViewerGUI::ViewerGUI(LaserDataVector* theLdVector, QWidget* parent)
+// {
+//   setupUi(this);
+//   QObject::connect(horizontalSlider, SIGNAL(sliderMoved(int)), this, SLOT(updateVal1(int)));
+//   QObject::connect(horizontalSlider_2, SIGNAL(sliderMoved(int)), this, SLOT(updateVal2(int)));
+//   QObject::connect(horizontalSlider_3, SIGNAL(sliderMoved(int)), this, SLOT(updateVal3(int)));
+//   QObject::connect(pushButton, SIGNAL(clicked()), this, SLOT(lineExtraction()));
+//   QObject::connect(pushButton_2, SIGNAL(clicked()), this, SLOT(showOriginal()));	
+//   QObject::connect(pushButton_3, SIGNAL(clicked()), this, SLOT(setIdIteration()));
+//   QObject::connect(checkBox, SIGNAL(clicked(bool)),this, SLOT(setAlgorithm()));
+//   QObject::connect(checkBox_2, SIGNAL(clicked(bool)),this, SLOT(setAlgorithm()));
+// 
+// 	
+//   slider1value = 0;
+//   slider2value = 0;
+//   slider3value = 0;
+//   algotype = noType;
+//   edgeExtr = 0;
+// 	lineExtractor = 0;
+// 	clusterer = 0;
+// 	ldvector = theLdVector;
+// 	numIteration = 0;
+// 
+// }
