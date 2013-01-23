@@ -65,16 +65,35 @@ PointWithNormalAligner::PointWithNormalAligner() {
   _translationalMinEigenRatio = 50;
   _debug = false;
   _numThreads = 1;
+
+  _referenceScene = 0; 
+  _currentScene = 0;
+}
+
+
+void PointWithNormalAligner::setReferenceScene(const Scene* refScene) {
+  _referenceScene = refScene;
+  _refPoints = &(refScene->points());
+  _refSVDs = &(refScene->svds());
+}
+
+void PointWithNormalAligner::setCurrentScene(const Scene* currScene){
+  _currentScene = currScene;
+  _currPoints = &(currScene->points());
+  _currSVDs = &(currScene->svds());
+  _omegasSet=false;
 }
 
 
 void PointWithNormalAligner::setReferenceCloud(const PointWithNormalVector*  refPoints, const PointWithNormalSVDVector* refSVDs) {
+  _referenceScene = 0;
   _refPoints = refPoints;
   _refSVDs = refSVDs;
 }
 // sets the cloud and conditions tthe covariances accordingly
 
 void PointWithNormalAligner::setCurrentCloud(const PointWithNormalVector*  currentPoints, const PointWithNormalSVDVector* currentSVDs){
+  _currentScene = 0;
   _currPoints = currentPoints;
   _currSVDs = currentSVDs;
   _omegasSet=false;

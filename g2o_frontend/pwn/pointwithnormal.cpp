@@ -77,7 +77,11 @@ void PointWithNormalVector::toIndexImage(Eigen::MatrixXi& indexImage, Eigen::Mat
     int& index =indexImage(coords.y(), coords.x());
     if (d>ip.z()){
       d=ip.z();
-      index = k;
+      // check if the normals are defined and are compatible with the viewPoint
+      // this does a normal check against the viewpoint
+      if (point.normal().dot(point.point()-cameraPose.translation()) <=0){
+	index = k;
+      } 
     }
   }
 }

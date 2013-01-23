@@ -53,7 +53,8 @@ class PointWithNormalStatistcsGenerator{
 public:
   PointWithNormalStatistcsGenerator();
 
-  void computeNormalsAndSVD(PointWithNormalVector& points, PointWithNormalSVDVector& svds, const Eigen::MatrixXi& indices, const Eigen::Matrix3f& cameraMatrix);
+  void computeNormalsAndSVD(PointWithNormalVector& points, PointWithNormalSVDVector& svds, const Eigen::MatrixXi& indices, 
+			    const Eigen::Matrix3f& cameraMatrix, const Eigen::Isometry3f& cameraPose=Eigen::Isometry3f::Identity() );
 
   // void computeNormals(PointWithNormalVector& points, const Eigen::MatrixXi indices, const Eigen::Matrix3f& cameraMatrix);
 

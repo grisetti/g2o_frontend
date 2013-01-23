@@ -14,7 +14,7 @@
 #include "pointwithnormalstatsgenerator.h"
 #include "pointwithnormalaligner.h"
 #include "g2o/stuff/timeutil.h"
-#include "gaussian3.h"
+#include "scene.h"
 
 using namespace Eigen;
 using namespace g2o;
@@ -44,41 +44,57 @@ set<string> readDir(std::string dir){
   return filenames;
 }
 
-struct Frame{
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  
-  DepthImage depthImage;
-  MatrixXi indexImage;
-  PointWithNormalVector points;
-  Gaussian3fVector gaussians;
-  PointWithNormalSVDVector svds;
-  MatrixXf zBuffer;
-  
+#if 0
 
-  bool load(std::string filename) {
-    return depthImage.load(filename.c_str());
-  }
-  void computeStats(PointWithNormalStatistcsGenerator & generator, const Matrix3f& cameraMatrix){
-    zBuffer.resize(depthImage.rows(), depthImage.cols());
-    gaussians.fromDepthImage(depthImage,cameraMatrix);
-    gaussians.toPointWithNormalVector(points);
-    indexImage.resize(depthImage.rows(), depthImage.cols());
-    gaussians.toIndexImage(indexImage, zBuffer, cameraMatrix, Eigen::Isometry3f::Identity(), 10);
-    cerr << "points: " << points.size() << endl; 
-    svds.resize(points.size());
-    double tNormalStart = get_time();
-    generator.computeNormalsAndSVD(points, svds, indexImage, cameraMatrix);
-    double tNormalEnd = get_time();
-    cerr << "Normal Extraction took " << tNormalEnd - tNormalStart << " sec." << endl;
-  }
-  void setAligner(PointWithNormalAligner& aligner, bool isRef){
-    if (isRef) {
-      aligner.setReferenceCloud(&points, &svds);
-    } else {
-      aligner.setCurrentCloud(&points, &svds);
+struct PointsMerger{
+  Eigen::Matrix3f cameraMatrix;
+  Eigen::MatrixXf zBuffer;
+  Eigen::MatrixXi indexImage;
+
+  void merge(Scene* scene, Eigen::Isometry3f& transform){
+    collapsedIndices.resize(scene->points().size(), -1);
+    scene->points.toIndexImage(indexImage, zBuffer, cameraMatrix, transform, 10);
+    // now pick up all points in the index image and see if the normal is compatible with the view direction
+    // set the other ones to -1;
+
+    // scan all the points, 
+    // if they fall in a cell not with -1, 
+    //   skip
+    // if they fall in a cell with n>1, 
+    //   if distance is incompatible,
+    //      skip
+    // if notrmals are incompatible
+    //      skip
+    // accumulate the point in the cell i
+    // set the target accumulator  to i;
+
+    // scan the vector of covariances.
+    // if the index is -1
+    //    copy into k
+    //    increment k 
+    // if the index is the same,
+    //    update the point with normal
+    //    copy into k
+    //    increment k
+
+    // recompute the depth and index images
+    
+    
+
+    PixelMapper pixelMapper;
+    pixelMapper.setCameraMatrix(cameraMatrix);
+    pixelMapper.setTransform(transform);
+    for (size_t i = 0; i<scene->points().size(); i++){
+      // project a point
+      // check if it is inside the image cone
     }
+   
   }
-};
+
+  std::vector<int> collapsedIndices;
+}
+
+#endif
 
 int
  main(int argc, char** argv){
@@ -172,7 +188,7 @@ int
 #endif //_PWN_USE_OPENMP_
 
 
-  Frame* referenceFrame= 0;
+  DepthFrame* referenceFrame= 0;
 
   Eigen::Matrix3f cameraMatrix;
   cameraMatrix << 
@@ -189,12 +205,15 @@ int
   int previousIndex=-1;
   int graphNum=0;
   int nFrames = 0;
+  //Scene* globalScene = new Scene;
+
   string baseFilename = graphFilename.substr( 0, graphFilename.find_last_of( '.' ) );
   for (size_t i=0; i<filenames.size(); i++){
     cerr << endl << endl << endl;
     cerr << ">>>>>>>>>>>>>>>>>>>>>>>> PROCESSING " << filenames[i] << " <<<<<<<<<<<<<<<<<<<<" <<  endl;
-    Frame* currentFrame= new Frame();
-    if(!currentFrame->load(filenames[i])) {
+    DepthFrame* currentFrame= new DepthFrame();
+    DepthImage img;
+    if(!img.load(filenames[i].c_str())) {
       cerr << "failure in loading image: " << filenames[i] << ", skipping" << endl;
       delete currentFrame;
       continue;
@@ -221,16 +240,20 @@ int
       os << "DEPTH_IMAGE_DATA 0 " << filenames[i] << " 0 0 " << endl;
     }
     
-    currentFrame->computeStats(normalGenerator,cameraMatrix);
+    currentFrame->_cameraMatrix = cameraMatrix;
+    currentFrame->_baseline = 0.075;
+    currentFrame->_maxDistance = 10;
+    currentFrame->setImage(img);
+    currentFrame->_updateSVDsFromPoints(normalGenerator, cameraMatrix);
     if (referenceFrame) {
-      referenceFrame->setAligner(aligner, true);
-      currentFrame->setAligner(aligner, false);
+      aligner.setReferenceScene(referenceFrame);
+      aligner.setCurrentScene(currentFrame);
 
       Matrix6f omega;
       Vector6f mean;
       float tratio;
       float rratio;
-      aligner.setImageSize(currentFrame->depthImage.rows(), currentFrame->depthImage.cols());
+      aligner.setImageSize(currentFrame->image().rows(), currentFrame->image().cols());
       Eigen::Isometry3f X;
       X.setIdentity();
       double ostart = get_time();
@@ -267,6 +290,8 @@ int
 	  }
 	} 
 	os << endl;
+
+	//globalScene->add(*currentFrame,trajectory);
       } else {
 	if (nFrames >10) {
 	  char buf[1024];
@@ -299,5 +324,7 @@ int
   gs << os.str();
   cout << os.str();
   gs.close();
+
+  //globalScene->points().save("allPoints.dat", 50);
   
 }
