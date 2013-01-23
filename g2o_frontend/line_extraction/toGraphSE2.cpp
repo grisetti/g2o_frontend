@@ -136,9 +136,7 @@ int main(int argc, char**argv){
 		}
 	}
 #endif
-	std::vector<int> edgesIds(graph->edges().size());
-	
-	
+// 	std::vector<int> edgesIds(graph->edges().size());
 // 	for (int j = 0; j <= edgesIds.size(); j++) 
 // 	{
 // 		OptimizableGraph::Edge* _e = graph->edges();
@@ -162,26 +160,26 @@ int main(int argc, char**argv){
 // 	}
 	
 	
-// 		for (OptimizableGraph::EdgeSet::iterator it = graph->edges().begin(); it != graph->edges().end(); it++) {
-// 			OptimizableGraph::Edge* _e = it;
-// 			EdgeSE3* e3 = dynamic_cast<EdgeSE3*>(_e);
-// 			if (!e3)
-// 				continue;
-// 			
-// 			EdgeSE2* e2 = new EdgeSE2();		
-// 			VertexSE3* tmp0 = dynamic_cast<VertexSE3*>(e3->vertices()[0]);
-// 			VertexSE3* tmp1 = dynamic_cast<VertexSE3*>(e3->vertices()[1]);
-// 			Vertex3to2 vertex0 = vertexVector[tmp0->id()];
-// 			Vertex3to2 vertex1 = vertexVector[tmp1->id()];
-// 			e2->setVertex(0, vertex0.second);
-// 			e2->setVertex(1, vertex1.second);
-// 			e2->setMeasurementFromState();
-// 			Eigen::Matrix<double, 6,6> m;
-// 			m.setIdentity();
-// 			e2->setInformation(m);
-// 			graphSE2->addEdge(e2);
-// 			graphSE2->saveEdge(ofG2O, e2);
-// 	}
+		for (OptimizableGraph::EdgeSet::iterator it = graph->edges().begin(); it != graph->edges().end(); it++) {
+			OptimizableGraph::Edge* _e = *it;
+			EdgeSE3* e3 = dynamic_cast<EdgeSE3*>(_e);
+			if (!e3)
+				continue;
+			
+			EdgeSE2* e2 = new EdgeSE2();		
+			VertexSE3* tmp0 = dynamic_cast<VertexSE3*>(e3->vertices()[0]);
+			VertexSE3* tmp1 = dynamic_cast<VertexSE3*>(e3->vertices()[1]);
+			Vertex3to2 vertex0 = vertexVector[tmp0->id()];
+			Vertex3to2 vertex1 = vertexVector[tmp1->id()];
+			e2->setVertex(0, vertex0.second);
+			e2->setVertex(1, vertex1.second);
+			e2->setMeasurementFromState();
+			Eigen::Matrix<double, 6,6> m;
+			m.setIdentity();
+			e2->setInformation(m);
+			graphSE2->addEdge(e2);
+			graphSE2->saveEdge(ofG2O, e2);
+	}
 
 	return (0);
 	
