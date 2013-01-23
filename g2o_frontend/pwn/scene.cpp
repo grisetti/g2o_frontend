@@ -55,6 +55,46 @@ void Scene::_updateSVDsFromPoints(PointWithNormalStatistcsGenerator & generator,
   generator.computeNormalsAndSVD(_points, _svds, indexImage, cameraMatrix, cameraPose);
 }
 
+void Scene::_suppressNoNormals(){
+  int k=0;
+  for (size_t i =0; i<size(); i++){
+    if (_points[i].normal().squaredNorm()>0) {
+      _points[k] = _points[i];
+      _svds[k] = _svds[i];
+      _gaussians[k] = _gaussians[i];
+      k++;
+    }
+  }
+  _points.resize(k);
+  _svds.resize(k);
+  _gaussians.resize(k);
+}
+
+void Scene::subScene(Scene& partial, const Eigen::Matrix3f& cameraMatrix_, const Eigen::Isometry3f& cameraPose,
+		int rows, int cols, float scale, float dmax){
+  int r = rows*scale;
+  int c = cols*scale;
+  Eigen::Matrix3f cameraMatrix = cameraMatrix_;
+  cameraMatrix.block<2, 3>(0, 0) *= scale;
+  Eigen::MatrixXi indexImage(r,c);
+  Eigen::MatrixXf zBuffer(r,c);
+  partial.clear();
+  int maxSize=r*c;
+  partial._points.reserve(maxSize);
+  partial._svds.reserve(maxSize);
+  partial._gaussians.reserve(maxSize);
+  _points.toIndexImage(indexImage, zBuffer, cameraMatrix, cameraPose, dmax);
+  for (int c=0; c<indexImage.cols(); c++)
+    for (int r=0; r<indexImage.rows(); r++){
+      int idx = indexImage(r,c);
+      if (idx<0)
+	continue;
+      partial._points.push_back(_points[idx]);
+      partial._svds.push_back(_svds[idx]);
+      partial._gaussians.push_back(_gaussians[idx]);
+    }
+}
+
 DepthFrame::DepthFrame() {
   _baseline = 0.075;
   _cameraMatrix <<   

@@ -16,6 +16,9 @@ struct Scene{
 		    const Eigen::Matrix3f& cameraMatrix, const Eigen::Isometry3f& cameraPose,
 		    float dmax = std::numeric_limits<float>::max());
 
+  void subScene(Scene& partial, const Eigen::Matrix3f& cameraMatrix, const Eigen::Isometry3f& cameraPose,
+		int rows=480, int columns=640, float scale=1, float dmax = std::numeric_limits<float>::max());
+
   void transform(const Eigen::Isometry3f& T);
   void add(const Scene& scene, const Eigen::Isometry3f& T=Eigen::Isometry3f::Identity());
   void clear();
@@ -27,6 +30,7 @@ struct Scene{
 			    const Eigen::Isometry3f& cameraPose=Eigen::Isometry3f::Identity(),
 			    int r=480, int c=640,
 			    float dmax = std::numeric_limits<float>::max());
+  void _suppressNoNormals();
   PointWithNormalVector _points;
   Gaussian3fVector _gaussians;
   PointWithNormalSVDVector _svds;
