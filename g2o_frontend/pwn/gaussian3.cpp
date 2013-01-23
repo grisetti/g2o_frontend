@@ -95,12 +95,13 @@ void Gaussian3fVector::toIndexImage(Eigen::MatrixXi& indexImage, Eigen::MatrixXf
   }
 }
 
-void Gaussian3fVector::toPointWithNormalVector(PointWithNormalVector& dest) const {
+void Gaussian3fVector::toPointWithNormalVector(PointWithNormalVector& dest, bool eraseNormals) const {
   dest.resize(size());
   for (size_t k =0; k<size(); k++){
     PointWithNormal& p = dest[k];
     p.head<3>()=at(k).mean();
-    p.tail<3>().setZero();
+    if (eraseNormals)
+      p.tail<3>().setZero();
   }
 }
 

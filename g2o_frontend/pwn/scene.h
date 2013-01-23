@@ -1,4 +1,5 @@
 #ifndef _SCENE_H_
+#define _SCENE_H_
 #include "depthimage.h"
 #include "pointwithnormal.h"
 #include "gaussian3.h"
@@ -19,26 +20,34 @@ struct Scene{
   void add(const Scene& scene, const Eigen::Isometry3f& T=Eigen::Isometry3f::Identity());
   void clear();
   size_t size() const {return _points.size();}
-protected: 
-  void _updateSVD(PointWithNormalStatistcsGenerator & generator, 
-		  const Eigen::Matrix3f& cameraMatrix, 
-		  const Eigen::Isometry3f& cameraPose=Eigen::Isometry3f::Identity(),
-		  int r=480, int c=640,
-		  float dmax = std::numeric_limits<float>::max());
+  //protected: 
+  void _updatePointsFromGaussians(bool eraseNormals=true);
+  void _updateSVDsFromPoints(PointWithNormalStatistcsGenerator & generator, 
+			    const Eigen::Matrix3f& cameraMatrix, 
+			    const Eigen::Isometry3f& cameraPose=Eigen::Isometry3f::Identity(),
+			    int r=480, int c=640,
+			    float dmax = std::numeric_limits<float>::max());
   PointWithNormalVector _points;
   Gaussian3fVector _gaussians;
   PointWithNormalSVDVector _svds;
+
 };
 
-// struct DepthFrame : public Scene{
-//   friend class SceneManipulator;
-//   inline const DepthImage& image() const {return _image;}
-//   inline const Matrix3f& cameraMatrix() const {return _cameraMatrix;}
-//   inline void setImage(const DepthImage& image_) {return _image;}
-// protected:
-//   DepthImage _image;
-//   Matrix3f _cameraMatrix;
-// }
+struct DepthFrame : public Scene{
+  friend class SceneManipulator;
+  DepthFrame();
+  inline const DepthImage& image() const {return _image;}
+  inline const Eigen::Matrix3f& cameraMatrix() const {return _cameraMatrix;}
+  float maxDistance() const { return _maxDistance;}
+  float baseline() const { return _baseline;}
+  void setImage(const DepthImage& image_);
+  //protected:
+  void _updateGaussiansFromImage();
+  DepthImage _image;
+  Eigen::Matrix3f _cameraMatrix;
+  float _maxDistance;
+  float _baseline;
+};
 
 // class SceneManipulator{
 //   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

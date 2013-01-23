@@ -53,7 +53,9 @@ void PointWithNormalStatistcsGenerator::computeNormalsAndSVD(PointWithNormalVect
 	  continue;
 	// determine the region
 	PointWithNormal& point = points[index];
-	PointWithNormalSVD& svd = svds[index];
+	PointWithNormalSVD& originalSVD = svds[index];
+	PointWithNormalSVD svd;
+	Eigen::Vector3f normal = point.normal();
 	Eigen::Vector3f coord = pixelMapper.projectPoint(point.point()+Eigen::Vector3f(_worldRadius, _worldRadius, 0));
 	svd._z=point(2);
 
@@ -84,19 +86,22 @@ void PointWithNormalStatistcsGenerator::computeNormalsAndSVD(PointWithNormalVect
 	    */
 	
 
-	  Eigen::Vector3f normal = eigenSolver.eigenvectors().col(0).normalized();
+	  normal = eigenSolver.eigenvectors().col(0).normalized();
 	  if (normal.dot(inverseTransform * mean) > 0.0f)
 	    normal =-normal;
-	  point.setNormal(normal);
 	  svd.updateCurvature();
 	  //cerr << "n(" << index << ") c:"  << svd.curvature() << endl << point.tail<3>() << endl;
 	  if (svd.curvature()>_maxCurvature){
 	    //cerr << "region: " << c-dx << " " <<  c+dx << " " <<  r-dx << " " << r+dx << " points: " << acc.n() << endl;
-	    point.tail<3>().setZero();
+	    normal.setZero();
 	  } 
 	} else {
-	  point.tail<3>().setZero();
+	  normal.setZero();
 	  svd = PointWithNormalSVD();
+	}
+	if (svd.n() > originalSVD.n()){
+	  originalSVD = svd;
+	  point.setNormal(normal);
 	}
       } 
     }

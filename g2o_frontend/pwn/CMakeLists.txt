@@ -36,6 +36,10 @@ ADD_EXECUTABLE(pwn_g2o pwn_g2o.cpp)
 SET_TARGET_PROPERTIES(pwn_g2o PROPERTIES OUTPUT_NAME pwn_g2o)
 TARGET_LINK_LIBRARIES( pwn_g2o pwn_library  ${G2O_STUFF_LIBRARY} )
 
+ADD_EXECUTABLE(pwn_g3o pwn_g3o.cpp)
+SET_TARGET_PROPERTIES(pwn_g3o PROPERTIES OUTPUT_NAME pwn_g3o)
+TARGET_LINK_LIBRARIES( pwn_g3o pwn_library  ${G2O_STUFF_LIBRARY} )
+
 ADD_EXECUTABLE(pwn_g2o_localmap pwn_g2o_localmap.cpp)
 SET_TARGET_PROPERTIES(pwn_g2o_localmap PROPERTIES OUTPUT_NAME pwn_g2o_localmap)
 TARGET_LINK_LIBRARIES( pwn_g2o_localmap pwn_library  ${G2O_STUFF_LIBRARY} )

@@ -96,7 +96,7 @@ public:
 		    const Eigen::Matrix3f& cameraMatrix, const Eigen::Isometry3f& cameraPose, 
 		    float dmax = std::numeric_limits<float>::max()) const;
 
-  void toPointWithNormalVector(PointWithNormalVector& dest) const;
+  void toPointWithNormalVector(PointWithNormalVector& dest, bool eraseNormals = false) const;
   //bool save(const char* filename, int step=1) const;
   //bool load(const char* filename);
 
