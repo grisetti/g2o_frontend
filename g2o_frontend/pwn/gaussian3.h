@@ -5,6 +5,7 @@
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
 #include <Eigen/Dense>
+#include "pointwithnormal.h"
 
 struct Gaussian3f {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -20,11 +21,11 @@ struct Gaussian3f {
     if (useInfoForm){
       _informationVector=v;
       _informationMatrix = m;
-      _momentsUpdated = false;
+      _infoUpdated = true;
     } else {
       _mean=v;
       _covarianceMatrix = m;
-      _infoUpdated = false;
+      _momentsUpdated = true;
     }
   }
 
@@ -51,18 +52,18 @@ struct Gaussian3f {
   inline const Eigen::Vector3f& informationVector() const { _updateInfo();return _informationVector; }
 protected:
   inline void _updateMoments() const {
-    if (_momentsUpdated){
-      _covarianceMatrix = _informationMatrix.inverse();
-      _mean = _covarianceMatrix*_informationVector;
-    }
+    if (_momentsUpdated)
+      return;
+    _covarianceMatrix = _informationMatrix.inverse();
+    _mean = _covarianceMatrix*_informationVector;
     _momentsUpdated = true;
   }
 
   inline void _updateInfo() const {
-    if (_infoUpdated){
-      _informationMatrix = _covarianceMatrix.inverse();
-      _informationVector = _informationMatrix*_mean;
-    }
+    if (_infoUpdated)
+      return;
+    _informationMatrix = _covarianceMatrix.inverse();
+    _informationVector = _informationMatrix*_mean;
     _infoUpdated = true;
   }
 
@@ -87,12 +88,15 @@ public:
 		    float dmax = std::numeric_limits<float>::max()) const;
 
   void fromDepthImage(const Eigen::MatrixXf& depthImage, 
-		      const Eigen::Matrix3f& cameraMatrix, const Eigen::Isometry3f& cameraPose, 
-		      float dmax = std::numeric_limits<float>::max(), float baseline = 0.075, float alpha=0.1);
+		      const Eigen::Matrix3f& cameraMatrix, 
+		      float dmax = std::numeric_limits<float>::max(), 
+		      float baseline = 0.075, float alpha=0.1);
 
   void toIndexImage(Eigen::MatrixXi& indexImage, Eigen::MatrixXf& zBuffer, 
 		    const Eigen::Matrix3f& cameraMatrix, const Eigen::Isometry3f& cameraPose, 
 		    float dmax = std::numeric_limits<float>::max()) const;
+
+  void toPointWithNormalVector(PointWithNormalVector& dest) const;
   //bool save(const char* filename, int step=1) const;
   //bool load(const char* filename);
 

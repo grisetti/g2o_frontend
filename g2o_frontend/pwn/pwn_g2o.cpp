@@ -14,6 +14,7 @@
 #include "pointwithnormalstatsgenerator.h"
 #include "pointwithnormalaligner.h"
 #include "g2o/stuff/timeutil.h"
+#include "gaussian3.h"
 
 using namespace Eigen;
 using namespace g2o;
@@ -49,6 +50,7 @@ struct Frame{
   DepthImage depthImage;
   MatrixXi indexImage;
   PointWithNormalVector points;
+  Gaussian3fVector gaussians;
   PointWithNormalSVDVector svds;
   MatrixXf zBuffer;
   
@@ -58,9 +60,10 @@ struct Frame{
   }
   void computeStats(PointWithNormalStatistcsGenerator & generator, const Matrix3f& cameraMatrix){
     zBuffer.resize(depthImage.rows(), depthImage.cols());
-    points.fromDepthImage(depthImage,cameraMatrix,Isometry3f::Identity());
+    gaussians.fromDepthImage(depthImage,cameraMatrix);
+    gaussians.toPointWithNormalVector(points);
     indexImage.resize(depthImage.rows(), depthImage.cols());
-    points.toIndexImage(indexImage, zBuffer, cameraMatrix, Eigen::Isometry3f::Identity(), 10);
+    gaussians.toIndexImage(indexImage, zBuffer, cameraMatrix, Eigen::Isometry3f::Identity(), 10);
     cerr << "points: " << points.size() << endl; 
     svds.resize(points.size());
     double tNormalStart = get_time();
@@ -186,7 +189,7 @@ int
   int previousIndex=-1;
   int graphNum=0;
   int nFrames = 0;
-  string baseFilename = graphFilename.substr( 0, graphFilename.find_last_of( '.' ) +1 );
+  string baseFilename = graphFilename.substr( 0, graphFilename.find_last_of( '.' ) );
   for (size_t i=0; i<filenames.size(); i++){
     cerr << endl << endl << endl;
     cerr << ">>>>>>>>>>>>>>>>>>>>>>>> PROCESSING " << filenames[i] << " <<<<<<<<<<<<<<<<<<<<" <<  endl;

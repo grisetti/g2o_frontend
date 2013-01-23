@@ -35,10 +35,9 @@ void Gaussian3fVector::toDepthImage(MatrixXf& depthImage,
 }
 
 void Gaussian3fVector::fromDepthImage(const Eigen::MatrixXf& depthImage, 
-					   const Matrix3f& cameraMatrix, const Eigen::Isometry3f& cameraPose, 
+				      const Matrix3f& cameraMatrix, 
 				      float dmax, float baseline, float alpha){
   PixelMapper pixelMapper;
-  pixelMapper.setTransform(cameraPose);
   pixelMapper.setCameraMatrix(cameraMatrix);
   clear();
   resize(depthImage.rows()*depthImage.cols(), Gaussian3f());
@@ -95,6 +94,16 @@ void Gaussian3fVector::toIndexImage(Eigen::MatrixXi& indexImage, Eigen::MatrixXf
     }
   }
 }
+
+void Gaussian3fVector::toPointWithNormalVector(PointWithNormalVector& dest) const {
+  dest.resize(size());
+  for (size_t k =0; k<size(); k++){
+    PointWithNormal& p = dest[k];
+    p.head<3>()=at(k).mean();
+    p.tail<3>().setZero();
+  }
+}
+
 
 // bool Gaussian3fVector::save(const char* filename, int step) const{
 //   ofstream os(filename);
