@@ -102,17 +102,6 @@ ELSE(CSPARSE_FOUND)
   SET(CSPARSE_FOUND TRUE)
 ENDIF(CSPARSE_FOUND)
 
-# Eigen library parallelise itself, though, presumably due to performance issues
-# OPENMP is experimental. We experienced some slowdown with it
-FIND_PACKAGE(OpenMP)
-SET( G2O_USE_OPENMP OFF CACHE BOOL "Build g2o_frontend with OpenMP support (EXPERIMENTAL)")
-IF(OPENMP_FOUND AND G2O_USE_OPENMP)
-  SET (G2O_OPENMP 1)
-  SET(g2o_frontend_C_FLAGS "${g2o_frontend_C_FLAGS} ${OpenMP_C_FLAGS}")
-  SET(g2o_frontend_CXX_FLAGS "${g2o_frontend_CXX_FLAGS} -DEIGEN_DONT_PARALLELIZE ${OpenMP_CXX_FLAGS}")
-  MESSAGE(STATUS "Compiling with OpenMP support")
-ENDIF(OPENMP_FOUND AND G2O_USE_OPENMP)
-
 # OpenGL is used in the draw actions for the different types, as well
 # as for creating the GUI itself
 FIND_PACKAGE(OpenGL)
@@ -158,24 +147,15 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${g2o_frontend_CXX_FLAGS}")
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${g2o_frontend_C_FLAGS}")
 
 # Find Eigen3
-FIND_PACKAGE(Eigen3)
-IF(EIGEN3_FOUND)
-  SET(G2O_FRONTEND_EIGEN3_INCLUDE ${EIGEN3_INCLUDE_DIR} CACHE PATH "Directory of Eigen3")
-ELSE(EIGEN3_FOUND)
-  SET(G2O_FRONTEND_EIGEN3_INCLUDE "" CACHE PATH "Directory of Eigen3")
-ENDIF(EIGEN3_FOUND)
+FIND_PACKAGE(Eigen3 REQUIRED)
 
 FIND_PACKAGE(Threads REQUIRED)
 
-
 # Find g2o
 FIND_PACKAGE(G2O REQUIRED)
-IF(G2O_FOUND)
-  SET(G2O_FRONTEND_G2O_INCLUDE ${G2O_INCLUDE_DIR} CACHE PATH "Directory of G2O include")
-  SET(G2O_FRONTEND_G2O_LIBRARY_PATH ${G2O_LIBRARY_PATH} CACHE PATH "Directory of G2O libraries")
-ELSE(G2O_FOUND)
-  SET(G2O_FRONTEND_G2O_INCLUDE "" CACHE PATH "Directory of G2O include")
-ENDIF(G2O_FOUND)
+if (G2O_FOUND)
+  include_directories(${G2O_INCLUDE_DIR})
+endif(G2O_FOUND)
 
 # Find PCL
 set(PCL_DIR $ENV{PCL_ROOT})
@@ -198,7 +178,7 @@ SET(G2O_FRONTEND_SHARED_LIBS ${BUILD_SHARED_LIBS})
 configure_file(config.h.in ${PROJECT_BINARY_DIR}/g2o_frontend/config.h)
 include_directories(${PROJECT_BINARY_DIR})
 INSTALL(FILES ${PROJECT_BINARY_DIR}/g2o_frontend/config.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/g2o_frontend)
-PROJECT( helloworld_proj )
+PROJECT( g2o_frontend_proj )
 
 # Include the subdirectories
 ADD_SUBDIRECTORY(g2o_frontend)
