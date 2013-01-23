@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'viewer.ui'
 **
-** Created: Thu Jan 17 11:14:18 2013
+** Created: Tue Jan 22 16:31:09 2013
 **      by: Qt User Interface Compiler version 4.8.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -39,7 +39,6 @@ public:
     QWidget *centralwidget;
     QHBoxLayout *horizontalLayout;
     QVBoxLayout *verticalLayout;
-    QPushButton *pushButton_3;
     QFrame *line;
     QGroupBox *groupBox;
     QCheckBox *checkBox;
@@ -53,6 +52,7 @@ public:
     QSlider *horizontalSlider_3;
     QPushButton *pushButton_2;
     QPushButton *pushButton;
+    QPushButton *pushButton_3;
     QVBoxLayout *verticalLayout_2;
     QSpacerItem *horizontalSpacer;
     leQGLViewer *viewer;
@@ -78,11 +78,6 @@ public:
         verticalLayout->setSpacing(5);
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
         verticalLayout->setContentsMargins(-1, -1, -1, 10);
-        pushButton_3 = new QPushButton(centralwidget);
-        pushButton_3->setObjectName(QString::fromUtf8("pushButton_3"));
-
-        verticalLayout->addWidget(pushButton_3);
-
         line = new QFrame(centralwidget);
         line->setObjectName(QString::fromUtf8("line"));
         line->setFrameShape(QFrame::HLine);
@@ -126,8 +121,6 @@ public:
         horizontalSlider->setObjectName(QString::fromUtf8("horizontalSlider"));
         horizontalSlider->setGeometry(QRect(30, 60, 141, 29));
         horizontalSlider->setOrientation(Qt::Horizontal);
-				horizontalSlider->setRange(6,50);
-				
         label_2 = new QLabel(groupBox_2);
         label_2->setObjectName(QString::fromUtf8("label_2"));
         label_2->setGeometry(QRect(0, 80, 161, 31));
@@ -135,9 +128,7 @@ public:
         horizontalSlider_2 = new QSlider(groupBox_2);
         horizontalSlider_2->setObjectName(QString::fromUtf8("horizontalSlider_2"));
         horizontalSlider_2->setGeometry(QRect(30, 110, 141, 29));
-        horizontalSlider_2->setOrientation(Qt::Horizontal);				
-        horizontalSlider_2->setRange(0,100);
-				
+        horizontalSlider_2->setOrientation(Qt::Horizontal);
         label_3 = new QLabel(groupBox_2);
         label_3->setObjectName(QString::fromUtf8("label_3"));
         label_3->setGeometry(QRect(0, 130, 161, 41));
@@ -146,7 +137,6 @@ public:
         horizontalSlider_3->setObjectName(QString::fromUtf8("horizontalSlider_3"));
         horizontalSlider_3->setGeometry(QRect(30, 160, 141, 29));
         horizontalSlider_3->setOrientation(Qt::Horizontal);
-        horizontalSlider_3->setRange(0,100);
 
         verticalLayout->addWidget(groupBox_2);
 
@@ -161,6 +151,11 @@ public:
         pushButton->setObjectName(QString::fromUtf8("pushButton"));
 
         verticalLayout->addWidget(pushButton);
+
+        pushButton_3 = new QPushButton(centralwidget);
+        pushButton_3->setObjectName(QString::fromUtf8("pushButton_3"));
+
+        verticalLayout->addWidget(pushButton_3);
 
 
         horizontalLayout->addLayout(verticalLayout);
@@ -200,7 +195,6 @@ public:
     void retranslateUi(QMainWindow *MainWindow)
     {
         MainWindow->setWindowTitle(QApplication::translate("MainWindow", "Line Extraction", 0, QApplication::UnicodeUTF8));
-        pushButton_3->setText(QApplication::translate("MainWindow", "Next Iteration", 0, QApplication::UnicodeUTF8));
         groupBox->setTitle(QApplication::translate("MainWindow", "ALgorithms for Line Extraction:", 0, QApplication::UnicodeUTF8));
         checkBox->setText(QApplication::translate("MainWindow", "Ransac", 0, QApplication::UnicodeUTF8));
         checkBox_2->setText(QApplication::translate("MainWindow", "Split-Merge", 0, QApplication::UnicodeUTF8));
@@ -210,6 +204,7 @@ public:
         label_3->setText(QApplication::translate("MainWindow", "Clusterer threshold:", 0, QApplication::UnicodeUTF8));
         pushButton_2->setText(QApplication::translate("MainWindow", "Show Original", 0, QApplication::UnicodeUTF8));
         pushButton->setText(QApplication::translate("MainWindow", "Line Detection", 0, QApplication::UnicodeUTF8));
+        pushButton_3->setText(QApplication::translate("MainWindow", "Next Iteration", 0, QApplication::UnicodeUTF8));
     } // retranslateUi
 
 };
