@@ -13,7 +13,7 @@ DrawableCorrespondences::DrawableCorrespondences() : Drawable() {
   _points2Transform.setIdentity();
 }
 
-DrawableCorrespondences::DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_, int step_, int numCorrespondences_, PointWithNormalAligner::CorrespondenceVector *correspondences_) : Drawable(transformation_, step_) {
+DrawableCorrespondences::DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_,  int numCorrespondences_, PointWithNormalAligner::CorrespondenceVector *correspondences_) : Drawable(transformation_) {
   setParameter(parameter_);
   _numCorrespondences = numCorrespondences_;
   _correspondences = correspondences_;
@@ -34,7 +34,7 @@ bool DrawableCorrespondences::setParameter(GLParameter *parameter_) {
 
 // Drawing function of the class object.
 void DrawableCorrespondences::draw() {
-  GLParameterCorrespondences* correspondencesParameter = (GLParameterCorrespondences*)_parameter;
+  GLParameterCorrespondences* correspondencesParameter = dynamic_cast<GLParameterCorrespondences*>(_parameter);
    if (_points1 && 
        _points2 && 
        _correspondences && 
@@ -46,7 +46,7 @@ void DrawableCorrespondences::draw() {
     glPushMatrix();
     correspondencesParameter->applyGLParameter();
     glBegin(GL_LINES);
-    for (int i = 0; i < _numCorrespondences; i += _step) {
+    for (int i = 0; i < _numCorrespondences; i += correspondencesParameter->step()) {
       const PointWithNormalAligner::Correspondence& correspondence = _correspondences->at(i);
       Eigen::Vector3f p0 = _points1->at(correspondence.i1).point();
       Eigen::Vector3f p1 = _transformation * (_points2->at(correspondence.i2).point());

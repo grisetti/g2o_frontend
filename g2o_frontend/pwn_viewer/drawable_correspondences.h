@@ -7,7 +7,7 @@
 class DrawableCorrespondences : public Drawable {
  public:
   DrawableCorrespondences();
-  DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_, int step_, int numCorrespondences_, PointWithNormalAligner::CorrespondenceVector *correspondences_);
+  DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_,  int numCorrespondences_, PointWithNormalAligner::CorrespondenceVector *correspondences_);
   
   void setNumCorrespondences(int numCorrespondences_) { _numCorrespondences = numCorrespondences_; }
   int numCorrespondances() { return _numCorrespondences; }

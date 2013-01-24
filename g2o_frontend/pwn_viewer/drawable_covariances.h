@@ -7,7 +7,7 @@
 class DrawableCovariances : public Drawable {
  public:
   DrawableCovariances();
-  DrawableCovariances(Eigen::Isometry3f transformation_, GLParameter *parameter_,int step_, PointWithNormalSVDVector *covariances_);
+  DrawableCovariances(Eigen::Isometry3f transformation_, GLParameter *parameter_,  PointWithNormalSVDVector *covariances_);
   virtual void setCovariances(PointWithNormalSVDVector *covariances_) { _covariances = covariances_; }
   virtual bool setParameter(GLParameter *parameter_);
   virtual const PointWithNormalSVDVector* covariances() { return _covariances; }

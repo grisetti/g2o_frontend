@@ -86,16 +86,21 @@ void PointWithNormalVector::toIndexImage(Eigen::MatrixXi& indexImage, Eigen::Mat
   }
 }
 
-bool PointWithNormalVector::save(const char* filename, int step) const{
+bool PointWithNormalVector::save(const char* filename, int step, bool binary) const{
   ofstream os(filename);
   if (! os)
     return false;
+  os << "POINTWITHNORMALVECTOR " << size()/step << " " << binary << endl; 
   for (size_t i = 0; i<size(); i+=step){
     const PointWithNormal& point = at(i);
-    os << "POINTWITHNORMAL ";
-    for (int k=0; k<6; k++)
-      os << point(k) << " ";
-    os << endl;
+    if (! binary) {
+      os << "POINTWITHNORMAL ";
+      for (int k=0; k<6; k++)
+	os << point(k) << " ";
+      os << endl;
+    } else {
+      os.write((const char*) &point,sizeof(PointWithNormal));
+    }
   }
   os.flush();
   os.close();
@@ -108,18 +113,34 @@ bool PointWithNormalVector::load(const char* filename){
   if (! is)
     return false;
   char buf[1024];
-  while (is.good()) {
-    is.getline(buf, 1024);
-    istringstream ls(buf);
-    string s;
-    ls >> s;
-    if (s!="POINTWITHNORMAL")
-      continue;
-    PointWithNormal p;
-    for (int i=0; i<6 && ls; i++) {
-      ls >> p(i);
+  is.getline(buf, 1024);
+  istringstream ls(buf);
+  string tag;
+  size_t numPoints;
+  bool binary;
+  ls >> tag;
+  if (tag!="POINTWITHNORMALVECTOR")
+    return false;
+  ls >> numPoints >> binary;
+  resize(numPoints);
+  cerr << "reading " << numPoints << " points, binary :" << binary << endl;
+  size_t k=0;
+  while (k<size() && is.good()) {
+    PointWithNormal& point=at(k);
+    if (!binary) {
+      is.getline(buf, 1024);
+      istringstream ls(buf);
+      string s;
+      ls >> s;
+      if (s!="POINTWITHNORMAL")
+	continue;
+      for (int i=0; i<6 && ls; i++) {
+	ls >> point(i);
+      }
+    } else {
+      is.read((char*) &point,sizeof(PointWithNormal));
     }
-    push_back(p);
+    k++;
   }
   return is.good();
 }

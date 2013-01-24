@@ -259,10 +259,10 @@ int main(int argc, char** argv){
 	  continue;
 	}
 	currentFrame->computeStats(*normalGenerator, cameraMatrix);
-	DrawablePoints* dp = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, 1, &(*currentFrame).points);
-	DrawableNormals *dn = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)nParam, 1, &(*currentFrame).points);
-	DrawableCovariances *dc = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)cParam, 1, &(*currentFrame).svds);
-  	DrawableCorrespondences* dcorr = new DrawableCorrespondences(Isometry3f::Identity(), (GLParameter*)corrParam, 1, 0, 0);
+	DrawablePoints* dp = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, &(*currentFrame).points);
+	DrawableNormals *dn = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)nParam, &(*currentFrame).points);
+	DrawableCovariances *dc = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)cParam, &(*currentFrame).svds);
+  	DrawableCorrespondences* dcorr = new DrawableCorrespondences(Isometry3f::Identity(), (GLParameter*)corrParam,  0, 0);
 	
 	if(drawableList.size() != 0) {
 	  DrawableCorrespondences* dcorr = (DrawableCorrespondences*)drawableList[drawableList.size()-1];
@@ -288,7 +288,7 @@ int main(int argc, char** argv){
      // Check feature visualization options.
     for(size_t i = 0; i < drawableList.size(); i++) {
       if(stepViewer[0])
-	drawableList[i]->setStep(stepViewer[1]);
+	drawableList[i]->parameter()->setStep(stepViewer[1]);
     }
   
     if(pointsViewer[0])
@@ -441,7 +441,7 @@ int main(int argc, char** argv){
       pwnm.mergedPoints()->toIndexImage(mergedIndexImage, mergedZBuffer, cameraMatrix, Eigen::Isometry3f::Identity(), 10);
       mergedSvds.resize(pwnm.mergedPoints()->size());
       normalGenerator->computeNormalsAndSVD(*(pwnm.mergedPoints()), mergedSvds, mergedIndexImage, cameraMatrix);
-      DrawablePoints* dp0 = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, 1, pwnm.mergedPoints());
+      DrawablePoints* dp0 = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParam, pwnm.mergedPoints());
       
       pwnGMW.viewer_3d->addDrawable((Drawable*)dp0);
       *merge = 0;
