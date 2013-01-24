@@ -8,7 +8,7 @@ DrawableCovariances::DrawableCovariances() : Drawable() {
   _covariances = 0;
 }
 
-DrawableCovariances::DrawableCovariances(Eigen::Isometry3f transformation_, GLParameter *parameter_, int step_, PointWithNormalSVDVector *covariances_) : Drawable(transformation_, step_){
+DrawableCovariances::DrawableCovariances(Eigen::Isometry3f transformation_, GLParameter *parameter_, PointWithNormalSVDVector *covariances_) : Drawable(transformation_){
   setParameter(parameter_);
   _covariances = covariances_;
 }
@@ -25,7 +25,7 @@ bool DrawableCovariances::setParameter(GLParameter *parameter_) {
 
 // Drawing function of the class object.
 void DrawableCovariances::draw() {
-  GLParameterCovariances* covariancesParameter = (GLParameterCovariances*)_parameter;
+  GLParameterCovariances* covariancesParameter = dynamic_cast<GLParameterCovariances*>(_parameter);
   if (_covariances && covariancesParameter && covariancesParameter->ellipsoidScale() > 0.0f) {
     glPushMatrix();
     glMultMatrixf(_transformation.data());
@@ -34,7 +34,7 @@ void DrawableCovariances::draw() {
     Eigen::Vector4f colorLowCurvature = covariancesParameter->colorLowCurvature();
     Eigen::Vector4f colorHighCurvature = covariancesParameter->colorHighCurvature();
     float curvatureThreshold = covariancesParameter->curvatureThreshold();
-    for (size_t i = 0; i < _covariances->size(); i += _step) {
+    for (size_t i = 0; i < _covariances->size(); i += covariancesParameter->step()) {
       const PointWithNormalSVD& covSVD = (*_covariances)[i];
       const Eigen::Vector3f& lambda = covSVD.singularValues();
       Eigen::Isometry3f I=Eigen::Isometry3f::Identity();

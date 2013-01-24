@@ -7,7 +7,7 @@
 class DrawablePoints : public Drawable {
  public:
   DrawablePoints();
-  DrawablePoints(Eigen::Isometry3f transformation_, GLParameter *parameter_, int step_, PointWithNormalVector *points_);
+  DrawablePoints(Eigen::Isometry3f transformation_, GLParameter *parameter_,  PointWithNormalVector *points_);
   virtual void setPoints(PointWithNormalVector *points_) { _points = points_; }
   virtual bool setParameter(GLParameter *parameter_);
   virtual const PointWithNormalVector* points() { return _points; }

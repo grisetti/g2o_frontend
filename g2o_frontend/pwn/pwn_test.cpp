@@ -1,5 +1,6 @@
 #include "g2o/stuff/command_args.h"
 #include "depthimage.h"
+#include "scene.h"
 #include "pointwithnormal.h"
 #include "pointwithnormalstatsgenerator.h"
 #include "pointwithnormalaligner.h"
@@ -197,4 +198,12 @@ int
   cerr << X.matrix() << endl;
   double oend = get_time();
   cerr << "alignment took: " << oend-ostart << " sec." << endl;
+
+  /***********************************************************************************/
+  cout << "Test 9 load and save (binary)";
+  points0.save("test9_txt.pwn");
+  points0.save("test9.pwn",1,true);
+  PointWithNormalVector points3b;
+  points3b.load("test9.pwn");
+  points3b.save("test9_txt_b.pwn");
 }

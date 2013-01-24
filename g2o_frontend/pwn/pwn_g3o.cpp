@@ -323,7 +323,7 @@ int
     if(!img.load(filenames[i].c_str())) {
       cerr << "failure in loading image: " << filenames[i] << ", skipping" << endl;
       delete currentFrame;
-      continue;
+      break;
     }
     nFrames ++;
     if (! referenceFrame ){
@@ -410,8 +410,8 @@ int
 	  ofstream gs(buf);
 	  gs << os.str();
 	  gs.close();
-	  sprintf(buf, "%s-%03d.dat", baseFilename.c_str(), graphNum);	
-	  globalScene->points().save(buf, 50);
+	  sprintf(buf, "%s-%03d.pwn", baseFilename.c_str(), graphNum);	
+	  globalScene->points().save(buf,1,true);
 	}
 	os.str("");
 	os.clear();
@@ -438,8 +438,11 @@ int
   cerr << "filesize:" << os.str().length() << endl; 
   ofstream gs(buf);
   gs << os.str();
-  cout << os.str();
+  //cout << os.str();
   gs.close();
+  sprintf(buf, "%s-%03d.pwn", baseFilename.c_str(), graphNum);	
+  cerr << "saving final points, n: " << globalScene->size() << " in file [" << buf << "]" << endl;
+  globalScene->points().save(buf,1,true);
 
   
 }

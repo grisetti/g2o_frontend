@@ -3,8 +3,9 @@
 
 #include <Eigen/Geometry>
 #include <GL/gl.h>
+#include "gl_parameter.h"
 
-class GLParameterNormals {
+class GLParameterNormals: public GLParameter {
  public:
   GLParameterNormals();
   GLParameterNormals(float pointSize_, Eigen::Vector4f color_, float normalLength_);

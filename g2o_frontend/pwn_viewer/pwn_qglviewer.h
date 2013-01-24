@@ -10,11 +10,12 @@ class PWNQGLViewer : public QGLViewer {
   virtual void init();
   virtual void draw();
   virtual void addDrawable(Drawable *d);
-  virtual void popBack() { _drawableList.pop_back(); }
-  virtual void clearDrawableList() { _drawableList.clear(); }
-  virtual std::vector<Drawable*> drawableList() { return _drawableList; }   
-  GLuint ellipsoidDrawList() { return _ellipsoidDrawList; }
-  GLuint pyramidDrawList() { return _ellipsoidDrawList; }
+  inline void popBack() { _drawableList.pop_back(); }
+  inline void clearDrawableList() { _drawableList.clear(); }
+  inline std::vector<Drawable*>& drawableList() { return _drawableList; }   
+  inline const std::vector<Drawable*>& drawableList() const { return _drawableList; }   
+  inline GLuint ellipsoidDrawList() { return _ellipsoidDrawList; }
+  inline GLuint pyramidDrawList() { return _ellipsoidDrawList; }
  
  protected:
   // Number of draw lists.
