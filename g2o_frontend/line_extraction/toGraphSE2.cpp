@@ -4,6 +4,8 @@
  *  Created on: Jan 22, 2013
  *      Author: Martina
  */
+#include <fstream>
+#include <iomanip>
 
 #include "g2o/stuff/macros.h"
 #include "g2o/stuff/color_macros.h"
@@ -31,9 +33,6 @@
 using namespace std;
 using namespace g2o;
 
-//fittizio e inutile
- 	LaserRobotData l;
-	
 typedef std::pair<g2o::VertexSE3*, g2o::VertexSE2*> Vertex3to2;
 typedef std::vector<Vertex3to2> v3Mapv2;
 
@@ -46,10 +45,11 @@ int main(int argc, char**argv){
 	
   string filename;	
   string outfilename;
-	std::ofstream ofG2O(&outfilename[0]);
-	CommandArgs arg;
-	arg.param("o", outfilename, "otest.g2o", "output file name");
+	ofstream ofG2O(outfilename.c_str());
+	g2o::CommandArgs arg;
+	
 	arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
+	arg.param("o", outfilename, "otest.g2o", "output file name");
   arg.parseArgs(argc, argv);
 	
 	// graph construction
@@ -124,7 +124,8 @@ int main(int argc, char**argv){
 		vertexVector.push_back(make_pair(v3, v2));	
 	}
 		
-	cout << "Mappa vertici:  " << vertexVector.size() << endl;
+	cout << "Map vertices:  " << vertexVector.size() << endl;
+	cout << "Graph vertices: " << graphSE2->vertices().size() << endl;
 	
 #if 0
 	for (int j = 0; j < vertexVector.size(); j++) {
@@ -140,29 +141,12 @@ int main(int argc, char**argv){
 // 	for (int j = 0; j <= edgesIds.size(); j++) 
 // 	{
 // 		OptimizableGraph::Edge* _e = graph->edges();
-// 		EdgeSE3* e3 = dynamic_cast<EdgeSE3*>(_e);
-//     if (!e3)
-//       continue;
-// 		
-// 		EdgeSE2* e2 = new EdgeSE2();		
-// 		VertexSE3* tmp0 = dynamic_cast<VertexSE3*>(e3->vertices()[0]);
-// 		VertexSE3* tmp1 = dynamic_cast<VertexSE3*>(e3->vertices()[1]);
-// 		Vertex3to2 vertex0 = vertexVector[tmp0->id()];
-// 		Vertex3to2 vertex1 = vertexVector[tmp1->id()];
-// 		e2->setVertex(0, vertex0.second);
-// 		e2->setVertex(1, vertex1.second);
-// 		e2->setMeasurementFromState();
-// 		Eigen::Matrix<double, 6,6> m;
-// 		m.setIdentity();
-// 		e2->setInformation(m);
-// 		graphSE2->addEdge(e2);
-// 		graphSE2->saveEdge(ofG2O, e2);
 // 	}
 	
 	
 		for (OptimizableGraph::EdgeSet::iterator it = graph->edges().begin(); it != graph->edges().end(); it++) {
-			OptimizableGraph::Edge* _e = *it;
-			EdgeSE3* e3 = dynamic_cast<EdgeSE3*>(_e);
+			
+			EdgeSE3* e3 = dynamic_cast<EdgeSE3*>(*it);
 			if (!e3)
 				continue;
 			
@@ -174,13 +158,18 @@ int main(int argc, char**argv){
 			e2->setVertex(0, vertex0.second);
 			e2->setVertex(1, vertex1.second);
 			e2->setMeasurementFromState();
-			Eigen::Matrix<double, 6,6> m;
-			m.setIdentity();
-			e2->setInformation(m);
+			Eigen::Matrix<double, 3,3> info;
+			info.setIdentity()*1000;
+// 			Eigen::Matrix3d info;
+// 			info << 1000, 0, 0, 0, 1000, 0, 0, 0, 1000;
+			e2->setInformation(info);
 			graphSE2->addEdge(e2);
 			graphSE2->saveEdge(ofG2O, e2);
 	}
 
-	return (0);
+	cout << "Graph edges: " << graphSE2->edges().size() << endl;
 	
+	ofG2O << "fanculooooooooo" << endl;
+	ofG2O.flush();
+	return (0);
 }
