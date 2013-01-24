@@ -15,6 +15,7 @@
 #include "pointwithnormalaligner.h"
 #include "g2o/stuff/timeutil.h"
 #include "scene.h"
+#include "pixelmapper.h"
 
 using namespace Eigen;
 using namespace g2o;
@@ -44,18 +45,65 @@ set<string> readDir(std::string dir){
   return filenames;
 }
 
-#if 0
+#if 1
 
-struct PointsMerger{
-  Eigen::Matrix3f cameraMatrix;
-  Eigen::MatrixXf zBuffer;
-  Eigen::MatrixXi indexImage;
+struct PointsWithNormalMerger{
+  std::vector<int> _collapsedIndices;
+  Eigen::Matrix3f _cameraMatrix;
+  Eigen::MatrixXf _zBuffer;
+  Eigen::MatrixXi _indexImage;
+  float _distanceThreshold;
+  float _normalThreshold;
+  float _maxPointDepth;
+  PointWithNormalStatistcsGenerator* _normalGenerator;
+
+  PointsWithNormalMerger(){
+    _distanceThreshold = 0.05;
+    _normalThreshold = cos(10*M_PI/180.0f);
+    _normalGenerator = 0;
+    _indexImage.resize(480,640);
+    _zBuffer.resize(480,540);
+    _maxPointDepth = 10;
+    _cameraMatrix << 
+      525.0f, 0.0f, 319.5f,
+      0.0f, 525.0f, 239.5f,
+      0.0f, 0.0f, 1.0f;
+
+  }
+  void setImageSize(int r, int c) {
+    _indexImage.resize(r,c);
+    _zBuffer.resize(r,c);
+  }
+  
+  Eigen::Vector2i imageSize() const {
+    return Eigen::Vector2i(_indexImage.rows(), _indexImage.cols());
+  }
+
+  inline void setDistanceThreshold(float distanceThreshold_) {
+    _distanceThreshold = distanceThreshold_;
+  }
+
+  inline float distanceThreshold() const {
+    return _distanceThreshold;
+  }
+
+  inline void setNormalThreshold(float normalThreshold_) {
+    _normalThreshold = normalThreshold_;
+  }
+
+  inline float normalThreshold() const {
+    return _normalThreshold;
+  }
+  
+  inline void setNormalGenerator(PointWithNormalStatistcsGenerator* normalGenerator_) { _normalGenerator = normalGenerator_;} 
+
+  inline PointWithNormalStatistcsGenerator* normalGenerator() {return _normalGenerator;} 
+  
+  void setCameraMatrix(const Eigen::Matrix3f cameraMatrix_) {_cameraMatrix = cameraMatrix_;}
 
   void merge(Scene* scene, Eigen::Isometry3f& transform){
-    collapsedIndices.resize(scene->points().size(), -1);
-    scene->points.toIndexImage(indexImage, zBuffer, cameraMatrix, transform, 10);
-    // now pick up all points in the index image and see if the normal is compatible with the view direction
-    // set the other ones to -1;
+    assert (_normalGenerator && "you need to set the normal generator");
+    scene->_points.toIndexImage(_indexImage, _zBuffer, _cameraMatrix, transform, _maxPointDepth);
 
     // scan all the points, 
     // if they fall in a cell not with -1, 
@@ -67,7 +115,41 @@ struct PointsMerger{
     //      skip
     // accumulate the point in the cell i
     // set the target accumulator  to i;
+    PixelMapper pixelMapper;
+    pixelMapper.setCameraMatrix(_cameraMatrix);
+    pixelMapper.setTransform(transform);
 
+    _collapsedIndices.resize(scene->points().size());
+    std::fill(_collapsedIndices.begin(), _collapsedIndices.end(), -1);
+    
+    int killed=0;
+    int currentIndex=0;
+    for (PointWithNormalVector::const_iterator it = scene->_points.begin(); it!=scene->_points.end(); currentIndex++ ,it++){
+      const PointWithNormal& currentPoint = *it;
+      Vector3f ip=pixelMapper.projectPoint(currentPoint.head<3>());
+      Vector2i coords=pixelMapper.imageCoords(ip);
+      if (ip.z()<0 || ip.z() > _maxPointDepth || 
+	  coords.x()<0 || coords.x()>=_zBuffer.cols() || 
+	  coords.y()<0 || coords.y()>=_zBuffer.rows())
+	continue;
+      float& targetZ = _zBuffer(coords.y(), coords.x());
+      int targetIndex =_indexImage(coords.y(), coords.x());
+      const PointWithNormal& targetPoint = scene->points()[targetIndex];
+      float currentZ=ip.z();
+      if (targetIndex <0){
+	continue;
+      }
+      if (targetIndex == currentIndex){
+	_collapsedIndices[currentIndex] = currentIndex;
+      } else if (fabs(currentZ-targetZ)<_distanceThreshold && currentPoint.normal().dot(targetPoint.normal()) > _normalThreshold){
+	Gaussian3f& targetGaussian = scene->_gaussians[targetIndex];
+	Gaussian3f& currentGaussian = scene->_gaussians[currentIndex];
+	targetGaussian.addInformation(currentGaussian);
+	_collapsedIndices[currentIndex]=targetIndex;
+	killed ++;
+      }
+    }
+    cerr << "killed: " << killed  << endl;
     // scan the vector of covariances.
     // if the index is -1
     //    copy into k
@@ -77,22 +159,37 @@ struct PointsMerger{
     //    copy into k
     //    increment k
 
-    // recompute the depth and index images
-    
-    
-
-    PixelMapper pixelMapper;
-    pixelMapper.setCameraMatrix(cameraMatrix);
-    pixelMapper.setTransform(transform);
-    for (size_t i = 0; i<scene->points().size(); i++){
-      // project a point
-      // check if it is inside the image cone
+    int murdered = 0;
+    int k=0;
+    for (size_t i=0; i<_collapsedIndices.size(); i++){
+      int collapsedIndex = _collapsedIndices[i];
+      if (collapsedIndex == (int)i){
+	scene->_points[i].setPoint(scene->_gaussians[i].mean());
+      }
+      if (collapsedIndex <0 || collapsedIndex == (int)i){
+	scene->_points[k] = scene->_points[i];
+	scene->_svds[k] = scene->_svds[i];
+	scene->_gaussians[k] = scene->_gaussians[i];
+	k++;
+      } else {
+	murdered ++;
+      }
     }
-   
+    
+    int originalSize = scene->size();
+    // kill the leftover points
+    scene->_points.resize(k);
+    scene->_gaussians.resize(k);
+    scene->_svds.resize(k);
+    cerr << "murdered: " << murdered  << endl;
+    cerr << "resized: " << originalSize << "->" << k << endl;
+    
+    // recompute the normals
+    scene->_points.toIndexImage(_indexImage, _zBuffer, _cameraMatrix, transform, 10);
+    _normalGenerator->computeNormalsAndSVD(scene->_points, scene->_svds, _indexImage, _cameraMatrix, transform);
   }
 
-  std::vector<int> collapsedIndices;
-}
+};
 
 #endif
 
@@ -121,9 +218,16 @@ int
   float al_lambda;
   float al_debug;
 
+  Eigen::Matrix3f cameraMatrix;
+  cameraMatrix << 
+    525.0f, 0.0f, 319.5f,
+    0.0f, 525.0f, 239.5f,
+    0.0f, 0.0f, 1.0f;
+
   PointWithNormalStatistcsGenerator normalGenerator;
   PointWithNormalAligner aligner;
-
+  PointsWithNormalMerger merger;
+  merger.setNormalGenerator(&normalGenerator);
   g2o::CommandArgs arg;
   arg.param("ng_step",ng_step,normalGenerator.step(),"compute a normal each x pixels") ;
   arg.param("ng_minPoints",ng_minPoints,normalGenerator.minPoints(),"minimum number of points in a region to compute the normal");
@@ -145,6 +249,7 @@ int
   arg.param("al_debug", al_debug, aligner.debug(), "prints lots of stuff");
   arg.param("numThreads", numThreads, 1, "numver of threads for openmp");
   
+
 
   if (numThreads<1)
     numThreads = 1;
@@ -188,13 +293,14 @@ int
 #endif //_PWN_USE_OPENMP_
 
 
+  float mergerScale =al_scale;
+  Matrix3f mergerCameraMatrix = cameraMatrix;
+  mergerCameraMatrix.block<2, 3>(0, 0) *= mergerScale;
+  merger.setImageSize(480*mergerScale, 640*mergerScale);
+  merger.setCameraMatrix(mergerCameraMatrix);
+
   DepthFrame* referenceFrame= 0;
 
-  Eigen::Matrix3f cameraMatrix;
-  cameraMatrix << 
-    525.0f, 0.0f, 319.5f,
-    0.0f, 525.0f, 239.5f,
-    0.0f, 0.0f, 1.0f;
 
   ostringstream os(graphFilename.c_str());
   
@@ -205,8 +311,9 @@ int
   int previousIndex=-1;
   int graphNum=0;
   int nFrames = 0;
-  //Scene* globalScene = new Scene;
-
+  Scene* globalScene = new Scene;
+  Scene* partialScene = new Scene;
+  int cumPoints=0;
   string baseFilename = graphFilename.substr( 0, graphFilename.find_last_of( '.' ) );
   for (size_t i=0; i<filenames.size(); i++){
     cerr << endl << endl << endl;
@@ -245,8 +352,11 @@ int
     currentFrame->_maxDistance = 10;
     currentFrame->setImage(img);
     currentFrame->_updateSVDsFromPoints(normalGenerator, cameraMatrix);
+    currentFrame->_suppressNoNormals();
     if (referenceFrame) {
-      aligner.setReferenceScene(referenceFrame);
+      globalScene->subScene(*partialScene,cameraMatrix,trajectory);
+      //aligner.setReferenceScene(referenceFrame);
+      aligner.setReferenceScene(partialScene);
       aligner.setCurrentScene(currentFrame);
 
       Matrix6f omega;
@@ -254,15 +364,16 @@ int
       float tratio;
       float rratio;
       aligner.setImageSize(currentFrame->image().rows(), currentFrame->image().cols());
-      Eigen::Isometry3f X;
-      X.setIdentity();
+      Eigen::Isometry3f X=trajectory;
+      //X.setIdentity();
       double ostart = get_time();
       float error;
       int result = aligner.align(error, X, mean, omega, tratio, rratio);
       cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
       cerr << "localTransform : " << endl;
-      cerr << X.inverse().matrix() << endl;
-      trajectory=trajectory*X;
+      cerr << (trajectory.inverse()*X).matrix() << endl;
+      //trajectory=trajectory*X;
+      trajectory=X;
       cerr << "globaltransform: " << endl;
       cerr << trajectory.matrix() << endl;
       double oend = get_time();
@@ -290,8 +401,8 @@ int
 	  }
 	} 
 	os << endl;
-
-	//globalScene->add(*currentFrame,trajectory);
+	cumPoints += currentFrame->size();
+	cerr << "total points that would be added: " << cumPoints << endl;
       } else {
 	if (nFrames >10) {
 	  char buf[1024];
@@ -299,6 +410,8 @@ int
 	  ofstream gs(buf);
 	  gs << os.str();
 	  gs.close();
+	  sprintf(buf, "%s-%03d.dat", baseFilename.c_str(), graphNum);	
+	  globalScene->points().save(buf, 50);
 	}
 	os.str("");
 	os.clear();
@@ -307,6 +420,7 @@ int
 	referenceFrame = 0;
 	graphNum ++;
 	nFrames = 0;
+	globalScene->clear();
       }
 
     }
@@ -314,6 +428,8 @@ int
     if (referenceFrame)
       delete referenceFrame;
     referenceFrame = currentFrame;
+    globalScene->add(*currentFrame,trajectory);
+    merger.merge(globalScene, trajectory);
   }
 
   char buf[1024];
@@ -325,6 +441,5 @@ int
   cout << os.str();
   gs.close();
 
-  //globalScene->points().save("allPoints.dat", 50);
   
 }

@@ -1,4 +1,3 @@
-
 FIND_PACKAGE(OpenMP)
 
 if(OPENMP_FOUND)
