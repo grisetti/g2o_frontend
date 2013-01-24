@@ -11,6 +11,7 @@
 #include "SplitMergeEE.h"
 
 #include <fstream>
+#include "g2o/types/slam2d/types_slam2d.h"
 
 #define MIN_POINTS_IN_LINES 10
 #define SPLIT_THRESHOLD 0.05*0.05
@@ -73,8 +74,26 @@ void ViewerGUI::showOriginal()
 	//in this...
 	VertexDataVector::iterator it = vldvector->begin();
 	vld = *(it+numIteration);
+	
+	g2o::VertexSE2* v = vld.first;
+// // 	TODO
+// 	Eigen::Isometry2d T = v->estimate()*offset;
+// 	for (int i = 0; i < vld.second.size(); i++)
+// 	{
+// 		// TODO TRANSFORM ORGINAL POINT IN ROBOT COORDINATES
+// 	}
 	this->viewer->setDataPointer(&(vld.second));
 	this->viewer->updateGL();
+}
+
+Eigen::Vector3d toVector3D(const Eigen::Isometry3d& iso) {
+	
+  Eigen::Vector3d rv;
+  rv[0] = iso.translation().x();
+  rv[1] = iso.translation().y();
+  Eigen::AngleAxisd aa(iso.linear());
+  rv[2] = aa.angle();	
+  return rv;
 }
 
 #if 1
@@ -101,8 +120,14 @@ void ViewerGUI::lineExtraction()
 		//in this..
 		VertexDataVector::iterator it = vldvector->begin();
 		vld = *(it+numIteration);
-		g2o::VertexSE3* v = vld.first;
-		Eigen::Isometry3d T = v->estimate()*offset;
+// 		TODO
+		g2o::VertexSE2* v = vld.first;
+		
+		Eigen::Isometry2d vEstimate;
+		vEstimate.translation() = v->estimate().translation();
+		vEstimate.linear() = v->estimate().rotation().toRotationMatrix(); //come si fa?!!
+		Eigen::Isometry2d T = vEstimate*offset; //v->estimate()*offset;
+
 		
 		if (algotype == splitMergeType){
 			cout << "#----------------------------------------------#" << endl;
@@ -158,26 +183,26 @@ void ViewerGUI::lineExtraction()
 					const Vector2f& p0 = lineExtractor->points()[line.p0Index];
 					const Vector2f& p1 = lineExtractor->points()[line.p1Index];
 					
-					//creating structure to draw lines
-					linePoints.push_back(Eigen::Vector2f(p0.x(), p0.y()));					
-					linePoints.push_back(Eigen::Vector2f(p1.x(), p1.y()));
-					
-#if 1
 					Vector3d p0_3(p0.x(), p0.y(), 0.f);
 					Vector3d p1_3(p1.x(), p1.y(), 0.f);
 					p0_3 = T*p0_3;
 					p1_3 = T*p1_3;
+#if 1
 					os << p0_3.transpose() << endl;
 					os << p1_3.transpose() << endl;
 					os << endl;
 					os << endl;
 					os.flush();
 #endif
+					//creating structure to draw lines (considering the odometry of the robot,use of p0_3 and p1_3)
+					linePoints.push_back(Eigen::Vector2f(p0_3.x(), p0_3.y()));					
+					linePoints.push_back(Eigen::Vector2f(p1_3.x(), p1_3.y()));
+					
 					this->lc.push_back(linePoints);
 					linePoints.clear();
 				}
 				
-				/* saving some information about the line extracted and its line adjacent, if exists*/	
+				/** saving some information about the line extracted and its line adjacent, if exists **/	
 				Line2DExtractor::IntLineMap::const_iterator bit=linesMap.begin();
 				la.push_back(bit->second);
 				while(bit != linesMap.end()) {
@@ -294,7 +319,6 @@ void ViewerGUI::linesInfoExtraction(Line2DExtractor::IntLineMap::const_iterator 
 				v = tmpPoints[imax];
 		}
 	}
-	
 	int numPointsInLine = (line.p1Index - line.p0Index) + 1; //tmpPoints.size();
 	cout << "NEW LINE! Point with max distance from the line:"  <<  v.x() << " ," << v.y() << endl;
 	cout << "------------------" << endl;
@@ -352,7 +376,55 @@ void ViewerGUI::setIdIteration()
 	this->showOriginal();
 }
 
-ViewerGUI::ViewerGUI(VertexDataVector* theVLdVector, Eigen::Isometry3d TheOffset, QWidget* parent)
+
+/** Compute the Line extraction for the entire graph adding vertices and edges related to the line data**/
+void ViewerGUI::ComputeAll()
+{
+	int count = 0;
+	int step = 2;
+	VertexData vld;
+	for (VertexDataVector::iterator it = vldvector->begin(); it != vldvector->end() && count < vldvector->size(); it++)
+	{
+		numIteration = count;
+		this->lineExtraction();
+		count+=step;
+		
+		//suppongo che ho letto il grafoSE2 creato a partire da quello SE3
+		vld = *(it);
+		//cambiare in SE
+		g2o::VertexSE2* v = vld.first;
+		g2o::OptimizableGraph* graph = v->graph();
+		int id1 = -1, id2 = -1;
+		int lid;
+		g2o::VertexSE2* vp1, vp2;
+		int id = (int)graph->vertices().size() - 1;
+		//for each line (ho entrambi i vertici per ora)
+// 		for (int i = 0; i < lc.size(); i++)
+// 		{
+// 			Vector2fVector l = (*lc)[i];
+// 			
+// 			Vector2f p1 = l[0];
+// 			Vector2f p2 = l[1];
+// 			vp1  = new g2o::VertexPointXY();
+// 			id1=id;
+// 			vp1->setId(id++);
+// 			vp1->setEstimate(p1); //ce li ho già trasformati, non moltiplico per T
+// 			graph->addVertex(vp1);
+// 
+// 			vp2  = new g2o::VertexPointXY();
+// 			id2=id;
+// 			vp2->setId(id++);
+// 			vp2->setEstimate(p2); //ce li ho già trasformati, non moltiplico per T
+// 			graph->addVertex(vp2);
+// 		}
+		
+		// 		usleep(50e3);
+		
+	}
+}
+
+// TODO
+ViewerGUI::ViewerGUI(VertexDataVector* theVLdVector, Eigen::Isometry2d TheOffset, QWidget* parent)
 {
   setupUi(this);
   QObject::connect(horizontalSlider, SIGNAL(sliderMoved(int)), this, SLOT(updateVal1(int)));
@@ -361,6 +433,7 @@ ViewerGUI::ViewerGUI(VertexDataVector* theVLdVector, Eigen::Isometry3d TheOffset
   QObject::connect(pushButton, SIGNAL(clicked()), this, SLOT(lineExtraction()));
   QObject::connect(pushButton_2, SIGNAL(clicked()), this, SLOT(showOriginal()));	
   QObject::connect(pushButton_3, SIGNAL(clicked()), this, SLOT(setIdIteration()));
+	QObject::connect(pushButton_4, SIGNAL(clicked()), this, SLOT(ComputeAll()));
   QObject::connect(checkBox, SIGNAL(clicked(bool)),this, SLOT(setAlgorithm()));
   QObject::connect(checkBox_2, SIGNAL(clicked(bool)),this, SLOT(setAlgorithm()));
 

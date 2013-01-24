@@ -33,6 +33,9 @@
 using namespace std;
 using namespace g2o;
 
+//useless
+VertexSE2 g;
+
 //to be deleted?
 volatile bool hasToStop;
 void sigquit_handler(int sig)
@@ -137,11 +140,13 @@ int main(int argc, char**argv){
 	//int this...
 	VertexDataVector vldvector;
 	
-	Eigen::Isometry3d offset = Eigen::Isometry3d::Identity();
+	Eigen::Isometry2d offset = Eigen::Isometry2d::Identity();
 	for (size_t i=0; i<vertexIds.size() && ! hasToStop; i++){
 		
     OptimizableGraph::Vertex* _v=graph->vertex(vertexIds[i]);
-    VertexSE3* v=dynamic_cast<VertexSE3*>(_v);
+// 		VertexSE3* v=dynamic_cast<VertexSE3*>(_v);
+    VertexSE2* v=dynamic_cast<VertexSE2*>(_v);
+		
 		
     if (!v)
       continue;
@@ -155,8 +160,8 @@ int main(int argc, char**argv){
 				//get laser Parameter
 				const Parameter* p = graph->parameters().getParameter(ldata->paramIndex());
 				const ParameterSE3Offset* param = dynamic_cast<const ParameterSE3Offset*> (p);
-				offset = param->offset();
-				
+// 				TODO
+				offset.setIdentity();//param->offset();
 				pointsOriginal = ldata->floatCartesian();
 				if (pointsOriginal.size()==0) {
 					cerr << "WARNING! No laser ranges detected, the g2o file you are using is wrong" << endl;
@@ -170,7 +175,7 @@ int main(int argc, char**argv){
       }
 		}
 	}
-	cout << "File ended!" << endl;
+	cout << "End of file!" << endl;
 
 #if 0
 			ofstream osp("points.dat");

@@ -24,10 +24,8 @@
 
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "g2o/types/slam2d/types_slam2d.h"
-#include "g2o/types/slam2d/se2.h"
-#include "g2o_frontend/thesis/SensorData.h"
 #include "g2o_frontend/thesis/LaserRobotData.h"
-#include "g2o_frontend/thesis/RGBDData.h"
+#include "g2o_frontend/thesis/RGBDData.h"*/
 
 
 using namespace std;
@@ -45,12 +43,11 @@ int main(int argc, char**argv){
 	
   string filename;	
   string outfilename;
-	ofstream ofG2O(outfilename.c_str());
 	g2o::CommandArgs arg;
-	
 	arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
 	arg.param("o", outfilename, "otest.g2o", "output file name");
   arg.parseArgs(argc, argv);
+	ofstream ofG2O(outfilename.c_str());
 	
 	// graph construction
   typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
@@ -97,34 +94,39 @@ int main(int argc, char**argv){
 			{
 				cout << "i: " << i << endl;
 				v2->addUserData(data);
+				
 				//adding sensor parameter
 				Parameter* p = graph->parameters().getParameter(data->paramIndex());
-				if (! graphSE2->parameters().getParameter(data->paramIndex())){
+				if (! graphSE2->parameters().getParameter(data->paramIndex()))
+				{
 					ParameterSE3Offset* parameter = dynamic_cast<ParameterSE3Offset*> (p);
-					graphSE2->parameters().addParameter(parameter);
-					graphSE2->saveParameter(ofG2O, parameter);
+					parameter->setId(1);
+					graphSE2->parameters().addParameter(p);
+					graphSE2->saveParameter(ofG2O, p);
 				}
-				graphSE2->addVertex(v2);
-				graphSE2->saveVertex(ofG2O, v2);		
 				//adding sensor parameter, using SensorData, not working
 // 				sensor = data->getSensor();
 // 				assert (!sensor && "!");
-// 				cout << "pippo" << endl;		
+// 				cout << "pippo3" << endl;		
 // 				Parameter* parameter = sensor->getParameter();
 // 				assert (!parameter && "!");
 // 				
 // 				if (! graphSE2->parameters().getParameter(parameter->id())){
-// 					cout << "pippo3" << endl; 
+// 					cout << "pippo4" << endl; 
 // 					graphSE2->parameters().addParameter(parameter);
-// 					cout << "pippo4" << endl;
+// 					cout << "pippo5" << endl;
 // 					graphSE2->saveParameter(ofG2O, parameter);
 // 				}
+				
+				graphSE2->addVertex(v2);
+				graphSE2->saveVertex(ofG2O, v2);		
 			}
+			
 		}
 		vertexVector.push_back(make_pair(v3, v2));	
 	}
 		
-	cout << "Map vertices:  " << vertexVector.size() << endl;
+// 	cout << "Map vertices:  " << vertexVector.size() << endl;
 	cout << "Graph vertices: " << graphSE2->vertices().size() << endl;
 	
 #if 0
@@ -136,14 +138,9 @@ int main(int argc, char**argv){
 			cout << "Vertex: " << tmp->id() << " Datal: " << ltmp->paramIndex() << endl;
 		}
 	}
-#endif
-// 	std::vector<int> edgesIds(graph->edges().size());
-// 	for (int j = 0; j <= edgesIds.size(); j++) 
-// 	{
-// 		OptimizableGraph::Edge* _e = graph->edges();
-// 	}
+#endif	
 	
-	
+	//adding edges: to do meanwhile I save the vertices
 		for (OptimizableGraph::EdgeSet::iterator it = graph->edges().begin(); it != graph->edges().end(); it++) {
 			
 			EdgeSE3* e3 = dynamic_cast<EdgeSE3*>(*it);
@@ -160,16 +157,15 @@ int main(int argc, char**argv){
 			e2->setMeasurementFromState();
 			Eigen::Matrix<double, 3,3> info;
 			info.setIdentity()*1000;
-// 			Eigen::Matrix3d info;
-// 			info << 1000, 0, 0, 0, 1000, 0, 0, 0, 1000;
+// 			Eigen::Matrix2d info;
+// 			info << 1000, 0, 0, 1000;
 			e2->setInformation(info);
 			graphSE2->addEdge(e2);
 			graphSE2->saveEdge(ofG2O, e2);
 	}
 
 	cout << "Graph edges: " << graphSE2->edges().size() << endl;
-	
-	ofG2O << "fanculooooooooo" << endl;
-	ofG2O.flush();
+
+	ofG2O.close();
 	return (0);
 }

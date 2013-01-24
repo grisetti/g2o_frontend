@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'viewer.ui'
 **
-** Created: Tue Jan 22 16:31:09 2013
+** Created: Thu Jan 24 10:29:27 2013
 **      by: Qt User Interface Compiler version 4.8.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -50,9 +50,10 @@ public:
     QSlider *horizontalSlider_2;
     QLabel *label_3;
     QSlider *horizontalSlider_3;
-    QPushButton *pushButton_2;
     QPushButton *pushButton;
     QPushButton *pushButton_3;
+    QPushButton *pushButton_2;
+    QPushButton *pushButton_4;
     QVBoxLayout *verticalLayout_2;
     QSpacerItem *horizontalSpacer;
     leQGLViewer *viewer;
@@ -140,13 +141,6 @@ public:
 
         verticalLayout->addWidget(groupBox_2);
 
-        pushButton_2 = new QPushButton(centralwidget);
-        pushButton_2->setObjectName(QString::fromUtf8("pushButton_2"));
-        pushButton_2->setAutoRepeatDelay(300);
-        pushButton_2->setAutoRepeatInterval(106);
-
-        verticalLayout->addWidget(pushButton_2);
-
         pushButton = new QPushButton(centralwidget);
         pushButton->setObjectName(QString::fromUtf8("pushButton"));
 
@@ -156,6 +150,18 @@ public:
         pushButton_3->setObjectName(QString::fromUtf8("pushButton_3"));
 
         verticalLayout->addWidget(pushButton_3);
+
+        pushButton_2 = new QPushButton(centralwidget);
+        pushButton_2->setObjectName(QString::fromUtf8("pushButton_2"));
+        pushButton_2->setAutoRepeatDelay(300);
+        pushButton_2->setAutoRepeatInterval(106);
+
+        verticalLayout->addWidget(pushButton_2);
+
+        pushButton_4 = new QPushButton(centralwidget);
+        pushButton_4->setObjectName(QString::fromUtf8("pushButton_4"));
+
+        verticalLayout->addWidget(pushButton_4);
 
 
         horizontalLayout->addLayout(verticalLayout);
@@ -202,9 +208,10 @@ public:
         label->setText(QApplication::translate("MainWindow", "Min points in line:", 0, QApplication::UnicodeUTF8));
         label_2->setText(QApplication::translate("MainWindow", "Split threshold:", 0, QApplication::UnicodeUTF8));
         label_3->setText(QApplication::translate("MainWindow", "Clusterer threshold:", 0, QApplication::UnicodeUTF8));
-        pushButton_2->setText(QApplication::translate("MainWindow", "Show Original", 0, QApplication::UnicodeUTF8));
         pushButton->setText(QApplication::translate("MainWindow", "Line Detection", 0, QApplication::UnicodeUTF8));
         pushButton_3->setText(QApplication::translate("MainWindow", "Next Iteration", 0, QApplication::UnicodeUTF8));
+        pushButton_2->setText(QApplication::translate("MainWindow", "Show Original", 0, QApplication::UnicodeUTF8));
+        pushButton_4->setText(QApplication::translate("MainWindow", "Compute", 0, QApplication::UnicodeUTF8));
     } // retranslateUi
 
 };
