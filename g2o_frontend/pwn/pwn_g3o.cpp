@@ -59,7 +59,7 @@ struct PointsWithNormalMerger{
 
   PointsWithNormalMerger(){
     _distanceThreshold = 0.05;
-    _normalThreshold = cos(10*M_PI/180.0f);
+    _normalThreshold = cos(45*M_PI/180.0f);
     _normalGenerator = 0;
     _indexImage.resize(480,640);
     _zBuffer.resize(480,540);
@@ -193,6 +193,53 @@ struct PointsWithNormalMerger{
 
 #endif
 
+void writeParams(ostream& os, int paramIndex, const Eigen::Matrix3f& cameraMatrix, const Eigen::Isometry3f& cameraPose = Eigen::Isometry3f::Identity()){
+  Quaternionf q(cameraPose.rotation());
+  os << "PARAMS_CAMERACALIB " 
+     << paramIndex << " "
+     << cameraPose.translation().transpose() << " "
+     << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << " "
+     << cameraMatrix(0,0) << " " << cameraMatrix(1,1) << " " << cameraMatrix(0,2) << " " << cameraMatrix(1,2)<< endl;
+}
+
+void writeVertex(ostream& os, int currentIndex, const Vector6f& estimate, const std::string& filename){
+    // write the vertex frame
+      Vector3f t = estimate.head<3>();
+      Vector3f mq = estimate.tail<3>();
+      float w = mq.squaredNorm();
+      if (w>1){
+	mq.setZero();
+	w = 1.0f;
+      } else {
+	w = sqrt(1-w);
+      }
+      
+      os << "VERTEX_SE3:QUAT " << currentIndex << " " << t.transpose() << " " << mq.transpose() << " " << w << endl;
+      os << "DEPTH_IMAGE_DATA 0 " << filename << " 0 0 " << endl;
+}
+
+void writeEdge(ostream& os, int previousIndex, int currentIndex, const Vector6f& mean, const Matrix6f& omega){
+  Vector6f x = mean;
+  Vector3f t = x.head<3>();
+  Vector3f mq = x.tail<3>();
+  float w = mq.squaredNorm();
+  if (w>1){
+    mq.setZero();
+    w = 1.0f;
+  } else {
+    w = sqrt(1-w);
+  }
+  
+  os << "EDGE_SE3:QUAT " << previousIndex << " " << currentIndex << " ";
+  os << t.transpose() << " " << mq.transpose() << " " << w <<  " ";
+  for (int r=0; r<6; r++){
+    for (int c=r; c<6; c++){
+      os << omega(r,c) << " ";
+    }
+  }
+  os << endl;
+}
+
 int
  main(int argc, char** argv){
   string dirname;
@@ -217,7 +264,8 @@ int
   float al_minInliers;
   float al_lambda;
   float al_debug;
-
+  int processEachN;
+  int chunkEachN;
   Eigen::Matrix3f cameraMatrix;
   cameraMatrix << 
     525.0f, 0.0f, 319.5f,
@@ -248,6 +296,8 @@ int
   arg.param("al_lambda", al_lambda, aligner.lambda(), "damping factor for the transformation update, the higher the smaller the step");
   arg.param("al_debug", al_debug, aligner.debug(), "prints lots of stuff");
   arg.param("numThreads", numThreads, 1, "numver of threads for openmp");
+  arg.param("processEachN",processEachN,1,"compute an image every X") ;
+  arg.param("chunkEachN",chunkEachN,1000000,"reset the process every X images") ;
   
 
 
@@ -309,13 +359,12 @@ int
   Isometry3f trajectory;
   trajectory.setIdentity();
   int previousIndex=-1;
-  int graphNum=0;
   int nFrames = 0;
   Scene* globalScene = new Scene;
   Scene* partialScene = new Scene;
   int cumPoints=0;
   string baseFilename = graphFilename.substr( 0, graphFilename.find_last_of( '.' ) );
-  for (size_t i=0; i<filenames.size(); i++){
+  for (size_t i=0; i<filenames.size(); i+=processEachN){
     cerr << endl << endl << endl;
     cerr << ">>>>>>>>>>>>>>>>>>>>>>>> PROCESSING " << filenames[i] << " <<<<<<<<<<<<<<<<<<<<" <<  endl;
     DepthFrame* currentFrame= new DepthFrame();
@@ -325,27 +374,11 @@ int
       delete currentFrame;
       break;
     }
-    nFrames ++;
     if (! referenceFrame ){
-      os << "PARAMS_CAMERACALIB 0 0 0 0 0 0 0 1 525 525 319.5 239.5"<< endl;
-      trajectory.setIdentity();
+      writeParams(os, 0, cameraMatrix);
+      writeVertex(os, i, t2v(trajectory), filenames[i]);
     }
-    {
-      // write the vertex frame
-      Vector6f x = t2v(trajectory);
-      Vector3f t = x.head<3>();
-      Vector3f mq = x.tail<3>();
-      float w = mq.squaredNorm();
-      if (w>1){
-	mq.setZero();
-	w = 1.0f;
-      } else {
-	w = sqrt(1-w);
-      }
-      
-      os << "VERTEX_SE3:QUAT " << i << " " << t.transpose() << " " << mq.transpose() << " " << w << endl;
-      os << "DEPTH_IMAGE_DATA 0 " << filenames[i] << " 0 0 " << endl;
-    }
+    nFrames ++;
     
     currentFrame->_cameraMatrix = cameraMatrix;
     currentFrame->_baseline = 0.075;
@@ -372,7 +405,6 @@ int
       cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
       cerr << "localTransform : " << endl;
       cerr << (trajectory.inverse()*X).matrix() << endl;
-      //trajectory=trajectory*X;
       trajectory=X;
       cerr << "globaltransform: " << endl;
       cerr << trajectory.matrix() << endl;
@@ -380,45 +412,24 @@ int
       cerr << "alignment took: " << oend-ostart << " sec." << endl;
       cerr << "aligner scaled image size: " << aligner.scaledImageRows() << " " << aligner.scaledImageCols() << endl;
       
-      if(rratio < 100 && tratio < 100) {
-	// write the edge frame
-	Vector6f x = mean;
-	Vector3f t = x.head<3>();
-	Vector3f mq = x.tail<3>();
-	float w = mq.squaredNorm();
-	if (w>1){
-	  mq.setZero();
-	  w = 1.0f;
-	} else {
-	  w = sqrt(1-w);
-	}
-	
-	os << "EDGE_SE3:QUAT " << previousIndex << " " << i << " ";
-	os << t.transpose() << " " << mq.transpose() << " " << w <<  " ";
-	for (int r=0; r<6; r++){
-	  for (int c=r; c<6; c++){
-	    os << omega(r,c) << " ";
-	  }
-	} 
-	os << endl;
+      if(rratio < 100 && tratio < 100 && (i%chunkEachN)) {
+	writeVertex(os, i, t2v(trajectory), filenames[i]);  
+	writeEdge(os, previousIndex, i, mean, omega);
 	cumPoints += currentFrame->size();
 	cerr << "total points that would be added: " << cumPoints << endl;
       } else {
-	if (nFrames >10) {
-	  char buf[1024];
-	  sprintf(buf, "%s-%03d.g2o", baseFilename.c_str(), graphNum);	
-	  ofstream gs(buf);
-	  gs << os.str();
-	  gs.close();
-	  sprintf(buf, "%s-%03d.pwn", baseFilename.c_str(), graphNum);	
-	  globalScene->points().save(buf,1,true);
-	}
+	char buf[1024];
+	sprintf(buf, "%s-%05d.g2o", baseFilename.c_str(), (int)i);	
+	ofstream gs(buf);
+	gs << os.str();
+	gs.close();
+	sprintf(buf, "%s-%05d.pwn", baseFilename.c_str(), (int)i);	
+	globalScene->points().save(buf,1,true);
 	os.str("");
 	os.clear();
 	if (referenceFrame)
 	  delete referenceFrame;
 	referenceFrame = 0;
-	graphNum ++;
 	nFrames = 0;
 	globalScene->clear();
       }
@@ -433,16 +444,17 @@ int
   }
 
   char buf[1024];
-  sprintf(buf, "%s-%03d.g2o", baseFilename.c_str(), graphNum);	
+  sprintf(buf, "%s-%05d.g2o", baseFilename.c_str(), (int)filenames.size());	
   cerr << "saving final frames, n: " << nFrames << " in file [" << buf << "]" << endl;
   cerr << "filesize:" << os.str().length() << endl; 
   ofstream gs(buf);
   gs << os.str();
   //cout << os.str();
   gs.close();
-  sprintf(buf, "%s-%03d.pwn", baseFilename.c_str(), graphNum);	
+  sprintf(buf, "%s-%05d.pwn", baseFilename.c_str(), (int)filenames.size());	
   cerr << "saving final points, n: " << globalScene->size() << " in file [" << buf << "]" << endl;
   globalScene->points().save(buf,1,true);
-
+  //globalScene->_suppressNoNormals();
+    
   
 }
