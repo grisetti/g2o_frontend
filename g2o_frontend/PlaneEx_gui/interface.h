@@ -11,8 +11,8 @@
 #include "viewer_slider.h"
 #include <qapplication.h>
 #include "CloudUtils.h"
-
-//PCL
+#include "Eigen/Core"
+#include "opencv2/opencv.hpp"
 #include <pcl/ModelCoefficients.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
