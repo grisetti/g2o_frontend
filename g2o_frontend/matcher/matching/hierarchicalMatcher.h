@@ -9,7 +9,7 @@ class HierarchicalMatcherResult : public CorrelativeMatcherResult
 {
   friend class HierarchicalMatcher;
   public:
-    virtual const float matchingScore() const;
+    virtual float matchingScore() const;
     virtual ~HierarchicalMatcherResult();
 };
 

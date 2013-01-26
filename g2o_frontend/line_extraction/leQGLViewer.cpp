@@ -72,7 +72,7 @@ void leQGLViewer::init()
   cam->lookAt(qglviewer::Vec(0., 0., 0.));
   delete oldcam;
 }
-#if 1
+#if 0
 				ofstream osp2("points2.dat");
 				ofstream os2("lines2.dat");
 #endif

@@ -5,6 +5,7 @@
 #include "depthimage.h"
 #include "pointwithnormalstatsgenerator.h"
 #include "g2o_frontend/dm_optimization/dm_math.h"
+#include "scene.h"
 
 class PointWithNormalAligner{
 public:
@@ -31,16 +32,23 @@ public:
   inline int scaledImageCols() const { return _refZbuffer.cols();}
   inline int scaledImageRows() const { return _refZbuffer.rows();}
 
+
+  void setReferenceScene(const Scene* refScene);
+  void setCurrentScene(const Scene* currentScene);
+  
+  inline const Scene* referenceScene() const { return _referenceScene;} 
+  inline const Scene* currentScene() const { return _currentScene;} 
+
   // sets the cloud and conditions the covariances accordingly
-  void setReferenceCloud(const PointWithNormalVector*  refPoints, const PointWithNormalSVDVector* refSVDs); 
-  const PointWithNormalVector* refPoints() const {return _refPoints;}
+  void setReferenceCloud(const PointWithNormalVector*  refPoints, const PointWithNormalSVDVector* refSVDs) __attribute__ ((deprecated)); 
+  const PointWithNormalVector* refPoints() const __attribute__ ((deprecated))  {return _refPoints;}
   // sets the cloud and conditions the covariances accordingly
-  void setCurrentCloud(const PointWithNormalVector*  currentPoints, const PointWithNormalSVDVector* currentSVDs); 
-  const PointWithNormalVector* referenceCloud() const {return _refPoints;}
-  const PointWithNormalSVDVector* referenceSVDs() const {return _refSVDs;}
-  const PointWithNormalVector* currentCloud() const {return _currPoints;}
-  const PointWithNormalSVDVector* currentSVDs() const {return _currSVDs;}
-  const PointWithNormalVector* currPoints() const {return _currPoints;}
+  void setCurrentCloud(const PointWithNormalVector*  currentPoints, const PointWithNormalSVDVector* currentSVDs) __attribute__ ((deprecated)); 
+  const PointWithNormalVector* referenceCloud() const __attribute__ ((deprecated)) {return _refPoints;}
+  const PointWithNormalSVDVector* referenceSVDs() const __attribute__ ((deprecated)) {return _refSVDs;}
+  const PointWithNormalVector* currentCloud() const __attribute__ ((deprecated)) {return _currPoints;}
+  const PointWithNormalSVDVector* currentSVDs() const __attribute__ ((deprecated)) {return _currSVDs;}
+  const PointWithNormalVector* currPoints() const __attribute__ ((deprecated)) {return _currPoints;}
   
   inline float scale() const {return _scale;}
   inline void setScale(float scale_) {_scale = scale_; _cameraSet = false;}
@@ -148,6 +156,7 @@ protected:
 
   const PointWithNormalVector *_refPoints, *_currPoints;
   const PointWithNormalSVDVector *_refSVDs, *_currSVDs;
+  const Scene* _referenceScene, *_currentScene;
   Matrix6fVector _currOmegas, _currFlatOmegas;
 
   DepthImage _refZbuffer, _currZbuffer;

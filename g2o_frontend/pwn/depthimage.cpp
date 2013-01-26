@@ -140,6 +140,7 @@ void DepthImage::fromUnsignedShort(const MatrixXus& m){
    MatrixXus usm;
    FILE* f=fopen(filename, "rb");
    bool result = _readPgm(usm, f);
+   fclose(f);
    if (! result)
      return false;
    fromUnsignedShort(usm);

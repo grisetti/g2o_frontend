@@ -1,4 +1,3 @@
-
 FIND_PACKAGE(OpenMP)
 
 if(OPENMP_FOUND)
@@ -12,11 +11,13 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 ADD_LIBRARY(pwn_library
   depthimage.cpp depthimage.h
   pixelmapper.cpp pixelmapper.h 
+  gaussian3.cpp gaussian3.h 
   pointwithnormal.cpp pointwithnormal.h 
   integralpointimage.cpp integralpointimage.h
   pointwithnormalstatsgenerator.cpp pointwithnormalstatsgenerator.h
   pointwithnormalaligner.cpp pointwithnormalaligner.h
   pointwithnormalmerger.cpp pointwithnormalmerger.h
+  scene.cpp scene.h
 )
 
 
@@ -33,6 +34,10 @@ TARGET_LINK_LIBRARIES( pwn_align pwn_library  ${G2O_STUFF_LIBRARY} )
 ADD_EXECUTABLE(pwn_g2o pwn_g2o.cpp)
 SET_TARGET_PROPERTIES(pwn_g2o PROPERTIES OUTPUT_NAME pwn_g2o)
 TARGET_LINK_LIBRARIES( pwn_g2o pwn_library  ${G2O_STUFF_LIBRARY} )
+
+ADD_EXECUTABLE(pwn_g3o pwn_g3o.cpp)
+SET_TARGET_PROPERTIES(pwn_g3o PROPERTIES OUTPUT_NAME pwn_g3o)
+TARGET_LINK_LIBRARIES( pwn_g3o pwn_library  ${G2O_STUFF_LIBRARY} )
 
 ADD_EXECUTABLE(pwn_g2o_localmap pwn_g2o_localmap.cpp)
 SET_TARGET_PROPERTIES(pwn_g2o_localmap PROPERTIES OUTPUT_NAME pwn_g2o_localmap)

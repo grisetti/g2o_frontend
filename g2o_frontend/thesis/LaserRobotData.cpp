@@ -91,7 +91,7 @@ bool LaserRobotData::read(istream& is){
   return true;
 }
 
-Eigen::Vector3d to2D(const Eigen::Isometry3d& iso) {
+Eigen::Vector3d toVector3D(const Eigen::Isometry3d& iso) {
 	
   Eigen::Vector3d rv;
   rv[0] = iso.translation().x();
@@ -145,10 +145,10 @@ bool LaserRobotData::write(ostream& os) const {
     os << " " << _intensities[i];
 
   // odometry pose
-  Eigen::Vector3d pose = to2D(v->estimate());
+  Eigen::Vector3d pose = toVector3D(v->estimate()*offset);
   os << " " << pose.x() << " " << pose.y() << " " << pose.z();
   // laser pose wrt the world
-  pose =  to2D(v->estimate()*offset);
+  pose =   toVector3D(v->estimate());
   os << " " << pose.x() << " " << pose.y() << " " << pose.z();
 
   // crap values
@@ -227,7 +227,7 @@ HyperGraphElementAction* LaserRobotDataDrawAction::operator()(HyperGraph::HyperG
 {
   if (typeid(*element).name()!=_typeName)
     return 0;
-
+	cout << ".";
   refreshPropertyPtrs(params_);
   if (! _previousParams){
     return this;
@@ -250,14 +250,18 @@ HyperGraphElementAction* LaserRobotDataDrawAction::operator()(HyperGraph::HyperG
   }
   
   const HyperGraph::DataContainer* container = that->dataContainer();
-  const VertexSE3* v = dynamic_cast<const VertexSE3*> (container);
+	const OptimizableGraph::Vertex* v = dynamic_cast<const OptimizableGraph::Vertex*> (container);
+
+//   const VertexSE3* v = dynamic_cast<const VertexSE3*> (container);
   if (! v) return false;
 
   const OptimizableGraph* g = v->graph();
   const Parameter* p = g->parameters().getParameter(that->paramIndex());
   const ParameterSE3Offset* oparam = dynamic_cast<const ParameterSE3Offset*> (p);
 		
-  const Eigen::Isometry3d& offset = oparam->offset();
+// 	TODO
+  Eigen::Isometry3d offset; //oparam->offset();
+	offset.setIdentity();
   glPushMatrix();
   glMultMatrixd(offset.data());
   glColor4f(1.f,0.f,0.f,0.5f);
@@ -267,6 +271,7 @@ HyperGraphElementAction* LaserRobotDataDrawAction::operator()(HyperGraph::HyperG
   if (_pointSize) {
     glPointSize(_pointSize->value());
   }
+
   glBegin(GL_POINTS);
   for (size_t i=0; i<points.size(); i+=step){
     glVertex3f((float)points[i].x(), (float)points[i].y(), 0.f);

@@ -5,7 +5,7 @@ using namespace std;
 using namespace Eigen;
 
 
-const float GradientMatcherResult::matchingScore() const
+float GradientMatcherResult::matchingScore() const
 {
   return _matchingScore;
 }
@@ -87,7 +87,7 @@ void GradientMatcher::scanMatch(const Vector2fVector& scan, const Vector3f& init
   Vector3f bestMoveAtResolution= bestMove;
   float bestScoreAtResolution = bestScore;
   
-  for(unsigned int i = 0; i < maxIterations; ++i)
+  for(int i = 0; i < maxIterations; ++i)
   {
     Vector3f bestLocalMove = bestMoveAtResolution;
     float bestLocalMoveScore = bestScoreAtResolution;

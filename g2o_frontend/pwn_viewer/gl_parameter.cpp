@@ -1,3 +1,5 @@
 #include "gl_parameter.h"
 
-GLParameter::GLParameter() {}
+GLParameter::GLParameter() {
+  _step=1.0f;
+}

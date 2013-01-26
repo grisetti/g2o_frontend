@@ -1,3 +1,10 @@
+/*
+ * line_extraction2d.cpp
+ *
+ *  Created on: Jan 15, 2013
+ *      Author: Martina
+ */
+
 #include <cmath>
 #include "line_extraction2d.h"
 #include <fstream>

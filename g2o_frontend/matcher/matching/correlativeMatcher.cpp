@@ -6,7 +6,7 @@ using namespace Eigen;
 
 
 
-const float CorrelativeMatcherResult::matchingScore() const
+float CorrelativeMatcherResult::matchingScore() const
 {
   return _matchingScore;
 }

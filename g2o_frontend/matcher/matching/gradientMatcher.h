@@ -9,7 +9,7 @@ class GradientMatcherResult : ScanMatcherResult
 {
   friend class GradientMatcher;
   public:
-    virtual const float matchingScore() const;
+    virtual float matchingScore() const;
     virtual ~GradientMatcherResult();
   
 };

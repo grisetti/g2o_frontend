@@ -22,6 +22,8 @@
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 
 #include "g2o_frontend/thesis/LaserRobotData.h"
+#include "line_extraction2d.h"
+
 
 #include <qapplication.h>
 #include <qobject.h>
@@ -31,9 +33,8 @@
 using namespace std;
 using namespace g2o;
 
-
-//for laser points data
-LaserRobotData::Vector2fVector pointsOriginal;
+//useless
+VertexSE2 g;
 
 //to be deleted?
 volatile bool hasToStop;
@@ -130,40 +131,51 @@ int main(int argc, char**argv){
   for (OptimizableGraph::VertexIDMap::iterator it=graph->vertices().begin(); it!= graph->vertices().end(); it ++){
     vertexIds[k++] = (it->first);
   }
-
   std::sort(vertexIds.begin(), vertexIds.end());
 	
 	LaserRobotData* ldata = 0;
-	LaserDataVector ldvector;
+	LaserRobotData::Vector2fVector pointsOriginal;
+	//changing this...
+	//LaserDataVector ldvector;
+	//int this...
+	VertexDataVector vldvector;
+	
+	Eigen::Isometry2d offset = Eigen::Isometry2d::Identity();
 	for (size_t i=0; i<vertexIds.size() && ! hasToStop; i++){
 		
     OptimizableGraph::Vertex* _v=graph->vertex(vertexIds[i]);
-    VertexSE3* v=dynamic_cast<VertexSE3*>(_v);
+// 		VertexSE3* v=dynamic_cast<VertexSE3*>(_v);
+    VertexSE2* v=dynamic_cast<VertexSE2*>(_v);
+		
 		
     if (!v)
       continue;
-    
+		
 		//read laser data from the graph constructed given the graph.g2o as filename
     OptimizableGraph::Data* d = v->userData();	
     while(d){
 			ldata = dynamic_cast<LaserRobotData*>(d);
 			d=d->next();
-// 			const Parameter* p = graph->parameters().getParameter(ldata->paramIndex());
-// 			const ParameterSE3Offset* param = dynamic_cast<const ParameterSE3Offset*> (p);
-// 			const Eigen::Isometry3d& offset = param->offset();
-// 			glMultMatrixd(offset.data());
       if (ldata) {
+				//get laser Parameter
+				const Parameter* p = graph->parameters().getParameter(ldata->paramIndex());
+				const ParameterSE3Offset* param = dynamic_cast<const ParameterSE3Offset*> (p);
+// 				TODO
+				offset.setIdentity();//param->offset();
 				pointsOriginal = ldata->floatCartesian();
 				if (pointsOriginal.size()==0) {
 					cerr << "WARNING! No laser ranges detected, the g2o file you are using is wrong" << endl;
 					return 0;
 				}
-				ldvector.push_back(make_pair(ldata,pointsOriginal));
-// 				cout << "LaserDataVector size is "<< ldvector.size() << "\tthe last reading has " << ldvector[i].second.size() << " points." << endl;
+				//for generating lines files, changing this...
+				//ldvector.push_back(make_pair(ldata,pointsOriginal));
+				//in this
+        vldvector.push_back(make_pair(v,pointsOriginal));				
+//			cout << "LaserDataVector size is "<< ldvector.size() << "\tthe last reading has " << ldvector[i].second.size() << " points." << endl;
       }
 		}
 	}
-	cout << "File ended!" << endl;
+	cout << "End of file!" << endl;
 
 #if 0
 			ofstream osp("points.dat");
@@ -172,12 +184,15 @@ int main(int argc, char**argv){
 			}
 			osp.flush();
 #endif
-	
-	
+
 	QApplication app(argc, argv);
 // 	glutInit(&argc, argv);
-	ViewerGUI *dialog = new ViewerGUI(&ldvector);
-	dialog->viewer->setDataPointer(&(ldvector[0].second));
+	//changing this...
+// 	ViewerGUI *dialog = new ViewerGUI(&ldvector);
+// 	dialog->viewer->setDataPointer(&(ldvector[0].second));
+	//in this..
+	ViewerGUI *dialog = new ViewerGUI(&vldvector, offset);
+	dialog->viewer->setDataPointer(&(vldvector[0].second));
 	dialog->show();
 	return app.exec();
 }

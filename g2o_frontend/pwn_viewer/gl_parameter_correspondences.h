@@ -3,8 +3,9 @@
 
 #include <Eigen/Geometry>
 #include <GL/gl.h>
+#include "gl_parameter.h"
 
-class GLParameterCorrespondences {
+class GLParameterCorrespondences : public GLParameter{
  public:
   GLParameterCorrespondences();
   GLParameterCorrespondences(float pointSize_, Eigen::Vector4f color_, float lineWidth_);

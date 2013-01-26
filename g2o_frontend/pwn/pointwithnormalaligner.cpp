@@ -3,7 +3,6 @@
 #include "g2o/stuff/unscented.h"
 #include "g2o/stuff/timeutil.h"
 #include <Eigen/Dense>
-
 #ifdef _PWN_USE_OPENMP_
 #include <omp.h>
 #endif // _PWN_USE_OPENMP_
@@ -11,6 +10,8 @@
 using namespace Eigen;
 using namespace std;
 using namespace g2o;
+
+#include "_pwn_align_rt_construct.cpp"
 
 inline Matrix6f jacobian(const Eigen::Isometry3f& X, const Vector6f& p) {
   Matrix6f J = Matrix6f::Zero();
@@ -20,6 +21,16 @@ inline Matrix6f jacobian(const Eigen::Isometry3f& X, const Vector6f& p) {
   J.block<3, 3>(0, 0) = R;
   J.block<3, 3>(0, 3) = R * skew(t);
   J.block<3, 3>(3, 3) = R * skew(n);
+  return J;
+}
+
+inline Matrix6f jacobian(const Vector6f& p) {
+  Matrix6f J = Matrix6f::Zero();
+  const Vector3f& t = p.head<3>();
+  const Vector3f& n = p.tail<3>();
+  J.block<3, 3>(0, 0) = Eigen::Matrix3f::Identity();
+  J.block<3, 3>(0, 3) = skew(t);
+  J.block<3, 3>(3, 3) = skew(n);
   return J;
 }
 
@@ -54,16 +65,35 @@ PointWithNormalAligner::PointWithNormalAligner() {
   _translationalMinEigenRatio = 50;
   _debug = false;
   _numThreads = 1;
+
+  _referenceScene = 0; 
+  _currentScene = 0;
+}
+
+
+void PointWithNormalAligner::setReferenceScene(const Scene* refScene) {
+  _referenceScene = refScene;
+  _refPoints = &(refScene->points());
+  _refSVDs = &(refScene->svds());
+}
+
+void PointWithNormalAligner::setCurrentScene(const Scene* currScene){
+  _currentScene = currScene;
+  _currPoints = &(currScene->points());
+  _currSVDs = &(currScene->svds());
+  _omegasSet=false;
 }
 
 
 void PointWithNormalAligner::setReferenceCloud(const PointWithNormalVector*  refPoints, const PointWithNormalSVDVector* refSVDs) {
+  _referenceScene = 0;
   _refPoints = refPoints;
   _refSVDs = refSVDs;
 }
 // sets the cloud and conditions tthe covariances accordingly
 
 void PointWithNormalAligner::setCurrentCloud(const PointWithNormalVector*  currentPoints, const PointWithNormalSVDVector* currentSVDs){
+  _currentScene = 0;
   _currPoints = currentPoints;
   _currSVDs = currentSVDs;
   _omegasSet=false;
@@ -120,28 +150,28 @@ void PointWithNormalAligner::_updateOmegas() {
 #endif// _PWN_USE_OPENMP_
       
     for (size_t i=threadId; i<_currPoints->size(); i+=_numThreads){
-	    const PointWithNormal& point = _currPoints->at(i);
-			const PointWithNormalSVD& svd = _currSVDs->at(i);
-			_currOmegas[i].setZero();
-			if (point.normal().squaredNorm()<1e-3) {
-	  		// the point has no normal;
-	  		continue;
-			}
+      const PointWithNormal& point = _currPoints->at(i);
+      const PointWithNormalSVD& svd = _currSVDs->at(i);
+      _currOmegas[i].setZero();
+      if (point.normal().squaredNorm()<1e-3) {
+	// the point has no normal;
+	continue;
+      }
 	
-			float curvature = svd.curvature();
-			_currFlatOmegas[i].setZero();
-			if (curvature<_flatCurvatureThreshold){
-	  		_currOmegas[i].block<3,3>(0,0) = svd.U() * flatOmegaP * svd.U().transpose();
-	  		_currOmegas[i].block<3,3>(3,3) = flatOmegaN;
-	  		_currFlatOmegas[i].block<3,3>(0,0) = svd.U() * errorFlatOmegaP * svd.U().transpose();
-	  		_currFlatOmegas[i].block<3,3>(3,3).setIdentity();
-			} else {
-	  		_currOmegas[i].block<3,3>(0,0) = svd.U() * 
-	    																	 Diagonal3f(nonFlatKp/svd.singularValues()(0),
-		   	    														 nonFlatKp/svd.singularValues()(1), 
-		   	    														 nonFlatKp/svd.singularValues()(2)) * svd.U().transpose();
-	  		_currOmegas[i].block<3,3>(3,3) = nonFlatOmegaN;
-			}
+      float curvature = svd.curvature();
+      _currFlatOmegas[i].setZero();
+      if (curvature<_flatCurvatureThreshold){
+	_currOmegas[i].block<3,3>(0,0) = svd.U() * flatOmegaP * svd.U().transpose();
+	_currOmegas[i].block<3,3>(3,3) = flatOmegaN;
+	_currFlatOmegas[i].block<3,3>(0,0) = svd.U() * errorFlatOmegaP * svd.U().transpose();
+	_currFlatOmegas[i].block<3,3>(3,3).setIdentity();
+      } else {
+	_currOmegas[i].block<3,3>(0,0) = svd.U() * 
+	  Diagonal3f(nonFlatKp/svd.singularValues()(0),
+		     nonFlatKp/svd.singularValues()(1), 
+		     nonFlatKp/svd.singularValues()(2)) * svd.U().transpose();
+	_currOmegas[i].block<3,3>(3,3) = nonFlatOmegaN;
+      }
     }
   }
   _omegasSet=true;
@@ -388,7 +418,7 @@ int PointWithNormalAligner::_constructLinearSystemQT(Matrix6f& H, Vector6f&b, fl
       continue;
     numInliers++;
     error += localError;
-    Matrix6f J = jacobian(Eigen::Isometry3f::Identity(), pref);
+    Matrix6f J = jacobian(pref);
     b += J.transpose() * omega * e;
     H += J.transpose() * omega * J;
   }
@@ -398,6 +428,12 @@ int PointWithNormalAligner::_constructLinearSystemQT(Matrix6f& H, Vector6f&b, fl
 int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, float& error, bool onlyFlat, int numThreads, int threadNum) const{
   b.setZero();
   H.setZero();
+
+  Vector12f b2;
+  b2.setZero();
+  Matrix12f H2;
+  H2.setZero();
+
   error = 0;
   int numInliers = 0;
   Matrix6x12f J;
@@ -406,8 +442,11 @@ int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, 
   int n = _numCorrespondences/numThreads;
   int imin = threadNum *n;
   int imax = (threadNum == numThreads -1) ? _numCorrespondences : (threadNum+1) *n;
-  for(int i = imin; i < imax; i++){
-    const Correspondence& corr = _correspondences[i];
+  Vector12f bl;
+  Matrix12f Hl;
+ 
+  for(int i = imin; i < imax; i++){ 
+   const Correspondence& corr = _correspondences[i];
     PointWithNormal pref  = _T*_refPoints->at(corr.i1);
     const PointWithNormal& pcurr = _currPoints->at(corr.i2);
     const Matrix6f& omega = omegas.at(corr.i2);
@@ -420,6 +459,8 @@ int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, 
       continue;
     numInliers++;
     error += localError;
+#ifdef _PWN_USE_EXPLICIT_RT_JACOBIAN
+    
     J.setZero();
     Vector3f t=pref.block<3,1>(0,0);
     Vector3f n=pref.block<3,1>(3,0);
@@ -430,10 +471,14 @@ int PointWithNormalAligner::_constructLinearSystemRT(Matrix12f& H, Vector12f&b, 
     J.block<1,3>(3,0)=n.transpose();
     J.block<1,3>(4,3)=J.block<1,3>(3,0);
     J.block<1,3>(5,6)=J.block<1,3>(3,0);
-    //J.block<3,12>(0,0)=_T.linear() * J.block<3,12>(0,0);
-    //J.block<3,12>(3,0)=_T.linear() * J.block<3,12>(3,0);
     b += -J.transpose() * omega * e;
     H += J.transpose() * omega * J;
+#else 
+    _pwn_RT_computeH(Hl,pref,omega);
+    _pwn_RT_computeB(bl,pref,omega,e);
+    b-=bl;
+    H+=Hl;
+#endif
   }
   return numInliers;
 }
@@ -670,10 +715,8 @@ int PointWithNormalAligner::_linearUpdate(float& error){
   if (svd.singularValues()(0)<.5)
     return false;
   
-  Matrix3f R=svd.matrixU()*svd.matrixV().transpose();
-  dT.linear()=R;
-  dT.translation().setZero();
-  //dT.translation()=_X.block<3,1>(0,3);
+  dT.linear()=svd.matrixU()*svd.matrixV().transpose();
+  //dT.translation().setZero();
   _T = dT * _T;
 
 
@@ -717,9 +760,10 @@ int PointWithNormalAligner::_linearUpdate(float& error){
   }
 
   Ht+=Matrix3f::Identity()*_lambda;
-  Vector3f dt = Ht.ldlt().solve(bt);
-  _T.translation()+=dt;
-
+  dT = Eigen::Isometry3f::Identity();
+  dT.translation() = Ht.ldlt().solve(bt);
+  _T = dT*_T;
+  //_T.translation() += dT.translation();
   return inliers;
 }
 

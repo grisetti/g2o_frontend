@@ -3,8 +3,9 @@
 
 #include <Eigen/Geometry>
 #include <GL/gl.h>
+#include "gl_parameter.h"
 
-class GLParameterCovariances {
+class GLParameterCovariances : public GLParameter{
  public:
   GLParameterCovariances();
   GLParameterCovariances(float pointSize_, Eigen::Vector4f colorLowCurvature_, Eigen::Vector4f colorHighCurvature_, float curvatureThreshold_, float ellipsoidScale_);

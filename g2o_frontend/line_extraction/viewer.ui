@@ -30,13 +30,6 @@
        <number>10</number>
       </property>
       <item>
-       <widget class="QPushButton" name="pushButton_3">
-        <property name="text">
-         <string>Next Iteration</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="Line" name="line">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -207,6 +200,20 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="pushButton">
+        <property name="text">
+         <string>Line Detection</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton_3">
+        <property name="text">
+         <string>Next Iteration</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="pushButton_2">
         <property name="text">
          <string>Show Original</string>
@@ -220,9 +227,9 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="pushButton_4">
         <property name="text">
-         <string>Line Detection</string>
+         <string>Compute</string>
         </property>
        </widget>
       </item>

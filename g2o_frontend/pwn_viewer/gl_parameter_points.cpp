@@ -1,13 +1,14 @@
 #include "gl_parameter_points.h"
-
+#include <iostream>
+using namespace std;
 GLParameterPoints::GLParameterPoints() {
   _pointSize = 1.0f;
   _color = Eigen::Vector4f(1.0f, 1.0f, 0.0f, 0.5f);
 }
 
-GLParameterPoints::GLParameterPoints(float pointSize_, Eigen::Vector4f color_) {
+GLParameterPoints::GLParameterPoints(float pointSize_, const Eigen::Vector4f& color_) {
   _pointSize = pointSize_;
-  color_ = color_;
+  _color = color_;
 }
 
 void GLParameterPoints::applyGLParameter() {
