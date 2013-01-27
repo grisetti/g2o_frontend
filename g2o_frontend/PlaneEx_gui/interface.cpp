@@ -6,8 +6,7 @@
  */
 
 #include "interface.h"
-#include "Eigen/Core"
-#include "opencv2/opencv.hpp"
+
 
 extern float voxelParam;
 extern int numpointParam;
@@ -39,6 +38,7 @@ void ViewerInterface::updateP(int val)
 
 //VOXELIZATION
 //***********************************************
+
 struct voxelAcc
 {
     Vec3f acc;
@@ -85,15 +85,17 @@ void ViewerInterface::showFull()
 {
     accumulatorMap accMap;
 
-
+    
     float res = voxelParam;
     float ires=1./res;
-
+    
 
     for(int i=0;i<(int)Cloud->size();i++)
     {
         //cout << (*Cloud)[i][0];
         something s;
+        res=(float)voxelParam;
+	ires=1./res;
         s.i[0]=(int)(*Cloud)[i][0]*ires;
         s.i[1]=(int)(*Cloud)[i][1]*ires;
         s.i[2]=(int)(*Cloud)[i][2]*ires;
