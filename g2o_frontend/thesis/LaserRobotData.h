@@ -96,6 +96,15 @@ protected:
   
 };	
 
+inline 	Eigen::Vector3d toVector3D(const Eigen::Isometry3d& iso) {
+	
+  Eigen::Vector3d rv;
+  rv[0] = iso.translation().x();
+  rv[1] = iso.translation().y();
+  Eigen::AngleAxisd aa(iso.linear());
+  rv[2] = aa.angle();	
+  return rv;
+}
 #ifdef G2O_HAVE_OPENGL
 
 class LaserRobotDataDrawAction : public g2o::DrawAction{

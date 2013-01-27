@@ -91,15 +91,7 @@ bool LaserRobotData::read(istream& is){
   return true;
 }
 
-Eigen::Vector3d toVector3D(const Eigen::Isometry3d& iso) {
-	
-  Eigen::Vector3d rv;
-  rv[0] = iso.translation().x();
-  rv[1] = iso.translation().y();
-  Eigen::AngleAxisd aa(iso.linear());
-  rv[2] = aa.angle();	
-  return rv;
-}
+
 
 bool LaserRobotData::write(ostream& os) const {
 
@@ -144,10 +136,10 @@ bool LaserRobotData::write(ostream& os) const {
   for (size_t i = 0; i < _intensities.size(); ++i) 
     os << " " << _intensities[i];
 
-  // odometry pose
+	// laser pose wrt the world
   Eigen::Vector3d pose = toVector3D(v->estimate()*offset);
   os << " " << pose.x() << " " << pose.y() << " " << pose.z();
-  // laser pose wrt the world
+  // odometry pose
   pose =   toVector3D(v->estimate());
   os << " " << pose.x() << " " << pose.y() << " " << pose.z();
 
@@ -227,7 +219,6 @@ HyperGraphElementAction* LaserRobotDataDrawAction::operator()(HyperGraph::HyperG
 {
   if (typeid(*element).name()!=_typeName)
     return 0;
-	cout << ".";
   refreshPropertyPtrs(params_);
   if (! _previousParams){
     return this;
@@ -244,15 +235,14 @@ HyperGraphElementAction* LaserRobotDataDrawAction::operator()(HyperGraph::HyperG
     r2 *= r2;
     for (size_t i=0; i<points.size(); i++){
       if (points[i].squaredNorm()<r2)
-	points[k++]=points[i];
+				points[k++]=points[i];
     }
     points.resize(k);
   }
   
   const HyperGraph::DataContainer* container = that->dataContainer();
-	const OptimizableGraph::Vertex* v = dynamic_cast<const OptimizableGraph::Vertex*> (container);
-
 //   const VertexSE3* v = dynamic_cast<const VertexSE3*> (container);
+	const OptimizableGraph::Vertex* v = dynamic_cast<const OptimizableGraph::Vertex*> (container);
   if (! v) return false;
 
   const OptimizableGraph* g = v->graph();
@@ -260,8 +250,10 @@ HyperGraphElementAction* LaserRobotDataDrawAction::operator()(HyperGraph::HyperG
   const ParameterSE3Offset* oparam = dynamic_cast<const ParameterSE3Offset*> (p);
 		
 // 	TODO
-  Eigen::Isometry3d offset; //oparam->offset();
-	offset.setIdentity();
+		Eigen::Isometry3d offset = oparam->offset();
+//  Eigen::Isometry3d offset; 
+// 	offset.setIdentity();
+	
   glPushMatrix();
   glMultMatrixd(offset.data());
   glColor4f(1.f,0.f,0.f,0.5f);

@@ -8,6 +8,7 @@
 #ifndef VIEWERGUI_H_
 #define VIEWERGUI_H_
 
+#include <fstream>
 #include "viewer.h"
 #include "IEdgesExtractor.h"
 #include "line_extraction2d.h"
@@ -26,6 +27,13 @@ typedef std::vector<VertexData> VertexDataVector;
 typedef std::vector<Line2D, Eigen::aligned_allocator<Line2D> > LinesAdjacent;
 typedef std::vector<LinesAdjacent/*, Eigen::aligned_allocator<std::vector<Line2D> > */> LinesAdjacentVector;
 
+// file .g2o to be read for the line extraction, it has to be modified with the line info founded
+std::string filename;
+// std::ifstream ifG2O(filename.c_str());
+// file .g2o with the original graph plus the new lines info
+std::string outfilename;
+std::ofstream ofG2O_line(outfilename.c_str());
+
 
 
 class ViewerGUI : public QMainWindow, public Ui::MainWindow
@@ -40,6 +48,7 @@ class ViewerGUI : public QMainWindow, public Ui::MainWindow
 		ViewerGUI(VertexDataVector* TheVLdvector, const Eigen::Isometry2d TheOffset, QWidget *parent=0);
 
 		void linesInfoExtraction(Line2DExtractor::IntLineMap::const_iterator it_, const Line2DExtractor::IntLineMap& linesMap_, Vector2fVector& currentPoints_) const;
+		void addingData(VertexDataVector::iterator it_);
 		int slider1value;
 		int slider2value;
 		int slider3value;
