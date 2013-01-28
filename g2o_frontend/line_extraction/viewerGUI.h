@@ -28,7 +28,7 @@ typedef std::vector<Line2D, Eigen::aligned_allocator<Line2D> > LinesAdjacent;
 typedef std::vector<LinesAdjacent/*, Eigen::aligned_allocator<std::vector<Line2D> > */> LinesAdjacentVector;
 
 // file .g2o to be read for the line extraction, it has to be modified with the line info founded
-std::string filename;
+// std::string filename;
 // file .g2o with the original graph plus the new lines info
 std::string outfilename;
 

@@ -509,7 +509,7 @@ void ViewerGUI::ComputeAll()
 			infolp2(0,0) = 1e9;
 			elp2->setInformation(infolp2);
 			graph->addEdge(elp2);
-	// 		graph->saveEdge(ofG2OLine, elp2);
+// 	 		graph->saveEdge(ofG2OLine, elp2);
 		}
 	}
 	
@@ -521,121 +521,121 @@ void ViewerGUI::ComputeAll()
 
 void ViewerGUI::addingData(VertexDataVector::iterator it)
 {	
-	ofstream ofG2OLine("pippo2.g2o");/*, ios::app*/
-	VertexData vld = *(it);
-	g2o::VertexSE2* v = vld.first;
-	
-	// we need T to transform points in gloabl frame
-	Eigen::Isometry2d vEstimate;
-	Vector3d ev = v->estimate().toVector();
-	vEstimate.linear() = Rotation2Dd(ev.z()).matrix();
-	vEstimate.translation() = ev.head<2>();
-	Eigen::Isometry2d T = vEstimate*offset;
-	Eigen::Isometry2d iT = T.inverse();
-	
-	g2o::OptimizableGraph* graph = v->graph();
-	int id1 = -1, id2 = -1;
-	int lid;
-	g2o::VertexPointXY* vp1, *vp2;
-	g2o::VertexLine2D* vl;
-	int id = (int)graph->vertices().size() - 1;
-	
-// 		for each line (ho entrambi i vertici per ora)
-	for (int i = 0; i < lc.size(); i++)
-	{
-		Vector2fVector l = lc[i];		
-		Vector2d p1(l[0].x(), l[0].y());
-		Vector2d p2(l[1].x(), l[1].y());
-		Vector2d lp1 = iT * p1;
-		Vector2d lp2 = iT * p2;
-		
-		
-			
-		//first vertice
-		vp1 = new g2o::VertexPointXY();
-		id1=id++;
-		vp1->setId(id1);
-		vp1->setEstimate(p1); //ce li ho già trasformati, non moltiplico per T
-		graph->addVertex(vp1);
-		graph->saveVertex(ofG2OLine, vp1);
-		
-		//edge between v and  first vertice
-		g2o::EdgeSE2PointXY* erp1 = new g2o::EdgeSE2PointXY();
-		erp1->setVertex(0,v);
-		erp1->setVertex(1,vp1);
-		erp1->setMeasurement(lp1); // p1 not transformed(in global frame)
-		Eigen::Matrix2d info1;
-		info1 << 1000, 0, 0, 1000;
-		erp1->setInformation(info1);
-		graph->addEdge(erp1);
-		graph->saveEdge(ofG2OLine, erp1);
-		
-		//second vertice
-		vp2 = new g2o::VertexPointXY();
-		id2=id++;
-		vp2->setId(id2);
-		vp2->setEstimate(p2); //ce li ho già trasformati, non moltiplico per T
-		graph->addVertex(vp2);
-		graph->saveVertex(ofG2OLine, vp2);
-
-		//edge between v and second vertice
-		g2o::EdgeSE2PointXY* erp2 = new g2o::EdgeSE2PointXY();
-		erp2->setVertex(0,v);
-		erp2->setVertex(1,vp2);
-		erp2->setMeasurement(lp2); // p2 not transformed(in global frame)
-		Eigen::Matrix2d info2;
-		info2 << 1000, 0, 0, 1000;
-		erp2->setInformation(info2);
-		graph->addEdge(erp2);
-		graph->saveEdge(ofG2OLine, erp2);
-
-		//line vertice
-		vl = new g2o::VertexLine2D();
-		lid = id++;
-		vl->setId(lid);
-		vl->setEstimate(pointsToLine(p1,p2));
-		vl->p1Id = id1;
-		vl->p2Id = id2;
-		graph->addVertex(vl);
-		graph->saveVertex(ofG2OLine, vl);
-
-		//Edge between v and vl
-		g2o::EdgeSE2Line2D* erl = new g2o::EdgeSE2Line2D();
-		erl->setMeasurement(pointsToLine(lp1,lp2));
-		erl->setVertex(0,v);
-		erl->setVertex(1,vl);
-		Eigen::Matrix2d infovl;
-		infovl << 1000, 0, 0, 1000;
-		erl->setInformation(infovl);
-		graph->addEdge(erl);
-		graph->saveEdge(ofG2OLine, erl);
-
-		
-		//Edge between vl and vp1
-		g2o::EdgeLine2DPointXY* elp1 = new g2o::EdgeLine2DPointXY();
-		elp1->setVertex(0,vl);
-		elp1->setVertex(1,vp1);
-		elp1->setMeasurement(0);
-		Eigen::Matrix<double, 1, 1> infolp1;
-		infolp1(0,0) = 1e9;
-		elp1->setInformation(infolp1);
-		graph->addEdge(elp1);
-		graph->saveEdge(ofG2OLine, elp1);
-
-		
-		//Edge between vl and vp2
-		g2o::EdgeLine2DPointXY* elp2 = new g2o::EdgeLine2DPointXY;
-		elp2->setVertex(0,vl);
-		elp2->setVertex(1,vp2);
-		elp2->setMeasurement(0);
-		Eigen::Matrix<double, 1, 1> infolp2;
-		infolp2(0,0) = 1e9;
-		elp2->setInformation(infolp2);
-		graph->addEdge(elp2);
-		graph->saveEdge(ofG2OLine, elp2);
-	}
-
-	ofG2OLine.flush();
+// 	ofstream ofG2OLine("pippo2.g2o");/*, ios::app*/
+// 	VertexData vld = *(it);
+// 	g2o::VertexSE2* v = vld.first;
+// 	
+// 	// we need T to transform points in gloabl frame
+// 	Eigen::Isometry2d vEstimate;
+// 	Vector3d ev = v->estimate().toVector();
+// 	vEstimate.linear() = Rotation2Dd(ev.z()).matrix();
+// 	vEstimate.translation() = ev.head<2>();
+// 	Eigen::Isometry2d T = vEstimate*offset;
+// 	Eigen::Isometry2d iT = T.inverse();
+// 	
+// 	g2o::OptimizableGraph* graph = v->graph();
+// 	int id1 = -1, id2 = -1;
+// 	int lid;
+// 	g2o::VertexPointXY* vp1, *vp2;
+// 	g2o::VertexLine2D* vl;
+// 	int id = (int)graph->vertices().size() - 1;
+// 	
+// // 		for each line (ho entrambi i vertici per ora)
+// 	for (int i = 0; i < lc.size(); i++)
+// 	{
+// 		Vector2fVector l = lc[i];		
+// 		Vector2d p1(l[0].x(), l[0].y());
+// 		Vector2d p2(l[1].x(), l[1].y());
+// 		Vector2d lp1 = iT * p1;
+// 		Vector2d lp2 = iT * p2;
+// 		
+// 		
+// 			
+// 		//first vertice
+// 		vp1 = new g2o::VertexPointXY();
+// 		id1=id++;
+// 		vp1->setId(id1);
+// 		vp1->setEstimate(p1); //ce li ho già trasformati, non moltiplico per T
+// 		graph->addVertex(vp1);
+// 		graph->saveVertex(ofG2OLine, vp1);
+// 		
+// 		//edge between v and  first vertice
+// 		g2o::EdgeSE2PointXY* erp1 = new g2o::EdgeSE2PointXY();
+// 		erp1->setVertex(0,v);
+// 		erp1->setVertex(1,vp1);
+// 		erp1->setMeasurement(lp1); // p1 not transformed(in global frame)
+// 		Eigen::Matrix2d info1;
+// 		info1 << 1000, 0, 0, 1000;
+// 		erp1->setInformation(info1);
+// 		graph->addEdge(erp1);
+// 		graph->saveEdge(ofG2OLine, erp1);
+// 		
+// 		//second vertice
+// 		vp2 = new g2o::VertexPointXY();
+// 		id2=id++;
+// 		vp2->setId(id2);
+// 		vp2->setEstimate(p2); //ce li ho già trasformati, non moltiplico per T
+// 		graph->addVertex(vp2);
+// 		graph->saveVertex(ofG2OLine, vp2);
+// 
+// 		//edge between v and second vertice
+// 		g2o::EdgeSE2PointXY* erp2 = new g2o::EdgeSE2PointXY();
+// 		erp2->setVertex(0,v);
+// 		erp2->setVertex(1,vp2);
+// 		erp2->setMeasurement(lp2); // p2 not transformed(in global frame)
+// 		Eigen::Matrix2d info2;
+// 		info2 << 1000, 0, 0, 1000;
+// 		erp2->setInformation(info2);
+// 		graph->addEdge(erp2);
+// 		graph->saveEdge(ofG2OLine, erp2);
+// 
+// 		//line vertice
+// 		vl = new g2o::VertexLine2D();
+// 		lid = id++;
+// 		vl->setId(lid);
+// 		vl->setEstimate(pointsToLine(p1,p2));
+// 		vl->p1Id = id1;
+// 		vl->p2Id = id2;
+// 		graph->addVertex(vl);
+// 		graph->saveVertex(ofG2OLine, vl);
+// 
+// 		//Edge between v and vl
+// 		g2o::EdgeSE2Line2D* erl = new g2o::EdgeSE2Line2D();
+// 		erl->setMeasurement(pointsToLine(lp1,lp2));
+// 		erl->setVertex(0,v);
+// 		erl->setVertex(1,vl);
+// 		Eigen::Matrix2d infovl;
+// 		infovl << 1000, 0, 0, 1000;
+// 		erl->setInformation(infovl);
+// 		graph->addEdge(erl);
+// 		graph->saveEdge(ofG2OLine, erl);
+// 
+// 		
+// 		//Edge between vl and vp1
+// 		g2o::EdgeLine2DPointXY* elp1 = new g2o::EdgeLine2DPointXY();
+// 		elp1->setVertex(0,vl);
+// 		elp1->setVertex(1,vp1);
+// 		elp1->setMeasurement(0);
+// 		Eigen::Matrix<double, 1, 1> infolp1;
+// 		infolp1(0,0) = 1e9;
+// 		elp1->setInformation(infolp1);
+// 		graph->addEdge(elp1);
+// 		graph->saveEdge(ofG2OLine, elp1);
+// 
+// 		
+// 		//Edge between vl and vp2
+// 		g2o::EdgeLine2DPointXY* elp2 = new g2o::EdgeLine2DPointXY;
+// 		elp2->setVertex(0,vl);
+// 		elp2->setVertex(1,vp2);
+// 		elp2->setMeasurement(0);
+// 		Eigen::Matrix<double, 1, 1> infolp2;
+// 		infolp2(0,0) = 1e9;
+// 		elp2->setInformation(infolp2);
+// 		graph->addEdge(elp2);
+// 		graph->saveEdge(ofG2OLine, elp2);
+// 	}
+// 
+// 	ofG2OLine.flush();
 }
 
 

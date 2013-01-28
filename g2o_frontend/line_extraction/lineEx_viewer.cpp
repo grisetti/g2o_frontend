@@ -52,7 +52,7 @@ void sigquit_handler(int sig)
 
 int main(int argc, char**argv){
   hasToStop = false;
-//   string filename;
+  string filename;
 //  string outfilename;
   bool noLoop;
   CommandArgs arg;
