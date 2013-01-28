@@ -32,7 +32,7 @@ std::string filename;
 // std::ifstream ifG2O(filename.c_str());
 // file .g2o with the original graph plus the new lines info
 std::string outfilename;
-std::ofstream ofG2O_line(outfilename.c_str());
+// std::ofstream ofG2O_line(outfilename.c_str());
 
 
 

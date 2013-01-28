@@ -187,7 +187,7 @@ int main(int argc, char**argv){
       }
 		}
 	}
-  graph->save(ofG2O_line);
+//   graph->save(ofG2O_line);
 	cout << "End of file!" << endl;
 
 #if 0

@@ -148,7 +148,8 @@ void ViewerGUI::lineExtraction()
 			cout << "I found " << clusterer->numClusters() << " clusters in the pool" << endl;
 			
 			//for adjacent lines
-			LinesAdjacent la;			
+			LinesAdjacent la;
+			
 			for (int i =0; i< clusterer->numClusters(); ++i){
 				const Point2DClusterer::Cluster& cluster = clusterer->cluster(i);
 				int clusterSize = cluster.second - cluster.first;
@@ -206,7 +207,10 @@ void ViewerGUI::lineExtraction()
 				la.push_back(bit->second);
 				while(bit != linesMap.end()) {
 					const Line2D& line = bit->second;
+					
+					//printing some info
 					linesInfoExtraction(bit, linesMap, currentPoints);
+					
 					Line2DExtractor::IntLineMap::const_iterator tmp = bit;
 					if((++tmp) != linesMap.end()) {
 						const Line2D& lineRight = tmp->second;
@@ -410,11 +414,11 @@ void ViewerGUI::addingData(VertexDataVector::iterator it)
 	g2o::VertexPointXY* vp1, *vp2;
 	g2o::VertexLine2D* vl;
 	int id = (int)graph->vertices().size() - 1;
+	
 // 		for each line (ho entrambi i vertici per ora)
 	for (int i = 0; i < lc.size(); i++)
 	{
-		Vector2fVector l = lc[i];
-		
+		Vector2fVector l = lc[i];		
 		Vector2d p1(l[0].x(), l[0].y());
 		Vector2d p2(l[1].x(), l[1].y());
 		

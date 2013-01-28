@@ -128,7 +128,7 @@ int main(int argc, char**argv){
 		
 // 	cout << "Map vertices:  " << vertexVector.size() << endl;
 cout << "Graph vertices: " << graphSE2->vertices().size() << endl;
-	cout << "GraphSE2 vertices: " << graphSE2->vertices().size() << endl;
+cout << "GraphSE2 vertices: " << graphSE2->vertices().size() << endl;
 	
 #if 0
 	for (int j = 0; j < vertexVector.size(); j++) {
