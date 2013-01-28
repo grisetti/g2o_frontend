@@ -26,6 +26,16 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/passthrough.h>
 
+#define fx_d 5.9421434211923247e+02
+#define fy_d 5.9104053696870778e+02
+#define cx_d 3.3930780975300314e+02
+#define cy_d 2.4273913761751615e+02
+#define k1_d -2.6386489753128833e-01
+#define k2_d 9.9966832163729757e-01
+#define p1_d -7.6275862143610667e-04
+#define p2_d 5.0350940090814270e-03
+#define k3_d -1.3053628089976321e+00
+
 
 using namespace std;
 using namespace g2o;
@@ -117,8 +127,10 @@ int main(int argc, char**argv){
     float voxelSize;
     int minPlanePoints;
     int maxDist;
+    int minAcc;
     arg.param("o", outfilename, "otest.g2o", "output file name");
     arg.param("voxelSize", voxelSize, 10, "grid voxel size");
+    arg.param("minAcc", minAcc, 10, "minimum accurancy");
     arg.param("minPlanePoins", minPlanePoints, 500, "minimum point for a plane model to be considered as a valid plane");
     arg.param("maxDist", maxDist, 2000, "maximum valid distance of points");
     arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
@@ -159,9 +171,11 @@ int main(int argc, char**argv){
     vparam->setId(vertexNum++);
     graph->addVertex(vparam);
 
-    const ParameterStereoCamera* camParam = 0;
+    //VERTEX_SE3:QUAT 2545  0 0 0  0.5000   -0.5000    0.5000   -0.5000
+    //angle2quat(-pi/2, 0,-pi/2) //'ZYX'
+
     int test=0;
-    for (size_t i=0; i<vertexIds.size() && ! hasToStop; i++){ //process each id in this for
+    for (size_t i=0; i<vertexIds.size()  && ! hasToStop; i++){ //process each id in this for
 
         OptimizableGraph::Vertex* _v=graph->vertex(vertexIds[i]);
         VertexSE3* v=dynamic_cast<VertexSE3*>(_v);
@@ -170,34 +184,34 @@ int main(int argc, char**argv){
         k = 0;
 
         test++;
-        while(d && test >500 && test<600){
-
+        while(d ){
+            Vector<Plane3D> stashOfPlanes;
             //RGBDImageData* imageData = dynamic_cast<RGBDImageData*>(d);
             RGBDData* imageData = dynamic_cast<RGBDData*>(d);
             d=d->next();
-
-            cout << "test-> "<<test<<endl;
             if (imageData) {
                 // extract plane
                 const Parameter* pa = graph->parameters().getParameter(imageData->paramIndex());
+                const ParameterCamera* camParam = dynamic_cast<const ParameterCamera*>(pa);
 
-                const ParameterSE3Offset* param = dynamic_cast<const ParameterSE3Offset*> (pa);
-                cerr << "image found" << endl;
+                if(camParam!=0) {
+                    vparam->setEstimate(camParam->offset());
+                }
+
+                //cerr << "image found" << endl;
                 //string base_name=imageData->baseFilename();
                 //string intensity="_intensity.pgm";
                 //string realPath= strcat(base_name,intensity);
+
                 cout << "\t Processing "<<imageData->baseFilename()<<"\n";
-
-
                 Mat *imageToProcess;
                 imageToProcess = imageData->_depthImage; //no need to reproject image 'cause we've the depth registered
                 std::vector<Vec3f> Cloud;
 
-
                 int rows=imageToProcess->rows;
                 int cols=imageToProcess->cols;
-                unsigned short * dptra=imageToProcess->ptr<unsigned short>(0);
-                int acc=0;
+
+                unsigned short * dptra=imageToProcess->ptr<unsigned short>(0);;
                 for(int i = 0; i < rows; i++)
                 {
 
@@ -208,31 +222,29 @@ int main(int argc, char**argv){
                         {
 
                             Vec3f cloudElem;
-                            if(d<2000) //2000 is max distance
+                            if(d<maxDist) //2000 is max distance
                             {
-                                cloudElem[0]=i;
-                                cloudElem[1]=j;
+                                cloudElem[0]=(double)((double)j-(double)cx_d)*(double)d/(double)fx_d;
+                                cloudElem[1]=(double)((double)i-(double)cy_d)*(double)d/(double)fy_d;
                                 cloudElem[2]=d;
 
                                 Cloud.push_back(cloudElem);
-                                acc++;
+
                             }
                         }
                         dptra++;
                     }
                 }
-                cout << "\t\t Cloud has " << Cloud.size() << " points"<<endl;
+                //cout << "\t\t Cloud has " << Cloud.size() << " points"<<endl;
 
                 //**************************************************************
                 //voxel
                 //**************************************************************
 
-                cout << "\t\t starting voxelization"<<endl;
+                //cout << "\t\t starting voxelization"<<endl;
 
                 accumulatorMap accMap;
-
-
-                float res = 10;
+                float res = voxelSize;
                 float ires=1./res;
                 std::vector<Vec3f> * theCloud=&Cloud;
 
@@ -240,7 +252,7 @@ int main(int argc, char**argv){
                 {
                     //cout << (*Cloud)[i][0];
                     something s;
-                    res=(float)10;
+                    res=(float)voxelSize;
                     ires=1./res;
                     s.i[0]=(int)(*theCloud)[i][0]*ires;
                     s.i[1]=(int)(*theCloud)[i][1]*ires;
@@ -272,11 +284,9 @@ int main(int argc, char**argv){
                     voxelAcc &aMap=it->second;
                     Vec3f tmp = aMap.average();
                     theCloud->push_back(tmp);
-
-
                 }
-                cout << "\t\t voxelized in "<<theCloud->size()<<" points"<<endl;
-                cout << "\t\t Voxelization finished..."<<endl;
+                //cout << "\t\t voxelized in "<<theCloud->size()<<" points"<<endl;
+                //cout << "\t\t Voxelization finished..."<<endl;
 
                 //**************************************************************
                 //time to extract some planes!
@@ -285,21 +295,18 @@ int main(int argc, char**argv){
                 //ESTRAZIONE DEI PIANI
                 pcl::PointCloud<pcl::PointXYZ> pclCLOUD;
 
-                cout << "\t\t Populataing a PCL cloud..."<<endl;
-
+                //POPOLO LA CLOUD PCL
                 for(int i=0;i<theCloud->size();i++)
                 {
                     pcl::PointXYZ tmpXYZ((*theCloud)[i][0],(*theCloud)[i][1],(*theCloud)[i][2]);
                     pclCLOUD.push_back(tmpXYZ);
                 }
 
-                cout << "\t\t Starting Sample consensus procedure..."<<endl;
 
                 //--------------------------------------------------------------------------------
                 //DICHIARAZIONI PER L'ESTRAZIONE DEI TANTI PIANI
-                const int numpoint=500;
-                const int tresh=10;
-
+                const int numpoint=minPlanePoints; //numero minimo di punti affinchè l'oggetto venga considerato un piano
+                const int tresh=minAcc;     //distanza minima tra i punti
                 int planesExtracted=0;
                 pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
                 pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
@@ -314,9 +321,7 @@ int main(int argc, char**argv){
                 //--------------------------------------------------------------------------------
                 //Procedure
                 seg.setInputCloud (pclCLOUD.makeShared ());
-
                 seg.segment (*inliers, *coefficients);
-
                 theCloud->clear();
 
                 while(
@@ -329,9 +334,7 @@ int main(int argc, char**argv){
                     plane tmpCLOUD;
 
                     //Istanzio un plane, lo popolo con i punti degli inliers rilevati in precedenza
-
-
-                    const int repj=1000;
+                    const int repj=1000; //metri
                     Vec3f com_tmp;
                     com_tmp[0]=0;com_tmp[1]=0;com_tmp[2]=0;
 
@@ -351,19 +354,29 @@ int main(int argc, char**argv){
                     com_tmp[1]=com_tmp[1]/inliers->indices.size ();
                     com_tmp[2]=com_tmp[2]/inliers->indices.size ();
 
+                    /*
                     cout << "\t\t coeffiecienti estratti a:("<<
                             coefficients->values[0]<<") b:("<<
                             coefficients->values[1]<<") c:("<<
                             coefficients->values[2]<<") d:("<<
                             coefficients->values[3]<<")"<<endl;
-
-
+                    */
+                    //creo un oggetto g2o::Plane3d
+                    Plane3D p;
+                    Vector4d planeCoeff;
+                    planeCoeff[0]=coefficients->values[0];
+                    planeCoeff[1]=coefficients->values[1];
+                    planeCoeff[2]=coefficients->values[2];
+                    planeCoeff[3]=(coefficients->values[3]/1000); //in meters please
+                    cout << "COEFF: "<< planeCoeff[0] << " "<< planeCoeff[1]<<" "<< planeCoeff[2]<<" "<< planeCoeff[3]<<endl;
+                    p.fromVector(planeCoeff);
+                    stashOfPlanes.push_back(p);
                     tmpCLOUD.cloud.clear();
 
                     //Elimino i punti appena rilevati dalla nuvola inizale
+                    //****************************************************
 
                     pcl::PointCloud<pcl::PointXYZ> temporanyCLOUD;
-
                     for(int k=0;k<pclCLOUD.size();k++)
                     {
                         bool valid=1;
@@ -381,7 +394,7 @@ int main(int argc, char**argv){
                             temporanyCLOUD.push_back(pclCLOUD[k]);
                         }
                     }
-
+                    //****************************************************
                     pclCLOUD.clear();
 
                     for(int k=0;k<temporanyCLOUD.size();k++)
@@ -395,28 +408,34 @@ int main(int argc, char**argv){
 
 
 
-                Plane3D p; // extracted plane
+                //Plane3D p; // extracted plane
+
                 /*
-                if (! camParam){
-                    camParam = imageData->cameraParams();
+                if (!camParam ){
+                    camParam = param->offset();
                     vparam->setEstimate(camParam->offset());
+
                 }
                 */
+
                 Isometry3d sensorAndRobot = v->estimate() * vparam->estimate();
+                for(int i=0;i<stashOfPlanes.size();i++)
+                {
+                    VertexPlane* vplane = new VertexPlane();
+                    vplane->setId(vertexNum);
+                    vplane->setEstimate(sensorAndRobot*stashOfPlanes[i]);
+                    graph->addVertex(vplane);
 
-                VertexPlane* vplane = new VertexPlane();
-                vplane->setId(vertexNum);
-                vplane->setEstimate(sensorAndRobot*p);
-                graph->addVertex(vplane);
 
-                EdgeSE3PlaneSensorCalib* edge= new EdgeSE3PlaneSensorCalib();
-                edge->setVertex(0,v);
-                edge->setVertex(1,vplane);
-                edge->setVertex(2,vparam);
-                edge->setMeasurement(p);
-                edge->setInformation(Matrix3d::Identity());
-                graph->addEdge(edge);
-                vertexNum++;
+                    EdgeSE3PlaneSensorCalib* edge= new EdgeSE3PlaneSensorCalib();
+                    edge->setVertex(0,v);
+                    edge->setVertex(1,vplane);
+                    edge->setVertex(2,vparam);
+                    edge->setMeasurement(stashOfPlanes[i]);
+                    edge->setInformation(Matrix3d::Identity());
+                    graph->addEdge(edge);
+                    vertexNum++;
+                }
             }
 
         }
