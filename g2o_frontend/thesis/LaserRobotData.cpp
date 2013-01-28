@@ -96,7 +96,7 @@ bool LaserRobotData::read(istream& is){
 bool LaserRobotData::write(ostream& os) const {
 
   const HyperGraph::DataContainer* container = dataContainer();
-  const VertexSE3* v = dynamic_cast<const VertexSE3*> (container);
+  const OptimizableGraph::Vertex* v = dynamic_cast<const OptimizableGraph::Vertex*> (container);
   if (! v) {
     cerr << "dataContainer = " << container << endl;
     cerr << "dynamic cast failed" << endl;
@@ -137,10 +137,12 @@ bool LaserRobotData::write(ostream& os) const {
     os << " " << _intensities[i];
 
 	// laser pose wrt the world
-  Eigen::Vector3d pose = toVector3D(v->estimate()*offset);
+  Eigen::Vector3d pose;
+  pose.setZero();
+  //= toVector3D(v->estimate()*offset); HACKK
   os << " " << pose.x() << " " << pose.y() << " " << pose.z();
   // odometry pose
-  pose =   toVector3D(v->estimate());
+  //pose =   toVector3D(v->estimate()); HACKK
   os << " " << pose.x() << " " << pose.y() << " " << pose.z();
 
   // crap values

@@ -36,7 +36,11 @@ typedef std::vector<Vertex3to2> v3Mapv2;
 
 SE2 fromIsoSE3(const Eigen::Isometry3d& iso){
 	Eigen::AngleAxisd aa(iso.linear());
-	return SE2(iso.translation().x(), iso.translation().y(), aa.angle());
+	float angle = aa.angle();
+	if (aa.axis().z()<0){
+			angle=-angle;
+	}
+	return SE2(iso.translation().x(), iso.translation().y(), angle);
 }
 
 int main(int argc, char**argv){
@@ -45,7 +49,7 @@ int main(int argc, char**argv){
   string outfilename;
 	g2o::CommandArgs arg;
 	arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
-	arg.param("o", outfilename, "newGraphSE2.g2o", "output file name");
+	arg.param("o", outfilename, "graphSE2.g2o", "output file name");
   arg.parseArgs(argc, argv);
 	ofstream ofG2O(outfilename.c_str());
 	
@@ -92,7 +96,7 @@ int main(int argc, char**argv){
 			d=d->next();
 			if(data)
 			{
-				cout << "i: " << i << endl;
+// 				cout << "i: " << i << endl;
 				v2->addUserData(data);
 				
 				//adding sensor parameter
@@ -119,7 +123,7 @@ int main(int argc, char**argv){
 // 				}
 				
 				graphSE2->addVertex(v2);
-				graphSE2->saveVertex(ofG2O, v2);		
+// 				graphSE2->saveVertex(ofG2O, v2);		
 			}
 			
 		}
@@ -162,12 +166,13 @@ cout << "GraphSE2 vertices: " << graphSE2->vertices().size() << endl;
 // 			info << 1000, 0, 0, 1000;
 			e2->setInformation(info);
 			graphSE2->addEdge(e2);
-			graphSE2->saveEdge(ofG2O, e2);
+// 			graphSE2->saveEdge(ofG2O, e2);
 	}
 
 	cout << "Graph edges: " << graph->edges().size() << endl;
 	cout << "GraphSE2 edges: " << graphSE2->edges().size() << endl;
 
+	graphSE2->save(ofG2O);
 	ofG2O.close();
 	return (0);
 }
