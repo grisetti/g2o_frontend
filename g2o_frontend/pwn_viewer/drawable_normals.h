@@ -7,7 +7,7 @@
 class DrawableNormals : public Drawable {
  public:
   DrawableNormals();
-  DrawableNormals(Eigen::Isometry3f transformation_, GLParameter *parameter_,  PointWithNormalVector *normals_);
+  DrawableNormals(const Eigen::Isometry3f& transformation_, GLParameter *parameter_,  const PointWithNormalVector *normals_);
   virtual void setNormals(PointWithNormalVector *normals_) { _normals = normals_; }
   virtual bool setParameter(GLParameter *parameter_);
   virtual const PointWithNormalVector* normals() { return _normals; }

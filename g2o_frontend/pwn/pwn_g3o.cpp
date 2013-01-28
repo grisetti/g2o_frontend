@@ -58,8 +58,8 @@ struct PointsWithNormalMerger{
   PointWithNormalStatistcsGenerator* _normalGenerator;
 
   PointsWithNormalMerger(){
-    _distanceThreshold = 0.05;
-    _normalThreshold = cos(45*M_PI/180.0f);
+    _distanceThreshold = 0.1;
+    _normalThreshold = cos(20*M_PI/180.0f);
     _normalGenerator = 0;
     _indexImage.resize(480,640);
     _zBuffer.resize(480,540);
@@ -264,6 +264,12 @@ int
   float al_minInliers;
   float al_lambda;
   float al_debug;
+  float me_distanceThreshold;
+  float me_normalThreshold;
+
+
+  float chunkAngle;
+  float chunkDistance;
   int processEachN;
   int chunkEachN;
   Eigen::Matrix3f cameraMatrix;
@@ -295,9 +301,15 @@ int
   arg.param("al_nonLinearIterations", al_nonLinearIterations, aligner.nonLinearIterations(), "nonlinear iterations for each outer one (uses q,t)");
   arg.param("al_lambda", al_lambda, aligner.lambda(), "damping factor for the transformation update, the higher the smaller the step");
   arg.param("al_debug", al_debug, aligner.debug(), "prints lots of stuff");
+  arg.param("me_distanceThreshold", me_distanceThreshold, merger.distanceThreshold(), "distance along the z when to merge points");
+  arg.param("me_normalThreshold", me_normalThreshold, acos(merger.normalThreshold()), "distance along the z when to merge points");
+
+
   arg.param("numThreads", numThreads, 1, "numver of threads for openmp");
   arg.param("processEachN",processEachN,1,"compute an image every X") ;
   arg.param("chunkEachN",chunkEachN,1000000,"reset the process every X images") ;
+  arg.param("chunkAngle",chunkAngle,M_PI/4,"reset the process each time the camera has rotated of X radians from the first frame") ;
+  arg.param("chunkDistance",chunkDistance,0.5,"reset the process each time the camera has moved of X meters from the first frame") ;
   
 
 
@@ -348,6 +360,8 @@ int
   mergerCameraMatrix.block<2, 3>(0, 0) *= mergerScale;
   merger.setImageSize(480*mergerScale, 640*mergerScale);
   merger.setCameraMatrix(mergerCameraMatrix);
+  merger.setDistanceThreshold(me_distanceThreshold);
+  merger.setNormalThreshold(cos(me_normalThreshold));
 
   DepthFrame* referenceFrame= 0;
 
@@ -358,12 +372,14 @@ int
   cerr << "there are " << filenames.size() << " files  in the pool" << endl; 
   Isometry3f trajectory;
   trajectory.setIdentity();
+  Isometry3f initialFrame = trajectory;
   int previousIndex=-1;
   int nFrames = 0;
   Scene* globalScene = new Scene;
   Scene* partialScene = new Scene;
   int cumPoints=0;
   string baseFilename = graphFilename.substr( 0, graphFilename.find_last_of( '.' ) );
+  
   for (size_t i=0; i<filenames.size(); i+=processEachN){
     cerr << endl << endl << endl;
     cerr << ">>>>>>>>>>>>>>>>>>>>>>>> PROCESSING " << filenames[i] << " <<<<<<<<<<<<<<<<<<<<" <<  endl;
@@ -377,6 +393,7 @@ int
     if (! referenceFrame ){
       writeParams(os, 0, cameraMatrix);
       writeVertex(os, i, t2v(trajectory), filenames[i]);
+      initialFrame = trajectory;
     }
     nFrames ++;
     
@@ -402,7 +419,7 @@ int
       double ostart = get_time();
       float error;
       int result = aligner.align(error, X, mean, omega, tratio, rratio);
-      cerr << "inliers=" << result << " error/inliers: " << error/result << endl;
+      cerr << "inliers: " << result << " error/inliers: " << error/result << endl;
       cerr << "localTransform : " << endl;
       cerr << (trajectory.inverse()*X).matrix() << endl;
       trajectory=X;
@@ -412,7 +429,14 @@ int
       cerr << "alignment took: " << oend-ostart << " sec." << endl;
       cerr << "aligner scaled image size: " << aligner.scaledImageRows() << " " << aligner.scaledImageCols() << endl;
       
-      if(rratio < 100 && tratio < 100 && (i%chunkEachN)) {
+      Eigen::Isometry3f motionFromFirstFrame = initialFrame.inverse()*trajectory;
+      Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
+      cerr << "motion from first frame: " << motionFromFirstFrame.translation().transpose() << " d:" <<
+	motionFromFirstFrame.translation().norm() << endl;
+      cerr << "rotation from first frame: " << rotationFromFirstFrame.axis().transpose() << " a:" <<
+	rotationFromFirstFrame.angle() << endl;
+      
+      if(rratio < 100 && tratio < 100 && (i%chunkEachN) && fabs(rotationFromFirstFrame.angle())<chunkAngle && motionFromFirstFrame.translation().norm() < chunkDistance) {
 	writeVertex(os, i, t2v(trajectory), filenames[i]);  
 	writeEdge(os, previousIndex, i, mean, omega);
 	cumPoints += currentFrame->size();
@@ -432,6 +456,7 @@ int
 	referenceFrame = 0;
 	nFrames = 0;
 	globalScene->clear();
+	initialFrame = trajectory;
       }
 
     }

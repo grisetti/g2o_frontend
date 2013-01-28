@@ -10,8 +10,10 @@
 #include "RansacEE.h"
 #include "SplitMergeEE.h"
 
-#include <fstream>
 #include "g2o/types/slam2d/types_slam2d.h"
+#include "g2o/types/slam2d_addons/vertex_line2d.h"
+#include "g2o/types/slam2d_addons/edge_line2d_pointxy.h"
+#include "g2o/types/slam2d_addons/edge_se2_line2d.h"
 
 #define MIN_POINTS_IN_LINES 10
 #define SPLIT_THRESHOLD 0.05*0.05
@@ -75,25 +77,15 @@ void ViewerGUI::showOriginal()
 	VertexDataVector::iterator it = vldvector->begin();
 	vld = *(it+numIteration);
 	
-	g2o::VertexSE2* v = vld.first;
 // // 	TODO
-// 	Eigen::Isometry2d T = v->estimate()*offset;
+// 	g2o::VertexSE3* v = vld.first;
+// 	Eigen::Isometry3d T = v->estimate()*offset;
 // 	for (int i = 0; i < vld.second.size(); i++)
 // 	{
 // 		// TODO TRANSFORM ORGINAL POINT IN ROBOT COORDINATES
 // 	}
 	this->viewer->setDataPointer(&(vld.second));
 	this->viewer->updateGL();
-}
-
-Eigen::Vector3d toVector3D(const Eigen::Isometry3d& iso) {
-	
-  Eigen::Vector3d rv;
-  rv[0] = iso.translation().x();
-  rv[1] = iso.translation().y();
-  Eigen::AngleAxisd aa(iso.linear());
-  rv[2] = aa.angle();	
-  return rv;
 }
 
 #if 1
@@ -120,14 +112,21 @@ void ViewerGUI::lineExtraction()
 		//in this..
 		VertexDataVector::iterator it = vldvector->begin();
 		vld = *(it+numIteration);
-// 		TODO
-		g2o::VertexSE2* v = vld.first;
-		
-		Eigen::Isometry2d vEstimate;
-		vEstimate.translation() = v->estimate().translation();
-		vEstimate.linear() = v->estimate().rotation().toRotationMatrix(); //come si fa?!!
-		Eigen::Isometry2d T = vEstimate*offset; //v->estimate()*offset;
 
+		
+		//TODO changing in SE2:
+// 		g2o::VertexSE3* v = vld.first;
+// 		Eigen::Isometry3d T = v->estimate()*offset;
+		g2o::VertexSE2* v = vld.first;
+		Eigen::Isometry2d vEstimate;
+		Vector3d ev = v->estimate().toVector();
+		vEstimate.linear() = Rotation2Dd(ev.z()).matrix();
+		vEstimate.translation() = ev.head<2>();
+// 		vEstimate.linear() = v->estimate().rotation().toRotationMatrix();
+// 		vEstimate.translation() = v->estimate().translation();
+		Eigen::Isometry2d T = vEstimate*offset;
+		
+// 		cerr << T.translation().transpose() << endl;
 		
 		if (algotype == splitMergeType){
 			cout << "#----------------------------------------------#" << endl;
@@ -146,20 +145,21 @@ void ViewerGUI::lineExtraction()
 #endif
 			clusterer->setPoints(cartesianPoints);
 			clusterer->compute();
-			cerr << "I found " << clusterer->numClusters() << " clusters in the pool" << endl;
+			cout << "I found " << clusterer->numClusters() << " clusters in the pool" << endl;
 			
 			//for adjacent lines
-			LinesAdjacent la;			
+			LinesAdjacent la;
+			
 			for (int i =0; i< clusterer->numClusters(); ++i){
 				const Point2DClusterer::Cluster& cluster = clusterer->cluster(i);
 				int clusterSize = cluster.second - cluster.first;
-				cerr << "processing cluster: " << i << ", npoints: " << cluster.second - cluster.first;
+				cout << "processing cluster: " << i << ", npoints: " << cluster.second - cluster.first;
 				
 				if (clusterSize < minPointsCluster) {
-					cerr << ": IGNORE" << endl;
+					cout << ": IGNORE" << endl;
 					continue;
 				}
-				cerr << ": ACCEPT" << endl;
+				cout << ": ACCEPT" << endl;
 				Vector2fVector::const_iterator first = cartesianPoints.begin() + cluster.first;
 				Vector2fVector::const_iterator last = cartesianPoints.begin() + cluster.second + 1;
 				Vector2fVector currentPoints(first, last);				
@@ -183,8 +183,8 @@ void ViewerGUI::lineExtraction()
 					const Vector2f& p0 = lineExtractor->points()[line.p0Index];
 					const Vector2f& p1 = lineExtractor->points()[line.p1Index];
 					
-					Vector3d p0_3(p0.x(), p0.y(), 0.f);
-					Vector3d p1_3(p1.x(), p1.y(), 0.f);
+					Vector2d p0_3(p0.x(), p0.y()); //without , 0.f in SE2
+					Vector2d p1_3(p1.x(), p1.y());
 					p0_3 = T*p0_3;
 					p1_3 = T*p1_3;
 #if 1
@@ -207,7 +207,10 @@ void ViewerGUI::lineExtraction()
 				la.push_back(bit->second);
 				while(bit != linesMap.end()) {
 					const Line2D& line = bit->second;
+					
+					//printing some info
 					linesInfoExtraction(bit, linesMap, currentPoints);
+					
 					Line2DExtractor::IntLineMap::const_iterator tmp = bit;
 					if((++tmp) != linesMap.end()) {
 						const Line2D& lineRight = tmp->second;
@@ -381,47 +384,131 @@ void ViewerGUI::setIdIteration()
 void ViewerGUI::ComputeAll()
 {
 	int count = 0;
-	int step = 2;
-	VertexData vld;
-	for (VertexDataVector::iterator it = vldvector->begin(); it != vldvector->end() && count < vldvector->size(); it++)
+	int step = 1;
+	for (VertexDataVector::iterator it = vldvector->begin(); it != vldvector->end() && count < vldvector->size(); it+=step)
 	{
 		numIteration = count;
 		this->lineExtraction();
 		count+=step;
 		
-		//suppongo che ho letto il grafoSE2 creato a partire da quello SE3
-		vld = *(it);
-		//cambiare in SE
-		g2o::VertexSE2* v = vld.first;
-		g2o::OptimizableGraph* graph = v->graph();
-		int id1 = -1, id2 = -1;
-		int lid;
-		g2o::VertexSE2* vp1, vp2;
-		int id = (int)graph->vertices().size() - 1;
-		//for each line (ho entrambi i vertici per ora)
-// 		for (int i = 0; i < lc.size(); i++)
-// 		{
-// 			Vector2fVector l = (*lc)[i];
-// 			
-// 			Vector2f p1 = l[0];
-// 			Vector2f p2 = l[1];
-// 			vp1  = new g2o::VertexPointXY();
-// 			id1=id;
-// 			vp1->setId(id++);
-// 			vp1->setEstimate(p1); //ce li ho già trasformati, non moltiplico per T
-// 			graph->addVertex(vp1);
-// 
-// 			vp2  = new g2o::VertexPointXY();
-// 			id2=id;
-// 			vp2->setId(id++);
-// 			vp2->setEstimate(p2); //ce li ho già trasformati, non moltiplico per T
-// 			graph->addVertex(vp2);
-// 		}
-		
-		// 		usleep(50e3);
-		
+		addingData(it);
 	}
 }
+
+void ViewerGUI::addingData(VertexDataVector::iterator it)
+{
+	ofstream ofG2OLine(filename.c_str(), ios::app);
+	VertexData vld = *(it);
+	g2o::VertexSE2* v = vld.first;
+	
+	// we need T to transform points in gloabl frame
+	Eigen::Isometry2d vEstimate;
+	Vector3d ev = v->estimate().toVector();
+	vEstimate.linear() = Rotation2Dd(ev.z()).matrix();
+	vEstimate.translation() = ev.head<2>();
+	Eigen::Isometry2d T = vEstimate*offset;
+	
+	g2o::OptimizableGraph* graph = v->graph();
+	int id1 = -1, id2 = -1;
+	int lid;
+	g2o::VertexPointXY* vp1, *vp2;
+	g2o::VertexLine2D* vl;
+	int id = (int)graph->vertices().size() - 1;
+	
+// 		for each line (ho entrambi i vertici per ora)
+	for (int i = 0; i < lc.size(); i++)
+	{
+		Vector2fVector l = lc[i];		
+		Vector2d p1(l[0].x(), l[0].y());
+		Vector2d p2(l[1].x(), l[1].y());
+		
+		//first vertice
+		vp1 = new g2o::VertexPointXY();
+		id1=id++;
+		vp1->setId(id1);
+		vp1->setEstimate(p1); //ce li ho già trasformati, non moltiplico per T
+		graph->addVertex(vp1);
+		graph->saveVertex(ofG2OLine, vp1);
+		
+		//edge between v and  first vertice
+		g2o::EdgeSE2PointXY* erp1 = new g2o::EdgeSE2PointXY();
+		erp1->setVertex(0,v);
+		erp1->setVertex(1,vp1);
+		erp1->setMeasurement(T.inverse()*p1); // p1 not transformed(in global frame)
+		Eigen::Matrix2d info1;
+		info1 << 1000, 0, 0, 1000;
+		erp1->setInformation(info1);
+		graph->addEdge(erp1);
+		graph->saveEdge(ofG2OLine, erp1);
+		
+		//second vertice
+		vp2 = new g2o::VertexPointXY();
+		id2=id++;
+		vp2->setId(id2);
+		vp2->setEstimate(p2); //ce li ho già trasformati, non moltiplico per T
+		graph->addVertex(vp2);
+		graph->saveVertex(ofG2OLine, vp2);
+
+		//edge between v and  second vertice
+		g2o::EdgeSE2PointXY* erp2 = new g2o::EdgeSE2PointXY();
+		erp2->setVertex(0,v);
+		erp2->setVertex(1,vp2);
+		erp2->setMeasurement(T.inverse()*p2); // p2 not transformed(in global frame)
+		Eigen::Matrix2d info2;
+		info2 << 1000, 0, 0, 1000;
+		erp2->setInformation(info2);
+		graph->addEdge(erp2);
+		graph->saveEdge(ofG2OLine, erp2);
+
+		//line Vertex
+		vl = new g2o::VertexLine2D();
+		lid = id++;
+		vl->setId(lid);
+		Vector2d v2d;
+		v2d[0] = atan2(p2.y()-p1.y(), p2.x()-p1.x()); //theta
+		v2d[1] = (p2-p1).norm(); //rho
+		vl->setEstimate(v2d); 
+		vl->p1Id = id1;
+		vl->p2Id = id2;
+		graph->addVertex(vl);
+		graph->saveVertex(ofG2OLine, vl);
+
+		//Edge between v and vl
+		g2o::EdgeSE2Line2D* erl = new g2o::EdgeSE2Line2D();
+		erl->setMeasurement(vl->estimate());
+		Eigen::Matrix2d infovl;
+		infovl << 1000, 0, 0, 1000;
+		erl->setInformation(infovl);
+		graph->addEdge(erl);
+		graph->saveEdge(ofG2OLine, erl);
+
+		
+		//Edge between vl and vp1
+		g2o::EdgeLine2DPointXY* elp1 = new g2o::EdgeLine2DPointXY();
+		elp1->setVertex(0,vl);
+		elp1->setVertex(1,vp1);
+		elp1->setMeasurement(0);
+		Eigen::Matrix<double, 1, 1> infolp1;
+		infolp1(0,0) = 1e9;
+		elp1->setInformation(infolp1);
+		graph->addEdge(elp1);
+		graph->saveEdge(ofG2OLine, elp1);
+
+		
+		//Edge between vl and vp2
+		g2o::EdgeLine2DPointXY* elp2 = new g2o::EdgeLine2DPointXY;
+		elp2->setVertex(0,vl);
+		elp2->setVertex(1,vp2);
+		elp2->setMeasurement(0);
+		Eigen::Matrix<double, 1, 1> infolp2;
+		infolp2(0,0) = 1e9;
+		elp2->setInformation(infolp2);
+		graph->addEdge(elp2);
+		graph->saveEdge(ofG2OLine, elp2);
+	}
+	ofG2OLine.flush();
+}
+
 
 // TODO
 ViewerGUI::ViewerGUI(VertexDataVector* theVLdVector, Eigen::Isometry2d TheOffset, QWidget* parent)
@@ -448,7 +535,6 @@ ViewerGUI::ViewerGUI(VertexDataVector* theVLdVector, Eigen::Isometry2d TheOffset
 	vldvector = theVLdVector;
 	offset = TheOffset;
 	numIteration = 0;
-
 }
 
 // ViewerGUI::ViewerGUI(LaserDataVector* theLdVector, QWidget* parent)

@@ -52,8 +52,8 @@ void sigquit_handler(int sig)
 
 int main(int argc, char**argv){
   hasToStop = false;
-  string filename;
-  string outfilename;
+//   string filename;
+//  string outfilename;
   bool noLoop;
   CommandArgs arg;
   int localMapSize;
@@ -80,7 +80,7 @@ int main(int argc, char**argv){
   float minRange;
   bool odometryIsGood;
   int incrementalFeatureTrackingWindow;
-  arg.param("o", outfilename, "otest.g2o", "output file name"); 
+  arg.param("o", outfilename, "graphSE2_withLine.g2o", "output file name"); 
   arg.param("maxRange", maxRange, 1e3, "maximum range to sense features"); 
   arg.param("minRange", minRange, 0.5, "minimum range to sense features");
   arg.param("minLandmarkCreationFrames", minLandmarkCreationFrames, 2, "minimum range to sense features");
@@ -110,9 +110,16 @@ int main(int argc, char**argv){
   arg.param("minFeaturesInCluster", minFeaturesInCluster, 10, "min num of features to consider in a cluster "); 
   arg.param("minFrameToFrameInliers", minFrameToFrameInliers, 0, "min num of matching features to do something with the frame"); 
   arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
-  
   arg.parseArgs(argc, argv);
-	
+		
+// 	//creating new file to save the original graph not modified
+// 	while(!ifG2O.eof())
+// 	{
+// 		ofG2OLine << (char) ifG2O.get();
+// 		cout <<  ".";
+// 	}
+// 	ifG2O.close();
+// 	ofG2OLine.flush();
 	
   // graph construction
   typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
@@ -124,7 +131,7 @@ int main(int argc, char**argv){
   SparseOptimizer * graph = new SparseOptimizer();
   graph->setAlgorithm(solverGauss);
   graph->load(filename.c_str());
-  
+	
   // sort the vertices based on the id
   std::vector<int> vertexIds(graph->vertices().size());
   int k=0;
@@ -140,14 +147,15 @@ int main(int argc, char**argv){
 	//int this...
 	VertexDataVector vldvector;
 	
+	//TODO
+// 	Eigen::Isometry3d offset = Eigen::Isometry3d::Identity();
 	Eigen::Isometry2d offset = Eigen::Isometry2d::Identity();
+
 	for (size_t i=0; i<vertexIds.size() && ! hasToStop; i++){
 		
     OptimizableGraph::Vertex* _v=graph->vertex(vertexIds[i]);
 // 		VertexSE3* v=dynamic_cast<VertexSE3*>(_v);
     VertexSE2* v=dynamic_cast<VertexSE2*>(_v);
-		
-		
     if (!v)
       continue;
 		
@@ -160,8 +168,12 @@ int main(int argc, char**argv){
 				//get laser Parameter
 				const Parameter* p = graph->parameters().getParameter(ldata->paramIndex());
 				const ParameterSE3Offset* param = dynamic_cast<const ParameterSE3Offset*> (p);
-// 				TODO
-				offset.setIdentity();//param->offset();
+				//conversion to 2d, with SE3 is:
+// 				offset = param->offset();
+				Vector3d ov = toVector3D(param->offset());
+				offset.linear() = Rotation2Dd(ov.z()).matrix();
+				offset.translation() = ov.head<2>(); 
+				
 				pointsOriginal = ldata->floatCartesian();
 				if (pointsOriginal.size()==0) {
 					cerr << "WARNING! No laser ranges detected, the g2o file you are using is wrong" << endl;
@@ -175,6 +187,7 @@ int main(int argc, char**argv){
       }
 		}
 	}
+//   graph->save(ofG2O_line);
 	cout << "End of file!" << endl;
 
 #if 0
@@ -194,5 +207,6 @@ int main(int argc, char**argv){
 	ViewerGUI *dialog = new ViewerGUI(&vldvector, offset);
 	dialog->viewer->setDataPointer(&(vldvector[0].second));
 	dialog->show();
+
 	return app.exec();
 }

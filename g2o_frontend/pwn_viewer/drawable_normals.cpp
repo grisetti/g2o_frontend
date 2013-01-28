@@ -7,7 +7,7 @@ DrawableNormals::DrawableNormals() : Drawable(){
   _normals = 0;
 }
 
-DrawableNormals::DrawableNormals(Eigen::Isometry3f transformation_, GLParameter *parameter_,  PointWithNormalVector *normals_) : Drawable(transformation_) {
+DrawableNormals::DrawableNormals(const Eigen::Isometry3f& transformation_, GLParameter *parameter_,  const PointWithNormalVector *normals_) : Drawable(transformation_) {
   setParameter(parameter_);
   _normals = normals_;
 }

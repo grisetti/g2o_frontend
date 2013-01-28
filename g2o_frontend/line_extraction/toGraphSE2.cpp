@@ -34,7 +34,7 @@ using namespace g2o;
 typedef std::pair<g2o::VertexSE3*, g2o::VertexSE2*> Vertex3to2;
 typedef std::vector<Vertex3to2> v3Mapv2;
 
-SE2 fromSE3(const Eigen::Isometry3d& iso){
+SE2 fromIsoSE3(const Eigen::Isometry3d& iso){
 	Eigen::AngleAxisd aa(iso.linear());
 	return SE2(iso.translation().x(), iso.translation().y(), aa.angle());
 }
@@ -45,7 +45,7 @@ int main(int argc, char**argv){
   string outfilename;
 	g2o::CommandArgs arg;
 	arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
-	arg.param("o", outfilename, "otest.g2o", "output file name");
+	arg.param("o", outfilename, "newGraphSE2.g2o", "output file name");
   arg.parseArgs(argc, argv);
 	ofstream ofG2O(outfilename.c_str());
 	
@@ -83,7 +83,7 @@ int main(int argc, char**argv){
       continue;		
 		
 		VertexSE2* v2 = new VertexSE2();
-		v2->setEstimate(fromSE3(v3->estimate()));
+		v2->setEstimate(fromIsoSE3(v3->estimate()));
 		v2->setId(v3->id());
 		d = v3->userData();		
 	  
@@ -127,7 +127,8 @@ int main(int argc, char**argv){
 	}
 		
 // 	cout << "Map vertices:  " << vertexVector.size() << endl;
-	cout << "Graph vertices: " << graphSE2->vertices().size() << endl;
+cout << "Graph vertices: " << graphSE2->vertices().size() << endl;
+cout << "GraphSE2 vertices: " << graphSE2->vertices().size() << endl;
 	
 #if 0
 	for (int j = 0; j < vertexVector.size(); j++) {
@@ -164,7 +165,8 @@ int main(int argc, char**argv){
 			graphSE2->saveEdge(ofG2O, e2);
 	}
 
-	cout << "Graph edges: " << graphSE2->edges().size() << endl;
+	cout << "Graph edges: " << graph->edges().size() << endl;
+	cout << "GraphSE2 edges: " << graphSE2->edges().size() << endl;
 
 	ofG2O.close();
 	return (0);

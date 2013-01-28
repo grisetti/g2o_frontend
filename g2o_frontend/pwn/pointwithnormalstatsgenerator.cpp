@@ -12,8 +12,8 @@ using namespace std;
 PointWithNormalStatistcsGenerator::PointWithNormalStatistcsGenerator(){
   _step = 1;
   _worldRadius = 0.1;
-  _imageRadius = 100;
-  _minPoints = 50;
+  _imageRadius = 50;
+  _minPoints = 30;
   _maxCurvature = 0.5f;
   _cameraMatrix <<   
     525.0f, 0.0f, 319.5f,

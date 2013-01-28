@@ -51,12 +51,12 @@ bool Line2DExtractor::split(int k) {
 	
   /** seek for the point with the largest distance between the indices contained in the line**/
   int imax= maxDistanceIndex(line);
-//   cerr<< "\t\t imax: " << imax << endl;
+//   cout<< "\t\t imax: " << imax << endl;
   if (imax <0  || imax == line.p1Index-1){
     return false;
   }
   const Vector2f& v = _points[imax];
-//   cerr<< "\t\t d: " << line.squaredDistance(v) << endl;
+//   cout<< "\t\t d: " << line.squaredDistance(v) << endl;
   
 
   std::pair<IntLineMap::iterator, bool> insertResult= _lines.insert(make_pair(imax, Line2D()));
@@ -65,8 +65,8 @@ bool Line2DExtractor::split(int k) {
   Line2D& newLine = insertResult.first->second;
   initializeFromIndices(newLine, imax, line.p1Index);
   initializeFromIndices(line, line.p0Index, imax);
-//   cerr << "\tfirstLine: " << line.p0Index << " " << line.p1Index << endl;
-//   cerr << "\tseconLine: " << newLine.p0Index << " " << newLine.p1Index << endl;
+//   cout << "\tfirstLine: " << line.p0Index << " " << line.p1Index << endl;
+//   cout << "\tseconLine: " << newLine.p0Index << " " << newLine.p1Index << endl;
   return true;
 }
 
@@ -142,31 +142,31 @@ void Line2DExtractor::compute(){
 		
     const Line2D& l=it->second;
     bool splitResult= split(it->first);
-//     cerr << "\tsplit" << l.p0Index << " " << l.p1Index;
+//     cout << "\tsplit" << l.p0Index << " " << l.p1Index;
     if (splitResult) {
-      cerr << "split done" << endl;
+      cout << "split done" << endl;
     } else 
-      cerr << "split nope" << endl;
+      cout << "split nope" << endl;
 			if (! splitResult)
 				it++;
 		
   }
-  cerr << "\tI split " << _lines.size() << " times" << endl;
+  cout << "\tI split " << _lines.size() << " times" << endl;
 	
 	/** Merge step **/
   it = _lines.begin();
   while (it!=_lines.end()){
     const Line2D& l=it->second;
     bool mergeResult= merge(it->first);
-//     cerr << "\tmerge" << l.p0Index << " " << l.p1Index;
+//     cout << "\tmerge" << l.p0Index << " " << l.p1Index;
     if (mergeResult) {
-      cerr << "merge done" << endl;
+      cout << "merge done" << endl;
     } else 
-      cerr << "merge nope" << endl;
+      cout << "merge nope" << endl;
     if (!mergeResult)
       it++;
   }
-  cerr << "\tI merge " << _lines.size() << " times" << endl;
+  cout << "\tI merge " << _lines.size() << " times" << endl;
 }
 
 

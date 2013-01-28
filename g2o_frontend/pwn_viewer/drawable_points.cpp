@@ -10,7 +10,7 @@ DrawablePoints::DrawablePoints() : Drawable() {
   _points = 0;
 }
 
-DrawablePoints::DrawablePoints(Eigen::Isometry3f transformation_, GLParameter *parameter_,  PointWithNormalVector *points_) : Drawable(transformation_) {
+DrawablePoints::DrawablePoints(const Eigen::Isometry3f& transformation_, GLParameter *parameter_,  const PointWithNormalVector *points_) : Drawable(transformation_) {
   setParameter(parameter_);
   _points = points_;
 }
