@@ -9,6 +9,7 @@ endif(OPENMP_FOUND)
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 
 ADD_LIBRARY(pwn_library
+  ../dm_optimization/dm_math.h
   depthimage.cpp depthimage.h
   pixelmapper.cpp pixelmapper.h 
   gaussian3.cpp gaussian3.h 

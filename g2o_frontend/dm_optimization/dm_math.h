@@ -3,13 +3,14 @@
 
 #include "dm_defs.h"
 
-inline Eigen::Matrix3f quat2mat(const Eigen::Vector3f& q)
+template <typename OtherDerived>
+inline Eigen::Matrix<typename OtherDerived::Scalar,3,3> quat2mat(const Eigen::MatrixBase< OtherDerived >& q)
 {
-  const float& qx = q.x();
-  const float& qy = q.y();
-  const float& qz = q.z();
-  float qw = sqrt(1.f - q.squaredNorm());
-  Eigen::Matrix3f R;
+  const typename OtherDerived::Scalar& qx = q.x();
+  const typename OtherDerived::Scalar& qy = q.y();
+  const typename OtherDerived::Scalar& qz = q.z();
+  typename  OtherDerived::Scalar qw = sqrt(1.f - q.squaredNorm());
+  Eigen::Matrix<typename  OtherDerived::Scalar,3,3> R;
   R << qw*qw + qx*qx - qy*qy - qz*qz, 2*(qx*qy - qw*qz) , 2*(qx*qz + qw*qy),
     2*(qx*qy + qz*qw) , qw*qw - qx*qx + qy*qy - qz*qz, 2*(qy*qz - qx*qw),
     2*(qx*qz - qy*qw) , 2*(qy*qz + qx*qw), qw*qw - qx*qx - qy*qy + qz*qz;
@@ -17,11 +18,12 @@ inline Eigen::Matrix3f quat2mat(const Eigen::Vector3f& q)
     return R;
 }
 
-inline Eigen::Vector3f mat2quat(const Eigen::Matrix3f& R)
+template <typename OtherDerived>
+inline Eigen::Matrix<typename OtherDerived::Scalar,3,1> mat2quat(const Eigen::MatrixBase< OtherDerived > & R)
 {
-  Eigen::Quaternionf q(R); 
+  Eigen::Quaternion<typename OtherDerived::Scalar> q(R); 
   q.normalize();
-  Eigen::Vector3f rq;
+  Eigen::Matrix<typename OtherDerived::Scalar,3,1> rq;
   rq << q.x(), q.y(), q.z();
   if (q.w()<0){
     rq = -rq;
@@ -29,30 +31,32 @@ inline Eigen::Vector3f mat2quat(const Eigen::Matrix3f& R)
   return rq;
 }
 
-inline Eigen::Isometry3f v2t(const Vector6f& x)
+template <typename OtherDerived>
+inline Eigen::Transform<typename OtherDerived::Scalar, 3, Eigen::Isometry> v2t(const Eigen::MatrixBase< OtherDerived >& x)
 {
-    Eigen::Isometry3f X;
-    X.linear() = quat2mat(x.tail<3>());
-    X.translation() = x.head<3>();
-
-    return X;
+  Eigen::Transform<typename OtherDerived::Scalar, 3, Eigen:: Isometry> X;
+  X.linear() = quat2mat(x.tail(3));
+  X.translation() = x.head(3);
+  return X;
 }
 
-inline Vector6f t2v(const Eigen::Isometry3f& X)
+template <typename Scalar>
+inline Eigen::Matrix<Scalar, 6, 1> t2v(const Eigen::Transform<Scalar, 3, Eigen::Isometry>& X)
 {
-    Vector6f v;
-    v.head<3>() = X.translation();
-    v.tail<3>() = mat2quat(X.linear());
+    Eigen::Matrix<Scalar, 6, 1> v;
+    v.head(3) = X.translation();
+    v.tail(3) = mat2quat(X.linear());
 
     return v;
 }
 
-inline Eigen::Matrix3f skew(const Eigen::Vector3f& v)
+template <typename Scalar>
+inline Eigen::Matrix<Scalar,3,3> skew(const Eigen::Matrix<Scalar,3,1>& v)
 {
     const float& tx = v.x();
     const float& ty = v.y();
     const float& tz = v.z();
-    Eigen::Matrix3f S;
+    Eigen::Matrix<Scalar,3,3> S;
     S << 0, (2*tz), (-2*ty),
             (-2*tz), 0, (2*tx),
             (2*ty),  (-2*tx),0;
