@@ -3,6 +3,10 @@
 using namespace std;
 
 
+Scene::Scene(){
+  _origin.setIdentity();
+}
+
 void Scene::toIndexImage(Eigen::MatrixXi& indexImage, Eigen::MatrixXf& zBuffer, 
 		    const Eigen::Matrix3f& cameraMatrix, const Eigen::Isometry3f& cameraPose,
 			 float dmax){
