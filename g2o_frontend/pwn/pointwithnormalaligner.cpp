@@ -34,6 +34,24 @@ inline Matrix6f jacobian(const Vector6f& p) {
   return J;
 }
 
+inline void _computeHb_qt(Matrix6f& H, Vector6f& b, const Vector6f& p, const Vector6f& e, const Matrix6f& Omega) {
+  const Vector3f& t = p.head<3>();
+  const Vector3f& n = p.tail<3>();
+  Matrix3f St=skew(t);
+  Matrix3f Sn=skew(n);
+  const Matrix3f& Omegat = Omega.block<3,3>(0,0);
+  const Matrix3f& Omegan = Omega.block<3,3>(3,3);
+  H.block<3,3>(0,0)+=Omegat;
+  H.block<3,3>(0,3)+=Omegat*St;
+  H.block<3,3>(3,3)+=St.transpose()*Omegat*St+Sn.transpose()*Omegan*Sn;
+  const Vector3f et=Omegat*e.head<3>();
+  const Vector3f en=Omegan*e.tail<3>();
+  b.head<3>()+=et;
+  b.tail<3>()+=St.transpose()*et + Sn.transpose()*en;
+}
+
+
+
 PointWithNormalAligner::PointWithNormalAligner() {
   _cameraMatrix <<
     525.0f, 0.0f, 319.5f,
@@ -418,10 +436,16 @@ int PointWithNormalAligner::_constructLinearSystemQT(Matrix6f& H, Vector6f&b, fl
       continue;
     numInliers++;
     error += localError;
+#if 0
     Matrix6f J = jacobian(pref);
     b += J.transpose() * omega * e;
     H += J.transpose() * omega * J;
+#else
+    _computeHb_qt(H, b, pref, e, omega);
+#endif
+
   }
+  H.block<3,3>(3,0)=H.block<3,3>(0,3).transpose();
   return numInliers;
 }
 
