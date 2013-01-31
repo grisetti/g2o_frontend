@@ -95,7 +95,6 @@ protected:
 	float _accuracy;
   
 };	
-
 inline 	Eigen::Vector3d toVector3D(const Eigen::Isometry3d& iso) {
 	
   Eigen::Vector3d rv;
@@ -103,6 +102,16 @@ inline 	Eigen::Vector3d toVector3D(const Eigen::Isometry3d& iso) {
   rv[1] = iso.translation().y();
   Eigen::AngleAxisd aa(iso.linear());
   rv[2] = aa.angle();	
+  return rv;
+}
+
+inline 	Eigen::Vector3d toVector3D_fromIso2(const Eigen::Isometry2d& iso) {
+	
+  Eigen::Vector3d rv;
+  rv[0] = iso.translation().x();
+  rv[1] = iso.translation().y();
+//   Eigen::AngleAxisd aa(iso.linear()); //???
+  rv[2] = 0.;	
   return rv;
 }
 #ifdef G2O_HAVE_OPENGL

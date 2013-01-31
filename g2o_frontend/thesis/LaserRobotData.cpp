@@ -113,17 +113,13 @@ bool LaserRobotData::write(ostream& os) const {
   if (! p) {
     cerr << "no param" << endl;
     return false;
-  }
+  }	
 
-		
-  const ParameterSE3Offset* oparam = dynamic_cast<const g2o::ParameterSE3Offset*> (p);
-
-  if (! oparam) {
-    cerr << "no good param" << endl;
-    return false;
-  }
-		
-  Eigen::Isometry3d offset = oparam->offset();
+	const ParameterSE3Offset* oparam = dynamic_cast<const g2o::ParameterSE3Offset*> (p);
+	if (! oparam) {
+		cerr << "no good param" << endl;
+		return false;
+	}
 		
   float angularStep = _fov / _ranges.size();
   int remissionMode = 0;
@@ -136,14 +132,40 @@ bool LaserRobotData::write(ostream& os) const {
   for (size_t i = 0; i < _intensities.size(); ++i) 
     os << " " << _intensities[i];
 
-	// laser pose wrt the world
-  Eigen::Vector3d pose;
-  pose.setZero();
-  //= toVector3D(v->estimate()*offset); HACKK
-  os << " " << pose.x() << " " << pose.y() << " " << pose.z();
-  // odometry pose
-  //pose =   toVector3D(v->estimate()); HACKK
-  os << " " << pose.x() << " " << pose.y() << " " << pose.z();
+	const VertexSE3* v3 = dynamic_cast<const VertexSE3*> (container);
+	if (v3) 
+	{
+		Eigen::Isometry3d offset = oparam->offset();
+		
+		// laser pose wrt the world
+		Eigen::Vector3d pose = toVector3D(v3->estimate()*offset);
+		os << " " << pose.x() << " " << pose.y() << " " << pose.z();
+		// odometry pose
+	  pose = toVector3D(v3->estimate());
+		os << " " << pose.x() << " " << pose.y() << " " << pose.z();
+	}
+	
+	const VertexSE2* v2 = dynamic_cast<const VertexSE2*> (container);
+	if (v2)
+	{
+		Eigen::Isometry2d offset;
+		Vector3d ov = toVector3D(oparam->offset());
+		offset.linear() = Rotation2Dd(ov.z()).matrix();
+		offset.translation() = ov.head<2>();
+		
+		Eigen::Isometry2d vEstimate;
+		Vector3d ev = v2->estimate().toVector();
+		vEstimate.linear() = Rotation2Dd(ev.z()).matrix();
+		vEstimate.translation() = ev.head<2>();
+		// laser pose wrt the world
+		Eigen::Vector3d pose;
+// 		pose.setZero();
+		  pose = toVector3D_fromIso2(vEstimate*offset); 
+		os << " " << pose.x() << " " << pose.y() << " " << pose.z();
+		// odometry pose
+		  pose = toVector3D_fromIso2(vEstimate); 
+		os << " " << pose.x() << " " << pose.y() << " " << pose.z();
+	}
 
   // crap values
   os << FIXED(" " <<  _laserTv << " " <<  _laserRv << " " << _forwardSafetyDist << " "
@@ -253,7 +275,7 @@ HyperGraphElementAction* LaserRobotDataDrawAction::operator()(HyperGraph::HyperG
 		
 // 	TODO
 		Eigen::Isometry3d offset = oparam->offset();
-//  Eigen::Isometry3d offset; 
+//  Eigen::Isometry2d offset; 
 // 	offset.setIdentity();
 	
   glPushMatrix();
