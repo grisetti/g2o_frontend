@@ -60,6 +60,7 @@ int main (int argc, char** argv) {
   hlayout->setStretch(1,1);
 
   QListWidget* listWidget = new QListWidget(mainWindow);
+  listWidget->setSelectionMode(QAbstractItemView::MultiSelection );
   vlayout->addWidget(listWidget);
   PWNQGLViewer* viewer = new PWNQGLViewer(mainWindow);
   vlayout2->addWidget(viewer);
@@ -91,7 +92,6 @@ int main (int argc, char** argv) {
     DrawableNormals* drawableNormals = new DrawableNormals(T, normalParams, points);
     normalParams->setStep(normalStep);
     normalParams->setNormalLength(normalLenght);
-  
     viewer->addDrawable(drawableNormals);
   }
 
@@ -100,6 +100,27 @@ int main (int argc, char** argv) {
   viewer->show();
   listWidget->show();
   while (1) {
+    bool selectionChanged= false;
+    for (int i=0; i<listWidget->count(); i++){
+      QListWidgetItem* item = listWidget->item(i);
+      int dpIndex = i*2;
+      int dnIndex = dpIndex+1;
+      Drawable* drawablePoints = viewer->drawableList().at(dpIndex);
+      Drawable* drawableNormals = viewer->drawableList().at(dnIndex);
+      if (item && item->isSelected()){
+	if(!drawablePoints->parameter()->isShown())
+	  selectionChanged = true;
+	drawablePoints->parameter()->setShow(true);
+	drawableNormals->parameter()->setShow(true);
+      } else {
+	if(drawablePoints->parameter()->isShown())
+	  selectionChanged = true;
+	drawablePoints->parameter()->setShow(false);
+	drawableNormals->parameter()->setShow(false);
+      }
+    }
+    if (selectionChanged)
+      viewer->updateGL();
     /*    
       for (int i=0; i<listWidget....; i++){
       if (the widget is selected){

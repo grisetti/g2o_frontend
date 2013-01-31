@@ -25,7 +25,10 @@ bool DrawableNormals::setParameter(GLParameter *parameter_) {
 // Drawing function of the class object.
 void DrawableNormals::draw() {
   GLParameterNormals* normalsParameter = dynamic_cast<GLParameterNormals*>(_parameter);
-  if (_normals && normalsParameter && normalsParameter->normalLength() > 0.0f) {
+  if (_normals && 
+      normalsParameter &&
+      normalsParameter->isShown() && 
+      normalsParameter->normalLength() > 0.0f) {
     glPushMatrix();
     glMultMatrixf(_transformation.data());
     normalsParameter->applyGLParameter();

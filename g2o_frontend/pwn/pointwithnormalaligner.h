@@ -4,8 +4,8 @@
 #include "pointwithnormal.h"
 #include "depthimage.h"
 #include "pointwithnormalstatsgenerator.h"
-#include "g2o_frontend/dm_optimization/dm_math.h"
 #include "scene.h"
+#include "g2o_frontend/basemath/bm_se3.h"
 
 class PointWithNormalAligner{
 public:

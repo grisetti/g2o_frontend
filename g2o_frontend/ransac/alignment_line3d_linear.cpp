@@ -1,4 +1,4 @@
-#include "g2o_frontend/dm_optimization/dm_math.h"
+#include "g2o_frontend/basemath/bm_se3.h"
 #include "alignment_line3d_linear.h"
 #include <Eigen/SVD>
 #include <Eigen/Cholesky>
@@ -10,24 +10,6 @@ namespace g2o_frontend{
   using namespace g2o;
   using namespace Slam3dAddons;
   using namespace Eigen;
-
-  inline void _skew(Eigen::Matrix3d& S, const Eigen::Vector3d& t){
-    S <<   
-      0,  -t.z(),   t.y(),
-      t.z(),     0,     -t.x(),
-      -t.y()     ,t.x(),   0;
-  }
-
-  inline Eigen::Matrix3d _skew(const Eigen::Vector3d& t){
-    Eigen::Matrix3d S;
-    S <<   
-      0,  -t.z(),   t.y(),
-      t.z(),     0,     -t.x(),
-      -t.y(),     t.x(),   0;
-    return S;
-  }
-
-
 
   AlignmentAlgorithmLine3DLinear::AlignmentAlgorithmLine3DLinear(): AlignmentAlgorithmSE3Line3D(2) {
   }
@@ -54,7 +36,7 @@ namespace g2o_frontend{
       A.block<1,3>(0,0)=lj.w().transpose();
       A.block<1,3>(1,3)=lj.w().transpose();
       A.block<1,3>(2,6)=lj.w().transpose();
-      A.block<3,3>(0,9)=-_skew(li.d());
+      A.block<3,3>(0,9)=-::skew(li.d());
       A.block<1,3>(3,0)=lj.d().transpose();
       A.block<1,3>(4,3)=lj.d().transpose();
       A.block<1,3>(5,6)=lj.d().transpose();
@@ -89,7 +71,7 @@ namespace g2o_frontend{
       const VertexLine3D* v2 = static_cast<const VertexLine3D*>(edge->vertex(1));
       const AlignmentAlgorithmLine3DLinear::PointEstimateType& li= v1->estimate();
       const AlignmentAlgorithmLine3DLinear::PointEstimateType& lj= v2->estimate();
-      Matrix3d A2=-_skew(R*lj.d());
+      Matrix3d A2=-::skew(Vector3d(R*lj.d()));
       Vector3d ek = li.w()-R*lj.w()-A2*X.translation();
       H2+=A2.transpose()*A2;
       b2+=A2.transpose()*ek;
