@@ -11,24 +11,6 @@ namespace g2o_frontend{
   using namespace Slam3dAddons;
   using namespace Eigen;
 
-  // inline void _skew(Eigen::Matrix3d& S, const Eigen::Vector3d& t){
-  //   S <<   
-  //     0,  -t.z(),   t.y(),
-  //     t.z(),     0,     -t.x(),
-  //     -t.y()     ,t.x(),   0;
-  // }
-
-  // inline Eigen::Matrix3d _skew(const Eigen::Vector3d& t){
-  //   Eigen::Matrix3d S;
-  //   S <<   
-  //     0,  -t.z(),   t.y(),
-  //     t.z(),     0,     -t.x(),
-  //     -t.y(),     t.x(),   0;
-  //   return S;
-  // }
-
-
-
   AlignmentAlgorithmLine3DLinear::AlignmentAlgorithmLine3DLinear(): AlignmentAlgorithmSE3Line3D(2) {
   }
   
