@@ -6,6 +6,7 @@ ADD_LIBRARY(ransac ${G2O_FRONTEND_LIB_TYPE}
   alignment_se2.cpp alignment_se2.h
   alignment_se3.cpp alignment_se3.h
   alignment_line3d_linear.cpp alignment_line3d_linear.h
+	alignment_line2d_linear.cpp alignment_line2d_linear.h
   distance_correspondence_validator.cpp distance_correspondence_validator.h
 )
 

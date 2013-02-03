@@ -76,14 +76,23 @@ void ViewerGUI::showOriginal()
 	//in this...
 	VertexDataVector::iterator it = vldvector->begin();
 	vld = *(it+numIteration);
-	
-// // 	TODO
+	// TODO changing from SE3:
 // 	g2o::VertexSE3* v = vld.first;
 // 	Eigen::Isometry3d T = v->estimate()*offset;
-// 	for (int i = 0; i < vld.second.size(); i++)
-// 	{
-// 		// TODO TRANSFORM ORGINAL POINT IN ROBOT COORDINATES
-// 	}
+	//in SE2:
+	g2o::VertexSE2* v = vld.first;
+	Eigen::Isometry2d vEstimate;
+	Vector3d ev = v->estimate().toVector();
+	vEstimate.linear() = Rotation2Dd(ev.z()).matrix();
+	vEstimate.translation() = ev.head<2>();
+	Eigen::Isometry2d T = vEstimate*offset;
+	
+	for (int i = 0; i < vld.second.size(); i++) {
+		Vector2d dpoints(vld.second[i].x(), vld.second[i].y());
+		dpoints = T*dpoints;
+		Vector2f lpoints(dpoints.x(),dpoints.y());
+		vld.second[i] = lpoints;
+	}	
 	this->viewer->setDataPointer(&(vld.second));
 	this->viewer->updateGL();
 }
@@ -183,20 +192,20 @@ void ViewerGUI::lineExtraction()
 					const Vector2f& p0 = lineExtractor->points()[line.p0Index];
 					const Vector2f& p1 = lineExtractor->points()[line.p1Index];
 					
-					Vector2d p0_3(p0.x(), p0.y()); //without , 0.f in SE2
-					Vector2d p1_3(p1.x(), p1.y());
-					p0_3 = T*p0_3;
-					p1_3 = T*p1_3;
+					Vector2d p0_g(p0.x(), p0.y()); //without , 0.f in SE2
+					Vector2d p1_g(p1.x(), p1.y());
+					p0_g = T*p0_g;
+					p1_g = T*p1_g;
 #if 1
-					os << p0_3.transpose() << endl;
-					os << p1_3.transpose() << endl;
+					os << p0_g.transpose() << endl;
+					os << p1_g.transpose() << endl;
 					os << endl;
 					os << endl;
 					os.flush();
 #endif
 					//creating structure to draw lines (considering the odometry of the robot,use of p0_3 and p1_3)
-					linePoints.push_back(Eigen::Vector2f(p0_3.x(), p0_3.y()));					
-					linePoints.push_back(Eigen::Vector2f(p1_3.x(), p1_3.y()));
+					linePoints.push_back(Eigen::Vector2f(p0_g.x(), p0_g.y()));					
+					linePoints.push_back(Eigen::Vector2f(p1_g.x(), p1_g.y()));
 					
 					this->lc.push_back(linePoints);
 					linePoints.clear();

@@ -110,8 +110,10 @@ inline 	Eigen::Vector3d toVector3D_fromIso2(const Eigen::Isometry2d& iso) {
   Eigen::Vector3d rv;
   rv[0] = iso.translation().x();
   rv[1] = iso.translation().y();
+	Eigen::Matrix2d RotMat= iso.rotation();
+	double angle = atan2(RotMat(1,0), RotMat(0,0));
 //   Eigen::AngleAxisd aa(iso.linear()); //???
-  rv[2] = 0.;	
+  rv[2] = angle;	
   return rv;
 }
 #ifdef G2O_HAVE_OPENGL
