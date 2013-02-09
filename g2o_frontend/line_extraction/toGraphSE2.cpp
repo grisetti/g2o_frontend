@@ -24,8 +24,8 @@
 
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "g2o/types/slam2d/types_slam2d.h"
-#include "g2o_frontend/thesis/LaserRobotData.h"
-#include "g2o_frontend/thesis/RGBDData.h"*/
+#include "g2o_frontend/g2o_sensor_data/LaserRobotData.h"
+#include "g2o_frontend/g2o_sensor_data/RGBDData.h"
 
 
 using namespace std;

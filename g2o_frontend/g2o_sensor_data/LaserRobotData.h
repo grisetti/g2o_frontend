@@ -26,9 +26,9 @@
 #include <string>
 
 #include "g2o/core/hyper_graph.h"
-#include "g2o_frontend/thesis/SensorData.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "g2o/types/slam2d/types_slam2d.h"
+#include "SensorData.h"
 #include "SensorLaserRobot.h"
 
 /**

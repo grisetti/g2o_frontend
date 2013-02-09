@@ -13,8 +13,8 @@
 
 #include "opencv2/highgui/highgui.hpp"
 #include "g2o/core/hyper_graph.h"
-#include "g2o_frontend/thesis/SensorData.h"
 #include "g2o/types/slam3d/types_slam3d.h"
+#include "SensorData.h"
 #include "SensorRGBDCamera.h"
 
 class RGBDData: public SensorData {
