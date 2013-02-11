@@ -33,7 +33,6 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "g2o/core/optimizable_graph.h"
 #include "g2o/core/hyper_graph_action.h"
-#include "g2o/types/slam3d/types_slam3d.h"
 
 struct DataCache;
 

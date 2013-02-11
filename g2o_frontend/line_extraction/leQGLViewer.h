@@ -2,7 +2,7 @@
 #define LEDQGLVIEWER_H
 
 #include <QGLViewer/qglviewer.h>
-#include "g2o_frontend/thesis/LaserRobotData.h"
+#include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "line_extraction2d.h"
 
 	/**

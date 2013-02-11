@@ -39,6 +39,7 @@ void DrawableCorrespondences::draw() {
        _points2 && 
        _correspondences && 
        correspondencesParameter && 
+       correspondencesParameter->isShown() && 
        correspondencesParameter->lineWidth() > 0.0f) {
     
      //Eigen::Isometry3f p2transform = _transformation * _points2Transform;

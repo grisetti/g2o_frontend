@@ -8,10 +8,13 @@
 
 struct Scene{
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  Scene();
   friend class SceneManipulator;
   inline const PointWithNormalVector& points() const { return _points; }
   inline const Gaussian3fVector& gaussians() const {return _gaussians;}
   inline const PointWithNormalSVDVector& svds() const {return _svds;}
+  inline const Eigen::Isometry3f& origin() const {return _origin;}
+  inline void setOrigin(const Eigen::Isometry3f& origin_) {_origin=origin_;}
   void toIndexImage(Eigen::MatrixXi& indexImage, Eigen::MatrixXf& zBuffer, 
 		    const Eigen::Matrix3f& cameraMatrix, const Eigen::Isometry3f& cameraPose,
 		    float dmax = std::numeric_limits<float>::max());
@@ -34,7 +37,7 @@ struct Scene{
   PointWithNormalVector _points;
   Gaussian3fVector _gaussians;
   PointWithNormalSVDVector _svds;
-
+  Eigen::Isometry3f _origin;
 };
 
 struct DepthFrame : public Scene{

@@ -21,7 +21,7 @@
 #include "g2o/core/optimization_algorithm_levenberg.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 
-#include "g2o_frontend/thesis/LaserRobotData.h"
+#include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "line_extraction2d.h"
 
 
@@ -52,7 +52,7 @@ void sigquit_handler(int sig)
 
 int main(int argc, char**argv){
   hasToStop = false;
-//   string filename;
+  string filename;
 //  string outfilename;
   bool noLoop;
   CommandArgs arg;
@@ -131,6 +131,7 @@ int main(int argc, char**argv){
   SparseOptimizer * graph = new SparseOptimizer();
   graph->setAlgorithm(solverGauss);
   graph->load(filename.c_str());
+  graph->save("originalGraph.g2o");
 	
   // sort the vertices based on the id
   std::vector<int> vertexIds(graph->vertices().size());
@@ -187,7 +188,6 @@ int main(int argc, char**argv){
       }
 		}
 	}
-//   graph->save(ofG2O_line);
 	cout << "End of file!" << endl;
 
 #if 0

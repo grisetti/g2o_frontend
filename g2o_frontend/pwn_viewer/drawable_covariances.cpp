@@ -26,7 +26,10 @@ bool DrawableCovariances::setParameter(GLParameter *parameter_) {
 // Drawing function of the class object.
 void DrawableCovariances::draw() {
   GLParameterCovariances* covariancesParameter = dynamic_cast<GLParameterCovariances*>(_parameter);
-  if (_covariances && covariancesParameter && covariancesParameter->ellipsoidScale() > 0.0f) {
+  if (_covariances && 
+      covariancesParameter && 
+      covariancesParameter->isShown() && 
+      covariancesParameter->ellipsoidScale() > 0.0f) {
     glPushMatrix();
     glMultMatrixf(_transformation.data());
     covariancesParameter->applyGLParameter();

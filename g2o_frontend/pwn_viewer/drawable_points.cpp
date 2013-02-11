@@ -28,7 +28,8 @@ bool DrawablePoints::setParameter(GLParameter *parameter_) {
 // Drawing function of the class object.
 void DrawablePoints::draw() {
   GLParameterPoints *pointsParameter = dynamic_cast<GLParameterPoints*>(_parameter);
-  if (_points && pointsParameter && pointsParameter->pointSize() > 0.0f) {
+  
+  if (_points && pointsParameter && pointsParameter->isShown() && pointsParameter->pointSize() > 0.0f) {
     glPushMatrix();
     glMultMatrixf(_transformation.data());
     pointsParameter->applyGLParameter();

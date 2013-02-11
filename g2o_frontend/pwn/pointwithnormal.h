@@ -46,8 +46,12 @@ public:
   void toIndexImage(Eigen::MatrixXi& indexImage, Eigen::MatrixXf& zBuffer, 
 		    const Eigen::Matrix3f& cameraMatrix, const Eigen::Isometry3f& cameraPose, 
 		    float dmax = std::numeric_limits<float>::max()) const;
+
+  bool save(std::ostream & os, int step=1, bool binary=false) const;
+  bool load(std::istream& is);
   bool save(const char* filename, int step=1, bool binary=false) const;
   bool load(const char* filename);
+
 };
 
 PointWithNormalVector operator*(Eigen::Isometry3f t, const PointWithNormalVector& points);

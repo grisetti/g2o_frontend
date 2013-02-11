@@ -14,7 +14,7 @@
 #include "line_extraction2d.h"
 #include <Qt/qapplication.h>
 
-#include "g2o_frontend/thesis/LaserRobotData.h"
+#include "g2o_frontend/sensor_data/laser_robot_data.h"
 
 //changing this..
 // typedef std::pair<LaserRobotData*, LaserRobotData::Vector2fVector> LaserData;
@@ -28,11 +28,9 @@ typedef std::vector<Line2D, Eigen::aligned_allocator<Line2D> > LinesAdjacent;
 typedef std::vector<LinesAdjacent/*, Eigen::aligned_allocator<std::vector<Line2D> > */> LinesAdjacentVector;
 
 // file .g2o to be read for the line extraction, it has to be modified with the line info founded
-std::string filename;
-// std::ifstream ifG2O(filename.c_str());
+// std::string filename;
 // file .g2o with the original graph plus the new lines info
 std::string outfilename;
-// std::ofstream ofG2O_line(outfilename.c_str());
 
 
 

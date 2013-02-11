@@ -1,12 +1,13 @@
 
-ADD_EXECUTABLE(plane_g2o_application
+ADD_EXECUTABLE(
+  plane_g2o_application
   plane_g2o.cpp
 )
 SET_TARGET_PROPERTIES(plane_g2o_application PROPERTIES OUTPUT_NAME plane_g2o_application)
 INCLUDE_DIRECTORIES(plane_g2o_application ${CSPARSE_INCLUDE_DIR} )
 
 TARGET_LINK_LIBRARIES(plane_g2o_application
-    thesis_library
+    sensor_data_library
     types_data
     ${QT_LIBRARIES}
     ${G2O_TYPES_SLAM2D}

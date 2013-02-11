@@ -86,10 +86,7 @@ void PointWithNormalVector::toIndexImage(Eigen::MatrixXi& indexImage, Eigen::Mat
   }
 }
 
-bool PointWithNormalVector::save(const char* filename, int step, bool binary) const{
-  ofstream os(filename);
-  if (! os)
-    return false;
+bool PointWithNormalVector::save(ostream& os, int step, bool binary) const {
   os << "POINTWITHNORMALVECTOR " << size()/step << " " << binary << endl; 
   for (size_t i = 0; i<size(); i+=step){
     const PointWithNormal& point = at(i);
@@ -102,16 +99,11 @@ bool PointWithNormalVector::save(const char* filename, int step, bool binary) co
       os.write((const char*) &point,sizeof(PointWithNormal));
     }
   }
-  os.flush();
-  os.close();
-  return true;
+  return os.good();
 }
 
-bool PointWithNormalVector::load(const char* filename){
+bool PointWithNormalVector::load(istream & is){
   clear();
-  ifstream is(filename);
-  if (! is)
-    return false;
   char buf[1024];
   is.getline(buf, 1024);
   istringstream ls(buf);
@@ -143,6 +135,20 @@ bool PointWithNormalVector::load(const char* filename){
     k++;
   }
   return is.good();
+}
+
+bool PointWithNormalVector::save(const char* filename, int step, bool binary) const{
+  ofstream os(filename);
+  if (! os)
+    return false;
+  return save(os,step,binary);
+}
+
+bool PointWithNormalVector::load(const char* filename){
+  ifstream is(filename);
+  if (! is)
+    return false;
+  return load(is);
 }
 
 PointWithNormalVector operator*(Eigen::Isometry3f t, const PointWithNormalVector& points){

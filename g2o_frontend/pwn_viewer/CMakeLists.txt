@@ -1,3 +1,8 @@
+INCLUDE(${QT_USE_FILE})
+SET(UI_HEADERS gl_parameter.h)
+QT4_WRAP_CPP(UI_SOURCES ${UI_HEADERS})
+
+
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${QGLVIEWER_INCLUDE_DIR} ${QT_INCLUDES})
 
 ADD_LIBRARY(pwn_viewer_library 
@@ -17,6 +22,9 @@ ADD_LIBRARY(pwn_viewer_library
 
   gl_parameter_correspondences.cpp gl_parameter_correspondences.h
   drawable_correspondences.cpp drawable_correspondences.h
+
+  ${UI_HEADERS}
+  ${UI_SOURCES}
 )
 SET_TARGET_PROPERTIES(pwn_viewer_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn_viewer)
 TARGET_LINK_LIBRARIES(pwn_viewer_library

@@ -1,5 +1,6 @@
 #include "gl_parameter.h"
 
 GLParameter::GLParameter() {
-  _step=1.0f;
+  _step=1;
+  _show=true;
 }
