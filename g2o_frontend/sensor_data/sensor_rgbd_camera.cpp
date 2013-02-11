@@ -1,11 +1,11 @@
 /*
- * SensorRGBDCamera.cpp
+ * sensor_rgbd_camera.cpp
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
  */
 
-#include "SensorRGBDCamera.h"
+#include "sensor_rgbd_camera.h"
 #include "g2o/types/slam3d/parameter_camera.h"
 
 SensorRGBDCamera::SensorRGBDCamera() {

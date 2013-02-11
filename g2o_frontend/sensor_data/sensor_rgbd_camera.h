@@ -1,5 +1,5 @@
 /*
- * SensorRGBDCamera.h
+ * sensor_rgbd_camera.h
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
@@ -8,7 +8,7 @@
 #ifndef SENSORRGBDCAMERA_H_
 #define SENSORRGBDCAMERA_H_
 
-#include "Sensor.h"
+#include "sensor.h"
 
 class SensorRGBDCamera : public Sensor {
 public:

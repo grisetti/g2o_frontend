@@ -1,8 +1,8 @@
 #ifndef OMNICAMDATA_H
 #define OMNICAMDATA_H
 
-#include "SensorData.h"
-#include "SensorOmnicam.h"
+#include "sensor_data.h"
+#include "sensor_omnicam.h"
 #include "g2o/core/hyper_graph.h"
 #include "g2o/core/hyper_graph_action.h"
 #include "g2o/types/slam2d/types_slam2d.h"

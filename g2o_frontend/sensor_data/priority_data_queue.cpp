@@ -1,11 +1,11 @@
 /*
- * PriorityDataQueue.cpp
+ * Prioritydata_queue.cpp
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
  */
 
-#include "PriorityDataQueue.h"
+#include "priority_data_queue.h"
 
 PriorityDataQueue::PriorityDataQueue() {
   _lastElementTime = -1;

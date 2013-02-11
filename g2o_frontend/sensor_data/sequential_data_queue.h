@@ -1,5 +1,5 @@
 /*
- * SequentialDataQueue.h
+ * sequential_data_queue.h
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
@@ -8,7 +8,7 @@
 #ifndef SEQUENTIALDATAQUEUE_H_
 #define SEQUENTIALDATAQUEUE_H_
 
-#include "DataQueue.h"
+#include "data_queue.h"
 
 class SequentialDataQueue : public DataQueue{
 public:

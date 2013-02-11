@@ -1,11 +1,11 @@
 /*
- * RGBDData.cpp
+ * rgbd_data.cpp
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
  */
 
-#include "RGBDData.h"
+#include "rgbd_data.h"
 #include <fstream>
 #include "g2o/stuff/macros.h"
 #include "g2o/core/factory.h"

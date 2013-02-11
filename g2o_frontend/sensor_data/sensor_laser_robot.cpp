@@ -18,7 +18,7 @@
 */
 
 
-#include "SensorLaserRobot.h"
+#include "sensor_laser_robot.h"
 #include <g2o/types/slam3d/parameter_se3_offset.h>
 
 SensorLaserRobot::SensorLaserRobot() 

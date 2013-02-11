@@ -1,11 +1,11 @@
 /*
- * Mutexed.cpp
+ * mutexed.cpp
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
  */
 
-#include "Mutexed.h"
+#include "mutexed.h"
 
 Mutexed::Mutexed() {
 

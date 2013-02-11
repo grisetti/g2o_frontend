@@ -5,7 +5,7 @@
  *      Author: jacopo
  */
 
-#include "SensorData.h"
+#include "sensor_data.h"
 
 void Stamped::setTimeStamp(double ts) {
 	_timeStamp = ts;

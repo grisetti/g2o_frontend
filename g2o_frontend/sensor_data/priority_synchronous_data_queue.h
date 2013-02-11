@@ -1,5 +1,5 @@
 /*
- * PrioritySynchronousDataQueue.h
+ * PrioritySynchronousdata_queue.h
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
@@ -8,8 +8,8 @@
 #ifndef PRIORITYSYNCHRONOUSDATAQUEUE_H_
 #define PRIORITYSYNCHRONOUSDATAQUEUE_H_
 
-#include "PriorityDataQueue.h"
-#include "Mutexed.h"
+#include "priority_data_queue.h"
+#include "mutexed.h"
 
 class PrioritySynchronousDataQueue : public PriorityDataQueue, public Mutexed {
 public:

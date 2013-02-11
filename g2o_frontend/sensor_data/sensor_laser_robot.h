@@ -20,7 +20,7 @@
 
 #ifndef SENSORLASERROBOT_H
 #define SENSORLASERROBOT_H
-#include "Sensor.h"
+#include "sensor.h"
 
 class SensorLaserRobot: public Sensor
 {

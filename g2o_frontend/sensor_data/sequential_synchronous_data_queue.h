@@ -1,5 +1,5 @@
 /*
- * SequentialSynchronousDataQueue.h
+ * sequential_synchronous_data_queue.h
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
@@ -8,8 +8,8 @@
 #ifndef SEQUENTIALSYNCHRONOUSDATAQUEUE_H_
 #define SEQUENTIALSYNCHRONOUSDATAQUEUE_H_
 
-#include "SequentialDataQueue.h"
-#include "Mutexed.h"
+#include "sequential_data_queue.h"
+#include "mutexed.h"
 
 class SequentialSynchronousDataQueue : public SequentialDataQueue, public Mutexed {
 public:

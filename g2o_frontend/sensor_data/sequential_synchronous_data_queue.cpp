@@ -1,11 +1,11 @@
 /*
- * SequentialSynchronousDataQueue.cpp
+ * sequential_synchronous_data_queue.cpp
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
  */
 
-#include "SequentialSynchronousDataQueue.h"
+#include "sequential_synchronous_data_queue.h"
 
 SequentialSynchronousDataQueue::SequentialSynchronousDataQueue() {
 

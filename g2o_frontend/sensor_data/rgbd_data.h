@@ -1,5 +1,5 @@
 /*
- * RGBDData.h
+ * rgbd_data.h
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
@@ -14,8 +14,8 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "g2o/core/hyper_graph.h"
 #include "g2o/types/slam3d/types_slam3d.h"
-#include "SensorData.h"
-#include "SensorRGBDCamera.h"
+#include "sensor_data.h"
+#include "sensor_rgbd_camera.h"
 
 class RGBDData: public SensorData {
 public:  

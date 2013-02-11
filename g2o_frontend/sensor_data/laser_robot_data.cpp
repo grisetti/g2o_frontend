@@ -18,7 +18,7 @@
 */
 
 
-#include "LaserRobotData.h"
+#include "laser_robot_data.h"
 #include "g2o/stuff/macros.h"
 #include "g2o/core/factory.h"
 #include <Eigen/Dense>

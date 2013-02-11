@@ -1,4 +1,4 @@
-#include "OmnicamData.h"
+#include "omnicam_data.h"
 #include <fstream>
 #include "g2o/stuff/macros.h"
 #include "g2o/core/factory.h"

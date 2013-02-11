@@ -14,7 +14,7 @@
 #include "line_extraction2d.h"
 #include <Qt/qapplication.h>
 
-#include "g2o_frontend/sensor_data/LaserRobotData.h"
+#include "g2o_frontend/sensor_data/laser_robot_data.h"
 
 //changing this..
 // typedef std::pair<LaserRobotData*, LaserRobotData::Vector2fVector> LaserData;

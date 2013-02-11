@@ -1,11 +1,11 @@
 /*
- * PrioritySynchronousDataQueue.cpp
+ * PrioritySynchronousdata_queue.cpp
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
  */
 
-#include "PrioritySynchronousDataQueue.h"
+#include "priority_synchronous_data_queue.h"
 
 PrioritySynchronousDataQueue::PrioritySynchronousDataQueue() {
 

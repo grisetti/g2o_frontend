@@ -1,5 +1,5 @@
 /*
- * SensorHandler.h
+ * sensor_handler.h
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
@@ -8,8 +8,8 @@
 #ifndef SENSORHANDLER_H_
 #define SENSORHANDLER_H_
 
-#include "Sensor.h"
-#include "PriorityDataQueue.h"
+#include "sensor.h"
+#include "priority_data_queue.h"
 
 class SensorHandler {
 public:

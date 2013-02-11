@@ -28,8 +28,8 @@
 #include "g2o/core/hyper_graph.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "g2o/types/slam2d/types_slam2d.h"
-#include "SensorData.h"
-#include "SensorLaserRobot.h"
+#include "sensor_data.h"
+#include "sensor_laser_robot.h"
 
 /**
 * \brief laser measurement obtained by a robot

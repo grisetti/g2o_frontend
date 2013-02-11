@@ -1,11 +1,11 @@
 /*
- * SensorRGBDCamera.cpp
+ * sensor_rgbd_camera.cpp
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
  */
 
-#include "SensorOmnicam.h"
+#include "sensor_omnicam.h"
 
 SensorOmnicam::SensorOmnicam() {
 	_parameter = new g2o::ParameterCamera();

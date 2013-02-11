@@ -1,5 +1,5 @@
 /*
- * PriorityDataQueue.h
+ * Prioritydata_queue.h
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
@@ -8,8 +8,8 @@
 #ifndef PRIORITYDATAQUEUE_H_
 #define PRIORITYDATAQUEUE_H_
 
-#include "DataQueue.h"
-#include "SensorData.h"
+#include "data_queue.h"
+#include "sensor_data.h"
 
 class PriorityDataQueue : public DataQueue {
 public:

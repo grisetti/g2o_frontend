@@ -1,5 +1,5 @@
 /*
- * Mutexed.h
+ * mutexed.h
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo

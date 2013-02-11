@@ -1,5 +1,5 @@
 /*
- * DataQueue.h
+ * data_queue.h
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo

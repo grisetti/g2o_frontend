@@ -1,11 +1,11 @@
 /*
- * DataQueue.cpp
+ * data_queue.cpp
  *
  *  Created on: Nov 14, 2012
  *      Author: jacopo
  */
 
-#include "DataQueue.h"
+#include "data_queue.h"
 
 DataQueue::DataQueue() {
 
