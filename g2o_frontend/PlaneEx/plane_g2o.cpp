@@ -16,7 +16,7 @@
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "g2o/types/slam3d_addons/types_slam3d_addons.h"
 #include "g2o_frontend/data/rgbd_image_data.h"
-#include "g2o_frontend/g2o_sensor_data/RGBDData.h"
+#include "g2o_frontend/sensor_data/RGBDData.h"
 #include <Eigen/Geometry>
 #include <pcl/ModelCoefficients.h>
 #include <pcl/io/pcd_io.h>

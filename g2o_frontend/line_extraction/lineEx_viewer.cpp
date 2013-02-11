@@ -21,7 +21,7 @@
 #include "g2o/core/optimization_algorithm_levenberg.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 
-#include "g2o_frontend/g2o_sensor_data/LaserRobotData.h"
+#include "g2o_frontend/sensor_data/LaserRobotData.h"
 #include "line_extraction2d.h"
 
 
