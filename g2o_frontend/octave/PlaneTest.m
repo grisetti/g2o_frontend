@@ -5,6 +5,7 @@
 
 #  generate a transform
 gtx = [1 5 6 .5 .2 .3]';
+#gtx = [0 0 0 .0 .0 .0]';
 gtX = v2t(gtx);
 printf("the ground truth transform is:\n");
 disp(gtX);
@@ -27,9 +28,8 @@ Omega=eye(4);
 Omega(1:3,1:3)*=1000;
 Omega(4,4)*=1000;
 
-[Xs, es] = plane_solve(Li, Lj, Omega, X, 10);
-
-
+#[Xs, es] = plane_solve(Li, Lj, Omega, X, 10);
+[Xs, es] = plane_linearSolve(Li, Lj, Omega, X);
 
 
 

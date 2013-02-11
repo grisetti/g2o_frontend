@@ -36,7 +36,8 @@ function [Xnew, err]= plane_iteration(Li, Lj, Omega, X)
     H += Hij;
     err += eij' * Omega * eij;
   endfor
-  dx = -H\b;
+  dx = -H\b
   dX = v2t(dx);
+
   Xnew  = X*dX;
 endfunction
