@@ -50,13 +50,13 @@ inline Vector6f t2v(const Eigen::Isometry3f& X)
 
 inline Eigen::Matrix3f skew(const Eigen::Vector3f& v)
 {
-    const float& tx = v.x();
-    const float& ty = v.y();
-    const float& tz = v.z();
+    const float& tx = 2*v.x();
+    const float& ty = 2*v.y();
+    const float& tz = 2*v.z();
     Eigen::Matrix3f S;
-    S << 0, (2*tz), (-2*ty),
-            (-2*tz), 0, (2*tx),
-            (2*ty),  (-2*tx),0;
+    S <<  0,    tz, -ty,
+         -tz,   0,   tx,
+          ty,  -tx,  0;
     return S;
 }
 

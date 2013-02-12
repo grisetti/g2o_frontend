@@ -24,4 +24,3 @@ namespace g2o_frontend{
   }
 
 }
-#endif
