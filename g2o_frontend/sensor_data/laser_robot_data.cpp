@@ -57,38 +57,39 @@ LaserRobotData::~LaserRobotData()
 {
 }
 
-bool LaserRobotData::read(istream& is){
-  float res, remissionMode;
-	
-  is >> _paramIndex >> _firstBeamAngle >> _fov >> res >> _maxRange >> _accuracy >> remissionMode;
+bool LaserRobotData::read(istream& is)
+{
+	float res, remissionMode;
 
-  int beams;
-  is >> beams;
-  _ranges.resize(beams);
-  for (int i=0; i<beams; i++)
-    is >> _ranges[i];
+	is >> _paramIndex >> _firstBeamAngle >> _fov >> res >> _maxRange >> _accuracy >> remissionMode;
 
-  is >> beams;
-  _intensities.resize(beams);
-  for (int i = 0; i < beams; i++)
-    is >> _intensities[i];
+	int beams;
+	is >> beams;
+	_ranges.resize(beams);
+	for (int i=0; i<beams; i++)
+	is >> _ranges[i];
 
-  // special robot laser stuff
-  double x,y,theta;
-  //odom pose of the robot: no need
-  is >> x >> y >> theta;
-  //laser pose wrt to the world: no need
-  is >> x >> y >> theta;
-  is >> _laserTv >>  _laserRv >>  _forwardSafetyDist >> _sideSaftyDist >> _turnAxis;
+	is >> beams;
+	_intensities.resize(beams);
+	for (int i = 0; i < beams; i++)
+	is >> _intensities[i];
 
-  // timestamp + hostname
-  string hostname;
-  double ts;
-  is >> ts;
-  is >> hostname;
-  setTimeStamp(ts);
-  is >> ts;
-  return true;
+	// special robot laser stuff
+	double x,y,theta;
+	//odom pose of the robot: no need
+	is >> x >> y >> theta;
+	//laser pose wrt to the world: no need
+	is >> x >> y >> theta;
+	is >> _laserTv >>  _laserRv >>  _forwardSafetyDist >> _sideSaftyDist >> _turnAxis;
+
+	// timestamp + hostname
+	string hostname;
+	double ts;
+	is >> ts;
+	is >> hostname;
+	setTimeStamp(ts);
+	is >> ts;
+	return true;
 }
 
 

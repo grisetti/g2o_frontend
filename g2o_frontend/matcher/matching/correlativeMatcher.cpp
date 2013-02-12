@@ -24,7 +24,7 @@ CorrelativeMatcher::CorrelativeMatcher(const float& resolution, const float& rad
 }
 
 
-CorrelativeMatcher::CorrelativeMatcher(const _GridMap<float>& g, const int& kernelSize,
+CorrelativeMatcher::CorrelativeMatcher(const CharGrid& g, const int& kernelSize,
 				       const float& kernelMaxValue, int kscale_)
 : ScanMatcher(g, kernelSize, kernelMaxValue)
 {

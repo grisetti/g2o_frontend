@@ -7,6 +7,7 @@
 
 #include "rgbd_data.h"
 #include <fstream>
+#include <iomanip>
 #include "g2o/stuff/macros.h"
 #include "g2o/core/factory.h"
 #include <Eigen/Dense>
@@ -88,7 +89,8 @@ bool RGBDData::write(std::ostream& os) const
   else
     os << -1;
   os << " " <<  _baseFilename << " ";
-  os << _ts_sec << " " << _ts_usec;
+  string hn = "hostname";
+  os << FIXED(" " << _timeStamp << " " << hn << " " << _timeStamp);
   return true;
 }
 

@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 ADD_LIBRARY(sensor_data_library 
   data_queue.cpp
   data_queue.h
+  imu_data.cpp
+  imu_data.h
   laser_robot_data.cpp
   laser_robot_data.h
   mutexed.cpp
@@ -21,6 +23,8 @@ ADD_LIBRARY(sensor_data_library
   sensor.h
   sensor_handler.cpp
   sensor_handler.h
+  sensor_imu.cpp
+  sensor_imu.h
   sensor_laser_robot.cpp
   sensor_laser_robot.h
   sensor_omnicam.cpp

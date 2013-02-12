@@ -1,4 +1,5 @@
 #include "scanMatcher.h"
+#include <stdio.h>
 
 using namespace std;
 using namespace Eigen;
@@ -14,13 +15,12 @@ float ScanMatcherResult::matchingScore() const
 ScanMatcherResult::~ScanMatcherResult() {}
 
 
-
 ScanMatcher::ScanMatcher(const float& resolution, const float& radius, const int& kernelSize, const float& kernelMaxValue)
 {
   int size = (int) 2*(radius/resolution);
-  this->_scanGrid = FloatGrid(Vector2i(size, size), Vector2f(-radius, -radius), resolution, float(0));
-  this->_convolvedGrid = FloatGrid(Vector2i(size, size), Vector2f(-radius, -radius), resolution, float(0.5));
-  this->initializeKernel(kernelSize, resolution, kernelMaxValue);
+  this->_scanGrid = CharGrid(Vector2i(size, size), Vector2f(-radius, -radius), resolution, char(0));
+  this->_convolvedGrid = CharGrid(Vector2i(size, size), Vector2f(-radius, -radius), resolution, char(3));
+  this->initializeKernel(kernelSize, resolution, kernelMaxValue);  
   
 //   _rasterCells.reserve(size*size);
 //   _convolvedCells.reserve(size*size);
@@ -29,16 +29,11 @@ ScanMatcher::ScanMatcher(const float& resolution, const float& radius, const int
 }
 
 
-ScanMatcher::ScanMatcher(const _GridMap<float>& inputGrid, const int& kernelSize, const float& kernelMaxValue)
+ScanMatcher::ScanMatcher(const CharGrid& inputGrid, const int& kernelSize, const float& kernelMaxValue)
 {
   this->_scanGrid = inputGrid;
   int size = 2*(_scanGrid.lowerLeft().x()/_scanGrid.resolution());
 
-//   _rasterCells.reserve(size*size);
-//   _convolvedCells.reserve(size*size);
-//   _rasterIndices.reserve(size*size);
-//   _convolvedIndices.reserve(size*size);
-  
   for(int x = 0; x < inputGrid.size().x(); ++x)
   {
     for(int y = 0; y < inputGrid.size().y(); ++y)
@@ -52,9 +47,9 @@ ScanMatcher::ScanMatcher(const _GridMap<float>& inputGrid, const int& kernelSize
     }
   }
   
-  this->_convolvedGrid = FloatGrid(inputGrid.size(), inputGrid.lowerLeft(), inputGrid.resolution(), float(0.5));
-  this->initializeKernel(kernelSize, inputGrid.resolution(), kernelMaxValue);
-  this->convolveGrid(_scanGrid);
+  this->_convolvedGrid = CharGrid(inputGrid.size(), inputGrid.lowerLeft(), inputGrid.resolution(), char(3));
+  this->initializeKernel(kernelSize, inputGrid.resolution(), (char) kernelMaxValue);
+  this->convolveGrid(_scanGrid);  
 }
 
 
@@ -64,12 +59,14 @@ ScanMatcher::~ScanMatcher()
 }
 
 
+
+
 void ScanMatcher::clear()
 {
   int sizeCC = _convolvedCells.size();
   for(int i = 0; i < sizeCC; ++i)
   {
-    *(_convolvedCells[i]) = 0.5;
+    *(_convolvedCells[i]) = char(3);
   }
   _convolvedCells.clear();
   _convolvedIndices.clear();  
@@ -77,16 +74,16 @@ void ScanMatcher::clear()
   int sizeRC = _rasterCells.size();
   for(int j = 0; j < sizeRC; ++j)
   {
-    *(_rasterCells[j]) = 0;
+    *(_rasterCells[j]) = char(0);
   }
   _rasterCells.clear();
-  _rasterIndices.clear();
+  _rasterIndices.clear();  
 }
 
 
-void ScanMatcher::convolveGrid(const _GridMap<float>& g)
+void ScanMatcher::convolveGrid(const CharGrid& g)
 {
-  const float* ker = _kernel.data();
+  const unsigned char* ker = _kernel.data();
   int kRows = _kernel.rows();
   int kCols = _kernel.cols();
   Vector2i gridSize = _convolvedGrid.size();
@@ -94,8 +91,8 @@ void ScanMatcher::convolveGrid(const _GridMap<float>& g)
   int oCols = gridSize.y();
   int center = (kRows-1)/2;
   
-  vector<Vector2i> gRasterIndices = this->getRasterIndices();
-  for(vector<Vector2i>::const_iterator it = gRasterIndices.begin(); it != gRasterIndices.end(); ++it)
+  Vector2iVector gRasterIndices = this->getRasterIndices();
+  for(Vector2iVector::const_iterator it = gRasterIndices.begin(); it != gRasterIndices.end(); ++it)
   {
     Vector2i ip = *it;
     int r = ip.x();
@@ -110,9 +107,9 @@ void ScanMatcher::convolveGrid(const _GridMap<float>& g)
 	  int jOut = c+j-center;
 	  if((jOut >= 0) && (jOut < oCols))
 	  {
-	    float& v = _convolvedGrid.cell(iOut, jOut);
-	    const float& k = ker[j*kRows+i];
-	    v = (k<v) ? k : v;
+	    unsigned char& v = _convolvedGrid.cell(iOut, jOut);
+	    const unsigned char& k = ker[j*kRows+i];
+	    v = (k < v) ? k : v;
 	    Vector2i currentIndices(iOut, jOut);
 	    _convolvedIndices.push_back(currentIndices);
 	    _convolvedCells.push_back(&_convolvedGrid.cell(currentIndices));
@@ -126,7 +123,7 @@ void ScanMatcher::convolveGrid(const _GridMap<float>& g)
 
 void ScanMatcher::convolveScan(const ScanMatcher::Vector2fVector& ns, const Isometry2f& transform)
 {
-  const float* ker = _kernel.data();
+  const unsigned char* ker = _kernel.data();
   int kRows = _kernel.rows();
   int kCols = _kernel.cols();
   Vector2i gridSize = _convolvedGrid.size();
@@ -161,8 +158,8 @@ void ScanMatcher::convolveScan(const ScanMatcher::Vector2fVector& ns, const Isom
 	  int jOut = c+j-center;
 	  if((jOut >= 0) && (jOut < oCols))
 	  {
-	    float& v = _convolvedGrid.cell(iOut, jOut);
-	    const float& k = ker[j*kRows+i];
+	    unsigned char& v = _convolvedGrid.cell(iOut, jOut);
+	    const unsigned char& k = ker[j*kRows+i];
 	    v = (k<v) ? k : v;
 	    Vector2i currentIndices(iOut, jOut);
 	    _convolvedIndices.push_back(currentIndices);
@@ -178,15 +175,15 @@ void ScanMatcher::convolveScan(const ScanMatcher::Vector2fVector& ns, const Isom
 void ScanMatcher::initializeKernel(const int size, const float res, const float dmax)
 {
   int center = size;
-  int dim = 2*size+1;
+  int dim = (2*size)+1;
   _kernel.resize(dim,dim);
-  _kernel.fill(dmax);
+  _kernel.fill((unsigned char) dmax);
 
-  for(int j = 0; j <= size; j++)
+  for(int j = 0; j <= size; ++j)
   {
-    for(int i = 0; i <= size; i++)
+    for(int i = 0; i <= size; ++i)
     {
-      float distance = res*sqrt(j*j+i*i);
+      unsigned char distance = 128*res*(sqrt(j*j+i*i));
       if(distance > dmax)
       {
 	continue;
@@ -218,7 +215,7 @@ void ScanMatcher::integrateScan(const Vector2fVector& ns, const float& val, cons
     Vector2i ip = _scanGrid.world2grid(transformedPoint);
     if(ip.x() >= 0 && ip.x() < _scanGrid.size().x() && ip.y() >= 0 && ip.y() < _scanGrid.size().y())
     {
-      _scanGrid.cell(ip) = val;
+      _scanGrid.cell(ip) = (char) val;
       _rasterIndices.push_back(ip);
       _rasterCells.push_back(&_scanGrid.cell(ip));
     }

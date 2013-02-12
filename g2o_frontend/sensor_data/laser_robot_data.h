@@ -39,7 +39,7 @@
 */
 class LaserRobotData: public SensorData {
 public:
-	
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	typedef std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d> > Point2DVector;
 	typedef std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > Vector2fVector;
 	
