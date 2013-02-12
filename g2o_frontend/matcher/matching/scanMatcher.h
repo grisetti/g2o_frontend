@@ -5,7 +5,6 @@
 #include "g2o_frontend/matcher/structures/gridmap.h"
 
 
-
 struct PointAccumulator
 {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -21,7 +20,9 @@ struct PointAccumulator
   Eigen::Vector2f mean() const
   { 
     if(_count)
+    {
       return _acc * (1. / (float) _count);
+    }
     return _acc;
   }
 
@@ -48,8 +49,10 @@ struct Vector2iComparator
 {
   bool operator () (const Eigen::Vector2i& v1, const Eigen::Vector2i& v2)
   {
-    if (v1.x() < v2.x() || (v1.x() == v2.x() && v1.y() < v2.y()))
+    if((v1.x() < v2.x()) || (((v1.x() == v2.x()) && (v1.y() < v2.y()))))
+    {
       return true;
+    }
     return false;
   }
 };
@@ -59,7 +62,7 @@ typedef std::map<Eigen::Vector2i, PointAccumulator, Vector2iComparator> Vector2i
 class ScanMatcherResult : public MatcherResult
 {
   public:
-    friend class ScanMatcher;
+    friend class CharMatcher;
     virtual float matchingScore() const;
     virtual ~ScanMatcherResult();
 };
@@ -72,14 +75,12 @@ class ScanMatcher : public Matcher
   
     typedef std::vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i> > Vector2iVector;
     typedef std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > Vector2fVector;
-    typedef Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> MatrixXChar;    
-    typedef _GridMap<float> FloatGrid;
-    typedef _GridMap<char> CharGrid;
-
+    typedef Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> MatrixXChar;
+    typedef _GridMap<unsigned char> CharGrid;
     
     ScanMatcher(const float& resolution, const float& radius, const int& kernelSize, const float& kernelMaxValue);
-    ScanMatcher(const _GridMap<float>& g, const int& kernelSize, const float& kernelMaxValue);
-    
+    ScanMatcher(const CharGrid& fg, const int& kernelSize, const float& kernelMaxValue);
+
     virtual ~ScanMatcher();
     virtual void scanMatch(const Vector2fVector& s, const Eigen::Vector3f& ig);
     
@@ -90,30 +91,35 @@ class ScanMatcher : public Matcher
     void saveConvolvedScanAsPPM(std::ostream& os, bool eq) const;
     void saveScanAsPPM(std::ostream& os, bool eq) const;
     void subsample(Vector2fVector& dest, const Vector2fVector& src);
-    
-    
-    inline std::vector<Eigen::Vector2i>& getConvolvedIndices() {return _convolvedIndices;}
-    inline const std::vector<Eigen::Vector2i>& getConvolvedIndices() const {return _convolvedIndices;}    
-    
-    inline std::vector<Eigen::Vector2i>& getRasterIndices() {return _rasterIndices;}
-    inline const std::vector<Eigen::Vector2i>& getRasterIndices() const {return _rasterIndices;}
-    
-    inline FloatGrid& getScanGrid() {return _scanGrid;}
-    inline const FloatGrid& getScanGrid() const {return _scanGrid;}
-    
-  protected:
-    void convolveGrid(const _GridMap<float>& g);
-    void initializeKernel(const int size, const float res, const float dmax);
 
-    FloatGrid _scanGrid;
-    FloatGrid _convolvedGrid;
+
+    inline Vector2iVector& getConvolvedIndices() {return _convolvedIndices;}
+    inline const Vector2iVector& getConvolvedIndices() const {return _convolvedIndices;}    
     
-    std::vector<float*> _rasterCells;
-    std::vector<float*> _convolvedCells;
-    std::vector<Eigen::Vector2i> _rasterIndices;
-    std::vector<Eigen::Vector2i> _convolvedIndices;
+    inline Vector2iVector& getRasterIndices() {return _rasterIndices;}
+    inline const Vector2iVector& getRasterIndices() const {return _rasterIndices;}
     
+    inline CharGrid& getScanGrid() {return _scanGrid;}
+    inline const CharGrid& getScanGrid() const {return _scanGrid;}
     
-    Eigen::MatrixXf _kernel;
+    inline CharGrid& getConvolvedGrid() {return _convolvedGrid;}
+    inline const CharGrid& getConvolvedGrid() const {return _convolvedGrid;}
+
+
+  protected:
+    void convolveGrid(const CharGrid& g);
+    void initializeKernel(const int size, const float res, const float dmax);
+    void initializeCharKernel(const int size, const float res, const int dmax);
+
+    CharGrid _scanGrid;
+    CharGrid _convolvedGrid;
+
+    std::vector<unsigned char*> _rasterCells;
+    std::vector<unsigned char*> _convolvedCells;
+
+    Vector2iVector _rasterIndices;
+    Vector2iVector _convolvedIndices;
+
+    MatrixXChar _kernel;
 };
 #endif

@@ -17,7 +17,7 @@ int main()
   float radius = 50;
   GradientMatcher gm(resolution, radius, kernelRange/resolution, kernelRange);
     
-  const string logFile = "../logFile/dis.clf";
+  const string logFile = "/home/erratic/src/matcher/logFile/dis.clf";
   LogReader lr(logFile, hV);
 
   vector<Vector2fVector> logScan = lr.getScans();
@@ -46,15 +46,15 @@ int main()
     MatrixXf mat = delta.rotation();
     float angle = atan2(mat(1, 0), mat(0, 0));
     Vector3f initGuess(delta.translation().x(), delta.translation().y(), angle);
-    
+        
     gm.convolveScan(previousScan);
+    
     double start = gm.getMilliSecs();
     gm.scanMatch(currentScan, initGuess);
     double end = gm.getMilliSecs();
     gm.clear();    
     pOdom = cOdom;
     previousScan = currentScan;
-    
     cout << (end - start) * 1000 << " ms " << endl;
   }
   double totalEnd = gm.getMilliSecs();

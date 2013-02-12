@@ -23,10 +23,20 @@ struct _GridMap
   */
   inline Eigen::Vector2i world2grid(const Eigen::Vector2f& wp) const
   {
-//     return Eigen::Vector2i(lrint((wp.x())*_inverseResolution)-_lowerLeft.x(), lrint((wp.y())*_inverseResolution)-_lowerLeft.y());
     return Eigen::Vector2i(lrint((wp.x()-_lowerLeft.x())*_inverseResolution), lrint((wp.y()-_lowerLeft.y())*_inverseResolution));
   }
 
+  
+  /**Mapping function between world coordinates and map cells.
+  @param x: x coordinate
+  @param y: y coordinate
+  @returns the indices of the cell corresponding to wp in the grid
+  */
+  inline Eigen::Vector2i world2grid(const float x, const float y) const
+  {
+    return Eigen::Vector2i(lrint((x -_lowerLeft.x())*_inverseResolution), lrint((y -_lowerLeft.y())*_inverseResolution));
+  }
+  
 
   /**Mapping function between map cells and world coordinates.
   @param gp: grid cell
@@ -34,7 +44,6 @@ struct _GridMap
   */
   Eigen::Vector2f grid2world(const Eigen::Vector2i& gp) const
   {
-//     return Eigen::Vector2f((_resolution*((float)gp.x()+_lowerLeft.x())), (_resolution*(float)gp.y() +_lowerLeft.y()));
     return Eigen::Vector2f((float) _lowerLeft.x()+(_resolution*(float)gp.x()), (float) _lowerLeft.y()+(_resolution*(float)gp.y()));
   }
 

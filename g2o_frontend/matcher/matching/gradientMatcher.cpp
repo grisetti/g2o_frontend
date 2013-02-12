@@ -27,7 +27,7 @@ GradientMatcher::GradientMatcher(const float& resolution, const float& radius, c
 }
 
 
-GradientMatcher::GradientMatcher(const _GridMap<float>& g, const int& kernelSize,
+GradientMatcher::GradientMatcher(const CharGrid& g, const int& kernelSize,
 				 const float& kernelMaxValue, const Vector3f& baseMove)
 : ScanMatcher(g, kernelSize, kernelMaxValue)
 {
@@ -46,12 +46,12 @@ GradientMatcher::~GradientMatcher()
 }
 
 
-float GradientMatcher::partialScore(const Vector2fVector& scan, const Vector3f& t)
+int GradientMatcher::partialScore(const Vector2fVector& scan, const Vector3f& t)
 {
   float s = sin(t.z());
   float c = cos(t.z());
   Vector2i previousPoint(-10000, -10000);
-  float innerScore = 0;
+  int innerScore = 0;
   for(unsigned int beamNo = 0; beamNo < scan.size(); ++beamNo)
   {
     const Vector2f& endPoint = scan[beamNo];
@@ -69,7 +69,7 @@ float GradientMatcher::partialScore(const Vector2fVector& scan, const Vector3f& 
     }
     previousPoint = intPoint;
   }
-  return innerScore;
+  return innerScore;  
 }
 
 
@@ -122,6 +122,6 @@ void GradientMatcher::scanMatch(const Vector2fVector& scan, const Vector3f& init
   gmr->_transformation = bestMoveAtResolution;
   gmr->_matchingScore = bestScoreAtResolution;
   _matchResults.push_back(gmr);
-
+  
   _scanGrid.setCenter(tempCenter);
 }
