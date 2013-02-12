@@ -1,5 +1,5 @@
 # converts a transformation vector into an isometry
-# x: the transformation vector [tx ty teta]
+# x: the transformation vector [tx ty theta]
 # X: the 3x3 transformation matrix
 
 function X = v2t_2d(x)
