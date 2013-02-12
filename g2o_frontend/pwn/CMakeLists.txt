@@ -19,6 +19,7 @@ ADD_LIBRARY(pwn_library
   pointwithnormalaligner.cpp pointwithnormalaligner.h
   pointwithnormalmerger.cpp pointwithnormalmerger.h
   scene.cpp scene.h
+  scene_merger.cpp scene_merger.h
 )
 
 
