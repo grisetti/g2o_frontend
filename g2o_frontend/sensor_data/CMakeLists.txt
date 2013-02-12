@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
+include_directories(${CSPARSE_INCLUDE_DIR})
 
 ADD_LIBRARY(sensor_data_library 
   data_queue.cpp
@@ -67,3 +68,20 @@ IF(CMAKE_BUILD_TYPE MATCHES Debug)
   )
 ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
 
+ADD_EXECUTABLE(sequential_read sequential_read.cpp)
+SET_TARGET_PROPERTIES(sequential_read PROPERTIES OUTPUT_NAME sequential_read)
+TARGET_LINK_LIBRARIES(sequential_read 
+  sensor_data_library  
+  ${G2O_TYPES_DATA}
+  ${G2O_TYPES_SLAM2D}
+  ${G2O_TYPES_SLAM3D}
+  ${G2O_STUFF_LIBRARY}
+  ${G2O_CORE_LIBRARY}
+  ${G2O_SOLVER_CSPARSE_DEBUG}
+  ${G2O_SOLVER_CSPARSE_EXTENSION_DEBUG}
+  ${CSPARSE_LIBRARY}
+  ${PCL_LIBRARIES}
+  ${OpenCV_LIBS}
+  ${OPENGL_gl_LIBRARY}
+  pthread
+  )
