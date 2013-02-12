@@ -11,13 +11,13 @@ using namespace Eigen;
 int main()
 {
   float resolution = 0.03;
-  float kernelRange = 0.5;
-  int hV = 10;
+  float kernelMaxValue = 0.5;
+  int hV = 30;
   
   float radius = 50;
-  CorrelativeMatcher cm(resolution, radius, kernelRange/resolution, kernelRange, 128);
+  CorrelativeMatcher cm(resolution, radius, 15, kernelMaxValue, 128);
   
-  const string logFile = "../logFile/dis.clf";
+  const string logFile = "/home/erratic/src/matcher/logFile/dis.clf";
   LogReader lr(logFile, hV);
 
   vector<Vector2fVector> logScan = lr.getScans();
@@ -85,7 +85,8 @@ int main()
   
 //   float mapRadius = 50; //lower dimension for fakeSimulated.clf
   float mapRadius = 100; //higher dimension for dis.clf
-  CorrelativeMatcher cm1(resolution, mapRadius, kernelRange/resolution, kernelRange, 128);
+//   CorrelativeMatcher cm1(resolution, mapRadius, kernelMaxValue/resolution, kernelMaxValue, 128);
+  CorrelativeMatcher cm1(resolution, mapRadius, 15, kernelMaxValue, 128);
   cm1.integrateScan(scan, 1., adjust);
   for(size_t it = 1; it < logScan.size(); ++it)
   {

@@ -16,7 +16,7 @@ int main()
   
   float radius = 50;
   HierarchicalMatcher hm(resolution, radius, kernelRange/resolution, kernelRange, 128);
-  const string logFile = "../logFile/dis.clf";
+  const string logFile = "/home/erratic/src/matcher/logFile/dis.clf";
   LogReader lr(logFile, hV);
 
   vector<Vector2fVector> logScan = lr.getScans();

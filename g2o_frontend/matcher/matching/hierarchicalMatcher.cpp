@@ -23,7 +23,7 @@ HierarchicalMatcher::HierarchicalMatcher(const float& resolution, const float& r
 }
 
 
-HierarchicalMatcher::HierarchicalMatcher(const _GridMap< float >& g, const int& kernelSize, const float& kernelMaxValue, int kscale_)
+HierarchicalMatcher::HierarchicalMatcher(const CharGrid& g, const int& kernelSize, const float& kernelMaxValue, int kscale_)
 : CorrelativeMatcher(kernelMaxValue, kernelMaxValue, kernelSize, kernelMaxValue, kscale_)
 {
 

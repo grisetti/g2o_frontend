@@ -21,8 +21,8 @@ class HierarchicalMatcher : public CorrelativeMatcher
 			const float& kernelMaxValue, int kscale_= 128);
 
 
-    HierarchicalMatcher(const _GridMap<float>& g, const int& kernelSize,
-			const float& kernelMaxValue, int kscale_ = 128);    
+    HierarchicalMatcher(const CharGrid& g, const int& kernelSize,
+			const float& kernelMaxValue, int kscale_ = 128);
 
 
     void scanMatch(std::vector<CorrelativeMatcherResult*>& mresvec, const Vector2fVector& points,

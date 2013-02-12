@@ -1,7 +1,7 @@
 #ifndef __CORRELATIVE_MATCHER_H__
 #define __CORRELATIVE_MATCHER_H__
 
-#include "scanMatcher.h" 
+#include "scanMatcher.h"
 
 
 struct Region
@@ -10,7 +10,6 @@ struct Region
   Eigen::Vector3f lowerLeft;
   Eigen::Vector3f upperRight;
 };
-
 typedef std::vector<Region, Eigen::aligned_allocator<Region> > RegionVector;
 
 
@@ -62,7 +61,7 @@ class CorrelativeMatcher : public ScanMatcher
     CorrelativeMatcher(const float& resolution, const float& radius, const int& kernelSize,
 		       const float& kernelMaxValue, int kscale_= 128);
     
-    CorrelativeMatcher(const _GridMap<float>& g, const int& kernelSize,
+    CorrelativeMatcher(const CharGrid& g, const int& kernelSize,
 		       const float& kernelMaxValue, int kscale_ = 128);
     
     
