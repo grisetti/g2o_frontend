@@ -3,10 +3,9 @@
 
 #include "bm_defs.h"
 
-inline Eigen::Matrix2f angle2mat_2d(const Element1f& angle)
+inline Eigen::Matrix2f angle2mat_2d(float theta)
 {
   Eigen::Matrix2f R;
-	float theta = angle[0];
   R << cos(theta), -sin(theta) ,
     sin(theta), cos(theta);
 
@@ -29,7 +28,7 @@ inline Eigen::Matrix2f angle2mat_2d(const Element1f& angle)
 inline Eigen::Isometry2f v2t_2d(const Eigen::Vector3f& x)
 {
     Eigen::Isometry2f X;
-    X.linear() = angle2mat_2d(x.tail<1>());
+    X.linear() = angle2mat_2d(x[2]);
     X.translation() = x.head<2>();
 
     return X;
@@ -75,10 +74,9 @@ inline Eigen::Matrix3f vector2homogeneous_2d(const Vector6f x){
 
 /**************  double counterparts **************/
 
-inline Eigen::Matrix2d angle2mat_2d(const Element1d& angle)
+inline Eigen::Matrix2d angle2mat_2d(double theta)
 {
   Eigen::Matrix2d R;
-	double theta = angle[0];
   R << cos(theta), -sin(theta) ,
     sin(theta), cos(theta);
 
@@ -100,7 +98,7 @@ inline Eigen::Matrix2d angle2mat_2d(const Element1d& angle)
 inline Eigen::Isometry2d v2t_2d(const Eigen::Vector3d& x)
 {
     Eigen::Isometry2d X;
-    X.linear() = angle2mat_2d(Element1d(x.tail<1>()));
+    X.linear() = angle2mat_2d(x[2]);
     X.translation() = x.head<2>();
 
     return X;
