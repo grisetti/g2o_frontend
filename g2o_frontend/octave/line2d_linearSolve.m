@@ -20,15 +20,16 @@ function [Xnew, err]= line2d_linearSolve(Li, Lj, Omega, X)
     #A(3,1:2)=x(5)*nj';
     #A(3,3:4)=x(6)*nj';
     #A(3,5:6))=(X(1:2,1:2)*nj)';
-    ek=A*x(1:4)-li(1:2);
-    H+=A'*Omega(1:2,1:2)*A;
-    b+=A'*Omega(1:2,1:2)*ek;
+    ek = A*x(1:4)-li(1:2);
+    H += A'*Omega(1:2,1:2)*A;
+    b += A'*Omega(1:2,1:2)*ek;
     err += ek'*Omega(1:2,1:2)*ek;
   endfor
   x=H\-b;
   
   printf("partial (R) before rotation: %f\n", err);  
-
+	
+	# saving the rotational part of the X
   Xtemp = X;
   Xtemp(1,1:2)+=x(1:2)';
   Xtemp(2,1:2)+=x(3:4)';
@@ -55,10 +56,10 @@ function [Xnew, err]= line2d_linearSolve(Li, Lj, Omega, X)
     di = li(3);
     nj = lj(1:2);
     dj = lj(3);
-    A=nj'*R';
-    ek=dj+A*t;
-    H+=A'*Omega(3,3)*A;
-    b+= (A'*Omega(3,3)*ek);
+    A = nj'*R';
+    ek = dj+A*t;
+    H += A'*Omega(3,3)*A;
+    b += A'*Omega(3,3)*ek;
     err += ek*Omega(3,3)*ek;
   endfor
   dt=H\-b;

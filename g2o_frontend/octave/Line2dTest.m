@@ -4,7 +4,7 @@
 
 
 #  generate a transform
-gtx = [1 5 .2]';
+gtx = [2 5 .3]';
 gtX = v2t_2d(gtx);
 printf("the ground truth transform is:\n");
 disp(gtX);

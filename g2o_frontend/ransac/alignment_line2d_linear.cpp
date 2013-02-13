@@ -67,12 +67,14 @@ namespace g2o_frontend{
       b+=A.transpose()*Omega.block<2,2>(0,0)*ek;
 			err+= ek.transpose()*Omega.block<2,2>(0,0)*ek;
     }
-//     LDLT<Matrix7d> ldlt(H);
-//     if (ldlt.isNegative())
-//       return false;
-//     x=ldlt.solve(b); // using a LDLT factorizationldlt;
-//     
-//     Matrix3d _X = transform.matrix()+vector2homogeneous_2d(x);
+    LDLT<Matrix4d> ldlt(H);
+    if (ldlt.isNegative())
+      return false;
+    x=ldlt.solve(b); // using a LDLT factorizationldlt;
+		
+		//saving the rotational part of the X
+//     _x.head<4>() = x.head<4>();
+//     Matrix3d _X = transform.matrix()+vector2homogeneous_2d(_x);
 //     
 //     // recondition the rotation 
 //     JacobiSVD<Matrix2d> svd(_X.block<2,2>(0,0), Eigen::ComputeThinU | Eigen::ComputeThinV);
