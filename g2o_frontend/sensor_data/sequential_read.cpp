@@ -49,7 +49,7 @@ LaserRobotData* lrd = new LaserRobotData;
 ParameterCamera* pc = new ParameterCamera;
 ParameterSE3Offset* po = new ParameterSE3Offset;
 RGBDData* rgbd=new RGBDData;
-IMUData* imu = new IMUData;
+ImuData* imu = new ImuData;
 
 int main(int argc, char**argv){
   hasToStop = false;
