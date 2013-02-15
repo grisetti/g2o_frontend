@@ -80,6 +80,8 @@ namespace g2o_frontend{
 		_X.block<2,2>(0,0) += vector2homogeneous_2d(_x).block<2,2>(0,0);;
 		Vector2d t = _X.block<2,1>(0,2);
 		
+cout << "t after rotation: " << t.transpose() << endl;
+		
 //     // recondition the rotation 
     JacobiSVD<Matrix2d> svd(_X.block<2,2>(0,0), Eigen::ComputeThinU | Eigen::ComputeThinV);
     if (svd.singularValues()(0)<.5)
@@ -88,6 +90,7 @@ namespace g2o_frontend{
     Isometry2d Xnew = Isometry2d::Identity();
     Xnew.linear() = R;
     Xnew.translation() = t;
+cout << "R after reconditioning the rotation:\n" << R << endl;
 
     Matrix2d H2 = Matrix2d::Zero();
     Vector2d b2 = Vector2d::Zero();
@@ -106,9 +109,9 @@ namespace g2o_frontend{
 			Vector3d li(cos(l1[0]), sin(l1[0]), l1[1]);
 			Vector3d lj(cos(l2[0]), sin(l2[0]), l2[1]);
 			
-			A2 = Xnew.linear() * li.head<2>();
-			double ek3 = lj[3];
-			ek3+= A2.transpose()*t;
+			A2 = Xnew.linear() * lj.head<2>();
+			double ek3 = li[3];
+			ek3-= lj[3] + A2.transpose()*t;
 			H2 += A2*Omega(3,3)*A2.transpose();
 			b2 += A2*Omega(3,3)*ek3;
 			err += ek3*Omega(3,3)*ek3;
@@ -139,10 +142,10 @@ namespace g2o_frontend{
 			
 			Vector3d tlj = line2d_remapCartesian(Xnew, lj);
 			Vector3d ek = tlj - li;
-			ek(3) = 0.;
+			//ek(3) = 0.;
 			err += ek.transpose() * Omega * ek;
 		}
-		cout << "after (T) after rotation: " << err << endl;
+		cout << "after all: " << err << endl;
     return true;
   }
 

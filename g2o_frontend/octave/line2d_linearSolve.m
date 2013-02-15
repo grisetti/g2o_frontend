@@ -57,7 +57,7 @@ function [Xnew, err]= line2d_linearSolve(Li, Lj, Omega, X)
     nj = lj(1:2);
     dj = lj(3);
     A = nj'*R';
-    ek = dj+A*t;
+    ek = dj+A*t - di;
     H += A'*Omega(3,3)*A;
     b += A'*Omega(3,3)*ek;
     err += ek*Omega(3,3)*ek;
@@ -69,13 +69,12 @@ function [Xnew, err]= line2d_linearSolve(Li, Lj, Omega, X)
   Xnew(1:2,3)=t;
   printf("partial (T) after rotation: %f\n", err);  
 
-
   err=0;
   for k = 1:size(Li)(2)
     li = Li(:,k);
     lj = line2d_remapCartesian(Xnew, Lj(:,k)); 
     ek=lj-li;
-    ek(3)=0;
+    #ek(3)=0;
     err += ek' * Omega * ek;  
   endfor
   printf("after all: %f\n", err);  

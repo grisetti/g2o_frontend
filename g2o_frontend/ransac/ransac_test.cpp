@@ -3,6 +3,8 @@
 #include "alignment_se2.h"
 #include "alignment_se3.h"
 #include "alignment_line3d_linear.h"
+#include "alignment_line2d_linear.h"
+#include "g2o_frontend/basemath/bm_se2.h"
 #include "g2o/types/slam3d/isometry3d_mappings.h"
 #include <iostream>
 #include <fstream>
@@ -68,7 +70,12 @@ struct Line3DMapping: public EuclideanMapping<Line3D,6>{
   }
 };
 
-
+struct Line2DMapping:public EuclideanMapping<Vector2d, 2>{
+	typedef typename EuclideanMapping<Vector2d, 2>::TypeDomain TypeDomain;
+	typedef typename EuclideanMapping<Vector2d, 2>::VectorType VectorType;
+	virtual TypeDomain fromVector(const VectorType& v) const {return v;}
+	virtual VectorType toVector(const TypeDomain& t) const {return t;}
+};
 
 template <typename MappingType, typename RansacType, typename EdgeCorrespondenceType>
 bool testRansac(typename RansacType::TransformType& result, 
@@ -361,6 +368,50 @@ int main(int , char** ){
       cerr << "unable to find a transform" << endl;
     }
   }
+  
+  { // Line2d
+		cerr << "*************** TEST Line2D  *************** " <<endl;
+    std::vector<double> scales;
+    std::vector<double> offsets;
+    std::vector<double> noises;
+    std::vector<double> omegas;
+    // translational part;
+    for (int i=0; i<1; i++){
+      scales.push_back(100);
+      offsets.push_back(50);
+      noises.push_back(0.1);
+      omegas.push_back(.001);
+    }
+    // rotational part
+    for (int i=0; i<2; i++){
+      scales.push_back(2);
+      offsets.push_back(-1);
+      noises.push_back(0.1);
+      omegas.push_back(.001);
+    }
+    
+    Vector3d _t;
+    _t << 1, 5, .3;
+    Isometry2d t0=v2t_2d(_t);
+cout << "ground truth: " << t2v_2d(t0) << endl;
+    Isometry2d tresult;
+    CorrespondenceValidatorPtrVector validators;
+    bool result = testRansac<Line2DMapping, RansacLine2DLinear, EdgeLine2D>(tresult, 100, t0, 
+									    scales, offsets, noises, omegas, 
+									    validators,
+									    0.2);
+    if (result){
+      cerr << "ground truth: " <<endl;
+      cerr << t2v_2d(t0)  << endl;
+      cerr << "transform found: " <<endl;
+      cerr << t2v_2d(tresult) << endl;
+      cerr << "transform error: " << endl;
+      cerr << t2v_2d(t0*tresult) << endl;
+    } else {
+      cerr << "unable to find a transform" << endl;
+    }
+
+	}
 
 
 }
