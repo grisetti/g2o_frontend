@@ -1,6 +1,6 @@
-%computes the solution for one iteration of least squares to align a set of lines2d onto another
-%Li: the 3xN matrix of reference planes in cartesian coords
-%Lj: the 3xN matrix of current planes in cartesian coords
+# computes the solution for one iteration of least squares to align a set of lines2d onto another
+# Li: the 3xN matrix of reference lines in cartesian coords
+# Lj: the 3xN matrix of current lines in cartesian coords
 # Omega: the information matrix of the lines, assumend to be the same for all
 # X: the isometry of the transformation
 #

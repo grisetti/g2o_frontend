@@ -4,7 +4,7 @@
 
 
 #  generate a transform
-gtx = [1 5 .2]';
+gtx = [2 5 .3]';
 gtX = v2t_2d(gtx);
 printf("the ground truth transform is:\n");
 disp(gtX);
@@ -27,7 +27,8 @@ Omega=eye(3);
 Omega(1:2,1:2)*=1000;
 Omega(3,3)*=1000;
 
-[Xs, es] = line2d_solve(Li, Lj, Omega, X, 10);
+#  [Xs, es] = line2d_solve(Li, Lj, Omega, X, 10);
+[Xs, es] = line2d_linearSolve(Li, Lj, Omega, X);
 
 
 

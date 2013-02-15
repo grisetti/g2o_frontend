@@ -118,7 +118,7 @@ protected:
 };
 
 
-inline 	Eigen::Vector3d toVector3D(const Eigen::Isometry3d& iso) {
+/*inline 	Eigen::Vector3d toVector3D(const Eigen::Isometry3d& iso) {
 	
   Eigen::Vector3d rv;
   rv[0] = iso.translation().x();
@@ -139,6 +139,6 @@ inline 	Eigen::Vector3d toVector3D_fromIso2(const Eigen::Isometry2d& iso) {
 //   Eigen::AngleAxisd aa(iso.linear()); //???
   rv[2] = angle;	
   return rv;
-}
+  }*/
 
 #endif

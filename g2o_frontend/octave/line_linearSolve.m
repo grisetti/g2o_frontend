@@ -43,6 +43,7 @@ function [Xnew, err]= line_linearSolve(Li, Lj, Omega, X)
   H=zeros(3,3);
   b=zeros(3,1);
   #recompute the translation 
+#err = 0;
   for k = 1:size(Li)(2)
     li = Li(:,k);
     lj = Lj(:,k);
@@ -53,6 +54,7 @@ function [Xnew, err]= line_linearSolve(Li, Lj, Omega, X)
     ek=wi-R*wj-A*t;
     H+=A'*Omega(1:3,1:3)*A;
     b+=A'*Omega(1:3,1:3)*ek;
+#err+=ek'*Omega(1:3,1:3)*ek;
   endfor
   dt=H\b;
   t+=dt;
