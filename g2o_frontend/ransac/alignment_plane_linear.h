@@ -7,16 +7,16 @@ namespace g2o_frontend{
 
   typedef AlignmentAlgorithm<Eigen::Isometry3d,Slam3dAddons::VertexPlane>   AlignmentAlgorithmSE3Plane3D;
 
-  class AlignmentAlgorithmPlane3DLinear: public AlignmentAlgorithmSE3Plane3D {
+  class AlignmentAlgorithmPlaneLinear: public AlignmentAlgorithmSE3Plane3D {
   public:
-    AlignmentAlgorithmPlane3DLinear();
+    AlignmentAlgorithmPlaneLinear();
     virtual bool operator()(TransformType& transform, const CorrespondenceVector& correspondences, const IndexVector& indices); 
 
   };
   
-  class RansacPlane3DLinear: public GeneralizedRansac<AlignmentAlgorithmPlane3DLinear>{
+  class RansacPlaneLinear: public GeneralizedRansac<AlignmentAlgorithmPlaneLinear>{
   public:
-    RansacPlane3DLinear();
+    RansacPlaneLinear();
   };
 
 
