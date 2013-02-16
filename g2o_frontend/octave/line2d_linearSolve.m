@@ -68,6 +68,8 @@ function [Xnew, err]= line2d_linearSolve(Li, Lj, Omega, X)
   Xnew(1:2,1:2)=R;
   Xnew(1:2,3)=t;
   printf("partial (T) after rotation: %f\n", err);  
+disp("the transform found is:\n");
+disp(Xnew);
 
   err=0;
   for k = 1:size(Li)(2)
