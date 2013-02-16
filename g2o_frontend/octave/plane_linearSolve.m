@@ -59,13 +59,18 @@ function [Xnew, err]= plane_linearSolve(Pi, Pj, Omega, X)
     di = pi(4);
     nj = pj(1:3);
     dj = pj(4);
+	nj
+	R
     A=-nj'*R';
-    ek=dj+A*t;
-    H+=A'*Omega(4,4)*A;
+    dj
+    A
+    t
+    ek=dj+A*t-di;
+    H+=A'*Omega(4,4)*A
     b+= (A'*Omega(4,4)*ek);
     err += ek*Omega(4,4)*ek;
   endfor
-  dt=H\-b;
+  dt=H\-b
   t+=dt;
   Xnew=eye(4);
   Xnew(1:3,1:3)=R;
@@ -78,7 +83,7 @@ function [Xnew, err]= plane_linearSolve(Pi, Pj, Omega, X)
     pi = Pi(:,k);
     pj = plane_remapCartesian(Xnew, Pj(:,k)); 
     ek=pj-pi;
-    ek(4)=0;
+    #ek(4)=0;
     err += ek' * Omega * ek;  
   endfor
   printf("after all: %f\n", err);  
