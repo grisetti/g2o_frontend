@@ -2,6 +2,7 @@
 #define _BM_SE2_H_
 
 #include "bm_defs.h"
+#include <iostream>
 
 inline Eigen::Matrix2f angle2mat_2f(float theta)
 {
@@ -77,7 +78,7 @@ inline Eigen::Matrix2d angle2mat_2d(double theta)
 
 inline double mat2angle_2d(const Eigen::Matrix2d& R)
 {
-  return atan2(R(2,1),R(1,1));
+  return (double)atan2(R(1,0),R(0,0));
 }
 
 inline Eigen::Isometry2d v2t_2d(const Eigen::Vector3d& x)
@@ -94,7 +95,6 @@ inline Eigen::Vector3d t2v_2d(const Eigen::Isometry2d& X)
     Eigen::Vector3d v;
     v.head<2>() = X.translation();
     v[2] = mat2angle_2d(X.linear());
-
     return v;
 }
 

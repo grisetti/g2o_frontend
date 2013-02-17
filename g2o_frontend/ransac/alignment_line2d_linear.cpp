@@ -60,8 +60,8 @@ namespace g2o_frontend{
       A.block<1,2>(0,0)=lj.head<2>().transpose();
       A.block<1,2>(1,2)=lj.head<2>().transpose();
 
-      Vector2d ek = li.head<2>();
-      ek -= A*x;
+      Vector2d ek = -li.head<2>();
+      ek += A*x;
 
       H+=A.transpose()*Omega.block<2,2>(0,0)*A;
       b+=A.transpose()*Omega.block<2,2>(0,0)*ek;
@@ -77,10 +77,11 @@ namespace g2o_frontend{
 		//saving the rotational part of the X
     _x.head<4>() = x.head<4>();
     Matrix3d _X = transform.matrix();
-		_X.block<2,2>(0,0) += vector2homogeneous_2d(_x).block<2,2>(0,0);;
+		_X.block<2,2>(0,0) += vector2homogeneous_2d(_x).block<2,2>(0,0);
 		Vector2d t = _X.block<2,1>(0,2);
 		
-cout << "t after rotation: " << t.transpose() << endl;
+cout << "AAAAAAAAAAAAAAAAAA X old: \n" << transform.matrix() << endl;
+cout << "AAAAAAAAAAAAAAAAAA X updated: \n" << _X << endl;
 		
 //     // recondition the rotation 
     JacobiSVD<Matrix2d> svd(_X.block<2,2>(0,0), Eigen::ComputeThinU | Eigen::ComputeThinV);
@@ -110,21 +111,22 @@ cout << "R after reconditioning the rotation:\n" << R << endl;
 			Vector3d lj(cos(l2[0]), sin(l2[0]), l2[1]);
 			
 			A2 = Xnew.linear() * lj.head<2>();
-			double ek3 = li[3];
-			ek3-= lj[3] + A2.transpose()*t;
-			H2 += A2*Omega(3,3)*A2.transpose();
-			b2 += A2*Omega(3,3)*ek3;
-			err += ek3*Omega(3,3)*ek3;
+			double ek3 = -li[3];
+			ek3+= lj[3] + A2.transpose()*t;
+			H2 += A2*Omega(2,2)*A2.transpose();
+			b2 += A2*Omega(2,2)*ek3;
+			err += ek3*Omega(2,2)*ek3;
     }
     Vector2d dt;
     dt = H2.ldlt().solve(b2);
     t+=dt;
 		Xnew.translation() = t;
+cout << "t after recompute the translation: " << t.transpose() << endl;
 		cout << "partial (T) after rotation: " << err << endl;
 		
     transform = Xnew;
     cerr << "transform: " << endl;
-    cerr << homogeneous2vector_2d(transform.matrix()).transpose() << endl;
+    cerr << transform.matrix()/*homogeneous2vector_2d(transform.matrix()).transpose()*/ << endl;
 		
 		//computing the total error with the transform found
 		err = 0;
@@ -145,7 +147,7 @@ cout << "R after reconditioning the rotation:\n" << R << endl;
 			//ek(3) = 0.;
 			err += ek.transpose() * Omega * ek;
 		}
-		cout << "after all: " << err << endl;
+// 		cout << "after all: " << err << endl;
     return true;
   }
 

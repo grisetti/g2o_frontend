@@ -124,11 +124,11 @@ bool testRansac(typename RansacType::TransformType& result,
     graph.addVertex(v1);
 
     PointVertexType* v2 = new PointVertexType();
-    if (drand48()>outlierFraction) {
+    /*if (drand48()>outlierFraction) {
       PointEstimateType v2est=transform * v1->estimate();
       VectorType v2noise=mapping.toVector(v2est)+noisePoint;
       v2->setEstimate(mapping.fromVector(v2noise));
-    } else {
+    } else */{
       PointEstimateType v2est=mapping.fromVector(randPoint2);
       v2->setEstimate(v2est);
     }
@@ -164,14 +164,15 @@ bool testRansac(typename RansacType::TransformType& result,
   RansacType ransac;
   ransac.correspondenceValidators()=validators;
   ransac.setCorrespondences(correspondences);
-  ransac.setMaxIterations(1000);
+  ransac.setMaxIterations(100);
   ransac.setInlierErrorThreshold(1.);
   ransac.setInlierStopFraction(0.5);
   return ransac(result, debug);
 }
 
 int main(int , char** ){
-  { // ICP 2D
+#if 0
+		{// ICP 2D
     cerr << "*************** TEST ICP 2D: *************** " <<endl;
 
     std::vector<double> scales;
@@ -207,6 +208,8 @@ int main(int , char** ){
       cerr << "unable to find a transform" << endl;
     }
   }
+#endif
+#if 0
   {  // ICP 3D
     cerr << "*************** TEST ICP 3D: *************** " <<endl;
     std::vector<double> scales;
@@ -244,8 +247,8 @@ int main(int , char** ){
       cerr << "unable to find a transform" << endl;
     }
   }
-
-  
+#endif
+#if 0 
   { // SE2
     cerr << "*************** TEST SE2  *************** " <<endl;
     std::vector<double> scales;
@@ -283,7 +286,8 @@ int main(int , char** ){
       cerr << "unable to find a transform" << endl;
     }
   }
-  
+#endif
+#if 0
   { // SE3
     cerr << "*************** TEST SE3  *************** " <<endl;
     std::vector<double> scales;
@@ -325,7 +329,8 @@ int main(int , char** ){
       cerr << "unable to find a transform" << endl;
     }
   }
-
+#endif
+#if 0
   { // Line3D
     cerr << "*************** TEST Line3D  *************** " <<endl;
     std::vector<double> scales;
@@ -368,6 +373,7 @@ int main(int , char** ){
       cerr << "unable to find a transform" << endl;
     }
   }
+#endif
   
   { // Line2d
 		cerr << "*************** TEST Line2D  *************** " <<endl;
@@ -375,34 +381,33 @@ int main(int , char** ){
     std::vector<double> offsets;
     std::vector<double> noises;
     std::vector<double> omegas;
+    // rotational part
+    for (int i=0; i<1; i++){
+      scales.push_back(2);
+      offsets.push_back(-1);
+      noises.push_back(0.);
+      omegas.push_back(1);
+    }
     // translational part;
     for (int i=0; i<1; i++){
       scales.push_back(100);
       offsets.push_back(50);
-      noises.push_back(0.1);
-      omegas.push_back(.001);
-    }
-    // rotational part
-    for (int i=0; i<2; i++){
-      scales.push_back(2);
-      offsets.push_back(-1);
-      noises.push_back(0.1);
-      omegas.push_back(.001);
+      noises.push_back(0.);
+      omegas.push_back(1);
     }
     
     Vector3d _t;
-    _t << 1, 5, .3;
+    _t << 2, 5, .3;
     Isometry2d t0=v2t_2d(_t);
-cout << "ground truth: " << t2v_2d(t0) << endl;
     Isometry2d tresult;
     CorrespondenceValidatorPtrVector validators;
-    bool result = testRansac<Line2DMapping, RansacLine2DLinear, EdgeLine2D>(tresult, 100, t0, 
+    bool result = testRansac<Line2DMapping, RansacLine2DLinear, EdgeLine2D>(tresult, 5, t0, 
 									    scales, offsets, noises, omegas, 
 									    validators,
-									    0.2);
+									    0., true);
     if (result){
       cerr << "ground truth: " <<endl;
-      cerr << t2v_2d(t0)  << endl;
+      cerr << t2v_2d(t0) << endl;
       cerr << "transform found: " <<endl;
       cerr << t2v_2d(tresult) << endl;
       cerr << "transform error: " << endl;
@@ -412,6 +417,8 @@ cout << "ground truth: " << t2v_2d(t0) << endl;
     }
 
 	}
-
-
 }
+
+// int main(int , char**){
+// 	
+// }
