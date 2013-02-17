@@ -19,32 +19,46 @@
 
 class RGBDData: public SensorData {
 public:  
-  RGBDData();
-  RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_);
-  RGBDData(Sensor* sensor_, cv::Mat* intensityImage_, cv::Mat* depthImage_);
+  RGBDData(Sensor* sensor_ = 0 , cv::Mat* intensityImage_ = 0, cv::Mat* depthImage_ = 0);
   virtual ~RGBDData();
   //! read the data from a stream
   virtual bool read(std::istream& is);
   //! write the data to a stream
   virtual bool write(std::ostream& os) const;
-  virtual void writeOut(const std::string& g2oGraphFilename);
-  void update();
-  void release();
-  inline int paramIndex() {return _paramIndex;}
-  const std::string& baseFilename() const { return _baseFilename; };
-  void  setBaseFilename(const std::string baseFilename_) { _baseFilename = baseFilename_; };
+  //! write the images (if changed)
+  virtual void writeOut() const;
   virtual Sensor* getSensor() const { return _rgbdCameraSensor; }  
   virtual void setSensor(Sensor* rgbdCameraSensor_);
-  cv::Mat* _intensityImage;
-  cv::Mat* _depthImage;
-    
+
+  void update();
+  void release();
+  inline int paramIndex() const { return _rgbdCameraSensor? _rgbdCameraSensor->getParameter()->id():_paramIndex; }
+  inline const std::string& baseFilename() const { return _baseFilename; };
+  inline void  setBaseFilename(const std::string baseFilename_) { _baseFilename = baseFilename_; };
+  inline const cv::Mat* intensityImage() const {return _intensityImage;}
+  inline const cv::Mat* depthImage() const {return _depthImage;}
+  void setIntensityImage(cv::Mat* intensityImage_) {
+    if (_intensityImage) 
+      delete _intensityImage;
+    _intensityImage = intensityImage_;
+    _intensityImageModified =  true;
+  }
+
+  void setDepthImage(cv::Mat* depthImage_) {
+    if (_depthImage) 
+      delete _depthImage;
+    _depthImage = depthImage_;
+    _depthImageModified =  true;
+  }
 protected:
   std::string _baseFilename;
   SensorRGBDCamera* _rgbdCameraSensor;
-  long int _ts_usec;
-  long int _ts_sec;
+  cv::Mat* _intensityImage;
+  cv::Mat* _depthImage;
 private:
   int _paramIndex;
+  mutable bool _intensityImageModified;
+  mutable bool _depthImageModified;
 };
 
 #ifdef G2O_HAVE_OPENGL

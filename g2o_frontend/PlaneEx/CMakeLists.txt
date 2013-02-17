@@ -8,7 +8,6 @@ INCLUDE_DIRECTORIES(plane_g2o_application ${CSPARSE_INCLUDE_DIR} )
 
 TARGET_LINK_LIBRARIES(plane_g2o_application
     sensor_data_library
-    types_data
     ${QT_LIBRARIES}
     ${G2O_TYPES_SLAM2D}
     ${G2O_TYPES_SLAM2D_ADDONS}

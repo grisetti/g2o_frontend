@@ -27,39 +27,17 @@
 using namespace g2o;
 using namespace std;
 
-RGBDData::RGBDData()
-{
-  _paramIndex = -1;
-  _baseFilename = "none";
-  _rgbdCameraSensor = 0;
-  _ts_sec = 0;
-  _ts_usec = 0;
-  _intensityImage = 0;
-  _depthImage = 0;
-  _dataContainer = 0;
-}
-
-RGBDData::RGBDData(cv::Mat* intensityImage_, cv::Mat* depthImage_) {
-  _paramIndex = -1;
-  _baseFilename = "none";
-  _rgbdCameraSensor = 0;
-  _ts_sec = 0;
-  _ts_usec = 0;
-  _intensityImage = intensityImage_;
-  _depthImage = depthImage_;
-  _dataContainer = 0;
-}
 
 RGBDData::RGBDData(Sensor* sensor_, cv::Mat* intensityImage_, cv::Mat* depthImage_)
 {
   _paramIndex = -1;
-  _baseFilename = "none";
-  _rgbdCameraSensor = (SensorRGBDCamera*)sensor_;
-  _ts_sec = 0;
-  _ts_usec = 0;
+  _baseFilename = "";
+  _rgbdCameraSensor = (SensorRGBDCamera*)sensor_; 
   _intensityImage = intensityImage_;
   _depthImage = depthImage_;
   _dataContainer = 0;
+  _intensityImageModified = _intensityImage;
+  _depthImageModified = _depthImage;
 }
 
 RGBDData::~RGBDData(){
@@ -73,7 +51,9 @@ RGBDData::~RGBDData(){
 bool RGBDData::read(std::istream& is) 
 {
   is >> _paramIndex >> _baseFilename;
-  is >> _ts_sec >> _ts_usec;
+  double ts;
+  is >> ts;
+  setTimeStamp(ts);
   _intensityImage = 0;
   _depthImage = 0;
   update();
@@ -83,29 +63,29 @@ bool RGBDData::read(std::istream& is)
 //! write the data to a stream
 bool RGBDData::write(std::ostream& os) const 
 {
-  
-  if (_rgbdCameraSensor)
-    os << _rgbdCameraSensor->getParameter()->id();
-  else
-    os << -1;
+  os << paramIndex() << " ";
   os << " " <<  _baseFilename << " ";
   string hn = "hostname";
   os << FIXED(" " << _timeStamp << " " << hn << " " << _timeStamp);
+  writeOut();
   return true;
 }
 
-void RGBDData::writeOut(const std::string& g2oGraphFilename)
+void RGBDData::writeOut() const
 {
-  int num = _rgbdCameraSensor->getNum();
-  _rgbdCameraSensor->setNum(num+1);
-  _baseFilename = g2oGraphFilename.substr(0, g2oGraphFilename.length()-4);
-  char buf[50];
-  sprintf(buf, "%s_rgbd_%d_%05d_intensity.pgm", &_baseFilename[0], _rgbdCameraSensor->getParameter()->id(), num);
-  cv::imwrite(buf, *_intensityImage);
-  sprintf(buf, "%s_rgbd_%d_%05d_depth.pgm", &_baseFilename[0], _rgbdCameraSensor->getParameter()->id(), num);
-  cv::imwrite(buf, *_depthImage);
-  _baseFilename = string(buf);
-  _baseFilename = _baseFilename.substr(0, _baseFilename.length()-10);
+  if (_intensityImageModified && _intensityImage) {
+    string intensityName=_baseFilename+ "_intensity.pgm";
+    cv::imwrite(intensityName.c_str(), *_intensityImage);
+    _intensityImageModified = false;
+    cerr << "I" << endl;
+  }
+
+  if (_depthImageModified && _depthImage) {
+    string depthName=_baseFilename+ "_depth.pgm";
+    cv::imwrite(depthName.c_str(), *_depthImage);
+    _depthImageModified = false;
+    cerr << "D" << endl;
+  }
 }
 
 void RGBDData::update()
@@ -113,9 +93,13 @@ void RGBDData::update()
   if (!_intensityImage) 
   {
     _intensityImage = new cv::Mat();
-    _depthImage = new cv::Mat();
     *_intensityImage = cv::imread((_baseFilename + "_intensity.pgm") .c_str(), -1);
+    _intensityImageModified = false;
+  }
+  if (!_depthImage) {
+    _depthImage = new cv::Mat();
     *_depthImage = cv::imread((_baseFilename + "_depth.pgm") .c_str(), -1);
+    _depthImageModified = false;
   }
 }
 
@@ -180,8 +164,8 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
     glPointSize(1);
   
   RGBDData* that = static_cast<RGBDData*>(element);
-  unsigned short* dptr = reinterpret_cast<unsigned short*>(that->_depthImage->data);
-  unsigned char* dptrIntensity = reinterpret_cast<unsigned char*>(that->_intensityImage->data);
+  const unsigned short* dptr = reinterpret_cast<unsigned short*>(that->depthImage()->data);
+  const unsigned char* dptrIntensity = reinterpret_cast<unsigned char*>(that->intensityImage()->data);
 	
   glBegin(GL_POINTS);
   
@@ -206,8 +190,8 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
   float constant_x = unit_scaling / fx;
   float constant_y = unit_scaling / fy;
   
-  for(int i = 0; i < that->_depthImage->rows; i++)  {
-    for(int j = 0; j < that->_depthImage->cols; j+=step) {
+  for(int i = 0; i < that->depthImage()->rows; i++)  {
+    for(int j = 0; j < that->depthImage()->cols; j+=step) {
     	unsigned short d = *dptr;
 	unsigned int color = (unsigned int)*dptrIntensity;
     	if(d != 0) {

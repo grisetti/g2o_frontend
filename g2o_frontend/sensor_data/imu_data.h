@@ -51,7 +51,7 @@ public:
 	virtual void setSensor(Sensor* imuSensor_);
 	virtual Sensor* getSensor() const { return _imuSensor; }
 
-	inline int paramIndex() { return _paramIndex; }
+        inline int paramIndex() const { return _imuSensor? _imuSensor->getParameter()->id():_paramIndex; }
 
 	inline Eigen::Quaternionf getOrientation() { return _orientation; };
 	inline const Eigen::Quaternionf getOrientation() const { return _orientation; };

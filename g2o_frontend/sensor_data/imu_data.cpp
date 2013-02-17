@@ -52,6 +52,7 @@ ImuData::ImuData()
 	_linearAccelerationCovariance.setZero();
 	_magnetic.setZero();
 	_imuSensor = 0;
+	_paramIndex = -1;
 }
 
 
@@ -166,7 +167,7 @@ bool ImuData::write(ostream& os) const
 		
 //	os << _paramIndex << " " << 4; // Quaternion size is always equal to 4
 
-	os << _imuSensor->getParameter()->id();
+	os << paramIndex();
 	os << " " << _orientation.x() << " " << _orientation.y() << " " << _orientation.z() << " " << _orientation.w();
 	
 	os << " " << _orientationCovariance.size();
