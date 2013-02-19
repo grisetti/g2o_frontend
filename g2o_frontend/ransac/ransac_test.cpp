@@ -124,11 +124,11 @@ bool testRansac(typename RansacType::TransformType& result,
     graph.addVertex(v1);
 
     PointVertexType* v2 = new PointVertexType();
-    /*if (drand48()>outlierFraction) {
+    if (drand48()>outlierFraction) {
       PointEstimateType v2est=transform * v1->estimate();
       VectorType v2noise=mapping.toVector(v2est)+noisePoint;
       v2->setEstimate(mapping.fromVector(v2noise));
-    } else */{
+    } else {
       PointEstimateType v2est=mapping.fromVector(randPoint2);
       v2->setEstimate(v2est);
     }
@@ -164,7 +164,7 @@ bool testRansac(typename RansacType::TransformType& result,
   RansacType ransac;
   ransac.correspondenceValidators()=validators;
   ransac.setCorrespondences(correspondences);
-  ransac.setMaxIterations(100);
+  ransac.setMaxIterations(1000);
   ransac.setInlierErrorThreshold(1.);
   ransac.setInlierStopFraction(0.5);
   return ransac(result, debug);
@@ -374,8 +374,8 @@ int main(int , char** ){
     }
   }
 #endif
-  
-  { // Line2d
+	
+	  { // Line2d
 		cerr << "*************** TEST Line2D  *************** " <<endl;
     std::vector<double> scales;
     std::vector<double> offsets;
@@ -385,40 +385,47 @@ int main(int , char** ){
     for (int i=0; i<1; i++){
       scales.push_back(2);
       offsets.push_back(-1);
-      noises.push_back(0.);
-      omegas.push_back(1);
+      noises.push_back(0.1);
+      omegas.push_back(1000);
     }
     // translational part;
     for (int i=0; i<1; i++){
       scales.push_back(100);
       offsets.push_back(50);
-      noises.push_back(0.);
-      omegas.push_back(1);
+      noises.push_back(0.1);
+      omegas.push_back(1000);
     }
     
-    Vector3d _t;
-    _t << 2, 5, .3;
-    Isometry2d t0=v2t_2d(_t);
-    Isometry2d tresult;
+    Vector3d _t(2, 5, .3);
+    Isometry2d _t0=v2t_2d(_t);
+			cerr << "ground truth vector: " <<endl;
+			cerr << t2v_2d(_t0) << endl;
+			cerr << "ground truth: " <<endl;
+			cerr << _t0.matrix() << endl;
+		SE2 tresult;
+		SE2 t0(_t0);
     CorrespondenceValidatorPtrVector validators;
-    bool result = testRansac<Line2DMapping, RansacLine2DLinear, EdgeLine2D>(tresult, 5, t0, 
+    bool result = testRansac<Line2DMapping, RansacLine2DLinear, EdgeLine2D>(tresult, 100, t0, 
 									    scales, offsets, noises, omegas, 
 									    validators,
-									    0., true);
-    if (result){
-      cerr << "ground truth: " <<endl;
-      cerr << t2v_2d(t0) << endl;
-      cerr << "transform found: " <<endl;
-      cerr << t2v_2d(tresult) << endl;
-      cerr << "transform error: " << endl;
-      cerr << t2v_2d(t0*tresult) << endl;
-    } else {
-      cerr << "unable to find a transform" << endl;
-    }
-
+									    0.2, true);
+   if (result){
+// 			cerr << "ground truth vector: " <<endl;
+// 			cerr << t2v_2d(_t0) << endl;
+// 			cerr << "ground truth: " <<endl;
+// 			cerr << _t0.matrix() << endl;
+			cerr << "***********FOUND!***********" << endl;
+			Isometry2d res = tresult.toIsometry();
+			cerr << "transform found vector: " <<endl;
+			cerr << t2v_2d(res) << endl;
+			cerr << "transform found: " <<endl;
+			cerr << res.matrix() << endl;
+			cerr << "transform error vector: " << endl;
+			cerr << t2v_2d(_t0*res) << endl;
+			cerr << "transform error: " << endl;
+			cerr << (_t0*res).matrix() << endl;
+   } else {
+     cerr << "unable to find a transform" << endl;
+   }
 	}
 }
-
-// int main(int , char**){
-// 	
-// }
