@@ -44,7 +44,7 @@ using namespace Eigen;
 
 ImuData::ImuData()
 {
-	_orientation = Quaternionf(1., .0, .0, .0); // Quaternion constructor is Quaternion(w, x, y, z)
+	_orientation = Quaterniond(1., .0, .0, .0); // Quaternion constructor is Quaternion(w, x, y, z)
 	_orientationCovariance.setZero();
 	_angularVelocity.setZero();
 	_angularVelocityCovariance.setZero();
@@ -64,55 +64,55 @@ ImuData::~ImuData()
 bool ImuData::read(istream& is)
 {
 	is >> _paramIndex;
-
-	int orientationSize;
 	
-	// For the first time is equal to 4, that is the size of a Quaternion
-	is >> orientationSize;
-
 	// Direct copy of the Quaternion
 	is >> _orientation.x() >> _orientation.y() >> _orientation.z() >> _orientation.w();
 
+	int orientationSize;
 	is >> orientationSize;
-	_orientationCovariance.resize(orientationSize);
+	Vector9d tmp;
+	tmp.resize(orientationSize);
 	for(int i = 0; i < orientationSize; ++i)
 	{
-		is >> _orientationCovariance[i];
+	  is >> tmp[i];
 	}
+	setOrientationCovariance(tmp);
 	
 	is >> orientationSize;
 	_angularVelocity.resize(orientationSize);
 	for(int i = 0; i < orientationSize; ++i)
 	{
-		is >> _angularVelocity[i];
+	  is >> _angularVelocity[i];
 	}
 	
 	is >> orientationSize;
-	_angularVelocityCovariance.resize(orientationSize);
+	tmp.resize(orientationSize);
 	for(int i = 0; i < orientationSize; ++i)
 	{
-		is >> _angularVelocityCovariance[i];
+	  is >> tmp[i];
 	}
+	setAngularVelocityCovariance(tmp);
 	
 	is >> orientationSize;
 	_linearAcceleration.resize(orientationSize);
 	for(int i = 0; i < orientationSize; ++i)
 	{
-		is >> _linearAcceleration[i];
+	  is >> _linearAcceleration[i];
 	}
 
 	is >> orientationSize;
-	_linearAccelerationCovariance.resize(orientationSize);
+	tmp.resize(orientationSize);
 	for(int i = 0; i < orientationSize; ++i)
 	{
-		is >> _linearAccelerationCovariance[i];
+	  is >> tmp[i];
 	}
-
+	setLinearAccelerationCovariance(tmp);
+	
 	is >> orientationSize;
 	_magnetic.resize(orientationSize);
 	for(int i = 0; i < orientationSize; ++i)
 	{
-		is >> _magnetic[i];
+	  is >> _magnetic[i];
 	}
 			
 	// imu stuff
@@ -150,60 +150,53 @@ bool ImuData::write(ostream& os) const
 		cerr << "no graph" << endl;
 		return false;
 	}
-		
-//	const Parameter* p = g->parameters().getParameter(_paramIndex);
-//	if(!p) 
-//	{
-//		cerr << "no param, damn" << endl;
-//		return false;
-//	}
-
-//	const ParameterSE3Offset* oparam = dynamic_cast<const g2o::ParameterSE3Offset*> (p);
-//	if(!oparam)
-//	{
-//		cerr << "no good param" << endl;
-//		return false;
-//	}
-		
-//	os << _paramIndex << " " << 4; // Quaternion size is always equal to 4
 
 	os << paramIndex();
 	os << " " << _orientation.x() << " " << _orientation.y() << " " << _orientation.z() << " " << _orientation.w();
 	
 	os << " " << _orientationCovariance.size();
-	for(int i = 0; i < _orientationCovariance.size(); ++i)
+	for(int i = 0; i < _orientationCovariance.rows(); ++i)
 	{
-		os << " " << _orientationCovariance[i];
+	  for(int j = 0; j < _orientationCovariance.cols(); ++j)
+	  {
+	    os << " " << _orientationCovariance(i, j);
+	  }
 	}
 	
 	os << " " << _angularVelocity.size();
 	for(int i = 0; i < _angularVelocity.size(); ++i)
 	{
-		os << " " << _angularVelocity[i];
+	  os << " " << _angularVelocity[i];
 	}
 	
 	os << " " << _angularVelocityCovariance.size();
-	for(int i = 0; i < _angularVelocityCovariance.size(); ++i)
+	for(int i = 0; i < _angularVelocityCovariance.rows(); ++i)
 	{
-		os << " " << _angularVelocityCovariance[i];
+	  for(int j = 0; j < _angularVelocityCovariance.cols(); ++j)
+	  {
+	    os << " " << _angularVelocityCovariance(i, j);
+	  }
 	}
 	
 	os << " " << _linearAcceleration.size();
 	for(int i = 0; i < _linearAcceleration.size(); ++i)
 	{
-		os << " " << _linearAcceleration[i];
+	  os << " " << _linearAcceleration[i];
 	}
 	
 	os << " " << _linearAccelerationCovariance.size();
-	for(int i = 0; i < _linearAccelerationCovariance.size(); ++i)
+	for(int i = 0; i < _linearAccelerationCovariance.rows(); ++i)
 	{
-		os << " " << _linearAccelerationCovariance[i];
+	  for(int j = 0; j < _linearAccelerationCovariance.cols(); ++j)
+	  {
+	    os << " " << _linearAccelerationCovariance(i, j); 
+	  }
 	}
 	
 	os << " " << _magnetic.size();
 	for(int i = 0; i < _magnetic.size(); ++i)
 	{
-		os << " " << _magnetic[i];
+	  os << " " << _magnetic[i];
 	}
 
 //	const VertexSE3* v3 = dynamic_cast<const VertexSE3*>(container);
