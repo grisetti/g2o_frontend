@@ -17,6 +17,7 @@ public:
   virtual bool setParameter(g2o::Parameter* parameter_);
   virtual int paramIndex();
   virtual void setNum(int num_);
+  virtual int getNum() const {return _num;}
   std::string getIntensityTopic() { return _intensityTopic; };
   std::string getDepthTopic() { return _depthTopic; };
   void setTopics(std::string intensityTopic_, std::string depthTopic_);
