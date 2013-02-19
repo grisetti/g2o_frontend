@@ -56,7 +56,7 @@ bool RGBDData::read(std::istream& is)
   setTimeStamp(ts);
   _intensityImage = 0;
   _depthImage = 0;
-  update();
+  //update(); disable the automatic update
   return true;
 }
 
@@ -154,6 +154,10 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
   if (_show && !_show->value())
     return this;
 
+  RGBDData* that = static_cast<RGBDData*>(element);
+  if (! that->intensityImage() || ! that->depthImage())
+    return this;
+
   glPushMatrix();
   int step = 1;
   if(_beamsDownsampling )
@@ -163,7 +167,6 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
   else 
     glPointSize(1);
   
-  RGBDData* that = static_cast<RGBDData*>(element);
   const unsigned short* dptr = reinterpret_cast<unsigned short*>(that->depthImage()->data);
   const unsigned char* dptrIntensity = reinterpret_cast<unsigned char*>(that->intensityImage()->data);
 	

@@ -1,0 +1,14 @@
+ADD_EXECUTABLE(pwn_g2o_incremental
+  pwn_g2o_incremental.cpp  
+)
+
+TARGET_LINK_LIBRARIES(pwn_library
+    ${G2O_TYPES_DATA}
+    ${G2O_TYPES_SLAM2D}
+    ${G2O_TYPES_SLAM3D}
+    ${G2O_STUFF_LIBRARY}
+    ${G2O_CORE_LIBRARY}
+    ${PCL_LIBRARIES}
+    ${OpenCV_LIBS}
+    ${OPENGL_gl_LIBRARY}
+    pthread)
