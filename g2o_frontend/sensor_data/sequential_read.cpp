@@ -30,10 +30,12 @@ using namespace g2o;
 volatile bool hasToStop;
 void sigquit_handler(int sig)
 {
-  if (sig == SIGINT) {
+  if(sig == SIGINT)
+  {
     hasToStop = 1;
     static int cnt = 0;
-    if (cnt++ == 2) {
+    if(cnt++ == 2)
+    {
       cerr << __PRETTY_FUNCTION__ << " forcing exit" << endl;
       exit(1);
     }
@@ -43,55 +45,132 @@ void sigquit_handler(int sig)
 // these are to force the linking in case
 // ld wants to be picky.
 
-VertexSE3* v=new VertexSE3;
+VertexSE3* v = new VertexSE3;
 EdgeSE3* e = new EdgeSE3;
 LaserRobotData* lrd = new LaserRobotData;
 ParameterCamera* pc = new ParameterCamera;
 ParameterSE3Offset* po = new ParameterSE3Offset;
-RGBDData* rgbd=new RGBDData;
+RGBDData* rgbd = new RGBDData;
 ImuData* imu = new ImuData;
 
-int main(int argc, char**argv){
-  hasToStop = false;
-  string filename;
-  CommandArgs arg;
-  arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
-  
-  arg.parseArgs(argc, argv);
-  
-  // graph construction
-  typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
-  typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
-  SlamLinearSolver* linearSolver = new SlamLinearSolver();
-  linearSolver->setBlockOrdering(false);
-  SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
-  OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
-  SparseOptimizer * graph = new SparseOptimizer();
-  graph->setAlgorithm(solverGauss);
-  graph->load(filename.c_str());
-  
-  // sort the vertices based on the id
-  std::vector<int> vertexIds(graph->vertices().size());
-  int k=0;
-  for (OptimizableGraph::VertexIDMap::iterator it=graph->vertices().begin(); it!= graph->vertices().end(); it ++){
-    vertexIds[k++] = (it->first);
-  }
 
-  std::sort(vertexIds.begin(), vertexIds.end());
+int main(int argc, char**argv)
+{
+    hasToStop = false;
+    string filename;
+    string outputFilename;
+    CommandArgs arg;
+    arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
+    arg.paramLeftOver("graph-output", outputFilename , "", "output graph file", true);
+    arg.parseArgs(argc, argv);
+
+    // graph construction
+    typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
+    typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
+    SlamLinearSolver* linearSolver = new SlamLinearSolver();
+    linearSolver->setBlockOrdering(false);
+    SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
+    OptimizationAlgorithmGaussNewton* solverGauss = new OptimizationAlgorithmGaussNewton(blockSolver);
+    SparseOptimizer* graph = new SparseOptimizer();
+    graph->setAlgorithm(solverGauss);
+    graph->load(filename.c_str());
   
-  Factory* factory = Factory::instance();
-  for (size_t i=0; i<vertexIds.size() && ! hasToStop; i++){
-    OptimizableGraph::Vertex* v=graph->vertex(vertexIds[i]);
-    cerr << "vertex: " << v->id() << " type:" << factory->tag(v) << endl;
-    OptimizableGraph::Data* d = v->userData();
-    k = 0;
-    while(d){
-      if (d) {
-	cerr << "\t payload: " << factory->tag(d) << endl;
-	// write here something for doing something with the data you just pulled
-	k++;
-      }
-      d=d->next();
+    // sort the vertices based on the id
+    vector<int> vertexIds(graph->vertices().size());
+    int k=0;
+    for (OptimizableGraph::VertexIDMap::iterator it = graph->vertices().begin(); it != graph->vertices().end(); ++it)
+    {
+	vertexIds[k++] = (it->first);
     }
-  }
+
+    sort(vertexIds.begin(), vertexIds.end());
+
+    Factory* factory = Factory::instance();
+    bool firstVertex = true;
+    for(size_t i = 0; i < vertexIds.size() && ! hasToStop; ++i)
+    {
+	OptimizableGraph::Vertex* v = graph->vertex(vertexIds[i]);
+	cerr << "vertex: " << v->id() << " type:" << factory->tag(v) << endl;
+	OptimizableGraph::Data* d = v->userData();
+	k = 0;
+	while(d)
+	{
+	    if(d)
+	    {
+	    cerr << "\t payload: " << factory->tag(d) << endl;
+	    const ImuData *imuData = dynamic_cast<const ImuData*>(d);
+	    const LaserRobotData* laserRobotData = dynamic_cast<const LaserRobotData*>(d);
+	    const RGBDData* rgbdData = dynamic_cast<const RGBDData*>(d);
+	    VertexSE3* vse3 = dynamic_cast<VertexSE3*>(v);
+	    
+	    if(imuData && vse3)
+	    {
+		EdgeSE3Prior* prior = new EdgeSE3Prior;
+		prior->setVertex(0, v);
+		prior->setParameterId(0, imuData->paramIndex());
+		Eigen::Isometry3d meas;
+		meas.setIdentity();
+		Eigen::Quaterniond q = imuData->getOrientation();
+
+		if(q.w() < 0)
+		{
+		    q.x() = -q.x();
+		    q.y() = -q.y();
+		    q.z() = -q.z();
+		    q.w() = -q.w();
+		}
+
+		meas.linear() = q.toRotationMatrix();
+		meas.translation() = vse3->estimate().translation();
+		prior->setMeasurement(meas);
+		Eigen::Matrix<double, 6, 6> info;
+		info.setZero();
+		
+		if(firstVertex)
+		{
+		    info.setIdentity();
+		    firstVertex = false;
+		}
+		else 
+		{
+		    info.block<3,3>(3,3) = Eigen::Matrix3d::Identity() * 1000.0;
+		}
+		
+		prior->setInformation(info);
+		bool res = graph->addEdge(prior);
+		
+		if(res)
+		{
+		    cerr << "Imu edge added to vertex: " << v->id() << ", parameter: " << imuData->paramIndex() << endl;
+		}
+		else
+		{
+		    cerr << "Could not add imu edge to vertex: " << v->id() << endl;
+		}
+	    }
+
+	    if(laserRobotData && vse3)
+	    {
+		
+	    }
+	    
+	    if(rgbdData && vse3)
+	    {
+
+	    }
+	    
+	    k++;
+	    }
+	    d = d->next();
+	}
+    }
+    if(outputFilename != "")
+    {
+	graph->save(outputFilename.c_str());
+	cout << "Graph saved" << endl;
+    }
+    else
+    {
+	cout << "Output filename not provided" << endl;
+    }
 }

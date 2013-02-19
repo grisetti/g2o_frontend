@@ -44,7 +44,7 @@ using namespace Eigen;
 
 ImuData::ImuData()
 {
-  _orientation = Quaternionf(1., .0, .0, .0); // Quaternion constructor is Quaternion(w, x, y, z)
+  _orientation = Quaterniond(1., .0, .0, .0); // Quaternion constructor is Quaternion(w, x, y, z)
   _orientationCovariance.setZero();
   _angularVelocity.setZero();
   _angularVelocityCovariance.setZero();
@@ -65,20 +65,18 @@ bool ImuData::read(istream& is)
   is >> pi;
   setParamIndex(pi);
 
-  int orientationSize;
-	
-  // For the first time is equal to 4, that is the size of a Quaternion
-  is >> orientationSize;
-
   // Direct copy of the Quaternion
   is >> _orientation.x() >> _orientation.y() >> _orientation.z() >> _orientation.w();
 
+  int orientationSize;
   is >> orientationSize;
-  _orientationCovariance.resize(orientationSize);
+  Vector9d tmp;
+  tmp.resize(orientationSize);
   for(int i = 0; i < orientationSize; ++i)
     {
-      is >> _orientationCovariance[i];
+      is >> tmp[i];
     }
+  setOrientationCovariance(tmp);
 	
   is >> orientationSize;
   _angularVelocity.resize(orientationSize);
@@ -88,11 +86,12 @@ bool ImuData::read(istream& is)
     }
 	
   is >> orientationSize;
-  _angularVelocityCovariance.resize(orientationSize);
+  tmp.resize(orientationSize);
   for(int i = 0; i < orientationSize; ++i)
     {
-      is >> _angularVelocityCovariance[i];
+      is >> tmp[i];
     }
+  setAngularVelocityCovariance(tmp);
 	
   is >> orientationSize;
   _linearAcceleration.resize(orientationSize);
@@ -102,25 +101,19 @@ bool ImuData::read(istream& is)
     }
 
   is >> orientationSize;
-  _linearAccelerationCovariance.resize(orientationSize);
+  tmp.resize(orientationSize);
   for(int i = 0; i < orientationSize; ++i)
     {
-      is >> _linearAccelerationCovariance[i];
+      is >> tmp[i];
     }
-
+  setLinearAccelerationCovariance(tmp);
+	
   is >> orientationSize;
   _magnetic.resize(orientationSize);
   for(int i = 0; i < orientationSize; ++i)
     {
       is >> _magnetic[i];
     }
-			
-  // imu stuff
-  double x,y,theta;
-  //odom pose of the robot: no need
-  is >> x >> y >> theta;
-  //imu pose wrt to the world: no need
-  is >> x >> y >> theta;
 
   // timestamp + hostname
   string hostname;
@@ -143,22 +136,23 @@ bool ImuData::write(ostream& os) const
       cerr << "dynamic cast failed" << endl;
       return false;
     }
-		
   const OptimizableGraph* g = v->graph();
   if(!g)
     {
       cerr << "no graph" << endl;
       return false;
     }
-		
 
   os << paramIndex();
   os << " " << _orientation.x() << " " << _orientation.y() << " " << _orientation.z() << " " << _orientation.w();
 	
   os << " " << _orientationCovariance.size();
-  for(int i = 0; i < _orientationCovariance.size(); ++i)
+  for(int i = 0; i < _orientationCovariance.rows(); ++i)
     {
-      os << " " << _orientationCovariance[i];
+      for(int j = 0; j < _orientationCovariance.cols(); ++j)
+	{
+	  os << " " << _orientationCovariance(i, j);
+	}
     }
 	
   os << " " << _angularVelocity.size();
@@ -168,9 +162,12 @@ bool ImuData::write(ostream& os) const
     }
 	
   os << " " << _angularVelocityCovariance.size();
-  for(int i = 0; i < _angularVelocityCovariance.size(); ++i)
+  for(int i = 0; i < _angularVelocityCovariance.rows(); ++i)
     {
-      os << " " << _angularVelocityCovariance[i];
+      for(int j = 0; j < _angularVelocityCovariance.cols(); ++j)
+	{
+	  os << " " << _angularVelocityCovariance(i, j);
+	}
     }
 	
   os << " " << _linearAcceleration.size();
@@ -180,9 +177,12 @@ bool ImuData::write(ostream& os) const
     }
 	
   os << " " << _linearAccelerationCovariance.size();
-  for(int i = 0; i < _linearAccelerationCovariance.size(); ++i)
+  for(int i = 0; i < _linearAccelerationCovariance.rows(); ++i)
     {
-      os << " " << _linearAccelerationCovariance[i];
+      for(int j = 0; j < _linearAccelerationCovariance.cols(); ++j)
+	{
+	  os << " " << _linearAccelerationCovariance(i, j); 
+	}
     }
 	
   os << " " << _magnetic.size();
@@ -191,17 +191,6 @@ bool ImuData::write(ostream& os) const
       os << " " << _magnetic[i];
     }
 
-  //	const VertexSE3* v3 = dynamic_cast<const VertexSE3*>(container);
-  //	if(v3)
-  //	{
-  //		Eigen::Isometry3d offset = oparam->offset();
-  // imu pose wrt the world
-  //		Eigen::Vector3d pose = toVector3D(v3->estimate()*offset);
-  //		os << " " << pose.x() << " " << pose.y() << " " << pose.z();
-  // odometry pose
-  //		pose = toVector3D(v3->estimate());
-  //		os << " " << pose.x() << " " << pose.y() << " " << pose.z();
-  //	}
 	
   //	const VertexSE2* v2 = dynamic_cast<const VertexSE2*>(container);
   //	if(v2)

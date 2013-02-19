@@ -99,14 +99,13 @@ int main(int argc, char**argv){
 	  imuEdge->setParameterId(0,imuData->paramIndex());
 	  Eigen::Isometry3d measurement;
 	  measurement.setIdentity();
-	  Eigen::Quaternionf qf = imuData->getOrientation();
-	  if (qf.w()<0){
-	    qf.x()=-qf.x();
-	    qf.y()=-qf.y();
-	    qf.z()=-qf.z();
-	    qf.w()=-qf.w();
+	  Eigen::Quaterniond q = imuData->getOrientation();
+	  if (q.w()<0){
+	    q.x()=-q.x();
+	    q.y()=-q.y();
+	    q.z()=-q.z();
+	    q.w()=-q.w();
 	  }
-	  Eigen::Quaterniond q(qf.w(),qf.x(), qf.y(), qf.z());
 	  measurement.linear()=q.toRotationMatrix();
 	  measurement.translation()=v3->estimate().translation();
 	  imuEdge->setMeasurement(measurement);
