@@ -20,7 +20,7 @@ inline float mat2angle_2f(const Eigen::Matrix2f& R)
 
 inline Eigen::Isometry2f v2t_2f(const Eigen::Vector3f& x)
 {
-    Eigen::Isometry2f X;
+    Eigen::Isometry2f X = Eigen::Isometry2f::Identity();
     X.linear() = angle2mat_2f(x[2]);
     X.translation() = x.head<2>();
 
@@ -83,7 +83,7 @@ inline double mat2angle_2d(const Eigen::Matrix2d& R)
 
 inline Eigen::Isometry2d v2t_2d(const Eigen::Vector3d& x)
 {
-    Eigen::Isometry2d X;
+    Eigen::Isometry2d X = Eigen::Isometry2d::Identity();
     X.linear() = angle2mat_2d(x[2]);
     X.translation() = x.head<2>();
 
