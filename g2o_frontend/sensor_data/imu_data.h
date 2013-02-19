@@ -35,7 +35,7 @@
 * An imu measurement obtained by a robot. The measurement is equipped with a pose of the robot at which
 * the measurement was taken.
 */
-class ImuData : public SensorData
+class ImuData : public ParameterizedSensorData
 {
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -47,11 +47,6 @@ public:
 	virtual bool read(std::istream& is);
 	//! write the data to a stream
 	virtual bool write(std::ostream& os) const;
-
-	virtual void setSensor(Sensor* imuSensor_);
-	virtual Sensor* getSensor() const { return _imuSensor; }
-
-        inline int paramIndex() const { return _imuSensor? _imuSensor->getParameter()->id():_paramIndex; }
 
 	inline Eigen::Quaternionf getOrientation() { return _orientation; };
 	inline const Eigen::Quaternionf getOrientation() const { return _orientation; };
@@ -103,17 +98,12 @@ public:
 	}
 	
 protected:
-	int _paramIndex;
-
-	SensorImu* _imuSensor;
-	
 	Eigen::Quaternionf _orientation;
 	Vector9f _orientationCovariance;
 	Eigen::Vector3f _angularVelocity;
 	Vector9f _angularVelocityCovariance;
 	Eigen::Vector3f _linearAcceleration;
 	Vector9f _linearAccelerationCovariance;
-
 	Eigen::Vector3f _magnetic;
 };
 

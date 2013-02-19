@@ -17,7 +17,7 @@ SensorOmnicam::~SensorOmnicam() {
 
 }
 
-g2o::Parameter * SensorOmnicam::getParameter(){
+g2o::Parameter * SensorOmnicam::parameter(){
   return  _parameter;
 }
 
@@ -29,7 +29,7 @@ bool SensorOmnicam::setParameter(g2o::Parameter* parameter_) {
 	return true;
 }
 
-int SensorOmnicam::getNum(){
+int SensorOmnicam::paramIndex(){
   return _num;
 }
 

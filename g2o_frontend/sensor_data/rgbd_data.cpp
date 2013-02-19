@@ -30,9 +30,8 @@ using namespace std;
 
 RGBDData::RGBDData(Sensor* sensor_, cv::Mat* intensityImage_, cv::Mat* depthImage_)
 {
-  _paramIndex = -1;
+  setSensor(sensor_);
   _baseFilename = "";
-  _rgbdCameraSensor = (SensorRGBDCamera*)sensor_; 
   _intensityImage = intensityImage_;
   _depthImage = depthImage_;
   _dataContainer = 0;
@@ -50,7 +49,9 @@ RGBDData::~RGBDData(){
 //! read the data from a stream
 bool RGBDData::read(std::istream& is) 
 {
-  is >> _paramIndex >> _baseFilename;
+  int pi;
+  is >> pi >> _baseFilename;
+  setParamIndex(pi);
   double ts;
   is >> ts;
   setTimeStamp(ts);
@@ -77,14 +78,12 @@ void RGBDData::writeOut() const
     string intensityName=_baseFilename+ "_intensity.pgm";
     cv::imwrite(intensityName.c_str(), *_intensityImage);
     _intensityImageModified = false;
-    cerr << "I" << endl;
   }
 
   if (_depthImageModified && _depthImage) {
     string depthName=_baseFilename+ "_depth.pgm";
     cv::imwrite(depthName.c_str(), *_depthImage);
     _depthImageModified = false;
-    cerr << "D" << endl;
   }
 }
 
@@ -101,11 +100,6 @@ void RGBDData::update()
     *_depthImage = cv::imread((_baseFilename + "_depth.pgm") .c_str(), -1);
     _depthImageModified = false;
   }
-}
-
-void RGBDData::setSensor(Sensor* rgbdCameraSensor_)
-{
-  _rgbdCameraSensor = dynamic_cast<SensorRGBDCamera*>(rgbdCameraSensor_) ;
 }
 
 void RGBDData::release()
@@ -172,15 +166,11 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
 	
   glBegin(GL_POINTS);
   
-  g2o::HyperGraph::DataContainer* container = that->dataContainer();
+  //g2o::HyperGraph::DataContainer* container = that->dataContainer();
   
-  g2o::OptimizableGraph::Vertex* v= dynamic_cast<g2o::OptimizableGraph::Vertex*>(container);
+  const g2o::Parameter* p = that->parameter();
   
-  OptimizableGraph* g = v->graph();
-  
-  g2o::Parameter* p = g->parameters().getParameter(that->paramIndex());
-  
-  g2o::ParameterCamera* param = dynamic_cast<g2o::ParameterCamera*> (p);
+  const g2o::ParameterCamera* param = dynamic_cast<const g2o::ParameterCamera*> (p);
   
   Eigen::Matrix3d K = param->Kcam();
 

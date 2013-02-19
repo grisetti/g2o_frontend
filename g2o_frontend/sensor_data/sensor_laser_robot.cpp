@@ -33,7 +33,7 @@ SensorLaserRobot::~SensorLaserRobot()
 }
 
 
-g2o::Parameter* SensorLaserRobot::getParameter() {
+g2o::Parameter* SensorLaserRobot::parameter() {
 	return _parameter;
 }
 
@@ -46,7 +46,7 @@ bool SensorLaserRobot::setParameter(g2o::Parameter* parameter_){
   return true;
 }
 
-int SensorLaserRobot::getNum()
+int SensorLaserRobot::paramIndex()
 {
 	return _num;
 }

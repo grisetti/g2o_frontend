@@ -9,52 +9,45 @@
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "opencv2/highgui/highgui.hpp"
 
-class OmnicamData : public SensorData{
+class OmnicamData : public ParameterizedSensorData{
 public:
-	OmnicamData();
-	OmnicamData(cv::Mat* image_);
-	virtual ~OmnicamData();
+  OmnicamData(cv::Mat* image_ = 0, Sensor* _sensor=0);
+  virtual ~OmnicamData();
 	
-	//! read the data from a stream
-	virtual bool read(std::istream& is);
-	//! write the data to a stream
-	virtual bool write(std::ostream& os) const;
-	virtual void writeOut(const std::string& g2oGraphFilename);
-	
-	const std::string& baseFilename() const { return _baseFilename; };
-	void  setBaseFilename(const std::string baseFilename_) { _baseFilename = baseFilename_; };
-	void setImage(cv::Mat* image_);
-	int paramIndex(){return _paramIndex;};
-	cv::Mat * getImage(){return _image;};
+  //! read the data from a stream
+  virtual bool read(std::istream& is);
+  //! write the data to a stream
+  virtual bool write(std::ostream& os) const;
+  virtual void writeOut() const ;
 
-	virtual Sensor* getSensor() const { return _omnicamSensor ;};
-	virtual void    setSensor(Sensor*);
+  void update();
+  void release();
 	
+  const std::string& baseFilename() const { return _baseFilename; };
+  void  setBaseFilename(const std::string baseFilename_) { _baseFilename = baseFilename_; };
+  void setImage(cv::Mat* image_);
+  const cv::Mat * getImage() const {return _image;};
+
 protected:
-	std::string _baseFilename;		// name of the image file associated with this data
-	g2o::ParameterCamera* _cameraParams;	// pointer to the camera parametres
-	long int _ts_usec;
-	long int _ts_sec;
+  std::string _baseFilename;		// name of the image file associated with this data
 
 private:
-	cv::Mat* _image;
-	void init();
-	int _paramIndex;
-	Sensor* _omnicamSensor;
+  mutable bool _imageModified;
+  cv::Mat* _image;
 };
 
-	#ifdef G2O_HAVE_OPENGL
+#ifdef G2O_HAVE_OPENGL
 
-	class OmnicamDataDrawAction : public g2o::DrawAction{
-	public:
-	  OmnicamDataDrawAction() : DrawAction(typeid(OmnicamData).name()) {};
-	  virtual HyperGraphElementAction* operator()(g2o::HyperGraph::HyperGraphElement* element,
-	  	g2o::HyperGraphElementAction::Parameters* params_ );
-	protected:
-	  virtual bool refreshPropertyPtrs(g2o::HyperGraphElementAction::Parameters* params_);
-	  g2o::FloatProperty* _pointSize;
-	};
+class OmnicamDataDrawAction : public g2o::DrawAction{
+public:
+  OmnicamDataDrawAction() : DrawAction(typeid(OmnicamData).name()) {};
+  virtual HyperGraphElementAction* operator()(g2o::HyperGraph::HyperGraphElement* element,
+					      g2o::HyperGraphElementAction::Parameters* params_ );
+protected:
+  virtual bool refreshPropertyPtrs(g2o::HyperGraphElementAction::Parameters* params_);
+  g2o::FloatProperty* _pointSize;
+};
 
-	#endif	// endif G2O_HAVE_OPENGL
+#endif	// endif G2O_HAVE_OPENGL
 
 #endif	// endif OMNICAMDATA_H

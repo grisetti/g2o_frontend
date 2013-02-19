@@ -1,10 +1,3 @@
-/*
- * sensor_handler.h
- *
- *  Created on: Nov 14, 2012
- *      Author: jacopo
- */
-
 #ifndef SENSORHANDLER_H_
 #define SENSORHANDLER_H_
 
@@ -13,15 +6,16 @@
 
 class SensorHandler {
 public:
-	SensorHandler();
-	virtual Sensor* getSensor() = 0;
-	virtual bool setQueue(PriorityDataQueue* queue_) = 0;
-	virtual bool setSensor(Sensor* sensor_s) = 0;
-	virtual void registerCallback() = 0;
-	
+   SensorHandler();
+   virtual Sensor* sensor() { return _sensor;}
+   virtual const Sensor* sensor() const { return _sensor;}
+   virtual bool setQueue(PriorityDataQueue* queue_) = 0;
+  virtual bool setSensor(Sensor* sensor_) {_sensor = sensor_; return true;}
+   virtual void registerCallback() = 0;
+   
 protected:
-	Sensor* _sensor;
-	PriorityDataQueue* _queue;
-};
+   Sensor* _sensor;
+   PriorityDataQueue* _queue;
+ };
 
-#endif /* SENSORHANDLER_H_ */
+#endif //SENSORHANDLER_H_

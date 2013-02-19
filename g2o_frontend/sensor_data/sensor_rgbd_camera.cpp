@@ -16,7 +16,7 @@ SensorRGBDCamera::SensorRGBDCamera() {
  _baseFilename = "out";
 }
 
-g2o::Parameter* SensorRGBDCamera::getParameter() {
+g2o::Parameter* SensorRGBDCamera::parameter() {
 	return _parameter;
 }
 
@@ -28,7 +28,7 @@ bool SensorRGBDCamera::setParameter(g2o::Parameter* parameter_) {
 	return true;
 }
 
-int SensorRGBDCamera::getNum()
+int SensorRGBDCamera::paramIndex()
 { 
 	return _num;
 }
@@ -45,6 +45,6 @@ void SensorRGBDCamera::setTopics(string intensityTopic_, string depthTopic_) {
 
 std::string SensorRGBDCamera::getCurrentFilename(){
   char buf[1024];
-  sprintf(buf, "%s_%d_%05d", &_baseFilename[0], getParameter()->id(), _num);
+  sprintf(buf, "%s_%d_%05d", &_baseFilename[0], parameter()->id(), _num);
   return std::string(buf);
 }

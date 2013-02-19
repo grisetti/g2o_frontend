@@ -87,7 +87,7 @@ void ViewerGUI::showOriginal()
 	vEstimate.translation() = ev.head<2>();
 	Eigen::Isometry2d T = vEstimate*offset;
 	
-	for (int i = 0; i < vld.second.size(); i++) {
+	for (size_t i = 0; i < vld.second.size(); i++) {
 		Vector2d dpoints(vld.second[i].x(), vld.second[i].y());
 		dpoints = T*dpoints;
 		Vector2f lpoints(dpoints.x(),dpoints.y());
@@ -323,7 +323,7 @@ void ViewerGUI::linesInfoExtraction(Line2DExtractor::IntLineMap::const_iterator 
 	int imax=-1;
 	float maxDistance=-1;
 	Vector2f& v = tmpPoints[0];
-	for (int i = 0; i< tmpPoints.size(); i++){
+	for (size_t i = 0; i< tmpPoints.size(); i++){
 		float d = line.squaredDistance(tmpPoints[i]);
 		if (d>maxDistance){
 				imax = i; 

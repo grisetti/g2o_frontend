@@ -30,12 +30,12 @@ public:
 	virtual ~SensorLaserRobot();
 	
 	//! the parameters of the laser
-	virtual g2o::Parameter* getParameter();
+	virtual g2o::Parameter* parameter();
 	virtual bool setParameter(g2o::Parameter* parameter_);
 // 	const g2o::LaserParameters& laserParams() const { return _laserParams; }
 // 	void setLaserParams(const g2o::LaserParameters& laserParams_);
 	
-	virtual int getNum();
+	virtual int paramIndex();
 	virtual void setNum(int num_);
 	std::string getTopic() { return _scanTopic; };
 	void setTopic(std::string scanTopic_);

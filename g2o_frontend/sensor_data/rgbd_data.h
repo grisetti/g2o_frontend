@@ -17,7 +17,7 @@
 #include "sensor_data.h"
 #include "sensor_rgbd_camera.h"
 
-class RGBDData: public SensorData {
+class RGBDData: public ParameterizedSensorData {
 public:  
   RGBDData(Sensor* sensor_ = 0 , cv::Mat* intensityImage_ = 0, cv::Mat* depthImage_ = 0);
   virtual ~RGBDData();
@@ -27,12 +27,9 @@ public:
   virtual bool write(std::ostream& os) const;
   //! write the images (if changed)
   virtual void writeOut() const;
-  virtual Sensor* getSensor() const { return _rgbdCameraSensor; }  
-  virtual void setSensor(Sensor* rgbdCameraSensor_);
 
   void update();
   void release();
-  inline int paramIndex() const { return _rgbdCameraSensor? _rgbdCameraSensor->getParameter()->id():_paramIndex; }
   inline const std::string& baseFilename() const { return _baseFilename; };
   inline void  setBaseFilename(const std::string baseFilename_) { _baseFilename = baseFilename_; };
   inline const cv::Mat* intensityImage() const {return _intensityImage;}
@@ -52,11 +49,9 @@ public:
   }
 protected:
   std::string _baseFilename;
-  SensorRGBDCamera* _rgbdCameraSensor;
   cv::Mat* _intensityImage;
   cv::Mat* _depthImage;
 private:
-  int _paramIndex;
   mutable bool _intensityImageModified;
   mutable bool _depthImageModified;
 };
