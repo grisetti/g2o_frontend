@@ -37,9 +37,9 @@ public:
 	virtual int paramIndex();
 	virtual void setNum(int num_);
 	
-	inline std::string getDataTopic() { return _dataTopic; };
+    inline std::string getDataTopic() { return _dataTopic; }
 //	inline std::string getVelocityTopic() { return _velocityTopic; };
-	inline std::string getMagneticTopic() { return _magneticTopic; };
+    inline std::string getMagneticTopic() { return _magneticTopic; }
 	
 	void setDataTopic(const std::string dataTopic_);
 //	void setVelocityTopic(const std::string velocityTopic_);

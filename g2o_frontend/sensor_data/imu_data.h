@@ -38,7 +38,7 @@
 class ImuData : public ParameterizedSensorData
 {
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	typedef Eigen::Matrix<double, 9,1> Vector9d;
 	
 	ImuData();
@@ -48,15 +48,15 @@ public:
 	//! write the data to a stream
 	virtual bool write(std::ostream& os) const;
 
-	inline Eigen::Quaterniond& getOrientation() { return _orientation; };
-	inline const Eigen::Quaterniond& getOrientation() const { return _orientation; };
+    inline Eigen::Quaterniond& getOrientation() { return _orientation; }
+    inline const Eigen::Quaterniond& getOrientation() const { return _orientation; }
 	inline void setOrientation(const Eigen::Quaterniond& orientation_)
 	{
 	  _orientation = orientation_;
 	}
 	
-	inline Eigen::Matrix3d& getOrientationCovariance() { return _orientationCovariance; };
-	inline const Eigen::Matrix3d& getOrientationCovariance() const { return _orientationCovariance; };
+    inline Eigen::Matrix3d& getOrientationCovariance() { return _orientationCovariance; }
+    inline const Eigen::Matrix3d& getOrientationCovariance() const { return _orientationCovariance; }
 	inline void setOrientationCovariance(const Vector9d& orientationCovariance_)
 	{
 	  Eigen::Matrix3d orientCov_(Eigen::Matrix3d::Identity());
@@ -70,16 +70,16 @@ public:
 	  }
 	  _orientationCovariance = orientCov_;
 	}
-	
-	inline Eigen::Vector3d& getAngularVelocity() { return _angularVelocity; };
-	inline const Eigen::Vector3d& getAngularVelocity() const { return _angularVelocity; };
+
+    inline Eigen::Vector3d& getAngularVelocity() { return _angularVelocity; }
+    inline const Eigen::Vector3d& getAngularVelocity() const { return _angularVelocity; }
 	inline void setAngularVelocity(const Eigen::Vector3d& angularVelocity_)
 	{
 	  _angularVelocity = angularVelocity_;
 	}
 	
-	inline Eigen::Matrix3d& getAngularVelocityCovariance() { return _angularVelocityCovariance; };
-	inline const Eigen::Matrix3d& getAngularVelocityCovariance() const { return _angularVelocityCovariance; };
+    inline Eigen::Matrix3d& getAngularVelocityCovariance() { return _angularVelocityCovariance; }
+    inline const Eigen::Matrix3d& getAngularVelocityCovariance() const { return _angularVelocityCovariance; }
 	inline void setAngularVelocityCovariance(const Vector9d& angularVelocityCovariance_)
 	{
 	  Eigen::Matrix3d angVelCov_(Eigen::Matrix3d::Identity());
@@ -94,15 +94,15 @@ public:
 	  _angularVelocityCovariance = angVelCov_;
 	}
 	
-	inline Eigen::Vector3d& getLinearAcceleration() { return _linearAcceleration; };
-	inline const Eigen::Vector3d& getLinearAcceleration() const { return _linearAcceleration; };
+    inline Eigen::Vector3d& getLinearAcceleration() { return _linearAcceleration; }
+    inline const Eigen::Vector3d& getLinearAcceleration() const { return _linearAcceleration; }
 	inline void setLinearAcceleration(const Eigen::Vector3d& linearAcceleration_)
 	{
 	  _linearAcceleration = linearAcceleration_;
 	}
 	
-	inline Eigen::Matrix3d& getLinearAccelerationCovariance() { return _linearAccelerationCovariance; };
-	inline const Eigen::Matrix3d& getLinearAccelerationCovariance() const { return _linearAccelerationCovariance; };	
+    inline Eigen::Matrix3d& getLinearAccelerationCovariance() { return _linearAccelerationCovariance; }
+    inline const Eigen::Matrix3d& getLinearAccelerationCovariance() const { return _linearAccelerationCovariance; }
 	inline void setLinearAccelerationCovariance(const Vector9d& linearAccelerationCovariance_)
 	{
 	  Eigen::Matrix3d linAccCov_(Eigen::Matrix3d::Identity());
@@ -117,8 +117,8 @@ public:
 	  _linearAccelerationCovariance = linAccCov_;
 	}
 	
-	inline Eigen::Vector3d& getMagnetic() { return _magnetic; };
-	inline const Eigen::Vector3d& getMagnetic() const { return _magnetic; };
+    inline Eigen::Vector3d& getMagnetic() { return _magnetic; }
+    inline const Eigen::Vector3d& getMagnetic() const { return _magnetic; }
 	inline void setMagnetic(const Eigen::Vector3d& magnetic_)
 	{
 	  _magnetic = magnetic_;
