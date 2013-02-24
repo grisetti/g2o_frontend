@@ -15,21 +15,24 @@ tscale = 100;
 printf("Generating a sample set of %d lines with normal, distributed in a radius of %f meters\n\n", np, tscale);
 
 Li = rand(4, np)- 0.5;
+
 Lj = zeros(4,np);
-Li(1:3, :) *= tscale;
+#Li(1:3, :) *= tscale;
 for i = [1:size(Li)(2)]
-  Li(1:3, i) /= norm(Li(1:3, i));
+  #Li(1:3, i) /= norm(Li(1:3, i));
   Lj(:,i) = plane_remapCartesian(gtX, Li(:,i));
 endfor;
-
+Li'
+Lj'
 X=eye(4);
 
 Omega=eye(4);
-Omega(1:3,1:3)*=1000;
-Omega(4,4)*=1000;
+Omega(1:3,1:3)*=1;
+Omega(4,4)*=1;
 
 #[Xs, es] = plane_solve(Li, Lj, Omega, X, 10);
-[Xs, es] = plane_linearSolve(Li, Lj, Omega, X);
+[Xs, es, H] = plane_linearSolve(Li, Lj, Omega, X);
+AAA=gtx*Xs
 
 
 

@@ -71,7 +71,7 @@ public:
   inline double inlierErrorThreshold() const {return _inlierErrorTheshold;}
   inline void setInlierStopFraction(double inlierStopFraction_) {_inlierStopFraction = inlierStopFraction_;}
   inline double inlierStopFraction() const {return _inlierStopFraction;}
-
+  inline const std::vector<double> errors() const { return _errors;}
   inline int minimalSetSize() const {return _minimalSetSize;}
   int maxIterations() const {return _maxIterations;}
   void setMaxIterations(double maxIterations_) { _maxIterations = maxIterations_;}
