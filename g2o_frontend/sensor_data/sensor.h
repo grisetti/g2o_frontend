@@ -11,28 +11,30 @@ using namespace std;
  */
 class Sensor {
 public:
-	/** 
-	* Class constructor
-	*/
-	Sensor();
+  /** 
+   * Class constructor
+   */
+  Sensor();
 
-	/** 
-	* Paramater Getter, purely virtual
-	*/
-	virtual g2o::Parameter* getParameter() = 0;
+  /** 
+   * Paramater Getter, purely virtual
+   */
+  virtual const g2o::Parameter* parameter() const { return _parameter;}
 
-	/** 
-	* Paramater setter, purely virtual
-	*/
-	virtual bool setParameter(g2o::Parameter* parameter_) = 0;
+  virtual g2o::Parameter* parameter() { return _parameter;}
 
-	virtual int getNum() = 0;
-	virtual void setNum(int num_) = 0;
+  /** 
+   * Paramater setter, purely virtual
+   */
+  virtual bool setParameter(g2o::Parameter* parameter_) = 0;
+
+  virtual int paramIndex() = 0;
+  virtual void setNum(int num_) = 0;
 protected:
 
 	
-	g2o::Parameter* _parameter;
-	int _num;
+  g2o::Parameter* _parameter;
+  int _num;
 };
 
 #endif /* SENSOR_H_ */

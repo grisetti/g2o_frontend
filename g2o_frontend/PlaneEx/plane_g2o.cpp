@@ -15,7 +15,6 @@
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "g2o/types/slam3d_addons/types_slam3d_addons.h"
-#include "g2o_frontend/data/rgbd_image_data.h"
 #include "g2o_frontend/sensor_data/rgbd_data.h"
 #include <Eigen/Geometry>
 #include <pcl/ModelCoefficients.h>
@@ -204,14 +203,14 @@ int main(int argc, char**argv){
                 //string realPath= strcat(base_name,intensity);
 
                 cout << "\t Processing "<<imageData->baseFilename()<<"\n";
-                Mat *imageToProcess;
-                imageToProcess = imageData->_depthImage; //no need to reproject image 'cause we've the depth registered
+                const Mat *imageToProcess;
+                imageToProcess = imageData->depthImage(); //no need to reproject image 'cause we've the depth registered
                 std::vector<Vec3f> Cloud;
 
                 int rows=imageToProcess->rows;
                 int cols=imageToProcess->cols;
 
-                unsigned short * dptra=imageToProcess->ptr<unsigned short>(0);;
+                const unsigned short * dptra=imageToProcess->ptr<unsigned short>(0);;
                 for(int i = 0; i < rows; i++)
                 {
 

@@ -176,45 +176,29 @@ void CharMatcher::convolveScan(const Vector2fVector& ns, const Isometry2f& trans
 
 void CharMatcher::initializeKernel(const int size, const float res, const float dmax)
 {
-  int center = size;
-  int dim = (2*size)+1;
-  _kernel.resize(dim,dim);
-  
-  int K1 = res*_gridKScale;
-  int K2 = dmax*_gridKScale;
-  _kernel.fill((char) K2);
+    int center = size;
+    int dim = (2*size)+1;
+    _kernel.resize(dim,dim);
 
-//   _kernel.fill((char) dmax);
-  for(int j = 0; j <= size; ++j)
-  {
-    for(int i = 0; i <= size; ++i)
+    int K1 = res * _gridKScale;
+    int K2 = dmax * _gridKScale;
+    _kernel.fill((char) K2);
+
+    for(int j = 0; j <= size; ++j)
     {
-      char distance = K1*sqrt(j*j+i*i);
-      if(distance > K2)
-      {
-	continue;
-      }   
-//       char distance = 128*res*(sqrt(j*j+i*i));
-//       char distance = 64*(sqrt(i*i+j*j));
-//       char distance = i+j;
-//       if(distance > dmax)
-//       {
-// 	continue;
-//       }
-      _kernel(i+center,j+center) = distance;
-      _kernel(center-i,j+center) = distance;
-      _kernel(i+center,center-j) = distance;
-      _kernel(center-i,center-j) = distance;
+        for(int i = 0; i <= size; ++i)
+        {
+            char distance = K1*sqrt(j*j+i*i);
+            if(distance > K2)
+            {
+                continue;
+            }
+            _kernel(i+center,j+center) = distance;
+            _kernel(center-i,j+center) = distance;
+            _kernel(i+center,center-j) = distance;
+            _kernel(center-i,center-j) = distance;
+        }
     }
-  }
-//   for(int j = 0; j < dim; ++j)
-//   {
-//     for(int i = 0; i < dim; ++i)
-//     {
-//       printf(" %d\t", _kernel(j, i));
-//     }
-//     printf("\n");
-//   }
 }
 
 

@@ -15,9 +15,9 @@ class SensorOmnicam : public Sensor {
 public:
 	SensorOmnicam();
 	virtual ~SensorOmnicam();
-	virtual g2o::Parameter* getParameter();
+	virtual g2o::Parameter* parameter();
 	bool setParameter(g2o::Parameter* parameter_);
-	virtual int getNum();
+	virtual int paramIndex();
 	virtual void setNum(int num_);
 	std::string * getTopic();
 	void setTopic(std::string* imageTopic_);

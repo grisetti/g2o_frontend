@@ -18,64 +18,71 @@
 using namespace g2o;
 using namespace std;
 
-void OmnicamData::init(){
-  _paramIndex = -1;
-  _baseFilename = "none";
-  _omnicamSensor = 0;
-  _ts_sec = 0;
-  _ts_usec = 0;
+
+OmnicamData::OmnicamData(cv::Mat* image_, Sensor* sensor_){
+  _baseFilename = "";
   _image = 0;
   _dataContainer = 0;
-}
-
-OmnicamData::OmnicamData(){
-  this->init();
-}
-
-OmnicamData::OmnicamData(cv::Mat* image_){
-  this->init();
-  _image = image_;
+  _imageModified= false;
+  setSensor(sensor_);
+  _image = image_;  
 }
 
 OmnicamData::~OmnicamData(){
-  if(_image)
-    delete _image;
+  release();
 }
 
 //! read the data from a stream
 bool OmnicamData::read(std::istream& is) {
-  is >> _paramIndex >> _baseFilename;
-  is >> _ts_sec >> _ts_usec;
+  int pi;
+  is >> pi >> _baseFilename;
+  setParamIndex(pi);
+  is >> _timeStamp;
+  // update();
+  return is.good();
+}
+
+void OmnicamData::update(){
   if(_image != 0){
     delete _image;
   }
   _image = new cv::Mat();
-  *_image = cv::imread(_baseFilename+"omni.pgm");
-	return false;
+  *_image = cv::imread(_baseFilename+"_omni.pgm");
+  _imageModified = 0;
+}
+
+void OmnicamData::release(){
+  if (_image) {
+    _imageModified = 0;
+    delete _image;
+    _image =0;
+  }
 }
 
 //! write the data to a stream
 bool OmnicamData::write(std::ostream& os) const {
-  if(_omnicamSensor)
-    os << _omnicamSensor->getParameter()->id();
-  else
-    os << -1;
-  os << " " << _baseFilename << " ";
-  os << _ts_sec << " " << _ts_usec;
+  os << paramIndex() << " " ;
+  string hn = "hostname";
+  os << FIXED(" " << _timeStamp << " " << hn << " " << _timeStamp);
+  writeOut();
   return true;
 }
 
 //! saves the image on a file
-void OmnicamData::writeOut(const std::string& g2oGraphFilename)
+void OmnicamData::writeOut() const
 {
-  int num = _omnicamSensor->getNum();
-  _omnicamSensor->setNum(num+1);
-  _baseFilename = g2oGraphFilename.substr(0, g2oGraphFilename.length()-4);
-  char buf[50];
-  sprintf(buf, "%s_omni_%d_%05d.pgm", &_baseFilename[0], _omnicamSensor->getParameter()->id(), num);
-  cv::imwrite(buf, *_image);
-  _baseFilename = string(buf);
-  _baseFilename = _baseFilename.substr(0, _baseFilename.length()-4);
+  if (_imageModified && _image) {
+    string intensityName=_baseFilename+ "_intensity.pgm";
+    cv::imwrite(intensityName.c_str(), *_image);
+    _imageModified = false;
+  }
+}
+
+
+void OmnicamData::setImage(cv::Mat* image_)
+{
+  _image = image_;
+  _imageModified = true;
 }
 
 // OmnicamDataDrawAction methods are here, but they do nothing.
@@ -83,15 +90,6 @@ void OmnicamData::writeOut(const std::string& g2oGraphFilename)
 bool OmnicamDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction::Parameters* params_)
 {
   return DrawAction::refreshPropertyPtrs(params_);
-}
-
-void OmnicamData::setImage(cv::Mat* image_)
-{
-  _image = image_;
-}
-
-void OmnicamData::setSensor(Sensor* omniSensor_){
-  _omnicamSensor = dynamic_cast<SensorOmnicam*>(omniSensor_);
 }
 
 

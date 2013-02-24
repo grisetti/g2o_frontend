@@ -7,14 +7,16 @@
 
 #include "sensor_rgbd_camera.h"
 #include "g2o/types/slam3d/parameter_camera.h"
+#include <cstdio>
 
 SensorRGBDCamera::SensorRGBDCamera() {
 	_parameter = new g2o::ParameterCamera();
 	((g2o::ParameterCamera*)_parameter)->setKcam(5.25e02, 5.25e02, 3.195e02, 2.395e02);
 	_num = 0;
+ _baseFilename = "out";
 }
 
-g2o::Parameter* SensorRGBDCamera::getParameter() {
+g2o::Parameter* SensorRGBDCamera::parameter() {
 	return _parameter;
 }
 
@@ -26,7 +28,7 @@ bool SensorRGBDCamera::setParameter(g2o::Parameter* parameter_) {
 	return true;
 }
 
-int SensorRGBDCamera::getNum()
+int SensorRGBDCamera::paramIndex()
 { 
 	return _num;
 }
@@ -37,6 +39,12 @@ void SensorRGBDCamera::setNum(int num_)
 }
 
 void SensorRGBDCamera::setTopics(string intensityTopic_, string depthTopic_) {
-	_intensityTopic = intensityTopic_;
-	_depthTopic = depthTopic_;
+  _intensityTopic = intensityTopic_;
+  _depthTopic = depthTopic_;
+}
+
+std::string SensorRGBDCamera::getCurrentFilename(){
+  char buf[1024];
+  sprintf(buf, "%s_%d_%05d", &_baseFilename[0], parameter()->id(), _num);
+  return std::string(buf);
 }

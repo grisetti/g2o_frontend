@@ -33,7 +33,7 @@ SensorImu::~SensorImu()
 }
 
 
-g2o::Parameter* SensorImu::getParameter()
+g2o::Parameter* SensorImu::parameter()
 {
 	return _parameter;
 }
@@ -51,7 +51,7 @@ bool SensorImu::setParameter(g2o::Parameter* parameter_)
 }
 
 
-int SensorImu::getNum()
+int SensorImu::paramIndex()
 {
 	return _num;
 }

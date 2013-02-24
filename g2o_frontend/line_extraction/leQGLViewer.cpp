@@ -115,7 +115,7 @@ void leQGLViewer::draw()
 		
 		glLineWidth(3.f);
 		//cout << "line found!" << endl;
-		for(int i=0; i<lContainer->size(); i++)
+		for(size_t i=0; i<lContainer->size(); i++)
 		{
 			Vector2fVector line = (*lContainer)[i];
 			
