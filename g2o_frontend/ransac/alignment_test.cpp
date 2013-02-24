@@ -3,6 +3,8 @@
 #include "alignment_se2.h"
 #include "alignment_se3.h"
 #include "alignment_line3d_linear.h"
+#include "alignment_line2d_linear.h"
+#include "g2o_frontend/basemath/bm_se2.h"
 #include "g2o/types/slam3d/isometry3d_mappings.h"
 #include <iostream>
 #include <fstream>
@@ -68,6 +70,16 @@ struct Line3DMapping: public EuclideanMapping<Line3D,6>{
   }
 };
 
+struct Line2DMapping:public EuclideanMapping<Line2D, 2>{
+	typedef typename EuclideanMapping<Line2D, 2>::TypeDomain TypeDomain;
+	typedef typename EuclideanMapping<Line2D, 2>::VectorType VectorType;
+// 	virtual TypeDomain fromVector(const VectorType& v) const {return v;}
+// 	virtual VectorType toVector(const TypeDomain& t) const {return t;}
+	virtual TypeDomain fromVector(const Vector2d& v) const {
+		return Line2D(v);
+	}
+  virtual VectorType toVector(const TypeDomain& t) const {return Vector2d(t);}
+};
 
 
 template <typename MappingType, typename AlignerType, typename EdgeCorrespondenceType>
@@ -298,6 +310,57 @@ int main(int , char** ){
       cerr << "unable to find a transform" << endl;
     }
   }
+  
+      	  { // Line2d
+		cerr << "*************** TEST Line2D  *************** " <<endl;
+    std::vector<double> scales;
+    std::vector<double> offsets;
+    std::vector<double> noises;
+    std::vector<double> omegas;
+    // rotational part
+    for (int i=0; i<1; i++){
+      scales.push_back(2);
+      offsets.push_back(-1);
+      noises.push_back(0.1);
+      omegas.push_back(1000);
+    }
+    // translational part;
+    for (int i=0; i<1; i++){
+      scales.push_back(100);
+      offsets.push_back(50);
+      noises.push_back(0.1);
+      omegas.push_back(1000);
+    }
+    
+    Vector3d _t(2, 5, .3);
+    Isometry2d _t0=v2t_2d(_t);
+			cerr << "ground truth vector: " <<endl;
+			cerr << t2v_2d(_t0) << endl;
+			cerr << "ground truth: " <<endl;
+			cerr << _t0.matrix() << endl;
+		SE2 tresult;
+		SE2 t0(_t0);
+    CorrespondenceValidatorPtrVector validators;
+    bool result = testAligner<Line2DMapping, AlignmentAlgorithmLine2DLinear, EdgeLine2D>(tresult, 100, t0, scales, offsets, noises, true);
+   if (result){
+// 			cerr << "ground truth vector: " <<endl;
+// 			cerr << t2v_2d(_t0) << endl;
+// 			cerr << "ground truth: " <<endl;
+// 			cerr << _t0.matrix() << endl;
+			cerr << "***********FOUND!***********" << endl;
+			Isometry2d res = tresult.toIsometry();
+			cerr << "transform found vector: " <<endl;
+			cerr << t2v_2d(res) << endl;
+			cerr << "transform found: " <<endl;
+			cerr << res.matrix() << endl;
+			cerr << "transform error vector: " << endl;
+			cerr << t2v_2d(_t0*res) << endl;
+			cerr << "transform error: " << endl;
+			cerr << (_t0*res).matrix() << endl;
+   } else {
+     cerr << "unable to find a transform" << endl;
+   }
+	}
 
 
 

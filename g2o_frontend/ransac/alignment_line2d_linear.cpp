@@ -109,7 +109,7 @@ namespace g2o_frontend{
     cout << "ERROR: partial (T) after rotation: " << err << endl;
 		
     transform = Xnew;
-		_transform = SE2(transform);
+	_transform = SE2(transform);
 		
 //     cerr << "ITERATION: ***transform to vector***: " << endl;
 //     cerr << homogeneous2vector_2d(transform.matrix()).transpose() << endl;

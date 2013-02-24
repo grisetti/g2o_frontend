@@ -19,6 +19,7 @@
 
 
 #include "laser_robot_data.h"
+#include "g2o_frontend/basemath/bm_se2.h"
 #include "g2o/stuff/macros.h"
 #include "g2o/core/factory.h"
 #include <Eigen/Dense>
@@ -144,10 +145,10 @@ bool LaserRobotData::write(ostream& os) const {
       // laser pose wrt the world
       Eigen::Vector3d pose;
       // 		pose.setZero();
-      pose = toVector3D_fromIso2(vEstimate*offset); 
+      pose = t2v_2d(vEstimate*offset); 
       os << " " << pose.x() << " " << pose.y() << " " << pose.z();
       // odometry pose
-      pose = toVector3D_fromIso2(vEstimate); 
+      pose = t2v_2d(vEstimate); 
       os << " " << pose.x() << " " << pose.y() << " " << pose.z();
     }
 

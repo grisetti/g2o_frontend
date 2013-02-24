@@ -70,11 +70,15 @@ struct Line3DMapping: public EuclideanMapping<Line3D,6>{
   }
 };
 
-struct Line2DMapping:public EuclideanMapping<Vector2d, 2>{
-	typedef typename EuclideanMapping<Vector2d, 2>::TypeDomain TypeDomain;
-	typedef typename EuclideanMapping<Vector2d, 2>::VectorType VectorType;
-	virtual TypeDomain fromVector(const VectorType& v) const {return v;}
-	virtual VectorType toVector(const TypeDomain& t) const {return t;}
+struct Line2DMapping:public EuclideanMapping<Line2D, 2>{
+	typedef typename EuclideanMapping<Line2D, 2>::TypeDomain TypeDomain;
+	typedef typename EuclideanMapping<Line2D, 2>::VectorType VectorType;
+// 	virtual TypeDomain fromVector(const VectorType& v) const {return v;}
+// 	virtual VectorType toVector(const TypeDomain& t) const {return t;}
+	virtual TypeDomain fromVector(const Vector2d& v) const {
+		return Line2D(v);
+	}
+  virtual VectorType toVector(const TypeDomain& t) const {return Vector2d(t);}
 };
 
 template <typename MappingType, typename RansacType, typename EdgeCorrespondenceType>
@@ -385,14 +389,14 @@ int main(int , char** ){
     for (int i=0; i<1; i++){
       scales.push_back(2);
       offsets.push_back(-1);
-      noises.push_back(0.1);
+      noises.push_back(0.);
       omegas.push_back(1000);
     }
     // translational part;
     for (int i=0; i<1; i++){
       scales.push_back(100);
       offsets.push_back(50);
-      noises.push_back(0.1);
+      noises.push_back(0.);
       omegas.push_back(1000);
     }
     
@@ -408,7 +412,7 @@ int main(int , char** ){
     bool result = testRansac<Line2DMapping, RansacLine2DLinear, EdgeLine2D>(tresult, 100, t0, 
 									    scales, offsets, noises, omegas, 
 									    validators,
-									    0.2, true);
+									    0.2);
    if (result){
 // 			cerr << "ground truth vector: " <<endl;
 // 			cerr << t2v_2d(_t0) << endl;
