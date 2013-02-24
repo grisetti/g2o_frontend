@@ -2,8 +2,8 @@
 #include "alignment_line3d_linear.h"
 #include <Eigen/SVD>
 #include <Eigen/Cholesky>
-
 #include <iostream>
+
 using namespace std;
 
 namespace g2o_frontend{

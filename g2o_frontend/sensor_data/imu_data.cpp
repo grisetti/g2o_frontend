@@ -73,24 +73,24 @@ bool ImuData::read(istream& is)
   Vector9d tmp;
   tmp.resize(orientationSize);
   for(int i = 0; i < orientationSize; ++i)
-    {
+  {
       is >> tmp[i];
-    }
+  }
   setOrientationCovariance(tmp);
 	
   is >> orientationSize;
   _angularVelocity.resize(orientationSize);
   for(int i = 0; i < orientationSize; ++i)
-    {
+  {
       is >> _angularVelocity[i];
-    }
+  }
 	
   is >> orientationSize;
   tmp.resize(orientationSize);
   for(int i = 0; i < orientationSize; ++i)
-    {
+  {
       is >> tmp[i];
-    }
+  }
   setAngularVelocityCovariance(tmp);
 	
   is >> orientationSize;

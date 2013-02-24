@@ -6,6 +6,7 @@ float MatcherResult::matchingScore() const
   return _matchingScore;
 }
 
+
 MatcherResult::~MatcherResult() {}
 
 
@@ -29,29 +30,29 @@ void Matcher::clearMatchResults()
 }
 
 
-bool Matcher::addToCurrent(g2o::OptimizableGraph::Vertex* lv)
-{
-  _currentVerteces.push_back(lv);
-  return true;
-}
+//bool Matcher::addToCurrent(g2o::OptimizableGraph::Vertex* lv)
+//{
+//  _currentVerteces.push_back(lv);
+//  return true;
+//}
 
 
-bool Matcher::addToReference(g2o::OptimizableGraph::Vertex* lv)
-{
-  _referenceVerteces.push_back(lv);
-  return true;
-}
+//bool Matcher::addToReference(g2o::OptimizableGraph::Vertex* lv)
+//{
+//  _referenceVerteces.push_back(lv);
+//  return true;
+//}
 
 
-bool Matcher::setCurrentGauge(g2o::OptimizableGraph::Vertex* v)
-{
-  _currentGauge = v;
-  return true;
-}
+//bool Matcher::setCurrentGauge(g2o::OptimizableGraph::Vertex* v)
+//{
+//  _currentGauge = v;
+//  return true;
+//}
 
 
-bool Matcher::setReferenceGauge(g2o::OptimizableGraph::Vertex* v)
-{
-  _referenceGauge = v;
-  return true;
-}
+//bool Matcher::setReferenceGauge(g2o::OptimizableGraph::Vertex* v)
+//{
+//  _referenceGauge = v;
+//  return true;
+//}

@@ -7,7 +7,7 @@
 
 struct PointAccumulator
 {
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   
   PointAccumulator()
   {
@@ -47,7 +47,7 @@ struct PointAccumulator
 
 struct Vector2iComparator
 {
-  bool operator () (const Eigen::Vector2i& v1, const Eigen::Vector2i& v2)
+  bool operator()(const Eigen::Vector2i& v1, const Eigen::Vector2i& v2)
   {
     if((v1.x() < v2.x()) || (((v1.x() == v2.x()) && (v1.y() < v2.y()))))
     {
@@ -71,15 +71,15 @@ class CharMatcherResult : public MatcherResult
 class CharMatcher : public Matcher
 {
   public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   
     typedef std::vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i> > Vector2iVector;
     typedef std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > Vector2fVector;
     typedef Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic> MatrixXChar;
     typedef _GridMap<char> CharGrid;
     
-    CharMatcher(const float& resolution, const float& radius, const int& kernelSize, const float& kernelMaxValue, int _kscale = 128);
-    CharMatcher(const CharGrid& fg, const int& kernelSize, const float& kernelMaxValue, int _kscale = 128);
+    CharMatcher(const float& resolution, const float& radius, const int& kernelSize, const float& kernelMaxValue, int _gridKScale = 128);
+    CharMatcher(const CharGrid& fg, const int& kernelSize, const float& kernelMaxValue, int _gridKScale = 128);
 
     virtual ~CharMatcher();
     virtual void scanMatch(const Vector2fVector& s, const Eigen::Vector3f& ig);
