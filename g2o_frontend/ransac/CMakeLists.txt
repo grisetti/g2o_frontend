@@ -1,5 +1,6 @@
 ADD_LIBRARY(ransac ${G2O_FRONTEND_LIB_TYPE}
   ../basemath/bm_se3.h
+	../basemath/bm_se2.h
   ransac.cpp ransac.h
   alignment_horn2d.cpp alignment_horn2d.h
   alignment_horn3d.cpp alignment_horn3d.h

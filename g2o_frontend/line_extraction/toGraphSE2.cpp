@@ -1,5 +1,5 @@
 /*
- * line_extraction2d.cpp
+ * toGraphSE2.cpp
  *
  *  Created on: Jan 22, 2013
  *      Author: Martina
@@ -26,6 +26,7 @@
 #include "g2o/types/slam2d/types_slam2d.h"
 #include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "g2o_frontend/sensor_data/rgbd_data.h"
+#include "g2o_frontend/basemath/bm_se2.h"
 
 
 using namespace std;
@@ -33,15 +34,6 @@ using namespace g2o;
 
 typedef std::pair<g2o::VertexSE3*, g2o::VertexSE2*> Vertex3to2;
 typedef std::vector<Vertex3to2> v3Mapv2;
-
-SE2 fromIsoSE3(const Eigen::Isometry3d& iso){
-	Eigen::AngleAxisd aa(iso.linear());
-	float angle = aa.angle();
-	if (aa.axis().z()<0){
-			angle=-angle;
-	}
-	return SE2(iso.translation().x(), iso.translation().y(), angle);
-}
 
 int main(int argc, char**argv){
 	
@@ -77,7 +69,7 @@ int main(int argc, char**argv){
 	v3Mapv2 vertexVector;
 	OptimizableGraph::Data* d = 0;
 	LaserRobotData* data = 0;
-	Sensor* sensor = 0;
+// 	Sensor* sensor = 0;
 // 	OptimizableGraph* graphSE2 = new OptimizableGraph();
 	for (size_t i = 0; i<vertexIds.size(); i++)
 	{
@@ -87,7 +79,7 @@ int main(int argc, char**argv){
       continue;		
 		
 		VertexSE2* v2 = new VertexSE2();
-		v2->setEstimate(fromIsoSE3(v3->estimate()));
+		v2->setEstimate(iso3toSE_2d(v3->estimate()));
 		v2->setId(v3->id());
 		d = v3->userData();		
 	  
@@ -102,7 +94,7 @@ int main(int argc, char**argv){
 				//adding sensor parameter
 				Parameter* p = graph->parameters().getParameter(data->paramIndex());
 				if (! graphSE2->parameters().getParameter(data->paramIndex()))
-				{
+				{// TODO changing in SE2
 					ParameterSE3Offset* parameter = dynamic_cast<ParameterSE3Offset*> (p);
 					parameter->setId(1);
 					graphSE2->parameters().addParameter(p);
@@ -162,8 +154,6 @@ cout << "GraphSE2 vertices: " << graphSE2->vertices().size() << endl;
 			e2->setMeasurementFromState();
 			Eigen::Matrix<double, 3,3> info;
 			info.setIdentity()*1000;
-// 			Eigen::Matrix2d info;
-// 			info << 1000, 0, 0, 1000;
 			e2->setInformation(info);
 			graphSE2->addEdge(e2);
 // 			graphSE2->saveEdge(ofG2O, e2);
@@ -172,6 +162,7 @@ cout << "GraphSE2 vertices: " << graphSE2->vertices().size() << endl;
 	cout << "Graph edges: " << graph->edges().size() << endl;
 	cout << "GraphSE2 edges: " << graphSE2->edges().size() << endl;
 
+	cout << "...saving graph in " << outfilename.c_str() << endl;
 	graphSE2->save(ofG2O);
 	ofG2O.close();
 	return (0);

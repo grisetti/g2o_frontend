@@ -2,6 +2,7 @@
 #define _BM_SE2_H_
 
 #include "bm_defs.h"
+#include <g2o/types/slam2d/se2.h>
 #include <iostream>
 
 inline Eigen::Matrix2f angle2mat_2f(float theta)
@@ -125,6 +126,15 @@ inline Eigen::Matrix3d vector2homogeneous_2d(const Vector6d x){
   transform.matrix().block<1,2>(1,0)=x.block<2,1>(2,0).transpose();
   transform.translation()=x.block<2,1>(4,0);
   return transform.matrix();
+}
+
+g2o::SE2 iso3toSE_2d(const Eigen::Isometry3d& iso){
+	Eigen::AngleAxisd aa(iso.linear());
+	float angle = aa.angle();
+	if (aa.axis().z()<0){
+			angle=-angle;
+	}
+	return g2o::SE2(iso.translation().x(), iso.translation().y(), angle);
 }
 
 #endif
