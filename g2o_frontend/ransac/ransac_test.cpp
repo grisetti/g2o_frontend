@@ -171,7 +171,8 @@ bool testRansac(typename RansacType::TransformType& result,
   ransac.setMaxIterations(1000);
   ransac.setInlierErrorThreshold(1.);
   ransac.setInlierStopFraction(0.5);
-  return ransac(result, debug);
+  std::vector<int> tmp;
+  return ransac(result,tmp, debug);
 }
 
 int main(int , char** ){
