@@ -187,7 +187,7 @@ public:
 	currentErrors[k] = e->chi2();
 	//cerr << "e: " << e->chi2() << endl;
 	if (e->chi2()<_inlierErrorTheshold){
-	  if (0&&debug) {
+	  if (debug) {
 	    cerr << "**************** INLIER ****************" << endl;
 	    cerr << "v1 ";
 	    v1->write(cerr);

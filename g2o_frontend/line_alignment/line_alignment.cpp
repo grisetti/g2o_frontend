@@ -27,6 +27,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <boost/concept_check.hpp>
+#include <boost/iterator/iterator_concepts.hpp>
 
 using namespace Eigen;
 using namespace std;
@@ -58,7 +59,7 @@ typedef std::vector<LineCorrs> LineCorrsVector;
 bool findCorrespondences(LineCorrsVector& _lcorrsVector, LinesForMatchingVector& _linesSets){
 	cout << "....start finding correspondences" << endl; 
 	LineCorrs currCorrs;
-	double th = 2.f;
+	double th = 1e3;
 	cout << "number of pairs to be matched: " << _linesSets.size() << endl;
 	for (int i = 0; i<(int)_linesSets.size(); i++)
 	{
@@ -67,7 +68,7 @@ bool findCorrespondences(LineCorrsVector& _lcorrsVector, LinesForMatchingVector&
 		LinesSet s1 = _linesSets[i].first;
 		LinesSet s2 = _linesSets[i].second;
 		cout << "number of lines in the first set: " << s1.size() << endl;
-		cout << "number of lines in the first set: " << s2.size() << endl;
+		cout << "number of lines in the second set: " << s2.size() << endl;
 		for(int j = 0; j < (int)s1.size(); j++)
 		{	
 			lineCorrespondence lc;
@@ -94,29 +95,29 @@ bool findCorrespondences(LineCorrsVector& _lcorrsVector, LinesForMatchingVector&
 				
 				//computing the chi2
 				Vector3d err_tot = l1_coeff-l2_coeff;
-				err_tot.head<2>() *= 10;
+				err_tot.head<2>() *= 1000;
 				double err_chi2 = err_tot.squaredNorm();
 				
 // 				cerr << "- err_sum between frame 0 line "<< j << " and frame 1 line " << k << ":\t" <<  err_sum <<endl;
 // 				cerr << "- err_chi2 between frame 0 line "<< j << " and frame 1 line " << k << ":\t" << err_chi2 <<endl<<endl;
 				
-				if(err_sum < lc.error)
+				if(err_chi2 < lc.error)
 				{
 					//considering err_chi2, don't need this if
-					if(lc.error < th) {
-						lc_second.error = lc.error;
-						lc_second.lid1 = lc.lid1;
-						lc_second.lid2 = lc.lid2;
-					}
-					lc.error = err_chi2;//err_sum
+// 					if(lc.error < th) {
+// 						lc_second.error = lc.error;
+// 						lc_second.lid1 = lc.lid1;
+// 						lc_second.lid2 = lc.lid2;
+// 					}
+					lc.error = err_chi2;
 					lc.lid1 = j;
 					lc.lid2 = k;
-				} else if(err_sum < th && err_sum < lc_second.error)
+				}/* else if(err_chi2 < th && err_chi2 < lc_second.error)
 				{
-					lc_second.error = err_chi2;//err_sum
+					lc_second.error = err_chi2;
 					lc_second.lid1 = j;
 					lc_second.lid2 = k;
-				}
+				}*/
 			}
 			currCorrs.push_back(lc);
 			if(lc_second.error != 1e9){
@@ -127,6 +128,13 @@ bool findCorrespondences(LineCorrsVector& _lcorrsVector, LinesForMatchingVector&
 	}
 	return true;
 }
+
+
+#if 1
+		ofstream os1("Line1.dat");
+		ofstream os2("Line2Remapped.dat");
+
+#endif
 
 
 int main(int argc, char**argv){
@@ -214,7 +222,7 @@ int main(int argc, char**argv){
 		graphline->addVertex(v_new);
 
 		//for each edges from the current robot poses
-		cout << "*********edges from the current robot poses*********" << endl;
+		cout << "###### edges from the current robot poses ######" << endl;
 		OptimizableGraph::EdgeSet es = v_current->edges();
 		cout << "This vertex has " << es.size() << " edge." << endl; 
 		for (OptimizableGraph::EdgeSet::iterator itv = es.begin(); itv != es.end(); itv++) {
@@ -253,7 +261,7 @@ int main(int argc, char**argv){
 		
 		//line extracted for the current vertex
 		int currvertexLine = 0;
-		cout << endl << "***Line Extracted from CURRENT frame***" << endl;
+		cout << endl << "***Extracting lines from CURRENT frame***" << endl;
 		for (OptimizableGraph::EdgeSet::iterator itv = es.begin(); itv != es.end(); itv++) {
 			
 			EdgeSE2Line2D* el = dynamic_cast<EdgeSE2Line2D*>(*itv);
@@ -288,8 +296,7 @@ int main(int argc, char**argv){
 				}
 				currvertexLine++;
 			}
-			cout << "vector size of lines in the current vertex: " << lvector.size() << endl;
-
+			
 			///new graph stuff
 			//creating vertexpoints and saving edges between line and points
 			OptimizableGraph::EdgeSet vl_edges = vl->edges();
@@ -317,11 +324,12 @@ int main(int argc, char**argv){
 				graphline->addEdge(elp);
 			}
 		}
+		cout << "Saving lines of the current vertex, size is: " << lvector.size() << endl;
 		
 		//saving the lines of the next vertex, to create the correspondences for ransac
 		if(v_next) {
 			int nextvertexLine = 0;
-			cout << endl <<  "***Line Extracted from NEXT frame***" << endl;
+			cout << endl <<  "***Extracting lines from NEXT frame***" << endl;
 			for (OptimizableGraph::EdgeSet::iterator itv_next = es_next.begin(); itv_next != es_next.end(); itv_next++) 
 			{
 				EdgeSE2Line2D* el_next = dynamic_cast<EdgeSE2Line2D*>(*itv_next);
@@ -344,7 +352,7 @@ int main(int argc, char**argv){
 					nextvertexLine++;
 				}
 			}
-			cout << "vector size of lines in the next vertex: " << lvector_next.size() << endl;
+			cout << "Saving lines of the next vertex, size is:" << lvector_next.size() << endl;
 			
 			lineMatchingContainer.push_back(make_pair(lvector, lvector_next));
 			cout << endl << " ### iteration "  << i << ", SIZE of the container(pair of lines sets): " << lineMatchingContainer.size() << endl << endl;
@@ -362,7 +370,7 @@ int main(int argc, char**argv){
 	cout << endl << " ### Done with the graph reading, ready for the correspondences finder.. " << endl;
 	cout << " ### SIZE OF THE FINAL CONTAINER: " << lineMatchingContainer.size() << endl;
 	LineCorrsVector lcorrsVector;
-// 	lcorrsVector.resize(lineMatchingContainer.size());	
+	lcorrsVector.reserve(lineMatchingContainer.size());	
 	//calling find correspondances
 	bool resultCorrespondances = findCorrespondences(lcorrsVector, lineMatchingContainer);
 	if(resultCorrespondances){
@@ -377,6 +385,8 @@ int main(int argc, char**argv){
 			
 			LinesSet s1 = lineMatchingContainer[c].first;
 			LinesSet s2 = lineMatchingContainer[c].second;
+// 			VertexLine2D* v1;
+			VertexLine2D* v2remapped;
 			
 			//computing the ground thruth: the odometry transformation from vertexSE2 of lineSet s1 to vertexSE2 of lineSet s2
 			Isometry2d gt = Isometry2d::Identity();
@@ -392,22 +402,42 @@ int main(int argc, char**argv){
 			
 			for (int ci = 0; ci < currCorrs.size(); ci++)
 			{
-				int vlid1 = -1, vlid2 = -1;
-					cerr << "Correspondances position in lines sets: "  <<currCorrs[ci].lid1 << ", " << currCorrs[ci].lid2 << ", with error:  " << currCorrs[ci].error << endl;
-					cerr << "ID vertex 1: [" << s1[currCorrs[ci].lid1].vline->id() << "] - ID vertex 2: [" << s2[currCorrs[ci].lid2].vline->id() << "]" << endl;
-					vlid1 = graph->vertex(s1[currCorrs[ci].lid1].vline->id())->id();
-					vlid2 = graph->vertex(s2[currCorrs[ci].lid2].vline->id())->id();
-					cerr << "ID vertex 1: [" << vlid1 << "] - ID vertex 2: [" << vlid2 << "]" << endl;
-					EdgeLine2D* eline = new EdgeLine2D;
-					VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[ci].lid1].vline->id()));
-					VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[ci].lid2].vline->id()));
-
-					eline->setVertex(0,vli);
-					eline->setVertex(1,vlj);
-					Correspondence c(eline,100);
-					correspondences.push_back(c);
-					indices[ci]=ci;
-					
+				cerr << "Correspondances position in lines sets: "  <<currCorrs[ci].lid1 << ", " << currCorrs[ci].lid2 << ", with error:  " << currCorrs[ci].error << endl;
+// 				int vlid1 = -1, vlid2 = -1;
+				
+// 				cerr << "ID vertex 1: [" << s1[currCorrs[ci].lid1].vline->id() << "] - ID vertex 2: [" << s2[currCorrs[ci].lid2].vline->id() << "]" << endl;
+// 				vlid1 = graph->vertex(s1[currCorrs[ci].lid1].vline->id())->id();
+// 				vlid2 = graph->vertex(s2[currCorrs[ci].lid2].vline->id())->id();
+// 				cerr << "ID vertex 1: [" << vlid1 << "] - ID vertex 2: [" << vlid2 << "]" << endl;
+				EdgeLine2D* eline = new EdgeLine2D;
+				VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[ci].lid1].vline->id()));
+				VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[ci].lid2].vline->id()));
+// #if 1				
+// 				//plotting the lines of the first vertex
+// 					Vector2d line1 = Vector2d(vli->estimate());
+// 					Vector2d nline1(cos(line1(0)), sin(line1(0)));
+// 					Vector2d pmiddle1 = nline1*line1(1);
+// 					Vector2d t1(-nline1.y(), nline1.x());
+// 					double l1_1,l2_1 = 10;
+// 					Vector2d p1line1 = pmiddle1 + t1*l1_1;
+// 					Vector2d p2line1 = pmiddle1 + t1*l2_1;
+// 
+// 					os1 << p1line1.transpose() << endl;
+// 					os1 << p2line1.transpose() << endl;
+// 					os1 << endl;
+// 					os1 << endl;
+// 					os1.flush();
+// #endif
+				
+				eline->setVertex(0,vli);
+				eline->setVertex(1,vlj);
+				Matrix2d info;
+				info << 100, 0, 0, 1;
+				eline->setInformation(info);
+				Correspondence c(eline,100);
+				correspondences.push_back(c);
+				indices[ci]=ci;
+				
 // 					for(int i = 0; i < s1.size(); i++){
 // 						if(s1[i].vline->id() == currCorrs[ci].lid1){
 // 							vlid1 = s1[i].vline->id();
@@ -422,31 +452,86 @@ int main(int argc, char**argv){
 // 					}
 			}
 			cerr << "size of correspondances vector: " << correspondences.size() << endl;
-			AlignmentAlgorithmLine2DLinear aligner;
-			SE2 t0(gt);
+			
+			
 // 			SE2 t0(Isometry2d::Identity());
-			AlignmentAlgorithmLine2DLinear::TransformType transform = t0;
-			bool resultAligner = aligner(transform, correspondences, indices);
-			if(resultAligner)
+// 			AlignmentAlgorithmLine2DLinear aligner;
+// 			AlignmentAlgorithmLine2DLinear::TransformType transform = t0;
+// 			bool resultAligner = aligner(transform, correspondences, indices);
+			SE2 t0(gt);
+			RansacLine2DLinear ransac;
+			CorrespondenceValidatorPtrVector validators;
+			ransac.correspondenceValidators()=validators;
+			ransac.setCorrespondences(correspondences);
+			ransac.setMaxIterations(1000);
+			ransac.setInlierErrorThreshold(1.5);
+			ransac.setInlierStopFraction(0.5);
+			RansacLine2DLinear::TransformType transform = t0;
+			bool resultRansac = ransac(transform, true);
+			
+			if(resultRansac)
 			{
 				cerr << "***********FOUND!***********" << endl;
-			Isometry2d res = transform.toIsometry();
-			Isometry2d _t0 = t0.toIsometry();
-			cerr << "ground truth vector: " <<endl;
-			cerr << t2v_2d(_t0) << endl;
-			cerr << "ground truth: " <<endl;
-			cerr << _t0.matrix() << endl;
-			cerr << "transform found vector: " <<endl;
-			cerr << t2v_2d(res) << endl;
-			cerr << "transform found: " <<endl;
-			cerr << res.matrix() << endl;
-			cerr << "transform error vector: " << endl;
-			cerr << t2v_2d(_t0*res) << endl;
-			cerr << "transform error: " << endl;
-			cerr << (_t0*res).matrix() << endl;
+				Isometry2d res = transform.toIsometry();
+				Isometry2d _t0 = t0.toIsometry();
+				cerr << endl;
+	// 			cerr << "ground truth vector: " <<endl;
+	// 			cerr << t2v_2d(_t0) << endl;
+				cerr << "ground truth: " <<endl;
+				cerr << _t0.matrix() << endl;
+				cerr << endl;
+				cerr << "transform found vector: " <<endl;
+				cerr << t2v_2d(res) << endl;
+	// 			cerr << "transform found: " <<endl;
+	// 			cerr << res.matrix() << endl;
+				cerr << endl;
+				cerr << "transform error vector: " << endl;
+				cerr << t2v_2d(_t0*res) << endl;
+	// 			cerr << "transform error: " << endl;
+	// 			cerr << (_t0*res).matrix() << endl;
 				
+				vector<double> err = ransac.errors();
+				cout << "Erros size: " << err.size() << endl;
+				for (int h = 0; h < err.size(); h++){
+					double erri = err[h];
+					cout << "error of " << h << "-th correspondance: " << erri << endl;
+				}
+#if 1				
+				//plotting the new line remapped with the transform found
+					for (int ci = 0; ci < currCorrs.size(); ci++)
+					{
+						VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[ci].lid1].vline->id()));
+						VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[ci].lid2].vline->id()));
+						Vector2d line1 = Vector2d(vli->estimate());
+						Vector2d nline1(cos(line1(0)), sin(line1(0)));
+						Vector2d pmiddle1 = nline1*line1(1);
+						Vector2d t1(-nline1.y(), nline1.x());
+						double l1_1,l2_1 = 10;
+						Vector2d p1line1 = pmiddle1 + t1*l1_1;
+						Vector2d p2line1 = pmiddle1 + t1*l2_1;
+
+						os1 << p1line1.transpose() << endl;
+						os1 << p2line1.transpose() << endl;
+						os1 << endl;
+						os1 << endl;
+						os1.flush();
+						
+						Vector2d line2Remapped = Vector2d(transform*(vlj->estimate()));
+						Vector2d nline2R(cos(line2Remapped(0)), sin(line2Remapped(0)));
+						Vector2d pmiddle2 = nline2R*line2Remapped(1);
+						Vector2d t2(-nline2R.y(), nline2R.x());
+						double l1_2,l2_2 = 10;
+						Vector2d p1line2R = pmiddle2 + t2*l1_2;
+						Vector2d p2line2R = pmiddle2 + t2*l2_2;
+						os2 << p1line2R.transpose() << endl;
+						os2 << p2line2R.transpose() << endl;
+						os2 << endl;
+						os2 << endl;
+						os2.flush();
+					}
+#endif
 			}
-			cout << endl << "********************************END OF ALIGNMENT ALGORITHM: ITERATION " << c << "********************************" << endl << endl;
+			cout << endl << "********************************END OF ALIGNMENT ALGORITHM: ITERATION " << c << "********************************" << endl << endl;			
 		}
 	}
 	

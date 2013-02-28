@@ -89,7 +89,7 @@ bool testRansac(typename RansacType::TransformType& result,
 		const std::vector<double>& offsets,
 		const std::vector<double>& noises,
 		const std::vector<double>& omegas,
-		CorrespondenceValidatorPtrVector& validators,//no
+		CorrespondenceValidatorPtrVector& validators,
 		double outlierFraction=0.2,
 		bool debug = false){
   

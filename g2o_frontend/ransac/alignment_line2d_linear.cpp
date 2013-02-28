@@ -18,8 +18,8 @@ namespace g2o_frontend{
       return false;
     Isometry2d transform = _transform.toIsometry();
     Vector6d _x = homogeneous2vector_2d(transform.matrix());
-    Eigen::Matrix3d Omega = Eigen::Matrix3d::Identity()*1000; 
-    
+    Eigen::Matrix3d Omega = Eigen::Matrix3d::Identity(); 
+    Omega.block<2,2>(0,0)*=1000;
     //	considering only the rotational part to first compute rotational part of the transformation
     Vector4d x;
     x.head<4>() = _x.head<4>();
@@ -61,7 +61,7 @@ namespace g2o_frontend{
       return false;
     x=ldlt.solve(-b); // using a LDLT factorizationldlt;
 		
-    cout << "ERROR: partial (R) before rotation: " << err << endl;
+//     cout << "ERROR: partial (R) before rotation: " << err << endl;
 		
     //saving the rotational part of the X
     _x.head<4>() = x.head<4>();
@@ -106,7 +106,7 @@ namespace g2o_frontend{
     t+=dt;
     Xnew.translation() = t;
     cout << "t after recompute the translation: " << t.transpose() << endl;
-    cout << "ERROR: partial (T) after rotation: " << err << endl;
+//     cout << "ERROR: partial (T) after rotation: " << err << endl;
 		
     transform = Xnew;
 	_transform = SE2(transform);
@@ -139,10 +139,10 @@ namespace g2o_frontend{
 			
       Vector3d tlj = line2d_remapCartesian(transform, lj);
       Vector3d ek = tlj - li;
-//        			ek[2] = 0.;
+// 	  ek[2] = 0.;
       err += ek.transpose() * Omega * ek;
     }
-    cout << "after all: " << err << endl;
+//     cout << "after all: " << err << endl;
     return true;
   }
 
