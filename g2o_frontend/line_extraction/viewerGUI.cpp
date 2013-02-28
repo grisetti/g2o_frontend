@@ -15,8 +15,8 @@
 #include "g2o/types/slam2d_addons/edge_line2d_pointxy.h"
 #include "g2o/types/slam2d_addons/edge_se2_line2d.h"
 
-#define MIN_POINTS_IN_LINES 10
-#define SPLIT_THRESHOLD 0.05*0.05
+#define MIN_POINTS_IN_LINES 12
+#define SPLIT_THRESHOLD 0.06*0.06
 #define CLUSTER_SQUARED_DISTANCE 0.3*0.3
 
 using namespace std;
@@ -29,7 +29,11 @@ const std::string splitMergeType = "Split & Merge algorithm.";
 
 void ViewerGUI::updateVal1(int val)
 {
-	cout << "Min point in lines: " << slider1value << endl;
+	if (algotype == noType) {
+		cout << "WARNING! No type of algorithm extraction choosen yet. Please select one of the available options." << endl;
+		return;
+	}
+	cout << "Min point in lines: " << val << endl;
 	lineExtractor->_minPointsInLine = val;
 	this->lineExtraction();
 	this->viewer->updateGL();
@@ -37,7 +41,11 @@ void ViewerGUI::updateVal1(int val)
 
 void ViewerGUI::updateVal2(int val)
 {
-	cout << "Split threshold: " << slider2value << endl;
+	if (algotype == noType) {
+		cout << "WARNING! No type of algorithm extraction choosen yet. Please select one of the available options." << endl;
+		return;
+	}
+	cout << "Split threshold: " << val << endl;
 	float dist = (float)val * 0.0005;
 	if (dist > 0.f) {
 		lineExtractor->_splitThreshold = dist*dist;
@@ -50,6 +58,10 @@ void ViewerGUI::updateVal2(int val)
 
 void ViewerGUI::updateVal3(int val)
 {
+	if (algotype == noType) {
+		cout << "WARNING! No type of algorithm extraction choosen yet. Please select one of the available options." << endl;
+		return;
+	}
 	cout << "Cluster squared distance: " << slider3value << endl;
 	float dist = (float)val * 0.005;
 	if (dist > 0.f) {
@@ -186,8 +198,10 @@ void ViewerGUI::lineExtraction()
 				cout << "*** End of extraction: the number of lines found is " << lineExtractor->lines().size() << " ***" << endl;
 				cout << "***********************************************************************************" << endl;
 				
+				if(lineExtractor->lines().size() == 0)
+					continue;
 				const Line2DExtractor::IntLineMap& linesMap = lineExtractor->lines();
-				for (Line2DExtractor::IntLineMap::const_iterator it=linesMap.begin(); it!=linesMap.end(); it++) {					
+				for (Line2DExtractor::IntLineMap::const_iterator it=linesMap.begin(); it!=linesMap.end(); it++) {	
 					const Line2D& line = it->second;					
 					const Vector2f& p0 = lineExtractor->points()[line.p0Index];
 					const Vector2f& p1 = lineExtractor->points()[line.p1Index];

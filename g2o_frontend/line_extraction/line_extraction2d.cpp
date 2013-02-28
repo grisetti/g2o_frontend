@@ -31,7 +31,7 @@ void Point2DClusterer::compute() {
 Line2DExtractor::Line2DExtractor()
 {
   _splitThreshold = 0.03*0.03;  
-  _minPointsInLine = 6;
+  _minPointsInLine = 10;
   _maxPointDistance = 3;
   _normalMergeThreshold = ::cos(M_PI/360);
   _rhoMergeThreshold = 0.05;
