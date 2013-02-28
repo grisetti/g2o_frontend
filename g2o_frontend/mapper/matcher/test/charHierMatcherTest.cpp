@@ -2,8 +2,8 @@
 #include <iostream>
 #include <time.h>
 
-#include "g2o_frontend/matcher/matching/charCorrMatcher.h"
-#include "g2o_frontend/matcher/utils/logReader.h"
+#include "../matching/charHierMatcher.h"
+#include "../utils/logReader.h"
 
 
 using namespace std;
@@ -14,11 +14,12 @@ using namespace Eigen;
 int main()
 {
     float resolution = 0.03;
-    float kernelMaxValue = 5;
+    float kernelMaxValue = 1;
     int hV = 30;
 
-    float radius = 50;
-    CorrelativeCharMatcher cm(resolution, radius, kernelMaxValue, kernelMaxValue);
+    float radius = 200;
+    HierarchicalCharMatcher cm(resolution, radius, kernelMaxValue, kernelMaxValue);
+    cout << "size is: " << cm.getConvolvedGrid().size() << endl;
 
     const string logFile = "/home/erratic/datasets/carmen_log_files/dis.clf";
     LogReader lr(logFile, hV);
@@ -27,10 +28,10 @@ int main()
     vector<Vector3f> logPose = lr.getPoses();
     vector<Vector3f> initialGuesses;
     initialGuesses.resize(logScan.size());
-  
+
     Vector2fVector previousScan, previousReducedScan;
     Vector3f pOdom, cOdom;
-  
+
     previousScan = logScan[0];
     cm.subsample(previousReducedScan, previousScan);
     pOdom = logPose[0];
@@ -53,8 +54,8 @@ int main()
         MatrixXf mat = delta.rotation();
         float angle = atan2(mat(1, 0), mat(0, 0));
         Vector3f initGuess(delta.translation().x(), delta.translation().y(), angle);
-        Vector3f lower(-0.3+initGuess.x(), -0.3+initGuess.y(), -0.2+initGuess.z());
-        Vector3f upper(0.3+initGuess.x(), 0.3+initGuess.y(), 0.2+initGuess.z());
+        Vector3f lower(-0.3 + initGuess.x(), -0.3 + initGuess.y(), -0.2 + initGuess.z());
+        Vector3f upper(0.3 + initGuess.x(), 0.3 + initGuess.y(), 0.2 + initGuess.z());
         float thetaRes = 0.01;
         int max = 10000;
 
@@ -62,8 +63,10 @@ int main()
 
         Vector2fVector currentReducedScan;
         cm.subsample(currentReducedScan, currentScan);
-        cm.scanMatch(currentReducedScan, lower, upper, thetaRes, max, 0.5, 0.5, 0.2);
-//        cm.scanMatch(currentReducedScan, lower, upper, thetaRes, max);
+        double pre = cm.getMilliSecs();
+        cm.scanMatch(currentReducedScan, lower, upper, thetaRes, max, 0.5, 0.5, 0.2, 4);
+        double post = cm.getMilliSecs();
+        cout << "Time: " << (post - pre) * 1000 << " ms" << endl;
 
         cm.clear();
         pOdom = cOdom;
@@ -85,7 +88,7 @@ int main()
 
     //   float mapRadius = 50; //lower dimension for fakeSimulated.clf
     float mapRadius = 100; //higher dimension for dis.clf
-    CorrelativeCharMatcher cm1(resolution, mapRadius, 5, kernelMaxValue);
+    HierarchicalCharMatcher cm1(resolution, mapRadius, 5, kernelMaxValue);
     cm1.integrateScan(scan, 1, adjust);
     for(size_t it = 1; it < logScan.size(); ++it)
     {
@@ -101,8 +104,8 @@ int main()
         adjust = adjust * innerAdjust;
         cm1.integrateScan(scan, 1., adjust);
     }
-  
-    ofstream a("charCorrelativeMap.ppm");
+
+    ofstream a("charHierarchicalMap.ppm");
     cm1.saveScanAsPPM(a, true);
     a.close();
 

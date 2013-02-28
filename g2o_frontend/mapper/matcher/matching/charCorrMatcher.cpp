@@ -15,24 +15,25 @@ float CorrelativeCharMatcherResult::matchingScore() const
 CorrelativeCharMatcherResult::~CorrelativeCharMatcherResult() {}
 
 
-
 CorrelativeCharMatcher::CorrelativeCharMatcher(const float& resolution, const float& radius,
                                                const int& kernelSize, const float& kernelMaxValue, int gridScale)
     : CharMatcher(resolution, radius, kernelSize, kernelMaxValue, gridScale)
 {
-    _innerResults.resize(5000);
+
 }
 
 
 CorrelativeCharMatcher::CorrelativeCharMatcher(const CharGrid& g, const int& kernelSize, const float& kernelMaxValue, int gridScale)
     : CharMatcher(g, kernelSize, kernelMaxValue, gridScale)
 {
-    cout << "b" << endl;
-    _innerResults.resize(5000);
+
 }
 
 
-CorrelativeCharMatcher::~CorrelativeCharMatcher() {}
+CorrelativeCharMatcher::~CorrelativeCharMatcher()
+{
+    delete innerCMR;
+}
 
 
 void CorrelativeCharMatcher::addToPrunedMap(map<DiscreteTriplet, CorrelativeCharMatcherResult*>& myMap,
@@ -62,17 +63,19 @@ void CorrelativeCharMatcher::addToPrunedMap(map<DiscreteTriplet, CorrelativeChar
 void CorrelativeCharMatcher::scanMatch(const Vector2fVector& points, const Vector3f& lowerLeftF,
                                        const Vector3f& upperRightF, const float& thetaRes, const float& maxScore)
 {
+    vector<CorrelativeCharMatcherResult*> mresvec;
     float dx = _scanGrid.resolution()*4;
     float dy = _scanGrid.resolution()*4;
     float dth = thetaRes *4;
-    scanMatch(points, lowerLeftF, upperRightF, thetaRes, maxScore, dx, dy, dth);
-    if(_innerResults.size())
+    scanMatch(mresvec, points, lowerLeftF, upperRightF, thetaRes, maxScore, dx, dy, dth);
+    if(mresvec.size())
     {
       CorrelativeCharMatcherResult* cmr = new CorrelativeCharMatcherResult;
-      cmr->_transformation = _innerResults[0]->_transformation;
-      cmr->_matchingScore = _innerResults[0]->_matchingScore;
+      cmr->_transformation = mresvec[0]->_transformation;
+      cmr->_matchingScore = mresvec[0]->_matchingScore;
       _matchResults.push_back(cmr);
     }
+
     else
     {
       CorrelativeCharMatcherResult* cmr = new CorrelativeCharMatcherResult;
@@ -83,33 +86,33 @@ void CorrelativeCharMatcher::scanMatch(const Vector2fVector& points, const Vecto
 }
 
 
-void CorrelativeCharMatcher::scanMatch(const Vector2fVector& points, const RegionVector& regions,
+void CorrelativeCharMatcher::scanMatch(vector<CorrelativeCharMatcherResult*>& mresvec, const Vector2fVector& points, const RegionVector& regions,
                                        float thetaRes, float maxScore, float dx, float dy, float dth)
 {
     MatchingParameters params;
     params.searchStep = Vector3f(_scanGrid.resolution(), _scanGrid.resolution(), thetaRes);
     params.maxScore = maxScore;
-    params.resultsDiscretization = Vector3f(dx,dy,dth);
-    scanMatch(points, regions, params);
-    if(_innerResults.size())
+    params.resultsDiscretization = Vector3f(dx, dy, dth);
+    scanMatch(mresvec, points, regions, params);
+
+    CorrelativeCharMatcherResult* cmr = new CorrelativeCharMatcherResult;
+    if(mresvec.size())
     {
-      CorrelativeCharMatcherResult* cmr = new CorrelativeCharMatcherResult;
-      cmr->_transformation = _innerResults[0]->_transformation;
-      cmr->_matchingScore = _innerResults[0]->_matchingScore;
-      _matchResults.push_back(cmr);
+        cmr->_transformation = mresvec[0]->_transformation;
+        cmr->_matchingScore = mresvec[0]->_matchingScore;
+        _matchResults.push_back(cmr);
     }
     else
     {
-      CorrelativeCharMatcherResult* cmr = new CorrelativeCharMatcherResult;
-      cmr->_transformation = Vector3f(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
-      cmr->_matchingScore = numeric_limits<float>::max();
-      _matchResults.push_back(cmr);
+        cmr->_transformation = Vector3f(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
+        cmr->_matchingScore = numeric_limits<float>::max();
+        _matchResults.push_back(cmr);
     }
 }
 
 
-void CorrelativeCharMatcher::scanMatch(const Vector2fVector& points, const Vector3f& lowerLeftF,
-                                       const Vector3f& upperRightF, const float& thetaRes,
+void CorrelativeCharMatcher::scanMatch(vector<CorrelativeCharMatcherResult*>& mresvec, const Vector2fVector& points,
+                                       const Vector3f& lowerLeftF, const Vector3f& upperRightF, const float& thetaRes,
                                        const float& maxScore, const float& dx, const float& dy, const float& dth)
 {
     RegionVector regions(1);
@@ -120,33 +123,19 @@ void CorrelativeCharMatcher::scanMatch(const Vector2fVector& points, const Vecto
     params.searchStep = Vector3f(_scanGrid.resolution(), _scanGrid.resolution(), thetaRes);
     params.maxScore = maxScore;
     params.resultsDiscretization = Vector3f(dx,dy,dth);
-    scanMatch(points, regions, params);
-    if(_innerResults.size())
-    {
-      CorrelativeCharMatcherResult* cmr = new CorrelativeCharMatcherResult;
-      cmr->_transformation = _innerResults[0]->_transformation;
-      cmr->_matchingScore = _innerResults[0]->_matchingScore;
-      _matchResults.push_back(cmr);
-    }
-    else
-    {
-      CorrelativeCharMatcherResult* cmr = new CorrelativeCharMatcherResult;
-      cmr->_transformation = Vector3f(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
-      cmr->_matchingScore = numeric_limits<float>::max();
-      _matchResults.push_back(cmr);
-    }
+    return scanMatch(mresvec, points, regions, params);
 }
 
 
-void CorrelativeCharMatcher::scanMatch(const Vector2fVector& points, const RegionVector& regions,
-                                       const MatchingParameters& params)
+void CorrelativeCharMatcher::scanMatch(vector<CorrelativeCharMatcherResult*>& mresvec, const Vector2fVector& points,
+                                       const RegionVector& regions, const MatchingParameters& params)
 {
-    std::map<DiscreteTriplet,CorrelativeCharMatcherResult*> resultMap;
+    map<DiscreteTriplet,CorrelativeCharMatcherResult*> resultMap;        
 
     Vector2iVector intPoints(points.size());
     float thetaRes = params.searchStep.z();
-    int xSteps = params.searchStep.x()/_scanGrid.resolution();
-    int ySteps = params.searchStep.y()/_scanGrid.resolution();
+    int xSteps = params.searchStep.x()/_convolvedGrid.resolution();
+    int ySteps = params.searchStep.y()/_convolvedGrid.resolution();
     float maxScore = params.maxScore;
 
     if(xSteps <= 0)
@@ -159,13 +148,15 @@ void CorrelativeCharMatcher::scanMatch(const Vector2fVector& points, const Regio
     }
 
     int additions = 0;
+
+    int scanSizeX =  _scanGrid.size().x();
+    int scanSizeY =  _scanGrid.size().y();
     for(RegionVector::const_iterator rit=regions.begin(); rit!=regions.end(); ++rit)
     {
         Vector3f lowerLeftF = rit->lowerLeft;
         Vector3f upperRightF = rit->upperRight;
-        Vector2i lowerLeft = _scanGrid.world2grid(Vector2f(lowerLeftF.x(),  lowerLeftF.y()));
-        Vector2i upperRight = _scanGrid.world2grid(Vector2f(upperRightF.x(), upperRightF.y()));
-
+        Vector2i lowerLeft = _convolvedGrid.world2grid(Vector2f(lowerLeftF.x(),  lowerLeftF.y()));
+        Vector2i upperRight = _convolvedGrid.world2grid(Vector2f(upperRightF.x(), upperRightF.y()));
         for(float t = lowerLeftF.z(); t < upperRightF.z(); t += thetaRes)
         {
             float c = cos(t), s = sin(t);
@@ -176,13 +167,13 @@ void CorrelativeCharMatcher::scanMatch(const Vector2fVector& points, const Regio
             for(size_t i = 0; i < points.size(); i++)
             {
                 Vector2f p(c*_p->x()-s*_p->y(), s*_p->x()+c*_p->y());
-                Vector2i ip(p.x()*_scanGrid.inverseResolution(), p.y()*_scanGrid.inverseResolution());
+                Vector2i ip(p.x()*_convolvedGrid.inverseResolution(), p.y()*_convolvedGrid.inverseResolution());
                 if(ip.x() != previousPoint.x() || ip.y() != previousPoint.y())
                 {
-                    *_ip=ip;
+                    *_ip = ip;
                     _ip++;
                     k++;
-                    previousPoint=ip;
+                    previousPoint = ip;
                 }
                 _p++;
             }
@@ -192,46 +183,53 @@ void CorrelativeCharMatcher::scanMatch(const Vector2fVector& points, const Regio
             {
                 for(int j = lowerLeft.y(); j < upperRight.y(); j += ySteps)
                 {
-                    int idsum=0;
+                    int idsum = 0;
                     Vector2i offset(i,j);
-                    const Vector2i* _ip=&(intPoints[0]);
-                    for (int ii=0; ii<k; ii++)
+                    const Vector2i* _ip = &(intPoints[0]);
+                    for(int ii=0; ii < k; ++ii)
                     {
-                        Vector2i ip=*_ip+offset;
+                        Vector2i ip = *_ip+offset;
                         _ip++;
-                        idsum+=_convolvedGrid.cell(ip);
+                        int ipX = ip.x();
+                        int ipY = ip.y();
+//                        if(ipX >= 0 && ipX < scanSizeX && ipY >= 0 && ipY < scanSizeY)
+//                        if(ipX >= 0 && ipY >= 0)
+                        {
+                            idsum += _convolvedGrid.cell(ip);
+                        }
                     }
-
                     float dsum = (float)idsum * (float)ikscale;
                     dsum = k ? (dsum / (float) k) : maxScore+1;
-                    Vector2f mp(_scanGrid.grid2world(Vector2i(i,j)));
-                    Vector3f current(mp.x(), mp.y(), t);
                     if(dsum < maxScore)
                     {
+                        Vector2f mp(_convolvedGrid.grid2world(Vector2i(i,j)));
+                        Vector3f current(mp.x(), mp.y(), t);
                         CorrelativeCharMatcherResult* cmr = new CorrelativeCharMatcherResult;
                         cmr->_transformation = current;
                         cmr->_matchingScore = dsum;
                         additions++;
                         addToPrunedMap(resultMap, cmr, params.resultsDiscretization.x(),
                                        params.resultsDiscretization.y(), params.resultsDiscretization.z());
+                        delete cmr;
                     }
                 }
             }
         }
     }
-
     CorrelativeCharMatcherResult* cmr = new CorrelativeCharMatcherResult;
     cmr->_transformation = Vector3f(.0, .0, .0);
     cmr->_matchingScore = 0;
-    _innerResults.resize(resultMap.size(), cmr);
+    mresvec.resize(resultMap.size(), cmr);
+
+    delete cmr;
 
     unsigned int k = 0;
     for(map<DiscreteTriplet, CorrelativeCharMatcherResult*>::iterator it = resultMap.begin(); it != resultMap.end(); ++it)
     {
-        _innerResults[k++] = it->second;
+      mresvec[k++] = it->second;
     }
   //   cerr << "bareResults= " << additions << "/"  << mresvec.size() << endl;
 
     Comparator comp;
-    sort(_innerResults.begin(), _innerResults.end(), comp);
+    sort(mresvec.begin(), mresvec.end(), comp);
 }

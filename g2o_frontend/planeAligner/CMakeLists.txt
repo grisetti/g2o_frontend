@@ -9,6 +9,7 @@ INCLUDE_DIRECTORIES(plane_aligner ${CSPARSE_INCLUDE_DIR} )
 TARGET_LINK_LIBRARIES(plane_aligner
     sensor_data_library
     types_data
+    ransac
     ${QT_LIBRARIES}
     ${G2O_TYPES_SLAM2D}
     ${G2O_TYPES_SLAM2D_ADDONS}

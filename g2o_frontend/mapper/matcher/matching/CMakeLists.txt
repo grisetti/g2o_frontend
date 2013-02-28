@@ -11,6 +11,7 @@ ADD_LIBRARY(
 	charMatcher.cpp			charMatcher.h
 	charCorrMatcher.cpp		charCorrMatcher.h
 	charGradMatcher.cpp		charGradMatcher.h
+        charHierMatcher.cpp             charHierMatcher.h
 )
 
 

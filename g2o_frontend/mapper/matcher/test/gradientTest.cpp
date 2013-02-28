@@ -1,7 +1,7 @@
 #include <fstream>
 #include <iostream>
-#include "g2o_frontend/matcher/matching/gradientMatcher.h"
-#include "g2o_frontend/matcher/utils/logReader.h"
+#include "../matching/gradientMatcher.h"
+#include "../utils/logReader.h"
 
 using namespace std;
 using namespace Eigen;

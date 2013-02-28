@@ -29,12 +29,21 @@
 #include "g2o/types/slam3d_addons/edge_se3_plane_calib.h"
 #include "g2o/core/hyper_graph.h"
 #include "g2o_frontend/ransac/ransac.h"
+#include "g2o_frontend/ransac/alignment_plane_linear.h"
+#include "g2o_frontend/basemath/bm_se2.h"
+#include "g2o/types/slam3d/isometry3d_mappings.h"
+#include <iostream>
+#include <fstream>
+#include <cstdlib>
+#include "g2o_frontend/ransac/alignment_plane_linear.h"
+#include "g2o_frontend/ransac/ransac.h"
 
 using namespace std;
 using namespace g2o;
 using namespace Slam3dAddons;
 using namespace cv;
 using namespace Eigen;
+using namespace g2o_frontend;
 
 VertexPlane myfancyVertex;
 RGBDData imageOriginal;
@@ -57,6 +66,7 @@ std::vector<planeAndVertex> container1;
 std::vector<planeAndVertex> container2;
 std::vector<planeCorrespondence> corrs;
 
+
 volatile bool hasToStop;
 void sigquit_handler(int sig)
 {
@@ -68,6 +78,55 @@ void sigquit_handler(int sig)
             exit(1);
         }
     }
+}
+template <typename TypeDomain_, int dimension_>
+struct EuclideanMapping{
+    typedef TypeDomain_ TypeDomain;
+    typedef typename Eigen::Matrix<double, dimension_, 1> VectorType;
+    virtual int dimension() const {return dimension_;}
+    virtual TypeDomain fromVector(const VectorType& v) const =  0;
+    virtual VectorType toVector(const TypeDomain& t) const = 0;
+};
+
+template <int dimension_>
+struct VectorMapping : public EuclideanMapping<Eigen::Matrix<double, dimension_, 1>, dimension_>{
+    typedef typename EuclideanMapping<Eigen::Matrix<double, dimension_, 1>, dimension_>::TypeDomain TypeDomain;
+    typedef typename EuclideanMapping<Eigen::Matrix<double, dimension_, 1>, dimension_>::VectorType VectorType;
+    virtual TypeDomain fromVector(const VectorType& v) const {return v;}
+    virtual VectorType toVector(const TypeDomain& t) const {return t;}
+};
+
+
+struct PlaneMapping: public EuclideanMapping<Plane3D,4>{
+    typedef typename EuclideanMapping<Plane3D, 4>::TypeDomain TypeDomain;
+    typedef typename EuclideanMapping<Plane3D, 4>::VectorType VectorType;
+    virtual TypeDomain fromVector(const VectorType& v) const {
+        Plane3D l(v);
+        return l;
+    }
+    virtual VectorType toVector(const TypeDomain& t) const {
+        return t.toVector();
+    }
+};
+
+typedef std::vector<Correspondence> CorrespondenceVector;
+
+template <typename MappingType, typename RansacType, typename EdgeCorrespondenceType>
+bool testRansac(typename RansacType::TransformType& result,CorrespondenceVector correspondences){
+
+    typedef typename RansacType::AlignerType AlignerType;
+    typedef typename RansacType::PointVertexType PointVertexType;
+    typedef typename RansacType::PointEstimateType PointEstimateType;
+    typedef typename RansacType::TransformType TransformType;
+    typedef typename MappingType::VectorType VectorType;
+
+    RansacType ransac;
+    //ransac.correspondenceValidators()=validators;
+    ransac.setCorrespondences(correspondences);
+    ransac.setMaxIterations(1000);
+    ransac.setInlierErrorThreshold(1.);
+    ransac.setInlierStopFraction(0.5);
+    return ransac(result);
 }
 
 
@@ -81,6 +140,8 @@ int main(int argc, char**argv)
     arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
     arg.parseArgs(argc, argv);
 
+    //Reading graph
+    //**************************************************************************************************************************************
     OptimizableGraph graph;
     typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
     typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
@@ -99,21 +160,23 @@ int main(int argc, char**argv)
     cerr << "loaded graph, now processing planes" << endl;
     signal(SIGINT, sigquit_handler);
 
+    //**************************************************************************************************************************************
+
+
     cerr <<"entering cycle..."<<endl;
-
-    //for (size_t i=0; i<graph.vertices().size()  && ! hasToStop; i++)
-    //{
-
     Isometry3d transformation2to1;
     transformation2to1.setIdentity();
-
     Isometry3d cameraOffset;
     cameraOffset.setIdentity();
+
+
+
 
     int i=1;
 
     OptimizableGraph::Vertex* _v=graph.vertex(i);
     VertexSE3* v=dynamic_cast<VertexSE3*>(_v);
+
     if(v)
     {
         cerr << "Processing [1] vertex"<<v->id()<<endl;
@@ -215,7 +278,7 @@ int main(int argc, char**argv)
                 cerr <<"vertex 2 has a plane " <<endl<<thePlane.toVector()<<endl;
 
 
-                Isometry3d tmp = cameraOffset.inverse()*transformation2to1*cameraOffset;
+                Isometry3d tmp = cameraOffset.inverse()*transformation2to1.inverse()*cameraOffset;
                 Plane3D tst = tmp*thePlane;
                 planeAndVertex pav;
                 pav.plane=tst;
@@ -279,15 +342,20 @@ int main(int argc, char**argv)
             double erore = diffff.squaredNorm();
 
             cerr << "Differences between frame 1 plane "<<i<<" and frame 2 plane \t"<<k<<" is "<< erore <<endl;
-            if(mycorr.error>(diff1+diff2))
-            {
-                mycorr.p1=i;
-                mycorr.p2=k;
-                mycorr.error=erore;
+            //if per prendere solo le migliori, le voglio prendere tutte però
+//            if(mycorr.error>(diff1+diff2))
+//            {
+//                mycorr.p1=i;
+//                mycorr.p2=k;
+//                mycorr.error=erore;
 
-            }
+//            }
+            mycorr.p1=i;
+            mycorr.p2=k;
+            mycorr.error=erore;
+            corrs.push_back(mycorr);
         }
-        corrs.push_back(mycorr);
+        //corrs.push_back(mycorr);
         cerr <<endl;
     }
 
@@ -296,18 +364,18 @@ int main(int argc, char**argv)
     cerr << "Corrispondenze trovate e i loro errori:"<<endl;
 
 
-    for (int i=0;i<container1.size();i++)
-    {
+//    for (int i=0;i<container1.size();i++)
+//    {
 
-        cerr <<"[1] (" <<i<<") Vertex id "<<container1.at(i).vplane.id()<<endl;
-    }
+//        cerr <<"[1] (" <<i<<") Vertex id "<<container1.at(i).vplane.id()<<endl;
+//    }
 
-    cerr << endl;
-    for (int i=0;i<container1.size();i++)
-    {
+//    cerr << endl;
+//    for (int i=0;i<container1.size();i++)
+//    {
 
-        cerr <<"[2] ("<< i<<") Vertex id "<<container2.at(i).vplane.id()<<endl;
-    }
+//        cerr <<"[2] ("<< i<<") Vertex id "<<container2.at(i).vplane.id()<<endl;
+//    }
 
 
     for (int i=0;i<corrs.size();i++)
@@ -333,8 +401,18 @@ int main(int argc, char**argv)
     }
 
 
+    cerr << "Debug time:"<<endl;
+    cerr << "correspondence vector has "<< correspondences.size()<< " edges"<<endl;
 
+    cerr << "Calling RANSAC..."<<endl;
 
+    Isometry3d tresult;
+    tresult.setIdentity();
+
+    bool result = testRansac<PlaneMapping, RansacPlaneLinear, EdgePlane>(tresult, correspondences);
+    cerr << "Resutl is "<<result<<endl;
+    cerr << "Result transform is "<<endl<<tresult.matrix()<<endl;
+    cerr << "Result transform vector is "<< endl<< g2o::internal::toVectorMQT(tresult)<<endl;
     exit(0);
 
 }

@@ -15,7 +15,7 @@ using namespace g2o;
 using namespace Slam3dAddons;
 using namespace Eigen;
 
-#define DEBUG 1
+#define DEBUG 0
 
 AlignmentAlgorithmPlaneLinear::AlignmentAlgorithmPlaneLinear(): AlignmentAlgorithmSE3Plane3D(3)
 {

@@ -4,6 +4,8 @@ include_directories(${CSPARSE_INCLUDE_DIR})
 ADD_LIBRARY(sensor_data_library 
   mutexed.cpp
   mutexed.h
+#  persistent_data.cpp
+#  persistent_data.h
   sensor.cpp
   sensor_data.cpp
   sensor_data.h

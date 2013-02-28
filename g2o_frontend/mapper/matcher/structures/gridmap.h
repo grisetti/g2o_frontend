@@ -4,8 +4,7 @@
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
 #include <iostream>
-#include "g2o_frontend/matcher/utils/array_allocator.h"
-
+#include "../utils/array_allocator.h"
 
 /**Generic grid map class.
 Supports copy constuction, assignment, resize, and indicidual cell access.*/
@@ -200,7 +199,7 @@ _GridMap<T>::_GridMap(const Eigen::Vector2f& lowerLeft, const Eigen::Vector2f& u
   _upperRight = upperRight;
   _resolution = res;
   _inverseResolution = 1./_resolution;
-  Eigen::Vector2f dSize = (upperRight - lowerLeft);
+  Eigen::Vector2f dSize = (upperRight - lowerLeft)*_inverseResolution;
   Eigen::Vector2i iSize(dSize.x(), dSize.y());
   _allocator = _Array2DAllocator<0,0,CellType>(iSize.x(), iSize.x());
   

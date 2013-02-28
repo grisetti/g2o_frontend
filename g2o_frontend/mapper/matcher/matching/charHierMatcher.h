@@ -8,16 +8,19 @@
 
 class HierarchicalCharMatcherResult : public CorrelativeCharMatcherResult
 {
-  friend class HierarchicalCharMatcher;
-  public:
+    friend class HierarchicalCharMatcher;
+
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     virtual float matchingScore() const;
-    virtual ~HierarchicalMatcherResult();
+    virtual ~HierarchicalCharMatcherResult();
 };
 
 
 class HierarchicalCharMatcher : public CorrelativeCharMatcher
 {
-  public:
+
+public:
     HierarchicalCharMatcher(const float& resolution, const float& radius, const int& kernelSize,
                             const float& kernelMaxValue, int _gridKScale = 128);
 
@@ -26,19 +29,24 @@ class HierarchicalCharMatcher : public CorrelativeCharMatcher
                             const float& kernelMaxValue, int _gridKScale = 128);
 
 
-    void scanMatch(const Vector2fVector& points, Eigen::Vector3f lowerLeftF, Eigen::Vector3f upperRightF,
-                            double thetaRes, double maxScore, double dx, double dy, double dth);
+    virtual ~HierarchicalCharMatcher();
 
 
-    void scanMatch(const Vector2fVector& points, const RegionVector& regions, double thetaRes,
-                            float maxScore, float dx, float dy, float dth, int nLevels);
+    void scanMatch(const Vector2fVector& points,
+                   Eigen::Vector3f lowerLeftF, Eigen::Vector3f upperRightF,
+                   float thetaRes, float maxScore, float dx, float dy, float dth);
 
 
-    void scanMatch(std::vector<CorrelativeMatcherResult*>& mresvec, const Vector2fVector& points,
+    void scanMatch(const Vector2fVector& points,
+                   const RegionVector& regions, float thetaRes,
+                   float maxScore, float dx, float dy, float dth, int nLevels);
+
+
+    void scanMatch(const Vector2fVector& points,
                    const RegionVector& regions, const MatchingParametersVector& paramsVec);
 
 
-    void scanMatch(std::vector<CorrelativeMatcherResult*>& mresvec, const Vector2fVector& points,
+    void scanMatch(const Vector2fVector& points,
                    Eigen::Vector3f lowerLeftF, Eigen::Vector3f upperRightF, float thetaRes,
                    float maxScore, float dx, float dy, float dth, int nLevels);
 };

@@ -14,9 +14,7 @@
 
 class MatcherResult
 {
-    friend class Comparator;
     friend class Matcher;
-
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     virtual float matchingScore() const;
@@ -32,7 +30,7 @@ protected:
 
 struct Comparator
 {
-    bool operator()(const MatcherResult* mr1, const MatcherResult* mr2)
+    inline bool operator()(const MatcherResult* mr1, const MatcherResult* mr2)
     {
         return mr1->matchingScore() < mr2->matchingScore();
     }
@@ -81,7 +79,7 @@ public:
 
 
     // Set currentGauge to the given vertex
-    bool setCurrentGauge(g2o::OptimizableGraph::Vertex* v)
+    inline bool setCurrentGauge(g2o::OptimizableGraph::Vertex* v)
     {
         if(v)
         {
@@ -94,7 +92,7 @@ public:
 
 
     // Set referenceGauge to the given vertex
-    bool setReferenceGauge(g2o::OptimizableGraph::Vertex* v)
+    inline bool setReferenceGauge(g2o::OptimizableGraph::Vertex* v)
     {
         if(v)
         {

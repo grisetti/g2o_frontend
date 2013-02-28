@@ -1,9 +1,8 @@
-#ifndef __CHAR_MATCHER_H__
-#define __CHAR_MATCHER_H__
+#ifndef __SCAN_MATCHER_H__
+#define __SCAN_MATCHER_H__
 
 #include "matcher.h"
-#include "g2o_frontend/matcher/structures/gridmap.h"
-
+#include "../structures/gridmap.h"
 
 struct PointAccumulator
 {
@@ -47,7 +46,7 @@ struct PointAccumulator
 
 struct Vector2iComparator
 {
-  bool operator()(const Eigen::Vector2i& v1, const Eigen::Vector2i& v2)
+  bool operator () (const Eigen::Vector2i& v1, const Eigen::Vector2i& v2)
   {
     if((v1.x() < v2.x()) || (((v1.x() == v2.x()) && (v1.y() < v2.y()))))
     {
@@ -59,29 +58,29 @@ struct Vector2iComparator
 typedef std::map<Eigen::Vector2i, PointAccumulator, Vector2iComparator> Vector2iAccumulatorMap;
 
 
-class CharMatcherResult : public MatcherResult
+class ScanMatcherResult : public MatcherResult
 {
   public:
     friend class CharMatcher;
     virtual float matchingScore() const;
-    virtual ~CharMatcherResult();
+    virtual ~ScanMatcherResult();
 };
 
 
-class CharMatcher : public Matcher
+class ScanMatcher : public Matcher
 {
   public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   
     typedef std::vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i> > Vector2iVector;
     typedef std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > Vector2fVector;
-    typedef Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic> MatrixXChar;
-    typedef _GridMap<char> CharGrid;
+    typedef Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> MatrixXChar;
+    typedef _GridMap<unsigned char> CharGrid;
     
-    CharMatcher(const float& resolution, const float& radius, const int& kernelSize, const float& kernelMaxValue, int _gridKScale = 128);
-    CharMatcher(const CharGrid& fg, const int& kernelSize, const float& kernelMaxValue, int _gridKScale = 128);
+    ScanMatcher(const float& resolution, const float& radius, const int& kernelSize, const float& kernelMaxValue);
+    ScanMatcher(const CharGrid& fg, const int& kernelSize, const float& kernelMaxValue);
 
-    virtual ~CharMatcher();
+    virtual ~ScanMatcher();
     virtual void scanMatch(const Vector2fVector& s, const Eigen::Vector3f& ig);
     
     void clear();
@@ -113,15 +112,13 @@ class CharMatcher : public Matcher
 
     CharGrid _scanGrid;
     CharGrid _convolvedGrid;
-    MatrixXChar _kernel;
 
-    std::vector<char*> _rasterCells;
-    std::vector<char*> _convolvedCells;
+    std::vector<unsigned char*> _rasterCells;
+    std::vector<unsigned char*> _convolvedCells;
 
     Vector2iVector _rasterIndices;
     Vector2iVector _convolvedIndices;
 
-    int _gridKScale;
-    float _kernelRange;
+    MatrixXChar _kernel;
 };
 #endif

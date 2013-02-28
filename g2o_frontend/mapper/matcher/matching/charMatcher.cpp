@@ -15,7 +15,8 @@ float CharMatcherResult::matchingScore() const
 CharMatcherResult::~CharMatcherResult() {}
 
 
-CharMatcher::CharMatcher(const float& resolution, const float& radius, const int& kernelSize, const float& kernelMaxValue, int kscale)
+CharMatcher::CharMatcher(const float& resolution, const float& radius, const int& kernelSize,
+                         const float& kernelMaxValue, const int kscale)
 {
   _kernelRange = kernelMaxValue;
   _gridKScale = kscale;
@@ -32,7 +33,8 @@ CharMatcher::CharMatcher(const float& resolution, const float& radius, const int
 }
 
 
-CharMatcher::CharMatcher(const CharGrid& inputGrid, const int& kernelSize, const float& kernelMaxValue, int kscale)
+CharMatcher::CharMatcher(const CharGrid& inputGrid, const int& kernelSize,
+                         const float& kernelMaxValue, const int kscale)
 {
   _kernelRange = kernelMaxValue;
   _gridKScale = kscale;
@@ -54,6 +56,19 @@ CharMatcher::CharMatcher(const CharGrid& inputGrid, const int& kernelSize, const
   this->_convolvedGrid = CharGrid(inputGrid.size(), inputGrid.lowerLeft(), inputGrid.resolution(), (char) _kernelRange);
   this->initializeKernel(kernelSize, inputGrid.resolution(), _kernelRange);
   this->convolveGrid(_scanGrid);
+}
+
+
+void CharMatcher::resizeGrids(const float &resolution, const float &radius, const int &kernelSize,
+                              const float &kernelMaxValue, const int kscale)
+{
+    _kernelRange = kernelMaxValue;
+    _gridKScale = kscale;
+
+    int size = (int) 2*(radius/resolution);
+    this->_scanGrid = CharGrid(Vector2i(size, size), Vector2f(-radius, -radius), resolution, char(0));
+    this->_convolvedGrid = CharGrid(Vector2i(size, size), Vector2f(-radius, -radius), resolution, (char) _kernelRange);
+    this->initializeKernel(kernelSize, resolution, _kernelRange);
 }
 
 
@@ -218,12 +233,12 @@ void CharMatcher::integrateScan(const Vector2fVector& ns, const float& val, cons
     float py = p.y();
     Vector2f transformedPoint(c*px - s*py + tx, s*px + c*py + ty);
     Vector2i ip = _scanGrid.world2grid(transformedPoint);
-    if(ip.x() >= 0 && ip.x() < _scanGrid.size().x() && ip.y() >= 0 && ip.y() < _scanGrid.size().y())
-    {
+//    if(ip.x() >= 0 && ip.x() < _scanGrid.size().x() && ip.y() >= 0 && ip.y() < _scanGrid.size().y())
+//    {
       _scanGrid.cell(ip) = (char) val;
       _rasterIndices.push_back(ip);
       _rasterCells.push_back(&_scanGrid.cell(ip));
-    }
+//    }
   }
 }
 

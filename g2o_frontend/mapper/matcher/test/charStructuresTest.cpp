@@ -1,15 +1,15 @@
 #include <iostream>
 #include <fstream>
-#include "g2o_frontend/matcher/matching/gradientMatcher.h"
-#include "g2o_frontend/matcher/matching/correlativeMatcher.h"
-#include "g2o_frontend/matcher/utils/logReader.h"
+#include "../matching/charGradMatcher.h"
+#include "../matching/charCorrMatcher.h"
+#include "../utils/logReader.h"
 
 using namespace std;
 using namespace Eigen;
 
 int main()
 {
-  float resolution = 0.05;
+  float resolution = 0.3;
   float kernelRange = 0.5;
   int hV = 5;
 
@@ -19,14 +19,14 @@ int main()
    */
   
   float radius = 50;
-  GradientMatcher gm(resolution, radius, kernelRange/resolution, kernelRange);
+  GradientCharMatcher gm(resolution, radius, kernelRange/resolution, kernelRange);
   cout << "params:" << endl;
   cout << "ll: " << gm.getScanGrid().lowerLeft() << endl;
   cout << "up: " << gm.getScanGrid().upperRight() << endl;
   cout << "res: " << gm.getScanGrid().resolution() << endl;
   cout << "ires: " << 1./gm.getScanGrid().resolution() << endl;
   
-  const string logFile = "../logFile/fakeSimulated.clf";
+  const string logFile = "/home/erratic/src/matcher/logFile/dis.clf";
   LogReader lr(logFile, hV);
 
   vector<Vector2fVector> logScan = lr.getScans();
