@@ -89,80 +89,80 @@ int main(int argc, char**argv)
     bool firstVertex = true;
     for(size_t i = 0; i < vertexIds.size() && ! hasToStop; ++i)
     {
-	OptimizableGraph::Vertex* v = graph->vertex(vertexIds[i]);
-	cerr << "vertex: " << v->id() << " type:" << factory->tag(v) << endl;
-	OptimizableGraph::Data* d = v->userData();
-	k = 0;
-	while(d)
-	{
-	    if(d)
-	    {
-	    cerr << "\t payload: " << factory->tag(d) << endl;
-	    const ImuData *imuData = dynamic_cast<const ImuData*>(d);
-	    const LaserRobotData* laserRobotData = dynamic_cast<const LaserRobotData*>(d);
-	    const RGBDData* rgbdData = dynamic_cast<const RGBDData*>(d);
-	    VertexSE3* vse3 = dynamic_cast<VertexSE3*>(v);
-	    
-	    if(imuData && vse3)
-	    {
-		EdgeSE3Prior* prior = new EdgeSE3Prior;
-		prior->setVertex(0, v);
-		prior->setParameterId(0, imuData->paramIndex());
-		Eigen::Isometry3d meas;
-		meas.setIdentity();
-		Eigen::Quaterniond q = imuData->getOrientation();
+        OptimizableGraph::Vertex* v = graph->vertex(vertexIds[i]);
+        cerr << "vertex: " << v->id() << " type:" << factory->tag(v) << endl;
+        OptimizableGraph::Data* d = v->userData();
+        k = 0;
+        while(d)
+        {
+            if(d)
+            {
+            cerr << "\t payload: " << factory->tag(d) << endl;
+            const ImuData *imuData = dynamic_cast<const ImuData*>(d);
+            const LaserRobotData* laserRobotData = dynamic_cast<const LaserRobotData*>(d);
+            const RGBDData* rgbdData = dynamic_cast<const RGBDData*>(d);
+            VertexSE3* vse3 = dynamic_cast<VertexSE3*>(v);
 
-		if(q.w() < 0)
-		{
-		    q.x() = -q.x();
-		    q.y() = -q.y();
-		    q.z() = -q.z();
-		    q.w() = -q.w();
-		}
+            if(imuData && vse3)
+            {
+            EdgeSE3Prior* prior = new EdgeSE3Prior;
+            prior->setVertex(0, v);
+            prior->setParameterId(0, imuData->paramIndex());
+            Eigen::Isometry3d meas;
+            meas.setIdentity();
+            Eigen::Quaterniond q = imuData->getOrientation();
 
-		meas.linear() = q.toRotationMatrix();
-		meas.translation() = vse3->estimate().translation();
-		prior->setMeasurement(meas);
-		Eigen::Matrix<double, 6, 6> info;
-		info.setZero();
-		
-		if(firstVertex)
-		{
-		    info.setIdentity();
-		    firstVertex = false;
-		}
-		else 
-		{
-		    info.block<3,3>(3,3) = Eigen::Matrix3d::Identity() * 1000.0;
-		}
-		
-		prior->setInformation(info);
-		bool res = graph->addEdge(prior);
-		
-		if(res)
-		{
-		    cerr << "Imu edge added to vertex: " << v->id() << ", parameter: " << imuData->paramIndex() << endl;
-		}
-		else
-		{
-		    cerr << "Could not add imu edge to vertex: " << v->id() << endl;
-		}
-	    }
+            if(q.w() < 0)
+            {
+                q.x() = -q.x();
+                q.y() = -q.y();
+                q.z() = -q.z();
+                q.w() = -q.w();
+            }
 
-	    if(laserRobotData && vse3)
-	    {
-		
-	    }
-	    
-	    if(rgbdData && vse3)
-	    {
+            meas.linear() = q.toRotationMatrix();
+            meas.translation() = vse3->estimate().translation();
+            prior->setMeasurement(meas);
+            Eigen::Matrix<double, 6, 6> info;
+            info.setZero();
 
-	    }
-	    
-	    k++;
-	    }
-	    d = d->next();
-	}
+            if(firstVertex)
+            {
+                info.setIdentity();
+                firstVertex = false;
+            }
+            else
+            {
+                info.block<3,3>(3,3) = Eigen::Matrix3d::Identity() * 1000.0;
+            }
+
+            prior->setInformation(info);
+            bool res = graph->addEdge(prior);
+
+            if(res)
+            {
+                cerr << "Imu edge added to vertex: " << v->id() << ", parameter: " << imuData->paramIndex() << endl;
+            }
+            else
+            {
+                cerr << "Could not add imu edge to vertex: " << v->id() << endl;
+            }
+            }
+
+            if(laserRobotData && vse3)
+            {
+
+            }
+
+            if(rgbdData && vse3)
+            {
+
+            }
+
+            k++;
+            }
+            d = d->next();
+        }
     }
     if(outputFilename != "")
     {
