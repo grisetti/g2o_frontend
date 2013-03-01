@@ -2,8 +2,8 @@
 #include <fstream>
 #include <GL/gl.h>
 
-
 #define RAG2DEG(x) (x*180/M_PI)
+
 
 using namespace g2o;
 
@@ -13,6 +13,7 @@ MapQGLViewer::MapQGLViewer(QWidget *parent): QGLViewer(parent)
 {
 	setAxisIsDrawn(false);
 } 
+
 
 void MapQGLViewer::init()
 {
@@ -79,36 +80,49 @@ void MapQGLViewer::drawVertex()
 
 void MapQGLViewer::draw()
 {
-    VertexSE2* v = new VertexSE2;
-    EdgeSE2* e = new EdgeSE2;
-
     drawAxis();
     glNormal3f(0.f, 0.f, 1.f);
     for(size_t i = 0; i < _drawableVertices.size(); ++i)
     {
-        v = _drawableVertices[i];
+        VertexSE2* vse2 = dynamic_cast<VertexSE2*>(_drawableVertices[i]);
+        VertexSE3* vse3 = dynamic_cast<VertexSE3*>(_drawableVertices[i]);
 
-        glPushMatrix();
-        glColor4f(1.f, .5f, .0f, .5f);
-        glTranslatef((float)v->estimate().translation().x(), (float)v->estimate().translation().y(), 0.f);
-        glRotatef((float)(RAG2DEG(v->estimate().rotation().angle())), 0.f, 0.f, 1.f);
-        glNormal3f(0.f,0.f,1.f);
-        drawVertex();
-        glPopMatrix();
+        if(vse2 && !vse3)
+        {
+            glPushMatrix();
+            glColor4f(1.f, .5f, .0f, .5f);
+            glTranslatef((float)vse2->estimate().translation().x(), (float)vse2->estimate().translation().y(), 0.f);
+            glRotatef((float)(RAG2DEG(vse2->estimate().rotation().angle())), 0.f, 0.f, 1.f);
+            glNormal3f(0.f,0.f,1.f);
+            drawVertex();
+            glPopMatrix();
+        }
+        if(vse3 && !vse2)
+        {
+            glPushMatrix();
+            glColor4f(1.f, 1.f, .0f, .5f);
+            glMultMatrixd(vse3->estimate().matrix().data());
+            glNormal3f(0.f,0.f,1.f);
+            drawVertex();
+            glPopMatrix();
+        }
     }
 
-    for(size_t j = 0; j < _drawableEdges.size(); ++j)
-    {
-        e = _drawableEdges[j];
-        VertexSE2* from = static_cast<VertexSE2*>(e->vertex(0));
-        VertexSE2* to = static_cast<VertexSE2*>(e->vertex(1));
+//    for(size_t j = 0; j < _drawableEdges.size(); ++j)
+//    {
+//        EdgeSE2* e = dynamic_cast<EdgeSE2*>(_drawableEdges[j]);
+//        if(e)
+//        {
+//            VertexSE2* from = static_cast<VertexSE2*>(e->vertex(0));
+//            VertexSE2* to = static_cast<VertexSE2*>(e->vertex(1));
 
-        glBegin(GL_LINES);
-        glColor4f(.5f, .5f, .5f, .5f);
-        glVertex3f(from->estimate().translation().x(), from->estimate().translation().y(), 0.f);
-        glVertex3f(to->estimate().translation().x(), to->estimate().translation().y(), 0.f);
-        glEnd();
-    }
+//            glBegin(GL_LINES);
+//            glColor4f(.5f, .5f, .5f, .5f);
+//            glVertex3f(from->estimate().translation().x(), from->estimate().translation().y(), 0.f);
+//            glVertex3f(to->estimate().translation().x(), to->estimate().translation().y(), 0.f);
+//            glEnd();
+//        }
+//    }
     glColor3f(1,1,1);
 }
 
