@@ -437,38 +437,57 @@ void ViewerGUI::ComputeAll()
 		Eigen::Isometry2d iT = T.inverse();
 		
 		graph = v->graph();
-		int id1 = -1, id2 = -1, lid = -1;
-		g2o::VertexPointXY* vp1, *vp2;
+		int id1, id2, lid,  id1_oldId2, tmpId2 = -1;
+		g2o::VertexPointXY* vp1, *vp2, *vp1_oldVp2, *tmpVp2 = 0;
 		g2o::VertexLine2D* vl;
+		
+		Vector2fVector prev;
+		prev.reserve(lc[0].size());
+		prev.push_back(Vector2f(-1e9, -1e9));
+		prev.push_back(Vector2f(-1e9, -1e9));
+		bool commonVertex = false;
+		
 		int id = (int)graph->vertices().size() - 1;
 			cout << "id ultimo: " << id << endl;
-		// 		for each line (ho entrambi i vertici per ora)
+		//for each line (ho entrambi i vertici per ora)
 		for (int i = 0; i < lc.size(); i++)
 		{
-			Vector2fVector l = lc[i];		
+			Vector2fVector l = lc[i];
 			Vector2d p1(l[0].x(), l[0].y());
 			Vector2d p2(l[1].x(), l[1].y());
 			Vector2d lp1 = iT * p1;
 			Vector2d lp2 = iT * p2;
 			
-			//first vertice
-			vp1 = new g2o::VertexPointXY();
-			id1 = ++id;
-			vp1->setId(id1);
-			vp1->setEstimate(p1); //ce li ho già trasformati, non moltiplico per T
-			graph->addVertex(vp1);
-	// 		graph->saveVertex(ofG2OLine, vp1);
+			//controlling if this line have a common vertex with the previous one
+			if(prev[1].x() == p1.x() && prev[1].y() == p1.y()){
+				commonVertex = true;
+				
+			}
+			else 
+				commonVertex = false;
 			
-			//edge between v and  first vertice
-			g2o::EdgeSE2PointXY* erp1 = new g2o::EdgeSE2PointXY();
-			erp1->setVertex(0,v);
-			erp1->setVertex(1,vp1);
-			erp1->setMeasurement(lp1); // p1 not transformed(in global frame)
-			Eigen::Matrix2d info1;
-			info1 << 1000, 0, 0, 1000;
-			erp1->setInformation(info1);
-			graph->addEdge(erp1);
-	// 		graph->saveEdge(ofG2OLine, erp1);
+			prev = l;
+	 		
+			if(!commonVertex){
+				//first vertice
+				vp1 = new g2o::VertexPointXY();
+				id1 = ++id;
+				vp1->setId(id1);
+				vp1->setEstimate(p1); //ce li ho già trasformati, non moltiplico per T
+				graph->addVertex(vp1);
+		// 		graph->saveVertex(ofG2OLine, vp1);
+				
+				//edge between v and  first vertice
+				g2o::EdgeSE2PointXY* erp1 = new g2o::EdgeSE2PointXY();
+				erp1->setVertex(0,v);
+				erp1->setVertex(1,vp1);
+				erp1->setMeasurement(lp1); // p1 not transformed(in global frame)
+				Eigen::Matrix2d info1;
+				info1 << 1000, 0, 0, 1000;
+				erp1->setInformation(info1);
+				graph->addEdge(erp1);
+		// 		graph->saveEdge(ofG2OLine, erp1);
+			}
 			
 			//second vertice
 			vp2 = new g2o::VertexPointXY();
@@ -476,6 +495,10 @@ void ViewerGUI::ComputeAll()
 			vp2->setId(id2);
 			vp2->setEstimate(p2); //ce li ho già trasformati, non moltiplico per T
 			graph->addVertex(vp2);
+			vp1_oldVp2 = tmpVp2;
+			id1_oldId2 = tmpId2;
+			tmpVp2 = vp2;
+			tmpId2 = id2;
 	// 		graph->saveVertex(ofG2OLine, vp2);
 
 			//edge between v and second vertice
@@ -494,7 +517,10 @@ void ViewerGUI::ComputeAll()
 			lid = ++id;
 			vl->setId(lid);
 			vl->setEstimate(pointsToLine(p1,p2));
-			vl->p1Id = id1;
+			if(!commonVertex)
+				vl->p1Id = id1;
+			else
+				vl->p1Id = id1_oldId2;
 			vl->p2Id = id2;
 			graph->addVertex(vl);
 	// 		graph->saveVertex(ofG2OLine, vl);
@@ -512,24 +538,27 @@ void ViewerGUI::ComputeAll()
 
 			
 			//Edge between vl and vp1
+			
 			g2o::EdgeLine2DPointXY* elp1 = new g2o::EdgeLine2DPointXY();
 			elp1->setVertex(0,vl);
-			elp1->setVertex(1,vp1);
+			if(!commonVertex)
+				elp1->setVertex(1,vp1);
+			else
+				elp1->setVertex(1,vp1_oldVp2);
 			elp1->setMeasurement(0);
 			Eigen::Matrix<double, 1, 1> infolp1;
-			infolp1(0,0) = 1e9;
+			infolp1(0,0) = 1e3;
 			elp1->setInformation(infolp1);
 			graph->addEdge(elp1);
 	// 		graph->saveEdge(ofG2OLine, elp1);
-
-			
-			//Edge between vl and vp2
+		
+			//Edge between vl and vp2				
 			g2o::EdgeLine2DPointXY* elp2 = new g2o::EdgeLine2DPointXY;
 			elp2->setVertex(0,vl);
 			elp2->setVertex(1,vp2);
 			elp2->setMeasurement(0);
 			Eigen::Matrix<double, 1, 1> infolp2;
-			infolp2(0,0) = 1e9;
+			infolp2(0,0) = 1e3;
 			elp2->setInformation(infolp2);
 			graph->addEdge(elp2);
 // 	 		graph->saveEdge(ofG2OLine, elp2);
