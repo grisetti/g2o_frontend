@@ -1,7 +1,8 @@
-#ifndef __CHAR_CORRELATIVE_MATCHER_H__
-#define __CHAR_CORRELATIVE_MATCHER_H__
+#ifndef CORRELATIVEMATCHER_H
+#define CORRELATIVEMATCHER_H
 
-#include "charMatcher.h"
+#include "scan_matcher.h"
+
 
 
 struct Region
@@ -54,30 +55,30 @@ struct DiscreteTriplet
 };
 
 
-class CorrelativeCharMatcherResult : public CharMatcherResult
+class CorrelativeMatcherResult : public ScanMatcherResult
 {
-    friend class CorrelativeCharMatcher;
+    friend class CorrelativeMatcher;
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     virtual float matchingScore() const;
-    virtual ~CorrelativeCharMatcherResult();
+    virtual ~CorrelativeMatcherResult();
 };
 
 
-class CorrelativeCharMatcher : public CharMatcher
+class CorrelativeMatcher : public ScanMatcher
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 
-    CorrelativeCharMatcher(const float& resolution, const float& radius, const int& kernelSize,
+    CorrelativeMatcher(const float& resolution, const float& radius, const int& kernelSize,
                            const float& kernelMaxValue, int _gridKScale = 128);
 
 
-    CorrelativeCharMatcher(const CharGrid& g, const int& kernelSize, const float& kernelMaxValue, int _gridKScale = 128);
+    CorrelativeMatcher(const CharGrid& g, const int& kernelSize, const float& kernelMaxValue, int _gridKScale = 128);
     
 
-    virtual ~CorrelativeCharMatcher();
+    virtual ~CorrelativeMatcher();
 
     //! search for the best in a region
     //! @param points: input scan points in cartesian coordinates
@@ -93,12 +94,12 @@ class CorrelativeCharMatcher : public CharMatcher
     //! @param regions: the regions where to do the search (vector)
     //! @param thetaRes: the resolution of the search
     //! @param maxScore: the maximum score of the match
-    void scanMatch(std::vector<CorrelativeCharMatcherResult*>& mresvec, const Vector2fVector& points,
+    void scanMatch(std::vector<CorrelativeMatcherResult*>& mresvec, const Vector2fVector& points,
                    const RegionVector& regions, float thetaRes, float maxScore,
                    float dx, float dy, float dth);
 
 
-    void scanMatch(std::vector<CorrelativeCharMatcherResult*>& mresvec, const Vector2fVector& points,
+    void scanMatch(std::vector<CorrelativeMatcherResult*>& mresvec, const Vector2fVector& points,
                    const Eigen::Vector3f& lowerLeftF, const Eigen::Vector3f& upperRightF,
                    const float& thetaRes, const float& maxScore, const float& dx, const float& dy, const float& dth);
     
@@ -107,14 +108,15 @@ class CorrelativeCharMatcher : public CharMatcher
     //! @param points: input scan points in cartesian coordinates
     //! @param regions: regions in which to search for the matching
     //! @param params: matching parameters
-    void scanMatch(std::vector<CorrelativeCharMatcherResult*>& mresvec, const Vector2fVector& points,
+    void scanMatch(std::vector<CorrelativeMatcherResult*>& mresvec, const Vector2fVector& points,
                    const RegionVector& regions, const MatchingParameters& params);
     
 
 protected:
-    void addToPrunedMap(std::map<DiscreteTriplet, CorrelativeCharMatcherResult*>& myMap,
-			const CorrelativeCharMatcherResult* mr, const float& dx, const float& dy, const float& dth);
+    void addToPrunedMap(std::map<DiscreteTriplet, CorrelativeMatcherResult*>& myMap,
+                        const CorrelativeMatcherResult* mr, const float& dx, const float& dy, const float& dth);
 
-    CorrelativeCharMatcherResult* innerCMR;
+    CorrelativeMatcherResult* innerCMR;
 };
-#endif
+
+#endif // CORRELATIVEMATCHER_H

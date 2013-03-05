@@ -1,35 +1,35 @@
-#ifndef CHARHIERMATCHER_H
-#define CHARHIERMATCHER_H
+#ifndef HIERARCHICALMATCHER_H
+#define HIERARCHICALMATCHER_H
 
 
-#include "charCorrMatcher.h"
+#include "correlative_matcher.h"
 
 
 
-class HierarchicalCharMatcherResult : public CorrelativeCharMatcherResult
+class HierarchicalMatcherResult : public CorrelativeMatcherResult
 {
-    friend class HierarchicalCharMatcher;
+    friend class HierarchicalMatcher;
 
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     virtual float matchingScore() const;
-    virtual ~HierarchicalCharMatcherResult();
+    virtual ~HierarchicalMatcherResult();
 };
 
 
-class HierarchicalCharMatcher : public CorrelativeCharMatcher
+class HierarchicalMatcher : public CorrelativeMatcher
 {
 
 public:
-    HierarchicalCharMatcher(const float& resolution, const float& radius, const int& kernelSize,
+    HierarchicalMatcher(const float& resolution, const float& radius, const int& kernelSize,
                             const float& kernelMaxValue, int _gridKScale = 128);
 
 
-    HierarchicalCharMatcher(const CharGrid& g, const int& kernelSize,
+    HierarchicalMatcher(const CharGrid& g, const int& kernelSize,
                             const float& kernelMaxValue, int _gridKScale = 128);
 
 
-    virtual ~HierarchicalCharMatcher();
+    virtual ~HierarchicalMatcher();
 
 
     void scanMatch(const Vector2fVector& points,
@@ -50,4 +50,5 @@ public:
                    Eigen::Vector3f lowerLeftF, Eigen::Vector3f upperRightF, float thetaRes,
                    float maxScore, float dx, float dy, float dth, int nLevels);
 };
-#endif // CHARHIERMATCHER_H
+
+#endif // HIERARCHICALMATCHER_H

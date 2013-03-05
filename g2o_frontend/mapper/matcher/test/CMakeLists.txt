@@ -1,35 +1,29 @@
-ADD_EXECUTABLE(charCorrMatcherTest charCorrMatcherTest.cpp)
-SET_TARGET_PROPERTIES(charCorrMatcherTest PROPERTIES OUTPUT_NAME charCorrMatcherTest)
-TARGET_LINK_LIBRARIES(charCorrMatcherTest matching_library reader_library ${G2O_STUFF_LIBRARY})
+ADD_EXECUTABLE(correlative_matcher_test correlative_matcher_test.cpp)
+SET_TARGET_PROPERTIES(correlative_matcher_test PROPERTIES OUTPUT_NAME correlative_matcher_test)
+TARGET_LINK_LIBRARIES(correlative_matcher_test matching_library reader_library ${G2O_STUFF_LIBRARY})
 
-ADD_EXECUTABLE(charGradMatcherTest charGradMatcherTest.cpp)
-SET_TARGET_PROPERTIES(charGradMatcherTest PROPERTIES OUTPUT_NAME charGradMatcherTest)
-TARGET_LINK_LIBRARIES(charGradMatcherTest matching_library reader_library ${G2O_STUFF_LIBRARY})
+ADD_EXECUTABLE(gradient_matcher_test gradient_matcher_test.cpp)
+SET_TARGET_PROPERTIES(gradient_matcher_test PROPERTIES OUTPUT_NAME gradient_matcher_test)
+TARGET_LINK_LIBRARIES(gradient_matcher_test matching_library reader_library ${G2O_STUFF_LIBRARY})
 
-ADD_EXECUTABLE(charHierMatcherTest charHierMatcherTest.cpp)
-SET_TARGET_PROPERTIES(charHierMatcherTest PROPERTIES OUTPUT_NAME charHierMatcherTest)
-TARGET_LINK_LIBRARIES(charHierMatcherTest matching_library reader_library ${G2O_STUFF_LIBRARY})
+ADD_EXECUTABLE(hierarchical_matcher_test hierarchical_matcher_test.cpp)
+SET_TARGET_PROPERTIES(hierarchical_matcher_test PROPERTIES OUTPUT_NAME hierarchical_matcher_test)
+TARGET_LINK_LIBRARIES(hierarchical_matcher_test matching_library reader_library ${G2O_STUFF_LIBRARY})
 
-ADD_EXECUTABLE(charStructuresTest charStructuresTest.cpp)
-SET_TARGET_PROPERTIES(charStructuresTest PROPERTIES OUTPUT_NAME charStructuresTest)
-TARGET_LINK_LIBRARIES(charStructuresTest matching_library reader_library ${G2O_STUFF_LIBRARY})
+ADD_EXECUTABLE(structures_test structures_test.cpp)
+SET_TARGET_PROPERTIES(structures_test PROPERTIES OUTPUT_NAME structures_test)
+TARGET_LINK_LIBRARIES(structures_test matching_library reader_library ${G2O_STUFF_LIBRARY})
 
-ADD_EXECUTABLE(correlativeTest correlativeTest.cpp)
-SET_TARGET_PROPERTIES(correlativeTest PROPERTIES OUTPUT_NAME correlativeTest)
-TARGET_LINK_LIBRARIES(correlativeTest matching_library reader_library ${G2O_STUFF_LIBRARY})
+ADD_EXECUTABLE(sub_sampler_test sub_sampler_test.cpp)
+SET_TARGET_PROPERTIES(sub_sampler_test PROPERTIES OUTPUT_NAME sub_sampler_test)
+TARGET_LINK_LIBRARIES(sub_sampler_test matching_library reader_library ${G2O_STUFF_LIBRARY})
 
-ADD_EXECUTABLE(gradientTest gradientTest.cpp)
-SET_TARGET_PROPERTIES(gradientTest PROPERTIES OUTPUT_NAME gradientTest)
-TARGET_LINK_LIBRARIES(gradientTest matching_library reader_library ${G2O_STUFF_LIBRARY})
 
-ADD_EXECUTABLE(hierarchicalTest hierarchicalTest.cpp)
-SET_TARGET_PROPERTIES(hierarchicalTest PROPERTIES OUTPUT_NAME hierarchicalTest)
-TARGET_LINK_LIBRARIES(hierarchicalTest matching_library reader_library ${G2O_STUFF_LIBRARY})
+INCLUDE_DIRECTORIES(${CSPARSE_INCLUDE_DIR})
 
-ADD_EXECUTABLE(structuresTest structuresTest.cpp)
-SET_TARGET_PROPERTIES(structuresTest PROPERTIES OUTPUT_NAME structuresTest)
-TARGET_LINK_LIBRARIES(structuresTest matching_library reader_library ${G2O_STUFF_LIBRARY})
-
-ADD_EXECUTABLE(subSamplerTest subSamplerTest.cpp)
-SET_TARGET_PROPERTIES(subSamplerTest PROPERTIES OUTPUT_NAME subSamplerTest)
-TARGET_LINK_LIBRARIES(subSamplerTest matching_library reader_library ${G2O_STUFF_LIBRARY})
+ADD_EXECUTABLE(openLoopSLAM openLoopSLAM.cpp)
+SET_TARGET_PROPERTIES(openLoopSLAM PROPERTIES OUTPUT_NAME openLoopSLAM)
+TARGET_LINK_LIBRARIES(openLoopSLAM matching_library sensor_data_library ${G2O_TYPES_DATA} ${G2O_TYPES_SLAM2D}
+                        ${G2O_STUFF_LIBRARY} ${G2O_CORE_LIBRARY} ${G2O_SOLVER_CSPARSE} ${G2O_SOLVER_CSPARSE_EXTENSION}
+                        ${CSPARSE_LIBRARY} ${OPENGL_gl_LIBRARY} pthread
+)

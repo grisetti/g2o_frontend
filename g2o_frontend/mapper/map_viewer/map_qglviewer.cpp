@@ -86,7 +86,8 @@ void MapQGLViewer::draw()
     {
         VertexSE2* vse2 = dynamic_cast<VertexSE2*>(_drawableVertices[i]);
         VertexSE3* vse3 = dynamic_cast<VertexSE3*>(_drawableVertices[i]);
-
+        std::cerr << "vse2: " << vse2 << std::endl;
+        std::cerr << "vse3: " << vse3 << std::endl;
         if(vse2 && !vse3)
         {
             glPushMatrix();

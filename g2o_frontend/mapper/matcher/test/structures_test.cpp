@@ -1,7 +1,8 @@
 #include <iostream>
 #include <fstream>
-#include "../matching/charGradMatcher.h"
-#include "../matching/charCorrMatcher.h"
+
+#include "../matching/gradient_matcher.h"
+#include "../matching/correlative_matcher.h"
 #include "../utils/logReader.h"
 
 using namespace std;
@@ -19,7 +20,7 @@ int main()
    */
   
   float radius = 50;
-  GradientCharMatcher gm(resolution, radius, kernelRange/resolution, kernelRange);
+  GradientMatcher gm(resolution, radius, kernelRange/resolution, kernelRange);
   cout << "params:" << endl;
   cout << "ll: " << gm.getScanGrid().lowerLeft() << endl;
   cout << "up: " << gm.getScanGrid().upperRight() << endl;

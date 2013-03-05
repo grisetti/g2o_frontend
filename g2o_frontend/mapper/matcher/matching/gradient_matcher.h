@@ -1,11 +1,11 @@
-#ifndef __GRADIENT_MATCHER_H__
-#define __GRADIENT_MATCHER_H__
+#ifndef GRADIENTMATCHER_H
+#define GRADIENTMATCHER_H
 
-#include "scanMatcher.h" 
+#include "scan_matcher.h"
 
 
 
-class GradientMatcherResult : ScanMatcherResult
+class GradientMatcherResult : public ScanMatcherResult
 {
   friend class GradientMatcher;
   public:
@@ -19,10 +19,10 @@ class GradientMatcher : public ScanMatcher
 {
   public:    
     GradientMatcher(const float& resolution, const float& radius, const int& kernelSize,
-		    const float& kernelMaxValue, const Eigen::Vector3f& baseMove = Eigen::Vector3f(0.1, 0.1, 0.3));
+			const float& kernelMaxValue, const Eigen::Vector3f& baseMove = Eigen::Vector3f(0.1, 0.1, 0.3));
     
     GradientMatcher(const CharGrid& g, const int& kernelSize,
-		    const float& kernelMaxValue, const Eigen::Vector3f& baseMove = Eigen::Vector3f(0.1, 0.1, 0.3));
+			const float& kernelMaxValue, const Eigen::Vector3f& baseMove = Eigen::Vector3f(0.1, 0.1, 0.3));
 
     
     virtual ~GradientMatcher();
@@ -35,4 +35,5 @@ class GradientMatcher : public ScanMatcher
     Eigen::Vector3f _moves[6];
     GradientMatcherResult* gmr;
 };
-#endif
+
+#endif // GRADIENTMATCHER_H

@@ -6,16 +6,17 @@
 #include <Eigen/Geometry>
 #include <list>
 #include <vector>
-#include "g2o/core/optimizable_graph.h"
+#include "g2o/core/hyper_graph.h"
 #include "g2o/stuff/command_args.h"
 #include "g2o/stuff/timeutil.h"
 
 
 
 class MatcherResult
-{
-    friend class Matcher;
+{    
 public:
+    friend class Matcher;
+
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     virtual float matchingScore() const;
     virtual ~MatcherResult();
@@ -41,7 +42,7 @@ class Matcher
 {
 
 public:
-    typedef std::vector<g2o::OptimizableGraph::Vertex*> VertexContainer;
+    typedef std::set<g2o::HyperGraph::Vertex*> VertexContainer;
     typedef std::vector<MatcherResult*> ResultContainer;
 
     virtual ~Matcher();
@@ -53,11 +54,42 @@ public:
     
 
     // Add vertex to current map (the one to be matched wrt the reference map)
-    inline bool addToCurrent(g2o::OptimizableGraph::Vertex* lv)
+    inline bool addToCurrent(g2o::HyperGraph::Vertex* lv)
     {
         if(lv)
         {
-            _currentVerteces.push_back(lv);
+            _currentVerteces.insert(lv);
+            return true;
+        }
+        else
+            return false;
+    }
+
+
+    // Add vertex to current map (the one to be matched wrt the reference map)
+    inline bool addToCurrent(VertexContainer lv)
+    {
+        for(VertexContainer::const_iterator it = lv.begin(); it != lv.end(); ++it)
+        {
+            if(*it)
+            {
+                _currentVerteces.insert(*it);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    // Add vertex to reference map
+    inline bool addToReference(g2o::HyperGraph::Vertex* lv)
+    {
+        if(lv)
+        {
+            _referenceVerteces.insert(lv);
             return true;
         }
         else
@@ -66,20 +98,25 @@ public:
 
 
     // Add vertex to reference map
-    inline bool addToReference(g2o::OptimizableGraph::Vertex* lv)
+    inline bool addToReference(VertexContainer lv)
     {
-        if(lv)
+        for(VertexContainer::const_iterator it = lv.begin(); it != lv.end(); ++it)
         {
-            _referenceVerteces.push_back(lv);
-            return true;
+            if(*it)
+            {
+                _referenceVerteces.insert(*it);
+            }
+            else
+            {
+                return false;
+            }
         }
-        else
-            return false;
+        return true;
     }
 
 
     // Set currentGauge to the given vertex
-    inline bool setCurrentGauge(g2o::OptimizableGraph::Vertex* v)
+    inline bool setCurrentGauge(g2o::HyperGraph::Vertex* v)
     {
         if(v)
         {
@@ -92,7 +129,7 @@ public:
 
 
     // Set referenceGauge to the given vertex
-    inline bool setReferenceGauge(g2o::OptimizableGraph::Vertex* v)
+    inline bool setReferenceGauge(g2o::HyperGraph::Vertex* v)
     {
         if(v)
         {
@@ -103,6 +140,9 @@ public:
             return false;
     }
 
+    virtual void clearMatchResults();
+
+    virtual void match(g2o::HyperGraph::Vertex* ref, g2o::HyperGraph::Vertex* curr);
     
     inline double getMilliSecs() const { return g2o::get_time(); }
 
@@ -115,18 +155,16 @@ public:
     inline VertexContainer referenceVerteces() { return _referenceVerteces; }
     inline const VertexContainer referenceVerteces() const { return _referenceVerteces; }
 
-    inline g2o::OptimizableGraph::Vertex* getCurrentGauge() { return _currentGauge; }
-    inline const g2o::OptimizableGraph::Vertex* getCurrentGauge() const { return _currentGauge; }
+    inline g2o::HyperGraph::Vertex* currentGauge() { return _currentGauge; }
+    inline const g2o::HyperGraph::Vertex* currentGauge() const { return _currentGauge; }
 
-    inline g2o::OptimizableGraph::Vertex* getReferenceGauge() { return _referenceGauge; }
-    inline const g2o::OptimizableGraph::Vertex* getReferenceGauge() const { return _referenceGauge; }
-
+    inline g2o::HyperGraph::Vertex* referenceGauge() { return _referenceGauge; }
+    inline const g2o::HyperGraph::Vertex* referenceGauge() const { return _referenceGauge; }
 
 protected:
-    virtual void clearMatchResults();
     
-    g2o::OptimizableGraph::Vertex* _currentGauge;	
-    g2o::OptimizableGraph::Vertex* _referenceGauge;
+    g2o::HyperGraph::Vertex* _currentGauge;
+    g2o::HyperGraph::Vertex* _referenceGauge;
     VertexContainer _currentVerteces;
     VertexContainer _referenceVerteces;
     ResultContainer _matchResults;

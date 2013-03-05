@@ -2,7 +2,7 @@
 #include <iostream>
 #include <time.h>
 
-#include "../matching/charCorrMatcher.h"
+#include "../matching/correlative_matcher.h"
 #include "../utils/logReader.h"
 
 
@@ -18,7 +18,7 @@ int main()
     int hV = 30;
 
     float radius = 100;
-    CorrelativeCharMatcher cm(resolution, radius, kernelMaxValue, kernelMaxValue);
+    CorrelativeMatcher cm(resolution, radius, kernelMaxValue, kernelMaxValue);
 
     cout << "sizeC:" << endl << cm.getConvolvedGrid().size() << endl;
     cout << "sizeS:" << endl << cm.getScanGrid().size() << endl;
@@ -86,12 +86,13 @@ int main()
 
     //   float mapRadius = 50; //lower dimension for fakeSimulated.clf
     float mapRadius = 100; //higher dimension for dis.clf
-    CorrelativeCharMatcher cm1(resolution, mapRadius, 5, kernelMaxValue);
+    CorrelativeMatcher cm1(resolution, mapRadius, 5, kernelMaxValue);
     cm1.integrateScan(scan, 1, adjust);
     for(size_t it = 1; it < logScan.size(); ++it)
     {
         scan = logScan[it];
         Vector3f current = matches[it-1]->_transformation;
+        cout << "current: " << current.x() << ", " << current.y() << ", " << current.z() << endl;
         if(current.x() == numeric_limits<char>::max())
         {
             current = initialGuesses[it-1];

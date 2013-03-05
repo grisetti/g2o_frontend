@@ -2,7 +2,7 @@
 #include <iostream>
 #include <time.h>
 
-#include "../matching/charHierMatcher.h"
+#include "../matching/hierarchical_matcher.h"
 #include "../utils/logReader.h"
 
 
@@ -18,7 +18,7 @@ int main()
     int hV = 30;
 
     float radius = 200;
-    HierarchicalCharMatcher cm(resolution, radius, kernelMaxValue, kernelMaxValue);
+    HierarchicalMatcher cm(resolution, radius, kernelMaxValue, kernelMaxValue);
     cout << "size is: " << cm.getConvolvedGrid().size() << endl;
 
     const string logFile = "/home/erratic/datasets/carmen_log_files/dis.clf";
@@ -88,7 +88,7 @@ int main()
 
     //   float mapRadius = 50; //lower dimension for fakeSimulated.clf
     float mapRadius = 100; //higher dimension for dis.clf
-    HierarchicalCharMatcher cm1(resolution, mapRadius, 5, kernelMaxValue);
+    HierarchicalMatcher cm1(resolution, mapRadius, 5, kernelMaxValue);
     cm1.integrateScan(scan, 1, adjust);
     for(size_t it = 1; it < logScan.size(); ++it)
     {
