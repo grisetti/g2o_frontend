@@ -5,13 +5,13 @@
 #include <fstream>
 #include <Qt/qapplication.h>
 
-#include "g2o/types/slam2d/vertex_se2.h"
-#include "g2o/types/slam2d/edge_se2.h"
+#include "g2o/core/hyper_graph.h"
 
 
-typedef std::vector<g2o::VertexSE2*> Vertices;
-typedef std::vector<g2o::EdgeSE2*> Edges;
-
+typedef std::vector<g2o::HyperGraph::Vertex*> Vertices;
+typedef std::vector<g2o::HyperGraph::Edge*> Edges;
+//typedef std::vector<g2o::VertexSE2*> Vertices;
+//typedef std::vector<g2o::EdgeSE2*> Edges;
 
 class MapGUI : public QMainWindow, public Ui::MainWindow
 {
@@ -20,8 +20,8 @@ class MapGUI : public QMainWindow, public Ui::MainWindow
 public:
     MapGUI(Vertices* verticesVector_, Edges* edgesVector_, QWidget *parent = 0);
 
-		Vertices* _vertices;
-		Edges* _edges;
+    Vertices* _vertices;
+    Edges* _edges;
 
 
 public slots:

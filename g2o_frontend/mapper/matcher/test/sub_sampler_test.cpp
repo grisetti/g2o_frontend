@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
-#include "../matching/scanMatcher.h"
+
+#include "../matching/scan_matcher.h"
 #include "../utils/logReader.h"
 
 

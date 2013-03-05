@@ -1,5 +1,4 @@
-#include "charHierMatcher.h"
-#include <stdio.h>
+#include "hierarchical_matcher.h"
 
 
 using namespace std;
@@ -7,31 +6,31 @@ using namespace Eigen;
 
 
 
-float HierarchicalCharMatcherResult::matchingScore() const
+float HierarchicalMatcherResult::matchingScore() const
 {
   return _matchingScore;
 }
 
 
-HierarchicalCharMatcherResult::~HierarchicalCharMatcherResult() {}
+HierarchicalMatcherResult::~HierarchicalMatcherResult() {}
 
 
-HierarchicalCharMatcher::HierarchicalCharMatcher(const float& resolution, const float& radius, const int& kernelSize,
+HierarchicalMatcher::HierarchicalMatcher(const float& resolution, const float& radius, const int& kernelSize,
                                                  const float& kernelMaxValue, int kscale)
-    : CorrelativeCharMatcher(resolution, radius, kernelSize, kernelMaxValue, kscale)
+    : CorrelativeMatcher(resolution, radius, kernelSize, kernelMaxValue, kscale)
 {}
 
 
-HierarchicalCharMatcher::HierarchicalCharMatcher(const CharGrid& g, const int& kernelSize,
+HierarchicalMatcher::HierarchicalMatcher(const CharGrid& g, const int& kernelSize,
                                                  const float& kernelMaxValue, int kscale)
-    : CorrelativeCharMatcher(g, kernelSize, kernelMaxValue, kscale)
+    : CorrelativeMatcher(g, kernelSize, kernelMaxValue, kscale)
 {}
 
 
-HierarchicalCharMatcher::~HierarchicalCharMatcher() {}
+HierarchicalMatcher::~HierarchicalMatcher() {}
 
 
-void HierarchicalCharMatcher::scanMatch(const Vector2fVector& points, Vector3f lowerLeftF,
+void HierarchicalMatcher::scanMatch(const Vector2fVector& points, Vector3f lowerLeftF,
                                         Vector3f upperRightF, float thetaRes,
                                         float maxScore, float dx, float dy, float dth)
 {
@@ -62,7 +61,7 @@ void HierarchicalCharMatcher::scanMatch(const Vector2fVector& points, Vector3f l
 }
 
 
-void HierarchicalCharMatcher::scanMatch(const Vector2fVector& points, Vector3f lowerLeftF,
+void HierarchicalMatcher::scanMatch(const Vector2fVector& points, Vector3f lowerLeftF,
                                         Vector3f upperRightF, float thetaRes, float maxScore,
                                         float dx, float dy, float dth, int nLevels)
 {
@@ -74,7 +73,7 @@ void HierarchicalCharMatcher::scanMatch(const Vector2fVector& points, Vector3f l
 }
 
 
-void HierarchicalCharMatcher::scanMatch(const Vector2fVector& points,
+void HierarchicalMatcher::scanMatch(const Vector2fVector& points,
                                         const RegionVector& regions, float thetaRes, float maxScore,
                                         float dx, float dy, float dth, int nLevels)
 {
@@ -97,16 +96,16 @@ void HierarchicalCharMatcher::scanMatch(const Vector2fVector& points,
 }
 
 
-void HierarchicalCharMatcher::scanMatch(const Vector2fVector& points, const RegionVector& regions,
+void HierarchicalMatcher::scanMatch(const Vector2fVector& points, const RegionVector& regions,
                                         const MatchingParametersVector& paramsVec)
 {
-    vector<CorrelativeCharMatcherResult*> mresvec;
+    vector<CorrelativeMatcherResult*> mresvec;
     RegionVector currentRegions = regions;
     for(unsigned int i = 0; i < paramsVec.size() -1; ++i)
     {
       double a = getMilliSecs();
       MatchingParameters params = paramsVec[i];
-      CorrelativeCharMatcher::scanMatch(mresvec, points, currentRegions, params);
+      CorrelativeMatcher::scanMatch(mresvec, points, currentRegions, params);
       currentRegions.clear();
       cout << "mresvec: " << mresvec.size() << endl;
       for(unsigned int i = 0; i < mresvec.size(); ++i)
@@ -123,17 +122,17 @@ void HierarchicalCharMatcher::scanMatch(const Vector2fVector& points, const Regi
     }
     cout << "Number of regions: " << currentRegions.size() << endl;
     MatchingParameters params = paramsVec[paramsVec.size()-1];
-    CorrelativeCharMatcher::scanMatch(mresvec, points, currentRegions, params);
+    CorrelativeMatcher::scanMatch(mresvec, points, currentRegions, params);
     if(mresvec.size())
     {
-      HierarchicalCharMatcherResult* hmr = new HierarchicalCharMatcherResult;
+      HierarchicalMatcherResult* hmr = new HierarchicalMatcherResult;
       hmr->_transformation = mresvec[0]->_transformation;
       hmr->_matchingScore = mresvec[0]->matchingScore();
       _matchResults.push_back(hmr);
     }
     else
     {
-      HierarchicalCharMatcherResult* hmr = new HierarchicalCharMatcherResult;
+      HierarchicalMatcherResult* hmr = new HierarchicalMatcherResult;
       hmr->_transformation = Vector3f(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
       hmr->_matchingScore = numeric_limits<float>::max();
       _matchResults.push_back(hmr);

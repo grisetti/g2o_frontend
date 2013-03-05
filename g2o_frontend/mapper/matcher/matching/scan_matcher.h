@@ -1,8 +1,10 @@
-#ifndef __CHAR_MATCHER_H__
-#define __CHAR_MATCHER_H__
+#ifndef SCANMATCHER_H
+#define SCANMATCHER_H
 
 #include "matcher.h"
 #include "../structures/gridmap.h"
+
+
 
 struct PointAccumulator
 {
@@ -58,17 +60,17 @@ struct Vector2iComparator
 typedef std::map<Eigen::Vector2i, PointAccumulator, Vector2iComparator> Vector2iAccumulatorMap;
 
 
-class CharMatcherResult : public MatcherResult
+class ScanMatcherResult : public MatcherResult
 {
-    friend class CharMatcher;
+    friend class ScanMatcher;
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     virtual float matchingScore() const;
-    virtual ~CharMatcherResult();
+    virtual ~ScanMatcherResult();
 };
 
 
-class CharMatcher : public Matcher
+class ScanMatcher : public Matcher
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -78,11 +80,12 @@ class CharMatcher : public Matcher
     typedef Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic> MatrixXChar;
     typedef _GridMap<char> CharGrid;
     
-    CharMatcher(const float& resolution, const float& radius, const int& kernelSize, const float& kernelMaxValue, const int _gridKScale = 128);
-    CharMatcher(const CharGrid& fg, const int& kernelSize, const float& kernelMaxValue, const int _gridKScale = 128);
+    ScanMatcher(const float& resolution, const float& radius, const int& kernelSize, const float& kernelMaxValue, const int _gridKScale = 128);
+    ScanMatcher(const CharGrid& fg, const int& kernelSize, const float& kernelMaxValue, const int _gridKScale = 128);
 
-    virtual ~CharMatcher();
-    virtual void scanMatch(const Vector2fVector& s, const Eigen::Vector3f& ig);
+    virtual ~ScanMatcher();
+
+    virtual void match(g2o::HyperGraph::Vertex* ref, g2o::HyperGraph::Vertex* curr);
     
     void clear();
     void convolveScan(const Vector2fVector& ns, const Eigen::Isometry2f& transform = Eigen::Isometry2f::Identity());
@@ -127,4 +130,5 @@ class CharMatcher : public Matcher
     int _gridKScale;
     float _kernelRange;
 };
-#endif
+
+#endif // SCANMATCHER_H

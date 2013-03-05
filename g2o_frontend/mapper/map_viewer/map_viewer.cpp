@@ -1,5 +1,7 @@
 #include <signal.h>
 
+#include "map_gui.h"
+
 #include "g2o/stuff/macros.h"
 #include "g2o/stuff/color_macros.h"
 #include "g2o/stuff/command_args.h"
@@ -14,8 +16,6 @@
 #include "g2o/core/optimization_algorithm_levenberg.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 
-#include "map_gui.h"
-
 #include <qapplication.h>
 #include <qobject.h>
 
@@ -23,9 +23,6 @@
 using namespace std;
 using namespace g2o;
 
-
-VertexSE2* g;
-EdgeSE2* e;
 
 
 //to be deleted?
@@ -68,7 +65,7 @@ int main(int argc, char**argv)
     vector<int> vertexIds(graph->vertices().size());
     int k = 0;
 
-    for(OptimizableGraph::VertexIDMap::iterator it=graph->vertices().begin(); it!= graph->vertices().end(); ++it)
+    for(OptimizableGraph::VertexIDMap::iterator it = graph->vertices().begin(); it != graph->vertices().end(); ++it)
     {
       vertexIds[k++] = (it->first);
     }
@@ -79,8 +76,7 @@ int main(int argc, char**argv)
 
     for(size_t i = 0; i < vertexIds.size() && ! hasToStop; ++i)
     {
-        OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[i]);
-        VertexSE2* v = dynamic_cast<VertexSE2*>(_v);
+        HyperGraph::Vertex* v = graph->vertex(vertexIds[i]);
         if(!v)
         {
             continue;
@@ -89,7 +85,7 @@ int main(int argc, char**argv)
         HyperGraph::EdgeSet edgeSet = v->edges();
         for(HyperGraph::EdgeSet::const_iterator it = edgeSet.begin(); it != edgeSet.end(); ++it)
         {
-            EdgeSE2* e = dynamic_cast<EdgeSE2*>(*it);
+            HyperGraph::Edge* e = *it;
             drawableEdges.push_back(e);
         }
         drawableVertices.push_back(v);

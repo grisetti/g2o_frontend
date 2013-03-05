@@ -1,60 +1,60 @@
-#include "charGradMatcher.h"
-#include <stdio.h>
+#include "gradient_matcher.h"
+
 
 using namespace std;
 using namespace Eigen;
 
 
 
-float GradientCharMatcherResult::matchingScore() const
+float GradientMatcherResult::matchingScore() const
 {
   return _matchingScore;
 }
 
 
-GradientCharMatcherResult::~GradientCharMatcherResult() {}
+GradientMatcherResult::~GradientMatcherResult() {}
 
 
-GradientCharMatcher::GradientCharMatcher(const float& resolution, const float& radius, const int& kernelSize,
-				 const float& kernelMaxValue, const Vector3f& baseMove)
-: CharMatcher(resolution, radius, kernelSize, kernelMaxValue)
+GradientMatcher::GradientMatcher(const float& resolution, const float& radius, const int& kernelSize,
+                                 const float& kernelMaxValue, const Vector3f& baseMove)
+    : ScanMatcher(resolution, radius, kernelSize, kernelMaxValue)
 {
-  _moves[0] = Vector3f(+baseMove.x(), 0, 0);
-  _moves[1] = Vector3f(-baseMove.x(), 0, 0);
-  _moves[2] = Vector3f(0, +baseMove.y(), 0);
-  _moves[3] = Vector3f(0, -baseMove.y(), 0);
-  _moves[4] = Vector3f(0, 0, +baseMove.z());
-  _moves[5] = Vector3f(0, 0, -baseMove.z());
+    _moves[0] = Vector3f(+baseMove.x(), 0, 0);
+    _moves[1] = Vector3f(-baseMove.x(), 0, 0);
+    _moves[2] = Vector3f(0, +baseMove.y(), 0);
+    _moves[3] = Vector3f(0, -baseMove.y(), 0);
+    _moves[4] = Vector3f(0, 0, +baseMove.z());
+    _moves[5] = Vector3f(0, 0, -baseMove.z());
 }
 
 
-GradientCharMatcher::GradientCharMatcher(const CharGrid& g, const int& kernelSize,
-				 const float& kernelMaxValue, const Vector3f& baseMove)
-: CharMatcher(g, kernelSize, kernelMaxValue)
+GradientMatcher::GradientMatcher(const CharGrid& g, const int& kernelSize,
+                                 const float& kernelMaxValue, const Vector3f& baseMove)
+    : ScanMatcher(g, kernelSize, kernelMaxValue)
 {
-  _moves[0] = Vector3f(+baseMove.x(), 0, 0);
-  _moves[1] = Vector3f(-baseMove.x(), 0, 0);
-  _moves[2] = Vector3f(0, +baseMove.y(), 0);
-  _moves[3] = Vector3f(0, -baseMove.y(), 0);
-  _moves[4] = Vector3f(0, 0, +baseMove.z());
-  _moves[5] = Vector3f(0, 0, -baseMove.z());
+    _moves[0] = Vector3f(+baseMove.x(), 0, 0);
+    _moves[1] = Vector3f(-baseMove.x(), 0, 0);
+    _moves[2] = Vector3f(0, +baseMove.y(), 0);
+    _moves[3] = Vector3f(0, -baseMove.y(), 0);
+    _moves[4] = Vector3f(0, 0, +baseMove.z());
+    _moves[5] = Vector3f(0, 0, -baseMove.z());
 }
 
 
-GradientCharMatcher::~GradientCharMatcher()
+GradientMatcher::~GradientMatcher()
 {
-  delete gmr;
+    delete gmr;
 }
 
 
-int GradientCharMatcher::partialScore(const Vector2fVector& scan, const Vector3f& t)
+int GradientMatcher::partialScore(const Vector2fVector& scan, const Vector3f& t)
 {
-  float s = sin(t.z());
-  float c = cos(t.z());
-  Vector2i previousPoint(-10000, -10000);
-  int innerScore = 0;
-  for(unsigned int beamNo = 0; beamNo < scan.size(); ++beamNo)
-  {
+    float s = sin(t.z());
+    float c = cos(t.z());
+    Vector2i previousPoint(-10000, -10000);
+    int innerScore = 0;
+    for(unsigned int beamNo = 0; beamNo < scan.size(); ++beamNo)
+    {
     const Vector2f& endPoint = scan[beamNo];
     float endPointX = endPoint.x();
     float endPointY = endPoint.y();
@@ -74,7 +74,7 @@ int GradientCharMatcher::partialScore(const Vector2fVector& scan, const Vector3f
 }
 
 
-void GradientCharMatcher::scanMatch(const Vector2fVector& scan, const Vector3f& initialGuess)
+void GradientMatcher::scanMatch(const Vector2fVector& scan, const Vector3f& initialGuess)
 {
   Vector2f tempCenter = _scanGrid.center();
   _scanGrid.setCenter(-initialGuess.x(), -initialGuess.y());
@@ -119,7 +119,7 @@ void GradientCharMatcher::scanMatch(const Vector2fVector& scan, const Vector3f& 
     bestMoveAtResolution = bestLocalMove;
     scale = scale * .5;
   }
-  gmr = new GradientCharMatcherResult;
+  gmr = new GradientMatcherResult;
   gmr->_transformation = bestMoveAtResolution;
   gmr->_matchingScore = bestScoreAtResolution;
   _matchResults.push_back(gmr);
