@@ -109,10 +109,10 @@ void ViewerGUI::showOriginal()
 	this->viewer->updateGL();
 }
 
-#if 1
+#if 0
 // 					ofstream osp1PrimaC("points1PrimaC.dat");
 // 					ofstream osp1("points1.dat");
-						ofstream os("myLines.dat");
+					ofstream os("myLines.dat");
 #endif
 void ViewerGUI::lineExtraction()
 {
@@ -122,6 +122,7 @@ void ViewerGUI::lineExtraction()
   }
 	else
 	{
+		ofstream os("myLines.dat");
 		this->lc.clear();
 		this->lAdjacentVector.clear();
 		
@@ -414,6 +415,11 @@ Vector2d pointsToLine(const Vector2d& p1, const Vector2d& p2){
 /** Compute the Line extraction for the entire graph adding vertices and edges related to the line data**/
 void ViewerGUI::ComputeAll()
 {
+	if (algotype == noType) {
+		cout << "WARNING! No type of algorithm extraction choosen yet. Please select one of the available options." << endl;
+		return;
+	}
+	
 	g2o::OptimizableGraph* graph;
 	
 	int count = 0;

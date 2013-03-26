@@ -55,40 +55,41 @@ typedef std::vector<LinesForMatching> LinesForMatchingVector;
 typedef std::vector<lineCorrespondence> LineCorrs;
 typedef std::vector<LineCorrs> LineCorrsVector;
 
-void mergePointVertex(OptimizableGraph* graph, VertexPointXY* pNew, VertexPointXY* pOld){
+void mergePointVertex(OptimizableGraph* graph, OptimizableGraph* graphline, VertexPointXY* pNew, VertexPointXY* pOld){
 	if (!pNew || !pOld || pNew == pOld)
 			return;
 	
 	int idOld=pOld->id();
 	int idNew=pNew->id();
-	OptimizableGraph::EdgeSet epoint1 = pNew->edges();
+	OptimizableGraph::EdgeSet epoint1 = pOld->edges();
 	for (OptimizableGraph::EdgeSet::iterator it_vp1 = epoint1.begin(); it_vp1 != epoint1.end(); it_vp1++)
 	{
 		EdgeLine2DPointXY* elp1 = dynamic_cast<EdgeLine2DPointXY*>(*it_vp1);
 		if(elp1){
 			VertexLine2D* line = dynamic_cast<VertexLine2D*>(elp1->vertex(0));
 			if (line) {
-				if (line->p1Id==idNew)
-					line->p1Id = idOld;
-				if (line->p2Id==idNew)
+				if (line->p1Id==idOld)
+					line->p1Id = idNew;
+				if (line->p2Id==idOld)
 					line->p2Id = idNew;
 			}
 		}
 	}
-	graph->mergeVertices(pOld, pNew, true);
+	graphline->mergeVertices(pNew, pOld, true);
 }
 
-void mergeLineVertex(OptimizableGraph* graph, VertexLine2D* lNew, VertexLine2D* lOld){
-	if (!lNew || !lOld && lNew==lOld)
+void mergeLineVertex(OptimizableGraph* graph, OptimizableGraph* graphline, VertexLine2D* lNew, VertexLine2D* lOld){
+	if (!lNew || !lOld && lNew == lOld)
 			return;
-	if (lNew->p1Id >0 && lOld->p1Id>0){ // merge the first vertices of both lines
-		mergePointVertex(graph,
+	if (lOld->p1Id > -1 && lNew->p1Id > -1){ // merge the first vertices of both lines
+		mergePointVertex(graph, graphline,
 						 dynamic_cast<VertexPointXY*>(graph->vertex(lNew->p1Id)),
 						 dynamic_cast<VertexPointXY*>(graph->vertex(lOld->p1Id)));
-	} else if (lOld->p1Id <0 && lNew->p1Id>-1 ){
-		lOld->p1Id = lNew->p1Id;
+	} else if (lNew->p1Id < 0 && lOld->p1Id > -1){ // just update the id of the keeping line
+		cerr << "fuck!!!!!!!!!" << endl;
+		lNew->p1Id = lOld->p1Id;
 	} 
-	graph->mergeVertices(lOld, lNew, true);
+	graphline->mergeVertices(lNew, lOld, true);
 }
 
 
@@ -181,6 +182,7 @@ bool updateVertexPointID(SparseOptimizer* graph,SparseOptimizer* graphline, Vert
 	cerr << "number of edges between point and lines: " << count1<< endl; 
 	if(count1 > 1) {
 		cerr << "This is a common vertex!!!" << endl;
+		{
 // 		OptimizableGraph::EdgeSet esvli = vlip1->edges();
 // 		for (OptimizableGraph::EdgeSet::iterator it_vli = esvli.begin(); it_vli != esvli.end(); it_vli++)
 // 		{
@@ -196,6 +198,7 @@ bool updateVertexPointID(SparseOptimizer* graph,SparseOptimizer* graphline, Vert
 // 			cout << "removing edge point-se2" << endl;
 // 			graphline->removeEdge(eSEpoint);
 // 		}
+		}
 		cout << "removing vertex..." << endl;
 
 		graphline->removeVertex(vlip1);
@@ -204,7 +207,7 @@ bool updateVertexPointID(SparseOptimizer* graph,SparseOptimizer* graphline, Vert
 	}
 	else updated = false;
 	
-	//checking if the second extreme point of a line is a common vertex
+// 	//checking if the second extreme point of a line is a common vertex
 	VertexPointXY* vlip2 = dynamic_cast<VertexPointXY*>(graph->vertex(vli->p2Id));
     VertexPointXY* vljp2 = dynamic_cast<VertexPointXY*>(graph->vertex(vlj->p2Id));
 	if(!vlip2)
@@ -217,36 +220,24 @@ bool updateVertexPointID(SparseOptimizer* graph,SparseOptimizer* graphline, Vert
 		if(elp2) count2++;
 	}
 	
-	cerr << "number of edges between point and lines: " << count2 << endl; 
+	cerr << "number of edges between point 2 and lines: " << count2 << endl; 
 	if(count2 > 1) {
-		cerr << "This is a common vertex!!!" << endl;
-// 		OptimizableGraph::EdgeSet esvli = vlip2->edges();
-// 		for (OptimizableGraph::EdgeSet::iterator it_vli = esvli.begin(); it_vli != esvli.end(); it_vli++)
-// 		{
-// 			EdgeLine2DPointXY* elpoint = dynamic_cast<EdgeLine2DPointXY*>(*it_vli);
-// 			if(!elpoint)
-// 				continue;
-// 			cout << "removing edge point-line2d" << endl;
-// 			graphline->removeEdge(elpoint);
-// 			
-// 			EdgeSE2PointXY* eSEpoint = dynamic_cast<EdgeSE2PointXY*>(*it_vli);
-// 			if(!eSEpoint)
-// 				continue;
-// 			cout << "removing edge point-se2" << endl;
-// 			graphline->removeEdge(eSEpoint);
-// 		}
-// 		cout << "removing vertex..." << endl;
-
-// 		graphline->removeVertex(vlip2);
-		vli->p2Id = vlj->p2Id; 
-		updated = true;
+		cerr << "The second is a common vertex!!!" << endl;
+		if(vli->p2Id != vlj->p2Id){
+			cerr << "ceccheccazzzu" << endl;
+			vli->p2Id = vlj->p2Id;
+// 			cout << "removing second vertex..." << endl;
+// 			graphline->removeVertex(vlip2);
+			updated = true;
+		} 
 	}
 	else updated = false;
 }
 
 #if 0
 		ofstream os1("Line1.dat");
-		ofstream os2("Line2Remapped.dat");
+		ofstream os2("Line2.dat");
+		ofstream os2R("Line2Remapped.dat");
 
 #endif
 
@@ -292,9 +283,11 @@ int main(int argc, char**argv){
 	LinesSet lvector_next;
 	LinesForMatchingVector lineMatchingContainer;
 	
+// 	int counttot = 0;
 	//for each vertex
 	for (size_t i = 0; i<vertexIds.size(); i++)
-	{		
+	{	
+		cerr << "num vertici " << vertexIds.size() << endl;
 		OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[i]);
 		VertexSE2* v = dynamic_cast<VertexSE2*>(_v);
 		if (!v)
@@ -302,7 +295,7 @@ int main(int argc, char**argv){
 		cout << "***********************************" << endl;
 		cout << "***********NEW ITERATION***********" << endl;
 		cout << "***********************************" << endl;
-		cout << "Current Vertex " << i << endl;
+// 		cout << "Current Vertex " << i << endl;
 		int vcurr_id = v->id();
 		int next_id = -1;
 		v_current = v;
@@ -338,9 +331,11 @@ int main(int argc, char**argv){
 		//for each edges from the current robot poses
 		cout << "###### edges from the current robot poses ######" << endl;
 		OptimizableGraph::EdgeSet es = v_current->edges();
-		cout << "This vertex has " << es.size() << " edge." << endl; 
+		cout << "This vertex has " << es.size() << " edge." << endl;
+// 		int countv = 0;
 		for (OptimizableGraph::EdgeSet::iterator itv = es.begin(); itv != es.end(); itv++) {
-			
+// 			countv++;
+// 			counttot++;
 			EdgeSE2* eSE2 = dynamic_cast<EdgeSE2*>(*itv);
 			if (!eSE2)
 				continue;		
@@ -364,6 +359,7 @@ int main(int argc, char**argv){
 				cout << "###Skipping this edge (forward evaluation of the odometry)###" << endl;
 			}
 		}
+// 		cerr << "edgeset del v " << countv << endl;
 		
 		if(v_next) {
 			es_next = v_next->edges();
@@ -478,7 +474,7 @@ int main(int argc, char**argv){
 			
 			lineMatchingContainer.push_back(make_pair(lvector, lvector_next));
 			cout << endl << " ### iteration "  << i << ", SIZE of the container(pair of lines sets): " << lineMatchingContainer.size() << endl << endl;
-			
+// 				debug
 // 			for(size_t uno = 0; uno < (lineMatchingContainer[i].first).size(); uno++){
 // 				cout << "primo set:size " << (lineMatchingContainer[i].first).size() << "\n" << (lineMatchingContainer[i].first)[uno] << endl << endl;			}
 // 			for(size_t due = 0; due < (lineMatchingContainer[i].second).size(); due++){
@@ -489,7 +485,7 @@ int main(int argc, char**argv){
 		lvector.clear();
 		lvector_next.clear();
 	}
-	
+// 	cerr << "edgeset tot " << counttot << endl;
 	
 	cout << endl << " ### Done with the graph reading, ready for the correspondences finder.. " << endl;
 	cout << " ### SIZE OF THE FINAL CONTAINER: " << lineMatchingContainer.size() << endl;
@@ -525,8 +521,8 @@ int main(int argc, char**argv){
 			for (int ci = 0; ci < currCorrs.size(); ci++)
 			{
 				cerr << "Correspondances position in lines sets: "  <<currCorrs[ci].lid1 << ", " << currCorrs[ci].lid2 << ", with error:  " << currCorrs[ci].error << endl;
+// 				debug
 // 				int vlid1 = -1, vlid2 = -1;
-				
 // 				cerr << "ID vertex 1: [" << s1[currCorrs[ci].lid1].vline->id() << "] - ID vertex 2: [" << s2[currCorrs[ci].lid2].vline->id() << "]" << endl;
 // 				vlid1 = graph->vertex(s1[currCorrs[ci].lid1].vline->id())->id();
 // 				vlid2 = graph->vertex(s2[currCorrs[ci].lid2].vline->id())->id();
@@ -544,6 +540,7 @@ int main(int argc, char**argv){
 				correspondences.push_back(c);
 				indices[ci]=ci;
 				
+				//debug
 // 					for(int i = 0; i < s1.size(); i++){
 // 						if(s1[i].vline->id() == currCorrs[ci].lid1){
 // 							vlid1 = s1[i].vline->id();
@@ -573,7 +570,9 @@ int main(int argc, char**argv){
 			ransac.setInlierErrorThreshold(1.);
 			ransac.setInlierStopFraction(0.5);
 			RansacLine2DLinear::TransformType transform = t0;
+			ScopeTime t("ransac aligned");
 			bool resultRansac = ransac(transform);
+			
 			
 			if(resultRansac)
 			{
@@ -583,15 +582,15 @@ int main(int argc, char**argv){
 				cerr << endl;
 	// 			cerr << "ground truth vector: " <<endl;
 	// 			cerr << t2v_2d(_t0) << endl;
-				cerr << "ground truth: " <<endl;
-				cerr << _t0.matrix() << endl;
-				cerr << endl;
-				cerr << "transform found vector: " <<endl;
-				cerr << t2v_2d(res) << endl;
+// 				cerr << "ground truth: " <<endl;
+// 				cerr << _t0.matrix() << endl;
+// 				cerr << endl;
+				//cerr << "transform found vector: " <<endl;
+				//cerr << t2v_2d(res) << endl;
 	// 			cerr << "transform found: " <<endl;
 	// 			cerr << res.matrix() << endl;
 				cerr << endl;
-				cerr << "transform error vector: " << endl;
+				cerr << "transform error : " << endl;
 				cerr << t2v_2d(_t0*res) << endl;
 	// 			cerr << "transform error: " << endl;
 	// 			cerr << (_t0*res).matrix() << endl;
@@ -603,41 +602,20 @@ int main(int argc, char**argv){
 					cout << "error of " << h << "-th correspondance: " << erri << endl;
 				}
 				
-				//book keping (updating the vertex point id of the correspondences for common vertex)
-				for (int ci = 0; ci < currCorrs.size(); ci++)
-				{
-					VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[ci].lid1].vline->id()));
-					VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[ci].lid2].vline->id()));
-                    updateVertexPointID(graph, graphline, vli, vlj);
-				}
-				
+				//book keeping (updating the vertex point id of the correspondences for common vertex)
+// 				for (int ci = 0; ci < currCorrs.size(); ci++)
+// 				{
+// 					VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[ci].lid1].vline->id()));
+// 					VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[ci].lid2].vline->id()));
+//                     updateVertexPointID(graph, graphline, vli, vlj);
+// 				}
+
 				//merging vertexes and lines
 				for (int ci = 0; ci < currCorrs.size(); ci++)
 				{
 					VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[ci].lid1].vline->id()));
 					VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[ci].lid2].vline->id()));
-					cout << "prendo linee" << endl;
-					
-					VertexPointXY* vlip1 = dynamic_cast<VertexPointXY*>(graph->vertex(vli->p1Id));	
-					VertexPointXY* vljp1 = dynamic_cast<VertexPointXY*>(graph->vertex(vlj->p1Id));
-					//TODO
-// 					if(vlip1->id() != vljp1->id()) {
-// 						bool resultmergePoint1 = graphline->mergeVertices(vljp1, vlip1 ,true);
-// 						cout << "merging point1: " << resultmergePoint1 << endl;
-// 					}
-// 						
-// 					VertexPointXY* vlip2 = dynamic_cast<VertexPointXY*>(graph->vertex(vli->p2Id));
-// 					VertexPointXY* vljp2 = dynamic_cast<VertexPointXY*>(graph->vertex(vlj->p2Id));
-// 					if(vlip2->id() != vljp2->id()){
-// 						bool resultmergePoint2 = graphline->mergeVertices(vljp2, vlip2 ,true);
-// 						cout << "merging point2: " << resultmergePoint2 << endl;
-// 					}
-// 
-// 
-// 					bool resultmergeLine = graphline->mergeVertices(vlj, vli ,true);
-// 					cout << "merging line: " << resultmergeLine << endl;
-						
-						
+// 					cout << "prendo linee" << endl;
 #if 0
 						//plotting lines frame i and lines frame j remapped with the transform found
 						Vector2d line1 = Vector2d(vli->estimate());
@@ -664,18 +642,64 @@ int main(int argc, char**argv){
 						Vector2d vpl2_2R = transform*(vpl2_2->estimate());
 						Vector2d nline2R(cos(line2Remapped(0)), sin(line2Remapped(0)));
 						Vector2d pmiddle2 = nline2R*line2Remapped(1);
-						Vector2d t2(-nline2R.y(), nline2R.x());
+						Vector2d t2R(-nline2R.y(), nline2R.x());
+						double l1_2R,l2_2R = 10;
+						l1_2R = t2R.dot(vpl1_2R - pmiddle2);
+						l2_2R = t2R.dot(vpl2_2R - pmiddle2);
+						Vector2d p1line2R = pmiddle2 + t2R*l1_2R;
+						Vector2d p2line2R = pmiddle2 + t2R*l2_2R;
+						os2R << p1line2R.transpose() << endl;
+						os2R << p2line2R.transpose() << endl;
+						os2R << endl;
+						os2R << endl;
+						os2R.flush();
+						
+						Vector2d line2 = Vector2d(vlj->estimate());
+						VertexPointXY* vpl1_2_ = dynamic_cast<VertexPointXY*>(graph->vertex(s2[currCorrs[ci].lid2].vline->p1Id));
+						VertexPointXY* vpl2_2_ = dynamic_cast<VertexPointXY*>(graph->vertex(s2[currCorrs[ci].lid2].vline->p2Id));
+						Vector2d nline2(cos(line2(0)), sin(line2(0)));
+						Vector2d pmiddle2_ = nline2*line2(1);
+						Vector2d t2(-nline2.y(), nline2.x());
 						double l1_2,l2_2 = 10;
-						l1_2 = t2.dot(vpl1_2R - pmiddle2);
-						l2_2 = t2.dot(vpl2_2R - pmiddle2);
-						Vector2d p1line2R = pmiddle2 + t2*l1_2;
-						Vector2d p2line2R = pmiddle2 + t2*l2_2;
-						os2 << p1line2R.transpose() << endl;
-						os2 << p2line2R.transpose() << endl;
+						l1_2 = t2.dot(vpl1_2_->estimate() - pmiddle2_);
+						l2_2 = t2.dot(vpl2_2_->estimate() - pmiddle2_);
+						Vector2d p1line2 = pmiddle2_ + t2*l1_2;
+						Vector2d p2line2 = pmiddle2_ + t2*l2_2;
+						os2 << p1line2.transpose() << endl;
+						os2 << p2line2.transpose() << endl;
 						os2 << endl;
 						os2 << endl;
 						os2.flush();
 #endif
+					mergeLineVertex(graph, graphline, vlj, vli);
+					
+// 					VertexPointXY* vlip1 = dynamic_cast<VertexPointXY*>(graph->vertex(vli->p1Id));	
+// 					VertexPointXY* vljp1 = dynamic_cast<VertexPointXY*>(graph->vertex(vlj->p1Id));
+// 					
+// 					if(vlip1->id() != vljp1->id()) {
+// 						bool resultmergePoint1 = graphline->mergeVertices(vljp1, vlip1 ,true);
+// 						cout << "merging point1: " << resultmergePoint1 << endl;
+// 					}
+// 						
+// 					VertexPointXY* vlip2 = dynamic_cast<VertexPointXY*>(graph->vertex(vli->p2Id));
+// 					VertexPointXY* vljp2 = dynamic_cast<VertexPointXY*>(graph->vertex(vlj->p2Id));
+// 					if(!vlip2 && !vljp2) cerr << "che cribbio succede???" << endl;
+// 					if(vlip2 || vljp2) {
+// 						if(vlip2 && !vljp2){
+// 							cerr << "imposible ploplio --> agiolnelei indice" << endl;
+// 							vlj->p2Id = vlip2->id();
+// 						} else if(!vlip2 && vljp2) {
+// 							cerr << "nun faccio una mazza" << endl;							
+// 						} else if(vlip2 && vljp2 && vlip2->id() != vljp2->id()){
+// 							bool resultmergePoint2 = graphline->mergeVertices(vljp2, vlip2 ,true);
+// 							cout << "merging point2: " << resultmergePoint2 << endl;
+// 						}
+// 					}
+// 					bool resultmergeLine = graphline->mergeVertices(vlj, vli ,true);
+// 					cout << "merging line: " << resultmergeLine << endl;
+						
+						
+
 					}
 			}
 			cout << endl << "********************************END OF ALIGNMENT ALGORITHM: ITERATION " << c << "********************************" << endl << endl;			
@@ -689,3 +713,4 @@ int main(int argc, char**argv){
 	ofG2O.close();
 	return (0);
 }
+
