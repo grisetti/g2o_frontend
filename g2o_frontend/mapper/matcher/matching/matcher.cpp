@@ -1,6 +1,10 @@
 #include "matcher.h"
 
 
+using namespace g2o;
+
+
+
 float MatcherResult::matchingScore() const
 {
     return _matchingScore;
@@ -28,3 +32,6 @@ void Matcher::clearMatchResults()
     }
     _matchResults.clear();
 }
+
+
+void Matcher::match(HyperGraph::Vertex* ref, HyperGraph::Vertex* curr) {}

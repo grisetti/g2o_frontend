@@ -35,7 +35,7 @@ void leQGLViewer::init()
 // 	glDisable(GL_LIGHT0);
 // 	glDisable(GL_LIGHT1);
 
-	setBackgroundColor(QColor::fromRgb(51, 51, 51));
+	setBackgroundColor(QColor::fromRgb(150, 150, 150));
 
   // some default settings i like
   glEnable(GL_LINE_SMOOTH);

@@ -2,8 +2,12 @@
 #define MAPQGLVIEWER_H
 
 #include <QGLViewer/qglviewer.h>
-#include "g2o/types/slam2d/edge_se2.h"
+
+#include "g2o/types/slam3d/vertex_se3.h"
+#include "g2o/types/slam3d/edge_se3.h"
+
 #include "g2o/types/slam2d/vertex_se2.h"
+#include "g2o/types/slam2d/edge_se2.h"
 
 
 
@@ -39,8 +43,10 @@ private:
     bool _standard;
 };
 
-typedef std::vector<g2o::VertexSE2*> Vertices;
-typedef std::vector<g2o::EdgeSE2*> Edges;
+
+
+typedef std::vector<g2o::HyperGraph::Vertex*> Vertices;
+typedef std::vector<g2o::HyperGraph::Edge*> Edges;
 
 
 class MapQGLViewer: public QGLViewer

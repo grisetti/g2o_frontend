@@ -1,17 +1,11 @@
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 
-ADD_LIBRARY(
-	matching_library
-	
-	matcher.cpp			matcher.h
-	scanMatcher.cpp 		scanMatcher.h
-	gradientMatcher.cpp 		gradientMatcher.h
-	correlativeMatcher.cpp 		correlativeMatcher.h
-	hierarchicalMatcher.cpp 	hierarchicalMatcher.h
-	charMatcher.cpp			charMatcher.h
-	charCorrMatcher.cpp		charCorrMatcher.h
-	charGradMatcher.cpp		charGradMatcher.h
-        charHierMatcher.cpp             charHierMatcher.h
+ADD_LIBRARY(matching_library
+            matcher.cpp			matcher.h
+            scan_matcher.cpp 		scan_matcher.h
+            gradient_matcher.cpp        gradient_matcher.h
+            correlative_matcher.cpp     correlative_matcher.h
+            hierarchical_matcher.cpp 	hierarchical_matcher.h
 )
 
 
