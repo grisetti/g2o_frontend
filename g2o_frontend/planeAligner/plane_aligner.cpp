@@ -68,6 +68,8 @@ std::vector<planeAndVertex> container1;
 std::vector<planeAndVertex> container2;
 std::vector<planeCorrespondence> corrs;
 
+std::set<VertexPlane*> morte;
+
 volatile bool hasToStop;
 void sigquit_handler(int sig)
 {
@@ -133,7 +135,9 @@ int main(int argc, char**argv)
     string filename;
     string outfilename;
     CommandArgs arg;
+    int theError;
     arg.param("o", outfilename, "otest.g2o", "output file name");
+    arg.param("e",theError,5,"errore");
     arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
     arg.parseArgs(argc, argv);
 
@@ -166,24 +170,19 @@ int main(int argc, char**argv)
     Isometry3d cameraOffset;
     cameraOffset.setIdentity();
 
-
-
-
-    int i=1;
     int acc=0;
-    //    OptimizableGraph::Vertex* _v=graph.vertex(i);
-    //    VertexSE3* v=dynamic_cast<VertexSE3*>(_v);
-
 
     OptimizableGraph::Vertex* _v=graph.vertex(0);
-    _v->setFixed(true); //important
-
+    _v->setFixed(true);
     VertexSE3* v=dynamic_cast<  VertexSE3*>(_v);
 
-
+    //needed to check if the VertexSE3 iteration reach the end
     int lastid;
     lastid=0;
-    while(v && acc<=50)
+    //--------------------------------------------------------
+
+    //main loop, for 100 vertifces
+    while(v && acc<100)
     {
         acc++;
         //accedo ad ogni vertice
@@ -208,6 +207,7 @@ int main(int argc, char**argv)
             {
                 //accedo al vertice successivo sul quale andare
                 a = dynamic_cast<  VertexSE3*>(eSE3->vertex(1));
+
                 //VertexSE3* b = dynamic_cast<  VertexSE3*>(eSE3->vertex(0));
                 odometry=eSE3->measurement();
 
@@ -217,6 +217,7 @@ int main(int argc, char**argv)
 
 
                     _v=graph.vertex(a->id());
+
                     //v è il nuovo vertice su cui mi devo spostare
                     vnext=dynamic_cast<VertexSE3*>(_v);
 
@@ -232,6 +233,7 @@ int main(int argc, char**argv)
 
                         Matrix3d info= Matrix3d::Identity();
                         info*=1000;
+                        info(2,2)=10;
 
 
 
@@ -239,6 +241,8 @@ int main(int argc, char**argv)
                         {
                             eSE3Calib->setInformation(info);
                             VertexPlane* vplane = dynamic_cast< VertexPlane*>(eSE3Calib->vertex(1));
+                            vplane->color=Vector3d(0,0,0);
+                            eSE3Calib->color=Vector3d(0.1,0.1,0.1);
 
                             //aggiungo un vertice tra i due
 
@@ -254,8 +258,20 @@ int main(int argc, char**argv)
                                     EdgeSE3PlaneSensorCalib * eSE3Calibnext =dynamic_cast< EdgeSE3PlaneSensorCalib*>(_enext);
                                     if(eSE3Calibnext)
                                     {
+                                        //configuro l'information matrix anche all'edge successivo
+                                        eSE3Calibnext->setInformation(info);
                                         VertexPlane* vplanenext = dynamic_cast< VertexPlane*>(eSE3Calibnext->vertex(1));
                                         sensorOffset = dynamic_cast< VertexSE3*>(eSE3Calibnext->vertex(2));
+
+                                        VertexSE3* vparamToSet = dynamic_cast< VertexSE3*>(eSE3Calibnext->vertex(2));
+
+                                        Isometry3d paramISO;
+                                        paramISO.setIdentity();
+                                        //Vector7d paramV;
+                                        //paramV<<0,0,0,0.5000,-0.5000,0.5000,-0.5000;
+                                        //vparamToSet->setFixed(true);
+                                        //vparamToSet->setEstimate(g2o::internal::fromVectorQT(paramV));
+
                                         if(vplanenext)
                                         {
                                             Plane3D planenext = vplanenext->estimate();
@@ -270,7 +286,8 @@ int main(int argc, char**argv)
 
 
                                             Vector4d diff = plane.toVector()-modifiedPlaneNext.toVector();
-                                            diff.head<3>() *= 100;
+                                            //Vector4d diff = plane.toVector()-planenext.toVector();
+                                            diff.head<3>() *= 10;
                                             double error = diff.squaredNorm();
                                             if(error<10) cerr <<"\t (P1) ";
                                             else cerr <<"\t [P1] ";
@@ -287,7 +304,7 @@ int main(int argc, char**argv)
                                             <<setw(20)<<" [ERR] "<< error<<endl;
 
                                             //time to create the correspondence vector
-                                            if(error<1000)
+                                            if(error<10)
                                             {
 
                                                 EdgePlane* eplane = new EdgePlane;
@@ -297,6 +314,9 @@ int main(int argc, char**argv)
                                                 Correspondence corr(eplane,error);
 
                                                 mycorrVector.push_back(corr);
+
+                                                morte.insert(vplane);
+                                                morte.insert(vplanenext);
                                             }
 
 
@@ -322,9 +342,8 @@ int main(int argc, char**argv)
                     ransac(tresult,iv);
                     std::vector<double> errorsVector=ransac.errors();
 
-                    //bool result = testRansac<PlaneMapping, RansacPlaneLinear, EdgePlane>(tresult, mycorrVector,iv);
-                    //cerr << "\t\t planes matching: "<<endl;
-
+                    bool result = testRansac<PlaneMapping, RansacPlaneLinear, EdgePlane>(tresult, mycorrVector,iv);
+                    cerr << "\t\t planes matching: "<<endl;
 
                     for (int i=0;i<iv.size();i++)
                     {
@@ -334,12 +353,12 @@ int main(int argc, char**argv)
                         VertexPlane *vp2 = new VertexPlane;
                         vp2= dynamic_cast<VertexPlane*>(tmpCorr.edge()->vertex(1));
 
-                        Plane3D p1=vp1->estimate();
-                        Plane3D p2=vp2->estimate();
+//                        Plane3D p1=vp1->estimate();
+//                        Plane3D p2=vp2->estimate();
 
-                        //                        cerr << "id Plane1: "<<vp1->id()<<" "<< "id Plane2: "<<vp2->id()<<endl;
-                        //                        cerr << "Plane coeff: "<<p1.toVector()[0]<< " "<<p1.toVector()[1]<< " "<<p1.toVector()[2]<< " "<<p1.toVector()[3]<< " ||||"
-                        //                             <<p2.toVector()[0]<< " "<<p2.toVector()[1]<< " "<<p2.toVector()[2]<< " "<<p2.toVector()[3]<< " @ "<<errorsVector.at(iv.at(i)) <<endl;
+//                                                cerr << "id Plane1: "<<vp1->id()<<" "<< "id Plane2: "<<vp2->id()<<endl;
+//                                                cerr << "Plane coeff: "<<p1.toVector()[0]<< " "<<p1.toVector()[1]<< " "<<p1.toVector()[2]<< " "<<p1.toVector()[3]<< " ||||"
+//                                                     <<p2.toVector()[0]<< " "<<p2.toVector()[1]<< " "<<p2.toVector()[2]<< " "<<p2.toVector()[3]<< " @ "<<errorsVector.at(iv.at(i)) <<endl;
                     }
 
                     cerr << "adding planes to the output graph..."<<endl;
@@ -355,6 +374,7 @@ int main(int argc, char**argv)
 
                         if(vp1 && vp2)
                         {
+                            cerr << "trying..."<<endl;
                             bool gottaGo=1;
                             for(int j=0;j<ids.size();j++)
                             {
@@ -366,6 +386,32 @@ int main(int argc, char**argv)
                             if(gottaGo)
                             {
                                 cerr << "trying to merge vertices... "<<vp2->id() << " is going to be merged on "<<vp1->id()<<" ...";
+
+                                vp1->color=Vector3d(1,0,0);
+                                vp2->color=Vector3d(1,0,0);
+
+                                HyperGraph::EdgeSet theSet=vp1->edges();
+                                for (HyperGraph::EdgeSet::iterator itnext = theSet.begin(); itnext!=theSet.end(); itnext++)
+                                {
+                                    HyperGraph::Edge* _enext = *itnext;
+                                    EdgeSE3PlaneSensorCalib * eSE3Calib =dynamic_cast< EdgeSE3PlaneSensorCalib*>(_enext);
+                                    if(eSE3Calib)
+                                    {
+                                       eSE3Calib->color=Vector3d(1,1,0);
+                                    }
+                                 }
+
+                                theSet=vp2->edges();
+                                for (HyperGraph::EdgeSet::iterator itnext = theSet.begin(); itnext!=theSet.end(); itnext++)
+                                {
+                                    HyperGraph::Edge* _enext = *itnext;
+                                    EdgeSE3PlaneSensorCalib * eSE3Calib =dynamic_cast< EdgeSE3PlaneSensorCalib*>(_enext);
+                                    if(eSE3Calib)
+                                    {
+                                       eSE3Calib->color=Vector3d(0,1,0);
+                                    }
+                                 }
+
 
                                 bool res=graph.mergeVertices(vp1,vp2,0);
                                 cerr << "done [ "<<res<<" ]!"<<endl;
@@ -380,13 +426,15 @@ int main(int argc, char**argv)
 
                     }
 
-                    for(std::set<VertexPlane*>::iterator it=murdered.begin();it!=murdered.end();it++)
-                    {
-                        cerr << "Slaughtering the vertex "<<(*it)->id()<< " has "<< (*it)->edges().size() << endl;
-                        graph.removeVertex(*it);
+//                    for(std::set<VertexPlane*>::iterator it=murdered.begin();it!=murdered.end();it++)
+//                    {
+//                        cerr << "Slaughtering the vertex "<<(*it)->id()<< " has "<< (*it)->edges().size() << endl;
+//                        graph.removeVertex(*it);
 
 
-                    }
+//                    }
+
+
 
                 }
 
@@ -416,7 +464,7 @@ int main(int argc, char**argv)
         if(v!=0)
         {
             graph.removeVertex(v);
-            cerr << "vertex "<< iteratore << " is a SE3"<<endl;
+            //cerr << "vertex "<< iteratore << " is a SE3"<<endl;
         }
         else
             cerr << "vertex "<< iteratore << " is not an S3"<<endl;
@@ -424,266 +472,32 @@ int main(int argc, char**argv)
 
     }
 
+    //    for(int i=2546;i<=2839;i++)
+    //    {
+    //        VertexPlane* victim=dynamic_cast<VertexPlane*>(graph.vertex(i));
+    //        if(victim)
+    //        {
+    //            cerr << "found a possible victim"<<endl;
+    //            std::set<VertexPlane*>::iterator it;
+    //            it=morte.find(victim);
+    //            if(it==morte.end())
+    //            {
+    //                cerr << "\t victim has to be sacrified"<<endl;
+    //                graph.removeVertex(victim);
+    //            }
+    //            else
+    //                cerr << "\t victim will be saved"<<endl;
+
+    //        }
+    //    }
+
     cerr << "saving graph..."<<endl;
-    ofstream oscani ("cthulhu.g2o");
+    ofstream oscani ("colorato.g2o");
     graph.save(oscani);
 
 
-    //    if(v)
-    //    {
-    //        cerr << "Processing [1] vertex"<<v->id()<<endl;
-    //        OptimizableGraph::EdgeSet e = v->edges();
-
-    //        int vertexHasPlanes=0;
-
-    //        cerr << "*************** PLANES ***************"<<endl;
-    //        for (HyperGraph::EdgeSet::iterator it = e.begin(); it!=e.end(); it++)
-    //        {
-
-    //            HyperGraph::Edge* _e = *it;
-    //            const EdgeSE3PlaneSensorCalib* ePlane =dynamic_cast<const EdgeSE3PlaneSensorCalib*>(_e);
-    //            if(ePlane)
-    //            {
-    //                const VertexSE3* offset = dynamic_cast<const  VertexSE3*>(ePlane->vertex(2));
-    //                cerr <<"Sensor offset transformation " <<endl<<offset->estimate().matrix()<<endl;
-    //                cameraOffset=offset->estimate();
-
-    //                vertexHasPlanes++;
-    //                const Plane3D thePlane= ePlane->measurement();
-    //                const VertexPlane* aaa = dynamic_cast<const  VertexPlane*>(ePlane->vertex(1));
-
-    //                VertexPlane tmp=*aaa;
-
-    //                planeAndVertex pav;
-    //                pav.plane=thePlane;
-
-    //                pav.vplane.setEstimate(tmp.estimate());
-    //                pav.vplane.setId(tmp.id());
-
-    //                container1.push_back(pav);
-
-    //                cerr <<"adding EDGEPLANECALIB to graph " <<endl;
-    //                outgraph.addEdge(const_cast<EdgeSE3PlaneSensorCalib*>(ePlane));
-    //                cerr <<"vertex 1 has a plane " <<endl<<thePlane.toVector()<<endl;
-    //                //cerr <<"plane has norm of "<<thePlane.toVector().head<3>().norm()<<endl;
-
-
-    //            }
-    //        }
-
-
-
-    //        cerr << "*************** Odometry Transformation Transformation ***************"<<endl;
-    //        for (HyperGraph::EdgeSet::iterator it = e.begin(); it!=e.end(); it++)
-    //        {
-
-    //            HyperGraph::Edge* _e = *it;
-    //            const EdgeSE3 * ese3 =dynamic_cast<const EdgeSE3*>(_e);
-    //            if(ese3)
-    //            {
-    //                const VertexSE3* vFrom = dynamic_cast<const  VertexSE3*>(ese3->vertex(0));
-    //                const VertexSE3* vTo = dynamic_cast<const  VertexSE3*>(ese3->vertex(1));
-
-
-    //                cerr <<"Transformation FROM ID "<< vFrom->id()<< " TO ID "<<vTo->id()<<endl;
-    //                cerr <<"Transformation Matrix is "<<endl<<ese3->measurement().matrix()<<endl;
-    //                transformation2to1=ese3->measurement();
-
-    //                if(vTo->id()==2)
-    //                {
-    //                    VertexSE3* vFromToSave=const_cast<VertexSE3*>(vFrom);
-    //                    VertexSE3* vToToSave=const_cast<VertexSE3*>(vTo);
-    //                    EdgeSE3* odomFrame=const_cast<EdgeSE3*>(ese3);
-
-    //                    outgraph.addVertex(vFromToSave);
-    //                    outgraph.addVertex(vToToSave);
-    //                    outgraph.addEdge(odomFrame);
-    //                }
-    //            }
-    //        }
-
-
-    //    }
-
-    //    i=2;
-    //    _v=graph.vertex(i);
-    //    v=dynamic_cast<VertexSE3*>(_v);
-    //    if(v)
-    //    {
-    //        cerr << "Processing [2] vertex"<<v->id()<<endl;
-    //        OptimizableGraph::EdgeSet e = v->edges();
-
-    //        int vertexHasPlanes=0;
-
-    //        cerr << "*************** PLANES ***************"<<endl;
-    //        for (HyperGraph::EdgeSet::iterator it = e.begin(); it!=e.end(); it++)
-    //        {
-
-    //            HyperGraph::Edge* _e = *it;
-    //            const EdgeSE3PlaneSensorCalib* ePlane =dynamic_cast<const EdgeSE3PlaneSensorCalib*>(_e);
-    //            if(ePlane)
-    //            {
-    //                vertexHasPlanes++;
-    //                const Plane3D thePlane= ePlane->measurement();
-    //                const VertexPlane* aaa = dynamic_cast<const  VertexPlane*>(ePlane->vertex(1));
-
-    //                cerr <<"adding EDGEPLANECALIB to graph " <<endl;
-    //                outgraph.addEdge(const_cast<EdgeSE3PlaneSensorCalib*>(ePlane));
-
-    //                cerr <<"vertex 2 has a plane " <<endl<<thePlane.toVector()<<endl;
-
-
-    //                Isometry3d tmp = cameraOffset.inverse()*transformation2to1.inverse()*cameraOffset;
-    //                Plane3D tst = tmp*thePlane;
-    //                planeAndVertex pav;
-    //                pav.plane=tst;
-    //                pav.vplane.setEstimate(aaa->estimate());
-    //                pav.vplane.setId(aaa->id());
-
-    //                container2.push_back(pav);
-
-
-    //            }
-    //        }
-
-
-    //    }
-
-    //    //FINE LETTURA DELLE COSE DAL FILE G2O PASSATO IN INGRESSO, TEST DI SCRITTURA DI UN GENERICO FILE G2O
-    //    cerr << "saving graph..."<<endl;
-    //    ofstream oscani ("cani.g2o");
-    //    outgraph.save(oscani);
-    //    cerr << "graph saved!"<<endl;
-    //    cerr << "Now a test!"<<endl;
-
-    //    cerr << "Container 1 has "<<container1.size()<< " things"<<endl;
-
-
-    //    for(unsigned  int i=0;i<container1.size();i++)
-    //    {
-    //        Vector4d c=container1[i].plane.toVector();
-    //        cerr << c[0] <<" "<<c[1]<<" "<<c[2]<<" "<<c[3]<<endl;
-    //    }
-
-    //    cerr << "Container 2 has "<<container2.size()<< " things"<<endl;
-
-    //    for(unsigned  int i=0;i<container2.size();i++)
-    //    {
-    //        Vector4d c=container2.at(i).plane.toVector();
-    //        cerr << c[0] <<" "<<c[1]<<" "<<c[2]<<" "<<c[3]<<endl;
-    //    }
-
-    //    cerr << "Finding correspondences..."<<endl;
-
-    //    for(unsigned int i=0;i<container1.size();i++)
-    //    {
-    //        Vector4d p1_coeff=container1[i].plane.toVector();
-    //        planeCorrespondence mycorr;
-    //        mycorr.error=999;
-    //        mycorr.p1=-1;
-    //        mycorr.p2=-1;
-    //        for(unsigned int k=0;k<container2.size();k++)
-    //        {
-    //            Vector4d p2_coeff=container2[k].plane.toVector();
-    //            //            double diff1=   abs(
-    //            //                        p1_coeff[0]-p2_coeff[0]+
-    //            //                        p1_coeff[1]-p2_coeff[1]+
-    //            //                        p1_coeff[2]-p2_coeff[2]);
-
-    //            //            double diff2=   abs(p1_coeff[3]-p2_coeff[3]);
-
-    //            Vector4d diffff = p1_coeff-p2_coeff;
-    //            diffff.head<3>() *= 10;
-    //            double erore = diffff.squaredNorm();
-
-    //            cerr << "Differences between frame 1 plane "<<i<<" and frame 2 plane \t"<<k<<" is "<< erore <<endl;
-    //            //if per prendere solo le migliori, le voglio prendere tutte però
-    //            //            if(mycorr.error>(diff1+diff2))
-    //            //            {
-    //            //                mycorr.p1=i;
-    //            //                mycorr.p2=k;
-    //            //                mycorr.error=erore;
-
-    //            //            }
-    //            mycorr.p1=i;
-    //            mycorr.p2=k;
-    //            mycorr.error=erore;
-    //            corrs.push_back(mycorr);
-    //        }
-    //        //corrs.push_back(mycorr);
-    //        cerr <<endl;
-    //    }
-
-    //    //vettore delle corrispondenze da passare a ransac
-    //    g2o_frontend::CorrespondenceVector correspondences;
-    //    cerr << "Corrispondenze trovate e i loro errori:"<<endl;
-
-
-    //    //    for (int i=0;i<container1.size();i++)
-    //    //    {
-
-    //    //        cerr <<"[1] (" <<i<<") Vertex id "<<container1.at(i).vplane.id()<<endl;
-    //    //    }
-
-    //    //    cerr << endl;
-    //    //    for (int i=0;i<container1.size();i++)
-    //    //    {
-
-    //    //        cerr <<"[2] ("<< i<<") Vertex id "<<container2.at(i).vplane.id()<<endl;
-    //    //    }
-
-
-    //    for (unsigned int i=0;i<corrs.size();i++)
-    //    {
-    //        cerr << corrs.at(i).p1 << " " << corrs.at(i).p2 << " "<< corrs.at(i).error<<endl;
-    //        EdgePlane* eplane = new EdgePlane;
-
-    //        cerr <<     graph.vertex(container1.at(corrs.at(i).p1).vplane.id())->id()
-    //                 <<     " <=> "
-    //                     <<     graph.vertex(container2.at(corrs.at(i).p2).vplane.id())->id()
-    //                         <<endl;
-    //        //        int v1id=graph.vertex(container1.at(corrs.at(i).p1).vplane.id())->id();
-    //        //        int v2id=graph.vertex(container2.at(corrs.at(i).p2).vplane.id())->id();
-
-    //        VertexPlane* vp1 = dynamic_cast<VertexPlane*>(graph.vertex(container1.at(corrs.at(i).p1).vplane.id()));
-    //        VertexPlane* vp2 = dynamic_cast<VertexPlane*>(graph.vertex(container2.at(corrs.at(i).p2).vplane.id()));
-
-
-    //        eplane->setVertex(0,vp1);
-    //        eplane->setVertex(1,vp2);
-
-    //        correspondences.push_back(eplane);
-    //    }
-
-
-
-    //    cerr << "Calling RANSAC..."<<endl;
-
-    //    Isometry3d tresult;
-    //    tresult.setIdentity();
-    //    IndexVector iv;
-
-    //    bool result = testRansac<PlaneMapping, RansacPlaneLinear, EdgePlane>(tresult, correspondences,iv);
-    //    cerr << "Resutl is "<<result<<endl;
-    //    cerr << "Result transform is "<<endl<<tresult.matrix()<<endl;
-    //    cerr << "Result transform vector is "<< endl<< g2o::internal::toVectorMQT(tresult)<<endl;
-
-
-    //    cerr << "Index vector contains "<<iv.size()<<" elements"<<endl;
-    //    for(int i=0;i<iv.size();i++)
-    //    {
-    //        cerr << "index "<<i<<" : "<< iv.at(i)<<endl;
-    //    }
-
-
-    //    cerr << "Debug time:"<<endl;
-    //    cerr << "correspondence vector had "<< correspondences.size()<< " edges"<<endl;
-
-    //    //    for(int i=0;i<iv.size();i++)
-    //    //    {
-    //    //        cerr << correspondences.at(iv.at(i))
-    //    //    }
 
     exit(0);
 
 }
+

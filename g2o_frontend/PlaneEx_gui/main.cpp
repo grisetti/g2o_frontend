@@ -6,6 +6,7 @@
 #include <qobject.h>
 #include "interface.h"
 #include "CloudUtils.h"
+#include <Eigen/Geometry>
 
 using namespace std;
 using namespace cv;

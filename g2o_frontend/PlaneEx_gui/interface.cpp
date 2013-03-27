@@ -6,11 +6,18 @@
  */
 
 #include "interface.h"
+#include <Eigen/Geometry>
+#include "g2o/stuff/timeutil.h"
+
+using namespace Eigen;
 
 
 extern float voxelParam;
 extern int numpointParam;
 extern int treshParam;
+
+Vector3d kinectRay(0,0,1);
+
 
 void ViewerInterface::updateZmin(int val)
 {
@@ -89,6 +96,7 @@ void ViewerInterface::showFull()
     float res = voxelParam;
     float ires=1./res;
     
+    g2o::ScopeTime t("aa");
 
     for(int i=0;i<(int)Cloud->size();i++)
     {
@@ -213,6 +221,11 @@ void ViewerInterface::showFull()
                 coefficients->values[2]<<") d:("<<
                 coefficients->values[3]<<")"<<endl;
 
+
+        //controllo se le normali sono coerenti con il punto di vista del kinect
+
+
+
         //assegno i coefficienti del piano estratti da PCL salvandoli alla lista dei piani estratti
         tmpCLOUD.a=coefficients->values[0];
         tmpCLOUD.b=coefficients->values[1];
@@ -221,6 +234,26 @@ void ViewerInterface::showFull()
 
         //salvo il centro di massa
         tmpCLOUD.com=com_tmp;
+        Vector3d piano(coefficients->values[0],coefficients->values[1],coefficients->values[2]);
+        Vector3d mass(com_tmp[0],com_tmp[1],com_tmp[2]);
+        float facingDirection=piano.dot(mass);
+        cout << "FACING HAS VALUE OF "<<facingDirection<<endl;
+        cout << mass<<endl<<endl;
+        cout << piano<<endl;
+        if(facingDirection>0)
+        {
+            cout << "la normale punta in direzione opposta al kinect, va rimappata!"<<endl;
+            piano*=-1;
+            coefficients->values[0]=piano.coeff(0);
+            coefficients->values[1]=piano.coeff(1);
+            coefficients->values[2]=piano.coeff(2);
+            coefficients->values[3]=piano.coeff(3);
+
+            tmpCLOUD.a=coefficients->values[0];
+            tmpCLOUD.b=coefficients->values[1];
+            tmpCLOUD.c=coefficients->values[2];
+            tmpCLOUD.d=coefficients->values[3];
+        }
 
         this->planes.push_back(tmpCLOUD);
         tmpCLOUD.cloud.clear();

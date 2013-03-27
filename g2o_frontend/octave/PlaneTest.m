@@ -21,6 +21,7 @@ Lj = zeros(4,np);
 for i = [1:size(Li)(2)]
   #Li(1:3, i) /= norm(Li(1:3, i));
   Lj(:,i) = plane_remapCartesian(gtX, Li(:,i));
+  Lj(:,i)+=rand(4,1)/100;
 endfor;
 Li'
 Lj'
