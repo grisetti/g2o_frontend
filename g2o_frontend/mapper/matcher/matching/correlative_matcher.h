@@ -80,6 +80,14 @@ class CorrelativeMatcher : public ScanMatcher
 
     virtual ~CorrelativeMatcher();
 
+
+    //! function inherited from the super-classes Matcher, compatible with g2o
+    //! represention of the graph
+    //! @param ref: pointer to the vertex whose data is to use as reference
+    //! @param curr: pointer to the vertex whose data is to be matched against the reference
+    void match(g2o::OptimizableGraph::Vertex* ref, g2o::OptimizableGraph::Vertex* curr);
+
+
     //! search for the best in a region
     //! @param points: input scan points in cartesian coordinates
     //! @param lowerLeftF: lower left corner of the search region (z is the theta component in radians)
@@ -109,13 +117,14 @@ class CorrelativeMatcher : public ScanMatcher
     //! @param regions: regions in which to search for the matching
     //! @param params: matching parameters
     void scanMatch(std::vector<CorrelativeMatcherResult*>& mresvec, const Vector2fVector& points,
-                   const RegionVector& regions, const MatchingParameters& params);
+                   /*const RegionVector& regions, */const MatchingParameters& params);
     
 
 protected:
     void addToPrunedMap(std::map<DiscreteTriplet, CorrelativeMatcherResult*>& myMap,
                         const CorrelativeMatcherResult* mr, const float& dx, const float& dy, const float& dth);
 
+    RegionVector _regions;
     CorrelativeMatcherResult* innerCMR;
 };
 

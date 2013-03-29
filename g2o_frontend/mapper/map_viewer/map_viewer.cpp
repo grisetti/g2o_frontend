@@ -44,57 +44,96 @@ void sigquit_handler(int sig)
 
 int main(int argc, char**argv)
 {
-    hasToStop = false;
-    string filename;
-    CommandArgs arg;
-    arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
-    arg.parseArgs(argc, argv);
+//    hasToStop = false;
+//    string filename1;
+//    string filename2;
 
-    // graph construction
-    typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
-    typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
-    SlamLinearSolver* linearSolver = new SlamLinearSolver();
-    linearSolver->setBlockOrdering(false);
-    SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
-    OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
-    SparseOptimizer * graph = new SparseOptimizer();
-    graph->setAlgorithm(solverGauss);
-    graph->load(filename.c_str());
+//    CommandArgs arg;
+//    arg.paramLeftOver("graph-input", filename1, "", "graph file which will be processed", true);
+//    arg.paramLeftOver("graph-input", filename2, "", "graph file which will be processed", true);
+//    arg.parseArgs(argc, argv);
 
-    // sort the vertices based on the id
-    vector<int> vertexIds(graph->vertices().size());
-    int k = 0;
+//    // graph construction
+//    typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
+//    typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
+//    SlamLinearSolver* linearSolver = new SlamLinearSolver();
+//    linearSolver->setBlockOrdering(false);
+//    SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
+//    OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
+//    SparseOptimizer * graph1 = new SparseOptimizer();
+//    graph1->setAlgorithm(solverGauss);
+//    graph1->load(filename1.c_str());
 
-    for(OptimizableGraph::VertexIDMap::iterator it = graph->vertices().begin(); it != graph->vertices().end(); ++it)
-    {
-      vertexIds[k++] = (it->first);
-    }
-    sort(vertexIds.begin(), vertexIds.end());
 
-    Vertices drawableVertices;
-    Edges drawableEdges;
+//    // sort the vertices based on the id
+//    vector<int> vertexIds(graph1->vertices().size());
+//    int k = 0;
 
-    for(size_t i = 0; i < vertexIds.size() && ! hasToStop; ++i)
-    {
-        HyperGraph::Vertex* v = graph->vertex(vertexIds[i]);
-        if(!v)
-        {
-            continue;
-        }
+//    for(OptimizableGraph::VertexIDMap::iterator it = graph1->vertices().begin(); it != graph1->vertices().end(); ++it)
+//    {
+//        vertexIds[k++] = (it->first);
+//    }
+//    sort(vertexIds.begin(), vertexIds.end());
 
-        HyperGraph::EdgeSet edgeSet = v->edges();
-        for(HyperGraph::EdgeSet::const_iterator it = edgeSet.begin(); it != edgeSet.end(); ++it)
-        {
-            HyperGraph::Edge* e = *it;
-            drawableEdges.push_back(e);
-        }
-        drawableVertices.push_back(v);
-    }
-    cout << "End of file!" << endl;
+//    Vertices drawableVertices;
+//    Edges drawableEdges;
+
+//    for(size_t i = 0; i < vertexIds.size() && ! hasToStop; ++i)
+//    {
+//        HyperGraph::Vertex* v = graph1->vertex(vertexIds[i]);
+//        if(!v)
+//        {
+//            continue;
+//        }
+
+//        HyperGraph::EdgeSet edgeSet = v->edges();
+//        for(HyperGraph::EdgeSet::const_iterator it = edgeSet.begin(); it != edgeSet.end(); ++it)
+//        {
+//            HyperGraph::Edge* e = *it;
+//            drawableEdges.push_back(e);
+//        }
+//        drawableVertices.push_back(v);
+//    }
+//    cout << "First graph read" << endl;
+
+
+//    SparseOptimizer* graph2 = new SparseOptimizer;
+//    graph2->setAlgorithm(solverGauss);
+//    graph2->load(filename2.c_str());
+
+//    vector<int> verticesIds(graph2->vertices().size());
+//    int k2 = 0;
+
+
+//    for(OptimizableGraph::VertexIDMap::iterator it = graph2->vertices().begin(); it != graph2->vertices().end(); ++it)
+//    {
+//        verticesIds[k2++] = (it->first);
+//    }
+//    sort(verticesIds.begin(), verticesIds.end());
+
+//    Vertices drawableVertices2;
+//    Edges drawableEdges2;
+
+//    for(size_t i = 0; i < verticesIds.size() && ! hasToStop; ++i)
+//    {
+//        HyperGraph::Vertex* v = graph2->vertex(verticesIds[i]);
+//        if(!v)
+//        {
+//            continue;
+//        }
+
+//        HyperGraph::EdgeSet edgeSet = v->edges();
+//        for(HyperGraph::EdgeSet::const_iterator it = edgeSet.begin(); it != edgeSet.end(); ++it)
+//        {
+//            HyperGraph::Edge* e = *it;
+//            drawableEdges2.push_back(e);
+//        }
+//        drawableVertices2.push_back(v);
+//    }
+//    cout << "Second graph read" << endl;
 
     QApplication app(argc, argv);
-    MapGUI* dialog = new MapGUI(&drawableVertices, &drawableEdges);
-    dialog->viewer->setDataPointer(drawableVertices, drawableEdges);
+    MapGUI* dialog = new MapGUI();
     dialog->show();
 
     return app.exec();

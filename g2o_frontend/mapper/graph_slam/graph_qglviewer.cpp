@@ -1,4 +1,4 @@
-#include "map_qglviewer.h"
+#include "graph_qglviewer.h"
 #include "../../sensor_data/laser_robot_data.h"
 
 #include <fstream>
@@ -11,13 +11,12 @@ using namespace g2o;
 
 
 
-MapQGLViewer::MapQGLViewer(QWidget *parent): QGLViewer(parent)
+GraphQGLViewer::GraphQGLViewer(QWidget *parent): QGLViewer(parent)
 {
-    setAxisIsDrawn(false);
-} 
+}
 
 
-void MapQGLViewer::init()
+void GraphQGLViewer::init()
 {
     QGLViewer::init();
     //	Light disabled
@@ -64,7 +63,7 @@ void MapQGLViewer::init()
 }
 
 
-void MapQGLViewer::drawVertex()
+void GraphQGLViewer::drawVertex()
 {
     glBegin(GL_LINES);
     glVertex2f(0.f, 0.f);
@@ -80,32 +79,19 @@ void MapQGLViewer::drawVertex()
 }
 
 
-void MapQGLViewer::drawReferenceGraph()
+void GraphQGLViewer::drawReferenceGraph()
 {
     _drawableVertices.clear();
     _drawableEdges.clear();
 
     setAlpha(1.0f);
-    setColor(1, 0, 0);
-    setDepth(0.0f);
-    drawGraph(_referenceGraphVertices, _referenceGraphEdges);
-
-}
-
-
-void MapQGLViewer::drawCurrentGraph()
-{
-    _drawableVertices.clear();
-    _drawableEdges.clear();
-
-    setAlpha(0.8f);
     setColor(0, 0, 1);
-    setDepth(2.0f);
-    drawGraph(_currentGraphVertices, _currentGraphEdges);
+    setDepth(0.0f);
+    drawGraph(_referenceGraphVertices);
 }
 
 
-void MapQGLViewer::drawGraph(const Vertices &v, const Edges &e)
+void GraphQGLViewer::drawGraph(const Vertices &v)
 {
     glNormal3f(0.f, 0.f, 1.f);
     for(size_t i = 0; i < v.size(); ++i)
@@ -123,15 +109,15 @@ void MapQGLViewer::drawGraph(const Vertices &v, const Edges &e)
                 glTranslatef((float)vse2->estimate().translation().x(), (float)vse2->estimate().translation().y(), _depth);
                 glRotatef((float)(RAG2DEG(vse2->estimate().rotation().angle())), 0.f, 0.f, 1.f);
                 glNormal3f(0.f,0.f,1.f);
-//                drawVertex();
-                LaserRobotData::Vector2fVector scan = laserRobotData->floatCartesian();
-                for(size_t i = 0; i < scan.size(); ++i)
-                {
-                    glBegin(GL_POINTS);
-                    glColor4f(_red, _green, _blue, _alpha);
-                    glVertex3f(scan[i].x(), scan[i].y(), 0.f);
-                    glEnd();
-                }
+                drawVertex();
+//                LaserRobotData::Vector2fVector scan = laserRobotData->floatCartesian();
+//                for(size_t i = 0; i < scan.size(); ++i)
+//                {
+//                    glBegin(GL_POINTS);
+//                    glColor4f(_red, _green, _blue, _alpha);
+//                    glVertex3f(scan[i].x(), scan[i].y(), 0.f);
+//                    glEnd();
+//                }
                 glPopMatrix();
             }
         }
@@ -145,29 +131,12 @@ void MapQGLViewer::drawGraph(const Vertices &v, const Edges &e)
             glPopMatrix();
         }
     }
-
-    //    for(size_t j = 0; j < e.size(); ++j)
-    //    {
-    //        EdgeSE2* e = dynamic_cast<EdgeSE2*>(e[j]);
-    //        if(e)
-    //        {
-    //            VertexSE2* from = static_cast<VertexSE2*>(e->vertex(0));
-    //            VertexSE2* to = static_cast<VertexSE2*>(e->vertex(1));
-
-    //            glBegin(GL_LINES);
-    //            glColor4f(.5f, .5f, .5f, .5f);
-    //            glVertex3f(from->estimate().translation().x(), from->estimate().translation().y(), 0.f);
-    //            glVertex3f(to->estimate().translation().x(), to->estimate().translation().y(), 0.f);
-    //            glEnd();
-    //        }
-    //    }
     glColor3f(1,1,1);
 }
 
 
-void MapQGLViewer::draw()
+void GraphQGLViewer::draw()
 {
     drawAxis();
     drawReferenceGraph();
-    drawCurrentGraph();
 }

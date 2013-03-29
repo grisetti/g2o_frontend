@@ -1,6 +1,7 @@
 #include "correlative_matcher.h"
 
 
+using namespace g2o;
 using namespace std;
 using namespace Eigen;
 
@@ -16,17 +17,17 @@ CorrelativeMatcherResult::~CorrelativeMatcherResult() {}
 
 
 CorrelativeMatcher::CorrelativeMatcher(const float& resolution, const float& radius,
-                                               const int& kernelSize, const float& kernelMaxValue, int gridScale)
+                                       const int& kernelSize, const float& kernelMaxValue, int gridScale)
     : ScanMatcher(resolution, radius, kernelSize, kernelMaxValue, gridScale)
 {
-
+    _regions.reserve(100);
 }
 
 
 CorrelativeMatcher::CorrelativeMatcher(const CharGrid& g, const int& kernelSize, const float& kernelMaxValue, int gridScale)
     : ScanMatcher(g, kernelSize, kernelMaxValue, gridScale)
 {
-
+    _regions.reserve(100);
 }
 
 
@@ -60,8 +61,33 @@ void CorrelativeMatcher::addToPrunedMap(map<DiscreteTriplet, CorrelativeMatcherR
 }
 
 
+void CorrelativeMatcher::match(OptimizableGraph::Vertex* ref, OptimizableGraph::Vertex* curr)
+{
+    OptimizableGraph::Data* refData = ref->userData();
+    const LaserRobotData* previousLaserData = dynamic_cast<const LaserRobotData*>(refData);
+    VertexSE2* referenceSE2 = dynamic_cast<VertexSE2*>(ref);
+
+    OptimizableGraph::Data* currData = curr->userData();
+    const LaserRobotData* currentLaserData = dynamic_cast<const LaserRobotData*>(currData);
+    VertexSE2* currentSE2 = dynamic_cast<VertexSE2*>(curr);
+    if(previousLaserData && referenceSE2 && currentLaserData && currentSE2)
+    {
+        Isometry2d delta = referenceSE2->estimate().toIsometry().inverse() * currentSE2->estimate().toIsometry();
+        Matrix2f mat = delta.rotation().cast<float>();
+        float angle = atan2(mat(1, 0), mat(0, 0));
+        Vector3f initGuess(delta.translation().x(), delta.translation().y(), angle);
+
+
+        Vector2fVector scan = previousLaserData->floatCartesian();
+        convolveScan(scan);
+
+    }
+
+}
+
+
 void CorrelativeMatcher::scanMatch(const Vector2fVector& points, const Vector3f& lowerLeftF,
-                                       const Vector3f& upperRightF, const float& thetaRes, const float& maxScore)
+                                   const Vector3f& upperRightF, const float& thetaRes, const float& maxScore)
 {
     vector<CorrelativeMatcherResult*> mresvec;
     float dx = _scanGrid.resolution()*4;
@@ -70,30 +96,34 @@ void CorrelativeMatcher::scanMatch(const Vector2fVector& points, const Vector3f&
     scanMatch(mresvec, points, lowerLeftF, upperRightF, thetaRes, maxScore, dx, dy, dth);
     if(mresvec.size())
     {
-      CorrelativeMatcherResult* cmr = new CorrelativeMatcherResult;
-      cmr->_transformation = mresvec[0]->_transformation;
-      cmr->_matchingScore = mresvec[0]->_matchingScore;
-      _matchResults.push_back(cmr);
+        CorrelativeMatcherResult* cmr = new CorrelativeMatcherResult;
+        cmr->_transformation = mresvec[0]->_transformation;
+        cmr->_matchingScore = mresvec[0]->_matchingScore;
+        _matchResults.push_back(cmr);
     }
 
     else
     {
-      CorrelativeMatcherResult* cmr = new CorrelativeMatcherResult;
-      cmr->_transformation = Vector3f(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
-      cmr->_matchingScore = numeric_limits<float>::max();
-      _matchResults.push_back(cmr);
+        CorrelativeMatcherResult* cmr = new CorrelativeMatcherResult;
+        cmr->_transformation = Vector3f(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
+        cmr->_matchingScore = numeric_limits<float>::max();
+        _matchResults.push_back(cmr);
     }
 }
 
 
 void CorrelativeMatcher::scanMatch(vector<CorrelativeMatcherResult*>& mresvec, const Vector2fVector& points, const RegionVector& regions,
-                                       float thetaRes, float maxScore, float dx, float dy, float dth)
+                                   float thetaRes, float maxScore, float dx, float dy, float dth)
 {
     MatchingParameters params;
     params.searchStep = Vector3f(_scanGrid.resolution(), _scanGrid.resolution(), thetaRes);
     params.maxScore = maxScore;
     params.resultsDiscretization = Vector3f(dx, dy, dth);
-    scanMatch(mresvec, points, regions, params);
+
+    _regions.clear();
+    _regions = regions;
+
+    scanMatch(mresvec, points, /*regions, */params);
 
     CorrelativeMatcherResult* cmr = new CorrelativeMatcherResult;
     if(mresvec.size())
@@ -112,23 +142,26 @@ void CorrelativeMatcher::scanMatch(vector<CorrelativeMatcherResult*>& mresvec, c
 
 
 void CorrelativeMatcher::scanMatch(vector<CorrelativeMatcherResult*>& mresvec, const Vector2fVector& points,
-                                       const Vector3f& lowerLeftF, const Vector3f& upperRightF, const float& thetaRes,
-                                       const float& maxScore, const float& dx, const float& dy, const float& dth)
+                                   const Vector3f& lowerLeftF, const Vector3f& upperRightF, const float& thetaRes,
+                                   const float& maxScore, const float& dx, const float& dy, const float& dth)
 {
-    RegionVector regions(1);
-    regions[0].lowerLeft = lowerLeftF;
-    regions[0].upperRight = upperRightF;
+    Region r;
+    r.lowerLeft = lowerLeftF;
+    r.upperRight = upperRightF;
+
+    _regions.clear();
+    _regions.push_back(r);
 
     MatchingParameters params;
     params.searchStep = Vector3f(_scanGrid.resolution(), _scanGrid.resolution(), thetaRes);
     params.maxScore = maxScore;
     params.resultsDiscretization = Vector3f(dx,dy,dth);
-    return scanMatch(mresvec, points, regions, params);
+    return scanMatch(mresvec, points, /*regions, */params);
 }
 
 
 void CorrelativeMatcher::scanMatch(vector<CorrelativeMatcherResult*>& mresvec, const Vector2fVector& points,
-                                       const RegionVector& regions, const MatchingParameters& params)
+                                   /*const RegionVector& regions, */const MatchingParameters& params)
 {
     map<DiscreteTriplet,CorrelativeMatcherResult*> resultMap;
 
@@ -148,10 +181,7 @@ void CorrelativeMatcher::scanMatch(vector<CorrelativeMatcherResult*>& mresvec, c
     }
 
     int additions = 0;
-
-    int scanSizeX =  _scanGrid.size().x();
-    int scanSizeY =  _scanGrid.size().y();
-    for(RegionVector::const_iterator rit=regions.begin(); rit!=regions.end(); ++rit)
+    for(RegionVector::const_iterator rit = _regions.begin(); rit != _regions.end(); ++rit)
     {
         Vector3f lowerLeftF = rit->lowerLeft;
         Vector3f upperRightF = rit->upperRight;
@@ -192,8 +222,8 @@ void CorrelativeMatcher::scanMatch(vector<CorrelativeMatcherResult*>& mresvec, c
                         _ip++;
                         int ipX = ip.x();
                         int ipY = ip.y();
-//                        if(ipX >= 0 && ipX < scanSizeX && ipY >= 0 && ipY < scanSizeY)
-//                        if(ipX >= 0 && ipY >= 0)
+                        //                        if(ipX >= 0 && ipX < scanSizeX && ipY >= 0 && ipY < scanSizeY)
+                        //                        if(ipX >= 0 && ipY >= 0)
                         {
                             idsum += _convolvedGrid.cell(ip);
                         }
@@ -226,9 +256,9 @@ void CorrelativeMatcher::scanMatch(vector<CorrelativeMatcherResult*>& mresvec, c
     unsigned int k = 0;
     for(map<DiscreteTriplet, CorrelativeMatcherResult*>::iterator it = resultMap.begin(); it != resultMap.end(); ++it)
     {
-      mresvec[k++] = it->second;
+        mresvec[k++] = it->second;
     }
-  //   cerr << "bareResults= " << additions << "/"  << mresvec.size() << endl;
+    //   cerr << "bareResults= " << additions << "/"  << mresvec.size() << endl;
 
     Comparator comp;
     sort(mresvec.begin(), mresvec.end(), comp);

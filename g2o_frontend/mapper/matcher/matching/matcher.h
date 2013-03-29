@@ -6,7 +6,7 @@
 #include <Eigen/Geometry>
 #include <list>
 #include <vector>
-#include "g2o/core/hyper_graph.h"
+#include "g2o/core/optimizable_graph.h"
 #include "g2o/stuff/command_args.h"
 #include "g2o/stuff/timeutil.h"
 
@@ -142,6 +142,11 @@ public:
 
     virtual void clearMatchResults();
 
+
+    //! General matching functino, compatible with g2o represention of the graph.
+    //! It is implemented for both 2D and 3D by the classes inheriting from this one
+    //! @param ref: pointer to the vertex whose data is to use as reference
+    //! @param curr: pointer to the vertex whose data is to be matched against the reference
     virtual void match(g2o::HyperGraph::Vertex* ref, g2o::HyperGraph::Vertex* curr);
     
     inline double getMilliSecs() const { return g2o::get_time(); }
@@ -169,4 +174,5 @@ protected:
     VertexContainer _referenceVerteces;
     ResultContainer _matchResults;
 };
+
 #endif

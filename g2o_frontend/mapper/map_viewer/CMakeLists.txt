@@ -29,6 +29,7 @@ ADD_EXECUTABLE(map_viewer map_viewer.cpp)
 SET_TARGET_PROPERTIES(map_viewer PROPERTIES OUTPUT_NAME map_viewer)
 TARGET_LINK_LIBRARIES(map_viewer
                         map_viewer_library
+                        sensor_data_library
   ${G2O_STUFF_LIBRARY} 	${G2O_SOLVER_CSPARSE} ${G2O_SOLVER_CSPARSE_EXTENSION}
   ${G2O_CORE_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${CSPARSE_LIBRARY}
 	#${GLUT_LIBRARY}

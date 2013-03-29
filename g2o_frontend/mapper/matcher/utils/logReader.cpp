@@ -138,4 +138,6 @@ bool LogReader::logToScan(const std::string& fileIn)
   cout << scans.size() << " scans created" << endl;
   cout << data.size() << " elements created" << endl;
   ifs.close();
+
+  return true;
 }
