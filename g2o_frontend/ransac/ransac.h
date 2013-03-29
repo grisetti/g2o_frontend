@@ -73,6 +73,7 @@ public:
   inline double inlierStopFraction() const {return _inlierStopFraction;}
   inline const std::vector<double> errors() const { return _errors;}
   inline int minimalSetSize() const {return _minimalSetSize;}
+  inline const IndexVector getInliersIndeces() const {return _indices;}
   int maxIterations() const {return _maxIterations;}
   void setMaxIterations(double maxIterations_) { _maxIterations = maxIterations_;}
   
@@ -148,7 +149,8 @@ public:
     return transformFound;
   }
   
-  bool operator()(TransformType& treturn, bool debug = false){
+  //mal
+  bool operator()(TransformType& treturn, std::vector<int>& in, bool debug = false){
     if ((int)_correspondences.size()<minimalSetSize())
       return false;
     if (!_init())
@@ -225,6 +227,9 @@ public:
 	  _errors = currentErrors;
 	  bestTransform = t;
 	  transformFound = true;
+
+      //mal
+      in=bestInliers;
 	}
 	if ((double)inliers.size()/(double)_correspondences.size() > _inlierStopFraction){
 	  transformFound = true;

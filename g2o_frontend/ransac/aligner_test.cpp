@@ -233,7 +233,8 @@ bool RansacFromGraph(typename RansacType::TransformType& result,const std::vecto
     ransac.setMaxIterations(1000);
     ransac.setInlierErrorThreshold(1.);
     ransac.setInlierStopFraction(0.5);
-    return ransac(result, 0);
+    std::vector<int> tmp;
+    return ransac(result, tmp,0);
 }
 
 

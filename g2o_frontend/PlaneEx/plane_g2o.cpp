@@ -6,6 +6,7 @@
 #include "g2o/stuff/filesys_tools.h"
 #include "g2o/stuff/string_tools.h"
 #include "g2o/stuff/timeutil.h"
+#include "g2o/types/slam3d/types_slam3d.h"
 
 #include "g2o/core/sparse_optimizer.h"
 #include "g2o/core/block_solver.h"
@@ -40,7 +41,11 @@ using namespace std;
 using namespace g2o;
 using namespace Slam3dAddons;
 using namespace cv;
+using namespace Eigen;
+
 RGBDData imageOriginal;
+
+Vector3d kinectRay(0,0,1);
 
 //PLANE
 //***********************************************
@@ -129,8 +134,8 @@ int main(int argc, char**argv){
     int minAcc;
     arg.param("o", outfilename, "otest.g2o", "output file name");
     arg.param("voxelSize", voxelSize, 10, "grid voxel size");
-    arg.param("minAcc", minAcc, 10, "minimum accurancy");
-    arg.param("minPlanePoins", minPlanePoints, 500, "minimum point for a plane model to be considered as a valid plane");
+    arg.param("minAcc", minAcc, 20, "minimum accurancy");
+    arg.param("minPlanePoins", minPlanePoints, 1000, "minimum point for a plane model to be considered as a valid plane");
     arg.param("maxDist", maxDist, 2000, "maximum valid distance of points");
     arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
     arg.parseArgs(argc, argv);
@@ -167,6 +172,12 @@ int main(int argc, char**argv){
     signal(SIGINT, sigquit_handler);
 
     VertexSE3* vparam = new VertexSE3;
+    Isometry3d paramISO;
+    paramISO.setIdentity();
+    Vector7d paramV;
+    paramV<<0,0,0,0.5000,-0.5000,0.5000,-0.5000;
+    vparam->setFixed(true);
+    vparam->setEstimate(g2o::internal::fromVectorQT(paramV));
     vparam->setId(vertexNum++);
     graph->addVertex(vparam);
 
@@ -203,7 +214,10 @@ int main(int argc, char**argv){
                 //string realPath= strcat(base_name,intensity);
 
                 cout << "\t Processing "<<imageData->baseFilename()<<"\n";
+
                 const Mat *imageToProcess;
+
+                imageData->update();
                 imageToProcess = imageData->depthImage(); //no need to reproject image 'cause we've the depth registered
                 std::vector<Vec3f> Cloud;
 
@@ -363,11 +377,47 @@ int main(int argc, char**argv){
                     //creo un oggetto g2o::Plane3d
                     Plane3D p;
                     Vector4d planeCoeff;
+
+                    Vector3d piano(coefficients->values[0],coefficients->values[1],coefficients->values[2]);
+                    Vector3d mass(com_tmp[0],com_tmp[1],com_tmp[2]);
+                    float facingDirection=piano.dot(mass);
+                    cout << "FACING HAS VALUE OF "<<facingDirection<<endl;
+                    cout << mass<<endl<<endl;
+                    cout << piano<<endl;
+                    if(facingDirection>0)
+                    {
+                        cout << "la normale punta in direzione opposta al kinect, va rimappata!"<<endl;
+                        piano*=-1;
+                        coefficients->values[0]=piano.coeff(0);
+                        coefficients->values[1]=piano.coeff(1);
+                        coefficients->values[2]=piano.coeff(2);
+                        coefficients->values[3]=piano.coeff(3);
+
+                        planeCoeff[0]=coefficients->values[0];
+                        planeCoeff[1]=coefficients->values[1];
+                        planeCoeff[2]=coefficients->values[2];
+                        planeCoeff[3]=coefficients->values[3];
+                    }
+
                     planeCoeff[0]=coefficients->values[0];
                     planeCoeff[1]=coefficients->values[1];
                     planeCoeff[2]=coefficients->values[2];
                     planeCoeff[3]=(coefficients->values[3]/1000); //in meters please
-                    cout << "COEFF: "<< planeCoeff[0] << " "<< planeCoeff[1]<<" "<< planeCoeff[2]<<" "<< planeCoeff[3]<<endl;
+
+                    Vector3d pianoNORM(planeCoeff[0],planeCoeff[1],planeCoeff[2]);
+                    double pianoD = planeCoeff[3];
+                    //i piani vanno rimappati nel frame giusto del robot
+//                    Eigen::Quaternion<double> quat(0.5000,-0.5000,0.5000,-0.5000);
+//                    Eigen::Isometry3d cose(quat);
+//                    Plane3D myPlane;
+
+//                    myPlane.fromVector(Vector4d(planeCoeff[0],planeCoeff[1],planeCoeff[2],planeCoeff[3]));
+//                    myPlane=cose*myPlane;
+
+//                    cout << "@COEFF: "<< planeCoeff[0] << " "<< planeCoeff[1]<<" "<< planeCoeff[2]<<" "<< planeCoeff[3]<<endl;
+//                    planeCoeff=myPlane.toVector();
+//                    cout << "#COEFF: "<< planeCoeff[0] << " "<< planeCoeff[1]<<" "<< planeCoeff[2]<<" "<< planeCoeff[3]<<endl;
+
                     p.fromVector(planeCoeff);
                     stashOfPlanes.push_back(p);
                     tmpCLOUD.cloud.clear();
@@ -416,7 +466,7 @@ int main(int argc, char**argv){
 
                 }
                 */
-
+                imageData->release();
                 Isometry3d sensorAndRobot = v->estimate() * vparam->estimate();
                 for(int i=0;i<stashOfPlanes.size();i++)
                 {
@@ -433,6 +483,8 @@ int main(int argc, char**argv){
                     edge->setMeasurement(stashOfPlanes[i]);
                     edge->setInformation(Matrix3d::Identity());
                     graph->addEdge(edge);
+                    edge->computeError();
+                    cerr << "edge.chi2()=" << edge->chi2() << endl;
                     vertexNum++;
                 }
             }
