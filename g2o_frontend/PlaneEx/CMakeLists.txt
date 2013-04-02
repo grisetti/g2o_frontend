@@ -7,6 +7,7 @@ SET_TARGET_PROPERTIES(plane_g2o_application PROPERTIES OUTPUT_NAME plane_g2o_app
 INCLUDE_DIRECTORIES(plane_g2o_application ${CSPARSE_INCLUDE_DIR} )
 
 TARGET_LINK_LIBRARIES(plane_g2o_application
+    ncurses
     sensor_data_library
     ${QT_LIBRARIES}
     ${G2O_TYPES_SLAM2D}
