@@ -1,0 +1,50 @@
+This library defines some basic math types used in the rest of the package.
+These types include:
+- geometric entities (points/lines/planes and so on)
+- transforms (SE2, SE3, projective transforms...)
+
+In addition to this it also defines a model for functions that operate on these types.
+- error functions
+
+The types heavily rely on eigen, and are parametric w.r.t. the scalar type
+(float, double, int and so on).
+
+A type is defined as a smooth manifold, and has two representations:
+the internal one, which might be over-parameterized
+the external one which has a minimal set of parameters.
+
+A generic type looks like that
+
+template  <typename Scalar_, int internalDimension_, int minimalDimension_>
+struct T: public <external representation> {
+
+       //convenience typedef for the scalar type to be accessed by functions that operate on the type
+       typedef typename Scalar_ Scalar;     
+
+       //convenience typedef for the minimal vector type
+       typedef typename Eigen::Matrix<Scalar_, minimalDimension_, 1> VectorType;
+
+       // instantiates a type from a minimal vector
+       T(const VectorType& v); 
+
+       // returns the minimal vector corresponding to the object
+       VectorType toVector() const; // returns the minimal representation
+
+       // applies the perturbation described by v;
+       T& oplus(const VectorType& v); 
+       
+       // returns the perturbation that applied to this by oplus, brings it to be equal to other
+       VectorType ominus(const T<Scalar_, internalDimension_, minimalDimension_>& other) //
+       
+};
+
+
+// function that returns the result of transforming an element of the domain element_ by a transform transform_
+template  <typename Scalar_, int internalDimension_, int minimalDimension_>
+T<Scalar, int internalDimension_, int minimalDimension_> operator*(const SE<Scalar, dim>& transform_, const T<Scalar, int internalDimension_, int minimalDimension_>, element);
+
+Notes:
+For efficiecy reasons an inline implementation is recommended
+
+
+A function

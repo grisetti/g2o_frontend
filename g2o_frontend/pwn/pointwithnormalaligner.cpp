@@ -84,6 +84,7 @@ PointWithNormalAligner::PointWithNormalAligner() {
   _translationalMinEigenRatio = 50;
   _debug = false;
   _numThreads = 1;
+  _sensorOffset.setIdentity();
 
   _referenceScene = 0; 
   _currentScene = 0;

@@ -10,9 +10,14 @@ public:
   typedef CodomainType_ CodomainType;
   typedef typename DomainType::Scalar DomainScalarType;
   typedef typename CodomainType::Scalar CodomainScalarType;
-  typedef Eigen::Matrix<CodomainScalarType, CodomainType::ColsAtCompileTime, DomainType::ColsAtCompileTime> JacobianType;
+  typedef Eigen::Matrix<CodomainScalarType, CodomainType::RowsAtCompileTime, DomainType::RowsAtCompileTime> JacobianType;
   virtual CodomainType operator()(const DomainType& x) const = 0;
-  JacobianType numeric_jacobian(const DomainType& x, DomainScalarType epsilon=1e-5) {
+  virtual JacobianType jacobian() const {
+    return numericJacobian();
+  }
+  virtual ~MultivariateVectorFunction(){}
+protected:
+  JacobianType numericJacobian(const DomainType& x, DomainScalarType epsilon=1e-5) const  {
     JacobianType retval;
     DomainType xup=x;
     DomainType xdown=x;
@@ -27,10 +32,10 @@ public:
     }
     return retval;
   }
-  JacobianType numeric_jacobian(DomainScalarType epsilon=1e-5) const {
+  JacobianType numericJacobian(DomainScalarType epsilon=1e-5) const {
     DomainType x;
     x.setZero();
-    return numeric_jacobian(x,epsilon);
+    return numericJacobian(x,epsilon);
   }
 };
 

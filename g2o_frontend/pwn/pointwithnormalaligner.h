@@ -109,6 +109,9 @@ public:
   inline void setNumThreads(int numThreads_)  { _numThreads = numThreads_; }
 #endif //_PWN_USE_OPENMP_
 
+  inline void setSensorOffset(const Eigen::Isometry3f& sensorOffset_) {_sensorOffset = sensorOffset_;}
+  inline const Eigen::Isometry3f& sensorOffset() const {return _sensorOffset;}
+
 
 protected:
   // size of the original image
@@ -166,6 +169,7 @@ protected:
 
   Eigen::Isometry3f _T;
   Eigen::Isometry3f _initialT;
+  Eigen::Isometry3f _sensorOffset;
   bool _debug;
 
   // parallelization

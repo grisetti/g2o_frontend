@@ -11,6 +11,10 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 ADD_LIBRARY(pwn_library
   ../basemath/bm_se3.h
   depthimage.cpp depthimage.h
+  pointprojector.cpp pointprojector.h
+  pinholepointprojector.cpp pinholepointprojector.h
+  homogeneouspoint3fintegralimage.cpp homogeneouspoint3fintegralimage.h
+  homogeneouspoint3fstatsgenerator.cpp homogeneouspoint3fstatsgenerator.h
   pixelmapper.cpp pixelmapper.h 
   gaussian3.cpp gaussian3.h 
   pointwithnormal.cpp pointwithnormal.h 
@@ -48,6 +52,10 @@ TARGET_LINK_LIBRARIES( pwn_g2o_localmap pwn_library  ${G2O_STUFF_LIBRARY} )
 ADD_EXECUTABLE(pwn_g2o_movingRef pwn_g2o_movingRef.cpp)
 SET_TARGET_PROPERTIES(pwn_g2o_movingRef PROPERTIES OUTPUT_NAME pwn_g2o_movingRef)
 TARGET_LINK_LIBRARIES( pwn_g2o_movingRef pwn_library  ${G2O_STUFF_LIBRARY} )
+
+ADD_EXECUTABLE(homogeneous_normals homogeneous_normals.cpp)
+SET_TARGET_PROPERTIES(homogeneous_normals PROPERTIES OUTPUT_NAME homogeneous_normals)
+TARGET_LINK_LIBRARIES( homogeneous_normals pwn_library  ${G2O_STUFF_LIBRARY} )
 
 
 

@@ -1,7 +1,8 @@
 #include "scene.h"
 #include <iostream>
 using namespace std;
-
+#include "g2o/stuff/timeutil.h"
+using namespace g2o;
 
 Scene::Scene(){
   _origin.setIdentity();
@@ -56,7 +57,10 @@ void Scene::_updateSVDsFromPoints(PointWithNormalStatistcsGenerator & generator,
   Eigen::MatrixXf zBuffer(r,c);
   _points.toIndexImage(indexImage, zBuffer, cameraMatrix, cameraPose, dmax);
   // assumes the gaussians and the points are consistent
+  double tNormalsStart = get_time();
   generator.computeNormalsAndSVD(_points, _svds, indexImage, cameraMatrix, cameraPose);
+  double tNormalsEnd = get_time();
+  cerr << "tNormals: " << tNormalsEnd - tNormalsStart << endl;
 }
 
 void Scene::_suppressNoNormals(){

@@ -22,17 +22,32 @@ public:
     updateTransform();
   } 
 
-  inline Eigen::Vector3f projectPoint(const Eigen::Vector3f& v) const {
-    return _KR * v + _Kt;
-  }
-
+  /*3f interface*/
   inline Eigen::Vector2i imageCoords(const Eigen::Vector3f& projected) const  {
     return Eigen::Vector2i(projected(0)/projected(2), projected(1)/projected(2));
   }
 
-  Eigen::Vector3f unprojectPixel(int x, int y, float depth) const {
+  inline Eigen::Vector3f projectPoint(const Eigen::Vector3f& v) const {
+    return _KR * v + _Kt;
+  }
+
+  inline Eigen::Vector3f unprojectPixel(int x, int y, float depth) const {
     Eigen::Vector3f ip(depth*x, depth*y, depth);
     return _iKR*ip+_iKt;
+  }
+
+  /*4f interface*/
+  inline Eigen::Vector2i imageCoords4f(const Eigen::Vector4f& projected) const  {
+    return Eigen::Vector2i(projected(0)/projected(2), projected(1)/projected(2));
+  }
+
+  inline Eigen::Vector4f projectPoint4f(const Eigen::Vector4f& v) const {
+    return _KRt * v;
+  }
+
+  inline Eigen::Vector4f unprojectPixel4f(int x, int y, float depth) const {
+    Eigen::Vector4f ip(depth*x, depth*y, depth, 1.0);
+    return _iKRt*ip;
   }
 
 protected:
@@ -41,6 +56,9 @@ protected:
   Eigen::Vector3f _Kt;
   Eigen::Matrix3f _iKR;
   Eigen::Vector3f _iKt;
+  Eigen::Matrix4f _KRt;
+  Eigen::Matrix4f _iKRt;
+
   Eigen::Isometry3f _transform;
   Eigen::Matrix3f _cameraMatrix;
 };
