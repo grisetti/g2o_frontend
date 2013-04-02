@@ -31,7 +31,7 @@ void GraphSLAM::localMatching()
     HyperGraph::Vertex* _currentVertex = new HyperGraph::Vertex;
     if(_currentSet.size() == 0)
     {
-        cout << "Current set for local matching is empty" << endl;
+        cout << "Set for local matching is empty" << endl;
         return;
     }
 
@@ -43,7 +43,11 @@ void GraphSLAM::localMatching()
 }
 
 
-void GraphSLAM::addLocalConstraints()
+void GraphSLAM::loopClosureMatching()
+{
+}
+
+void GraphSLAM::addLocalConstraint(int ref_id, int curr_id, Eigen::Isometry3d estimate)
 {
 
 }

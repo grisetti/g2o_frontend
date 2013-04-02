@@ -6,9 +6,9 @@ ADD_EXECUTABLE(gradient_matcher_test gradient_matcher_test.cpp)
 SET_TARGET_PROPERTIES(gradient_matcher_test PROPERTIES OUTPUT_NAME gradient_matcher_test)
 TARGET_LINK_LIBRARIES(gradient_matcher_test matching_library reader_library ${G2O_STUFF_LIBRARY})
 
-ADD_EXECUTABLE(hierarchical_matcher_test hierarchical_matcher_test.cpp)
-SET_TARGET_PROPERTIES(hierarchical_matcher_test PROPERTIES OUTPUT_NAME hierarchical_matcher_test)
-TARGET_LINK_LIBRARIES(hierarchical_matcher_test matching_library reader_library ${G2O_STUFF_LIBRARY})
+#ADD_EXECUTABLE(hierarchical_matcher_test hierarchical_matcher_test.cpp)
+#SET_TARGET_PROPERTIES(hierarchical_matcher_test PROPERTIES OUTPUT_NAME hierarchical_matcher_test)
+#TARGET_LINK_LIBRARIES(hierarchical_matcher_test matching_library reader_library ${G2O_STUFF_LIBRARY})
 
 ADD_EXECUTABLE(structures_test structures_test.cpp)
 SET_TARGET_PROPERTIES(structures_test PROPERTIES OUTPUT_NAME structures_test)

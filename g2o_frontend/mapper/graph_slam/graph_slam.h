@@ -20,13 +20,15 @@ public:
 
     void findNearestVertices(g2o::OptimizableGraph::Vertex* v_, double threshold_);
     void localMatching();
-    void addLocalConstraints();
+    void loopClosureMatching();
+    void addLocalConstraint(int ref_id, int curr_id, Eigen::Isometry3d estimate);
     void addLoopClosuresConstraints();
 
 protected:
     Matcher _matcher;
     g2o::OptimizableGraph* _graph;
 
+    g2o::HyperGraph::VertexSet _localMap;
 };
 
 #endif // GRAPHSLAM_H

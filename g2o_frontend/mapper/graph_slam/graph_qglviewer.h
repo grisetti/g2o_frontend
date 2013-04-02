@@ -1,5 +1,5 @@
-#ifndef MAPQGLVIEWER_H
-#define MAPQGLVIEWER_H
+#ifndef GRAPHQGLVIEWER_H
+#define GRAPHQGLVIEWER_H
 
 #include <QGLViewer/qglviewer.h>
 
@@ -49,24 +49,30 @@ typedef std::vector<g2o::HyperGraph::Vertex*> Vertices;
 typedef std::vector<g2o::HyperGraph::Edge*> Edges;
 
 
-class MapQGLViewer: public QGLViewer
+class GraphQGLViewer: public QGLViewer
 {
 
 public:
-    MapQGLViewer(QWidget *parent);
+    GraphQGLViewer(QWidget *parent);
     virtual void init();
     virtual void draw();
 
     void drawVertex();
-    void drawGraph(const Vertices& v, const Edges& e);
+    void drawGraph(const Vertices& v);
     void drawReferenceGraph();
     void drawCurrentGraph();
 
 
-    inline void setReferenceGraph(Vertices v, Edges e)
+    inline void setDrawableVertex(g2o::HyperGraph::Vertex* v)
+    {
+        _referenceGraphVertices.push_back(v);
+        drawReferenceGraph();
+    }
+
+
+    inline void setReferenceGraph(Vertices v)
     {
         _referenceGraphVertices = v;
-        _referenceGraphEdges = e;
         drawReferenceGraph();
     }
 
@@ -76,22 +82,6 @@ public:
         _referenceGraphVertices.clear();
         _referenceGraphEdges.clear();
         drawReferenceGraph();
-    }
-
-
-    inline void setCurrentGraph(Vertices v, Edges e)
-    {
-        _currentGraphVertices = v;
-        _currentGraphEdges = e;
-        drawCurrentGraph();
-    }
-
-
-    inline void cancelCurrentGraph()
-    {
-        _currentGraphVertices.clear();
-        _currentGraphEdges.clear();
-        drawCurrentGraph();
     }
 
 
@@ -113,9 +103,6 @@ public:
     Vertices _referenceGraphVertices;
     Edges _referenceGraphEdges;
 
-    Vertices _currentGraphVertices;
-    Edges _currentGraphEdges;
-
     float _alpha;
     float _color;
     float _depth;
@@ -125,4 +112,4 @@ public:
     float _blue;
 };
 
-#endif // MAPQGLVIEWER_H
+#endif // GRAPHQGLVIEWER_H
