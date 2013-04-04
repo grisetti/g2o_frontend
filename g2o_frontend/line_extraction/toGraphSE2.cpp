@@ -45,17 +45,17 @@ int main(int argc, char**argv){
   arg.parseArgs(argc, argv);
 	ofstream ofG2O(outfilename.c_str());
 	
-	// graph construction
-  typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
-  typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
-  SlamLinearSolver* linearSolver = new SlamLinearSolver();
-  linearSolver->setBlockOrdering(false);
-  SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
-  OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
-  SparseOptimizer * graph = new SparseOptimizer();
-	SparseOptimizer * graphSE2 = new SparseOptimizer();
-  graph->setAlgorithm(solverGauss);
-	graphSE2->setAlgorithm(solverGauss);
+  // graph construction
+//   typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
+//   typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
+//   SlamLinearSolver* linearSolver = new SlamLinearSolver();
+//   linearSolver->setBlockOrdering(false);
+//   SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
+//   OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
+  OptimizableGraph * graph = new OptimizableGraph(); //SparseOptimizer
+  OptimizableGraph * graphSE2 = new OptimizableGraph();
+//   graph->setAlgorithm(solverGauss);
+//   graphSE2->setAlgorithm(solverGauss);
   graph->load(filename.c_str());
 	
 	// sort the vertices based on the id
