@@ -64,6 +64,13 @@ struct planeCorrespondence
     double error;
 };
 
+struct error_struct
+{
+    int v1;
+    int v2;
+    double error;
+};
+
 std::vector<planeAndVertex> container1;
 std::vector<planeAndVertex> container2;
 std::vector<planeCorrespondence> corrs;
@@ -134,6 +141,10 @@ Vector3d aRandColor()
     return theColor;
 }
 
+
+Isometry3d odometry;
+
+
 int main(int argc, char**argv)
 {
     hasToStop = false;
@@ -197,7 +208,7 @@ int main(int argc, char**argv)
             HyperGraph::Edge* _e = *it;
             //accedo solo a quelli SE3 per sapere su quale vertice spostarmi
             EdgeSE3 * eSE3 =dynamic_cast< EdgeSE3*>(_e);
-            Isometry3d odometry;
+
             if(eSE3)
             {
                 //accedo al vertice successivo sul quale andare
@@ -232,14 +243,9 @@ int main(int argc, char**argv)
 
     vector<VertexPlane*> plane_v_container;
     vector<VertexPlane*> plane_v_next_container;
-    vector<VertexPlane*> REMAPPED_plane_v_next_container;
+    vector<Plane3D> REMAPPED_plane_v_next_container;
 
-    struct error_struct
-    {
-        int v1;
-        int v2;
-        double error;
-    };
+
 
     vector<error_struct> error_container;
 
@@ -289,6 +295,8 @@ int main(int argc, char**argv)
 
 
             eSE3Calib->setInformation(info);
+            sensorOffset = dynamic_cast< VertexSE3*>(eSE3Calib->vertex(2));
+
             VertexPlane* vplane = dynamic_cast< VertexPlane*>(eSE3Calib->vertex(1));
 
             eSE3Calib->color=Vector3d(0.1,1.0,0.1);
@@ -308,7 +316,22 @@ int main(int argc, char**argv)
 
     //remapping things
 
-    for(int )
+    for(int ik=0;ik<plane_v_next_container.size();ik++ )
+    {
+        Plane3D modifiedPlaneNext;
+        Plane3D planenext=(plane_v_next_container.at(ik))->estimate();
+        modifiedPlaneNext=sensorOffset->estimate().inverse()*odometry.inverse()*sensorOffset->estimate()*planenext.toVector();
+
+        REMAPPED_plane_v_next_container.push_back(planenext);
+
+        cout <<"From:"<<endl<< planenext.toVector() <<endl<<"to:" <<endl<<modifiedPlaneNext.toVector()<<endl<<endl;
+
+    }
+
+    VertexPlane* remapped_V = new VertexPlane();
+    EdgeSE3PlaneSensorCalib* remapped_E= new EdgeSE3PlaneSensorCalib();
+
+
 
 
     cout << "Salvataggio nel grafo di output..."<<endl;
