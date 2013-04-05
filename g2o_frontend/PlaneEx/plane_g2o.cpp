@@ -11,9 +11,10 @@
 #include "g2o/core/sparse_optimizer.h"
 #include "g2o/core/block_solver.h"
 #include "g2o/core/factory.h"
-//#include "g2o/core/optimization_algorithm_gauss_newton.h"
-//#include "g2o/core/optimization_algorithm_levenberg.h"
-//#include "g2o/solvers/csparse/linear_solver_csparse.h"
+
+#include <pthread.h>
+#include <unistd.h>
+
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "g2o/types/slam3d_addons/types_slam3d_addons.h"
 #include "g2o_frontend/sensor_data/rgbd_data.h"
@@ -46,6 +47,8 @@ using namespace Eigen;
 RGBDData imageOriginal;
 
 Vector3d kinectRay(0,0,1);
+
+#define NUM_THREADS 4
 
 //PLANE
 //***********************************************
@@ -123,9 +126,15 @@ void sigquit_handler(int sig)
 }
 
 
+std::vector<RGBDData *> images;
+void *processData(void *tid);
+
 int main(int argc, char**argv){
   
-  initscr();
+  //initscr();
+  pthread_t threads[NUM_THREADS];
+
+
   hasToStop = false;
   string filename;
   string outfilename;
@@ -142,16 +151,8 @@ int main(int argc, char**argv){
   arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
   arg.parseArgs(argc, argv);
 
-  // graph construction
-  //typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
-  //typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
-  //SlamLinearSolver* linearSolver = new SlamLinearSolver();
-  //linearSolver->setBlockOrdering(false);
-  //SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
-  //OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
-  //SparseOptimizer * graph = new SparseOptimizer();
+
   OptimizableGraph * graph = new OptimizableGraph();
-  //graph->setAlgorithm(solverGauss);
   mvprintw(0,0,"Parsing g2o file");
   refresh();
   //cout << "<Parsing .g2o file>"<<endl;
@@ -208,312 +209,357 @@ int main(int argc, char**argv){
     while(d ){
       Vector<Plane3D> stashOfPlanes;
       //RGBDImageData* imageData = dynamic_cast<RGBDImageData*>(d);
-      RGBDData* imageData = dynamic_cast<RGBDData*>(d);
+      RGBDData* imageData =  new RGBDData;
+      imageData=dynamic_cast<RGBDData*>(d);
       d=d->next();
-      if (imageData) {
-	// extract plane
-	const Parameter* pa = graph->parameters().getParameter(imageData->paramIndex());
-	const ParameterCamera* camParam = dynamic_cast<const ParameterCamera*>(pa);
-
-	if(camParam!=0) {
-	  vparam->setEstimate(camParam->offset());
-	}
-
-	//cerr << "image found" << endl;
-	//string base_name=imageData->baseFilename();
-	//string intensity="_intensity.pgm";
-	//string realPath= strcat(base_name,intensity);
-	move(1,0);
-	clrtoeol();
-	mvprintw(1,0,"Processing %s",imageData->baseFilename().c_str());
-	refresh();
-	//cout << "\t Processing "<<imageData->baseFilename()<<"\n";
-
-	const Mat *imageToProcess;
-
-	imageData->update();
-	imageToProcess = imageData->depthImage(); //no need to reproject image 'cause we've the depth registered
-	std::vector<Vec3f> Cloud;
-
-	int rows=imageToProcess->rows;
-	int cols=imageToProcess->cols;
-
-	const unsigned short * dptra=imageToProcess->ptr<unsigned short>(0);;
-	for(int i = 0; i < rows; i++)
-	  {
-
-	    for(int j = 0; j < cols; j++)
-	      {
-		unsigned short d = *dptra;
-		if(d != 0)
-		  {
-
-		    Vec3f cloudElem;
-		    if(d<maxDist) //2000 is max distance
-		      {
-			cloudElem[0]=(double)((double)j-(double)cx_d)*(double)d/(double)fx_d;
-			cloudElem[1]=(double)((double)i-(double)cy_d)*(double)d/(double)fy_d;
-			cloudElem[2]=d;
-
-			Cloud.push_back(cloudElem);
-
-		      }
-		  }
-		dptra++;
-	      }
-	  }
-	//cout << "\t\t Cloud has " << Cloud.size() << " points"<<endl;
-
-	//**************************************************************
-	//voxel
-	//**************************************************************
-
-	//cout << "\t\t starting voxelization"<<endl;
-
-	accumulatorMap accMap;
-	float res = voxelSize;
-	float ires=1./res;
-	std::vector<Vec3f> * theCloud=&Cloud;
-
-	for(int i=0;i<(int)theCloud->size();i++)
-	  {
-	    //cout << (*Cloud)[i][0];
-	    something s;
-	    res=(float)voxelSize;
-	    ires=1./res;
-	    s.i[0]=(int)(*theCloud)[i][0]*ires;
-	    s.i[1]=(int)(*theCloud)[i][1]*ires;
-	    s.i[2]=(int)(*theCloud)[i][2]*ires;
-
-	    accumulatorMap::iterator it=accMap.find(s);
-	    if(it==accMap.end())
-	      {
-		voxelAcc vac;
-		vac.acc[0]=(*theCloud)[i][0];
-		vac.acc[1]=(*theCloud)[i][1];
-		vac.acc[2]=(*theCloud)[i][2];
-		vac.i=1;
-		accMap.insert(make_pair(s,vac));
-	      }
-	    else
-	      {
-		voxelAcc & vac = it->second;
-		vac.add((*theCloud)[i]);
-	      }
-
-	  }
-
-
-
-	theCloud->clear();
-	for(accumulatorMap::iterator it=accMap.begin();it!=accMap.end();it++ )
-	  {
-	    voxelAcc &aMap=it->second;
-	    Vec3f tmp = aMap.average();
-	    theCloud->push_back(tmp);
-	  }
-	//cout << "\t\t voxelized in "<<theCloud->size()<<" points"<<endl;
-	//cout << "\t\t Voxelization finished..."<<endl;
-
-	//**************************************************************
-	//time to extract some planes!
-	//**************************************************************
-
-	//ESTRAZIONE DEI PIANI
-	pcl::PointCloud<pcl::PointXYZ> pclCLOUD;
-
-	//POPOLO LA CLOUD PCL
-	for(int i=0;i<theCloud->size();i++)
-	  {
-	    pcl::PointXYZ tmpXYZ((*theCloud)[i][0],(*theCloud)[i][1],(*theCloud)[i][2]);
-	    pclCLOUD.push_back(tmpXYZ);
-	  }
-
-
-	//--------------------------------------------------------------------------------
-	//DICHIARAZIONI PER L'ESTRAZIONE DEI TANTI PIANI
-	const int numpoint=minPlanePoints; //numero minimo di punti affinchè l'oggetto venga considerato un piano
-	const int tresh=minAcc;     //distanza minima tra i punti
-	int planesExtracted=0;
-	pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
-	pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
-	//------------// Create the segmentation object
-	pcl::SACSegmentation<pcl::PointXYZ> seg;
-	//------------// Optional
-	seg.setOptimizeCoefficients (true);
-	//------------// Mandatory
-	seg.setModelType (pcl::SACMODEL_PLANE);
-	seg.setMethodType (pcl::SAC_RANSAC);
-	seg.setDistanceThreshold(tresh);
-	//--------------------------------------------------------------------------------
-	//Procedure
-	seg.setInputCloud (pclCLOUD.makeShared ());
-	seg.segment (*inliers, *coefficients);
-	theCloud->clear();
-
-	while(
-	      (inliers->indices.size()!=0) &
-	      (inliers->indices.size()>numpoint) )
-	  {
-
-
-	    planesExtracted++;
-	    plane tmpCLOUD;
-
-	    //Istanzio un plane, lo popolo con i punti degli inliers rilevati in precedenza
-	    const int repj=1000; //metri
-	    Vec3f com_tmp;
-	    com_tmp[0]=0;com_tmp[1]=0;com_tmp[2]=0;
-
-	    for (size_t i = 0; i < inliers->indices.size (); ++i)
-	      {
-		tmpCLOUD.cloud.push_back(pcl::PointXYZ(
-						       pclCLOUD[inliers->indices[i]].x/repj,
-						       pclCLOUD[inliers->indices[i]].y/repj,
-						       pclCLOUD[inliers->indices[i]].z/repj));
-
-		com_tmp[0]+= pclCLOUD[inliers->indices[i]].x/repj;
-		com_tmp[1]+= pclCLOUD[inliers->indices[i]].y/repj;
-		com_tmp[2]+= pclCLOUD[inliers->indices[i]].z/repj;
-	      }
-
-	    com_tmp[0]=com_tmp[0]/inliers->indices.size ();
-	    com_tmp[1]=com_tmp[1]/inliers->indices.size ();
-	    com_tmp[2]=com_tmp[2]/inliers->indices.size ();
-
-	    /*
-	      cout << "\t\t coeffiecienti estratti a:("<<
-	      coefficients->values[0]<<") b:("<<
-	      coefficients->values[1]<<") c:("<<
-	      coefficients->values[2]<<") d:("<<
-	      coefficients->values[3]<<")"<<endl;
-	    */
-	    //creo un oggetto g2o::Plane3d
-	    Plane3D p;
-	    Vector4d planeCoeff;
-
-	    Vector3d piano(coefficients->values[0],coefficients->values[1],coefficients->values[2]);
-	    Vector3d mass(com_tmp[0],com_tmp[1],com_tmp[2]);
-	    float facingDirection=piano.dot(mass);
-	    //cout << "FACING HAS VALUE OF "<<facingDirection<<endl;
-	    //cout << mass<<endl<<endl;
-	    //cout << piano<<endl;
-	    if(facingDirection>0)
-	      {
-		//cout << "la normale punta in direzione opposta al kinect, va rimappata!"<<endl;
-		piano*=-1;
-		coefficients->values[0]=piano.coeff(0);
-		coefficients->values[1]=piano.coeff(1);
-		coefficients->values[2]=piano.coeff(2);
-		coefficients->values[3]=piano.coeff(3);
-
-		planeCoeff[0]=coefficients->values[0];
-		planeCoeff[1]=coefficients->values[1];
-		planeCoeff[2]=coefficients->values[2];
-		planeCoeff[3]=coefficients->values[3];
-	      }
-
-	    planeCoeff[0]=coefficients->values[0];
-	    planeCoeff[1]=coefficients->values[1];
-	    planeCoeff[2]=coefficients->values[2];
-	    planeCoeff[3]=(coefficients->values[3]/1000); //in meters please
-
-	    Vector3d pianoNORM(planeCoeff[0],planeCoeff[1],planeCoeff[2]);
-	    double pianoD = planeCoeff[3];
-	    //i piani vanno rimappati nel frame giusto del robot
-	    //                    Eigen::Quaternion<double> quat(0.5000,-0.5000,0.5000,-0.5000);
-	    //                    Eigen::Isometry3d cose(quat);
-	    //                    Plane3D myPlane;
-
-	    //                    myPlane.fromVector(Vector4d(planeCoeff[0],planeCoeff[1],planeCoeff[2],planeCoeff[3]));
-	    //                    myPlane=cose*myPlane;
-
-	    //                    cout << "@COEFF: "<< planeCoeff[0] << " "<< planeCoeff[1]<<" "<< planeCoeff[2]<<" "<< planeCoeff[3]<<endl;
-	    //                    planeCoeff=myPlane.toVector();
-	    //                    cout << "#COEFF: "<< planeCoeff[0] << " "<< planeCoeff[1]<<" "<< planeCoeff[2]<<" "<< planeCoeff[3]<<endl;
-
-	    p.fromVector(planeCoeff);
-	    stashOfPlanes.push_back(p);
-	    tmpCLOUD.cloud.clear();
-
-	    //Elimino i punti appena rilevati dalla nuvola inizale
-	    //****************************************************
-
-	    pcl::PointCloud<pcl::PointXYZ> temporanyCLOUD;
-	    for(int k=0;k<pclCLOUD.size();k++)
-	      {
-		bool valid=1;
-		for (size_t j = 0; j < inliers->indices.size (); ++j)
-		  {
-		    if(inliers->indices[j]!=k) valid=1;
-		    else
-		      {
-			valid=0;
-			break;
-		      }
-		  }
-		if(valid)
-		  {
-		    temporanyCLOUD.push_back(pclCLOUD[k]);
-		  }
-	      }
-	    //****************************************************
-	    pclCLOUD.clear();
-
-	    for(int k=0;k<temporanyCLOUD.size();k++)
-	      {
-		pclCLOUD.push_back(temporanyCLOUD[k]);
-	      }
-
-	    seg.setInputCloud (pclCLOUD.makeShared ());
-	    seg.segment (*inliers, *coefficients);
-	  }
-
-
-
-	//Plane3D p; // extracted plane
-
-	/*
-	  if (!camParam ){
-	  camParam = param->offset();
-	  vparam->setEstimate(camParam->offset());
-
-	  }
-	*/
-	imageData->release();
-	Isometry3d sensorAndRobot = v->estimate() * vparam->estimate();
-	for(int i=0;i<stashOfPlanes.size();i++)
-	  {
-	    VertexPlane* vplane = new VertexPlane();
-	    vplane->setId(vertexNum);
-	    vplane->setEstimate(sensorAndRobot*stashOfPlanes[i]);
-	    graph->addVertex(vplane);
-
-
-	    EdgeSE3PlaneSensorCalib* edge= new EdgeSE3PlaneSensorCalib();
-	    edge->setVertex(0,v);
-	    edge->setVertex(1,vplane);
-	    edge->setVertex(2,vparam);
-	    edge->setMeasurement(stashOfPlanes[i]);
-	    edge->setInformation(Matrix3d::Identity());
-	    graph->addEdge(edge);
-	    edge->computeError();
-	    cerr << "edge.chi2()=" << edge->chi2() << endl;
-	    vertexNum++;
-	  }
+      if (imageData)
+      {
+        //things happens here;
+          images.push_back(imageData);
+          mvprintw(1,0,"|- Stack size [%d]",images.size());
+          mvprintw(2,0,"|- Loaded image [%p]",imageData);
+          refresh();
+          //getch();
       }
+
 
     }
 
+
   }
 
-  //cerr << endl;
-  //cerr << "saving.... " << endl;
+  int tid=0;
+  pthread_create(&threads[tid], NULL, processData,&tid);
+  tid=1;
+  pthread_create(&threads[tid], NULL, processData,&tid);
+  while(1)
+  {
+      cout <<"sleep main "<<endl;
+      sleep(1);
+  }
+
+  mvprintw(4,0,"Done. Press any key to continue\n");
+  getch();
   clear();
   mvprintw(0,0,"Saving...\n");
   refresh();
- endwin();
   ofstream os (outfilename.c_str());
   graph->save(os);
+  mvprintw(0,10,"Done. Press any key to close\n");
+  refresh();
+  getch();
+  pthread_exit(NULL);
+  endwin();
   //cerr << endl;
+
+}
+
+void *processData(void *tid)
+{
+    long id;
+    id=(long)tid;
+    cout << "creating thread "<<id<<endl;
+    while(1)
+    {
+        if(id==0)
+        //mvprintw(5,0,"Thread - 5");
+            cout << "5"<<endl;
+        if(id==1)
+            cout << "6"<<endl;
+
+        sleep(1);
+        //refresh();
+    }
+
+//        // extract plane
+//        const Parameter* pa = graph->parameters().getParameter(imageData->paramIndex());
+//        const ParameterCamera* camParam = dynamic_cast<const ParameterCamera*>(pa);
+
+//        if(camParam!=0) {
+//          vparam->setEstimate(camParam->offset());
+//        }
+
+//        //cerr << "image found" << endl;
+//        //string base_name=imageData->baseFilename();
+//        //string intensity="_intensity.pgm";
+//        //string realPath= strcat(base_name,intensity);
+//        move(1,0);
+//        clrtoeol();
+//        mvprintw(1,0,"Processing %s",imageData->baseFilename().c_str());
+//        refresh();
+//        //cout << "\t Processing "<<imageData->baseFilename()<<"\n";
+
+//        const Mat *imageToProcess;
+
+//        imageData->update();
+//        imageToProcess = imageData->depthImage(); //no need to reproject image 'cause we've the depth registered
+//        std::vector<Vec3f> Cloud;
+
+//        int rows=imageToProcess->rows;
+//        int cols=imageToProcess->cols;
+
+//        const unsigned short * dptra=imageToProcess->ptr<unsigned short>(0);;
+//        for(int i = 0; i < rows; i++)
+//          {
+
+//            for(int j = 0; j < cols; j++)
+//              {
+//            unsigned short d = *dptra;
+//            if(d != 0)
+//              {
+
+//                Vec3f cloudElem;
+//                if(d<maxDist) //2000 is max distance
+//                  {
+//                cloudElem[0]=(double)((double)j-(double)cx_d)*(double)d/(double)fx_d;
+//                cloudElem[1]=(double)((double)i-(double)cy_d)*(double)d/(double)fy_d;
+//                cloudElem[2]=d;
+
+//                Cloud.push_back(cloudElem);
+
+//                  }
+//              }
+//            dptra++;
+//              }
+//          }
+//        //cout << "\t\t Cloud has " << Cloud.size() << " points"<<endl;
+
+//        //**************************************************************
+//        //voxel
+//        //**************************************************************
+
+//        //cout << "\t\t starting voxelization"<<endl;
+
+//        accumulatorMap accMap;
+//        float res = voxelSize;
+//        float ires=1./res;
+//        std::vector<Vec3f> * theCloud=&Cloud;
+
+//        for(int i=0;i<(int)theCloud->size();i++)
+//          {
+//            //cout << (*Cloud)[i][0];
+//            something s;
+//            res=(float)voxelSize;
+//            ires=1./res;
+//            s.i[0]=(int)(*theCloud)[i][0]*ires;
+//            s.i[1]=(int)(*theCloud)[i][1]*ires;
+//            s.i[2]=(int)(*theCloud)[i][2]*ires;
+
+//            accumulatorMap::iterator it=accMap.find(s);
+//            if(it==accMap.end())
+//              {
+//            voxelAcc vac;
+//            vac.acc[0]=(*theCloud)[i][0];
+//            vac.acc[1]=(*theCloud)[i][1];
+//            vac.acc[2]=(*theCloud)[i][2];
+//            vac.i=1;
+//            accMap.insert(make_pair(s,vac));
+//              }
+//            else
+//              {
+//            voxelAcc & vac = it->second;
+//            vac.add((*theCloud)[i]);
+//              }
+
+//          }
+
+
+
+//        theCloud->clear();
+//        for(accumulatorMap::iterator it=accMap.begin();it!=accMap.end();it++ )
+//          {
+//            voxelAcc &aMap=it->second;
+//            Vec3f tmp = aMap.average();
+//            theCloud->push_back(tmp);
+//          }
+//        //cout << "\t\t voxelized in "<<theCloud->size()<<" points"<<endl;
+//        //cout << "\t\t Voxelization finished..."<<endl;
+
+//        //**************************************************************
+//        //time to extract some planes!
+//        //**************************************************************
+
+//        //ESTRAZIONE DEI PIANI
+//        pcl::PointCloud<pcl::PointXYZ> pclCLOUD;
+
+//        //POPOLO LA CLOUD PCL
+//        for(int i=0;i<theCloud->size();i++)
+//          {
+//            pcl::PointXYZ tmpXYZ((*theCloud)[i][0],(*theCloud)[i][1],(*theCloud)[i][2]);
+//            pclCLOUD.push_back(tmpXYZ);
+//          }
+
+
+//        //--------------------------------------------------------------------------------
+//        //DICHIARAZIONI PER L'ESTRAZIONE DEI TANTI PIANI
+//        const int numpoint=minPlanePoints; //numero minimo di punti affinchè l'oggetto venga considerato un piano
+//        const int tresh=minAcc;     //distanza minima tra i punti
+//        int planesExtracted=0;
+//        pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
+//        pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+//        //------------// Create the segmentation object
+//        pcl::SACSegmentation<pcl::PointXYZ> seg;
+//        //------------// Optional
+//        seg.setOptimizeCoefficients (true);
+//        //------------// Mandatory
+//        seg.setModelType (pcl::SACMODEL_PLANE);
+//        seg.setMethodType (pcl::SAC_RANSAC);
+//        seg.setDistanceThreshold(tresh);
+//        //--------------------------------------------------------------------------------
+//        //Procedure
+//        seg.setInputCloud (pclCLOUD.makeShared ());
+//        seg.segment (*inliers, *coefficients);
+//        theCloud->clear();
+
+//        while(
+//              (inliers->indices.size()!=0) &
+//              (inliers->indices.size()>numpoint) )
+//          {
+
+
+//            planesExtracted++;
+//            plane tmpCLOUD;
+
+//            //Istanzio un plane, lo popolo con i punti degli inliers rilevati in precedenza
+//            const int repj=1000; //metri
+//            Vec3f com_tmp;
+//            com_tmp[0]=0;com_tmp[1]=0;com_tmp[2]=0;
+
+//            for (size_t i = 0; i < inliers->indices.size (); ++i)
+//              {
+//            tmpCLOUD.cloud.push_back(pcl::PointXYZ(
+//                                   pclCLOUD[inliers->indices[i]].x/repj,
+//                                   pclCLOUD[inliers->indices[i]].y/repj,
+//                                   pclCLOUD[inliers->indices[i]].z/repj));
+
+//            com_tmp[0]+= pclCLOUD[inliers->indices[i]].x/repj;
+//            com_tmp[1]+= pclCLOUD[inliers->indices[i]].y/repj;
+//            com_tmp[2]+= pclCLOUD[inliers->indices[i]].z/repj;
+//              }
+
+//            com_tmp[0]=com_tmp[0]/inliers->indices.size ();
+//            com_tmp[1]=com_tmp[1]/inliers->indices.size ();
+//            com_tmp[2]=com_tmp[2]/inliers->indices.size ();
+
+//            /*
+//              cout << "\t\t coeffiecienti estratti a:("<<
+//              coefficients->values[0]<<") b:("<<
+//              coefficients->values[1]<<") c:("<<
+//              coefficients->values[2]<<") d:("<<
+//              coefficients->values[3]<<")"<<endl;
+//            */
+//            //creo un oggetto g2o::Plane3d
+//            Plane3D p;
+//            Vector4d planeCoeff;
+
+//            Vector3d piano(coefficients->values[0],coefficients->values[1],coefficients->values[2]);
+//            Vector3d mass(com_tmp[0],com_tmp[1],com_tmp[2]);
+//            float facingDirection=piano.dot(mass);
+//            //cout << "FACING HAS VALUE OF "<<facingDirection<<endl;
+//            //cout << mass<<endl<<endl;
+//            //cout << piano<<endl;
+//            if(facingDirection>0)
+//              {
+//            //cout << "la normale punta in direzione opposta al kinect, va rimappata!"<<endl;
+//            piano*=-1;
+//            coefficients->values[0]=piano.coeff(0);
+//            coefficients->values[1]=piano.coeff(1);
+//            coefficients->values[2]=piano.coeff(2);
+//            coefficients->values[3]=piano.coeff(3);
+
+//            planeCoeff[0]=coefficients->values[0];
+//            planeCoeff[1]=coefficients->values[1];
+//            planeCoeff[2]=coefficients->values[2];
+//            planeCoeff[3]=coefficients->values[3];
+//              }
+
+//            planeCoeff[0]=coefficients->values[0];
+//            planeCoeff[1]=coefficients->values[1];
+//            planeCoeff[2]=coefficients->values[2];
+//            planeCoeff[3]=(coefficients->values[3]/1000); //in meters please
+
+//            Vector3d pianoNORM(planeCoeff[0],planeCoeff[1],planeCoeff[2]);
+//            double pianoD = planeCoeff[3];
+//            //i piani vanno rimappati nel frame giusto del robot
+//            //                    Eigen::Quaternion<double> quat(0.5000,-0.5000,0.5000,-0.5000);
+//            //                    Eigen::Isometry3d cose(quat);
+//            //                    Plane3D myPlane;
+
+//            //                    myPlane.fromVector(Vector4d(planeCoeff[0],planeCoeff[1],planeCoeff[2],planeCoeff[3]));
+//            //                    myPlane=cose*myPlane;
+
+//            //                    cout << "@COEFF: "<< planeCoeff[0] << " "<< planeCoeff[1]<<" "<< planeCoeff[2]<<" "<< planeCoeff[3]<<endl;
+//            //                    planeCoeff=myPlane.toVector();
+//            //                    cout << "#COEFF: "<< planeCoeff[0] << " "<< planeCoeff[1]<<" "<< planeCoeff[2]<<" "<< planeCoeff[3]<<endl;
+
+//            p.fromVector(planeCoeff);
+//            stashOfPlanes.push_back(p);
+//            tmpCLOUD.cloud.clear();
+
+//            //Elimino i punti appena rilevati dalla nuvola inizale
+//            //****************************************************
+
+//            pcl::PointCloud<pcl::PointXYZ> temporanyCLOUD;
+//            for(int k=0;k<pclCLOUD.size();k++)
+//              {
+//            bool valid=1;
+//            for (size_t j = 0; j < inliers->indices.size (); ++j)
+//              {
+//                if(inliers->indices[j]!=k) valid=1;
+//                else
+//                  {
+//                valid=0;
+//                break;
+//                  }
+//              }
+//            if(valid)
+//              {
+//                temporanyCLOUD.push_back(pclCLOUD[k]);
+//              }
+//              }
+//            //****************************************************
+//            pclCLOUD.clear();
+
+//            for(int k=0;k<temporanyCLOUD.size();k++)
+//              {
+//            pclCLOUD.push_back(temporanyCLOUD[k]);
+//              }
+
+//            seg.setInputCloud (pclCLOUD.makeShared ());
+//            seg.segment (*inliers, *coefficients);
+//          }
+
+
+
+//        //Plane3D p; // extracted plane
+
+//        /*
+//          if (!camParam ){
+//          camParam = param->offset();
+//          vparam->setEstimate(camParam->offset());
+
+//          }
+//        */
+//        imageData->release();
+//        Isometry3d sensorAndRobot = v->estimate() * vparam->estimate();
+//        for(int i=0;i<stashOfPlanes.size();i++)
+//          {
+//            VertexPlane* vplane = new VertexPlane();
+//            vplane->setId(vertexNum);
+//            vplane->setEstimate(sensorAndRobot*stashOfPlanes[i]);
+//            graph->addVertex(vplane);
+
+
+//            EdgeSE3PlaneSensorCalib* edge= new EdgeSE3PlaneSensorCalib();
+//            edge->setVertex(0,v);
+//            edge->setVertex(1,vplane);
+//            edge->setVertex(2,vparam);
+//            edge->setMeasurement(stashOfPlanes[i]);
+//            edge->setInformation(Matrix3d::Identity());
+//            graph->addEdge(edge);
+//            edge->computeError();
+//            cerr << "edge.chi2()=" << edge->chi2() << endl;
+//            vertexNum++;
+//          }
+
 }
