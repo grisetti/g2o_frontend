@@ -122,14 +122,14 @@ int main(int argc, char**argv){
 // 	ofG2OLine.flush();
 	
   // graph construction
-  typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
-  typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
-  SlamLinearSolver* linearSolver = new SlamLinearSolver();
-  linearSolver->setBlockOrdering(false);
-  SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
-  OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
-  SparseOptimizer * graph = new SparseOptimizer();
-  graph->setAlgorithm(solverGauss);
+//   typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
+//   typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
+//   SlamLinearSolver* linearSolver = new SlamLinearSolver();
+//   linearSolver->setBlockOrdering(false);
+//   SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
+//   OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
+  OptimizableGraph * graph = new OptimizableGraph(); //SparseOptimizer
+//   graph->setAlgorithm(solverGauss);
   graph->load(filename.c_str());
   graph->save("originalGraph.g2o");
 	
