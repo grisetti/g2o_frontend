@@ -11,7 +11,6 @@
 #include <QVBoxLayout>
 #include <QListWidget>
 
-
 #include "pwn_qglviewer.h"
 #include "drawable_points.h"
 #include "gl_parameter_points.h"
@@ -35,9 +34,9 @@ int main (int argc, char** argv) {
 
   
   g2o::CommandArgs arg;
-  arg.param("pointSize",pointSize,1,"size of the points") ;
+  arg.param("pointSize",pointSize,1.0f,"size of the points") ;
   arg.param("normalLenght",normalLenght,0,"lenght of the normals") ;
-  arg.param("alpha",alpha,0.5,"alpha channel for points") ;
+  arg.param("alpha",alpha,1.0f,"alpha channel for points") ;
   arg.param("pointStep",pointStep,1,"step of the points") ;
   arg.param("normalStep",normalStep,10,"step of the normals") ;
   arg.paramLeftOver("filenames", filenames[0], "", "filenames", true);
@@ -70,9 +69,9 @@ int main (int argc, char** argv) {
   for (int i=0; i<maxFiles; i++){
     if (filenames[i]=="")
       break;
-    float r=0.5+0.6*drand48();
-    float g=0.5+0.6*drand48();
-    float b=0.5+0.6*drand48();
+    //float r=0.85+0.15*drand48();
+    //float g=0.85+0.15*drand48();
+    //float b=0.85+0.15*drand48();
 
     PointWithNormalVector* points = new PointWithNormalVector;
     
@@ -82,13 +81,13 @@ int main (int argc, char** argv) {
     } else {
       listWidget->addItem(QString(filenames[i].c_str()));
     }
-    GLParameterPoints* pointsParams = new GLParameterPoints(pointSize,Eigen::Vector4f(r,g,b,alpha));
+    GLParameterPoints* pointsParams = new GLParameterPoints(pointSize,Eigen::Vector4f(0.0f,0.0f,1.0f,alpha));
     DrawablePoints* drawablePoints = new DrawablePoints(T, pointsParams, points);
     pointsParams->setStep(normalStep);
     
     viewer->addDrawable(drawablePoints);
     
-    GLParameterNormals* normalParams = new GLParameterNormals(0.1, Eigen::Vector4f(0.1,0.1,0.5,0.2), normalLenght);
+    GLParameterNormals* normalParams = new GLParameterNormals(pointSize, Eigen::Vector4f(1.0f,0.0f,0.0f,alpha), normalLenght);
     DrawableNormals* drawableNormals = new DrawableNormals(T, normalParams, points);
     normalParams->setStep(normalStep);
     normalParams->setNormalLength(normalLenght);
