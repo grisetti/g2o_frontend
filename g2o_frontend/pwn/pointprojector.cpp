@@ -73,7 +73,6 @@ void PointProjector::unProject(HomogeneousPoint3fVector& points,
 	*i=-1;
 	continue;
       }
-      //std::cout << point->transpose() << std::endl;
       point++;
       cpix++;
       *i=count;

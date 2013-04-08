@@ -38,7 +38,7 @@ void PinholePointProjector::_updateMatrices(){
   _iKRt.block<3,3>(0,0) = _iKR; _iKRt.block<3,1>(0,3) = _iKt;
 };
 
-bool PinholePointProjector::project(int& x, int&y, float&f, const HomogeneousPoint3f& p) const{
+bool PinholePointProjector::project(int& x, int& y, float&f, const HomogeneousPoint3f& p) const{
   return _project(x,y,f,p);
 }
 
@@ -84,7 +84,7 @@ void PinholePointProjector::projectIntervals(Eigen::MatrixXi& intervalImage,
   int cpix=0;
   for (int c=0; c<depthImage.cols(); c++){
     const float* f = &depthImage(0,c);
-    int* i =&intervalImage(0,c);
+    int* i = &intervalImage(0,c);
     for (int r=0; r<depthImage.rows(); r++, f++, i++){
       *i=_projectInterval(r,c,*f, worldRadius);
       cpix++;
@@ -108,7 +108,6 @@ void PinholePointProjector::unProject(HomogeneousPoint3fVector& points,
 	*i=-1;
 	continue;
       }
-      //std::cout << point->transpose() << std::endl;
       point++;
       cpix++;
       *i=count;

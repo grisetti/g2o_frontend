@@ -9,7 +9,7 @@ endif(OPENMP_FOUND)
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 
 ADD_LIBRARY(pwn_library
-  ../basemath/bm_se3.h
+	../basemath/bm_se3.h
   depthimage.cpp depthimage.h
   pointprojector.cpp pointprojector.h
   pinholepointprojector.cpp pinholepointprojector.h
@@ -23,9 +23,8 @@ ADD_LIBRARY(pwn_library
   pointwithnormalaligner.cpp pointwithnormalaligner.h
   pointwithnormalmerger.cpp pointwithnormalmerger.h
   scene.cpp scene.h
-  scene_merger.cpp scene_merger.h
+  scene_merger.cpp scene_merger.h 
 )
-
 
 SET_TARGET_PROPERTIES(pwn_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn_library)
 
@@ -55,8 +54,4 @@ TARGET_LINK_LIBRARIES( pwn_g2o_movingRef pwn_library  ${G2O_STUFF_LIBRARY} )
 
 ADD_EXECUTABLE(homogeneous_normals homogeneous_normals.cpp)
 SET_TARGET_PROPERTIES(homogeneous_normals PROPERTIES OUTPUT_NAME homogeneous_normals)
-TARGET_LINK_LIBRARIES( homogeneous_normals pwn_library  ${G2O_STUFF_LIBRARY} )
-
-
-
-
+TARGET_LINK_LIBRARIES( homogeneous_normals pwn_library  ${G2O_STUFF_LIBRARY} ) 
