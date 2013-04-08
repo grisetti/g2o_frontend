@@ -215,7 +215,7 @@ int main(int argc, char**argv)
                 a = dynamic_cast<  VertexSE3*>(eSE3->vertex(1));
 
                 //VertexSE3* b = dynamic_cast<  VertexSE3*>(eSE3->vertex(0));
-                odometry=eSE3->measurement();
+
 
                 if(a->id()!=v->id() && a)
                 {
@@ -223,7 +223,13 @@ int main(int argc, char**argv)
 
 
                     _v=graph.vertex(a->id());
-
+                    odometry=eSE3->measurement();
+                    cout << "ODO:"<<endl;
+                    cout << odometry.translation();
+                    cout << endl;
+                    cout << odometry.rotation();
+                    cout << endl;
+                    outgraph.addEdge(eSE3);
                     //_v è il nuovo vertice su cui mi devo spostare
                     vnext=dynamic_cast<VertexSE3*>(_v);
                 }
@@ -266,9 +272,10 @@ int main(int argc, char**argv)
 
 
             eSE3Calib->setInformation(info);
-            VertexPlane* vplane = dynamic_cast< VertexPlane*>(eSE3Calib->vertex(1));
+            VertexPlane* vplane=new VertexPlane;
+            vplane->setEstimate(eSE3Calib->measurement());
 
-            eSE3Calib->color=Vector3d(1.0,0.1,0.1);
+            eSE3Calib->color=Vector3d(1.0,0.1,0.1);  //PRIMO FRAME ROSSO
             outgraph.addEdge(eSE3Calib);
             if(vplane)
             {
@@ -279,14 +286,16 @@ int main(int argc, char**argv)
         }
     }
 
+    Matrix3d info= Matrix3d::Identity();
 
     for (HyperGraph::EdgeSet::iterator it = v_next_EDGES.begin(); it!=v_next_EDGES.end(); it++)
     {
         HyperGraph::Edge* _e = *it;
         EdgeSE3PlaneSensorCalib * eSE3Calib = new EdgeSE3PlaneSensorCalib;
         eSE3Calib   =dynamic_cast< EdgeSE3PlaneSensorCalib*>(_e);
-        Matrix3d info= Matrix3d::Identity();
-        info*=1000;
+
+        info(0,0)==1000;
+        info(1,1)=1000;
         info(2,2)=10; //il vincolo in traslazione avrà un meso minore
 
         if(eSE3Calib)
@@ -296,48 +305,154 @@ int main(int argc, char**argv)
 
             eSE3Calib->setInformation(info);
             sensorOffset = dynamic_cast< VertexSE3*>(eSE3Calib->vertex(2));
-
             VertexPlane* vplane = dynamic_cast< VertexPlane*>(eSE3Calib->vertex(1));
-
-            eSE3Calib->color=Vector3d(0.1,1.0,0.1);
+            eSE3Calib->color=Vector3d(0.1,1.0,0.1); //SECONDO FRAME VERDE
             outgraph.addEdge(eSE3Calib);
-            if(vplane)
-            {
-                vplane->color=Vector3d(0,0,0);
-                Plane3D plane = vplane->estimate();
-                plane_v_next_container.push_back(vplane);
-            }
+
+            Plane3D piano=eSE3Calib->measurement();
+            VertexPlane * vpiano = new VertexPlane;
+            vpiano->setEstimate(piano);
+            plane_v_next_container.push_back(vpiano);
+
+            cout << "[VNEXT] "<<endl;
+            cout << eSE3Calib->measurement().toVector()<<endl;
+
         }
     }
 
+    //    for(int ok=0;ok<plane_v_next_container.size();ok++)
+    //    {
+    //        VertexPlane * vpiano;
+    //        vpiano= plane_v_next_container.at(ok);
+    //        cout <<"----------"<<endl;
+    //        cout <<vpiano->estimate().toVector();
+    //        cout <<"----------"<<endl;
+    //    }
 
     cout << "Il primo   container è composta da " <<plane_v_container.size()<<endl;
     cout << "Il secondo container è composta da " <<plane_v_next_container.size()<<endl;
-
+    cout << "Odometry "<< odometry.translation()<<endl;
     //remapping things
 
     for(int ik=0;ik<plane_v_next_container.size();ik++ )
     {
         Plane3D modifiedPlaneNext;
         Plane3D planenext=(plane_v_next_container.at(ik))->estimate();
-        modifiedPlaneNext=sensorOffset->estimate().inverse()*odometry.inverse()*sensorOffset->estimate()*planenext.toVector();
 
-        REMAPPED_plane_v_next_container.push_back(planenext);
 
-        cout <<"From:"<<endl<< planenext.toVector() <<endl<<"to:" <<endl<<modifiedPlaneNext.toVector()<<endl<<endl;
+        modifiedPlaneNext=
+                //sensorOffset->estimate()*
+                sensorOffset->estimate().inverse()*odometry*sensorOffset->estimate()*planenext;
+        //sensorOffset->estimate().inverse()*
+
+
+
+        REMAPPED_plane_v_next_container.push_back(modifiedPlaneNext);
 
     }
 
-    VertexPlane* remapped_V = new VertexPlane();
-    EdgeSE3PlaneSensorCalib* remapped_E= new EdgeSE3PlaneSensorCalib();
 
 
+    int incrementer=9999;
+    for(int ik=0;ik<REMAPPED_plane_v_next_container.size();ik++)
+    {
+        VertexPlane* remapped_V = new VertexPlane();
+        EdgeSE3PlaneSensorCalib* remapped_E= new EdgeSE3PlaneSensorCalib();
+        remapped_V->setId(incrementer);
+        remapped_V->setEstimate(REMAPPED_plane_v_next_container.at(ik));
+        remapped_E->setMeasurement(REMAPPED_plane_v_next_container.at(ik));
+        remapped_E->setVertex(0,v);
+        remapped_E->setVertex(1,remapped_V);
+        remapped_E->setVertex(2,sensorOffset);
+
+        remapped_E->color=Vector3d(0,0,1);
+        remapped_V->color=Vector3d(0,0,1);
+
+        remapped_E->setInformation(info);
+        outgraph.addVertex(remapped_V);
+        outgraph.addEdge(remapped_E);
+
+        cout << "Aggiungo nuovo vertice al grafo...["<< incrementer <<"]"<<endl;
+        incrementer++;
+    }
 
 
-    cout << "Salvataggio nel grafo di output..."<<endl;
+    cout << "Salvataggio nel grafo di output..."<<endl<<endl;
+    //rimuovo il fix dal vertice 2545
+    OptimizableGraph::Vertex* tmpVertex=graph.vertex(2545);
+    if(tmpVertex)
+    {
+        tmpVertex->setFixed(false);
+        cout << "param vertex found and set"<<endl;
+    }
+    else cout << "param vertex not found"<<endl;
 
     ofstream grafino ("grafino.g2o");
     outgraph.save(grafino);
+
+    cout <<"--------------------------------------------------"<<endl;
+    cout <<"Computazione Errore"<<endl;
+
+
+
+    //Creazione del vettore delle corrispondenze e calcolo degli errori.
+
+    for(int ei=0;ei<plane_v_container.size();ei++)
+    {
+        VertexPlane* first_frame_vertex_plane=new VertexPlane();
+        first_frame_vertex_plane=plane_v_container.at(ei);
+        Plane3D first_frame_plane=first_frame_vertex_plane->estimate();
+        //cout << "outer "<<ei<<endl;
+        for(int ri=0;ri<REMAPPED_plane_v_next_container.size();ri++)
+        {
+
+            //cout << "inner "<<ri<<endl;
+            Plane3D remapped_frame_plane=REMAPPED_plane_v_next_container.at(ri);
+            Vector4d diff = first_frame_plane.toVector()-remapped_frame_plane.toVector();
+            //diff.head<3>() *= 100;
+            double error = diff.squaredNorm();
+            cout <<first_frame_plane.toVector()[0]<<","
+                <<first_frame_plane.toVector()[1]<<","
+               <<first_frame_plane.toVector()[2]<<","
+              <<first_frame_plane.toVector()[3]<<","
+             <<"="
+            <<remapped_frame_plane.toVector()[0]<<","
+            <<remapped_frame_plane.toVector()[1]<<","
+            <<remapped_frame_plane.toVector()[2]<<","
+            <<remapped_frame_plane.toVector()[3];
+
+            cout <<"["<< error <<"]"<< endl;
+
+            EdgePlane* eplane = new EdgePlane;
+            eplane->setVertex(0,first_frame_vertex_plane);
+            eplane->setVertex(1,plane_v_next_container.at(ri));
+            Correspondence corr(eplane,error);
+            mycorrVector.push_back(corr);
+
+        }
+        cout << endl;
+    }
+
+
+    Isometry3d tresult;
+    tresult.setIdentity();
+    IndexVector iv;
+    RansacPlaneLinear ransac;
+
+    ransac.setCorrespondences(mycorrVector);
+    ransac.setMaxIterations(2000);
+    ransac.setInlierErrorThreshold(0.9);
+    ransac.setInlierStopFraction(0.5);
+
+    ransac(tresult,iv);
+
+    bool result = testRansac<PlaneMapping, RansacPlaneLinear, EdgePlane>(tresult, mycorrVector,iv);
+
+    cerr << "Transformation result from ransac"<<endl<<g2o::internal::toVectorMQT(tresult)<<endl;
+    cerr << "Odometry from robot"<<endl<<g2o::internal::toVectorMQT(odometry)<<endl;
+
+
+
 
 
     //                    //adesso mi serve cercare tutti i piani che sono legati all'edge su cui sto lavorando
