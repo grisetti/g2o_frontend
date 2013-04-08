@@ -64,6 +64,23 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
    *  @return a 3x3 matrix containing the eigenvalues extracted, where each column represent an eigenvector.
    */
   inline Eigen::Matrix3f eigenVectors(){return block<3,3>(0,0);};
+  
+
+
+  template<typename OtherDerived>
+  inline HomogeneousPoint3fStats transform(const Eigen::MatrixBase<OtherDerived>& other) const {
+    HomogeneousPoint3fStats s(other*(*this));
+    s.col(3)=col(3);
+    return s;
+  }
+
+  template<typename OtherDerived>
+  inline HomogeneousPoint3fStats& transformInPlace(const Eigen::MatrixBase<OtherDerived>& other) const {
+    HomogeneousPoint3fStats s(other*(*this));
+    s.col(3)=col(3);
+    *this = s;
+    return *this;
+  }
 
   /**
    *  This method computes the curvature of the point associated to the HomogeneousPoint3fStats object.

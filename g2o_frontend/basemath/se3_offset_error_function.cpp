@@ -37,3 +37,7 @@ void SE3OffsetErrorFunction::_updateTemporaries()  {
   _B = _currentTransform*_inverseSensorOffset;
 }
 
+void foo(const SE3OffsetErrorFunction& f, const Vector6f& x){
+  AffineVectorFunction<SE3OffsetErrorFunction::DomainType, SE3OffsetErrorFunction::CodomainType>
+    taylor = f.taylorExpansion(x);
+}
