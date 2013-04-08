@@ -4,6 +4,7 @@
 #include "bm_defs.h"
 #include "bm_se3.h"
 #include "multivariate_vector_function.h"
+#include "affine_vector_function.h"
 
 class SE3OffsetErrorFunction: public MultivariateVectorFunction<Vector6f, Vector6f> {
 public:

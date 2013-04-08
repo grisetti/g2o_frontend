@@ -26,7 +26,26 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
   inline Eigen::Vector3f eigenValues() {return block<3,1>(0,3);}
   inline Eigen::Matrix3f eigenVectors(){return block<3,3>(0,0);};
   inline float curvature() const {return coeffRef(0,3)/(coeffRef(0,3)+coeffRef(1,3)+coeffRef(2,3));}
+  
+
+
+  template<typename OtherDerived>
+  inline HomogeneousPoint3fStats transform(const Eigen::MatrixBase<OtherDerived>& other) const {
+    HomogeneousPoint3fStats s(other*(*this));
+    s.col(3)=col(3);
+    return s;
+  }
+
+  template<typename OtherDerived>
+  inline HomogeneousPoint3fStats& transformInPlace(const Eigen::MatrixBase<OtherDerived>& other) const {
+    HomogeneousPoint3fStats s(other*(*this));
+    s.col(3)=col(3);
+    *this = s;
+    return *this;
+  }
+
 };
+
 
 typedef TransformableVector<HomogeneousPoint3fStats> HomogeneousPoint3fStatsVector;
 

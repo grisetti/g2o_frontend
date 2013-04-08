@@ -4,6 +4,9 @@
 #include <Eigen/Core>
 
 template <typename DomainType_, typename CodomainType_> 
+class AffineVectorFunction;
+
+template <typename DomainType_, typename CodomainType_> 
 class MultivariateVectorFunction {
 public:
   typedef DomainType_ DomainType;
@@ -12,9 +15,15 @@ public:
   typedef typename CodomainType::Scalar CodomainScalarType;
   typedef Eigen::Matrix<CodomainScalarType, CodomainType::RowsAtCompileTime, DomainType::RowsAtCompileTime> JacobianType;
   virtual CodomainType operator()(const DomainType& x) const = 0;
+  virtual JacobianType jacobian(const DomainType& x) const {
+    return numericJacobian(x);
+  }
   virtual JacobianType jacobian() const {
     return numericJacobian();
   }
+ 
+  AffineVectorFunction<DomainType, CodomainType> taylorExpansion(const DomainType& x) const;
+
   virtual ~MultivariateVectorFunction(){}
 protected:
   JacobianType numericJacobian(const DomainType& x, DomainScalarType epsilon=1e-5) const  {

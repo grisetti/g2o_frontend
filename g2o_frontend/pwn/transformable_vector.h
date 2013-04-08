@@ -17,7 +17,7 @@ struct TransformableVector: public std::vector<Transformable, Eigen::aligned_all
   inline void transformInPlace(const OtherDerived& m){
     Transformable* t= &(*this)[0];
     for (size_t i=0; i< std::vector<Transformable, Eigen::aligned_allocator<Transformable> >::size(); i++, t++){
-      *t=m*(*t);
+      transformInPlace(m);
     }
   }
 
@@ -27,7 +27,7 @@ struct TransformableVector: public std::vector<Transformable, Eigen::aligned_all
     const Transformable* tSrc= &(*this)[0];
     Transformable* tDest= &dest[0];
     for (size_t i=0; i< std::vector<Transformable, Eigen::aligned_allocator<Transformable> >::size(); ++i, ++tSrc, ++tDest ){
-      *tDest=m*(*tSrc);
+      *tDest=tSrc->transform(m);
     }
   }
 
