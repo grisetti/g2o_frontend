@@ -1,7 +1,7 @@
 #include <omp.h>
 #include "homogeneouspoint3fintegralimage.h"
 
-HomogeneousPoint3fIntegralImage::HomogeneousPoint3fIntegralImage(): Eigen::Matrix<HomogeneousPoint3fAccumulator, Eigen::Dynamic, Eigen::Dynamic>(0,0){
+HomogeneousPoint3fIntegralImage::HomogeneousPoint3fIntegralImage(): Eigen::Matrix<HomogeneousPoint3fAccumulator, Eigen::Dynamic, Eigen::Dynamic>(0, 0) {
 }
 
 void HomogeneousPoint3fIntegralImage::compute(const Eigen::MatrixXi indices, const HomogeneousPoint3fVector& points){

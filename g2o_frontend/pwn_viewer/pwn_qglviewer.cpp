@@ -40,8 +40,8 @@ PWNQGLViewer::PWNQGLViewer(QWidget *parent, const QGLWidget *shareWidget, Qt::WF
 void PWNQGLViewer::init() {
   // Init QGLViewer.
   QGLViewer::init();
-  // Set background color gray.
-  setBackgroundColor(QColor::fromRgb(51, 51, 51));
+  // Set background color light yellow.
+  setBackgroundColor(QColor::fromRgb(255, 255, 194));
 
   // Set some default settings.
   glEnable(GL_LINE_SMOOTH);
@@ -78,7 +78,7 @@ void PWNQGLViewer::init() {
   glEndList();
   // Pyramid.
   glNewList(_pyramidDrawList, GL_COMPILE);
-  g2o::opengl::drawPyramid(1.0f, 1.0f);
+  g2o::opengl::drawPyramid(0.5f, 0.5f);
   glEndList();
 }
 

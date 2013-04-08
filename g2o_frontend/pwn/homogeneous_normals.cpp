@@ -77,9 +77,11 @@ struct DoNormalsForIgorAndOlga {
       const HomogeneousPoint3fStats& pstats = scaledStats[i];
       HomogeneousNormal3f& normal = imageNormals[i];
       normal=scaledStats[i].block<4,1>(0,0);
-      if (normal.squaredNorm()>0 && pstats.curvature()<0.02){
+      if (pstats.curvature() < 0.02) {
 	if (normal.dot(p)>0)
 	  normal = -normal;
+      } else {
+	normal.setZero();
       }
     }
 
