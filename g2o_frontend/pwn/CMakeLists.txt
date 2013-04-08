@@ -9,9 +9,49 @@ endif(OPENMP_FOUND)
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 
 ADD_LIBRARY(pwn_library
-	depthimage.h depthimage.cpp
+	../basemath/bm_se3.h
+  depthimage.cpp depthimage.h
+  pointprojector.cpp pointprojector.h
+  pinholepointprojector.cpp pinholepointprojector.h
+  homogeneouspoint3fintegralimage.cpp homogeneouspoint3fintegralimage.h
+  homogeneouspoint3fstatsgenerator.cpp homogeneouspoint3fstatsgenerator.h
+  pixelmapper.cpp pixelmapper.h 
+  gaussian3.cpp gaussian3.h 
+  pointwithnormal.cpp pointwithnormal.h 
+  integralpointimage.cpp integralpointimage.h
+  pointwithnormalstatsgenerator.cpp pointwithnormalstatsgenerator.h
+  pointwithnormalaligner.cpp pointwithnormalaligner.h
+  pointwithnormalmerger.cpp pointwithnormalmerger.h
+  scene.cpp scene.h
+  scene_merger.cpp scene_merger.h 
 )
 
+SET_TARGET_PROPERTIES(pwn_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn_library)
 
+ADD_EXECUTABLE(pwn_test pwn_test.cpp)
+SET_TARGET_PROPERTIES(pwn_test PROPERTIES OUTPUT_NAME pwn_test)
+TARGET_LINK_LIBRARIES( pwn_test pwn_library  ${G2O_STUFF_LIBRARY} )
 
+ADD_EXECUTABLE(pwn_align pwn_align.cpp)
+SET_TARGET_PROPERTIES(pwn_align PROPERTIES OUTPUT_NAME pwn_align)
+TARGET_LINK_LIBRARIES( pwn_align pwn_library  ${G2O_STUFF_LIBRARY} )
 
+ADD_EXECUTABLE(pwn_g2o pwn_g2o.cpp)
+SET_TARGET_PROPERTIES(pwn_g2o PROPERTIES OUTPUT_NAME pwn_g2o)
+TARGET_LINK_LIBRARIES( pwn_g2o pwn_library  ${G2O_STUFF_LIBRARY} )
+
+ADD_EXECUTABLE(pwn_g3o pwn_g3o.cpp)
+SET_TARGET_PROPERTIES(pwn_g3o PROPERTIES OUTPUT_NAME pwn_g3o)
+TARGET_LINK_LIBRARIES( pwn_g3o pwn_library  ${G2O_STUFF_LIBRARY} )
+
+ADD_EXECUTABLE(pwn_g2o_localmap pwn_g2o_localmap.cpp)
+SET_TARGET_PROPERTIES(pwn_g2o_localmap PROPERTIES OUTPUT_NAME pwn_g2o_localmap)
+TARGET_LINK_LIBRARIES( pwn_g2o_localmap pwn_library  ${G2O_STUFF_LIBRARY} )
+
+ADD_EXECUTABLE(pwn_g2o_movingRef pwn_g2o_movingRef.cpp)
+SET_TARGET_PROPERTIES(pwn_g2o_movingRef PROPERTIES OUTPUT_NAME pwn_g2o_movingRef)
+TARGET_LINK_LIBRARIES( pwn_g2o_movingRef pwn_library  ${G2O_STUFF_LIBRARY} )
+
+ADD_EXECUTABLE(homogeneous_normals homogeneous_normals.cpp)
+SET_TARGET_PROPERTIES(homogeneous_normals PROPERTIES OUTPUT_NAME homogeneous_normals)
+TARGET_LINK_LIBRARIES( homogeneous_normals pwn_library  ${G2O_STUFF_LIBRARY} ) 
