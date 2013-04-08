@@ -6,9 +6,9 @@
 using namespace Eigen;
 using namespace std;
 
-  PointWithNormalVector::PointWithNormalVector(size_t s, const PointWithNormal& p):
-    std::vector<PointWithNormal, Eigen::aligned_allocator<PointWithNormal> >(s,p){
-  }
+PointWithNormalVector::PointWithNormalVector(size_t s, const PointWithNormal& p):
+  std::vector<PointWithNormal, Eigen::aligned_allocator<PointWithNormal> >(s, p) {
+}
 
 void PointWithNormalVector::toDepthImage(MatrixXf& depthImage, 
 					 const Matrix3f& cameraMatrix, const Isometry3f& cameraPose, 
