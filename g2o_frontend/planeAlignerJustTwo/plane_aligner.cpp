@@ -338,19 +338,10 @@ int main(int argc, char**argv)
     {
         Plane3D modifiedPlaneNext;
         Plane3D planenext=(plane_v_next_container.at(ik))->estimate();
-
-
-        modifiedPlaneNext=
-                //sensorOffset->estimate()*
-                sensorOffset->estimate().inverse()*odometry*sensorOffset->estimate()*planenext;
-        //sensorOffset->estimate().inverse()*
-
-
-
+        modifiedPlaneNext=sensorOffset->estimate().inverse()*odometry*sensorOffset->estimate()*planenext;
         REMAPPED_plane_v_next_container.push_back(modifiedPlaneNext);
 
     }
-
 
 
     int incrementer=9999;
