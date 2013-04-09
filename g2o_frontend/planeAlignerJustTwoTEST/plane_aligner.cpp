@@ -40,6 +40,10 @@
 #include <cstdio>
 #include <iomanip>
 
+#include "fileReading.h"
+#include "printHelper.h"
+#include "planesTransformations.h"
+
 using namespace std;
 using namespace g2o;
 using namespace Slam3dAddons;
@@ -71,11 +75,7 @@ struct error_struct
     double error;
 };
 
-std::vector<planeAndVertex> container1;
-std::vector<planeAndVertex> container2;
-std::vector<planeCorrespondence> corrs;
 
-std::set<VertexPlane*> morte;
 
 volatile bool hasToStop;
 void sigquit_handler(int sig)
@@ -142,8 +142,8 @@ Vector3d aRandColor()
 }
 
 
-Isometry3d odometry;
-int size=1;
+Isometry3d odometry;    //the odometry ISOMETRY
+int size=1;             //number of planes to read from the .dat file
 
 int main(int argc, char**argv)
 {
@@ -175,56 +175,53 @@ int main(int argc, char**argv)
     std::ifstream p1("p1.dat");
     std::ifstream transformation("transform.dat");
 
+    //piani non normalizzati da leggere nel file
     Vector4d piano[5];
+    //piani non normalizzati transformati, verranno salvati qui
     Vector4d pianoR[5];
-    Vector6d trasformata;
+    //la trasformata relativa tra i piani, verra' letta dal file e salvata qui
+    Isometry3d trasformata;
 
+
+    fillPlanes("p1.dat",1,piano);
+    fillTransform("transform.dat",trasformata);
+
+
+    //stampe di debug
+    cout << "piani nel frame 0"<<endl;
     for(int i =0;i<size;i++)
     {
-        for(int j=0;j<4;j++)
-        {
-            p1 >> piano[i][j];
-        }
-    }
 
-    for(int i=0;i<6;i++)
-    {
-        transformation >>trasformata[i];
-    }
+        printVector4dAsRow(piano[i],1);
 
-    cout << "piani"<<endl;
-    for(int i =0;i<size;i++)
-    {
-        cout << piano[i]<<endl<<endl;
     }
+    cout << endl;
 
     cout << "trasformata"<<endl;
+    Vector6d trasformataV=g2o::internal::toVectorMQT(trasformata);
+    printVector6dAsRow(trasformataV,1);
+    cout << endl;
 
-    cout << trasformata<<endl;
-
-    cout << "piani trasformati"<<endl<<endl;
-
-    Isometry3d trasformataIsometry;
-    trasformataIsometry.setIdentity();
-    trasformataIsometry=g2o::internal::fromVectorMQT(trasformata);
-
+    cout << "piani trasformati nel frame 1"<<endl;
     for(int i=0;i<size;i++)
     {
-        pianoR[i]=trasformataIsometry*piano[i];
-        cout << pianoR[i]<<endl<<endl;
+        //pianoR[i]=remapPlane(piano[i],trasformata);
+        pianoR[i]=trasformata*piano[i];
+        printVector4dAsRow(pianoR[i],1);
     }
-    cout <<endl;
+    cout << endl;
 
-    cout << "rimappo"<<endl<<endl;
 
-    Isometry3d trasformataIsometry2=trasformataIsometry.inverse();
-
+    cout << "trasformo in piani in 1 nel sistema di riferimento di 0"<<endl;
+    Isometry3d trasformataIsometry2=trasformata.inverse();
     for(int i=0;i<size;i++)
     {
-        Vector4d tmp=trasformataIsometry2*pianoR[i];
-        cout << tmp<<endl<<endl;
+        Vector4d tmp=remapPlane(pianoR[i],trasformata.inverse());
+        printVector4dAsRow(tmp,1);
     }
+    cout << endl << endl <<"================================================================"<<endl<<endl;
 
+    //************************************************************************************************
 
     VertexSE3* v1 = new VertexSE3;
     VertexSE3* v2 = new VertexSE3;
@@ -237,7 +234,7 @@ int main(int argc, char**argv)
     v1->setEstimate(v1Est);
 
     EdgeSE3* v1TOv2=new EdgeSE3;
-    v1TOv2->setMeasurement(trasformataIsometry);
+    v1TOv2->setMeasurement(trasformata);
     v1TOv2->setVertex(0,v1);
     v1TOv2->setVertex(1,v2);
 
@@ -390,9 +387,6 @@ int main(int argc, char**argv)
     vector<VertexPlane*> plane_v_next_container;
     vector<Plane3D> REMAPPED_plane_v_next_container;
 
-
-
-    vector<error_struct> error_container;
 
 
     for (HyperGraph::EdgeSet::iterator it = v_EDGES.begin(); it!=v_EDGES.end(); it++)

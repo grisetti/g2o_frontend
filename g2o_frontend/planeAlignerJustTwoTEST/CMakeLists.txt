@@ -1,6 +1,9 @@
 ADD_EXECUTABLE(
   plane_alignerTEST
   plane_aligner.cpp
+  fileReading.h
+  printHelper.h
+  planesTransformations.h
 )
 SET_TARGET_PROPERTIES(plane_alignerTEST PROPERTIES OUTPUT_NAME plane_alignerTEST)
 INCLUDE_DIRECTORIES(plane_alignerTEST ${CSPARSE_INCLUDE_DIR} )

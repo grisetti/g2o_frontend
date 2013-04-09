@@ -19,7 +19,7 @@ Li = rand(4, np)- 0.5;
 Lj = zeros(4,np);
 #Li(1:3, :) *= tscale;
 for i = [1:size(Li)(2)]
-  #Li(1:3, i) /= norm(Li(1:3, i));
+  Li(1:3, i) /= norm(Li(1:3, i));
   Lj(:,i) = plane_remapCartesian(gtX, Li(:,i));
   Lj(:,i)+=rand(4,1)/100;
 endfor;
