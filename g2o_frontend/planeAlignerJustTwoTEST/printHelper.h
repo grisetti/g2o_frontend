@@ -19,6 +19,25 @@
 using namespace Eigen;
 using namespace g2o;
 
+void printPlaneCoeffsAsRow(Plane3D &plane, int terminatore=0)
+{
+    Vector4d vector=plane.coeffs();
+    if(terminatore==0)
+    {
+        cout << vector.coeff(0) << "\t"
+             << vector.coeff(1) << "\t"
+             << vector.coeff(2) << "\t"
+             << vector.coeff(3);
+    }
+    else
+    {
+        cout << vector.coeff(0) << "\t"
+             << vector.coeff(1) << "\t"
+             << vector.coeff(2) << "\t"
+             << vector.coeff(3)<<endl;
+
+    }
+}
 
 void printVector4dAsRow(Vector4d &vector,int terminatore=0)
 {
@@ -39,7 +58,30 @@ void printVector4dAsRow(Vector4d &vector,int terminatore=0)
     }
 }
 
-void printVector6dAsRow(Vector6d &vector,int terminatore=0)
+//void printVector6dAsRow(Vector6d &vector,int terminatore=0)
+//{
+//    if(terminatore==0)
+//    {
+//        cout << vector.coeff(0) << "\t"
+//             << vector.coeff(1) << "\t"
+//             << vector.coeff(2) << "\t"
+//             << vector.coeff(3) << "\t"
+//             << vector.coeff(4) << "\t"
+//             << vector.coeff(5);
+//    }
+//    else
+//    {
+//        cout << vector.coeff(0) << "\t"
+//             << vector.coeff(1) << "\t"
+//             << vector.coeff(2) << "\t"
+//             << vector.coeff(3) << "\t"
+//             << vector.coeff(4) << "\t"
+//             << vector.coeff(5)<<endl;
+
+//    }
+//}
+
+void printVector6dAsRow(Vector6d vector,int terminatore=0)
 {
     if(terminatore==0)
     {
@@ -61,3 +103,4 @@ void printVector6dAsRow(Vector6d &vector,int terminatore=0)
 
     }
 }
+

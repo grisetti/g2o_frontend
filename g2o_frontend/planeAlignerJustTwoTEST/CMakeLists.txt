@@ -4,6 +4,7 @@ ADD_EXECUTABLE(
   fileReading.h
   printHelper.h
   planesTransformations.h
+  graphUtils.h
 )
 SET_TARGET_PROPERTIES(plane_alignerTEST PROPERTIES OUTPUT_NAME plane_alignerTEST)
 INCLUDE_DIRECTORIES(plane_alignerTEST ${CSPARSE_INCLUDE_DIR} )

@@ -21,7 +21,7 @@ using namespace g2o;
 
 void fillPlanes(char* filename,int size,Vector4d* planes)
 {
-    std::ifstream p1("p1.dat");
+    std::ifstream p1(filename);
     //leggo i piani
     for(int i =0;i<size;i++)
     {
