@@ -208,8 +208,9 @@ public:
 	}
 	v2->setEstimate(ebackup);
       }
-
+      if(debug)
       cerr << "transformFound:" << (int) transformFound << endl;
+       if (debug)
       cerr << "inliers:" << inliers.size() << endl;
       if ((int)inliers.size()<minimalSetSize()) {
 	cerr << "too few inliers: " << (int)inliers.size() <<  endl;

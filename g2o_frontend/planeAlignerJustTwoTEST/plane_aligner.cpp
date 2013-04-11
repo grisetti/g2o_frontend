@@ -115,9 +115,9 @@ bool testRansac(typename RansacType::TransformType& result,CorrespondenceVector&
 
     //ransac.correspondenceValidators()=validators;
     ransac.setCorrespondences(correspondences);
-    ransac.setMaxIterations(2000);
-    ransac.setInlierErrorThreshold(0.01);
-    ransac.setInlierStopFraction(0.5);
+    ransac.setMaxIterations(10000);
+    ransac.setInlierErrorThreshold(0.02);
+    ransac.setInlierStopFraction(0.3);
 
     return ransac(result,iv);
 }
@@ -466,13 +466,14 @@ int main(int argc, char**argv)
             eplane->setVertex(0,vPlane1);
             eplane->setVertex(1,vPlane2);
             Correspondence corr(eplane,error);
+
             mycorrVector.push_back(corr);
 
         }
         cout << endl;
     }
 
-    cout << "Starting ransac... press a key"<<endl;
+
 
     //***************************************************************************************************************************
 
@@ -481,28 +482,61 @@ int main(int argc, char**argv)
         Isometry3d tresult;
         tresult.setIdentity();
         IndexVector iv;
-        RansacPlaneLinear ransac;
-
-        ransac.setCorrespondences(mycorrVector);
-        ransac.setMaxIterations(2000);
-        ransac.setInlierErrorThreshold(0.0001);
-        ransac.setInlierStopFraction(0.1);
-
-        ransac(tresult,iv);
 
         bool result = testRansac<PlaneMapping, RansacPlaneLinear, EdgePlane>(tresult, mycorrVector,iv);
 
-        Vector6d ttt=g2o::internal::toVectorMQT(tresult);
-        Vector6d ttt2=g2o::internal::toVectorMQT(tresult.inverse());
-        cout << "ERROR THRESHOLD "<<ransac.inlierErrorThreshold()<<endl;
-        cerr << "Transformation result from ransac"<<endl<<ttt<<endl;
-        cerr << "Transformation result from ransac"<<endl<<ttt2<<endl;
-        cerr << "Odometry from robot"<<endl<<g2o::internal::toVectorMQT(odometry)<<endl;
+        Vector6d result_DIRECT=g2o::internal::toVectorMQT(tresult);
+        Vector6d result_INVERSE=g2o::internal::toVectorMQT(tresult.inverse());
+        Vector6d ground_truth=g2o::internal::toVectorMQT(trasformata);
+
+        cerr << "Transformation result from ransac"<<endl;
+        printVector6dAsRow(result_DIRECT,1);
+        cout << endl;
+        cerr << "Transformation result (inverse) from ransac"<<endl;
+        printVector6dAsRow(result_INVERSE,1);
+        cout << endl;
+        cerr << "Odometry from robot"<<endl;
+        printVector6dAsRow(ground_truth,1);
+        cout << endl;
+
         cout << "SIZE INLIERS "<<iv.size()<<endl;
 
-        for(int i=0;i<ransac.errors().size();i++)
+//        cout << "ERRORS VECTOR"<<endl;
+//        for(int i=0;i<ransac.errors().size();i++)
+//        {
+//            cout << "ERR "<<ransac.errors().at(i)<<endl;
+//        }
+
+        cout << "INDEX VECTOR"<<endl;
+        for(int i=0;i<iv.size();i++)
         {
-            cout << "ERR "<<ransac.errors().at(i)<<endl;
+            cout << "["<<iv.at(i)<<"]"<<endl;
+            Correspondence corr=mycorrVector.at(iv.at(i));
+            VertexPlane* v1=dynamic_cast<VertexPlane*>(corr.edge()->vertex(0));
+            VertexPlane* v2=dynamic_cast<VertexPlane*>(corr.edge()->vertex(1));
+            Plane3D tmp=v1->estimate();
+
+            printPlaneCoeffsAsRow(tmp);
+            cout << " == ";
+            tmp=v2->estimate();
+            printPlaneCoeffsAsRow(tmp,1);
+        }
+
+        cout << endl << endl;
+
+        cout << "CORRESPONDANCE VECTOR"<<endl;
+        for(int i =0;i<mycorrVector.size();i++)
+        {
+            Correspondence corr=mycorrVector.at(i);
+            VertexPlane* v1=dynamic_cast<VertexPlane*>(corr.edge()->vertex(0));
+            VertexPlane* v2=dynamic_cast<VertexPlane*>(corr.edge()->vertex(1));
+            Plane3D tmp=v1->estimate();
+
+            printPlaneCoeffsAsRow(tmp);
+            cout << " <> ";
+            tmp=v2->estimate();
+            printPlaneCoeffsAsRow(tmp,0);
+            cout << " ["<<corr.score()<<"] "<<endl;
         }
     }
     exit(0);

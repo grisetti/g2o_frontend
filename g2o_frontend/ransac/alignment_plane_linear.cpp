@@ -213,9 +213,11 @@ if(DEBUG)
     X.translation()+=dt;
     transform = X;
     if(DEBUG)
+    {
     cerr << "TRANSFORM found: " << endl<< endl<< endl;
     cerr << g2o::internal::toVectorMQT(X) << endl;;
     cerr << transform.matrix()<< endl;;
+    }
     return true;
 }
 
