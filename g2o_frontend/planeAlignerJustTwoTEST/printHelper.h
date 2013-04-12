@@ -1,3 +1,7 @@
+#ifndef _MAL_PRINT
+#define _MAL_PRINT
+
+
 #include <Eigen/Geometry>
 #include "g2o/stuff/macros.h"
 #include "g2o/stuff/color_macros.h"
@@ -104,3 +108,4 @@ void printVector6dAsRow(Vector6d vector,int terminatore=0)
     }
 }
 
+#endif

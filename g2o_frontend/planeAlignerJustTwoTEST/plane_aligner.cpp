@@ -45,7 +45,7 @@
 #include "printHelper.h"
 #include "planesTransformations.h"
 #include "graphUtils.h"
-
+#include "ransacDeclarations.h"
 
 using namespace std;
 using namespace g2o;
@@ -70,58 +70,6 @@ void sigquit_handler(int sig)
         }
     }
 }
-//**************************************************************************************************************************************
-
-
-//RANSAC
-//**************************************************************************************************************************************
-//**************************************************************************************************************************************
-template <typename TypeDomain_, int dimension_>
-struct EuclideanMapping{
-    typedef TypeDomain_ TypeDomain;
-    typedef typename Eigen::Matrix<double, dimension_, 1> VectorType;
-    virtual int dimension() const {return dimension_;}
-    virtual TypeDomain fromVector(const VectorType& v) const =  0;
-    virtual VectorType toVector(const TypeDomain& t) const = 0;
-};
-
-template <int dimension_>
-struct VectorMapping : public EuclideanMapping<Eigen::Matrix<double, dimension_, 1>, dimension_>{
-    typedef typename EuclideanMapping<Eigen::Matrix<double, dimension_, 1>, dimension_>::TypeDomain TypeDomain;
-    typedef typename EuclideanMapping<Eigen::Matrix<double, dimension_, 1>, dimension_>::VectorType VectorType;
-    virtual TypeDomain fromVector(const VectorType& v) const {return v;}
-    virtual VectorType toVector(const TypeDomain& t) const {return t;}
-};
-
-
-struct PlaneMapping: public EuclideanMapping<Plane3D,4>{
-    typedef typename EuclideanMapping<Plane3D, 4>::TypeDomain TypeDomain;
-    typedef typename EuclideanMapping<Plane3D, 4>::VectorType VectorType;
-    virtual TypeDomain fromVector(const VectorType& v) const {
-        Plane3D l(v);
-        return l;
-    }
-    virtual VectorType toVector(const TypeDomain& t) const {
-        return t.toVector();
-    }
-};
-
-typedef std::vector<Correspondence> CorrespondenceVector;
-
-template <typename MappingType, typename RansacType, typename EdgeCorrespondenceType>
-bool testRansac(typename RansacType::TransformType& result,CorrespondenceVector& correspondences,IndexVector& iv){
-
-    RansacType ransac;
-
-    //ransac.correspondenceValidators()=validators;
-    ransac.setCorrespondences(correspondences);
-    ransac.setMaxIterations(10000);
-    ransac.setInlierErrorThreshold(0.02);
-    ransac.setInlierStopFraction(0.3);
-
-    return ransac(result,iv);
-}
-//**************************************************************************************************************************************
 //**************************************************************************************************************************************
 
 
@@ -416,15 +364,6 @@ int main(int argc, char**argv)
         printPlaneCoeffsAsRow(tmpPlane,1);
     }
 
-    //    cout << "Tento di rimappare i piani visti nel frame 2 nel frame 1"<<endl;
-
-    //    for(int i=0;i<plane_2_container.size();i++ )
-    //    {
-    //        Plane3D piano_V2=plane_2_container.at(i);
-    //        Plane3D piano_rimappato=odometry*piano_V2;
-    //        printPlaneCoeffsAsRow(piano_rimappato,1);
-    //    }
-
 
     cout <<"--------------------------------------------------"<<endl;
     cout <<"--------------------------------------------------"<<endl;
@@ -436,54 +375,17 @@ int main(int argc, char**argv)
 
 
     //Creazione del vettore delle corrispondenze e calcolo degli errori.
-
-    for(int i=0;i<plane_1_container.size();i++)
-    {
-        Plane3D p1=plane_1_container.at(i);
-
-        for(int j=0;j<plane_2_container.size();j++)
-        {
-
-            Plane3D p2=plane_2_container.at(j);
-            double error = computeError(p1,p2);
-
-            //DEBUG INFO ----
-            printPlaneCoeffsAsRow(p1);
-            cout << " <> ";
-            printPlaneCoeffsAsRow(p2);
-            cout <<" ["<<error<<"]"<<endl;
-            //DEBUG INFO ----
-
-            //FILLING CORRESPONDANCE VECTOR
-            EdgePlane* eplane = new EdgePlane;
-
-            VertexPlane* vPlane1=new VertexPlane;
-            VertexPlane* vPlane2=new VertexPlane;
-
-            vPlane1->setEstimate(p1);
-            vPlane2->setEstimate(plane_2_container_REMAPPED.at(j));
-
-            eplane->setVertex(0,vPlane1);
-            eplane->setVertex(1,vPlane2);
-            Correspondence corr(eplane,error);
-
-            mycorrVector.push_back(corr);
-
-        }
-        cout << endl;
-    }
-
-
+    compute_Correspondance_Vector(plane_1_container,plane_2_container,plane_2_container_REMAPPED,mycorrVector);
 
     //***************************************************************************************************************************
 
     if(ransac)
     {
         Isometry3d tresult;
-        tresult.setIdentity();
         IndexVector iv;
 
-        bool result = testRansac<PlaneMapping, RansacPlaneLinear, EdgePlane>(tresult, mycorrVector,iv);
+        executeRansac(mycorrVector,iv,tresult,1000,0.02,0.015);
+
 
         Vector6d result_DIRECT=g2o::internal::toVectorMQT(tresult);
         Vector6d result_INVERSE=g2o::internal::toVectorMQT(tresult.inverse());
@@ -495,17 +397,20 @@ int main(int argc, char**argv)
         cerr << "Transformation result (inverse) from ransac"<<endl;
         printVector6dAsRow(result_INVERSE,1);
         cout << endl;
+
+        Vector6d error=g2o::internal::toVectorMQT(trasformata*tresult);
+        cerr<< "MPLY transformations..."<<endl;
+        cerr <<error.transpose() <<endl;
+        cerr<< "MPLY..."<<endl;
+        cerr <<error.squaredNorm() <<endl;
+
+
+
         cerr << "Odometry from robot"<<endl;
         printVector6dAsRow(ground_truth,1);
         cout << endl;
 
         cout << "SIZE INLIERS "<<iv.size()<<endl;
-
-//        cout << "ERRORS VECTOR"<<endl;
-//        for(int i=0;i<ransac.errors().size();i++)
-//        {
-//            cout << "ERR "<<ransac.errors().at(i)<<endl;
-//        }
 
         cout << "INDEX VECTOR"<<endl;
         for(int i=0;i<iv.size();i++)

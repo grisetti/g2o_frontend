@@ -1,3 +1,7 @@
+#ifndef _MAL_PLANETRANSFORMATIONS
+#define _MAL_PLANETRANSFORMATIONS
+
+
 #include <Eigen/Geometry>
 #include "g2o/stuff/macros.h"
 #include "g2o/stuff/color_macros.h"
@@ -25,3 +29,5 @@ Vector4d remapPlane(Vector4d &plane, Isometry3d t)
     Vector4d remappedPlane=t*plane;
     return remappedPlane;
 }
+
+#endif

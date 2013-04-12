@@ -1,3 +1,7 @@
+#ifndef _MAL_GRAPHUTILS
+#define _MAL_GRAPHUTILS
+
+
 #include <Eigen/Geometry>
 #include "g2o/stuff/macros.h"
 #include "g2o/stuff/color_macros.h"
@@ -15,6 +19,9 @@
 #include "g2o/types/slam3d_addons/types_slam3d_addons.h"
 #include "g2o_frontend/data/point_cloud_data.h"
 #include "g2o_frontend/sensor_data/rgbd_data.h"
+
+#include "ransacDeclarations.h"
+#include "printHelper.h"
 
 using namespace Eigen;
 using namespace g2o;
@@ -55,3 +62,69 @@ double computeError(Plane3D &p1,Plane3D &p2)
     double Error=diff.squaredNorm();
     return Error;
 }
+
+void compute_Correspondance_Vector(vector<Plane3D> &c1,
+                                   vector<Plane3D> &c2,
+                                   vector<Plane3D> &c2R,
+                                   CorrespondenceVector &correspondanceVector)
+{
+    // C1 plane container 1
+    // C2 plane container 2
+    // C2R plane container 2
+
+    for(int i=0;i<c1.size();i++)
+    {
+        Plane3D p1=c1.at(i);
+
+        for(int j=0;j<c2.size();j++)
+        {
+
+            Plane3D p2=c2.at(j);
+            double error = computeError(p1,p2);
+
+            //DEBUG INFO ----
+            printPlaneCoeffsAsRow(p1);
+            cout << " <> ";
+            printPlaneCoeffsAsRow(p2);
+            cout <<" ["<<error<<"]"<<endl;
+            //DEBUG INFO ----
+
+            //FILLING CORRESPONDANCE VECTOR
+            EdgePlane* eplane = new EdgePlane;
+
+            VertexPlane* vPlane1=new VertexPlane;
+            VertexPlane* vPlane2=new VertexPlane;
+
+            vPlane1->setEstimate(p1);
+            vPlane2->setEstimate(c2R.at(j));
+
+            eplane->setVertex(0,vPlane1);
+            eplane->setVertex(1,vPlane2);
+            g2o_frontend::Correspondence corr(eplane,error);
+            if(error<1)
+                correspondanceVector.push_back(corr);
+
+        }
+        cout << endl;
+    }
+}
+
+void executeRansac(CorrespondenceVector &correspondanceVector,
+                   std::vector<int> &Indeces,
+                   Isometry3d &transform,
+                   int iterations,
+                   float inliersThreshold,
+                   float inliersStop)
+{
+
+    transform.setIdentity();
+
+    g2o_frontend::RansacPlaneLinear ransac;
+    ransac.setCorrespondences(correspondanceVector);
+    ransac.setMaxIterations(iterations);
+    ransac.setInlierErrorThreshold(inliersThreshold);
+    ransac.setInlierStopFraction(inliersStop);
+    ransac(transform,Indeces);
+}
+
+#endif

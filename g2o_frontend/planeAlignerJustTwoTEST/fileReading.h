@@ -1,3 +1,7 @@
+#ifndef _MAL_FILEREADING
+#define _MAL_FILEREADING
+
+
 #include <Eigen/Geometry>
 #include "g2o/stuff/macros.h"
 #include "g2o/stuff/color_macros.h"
@@ -45,3 +49,5 @@ void fillTransform(char* filename,Isometry3d &t)
     t=g2o::internal::fromVectorMQT(transform);
 
 }
+
+#endif

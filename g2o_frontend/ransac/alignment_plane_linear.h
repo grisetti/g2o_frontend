@@ -10,7 +10,7 @@ namespace g2o_frontend{
   class AlignmentAlgorithmPlaneLinear: public AlignmentAlgorithmSE3Plane3D {
   public:
     AlignmentAlgorithmPlaneLinear();
-    virtual bool operator()(TransformType& transform, const CorrespondenceVector& correspondences, const IndexVector& indices); 
+    virtual bool operator()(TransformType& transform, const CorrespondenceVector& correspondences, const IndexVector& indices);
 
   };
   
