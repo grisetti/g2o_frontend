@@ -4,24 +4,25 @@
 
 
 #  generate a transform
-gtx = [1 5 6 .5 .2 .3]';
+gtx = [10 50 60 .5 .2 .3]';
 #gtx = [0 0 0 .0 .0 .0]';
 gtX = v2t(gtx);
 printf("the ground truth transform is:\n");
 disp(gtX);
 
-np = 5;
+np = 50;
 tscale = 100;
 printf("Generating a sample set of %d lines with normal, distributed in a radius of %f meters\n\n", np, tscale);
 
 Li = rand(4, np)- 0.5;
+Li(4,:)*=20;
 
 Lj = zeros(4,np);
 #Li(1:3, :) *= tscale;
 for i = [1:size(Li)(2)]
   Li(1:3, i) /= norm(Li(1:3, i));
   Lj(:,i) = plane_remapCartesian(gtX, Li(:,i));
-  Lj(:,i)+=rand(4,1)/100;
+  #Lj(:,i)+=rand(4,1)/100;
 endfor;
 Li'
 Lj'

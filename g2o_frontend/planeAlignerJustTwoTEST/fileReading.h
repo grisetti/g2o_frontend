@@ -1,3 +1,7 @@
+#ifndef _MAL_FILEREADING
+#define _MAL_FILEREADING
+
+
 #include <Eigen/Geometry>
 #include "g2o/stuff/macros.h"
 #include "g2o/stuff/color_macros.h"
@@ -21,7 +25,7 @@ using namespace g2o;
 
 void fillPlanes(char* filename,int size,Vector4d* planes)
 {
-    std::ifstream p1("p1.dat");
+    std::ifstream p1(filename);
     //leggo i piani
     for(int i =0;i<size;i++)
     {
@@ -45,3 +49,5 @@ void fillTransform(char* filename,Isometry3d &t)
     t=g2o::internal::fromVectorMQT(transform);
 
 }
+
+#endif

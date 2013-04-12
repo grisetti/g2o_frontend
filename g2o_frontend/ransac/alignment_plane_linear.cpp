@@ -15,8 +15,6 @@ using namespace g2o;
 using namespace Slam3dAddons;
 using namespace Eigen;
 
-#define DEBUG 0
-
 AlignmentAlgorithmPlaneLinear::AlignmentAlgorithmPlaneLinear(): AlignmentAlgorithmSE3Plane3D(3)
 {
 
@@ -31,6 +29,8 @@ typedef Eigen::Matrix<double, 3, 3>  Matrix3x3d;
 typedef Eigen::Matrix<double, 9, 9>  Matrix9d;
 typedef Eigen::Matrix<double, 9, 1>  Matrix9x1d;
 typedef Eigen::Matrix<double, 9, 1> Vector9d;
+
+#define DEBUG 0
 
 bool AlignmentAlgorithmPlaneLinear::operator()(AlignmentAlgorithmPlaneLinear::TransformType& transform, const CorrespondenceVector& correspondences, const IndexVector& indices)
 {
@@ -184,6 +184,7 @@ if(DEBUG)
         if(DEBUG)
         cerr << "[TRANSLATION JACOBIAN][ JACOBIAN IS: ]"<<endl;
         A2=(-nj.transpose()*R.transpose());
+        if(DEBUG)
         cerr << A2<<endl;
 
         double ek;
@@ -213,9 +214,11 @@ if(DEBUG)
     X.translation()+=dt;
     transform = X;
     if(DEBUG)
+    {
     cerr << "TRANSFORM found: " << endl<< endl<< endl;
     cerr << g2o::internal::toVectorMQT(X) << endl;;
     cerr << transform.matrix()<< endl;;
+    }
     return true;
 }
 
