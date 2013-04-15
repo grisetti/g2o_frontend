@@ -9,7 +9,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
-#include "transformable_vector.h"
+#include "../basemath/transformable_vector.h"
 
 /** \struct HomogeneousVector4f
  *  \brief Base class used for 4 elements homogeneous vectors.
