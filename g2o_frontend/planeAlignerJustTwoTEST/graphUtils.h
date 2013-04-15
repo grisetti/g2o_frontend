@@ -139,8 +139,9 @@ void compute_Correspondance_Vector(vector<container> &c1,
         {
 
             Plane3D p2=((c2.at(j)).plane)->estimate();
+            Plane3D p2R=((c2R.at(j)).plane)->estimate();
 
-            double error = computeError(p1,p2);
+            double error = computeError(p1,p2R);
 
 
 

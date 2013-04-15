@@ -328,9 +328,7 @@ int main(int argc, char**argv)
 
 
         Plane3D tmpPlane=((plane_2_container.at(i)).plane)->estimate();
-
-        tmpPlane=odometry*tmpPlane;
-
+        tmpPlane=odometry.inverse()*tmpPlane;
         container c;
 
         c.id=(plane_2_container.at(i)).id;
@@ -343,6 +341,8 @@ int main(int argc, char**argv)
         printPlaneCoeffsAsRow(tmpPlane,1);
 
     }
+
+
     //--------------------------FINE DEBUG
 
     cout <<"--------------------------------------------------"<<endl;
