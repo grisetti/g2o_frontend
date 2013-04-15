@@ -42,10 +42,10 @@ struct TransformableVector: public std::vector<Transformable, Eigen::aligned_all
    *  object must be defined inside the template.
    */
   template<typename OtherDerived>
-  inline void transformInPlace(const OtherDerived& m){
-    Transformable* t= &(*this)[0];
-    for (size_t i=0; i< std::vector<Transformable, Eigen::aligned_allocator<Transformable> >::size(); i++, t++){
-      transformInPlace(m);
+    inline void transformInPlace(const OtherDerived& m) {
+    Transformable* t = &(*this)[0];
+    for (size_t i = 0; i < std::vector<Transformable, Eigen::aligned_allocator<Transformable> >::size(); i++, t++) {
+      *t = m * (*t);
     }
   }
 
@@ -62,8 +62,8 @@ struct TransformableVector: public std::vector<Transformable, Eigen::aligned_all
     dest.resize(this->size());
     const Transformable* tSrc= &(*this)[0];
     Transformable* tDest= &dest[0];
-    for (size_t i=0; i< std::vector<Transformable, Eigen::aligned_allocator<Transformable> >::size(); ++i, ++tSrc, ++tDest ){
-      *tDest=tSrc->transform(m);
+    for (size_t i = 0; i < std::vector<Transformable, Eigen::aligned_allocator<Transformable> >::size(); ++i, ++tSrc, ++tDest ) {
+      *tDest = m * (*tSrc);
     }
   }
 

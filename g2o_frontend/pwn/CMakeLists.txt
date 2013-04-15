@@ -10,15 +10,23 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 
 ADD_LIBRARY(pwn_library
 	../basemath/bm_se3.h
+	aligner.cpp aligner.h
   depthimage.cpp depthimage.h
   pointprojector.cpp pointprojector.h
   pinholepointprojector.cpp pinholepointprojector.h
   homogeneouspoint3fintegralimage.cpp homogeneouspoint3fintegralimage.h
+  normalgenerator.h	
   homogeneouspoint3fstatsgenerator.cpp homogeneouspoint3fstatsgenerator.h
+  homogeneouspoint3faccumulator.h
+  homogeneouspoint3fstats.h
+  homogeneouspoint3fomega.h
+  omegagenerator.h omegagenerator.cpp
+  homogeneousvector4f.h
   pixelmapper.cpp pixelmapper.h 
   gaussian3.cpp gaussian3.h 
   pointwithnormal.cpp pointwithnormal.h 
   integralpointimage.cpp integralpointimage.h
+  linearizer.cpp linearizer.h
   pointwithnormalstatsgenerator.cpp pointwithnormalstatsgenerator.h
   pointwithnormalaligner.cpp pointwithnormalaligner.h
   pointwithnormalmerger.cpp pointwithnormalmerger.h
@@ -26,7 +34,7 @@ ADD_LIBRARY(pwn_library
   scene_merger.cpp scene_merger.h 
 )
 
-SET_TARGET_PROPERTIES(pwn_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn_library)
+SET_TARGET_PROPERTIES(pwn_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}pwn_library)
 
 ADD_EXECUTABLE(pwn_test pwn_test.cpp)
 SET_TARGET_PROPERTIES(pwn_test PROPERTIES OUTPUT_NAME pwn_test)

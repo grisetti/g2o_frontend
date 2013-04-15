@@ -16,7 +16,7 @@ struct Gaussian {
 
   Gaussian() {
     _covarianceMatrix.setZero();
-    _informationMatrix.seZero();
+    _informationMatrix.setZero();
     _informationVector.setZero();
     _mean.setZero();
   }

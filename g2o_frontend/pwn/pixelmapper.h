@@ -1,5 +1,6 @@
 #ifndef _PIXEL_MAPPER_H_
 #define _PIXEL_MAPPER_H_
+
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
