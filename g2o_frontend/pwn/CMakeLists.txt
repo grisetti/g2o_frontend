@@ -32,7 +32,6 @@ ADD_LIBRARY(pwn_library
   pointwithnormalmerger.cpp pointwithnormalmerger.h
   scene.cpp scene.h
   scene_merger.cpp scene_merger.h 
-  transformable_vector.h
 )
 
 SET_TARGET_PROPERTIES(pwn_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}pwn_library)
