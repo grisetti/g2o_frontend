@@ -97,17 +97,6 @@ struct HomogeneousVector4f: public Eigen::Vector4f {
     return *this;
   }
 
-  template<typename OtherDerived>
-  inline HomogeneousVector4f transform(const Eigen::MatrixBase<OtherDerived>& other) const {
-    return other*(*this);
-  }
-
-  template<typename OtherDerived>
-  inline HomogeneousVector4f& transformInPlace(const Eigen::MatrixBase<OtherDerived>& other) const {
-    *this = HomogeneousVector4f(other*(*this));
-    return *this;
-  }
-
 };
 
 /** \typedef HomogeneousPoint3f

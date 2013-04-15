@@ -49,8 +49,8 @@ void HomogeneousPoint3fStatsGenerator::compute(HomogeneousPoint3fStatsVector& st
       covariance4f.setZero();
       covariance4f.block<3,3>(0,0) = eigenSolver.eigenvectors();
       covariance4f.block<3,1>(0,3) = eigenSolver.eigenvalues();
-      if (covariance4f.coeffRef(0,3)<0)
-	covariance4f.coeffRef(3,0)=0;
+      if (covariance4f.coeffRef(0,3) < 0.0f)
+	covariance4f.coeffRef(0,3) = 0.0f;
       stats[*index] = covariance4f;
     }
   }

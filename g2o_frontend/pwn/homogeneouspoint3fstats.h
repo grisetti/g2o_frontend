@@ -1,6 +1,7 @@
 #ifndef _HOMOGENEOUSPOINT3FSTATS_H_
 #define _HOMOGENEOUSPOINT3FSTATS_H_
 #include "homogeneousvector4f.h"
+#include <iostream>
 
 /** \struct HomogeneousPoint3fStats
  *  \brief Class for 3D points stats representation.
@@ -37,7 +38,7 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
   template<typename OtherDerived>
   inline HomogeneousPoint3fStats(const Eigen::MatrixBase<OtherDerived>& other)
     :Eigen::Matrix4f(other){
-    row(4).setZero();
+    block<1,4>(3,0).setZero();
   }
 
   /**
@@ -46,8 +47,8 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
    */
   template<typename OtherDerived>
   inline HomogeneousPoint3fStats& operator = (const Eigen::MatrixBase<OtherDerived>& other) {
-    this->Base::operator=(other);
-    row(4).setZero();
+    this->Base::operator=(other);    
+    block<1,4>(3,0).setZero();
     return *this;
   }
 
@@ -89,7 +90,7 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
    *  an high curvature (a corner).
    *  @return a float value between 0 and 1 representing the curvature.
    */
-  inline float curvature() const {return coeffRef(0,3)/(coeffRef(0,3)+coeffRef(1,3)+coeffRef(2,3)+1e-9);}
+  inline float curvature() const { return coeffRef(0,3)/(coeffRef(0,3)+coeffRef(1,3)+coeffRef(2,3)+1e-9);}
 };
 
 /** \typedef HomogeneousPoint3fStatsVector

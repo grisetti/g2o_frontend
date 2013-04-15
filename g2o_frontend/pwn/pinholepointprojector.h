@@ -178,7 +178,7 @@ public:
    *  Point unprojection method.
    *  @see unProject(). 
    */
-  inline  bool  _unProject(HomogeneousPoint3f& p, int x, int y, float d) const {
+  inline bool _unProject(HomogeneousPoint3f& p, int x, int y, float d) const {
     if (d<_minDistance || d>_maxDistance)
       return false;
     p=_iKRt*Eigen::Vector4f(x*d,y*d,d,1.0);
