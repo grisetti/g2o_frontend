@@ -27,7 +27,13 @@ using namespace Eigen;
 using namespace g2o;
 using namespace Slam3dAddons;
 
-void getCalibPlanes(VertexSE3* v,vector<Plane3D>* container,Vector3d color,Matrix3d &info)
+struct container{
+    int id;
+    VertexPlane* plane;
+};
+
+
+void getCalibPlanes(VertexSE3* v,vector<container>* containerP,Vector3d color,Matrix3d &info)
 {
     OptimizableGraph::EdgeSet edges  = v->edges();
 
@@ -40,22 +46,23 @@ void getCalibPlanes(VertexSE3* v,vector<Plane3D>* container,Vector3d color,Matri
         if(eSE3Calib)
         {
             eSE3Calib->setInformation(info);
-            VertexPlane* vplane=new VertexPlane;
-            vplane->setEstimate(eSE3Calib->measurement());
+            VertexPlane* vplane=dynamic_cast<VertexPlane*>(eSE3Calib->vertex(1));
             eSE3Calib->color=color;
-            //outgraph.addEdge(eSE3Calib);
             if(vplane)
             {
+
                 vplane->color=color;
-                Plane3D plane = vplane->estimate();
-                container->push_back(plane);
+                container c;
+                c.id=vplane->id();
+                c.plane=vplane;
+                containerP->push_back(c);
             }
         }
     }
 }
 
 
-double computeError(Plane3D &p1,Plane3D &p2)
+double computeError(Plane3D &p1,Plane3D &p2,int mply=10)
 {
     Vector4d diff = p1.toVector()-p2.toVector();
     diff.head<3>() *= 10;
@@ -63,9 +70,60 @@ double computeError(Plane3D &p1,Plane3D &p2)
     return Error;
 }
 
-void compute_Correspondance_Vector(vector<Plane3D> &c1,
-                                   vector<Plane3D> &c2,
-                                   vector<Plane3D> &c2R,
+//INPUT
+//  the graph
+//  the initial vertex
+//OUTPUT
+//  the next vertex in the odometry
+void get_next_vertexSE3(OptimizableGraph* graph,VertexSE3* v1, VertexSE3* v2,Isometry3d &odometry,EdgeSE3* eSE3)
+{
+    OptimizableGraph::Vertex* _vTEMP;
+
+    //accedo ad ogni edge di quel vertice
+    OptimizableGraph::EdgeSet e = v1->edges();
+    //di quei edge accedo ad ogni vertice successivo
+    for (HyperGraph::EdgeSet::iterator it = e.begin(); it!=e.end(); it++)
+    {
+
+        HyperGraph::Edge* _e = *it;
+        //accedo solo a quelli SE3 per sapere su quale vertice spostarmi
+        eSE3 =dynamic_cast< EdgeSE3*>(_e);
+
+        if(eSE3)
+        {
+            //accedo al vertice successivo sul quale andare
+            VertexSE3* nextVertex = dynamic_cast<  VertexSE3*>(eSE3->vertex(1));
+
+            //verifico che il vertice che ho recuperato dall'Edge è effettivamente
+            //- di tipo EdgeSE3 (verificato in precedenza)
+            //- il suo id è differente da quello di partenza
+
+            if(nextVertex->id()!=v1->id() && nextVertex)
+            {
+                cout << "mi muovo da - a"<<endl;
+                cout <<"V[" <<v1->id() << "] -> V[" << nextVertex->id() <<"] "<< endl;
+                _vTEMP=graph->vertex(nextVertex->id());
+
+                //se va tutto bene a questo punto l'odometria deve essere la stessa della trasformata iniziale
+                odometry=eSE3->measurement();
+                cout << "Odometria letta dal grafo:"<<endl;
+                printVector6dAsRow(g2o::internal::toVectorMQT(odometry),1);
+                //cout << "Trasformata letta da file:"<<endl;
+                //printVector6dAsRow(g2o::internal::toVectorMQT(trasformata),1);
+
+                //outgraph.addEdge(eSE3);
+                //_v è il nuovo vertice su cui mi devo spostare
+                v2=dynamic_cast<VertexSE3*>(_vTEMP);
+            }
+        }
+    }
+}
+
+
+
+void compute_Correspondance_Vector(vector<container> &c1,
+                                   vector<container> &c2,
+                                   vector<container> &c2R,
                                    CorrespondenceVector &correspondanceVector)
 {
     // C1 plane container 1
@@ -74,13 +132,17 @@ void compute_Correspondance_Vector(vector<Plane3D> &c1,
 
     for(int i=0;i<c1.size();i++)
     {
-        Plane3D p1=c1.at(i);
+
+        Plane3D p1=((c1.at(i)).plane)->estimate();
 
         for(int j=0;j<c2.size();j++)
         {
 
-            Plane3D p2=c2.at(j);
+            Plane3D p2=((c2.at(j)).plane)->estimate();
+
             double error = computeError(p1,p2);
+
+
 
             //DEBUG INFO ----
             printPlaneCoeffsAsRow(p1);
@@ -92,14 +154,8 @@ void compute_Correspondance_Vector(vector<Plane3D> &c1,
             //FILLING CORRESPONDANCE VECTOR
             EdgePlane* eplane = new EdgePlane;
 
-            VertexPlane* vPlane1=new VertexPlane;
-            VertexPlane* vPlane2=new VertexPlane;
-
-            vPlane1->setEstimate(p1);
-            vPlane2->setEstimate(c2R.at(j));
-
-            eplane->setVertex(0,vPlane1);
-            eplane->setVertex(1,vPlane2);
+            eplane->setVertex(0,c1.at(i).plane);
+            eplane->setVertex(1,c2.at(i).plane);
             g2o_frontend::Correspondence corr(eplane,error);
             if(error<1)
                 correspondanceVector.push_back(corr);
@@ -125,6 +181,18 @@ void executeRansac(CorrespondenceVector &correspondanceVector,
     ransac.setInlierErrorThreshold(inliersThreshold);
     ransac.setInlierStopFraction(inliersStop);
     ransac(transform,Indeces);
+}
+
+void merge_vertices(OptimizableGraph* graph,CorrespondenceVector &correspondanceVector)
+{
+    for(int i =0;i<correspondanceVector.size();i++)
+    {
+        g2o_frontend::Correspondence thecorr=correspondanceVector.at(i);
+        VertexPlane* a=dynamic_cast<VertexPlane*>(thecorr.edge()->vertex(0));
+        VertexPlane* b=dynamic_cast<VertexPlane*>(thecorr.edge()->vertex(1));
+
+        cout << "MERDGING ["<< a->id()<<"] > ["<< b->id()<<"] result: "<<graph->mergeVertices(a,b,1)<<endl;
+    }
 }
 
 #endif
