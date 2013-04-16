@@ -1,4 +1,7 @@
 #include "correspondencegenerator.h"
+#include <iostream>
+
+using namespace std;
 
 void CorrespondenceGenerator::compute(CorrespondenceVector &correspondences,
 				      const HomogeneousPoint3fVector &referencePoints, const HomogeneousPoint3fVector &currentPoints,
@@ -20,7 +23,6 @@ void CorrespondenceGenerator::compute(CorrespondenceVector &correspondences,
       HomogeneousNormal3f referenceNormal = T*referenceNormals.at(referenceIndex);
       HomogeneousPoint3f currentPoint = currentPoints.at(currentIndex);
       HomogeneousNormal3f currentNormal = currentNormals.at(currentIndex);
-      
       if (referenceNormal.squaredNorm() == 0 || currentNormal.squaredNorm() == 0) {
 	referenceIndex = -referenceIndex;
 	continue;

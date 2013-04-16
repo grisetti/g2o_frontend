@@ -1,6 +1,7 @@
 #include "normalgenerator.h"
 #include "omegagenerator.h"
 #include "correspondencegenerator.h"
+#include "pinholepointprojector.h"
 
 #include "g2o/stuff/command_args.h"
 #include "g2o/stuff/timeutil.h"
@@ -96,27 +97,62 @@ int main(int argc, char** argv) {
    *                         Omega Computation                            *
    ************************************************************************/
   cout << "Computing omegas...";
+  // Creating the omegas generators objects.
   PointOmegaGenerator pointOmegaGenerator;
   NormalOmegaGenerator normalOmegaGenerator;
+  // Here will go the omegas.
   HomogeneousPoint3fOmegaVector referencePointOmega;
   HomogeneousPoint3fOmegaVector referenceNormalOmega;
   HomogeneousPoint3fOmegaVector currentPointOmega;
   HomogeneousPoint3fOmegaVector currentNormalOmega;
 
+  // Omegas computation.
   pointOmegaGenerator.compute(referencePointOmega, referenceNormalGenerator.scaledStats, referenceImageNormals);
   normalOmegaGenerator.compute(referenceNormalOmega, referenceNormalGenerator.scaledStats, referenceImageNormals);
   pointOmegaGenerator.compute(currentPointOmega, currentNormalGenerator.scaledStats, currentImageNormals);
   normalOmegaGenerator.compute(currentNormalOmega, currentNormalGenerator.scaledStats, currentImageNormals);
   cout << " done." << endl;
+
   /************************************************************************
    *                         Correspondence Computation                   *
    ************************************************************************/
   cout << "Computing correspondences...";
-  //CorrespondenceGenerator correspondenceGenerator;
+  // Define the point projector object and set some parameters.
+  PinholePointProjector projector;
+  projector.setCameraMatrix(cameraMatrix);
+  projector.setTransform(Isometry3f::Identity());
   
+  
+  // Here will go the indices of the vector of points.
+  MatrixXi referenceIndexImage, currentIndexImage;
+  referenceIndexImage.resize(referenceDepthImage.rows(), referenceDepthImage.cols());
+  currentIndexImage.resize(currentDepthImage.rows(), currentDepthImage.cols());
+
+  // Reproject points.
+  projector.project(referenceIndexImage,
+		    referenceDepthImage, 
+		    referenceImagePoints);
+  projector.project(currentIndexImage,
+		    currentDepthImage, 
+		    currentImagePoints);
+
+  // Creating the correspondences generator objects.
+  CorrespondenceGenerator correspondenceGenerator;
+  // Here will go the omegas.
+  CorrespondenceVector correspondences;
+  Isometry3f T = Isometry3f::Identity();
+  
+  // Correspondences computation.    
+  correspondenceGenerator.compute(correspondences,
+				  referenceImagePoints, currentImagePoints,
+				  referenceImageNormals, currentImageNormals,
+				  referenceIndexImage, currentIndexImage,
+				  referenceNormalGenerator.scaledStats, currentNormalGenerator.scaledStats,
+				  T);
   
   cout << " done." << endl;
-  
+  cout << "Inliers: " << correspondenceGenerator.getNumCorrespondences() << endl;
+
   // This is just to check that the result is correct
   PointWithNormalVector referencePWNV(referenceImagePoints.size());
   for(size_t i = 0; i < referencePWNV.size(); ++i) {
