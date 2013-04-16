@@ -1,5 +1,8 @@
 #include "aligner.h"
 #include <omp.h>
+#include <iostream>
+
+using namespace std;
 
 void Linearizer::update() {
   // Variables initialization.
@@ -9,10 +12,11 @@ void Linearizer::update() {
   int inliers = 0;
   HomogeneousPoint3fOmegaVector* pointOmegas = _aligner->currentPointOmegas();
   HomogeneousPoint3fOmegaVector* normalOmegas = _aligner->currentNormalOmegas();
-
-  #pragma omp parallel for
-  for(size_t i = 0; i < _aligner->correspondences()->size(); i++) {
+  
+//#pragma omp parallel for
+  for(int i = 0; i < _aligner->numCorrespondences(); i++) {
     Correspondence& correspondence = _aligner->correspondences()->at(i);
+    _aligner->referencePoints()->size();
     HomogeneousPoint3f referencePoint = _aligner->T()*_aligner->referencePoints()->at(correspondence.referenceIndex);
     HomogeneousNormal3f referenceNormal = _aligner->T()*_aligner->referenceNormals()->at(correspondence.referenceIndex);
     HomogeneousPoint3f currentPoint = _aligner->currentPoints()->at(correspondence.currentIndex);

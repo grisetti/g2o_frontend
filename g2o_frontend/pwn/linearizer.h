@@ -22,7 +22,7 @@ class Linearizer {
   inline float inlierMaxChi2() const { return _inlierMaxChi2; }
   inline void setInlierMaxChi2(float inlierMaxChi2_) { _inlierMaxChi2 = inlierMaxChi2_; }
 
-  inline void _computeHb_qt(Matrix6f& H, Vector6f b, 
+  inline void _computeHb_qt(Matrix6f& H, Vector6f& b, 
 			    const HomogeneousPoint3f& point, const HomogeneousNormal3f& normal, 
 			    const HomogeneousPoint3f& pointError, const HomogeneousNormal3f& normalError, 
 			    HomogeneousPoint3fOmega& pointOmega, HomogeneousPoint3fOmega& normalOmega) {

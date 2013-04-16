@@ -63,7 +63,6 @@ void CorrespondenceGenerator::compute(CorrespondenceVector &correspondences,
     for (size_t i = _numCorrespondences; i < correspondences.size(); i++) {
       correspondences[i].referenceIndex = -1;
       correspondences[i].currentIndex = -1;
-    }
-    
+    }    
   }
 }

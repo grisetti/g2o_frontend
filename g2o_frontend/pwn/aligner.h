@@ -39,15 +39,26 @@ class Aligner {
     _currentNormals = currentNormals_;
   }
   
-  inline HomogeneousPoint3fStatsVector* currentStats() { return _currentStats; }
-  inline void setCurrentStats(HomogeneousPoint3fStatsVector* currentStats_) { _currentStats = currentStats_; }
+  inline HomogeneousPoint3fStatsVector* getReferenceStats() { return _referenceStats; }
+  inline HomogeneousPoint3fStatsVector* getCurrentStats() { return _currentStats; }
+  inline void setStats(HomogeneousPoint3fStatsVector* referenceStats_, HomogeneousPoint3fStatsVector* currentStats_) { 
+    _referenceStats = referenceStats_;
+    _currentStats = currentStats_; 
+  }
+  
   inline HomogeneousPoint3fOmegaVector* currentPointOmegas() { return _currentPointOmegas; }
-  inline void setCurrentPointOmegas(HomogeneousPoint3fOmegaVector* currentPointOmegas_) { _currentPointOmegas = currentPointOmegas_; }
   inline HomogeneousPoint3fOmegaVector* currentNormalOmegas() { return _currentNormalOmegas; }
-  inline void setCurrentNormalOmegas(HomogeneousPoint3fOmegaVector* currentNormalOmegas_) { _currentNormalOmegas = currentNormalOmegas_; }
+  inline void setCurrentOmegas(HomogeneousPoint3fOmegaVector* currentPointOmegas_, HomogeneousPoint3fOmegaVector* currentNormalOmegas_) {
+    _currentPointOmegas = currentPointOmegas_;
+    _currentNormalOmegas = currentNormalOmegas_;
+  }
+
   inline CorrespondenceVector* correspondences() { return _correspondences; }
   inline void setCorrespondences(CorrespondenceVector* correspondences_) { _correspondences = correspondences_; }
   
+  inline int numCorrespondences() { return _numCorrespondences; }
+  inline void setNumCorrespondences(int numCorrespondences_) { _numCorrespondences = numCorrespondences_; }
+
   inline Eigen::Isometry3f& T() { return _T; }
   inline void setT(Eigen::Isometry3f T_) { _T = T_; }
   inline Eigen::Isometry3f& initialGuess() { return _initialGuess; }
@@ -61,11 +72,12 @@ class Aligner {
   
   HomogeneousPoint3fVector *_referencePoints, *_currentPoints;
   HomogeneousNormal3fVector *_referenceNormals,* _currentNormals;
-  HomogeneousPoint3fStatsVector *referenceStats, *_currentStats;
+  HomogeneousPoint3fStatsVector *_referenceStats, *_currentStats;
   HomogeneousPoint3fOmegaVector *_currentPointOmegas;
   HomogeneousPoint3fOmegaVector *_currentNormalOmegas;
   CorrespondenceVector* _correspondences;
-
+  int _numCorrespondences;
+  
   Eigen::Isometry3f _T;
   Eigen::Isometry3f _initialGuess;
   Eigen::Isometry3f _sensorOffset;
