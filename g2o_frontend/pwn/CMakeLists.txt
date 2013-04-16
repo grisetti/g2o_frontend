@@ -31,7 +31,8 @@ ADD_LIBRARY(pwn_library
   pointwithnormalaligner.cpp pointwithnormalaligner.h
   pointwithnormalmerger.cpp pointwithnormalmerger.h
   scene.cpp scene.h
-  scene_merger.cpp scene_merger.h 
+  scene_merger.cpp scene_merger.h
+  correspondencegenerator.cpp correspondencegenerator.h 
 )
 
 SET_TARGET_PROPERTIES(pwn_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}pwn_library)

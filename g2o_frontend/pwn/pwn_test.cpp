@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
   // This is an hack since in the old code the images are loaded column-wise. 
   depthImage.transposeInPlace();
   cout << endl << "Loaded a depth image of size: " << depthImage.rows() << "x" << depthImage.cols() << endl;
-
+  
   /************************************************************************
    *                         Normal Computation                           *
    ************************************************************************/
@@ -89,7 +89,12 @@ int main(int argc, char** argv) {
   pointOmegaGenerator.compute(pointOmega, normalGenerator.scaledStats, imageNormals);
   normalOmegaGenerator.compute(normalOmega, normalGenerator.scaledStats, imageNormals);
 
+  /************************************************************************
+   *                         Correspondence Computation                   *
+   ************************************************************************/
+  CorrespondenceGenerator correspondenceGenerator;
   
+
 
   // This is just to check that the result is correct
   PointWithNormalVector pnv(imagePoints.size());
