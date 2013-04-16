@@ -30,6 +30,8 @@ class CorrespondenceGenerator {
   _numCorrespondences = 0;
 }
 
+  int getNumCorrespondences() { return _numCorrespondences; }
+
   void compute(CorrespondenceVector &correspondences,
 	       const HomogeneousPoint3fVector &referencePoints, const HomogeneousPoint3fVector &currentPoints,
 	       const HomogeneousNormal3fVector &referenceNormals, const HomogeneousNormal3fVector &currentNormals,

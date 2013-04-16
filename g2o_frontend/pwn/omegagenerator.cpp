@@ -8,7 +8,9 @@ void PointOmegaGenerator::compute(HomogeneousPoint3fOmegaVector& omegas,
 				  HomogeneousPoint3fStatsVector& stats,
 				  HomogeneousNormal3fVector& imageNormals) {
   HomogeneousPoint3fOmega U = Matrix4f::Zero();
-  omegas.resize(stats.size()); 
+  omegas.resize(stats.size());
+  //cerr << "ci sono " << imageNormals.size() << endl;
+  //cerr << "ci sono " << stats.size() << endl;
   for(size_t i = 0; i < stats.size(); i++) {
     HomogeneousPoint3fStats& pointStats = stats[i];
     U.block<3, 3>(0, 0) = pointStats.eigenVectors(); 
@@ -25,6 +27,7 @@ void PointOmegaGenerator::compute(HomogeneousPoint3fOmegaVector& omegas,
     } else 
       omegas[i] = HomogeneousPoint3fOmega();
   }
+  //cerr << "fine" << endl;
 }
 
 void NormalOmegaGenerator::compute(HomogeneousPoint3fOmegaVector& omegas, 
