@@ -92,9 +92,8 @@ int main(int argc, char** argv) {
   /************************************************************************
    *                         Correspondence Computation                   *
    ************************************************************************/
-  CorrespondenceGenerator correspondenceGenerator;
+  //CorrespondenceGenerator correspondenceGenerator;
   
-
 
   // This is just to check that the result is correct
   PointWithNormalVector pnv(imagePoints.size());
