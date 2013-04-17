@@ -62,10 +62,10 @@ void getCalibPlanes(VertexSE3* v,vector<container>* containerP,Vector3d color,Ma
 }
 
 
-double computeError(Plane3D &p1,Plane3D &p2,int mply=10)
+double computeError(Plane3D &p1,Plane3D &p2,int mply=100)
 {
     Vector4d diff = p1.toVector()-p2.toVector();
-    diff.head<3>() *= 10;
+    diff.head<3>() *= mply;
     double Error=diff.squaredNorm();
     return Error;
 }
@@ -75,7 +75,7 @@ double computeError(Plane3D &p1,Plane3D &p2,int mply=10)
 //  the initial vertex
 //OUTPUT
 //  the next vertex in the odometry
-void get_next_vertexSE3(OptimizableGraph* graph,VertexSE3* v1, VertexSE3* v2,Isometry3d &odometry,EdgeSE3* eSE3)
+void get_next_vertexSE3(OptimizableGraph* graph,VertexSE3* v1, VertexSE3* & v2,Isometry3d &odometry,EdgeSE3* eSE3)
 {
     OptimizableGraph::Vertex* _vTEMP;
 
@@ -130,12 +130,12 @@ void compute_Correspondance_Vector(vector<container> &c1,
     // C2 plane container 2
     // C2R plane container 2
 
-    for(int i=0;i<c1.size();i++)
+    for(unsigned int i=0;i<c1.size();i++)
     {
 
         Plane3D p1=((c1.at(i)).plane)->estimate();
 
-        for(int j=0;j<c2.size();j++)
+        for(unsigned int j=0;j<c2.size();j++)
         {
 
             Plane3D p2=((c2.at(j)).plane)->estimate();
@@ -158,7 +158,7 @@ void compute_Correspondance_Vector(vector<container> &c1,
             eplane->setVertex(0,c1.at(i).plane);
             eplane->setVertex(1,c2.at(i).plane);
             g2o_frontend::Correspondence corr(eplane,error);
-            if(error<1)
+            if(error<0.0001)
                 correspondanceVector.push_back(corr);
 
         }
@@ -186,7 +186,7 @@ void executeRansac(CorrespondenceVector &correspondanceVector,
 
 void merge_vertices(OptimizableGraph* graph,CorrespondenceVector &correspondanceVector)
 {
-    for(int i =0;i<correspondanceVector.size();i++)
+    for(unsigned int i =0;i<correspondanceVector.size();i++)
     {
         g2o_frontend::Correspondence thecorr=correspondanceVector.at(i);
         VertexPlane* a=dynamic_cast<VertexPlane*>(thecorr.edge()->vertex(0));

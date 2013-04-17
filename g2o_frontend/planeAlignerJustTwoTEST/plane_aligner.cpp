@@ -127,16 +127,19 @@ int main(int argc, char**argv)
     //- transform.dat contiene la trasformata relativa tra i due
 
     //piani non normalizzati da leggere nel file
-    Vector4d piano[5];
+    Vektor piano;
     //piani non normalizzati transformati, verranno salvati qui
-    Vector4d pianoR[5];
+    Vektor pianoR;
     //la trasformata relativa tra i piani, verra' letta dal file e salvata qui
     Isometry3d trasformata;
 
+    char file1[] = "p1.dat";
+    char file2[] = "p2.dat";
+    char file3[] = "transform.dat";
 
-    fillPlanes("p1.dat",5,piano);
-    fillPlanes("p2.dat",5,pianoR);
-    fillTransform("transform.dat",trasformata);
+    fillPlanes(file1,size,piano);
+    fillPlanes(file2,size,pianoR);
+    fillTransform(file3,trasformata);
 
 
     //stampe di debug
@@ -185,12 +188,23 @@ int main(int argc, char**argv)
     VertexSE3* offset=new VertexSE3;
     offset->setId(2545);
     offset->setEstimate(Isometry3d::Identity());
+    offset->setFixed(1);
     graph.addVertex(offset);
+
+    v1->setFixed(1);
+    v2->setFixed(1);
+
     graph.addVertex(v1);
     graph.addVertex(v2);
     graph.addEdge(v1TOv2);
 
     int planeID=666;
+
+    Matrix3d info= Matrix3d::Identity();
+    info*=1000;
+    info(2,2)=10; //il vincolo in traslazione avrà un peso minore
+
+
     //VERTICE 1
     for(int i=0;i<size;i++)
     {
@@ -199,7 +213,7 @@ int main(int argc, char**argv)
         plane.fromVector(piano[i]);
         vPlane->setEstimate(plane);
         vPlane->setId(planeID);
-
+        vPlane->color=Vector3d(0,0,0);
         cout << "[1] Adding normalized vertex plane: "<<endl;
         graph.addVertex(vPlane);
         printPlaneCoeffsAsRow(plane,1);
@@ -210,6 +224,8 @@ int main(int argc, char**argv)
         eSE3calib->setVertex(2,offset);
         eSE3calib->color=Vector3d(0,1,0);
         eSE3calib->setMeasurement(plane);
+
+        eSE3calib->setInformation(info);
 
         cout <<"Adding edge plane"<<endl;
         graph.addEdge(eSE3calib);
@@ -224,7 +240,7 @@ int main(int argc, char**argv)
         plane.fromVector(pianoR[i]);
         vPlane->setEstimate(plane);
         vPlane->setId(planeID);
-
+        vPlane->color=Vector3d(0,0,0);
         cout << "[2] Adding normalized vertex plane: "<<endl;
         graph.addVertex(vPlane);
         printPlaneCoeffsAsRow(plane,1);
@@ -232,9 +248,10 @@ int main(int argc, char**argv)
         eSE3calib->setVertex(0,v2);
         eSE3calib->setVertex(1,vPlane);
         eSE3calib->setVertex(2,offset);
-
+        eSE3calib->setInformation(info);
         //--------------------------------> IMPORTANT <-----------------------------------------
         eSE3calib->setMeasurement(v2->estimate().inverse()*plane);
+        eSE3calib->setMeasurement(plane);
         //--------------------------------> IMPORTANT <-----------------------------------------
 
         eSE3calib->color=Vector3d(1,0,0);
@@ -246,8 +263,8 @@ int main(int argc, char**argv)
 
 
     cout << "salvo grafo intermedio...";
-    ofstream grafino ("grafene.g2o");
-    graph.save(grafino);
+    ofstream saver ("grafene.g2o");
+    graph.save(saver);
     cout << "salvato"<<endl;
 
     cout << endl <<"================================================================"<<endl<<endl;
@@ -295,9 +312,7 @@ int main(int argc, char**argv)
     vector<container> plane_2_container;
     vector<container> plane_2_container_REMAPPED;
 
-    Matrix3d info= Matrix3d::Identity();
-    info*=1000;
-    info(2,2)=10; //il vincolo in traslazione avrà un peso minore
+
 
     //cout << "V1"<<endl;
     getCalibPlanes(v1,&plane_1_container,Vector3d(1,0,0),info);
@@ -307,7 +322,7 @@ int main(int argc, char**argv)
     //--------------------------INIZIO DEBUG
     cout << "Il primo   container è composta da " <<plane_1_container.size()<<" elemento"<< endl;
 
-    for(int i=0;i<plane_1_container.size();i++)
+    for(unsigned int i=0;i<plane_1_container.size();i++)
     {
         Plane3D tmpPlane=((plane_1_container.at(i)).plane)->estimate();
         printPlaneCoeffsAsRow(tmpPlane,1);
@@ -315,7 +330,7 @@ int main(int argc, char**argv)
 
     cout << "Il secondo container è composta da " <<plane_2_container.size()<<" elemento"<<endl;
 
-    for(int i=0;i<plane_2_container.size();i++)
+    for(unsigned int i=0;i<plane_2_container.size();i++)
     {
         Plane3D tmpPlane=((plane_2_container.at(i).plane))->estimate();
         printPlaneCoeffsAsRow(tmpPlane,1);
@@ -323,12 +338,12 @@ int main(int argc, char**argv)
 
     cout << "Il secondo container di piani rimappati" <<endl;
 
-    for(int i=0;i<plane_2_container.size();i++)
+    for(unsigned int i=0;i<plane_2_container.size();i++)
     {
 
 
         Plane3D tmpPlane=((plane_2_container.at(i)).plane)->estimate();
-        tmpPlane=odometry.inverse()*tmpPlane;
+        tmpPlane=odometry*tmpPlane;
         container c;
 
         c.id=(plane_2_container.at(i)).id;
@@ -393,7 +408,7 @@ int main(int argc, char**argv)
         cout << "SIZE INLIERS "<<iv.size()<<endl;
 
         cout << "INDEX VECTOR"<<endl;
-        for(int i=0;i<iv.size();i++)
+        for(unsigned int i=0;i<iv.size();i++)
         {
             cout << "["<<iv.at(i)<<"]"<<endl;
             Correspondence corr=mycorrVector.at(iv.at(i));
@@ -417,26 +432,25 @@ int main(int argc, char**argv)
 
 
         cout << "CORRESPONDANCE VECTOR"<<endl;
-        for(int i =0;i<mycorrVector.size();i++)
+        for(unsigned int i =0;i<mycorrVector.size();i++)
         {
             Correspondence corr=mycorrVector.at(i);
             VertexPlane* v1=dynamic_cast<VertexPlane*>(corr.edge()->vertex(0));
             VertexPlane* v2=dynamic_cast<VertexPlane*>(corr.edge()->vertex(1));
-            Plane3D tmp=v1->estimate();
+            //Plane3D tmp=v1->estimate();
 
-            cout << "["<< v1->id() <<"]";
-            printPlaneCoeffsAsRow(tmp);
-            cout << " <> ";
-            cout << "["<< v2->id() <<"]";
-            tmp=v2->estimate();
-            printPlaneCoeffsAsRow(tmp,0);
-            cout << " ["<<corr.score()<<"] "<<endl;
+//            cout << "["<< v1->id() <<"]";
+//            printPlaneCoeffsAsRow(tmp);
+//            cout << " <> ";
+//            cout << "["<< v2->id() <<"]";
+//            tmp=v2->estimate();
+//            printPlaneCoeffsAsRow(tmp,0);
+//            cout << " ["<<corr.score()<<"] "<<endl;
 
 
-            cout <<"]]]]]]>>>"<< v1->edges().size()<<endl;
-
-            cout << "MERDGING ["<< v1->id()<<"] > ["<< v2->id()<<"] result: ";
-            cout << graph.mergeVertices(v2,v1,1)<<endl;
+            //cout <<"]]]]]]>>>"<< v1->edges().size()<<endl;
+            //cout << "MERDGING ["<< v1->id()<<"] > ["<< v2->id()<<"] result: ";
+            cout << graph.mergeVertices(v1,v2,1)<<endl;
         }
         //--------------------------FINE DEBUG
 
