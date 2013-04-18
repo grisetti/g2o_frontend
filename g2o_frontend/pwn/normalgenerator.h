@@ -22,7 +22,7 @@ struct NormalGenerator {
   // Method that computes the points with normals given a the depth image.
   // The resulting points and normals are stored in the first two input
   // parameters, the third parameter is the input depth image.
-  void compute(HomogeneousPoint3fVector& imagePoints, HomogeneousNormal3fVector& imageNormals, const DepthImage& depthImage, float curvatureThreshold) {
+  void compute(HomogeneousPoint3fVector& imagePoints, HomogeneousNormal3fVector& imageNormals, const DepthImage& depthImage, float curvatureThreshold, Isometry3f offset = Isometry3f::Identity()) {
     // Update the size of the index image.
     indexImage.resize(depthImage.rows(), depthImage.cols());
     
@@ -38,6 +38,8 @@ struct NormalGenerator {
       scaledIndexImage.resize(scaledRows, scaledCols);
       scaledIntervalImage.resize(scaledRows, scaledCols);
     }
+    
+    projector.setTransform(offset);
     
     // Set the camera matrix of the projector object.
     projector.setCameraMatrix(cameraMatrix);

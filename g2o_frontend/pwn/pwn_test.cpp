@@ -2,7 +2,6 @@
 #include "omegagenerator.h"
 #include "correspondencegenerator.h"
 #include "pinholepointprojector.h"
-//#include "linearizer.h"
 #include "aligner.h"
 
 #include "g2o/stuff/command_args.h"
@@ -115,56 +114,67 @@ int main(int argc, char** argv) {
   normalOmegaGenerator.compute(currentNormalOmega, currentNormalGenerator.scaledStats, currentImageNormals);
   cout << " done." << endl;
 
-  /************************************************************************
-   *                         Correspondence Computation                   *
-   ************************************************************************/
-  cout << "Computing correspondences...";
-  // Creating the correspondences generator objects.
-  CorrespondenceGenerator correspondenceGenerator;
-  // Here will go the omegas.
-  CorrespondenceVector correspondences;
   Isometry3f T = Isometry3f::Identity();
+  for (int i = 0; i < 2; i++) {
+    cerr << "****************** ITERATION " << i << " ******************" << endl;
+    /************************************************************************
+     *                         Correspondence Computation                   *
+     ************************************************************************/
+    cout << "Computing correspondences...";
+    // Creating the correspondences generator objects.
+    CorrespondenceGenerator correspondenceGenerator;
+    // Here will go the omegas.
+    CorrespondenceVector correspondences;
+    
+    referenceNormalGenerator.projector.setTransform(T.inverse());
+    referenceNormalGenerator.projector.project(referenceNormalGenerator.scaledIndexImage,
+					       referenceDepthImage,
+					       referenceImagePoints);
+    
+    // Correspondences computation.    
+    correspondenceGenerator.compute(correspondences,
+				    referenceImagePoints, currentImagePoints,
+				    referenceImageNormals, currentImageNormals,
+				    referenceNormalGenerator.scaledIndexImage, currentNormalGenerator.scaledIndexImage,
+				    referenceNormalGenerator.scaledStats, currentNormalGenerator.scaledStats,
+				    T);
   
-  // Correspondences computation.    
-  correspondenceGenerator.compute(correspondences,
-				  referenceImagePoints, currentImagePoints,
-				  referenceImageNormals, currentImageNormals,
-				  referenceNormalGenerator.scaledIndexImage, currentNormalGenerator.scaledIndexImage,
-				  referenceNormalGenerator.scaledStats, currentNormalGenerator.scaledStats,
-				  T);
-  
-  cout << " done." << endl;
-  cout << "# inliers found: " << correspondenceGenerator.getNumCorrespondences() << endl;
+    cout << " done." << endl;
+    cout << "# inliers found: " << correspondenceGenerator.getNumCorrespondences() << endl;
 
-  /*for(int i = 0; i < correspondenceGenerator.getNumCorrespondences(); i++) {
-    cerr << correspondences[i].referenceIndex << " --- " << correspondences[i].currentIndex << endl;
-    char a;
-    cin >> a;
-    }*/
+    /************************************************************************
+     *                            Alignment                                 *
+     ************************************************************************/
+    cout << "Computing alignment transformation...";
+    Aligner aligner;
+    Linearizer linearizer;
+    aligner.setProjector(&currentNormalGenerator.projector);
+    aligner.setLinearizer(&linearizer);
+    aligner.setPoints(&referenceImagePoints, &currentImagePoints);
+    aligner.setNormals(&referenceImageNormals, &currentImageNormals);
+    aligner.setStats(&referenceNormalGenerator.scaledStats, &currentNormalGenerator.scaledStats);
+    aligner.setCurrentOmegas(&currentPointOmega, &currentNormalOmega);
+    aligner.setCorrespondences(&correspondences);
+    aligner.setNumCorrespondences(correspondenceGenerator.getNumCorrespondences());
+    linearizer.setAligner(&aligner);
+    for (int k = 0; k < 1; k++) {
+      Matrix6f& H = linearizer.H();
+      Vector6f& b = linearizer.b();
+      H.setZero();
+      b.setZero();
+      linearizer.setT(T);
+      linearizer.update();
+      Vector6f dx = linearizer.H().ldlt().solve(-linearizer.b());
+      Eigen::Isometry3f dT = v2t(dx);
+      T = dT * T;
+    }
+    cout << " done." << endl;
+    cout << "H: " << endl << linearizer.H() << endl;
+    cout << "b: " << endl << linearizer.b() << endl;
+  }
 
-  /************************************************************************
-   *                            Alignment                                 *
-   ************************************************************************/
-  cout << "Computing alignment transformation...";
-  Aligner aligner;
-  Linearizer linearizer;
-  aligner.setProjector(&currentNormalGenerator.projector);
-  aligner.setLinearizer(&linearizer);
-  aligner.setPoints(&referenceImagePoints, &currentImagePoints);
-  aligner.setNormals(&referenceImageNormals, &currentImageNormals);
-  aligner.setStats(&referenceNormalGenerator.scaledStats, &currentNormalGenerator.scaledStats);
-  aligner.setCurrentOmegas(&currentPointOmega, &currentNormalOmega);
-  aligner.setCorrespondences(&correspondences);
-  aligner.setNumCorrespondences(correspondenceGenerator.getNumCorrespondences());
-  linearizer.setAligner(&aligner);
-  linearizer.update();
-  cout << " done." << endl;
-  cout << "H: " << endl << linearizer.H() << endl;
-  cout << "b: " << endl << linearizer.b() << endl;
-
-  Vector6f dx = linearizer.H().ldlt().solve(-linearizer.b());
-  Eigen::Isometry3f dT = v2t(dx);
-  cerr << "Final transformation: " << endl << dT.matrix() << endl;
+  cerr << "Final transformation: " << endl << T.matrix() << endl;
+ 
 
   // This is just to check that the result is correct
   PointWithNormalVector referencePWNV(referenceImagePoints.size());
@@ -180,12 +190,11 @@ int main(int argc, char** argv) {
     currentPWNV[i].tail<3>() = currentImageNormals[i].head<3>();
   }
   currentPWNV.save("current.pwn", true);
-  
-  // This is just to check that the result is correct
+
   PointWithNormalVector alignedPWNV(currentImagePoints.size());
   for(size_t i = 0; i < alignedPWNV.size(); ++i) {
-    alignedPWNV[i].head<3>() = dT.linear().transpose()*currentImagePoints[i].head<3>() - dT.translation();
-    alignedPWNV[i].tail<3>() = dT.linear().transpose()*currentImageNormals[i].head<3>();
+    alignedPWNV[i].head<3>() = T.linear()*currentImagePoints[i].head<3>() + T.translation();
+    alignedPWNV[i].tail<3>() = T.linear()*currentImageNormals[i].head<3>();
   }
   alignedPWNV.save("aligned.pwn", true);
 

@@ -1,19 +1,21 @@
 #ifndef DRAWABLE_CORRESPONDENCES
 #define DRAWABLE_CORRESPONDENCES
 
-#include "../pwn/pointwithnormalaligner.h"
+//#include "../pwn/pointwithnormalaligner.h"
+#include "../pwn/pointwithnormal.h"
+#include "../pwn/correspondencegenerator.h"
 #include "drawable.h"
 
 class DrawableCorrespondences : public Drawable {
  public:
   DrawableCorrespondences();
-  DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_,  int numCorrespondences_, PointWithNormalAligner::CorrespondenceVector *correspondences_);
+  DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_,  int numCorrespondences_, CorrespondenceVector *correspondences_);
   
   void setNumCorrespondences(int numCorrespondences_) { _numCorrespondences = numCorrespondences_; }
   int numCorrespondances() { return _numCorrespondences; }
 
-  void setCorrespondences(const PointWithNormalAligner::CorrespondenceVector *correspondences_) { _correspondences = correspondences_; }
-  const PointWithNormalAligner::CorrespondenceVector* correspondences() { return _correspondences; }
+  void setCorrespondences(const CorrespondenceVector *correspondences_) { _correspondences = correspondences_; }
+  const CorrespondenceVector* correspondences() { return _correspondences; }
 
   void setPoints1(const PointWithNormalVector *points1_) { _points1 = points1_; }
   const PointWithNormalVector* points1() { return _points1; }
@@ -29,7 +31,7 @@ class DrawableCorrespondences : public Drawable {
 
  protected:
   int _numCorrespondences;
-  const PointWithNormalAligner::CorrespondenceVector *_correspondences;
+  const CorrespondenceVector *_correspondences;
   const PointWithNormalVector *_points1;
   const PointWithNormalVector *_points2;
  

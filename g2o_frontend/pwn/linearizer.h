@@ -15,9 +15,12 @@ class Linearizer {
     _inlierMaxChi2 = 9e3;
   }
   
-  inline const Eigen::MatrixXf H() const { return _H; }
-  inline const Eigen::VectorXf b() const { return _b; }
+  inline Matrix6f& H() { return _H; }
+  inline Vector6f& b() { return _b; }
   inline void setAligner(Aligner* aligner_) { _aligner = aligner_; }
+
+  inline Isometry3f T() { return _T; }
+  inline void setT(Isometry3f T_) { _T = T_; }
 
   inline float inlierMaxChi2() const { return _inlierMaxChi2; }
   inline void setInlierMaxChi2(float inlierMaxChi2_) { _inlierMaxChi2 = inlierMaxChi2_; }
@@ -30,19 +33,23 @@ class Linearizer {
     const Vector3f& n = normal.head<3>();
     Matrix3f Sp = skew(p);
     Matrix3f Sn = skew(n);
-    H.block<3,3>(0,0) += Sp.transpose()*pointOmega.block<3,3>(0,0)*Sp + Sn.transpose()*normalOmega.block<3,3>(0,0)*Sn;
-    H.block<3,3>(0,3) += -Sp.transpose()*pointOmega.block<3,3>(0,0);
-    H.block<3,3>(3,3) += pointOmega.block<3,3>(0,0);
-    const Vector3f ep = pointOmega.block<3,3>(0,0)*pointError.head<3>();
-    const Vector3f en = normalOmega.block<3,3>(0,0)*normalError.head<3>();
-    b.head<3>() += -Sp.transpose()*ep + Sn.transpose()*en;
-    b.tail<3>() += ep;
+    Matrix3f Omegap = pointOmega.block<3,3>(0,0);
+    Matrix3f Omegan = normalOmega.block<3,3>(0,0); 
+    H.block<3,3>(0,0) += Omegap;
+    H.block<3,3>(0,3) += Omegap*Sp;
+    H.block<3,3>(3,3) += Sp.transpose()*Omegap*Sp + Sn.transpose()*Omegan*Sn;
+    const Vector3f ep = Omegap*pointError.head<3>();
+    const Vector3f en = Omegan*normalError.head<3>();
+    b.head<3>() += ep;
+    b.tail<3>() += Sp.transpose()*ep + Sn.transpose()*en;
   }
 
-  void update();
+  float update();
  
  protected:
   Aligner* _aligner;
+  Isometry3f _T;
+
   Matrix6f _H;
   Vector6f _b;
 

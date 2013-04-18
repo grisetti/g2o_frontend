@@ -52,6 +52,8 @@ void HomogeneousPoint3fStatsGenerator::compute(HomogeneousPoint3fStatsVector& st
       if (covariance4f.coeffRef(0,3) < 0.0f)
 	covariance4f.coeffRef(0,3) = 0.0f;
       stats[*index] = covariance4f;
+      stats[*index].setN(acc.n());
+      stats[*index].setMean(acc.mean());
     }
   }
 }

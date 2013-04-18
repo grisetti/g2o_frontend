@@ -4,7 +4,7 @@
 
 using namespace std;
 
-void Linearizer::update() {
+float Linearizer::update() {
   // Variables initialization.
   _b = Vector6f::Zero();
   _H = Matrix6f::Zero();
@@ -16,9 +16,8 @@ void Linearizer::update() {
 //#pragma omp parallel for
   for(int i = 0; i < _aligner->numCorrespondences(); i++) {
     Correspondence& correspondence = _aligner->correspondences()->at(i);
-    _aligner->referencePoints()->size();
-    HomogeneousPoint3f referencePoint = _aligner->T()*_aligner->referencePoints()->at(correspondence.referenceIndex);
-    HomogeneousNormal3f referenceNormal = _aligner->T()*_aligner->referenceNormals()->at(correspondence.referenceIndex);
+    HomogeneousPoint3f referencePoint = _T*_aligner->referencePoints()->at(correspondence.referenceIndex);
+    HomogeneousNormal3f referenceNormal = _T*_aligner->referenceNormals()->at(correspondence.referenceIndex);
     HomogeneousPoint3f currentPoint = _aligner->currentPoints()->at(correspondence.currentIndex);
     HomogeneousNormal3f currentNormal = _aligner->currentNormals()->at(correspondence.currentIndex);
     HomogeneousPoint3fOmega& pointOmega = pointOmegas->at(correspondence.currentIndex);
@@ -44,4 +43,6 @@ void Linearizer::update() {
 		  pointOmega, normalOmega);
   }
   _H.block<3,3>(3,0) = _H.block<3,3>(0,3).transpose();
+  
+  return error;
 }
