@@ -1,16 +1,30 @@
-#include "normalgenerator.h"
-#include "omegagenerator.h"
-#include "correspondencegenerator.h"
-#include "pinholepointprojector.h"
-#include "aligner.h"
+#include "g2o_frontend/pwn/normalgenerator.h"
+#include "g2o_frontend/pwn/omegagenerator.h"
+#include "g2o_frontend/pwn/correspondencegenerator.h"
+#include "g2o_frontend/pwn/pinholepointprojector.h"
+#include "g2o_frontend/pwn/aligner.h"
+
+#include <qapplication.h>
+#include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
+#include "g2o_frontend/pwn_viewer/pwn_imageview.h"
+#include "g2o_frontend/pwn_viewer/drawable_points.h"
+#include "g2o_frontend/pwn_viewer/drawable_normals.h"
+#include "g2o_frontend/pwn_viewer/drawable_covariances.h"
+#include "g2o_frontend/pwn_viewer/drawable_correspondences.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_points.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_normals.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_covariances.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_correspondences.h"
+#include "pwn_gui_main_window.h"
 
 #include "g2o/stuff/command_args.h"
 #include "g2o/stuff/timeutil.h"
 
 #include <iostream>
 
-#include "pointwithnormal.h"
-
+#include "g2o_frontend/pwn/pointwithnormal.h"
+#include "g2o_frontend/basemath/bm_se3.h"
 using namespace std;
 
 int main(int argc, char** argv) {
@@ -18,7 +32,8 @@ int main(int argc, char** argv) {
    *                           Input Handling                             *
    ************************************************************************/
   
-  
+  //Matrix4f prova = skew4f(Vector3f(2.0f, 3.0f, 5.0f));
+  //cout << prova << endl;
   // Depth image file (path+filename).
   string currentFilename, referenceFilename;
 
@@ -26,6 +41,9 @@ int main(int argc, char** argv) {
   // ./pwn_normal_extraction -h to have more details about them.
   float ng_scale = 1.0f;
   float ng_curvatureThreshold = 1.0f;
+  int al_innerIterations = 5;
+  int al_outerIterations = 5;
+  int vz_step = 5;
 
   // Define the camera matrix, place here the values for the particular 
   // depth camera used (Kinect, Xtion or any other type). This particular
@@ -42,7 +60,10 @@ int main(int argc, char** argv) {
   // Optional input parameters.
   arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image. [float]");
   arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded. [float]");
-  
+  arg.param("al_innerIterations", al_innerIterations, 5, "Specify the inner iterations. [int]");
+  arg.param("al_outerIterations", al_outerIterations, 5, "Specify the outer iterations. [int]");
+  arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements. [int]");
+
   // Last parameter has to be the depth image file.
   arg.paramLeftOver("depthImageFile1", referenceFilename, "./test1.pgm", "First depth image file (.pgm image) to analyze. [string]", true);
   arg.paramLeftOver("depthImageFile2", currentFilename, "./test2.pgm", "Secodn depth image file (.pgm image) to analyze. [string]", true);
@@ -102,46 +123,47 @@ int main(int argc, char** argv) {
   PointOmegaGenerator pointOmegaGenerator;
   NormalOmegaGenerator normalOmegaGenerator;
   // Here will go the omegas.
-  //HomogeneousPoint3fOmegaVector referencePointOmega;
-  //HomogeneousPoint3fOmegaVector referenceNormalOmega;
   HomogeneousPoint3fOmegaVector currentPointOmega;
   HomogeneousPoint3fOmegaVector currentNormalOmega;
 
   // Omegas computation.
-  //pointOmegaGenerator.compute(referencePointOmega, referenceNormalGenerator.scaledStats, referenceImageNormals);
-  //normalOmegaGenerator.compute(referenceNormalOmega, referenceNormalGenerator.scaledStats, referenceImageNormals);
   pointOmegaGenerator.compute(currentPointOmega, currentNormalGenerator.scaledStats, currentImageNormals);
   normalOmegaGenerator.compute(currentNormalOmega, currentNormalGenerator.scaledStats, currentImageNormals);
   cout << " done." << endl;
 
-  Isometry3f T = Isometry3f::Identity();
-  for (int i = 0; i < 2; i++) {
-    cerr << "****************** ITERATION " << i << " ******************" << endl;
+  Isometry3f initialGuess = Isometry3f::Identity();
+  Isometry3f T = initialGuess;
+  float inliers = 0;
+  // Here will go the correspondences.
+  CorrespondenceVector correspondences;
+  for(int i = 0; i < al_outerIterations; i++) {
+    cout << "********************* Iteration " << i << " *********************" << endl;
+    
     /************************************************************************
      *                         Correspondence Computation                   *
      ************************************************************************/
     cout << "Computing correspondences...";
+    
     // Creating the correspondences generator objects.
     CorrespondenceGenerator correspondenceGenerator;
-    // Here will go the omegas.
-    CorrespondenceVector correspondences;
-    
+   
     referenceNormalGenerator.projector.setTransform(T.inverse());
     referenceNormalGenerator.projector.project(referenceNormalGenerator.scaledIndexImage,
-					       referenceDepthImage,
-					       referenceImagePoints);
+    					       referenceDepthImage,
+    					       referenceImagePoints);
     
     // Correspondences computation.    
     correspondenceGenerator.compute(correspondences,
-				    referenceImagePoints, currentImagePoints,
-				    referenceImageNormals, currentImageNormals,
-				    referenceNormalGenerator.scaledIndexImage, currentNormalGenerator.scaledIndexImage,
-				    referenceNormalGenerator.scaledStats, currentNormalGenerator.scaledStats,
-				    T);
-  
+    				    referenceImagePoints, currentImagePoints,
+    				    referenceImageNormals, currentImageNormals,
+    				    referenceNormalGenerator.scaledIndexImage, currentNormalGenerator.scaledIndexImage,
+    				    referenceNormalGenerator.scaledStats, currentNormalGenerator.scaledStats,
+    				    T);
+    
     cout << " done." << endl;
-    cout << "# inliers found: " << correspondenceGenerator.numCorrespondences() << endl;
-
+    inliers = correspondenceGenerator.numCorrespondences();
+    cout << "# inliers found: " << inliers << endl;
+ 
     /************************************************************************
      *                            Alignment                                 *
      ************************************************************************/
@@ -155,47 +177,83 @@ int main(int argc, char** argv) {
     aligner.setStats(&referenceNormalGenerator.scaledStats, &currentNormalGenerator.scaledStats);
     aligner.setCurrentOmegas(&currentPointOmega, &currentNormalOmega);
     aligner.setCorrespondences(&correspondences);
+    aligner.setNumCorrespondences(inliers);
     linearizer.setAligner(&aligner);
-    for (int k = 0; k < 1; k++) {
-      Matrix6f& H = linearizer.H();
-      Vector6f& b = linearizer.b();
-      H.setZero();
-      b.setZero();
+    Matrix6f H = Matrix6f::Zero();
+    Vector6f b = Vector6f::Zero();
+    float error = 0;
+    for (int k = 0; k < al_innerIterations; k++) {      
       linearizer.setT(T);
-      linearizer.update();
-      Vector6f dx = linearizer.H().ldlt().solve(-linearizer.b());
+      error += linearizer.update();
+      H += linearizer.H();
+      b += linearizer.b();
+      H = H + Matrix6f::Identity() * 10.0f;
+      Vector6f dx = H.ldlt().solve(-b);
       Eigen::Isometry3f dT = v2t(dx);
       T = dT * T;
     }
     cout << " done." << endl;
-    cout << "H: " << endl << linearizer.H() << endl;
-    cout << "b: " << endl << linearizer.b() << endl;
-  }
+    cout << "H: " << endl << H << endl;
+    cout << "b: " << endl << b << endl;
+    cout << "Error: " << error << endl;
+    }
 
-  cerr << "Final transformation: " << endl << T.matrix() << endl;
- 
+  cout << "Final transformation: " << endl << T.matrix() << endl;
 
   // This is just to check that the result is correct
-  PointWithNormalVector referencePWNV(referenceImagePoints.size());
-  for(size_t i = 0; i < referencePWNV.size(); ++i) {
-    referencePWNV[i].head<3>() = referenceImagePoints[i].head<3>();
-    referencePWNV[i].tail<3>() = referenceImageNormals[i].head<3>();
+  PointWithNormalVector* referencePWNV = new PointWithNormalVector(referenceImagePoints.size());
+  for(size_t i = 0; i < referencePWNV->size(); ++i) {
+    referencePWNV->at(i).head<3>() = referenceImagePoints[i].head<3>();
+    referencePWNV->at(i).tail<3>() = referenceImageNormals[i].head<3>();
   }
-  referencePWNV.save("reference.pwn", true);
   
-  PointWithNormalVector currentPWNV(currentImagePoints.size());
-  for(size_t i = 0; i < currentPWNV.size(); ++i) {
-    currentPWNV[i].head<3>() = currentImagePoints[i].head<3>();
-    currentPWNV[i].tail<3>() = currentImageNormals[i].head<3>();
+  Isometry3f finalT = T.inverse();
+  PointWithNormalVector* currentPWNV = new PointWithNormalVector(currentImagePoints.size());
+  for(size_t i = 0; i < currentPWNV->size(); ++i) {
+    currentPWNV->at(i).head<3>() = currentImagePoints[i].head<3>();
+    currentPWNV->at(i).tail<3>() = currentImageNormals[i].head<3>();
   }
-  currentPWNV.save("current.pwn", true);
+  
+  QApplication qApplication(argc, argv);
+  PWNGuiMainWindow pwnGMW;
+  pwnGMW.show();
 
-  PointWithNormalVector alignedPWNV(currentImagePoints.size());
-  for(size_t i = 0; i < alignedPWNV.size(); ++i) {
-    alignedPWNV[i].head<3>() = T.linear()*currentImagePoints[i].head<3>() + T.translation();
-    alignedPWNV[i].tail<3>() = T.linear()*currentImageNormals[i].head<3>();
+  GLParameterPoints *pParamReference = new GLParameterPoints(1.0f, Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+  pParamReference->setStep(vz_step);
+  GLParameterNormals *nParamReference = new GLParameterNormals(1.0f, Vector4f(1.0f, 1.0f, 0.0f, 1.0f), 0.02f);
+  nParamReference->setStep(vz_step);
+  GLParameterPoints *pParamCurrent = new GLParameterPoints(1.0f, Vector4f(1.0f, 0.5f, 0.0f, 1.0f));
+  pParamCurrent->setStep(vz_step);
+  GLParameterNormals *nParamCurrent = new GLParameterNormals(1.0f, Vector4f(1.0f, 1.0f, 0.0f, 1.0f), 0.02f);
+  nParamCurrent->setStep(vz_step);
+  GLParameterCovariances *cParam = new GLParameterCovariances(0.5f, Vector4f(0.0f, 1.0f, 0.0f, 1.0f), Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 0.02f, 0.03f);
+  cParam->setStep(vz_step);
+  GLParameterCorrespondences *corrParam = new GLParameterCorrespondences(1.0f, Vector4f(0.0f, 0.0f, 1.0f, 1.0f), 1.0f);
+  corrParam->setStep(vz_step);
+  
+  vector<Drawable*> drawableList = pwnGMW.viewer_3d->drawableList();
+  DrawablePoints* dpReference = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParamReference, referencePWNV);
+  DrawableNormals *dnReference = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)nParamReference, referencePWNV);
+  DrawablePoints* dpCurrent = new DrawablePoints(finalT, (GLParameter*)pParamCurrent, currentPWNV);
+  DrawableNormals *dnCurrent = new DrawableNormals(finalT, (GLParameter*)nParamCurrent, currentPWNV);
+  DrawableCovariances *dcov = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)cParam, &referenceNormalGenerator.scaledStats);
+  DrawableCorrespondences* dcorr = new DrawableCorrespondences(finalT, (GLParameter*)corrParam, 0, 0);
+  dcorr->setPoints1(referencePWNV);
+  dcorr->setPoints2(currentPWNV);
+  dcorr->setCorrespondences(&correspondences);
+  dcorr->setNumCorrespondences(inliers);
+
+  pwnGMW.viewer_3d->addDrawable((Drawable*)dpReference);
+  //pwnGMW.viewer_3d->addDrawable((Drawable*)dnReference);
+  pwnGMW.viewer_3d->addDrawable((Drawable*)dpCurrent);
+  //pwnGMW.viewer_3d->addDrawable((Drawable*)dnCurrent);
+  //pwnGMW.viewer_3d->addDrawable((Drawable*)dcov);
+  //pwnGMW.viewer_3d->addDrawable((Drawable*)dcorr);
+
+  while (!(*pwnGMW.closing())) {
+    qApplication.processEvents();
+    pwnGMW.viewer_3d->updateGL();
+    usleep(10000);
   }
-  alignedPWNV.save("aligned.pwn", true);
-
   return 0;
 }
