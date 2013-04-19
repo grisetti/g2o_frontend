@@ -13,7 +13,7 @@ DrawableCorrespondences::DrawableCorrespondences() : Drawable() {
   _points2Transform.setIdentity();
 }
 
-DrawableCorrespondences::DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_,  int numCorrespondences_, PointWithNormalAligner::CorrespondenceVector *correspondences_) : Drawable(transformation_) {
+DrawableCorrespondences::DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_,  int numCorrespondences_, CorrespondenceVector *correspondences_) : Drawable(transformation_) {
   setParameter(parameter_);
   _numCorrespondences = numCorrespondences_;
   _correspondences = correspondences_;
@@ -48,9 +48,9 @@ void DrawableCorrespondences::draw() {
     correspondencesParameter->applyGLParameter();
     glBegin(GL_LINES);
     for (int i = 0; i < _numCorrespondences; i += correspondencesParameter->step()) {
-      const PointWithNormalAligner::Correspondence& correspondence = _correspondences->at(i);
-      Eigen::Vector3f p0 = _points1->at(correspondence.i1).point();
-      Eigen::Vector3f p1 = _transformation * (_points2->at(correspondence.i2).point());
+      const Correspondence& correspondence = _correspondences->at(i);
+      Eigen::Vector3f p0 = _points1->at(correspondence.referenceIndex).point();
+      Eigen::Vector3f p1 = _transformation * (_points2->at(correspondence.currentIndex).point());
       glVertex3f(p1[0], p1[1], p1[2]);
       glVertex3f(p0[0], p0[1], p0[2]);
     }

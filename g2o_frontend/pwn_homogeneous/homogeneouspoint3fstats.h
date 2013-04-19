@@ -1,7 +1,6 @@
 #ifndef _HOMOGENEOUSPOINT3FSTATS_H_
 #define _HOMOGENEOUSPOINT3FSTATS_H_
 #include "homogeneousvector4f.h"
-#include <iostream>
 
 /** \struct HomogeneousPoint3fStats
  *  \brief Class for 3D points stats representation.
@@ -19,8 +18,6 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
    */
   inline HomogeneousPoint3fStats() {
     setZero();
-    _n = 0;
-    _mean = HomogeneousPoint3f::Zero();
   }
 
   /** \typedef Base
@@ -40,7 +37,7 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
   template<typename OtherDerived>
   inline HomogeneousPoint3fStats(const Eigen::MatrixBase<OtherDerived>& other)
     :Eigen::Matrix4f(other){
-    block<1,4>(3,0).setZero();
+    row(4).setZero();
   }
 
   /**
@@ -49,8 +46,8 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
    */
   template<typename OtherDerived>
   inline HomogeneousPoint3fStats& operator = (const Eigen::MatrixBase<OtherDerived>& other) {
-    this->Base::operator=(other);    
-    block<1,4>(3,0).setZero();
+    this->Base::operator=(other);
+    row(4).setZero();
     return *this;
   }
 
@@ -92,13 +89,7 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
    *  an high curvature (a corner).
    *  @return a float value between 0 and 1 representing the curvature.
    */
-  inline float curvature() const { return coeffRef(0,3)/(coeffRef(0,3)+coeffRef(1,3)+coeffRef(2,3)+1e-9); }
-  
-  void setN(int n_) { _n = n_; }
-  void setMean(HomogeneousPoint3f mean_) { _mean = mean_; }
-  	
-  int _n;
-  HomogeneousPoint3f _mean;
+  inline float curvature() const {return coeffRef(0,3)/(coeffRef(0,3)+coeffRef(1,3)+coeffRef(2,3)+1e-9);}
 };
 
 /** \typedef HomogeneousPoint3fStatsVector

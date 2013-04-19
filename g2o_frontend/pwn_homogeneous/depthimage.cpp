@@ -123,9 +123,8 @@ void DepthImage::toUnsignedShort(MatrixXus& m, float dmax) const {
   unsigned short* us=m.data();
   const float* f=data();
   int s = m.rows()*m.cols();
-  for (int i =0; i<s; i++, f++, us++) {
+  for (int i =0; i<s; i++, f++, us++)
     *us = (*f<dmax) ? (int)(1000.0f*(*f)) : 0;
-  }
 }
 
 void DepthImage::fromUnsignedShort(const MatrixXus& m){
@@ -152,6 +151,6 @@ void DepthImage::fromUnsignedShort(const MatrixXus& m){
    MatrixXus usm;
    toUnsignedShort(usm, 15.0f);
    FILE* f=fopen(filename, "wb");
-   return _writePgm(usm.transpose(), f);
+   return _writePgm(usm, f);
 }
 

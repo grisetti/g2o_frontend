@@ -240,6 +240,7 @@ int main(int argc, char**argv)
         eSE3calib->color=Vector3d(1,0,0);
         cout <<"Adding edge plane"<<endl;
         graph.addEdge(eSE3calib);
+
         planeID++;
     }
 
@@ -270,50 +271,13 @@ int main(int argc, char**argv)
     _v->setFixed(true);
 
     v1=dynamic_cast<VertexSE3*>(_v);
-    v2=new VertexSE3;
+    //v2=new VertexSE3;
+    EdgeSE3 * eSE3=new EdgeSE3;
 
-    //v è un vertex SE3
     if(v1)
     {
-
-        //accedo ad ogni edge di quel vertice
-        OptimizableGraph::EdgeSet e = v1->edges();
-
-        //di quei edge accedo ad ogni vertice successivo
-        for (HyperGraph::EdgeSet::iterator it = e.begin(); it!=e.end(); it++)
-        {
-
-            HyperGraph::Edge* _e = *it;
-            //accedo solo a quelli SE3 per sapere su quale vertice spostarmi
-            EdgeSE3 * eSE3 =dynamic_cast< EdgeSE3*>(_e);
-
-            if(eSE3)
-            {
-                //accedo al vertice successivo sul quale andare
-                VertexSE3* nextVertex = dynamic_cast<  VertexSE3*>(eSE3->vertex(1));
-
-                //verifico che il vertice che ho recuperato dall'Edge è effettivamente
-                //- di tipo EdgeSE3 (verificato in precedenza)
-                //- il suo id è differente da quello di partenza
-
-                if(nextVertex->id()!=v1->id() && nextVertex)
-                {
-                    cout << "mi muovo da - a"<<endl;
-                    cout <<"V[" <<v1->id() << "] -> V[" << nextVertex->id() <<"] "<< endl;
-                    _v=graph.vertex(nextVertex->id());
-                    //se va tutto bene a questo punto l'odometria deve essere la stessa della trasformata iniziale
-                    odometry=eSE3->measurement();
-                    cout << "Odometria letta dal grafo:"<<endl;
-                    printVector6dAsRow(g2o::internal::toVectorMQT(odometry),1);
-                    cout << "Trasformata letta da file:"<<endl;
-                    printVector6dAsRow(g2o::internal::toVectorMQT(trasformata),1);
-
-                    outgraph.addEdge(eSE3);
-                    //_v è il nuovo vertice su cui mi devo spostare
-                    v2=dynamic_cast<VertexSE3*>(_v);
-                }
-            }
-        }
+        get_next_vertexSE3(&graph,v1,v2,odometry,eSE3);
+        outgraph.addEdge(eSE3);
     }
 
     //a questo punto:
@@ -325,24 +289,27 @@ int main(int argc, char**argv)
     outgraph.addVertex(v2);
     cout<<endl;
 
-    vector<Plane3D> plane_1_container;
-    vector<Plane3D> plane_2_container;
-    vector<Plane3D> plane_2_container_REMAPPED;
 
+
+    vector<container> plane_1_container;
+    vector<container> plane_2_container;
+    vector<container> plane_2_container_REMAPPED;
 
     Matrix3d info= Matrix3d::Identity();
     info*=1000;
     info(2,2)=10; //il vincolo in traslazione avrà un peso minore
 
+    //cout << "V1"<<endl;
     getCalibPlanes(v1,&plane_1_container,Vector3d(1,0,0),info);
+    //cout << "V2"<<endl;
     getCalibPlanes(v2,&plane_2_container,Vector3d(0,1,0),info);
 
-
+    //--------------------------INIZIO DEBUG
     cout << "Il primo   container è composta da " <<plane_1_container.size()<<" elemento"<< endl;
 
     for(int i=0;i<plane_1_container.size();i++)
     {
-        Plane3D tmpPlane=plane_1_container.at(i);
+        Plane3D tmpPlane=((plane_1_container.at(i)).plane)->estimate();
         printPlaneCoeffsAsRow(tmpPlane,1);
     }
 
@@ -350,7 +317,7 @@ int main(int argc, char**argv)
 
     for(int i=0;i<plane_2_container.size();i++)
     {
-        Plane3D tmpPlane=plane_2_container.at(i);
+        Plane3D tmpPlane=((plane_2_container.at(i).plane))->estimate();
         printPlaneCoeffsAsRow(tmpPlane,1);
     }
 
@@ -358,12 +325,25 @@ int main(int argc, char**argv)
 
     for(int i=0;i<plane_2_container.size();i++)
     {
-        Plane3D tmpPlane=plane_2_container.at(i);
-        tmpPlane=odometry*tmpPlane;
-        plane_2_container_REMAPPED.push_back(tmpPlane);
+
+
+        Plane3D tmpPlane=((plane_2_container.at(i)).plane)->estimate();
+        tmpPlane=odometry.inverse()*tmpPlane;
+        container c;
+
+        c.id=(plane_2_container.at(i)).id;
+
+        c.plane=new VertexPlane;
+        c.plane->setEstimate(tmpPlane);
+
+        plane_2_container_REMAPPED.push_back(c);
+
         printPlaneCoeffsAsRow(tmpPlane,1);
+
     }
 
+
+    //--------------------------FINE DEBUG
 
     cout <<"--------------------------------------------------"<<endl;
     cout <<"--------------------------------------------------"<<endl;
@@ -386,7 +366,7 @@ int main(int argc, char**argv)
 
         executeRansac(mycorrVector,iv,tresult,1000,0.02,0.015);
 
-
+        //--------------------------INIZIO DEBUG
         Vector6d result_DIRECT=g2o::internal::toVectorMQT(tresult);
         Vector6d result_INVERSE=g2o::internal::toVectorMQT(tresult.inverse());
         Vector6d ground_truth=g2o::internal::toVectorMQT(trasformata);
@@ -429,6 +409,13 @@ int main(int argc, char**argv)
 
         cout << endl << endl;
 
+        cout << "salvo grafo intermedio...";
+        ofstream notmerged ("notmerged.g2o");
+        graph.save(notmerged);
+        cout << "salvato"<<endl;
+
+
+
         cout << "CORRESPONDANCE VECTOR"<<endl;
         for(int i =0;i<mycorrVector.size();i++)
         {
@@ -437,12 +424,28 @@ int main(int argc, char**argv)
             VertexPlane* v2=dynamic_cast<VertexPlane*>(corr.edge()->vertex(1));
             Plane3D tmp=v1->estimate();
 
+            cout << "["<< v1->id() <<"]";
             printPlaneCoeffsAsRow(tmp);
             cout << " <> ";
+            cout << "["<< v2->id() <<"]";
             tmp=v2->estimate();
             printPlaneCoeffsAsRow(tmp,0);
             cout << " ["<<corr.score()<<"] "<<endl;
+
+
+            cout <<"]]]]]]>>>"<< v1->edges().size()<<endl;
+
+            cout << "MERDGING ["<< v1->id()<<"] > ["<< v2->id()<<"] result: ";
+            cout << graph.mergeVertices(v2,v1,1)<<endl;
         }
+        //--------------------------FINE DEBUG
+
+
+
+        cout << "salvo grafo finale...";
+        ofstream merged ("merged.g2o");
+        graph.save(merged);
+        cout << "salvato"<<endl;
     }
     exit(0);
 }

@@ -9,7 +9,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
-#include "../basemath/transformable_vector.h"
+#include "transformable_vector.h"
 
 /** \struct HomogeneousVector4f
  *  \brief Base class used for 4 elements homogeneous vectors.
@@ -94,6 +94,17 @@ struct HomogeneousVector4f: public Eigen::Vector4f {
     this->data()[1] = other.data()[1];
     this->data()[2] = other.data()[2];
     this->data()[3] = wCoordinate;
+    return *this;
+  }
+
+  template<typename OtherDerived>
+  inline HomogeneousVector4f transform(const Eigen::MatrixBase<OtherDerived>& other) const {
+    return other*(*this);
+  }
+
+  template<typename OtherDerived>
+  inline HomogeneousVector4f& transformInPlace(const Eigen::MatrixBase<OtherDerived>& other) const {
+    *this = HomogeneousVector4f(other*(*this));
     return *this;
   }
 

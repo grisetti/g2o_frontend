@@ -67,7 +67,7 @@ bool testRansac(typename RansacType::TransformType& result,CorrespondenceVector&
     ransac.setCorrespondences(correspondences);
     ransac.setMaxIterations(10000);
     ransac.setInlierErrorThreshold(0.02);
-    ransac.setInlierStopFraction(0.3);
+    ransac.setInlierStopFraction(1);
 
     return ransac(result,iv);
 }

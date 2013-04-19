@@ -1,209 +1,202 @@
+#include "normalgenerator.h"
+#include "omegagenerator.h"
+#include "correspondencegenerator.h"
+#include "pinholepointprojector.h"
+#include "aligner.h"
+
 #include "g2o/stuff/command_args.h"
-#include "depthimage.h"
-#include "scene.h"
-#include "pointwithnormal.h"
-#include "pointwithnormalstatsgenerator.h"
-#include "pointwithnormalaligner.h"
-#include <iostream>
-#include <fstream>
-#include <string>
 #include "g2o/stuff/timeutil.h"
 
-using namespace Eigen;
-using namespace g2o;
+#include <iostream>
+
+#include "pointwithnormal.h"
+
 using namespace std;
 
-void savegnuplot(ostream& os, const PointWithNormalVector& points, float scale= 0.1, int step=1) {
-  for (size_t i =0; i<points.size(); i+=step) {
-    const PointWithNormal & pwn=points[i];
-    Vector3f v = pwn.point();
-    if (pwn.normal().squaredNorm() > 0.1) {
-      os << v.x() <<  " " <<  v.y() << " " << v.z() << endl;
-      v+=pwn.normal()*scale;
-      os << v.x() <<  " " <<  v.y() << " " << v.z() << endl;
-      os << endl;
-      os << endl;
-    }
-
-  }
-}
-
-int
- main(int argc, char** argv){
-  g2o::CommandArgs arg;
-  string imageName0;
-  arg.paramLeftOver("image0", imageName0, "", "image0", true);
-  arg.parseArgs(argc, argv);
-
-  /***********************************************************************************/
-  cout << "Test 1 Depth Image load" << endl;
-  DepthImage depthImage0;
-  int result = depthImage0.load(imageName0.c_str());
-  if (! result){
-    cout << "load failed" << endl;
-    return 0;
-  }
-
-  /***********************************************************************************/
-
-  cout << "Test 2 Depth Image save" << endl;
-  result = depthImage0.save("test1.pgm");
-  if (! result){
-    cout << "save failed" << endl;
-    return 0;
-  }
-  cout << "check that the two files are binary the same" << endl;
-
-  /***********************************************************************************/
+int main(int argc, char** argv) {
+  /************************************************************************
+   *                           Input Handling                             *
+   ************************************************************************/
   
-  cout << "Test 3 generating a cloud from an image" << endl;
-  PointWithNormalVector points0;
-  Eigen::Matrix3f cameraMatrix;
-  cameraMatrix << 
+  
+  // Depth image file (path+filename).
+  string currentFilename, referenceFilename;
+
+  // Variables for the input parameters. Just type on the command line
+  // ./pwn_normal_extraction -h to have more details about them.
+  float ng_scale = 1.0f;
+  float ng_curvatureThreshold = 1.0f;
+
+  // Define the camera matrix, place here the values for the particular 
+  // depth camera used (Kinect, Xtion or any other type). This particular
+  // matrix is the one related to the Kinect.
+  Matrix3f cameraMatrix;
+  cameraMatrix <<     
     525.0f, 0.0f, 319.5f,
     0.0f, 525.0f, 239.5f,
     0.0f, 0.0f, 1.0f;
-
-  points0.fromDepthImage((const MatrixXf&)depthImage0, cameraMatrix, Eigen::Isometry3f::Identity(), 10);
-  cerr << " generated " << points0.size() << endl;
-  points0.save("test3.pwn");
-
-  /***********************************************************************************/
-  cout << "Test 4 generating an image from a cloud" << endl;
-  DepthImage depthImage1(depthImage0.rows(), depthImage0.cols());
-  depthImage1.fill(0);
-  points0.toDepthImage(depthImage1, cameraMatrix, Eigen::Isometry3f::Identity(), 10);
-
-  result = depthImage1.save("test4.pgm");
-  if (! result){
-    cout << "save failed" << endl;
-    return 0;
-  }
-
-  /***********************************************************************************/
-
-  cout << "Test 5 loading a cloud and generating an image";
-  points0.load("test3.pwn");
-  depthImage1.fill(0);
-  points0.toDepthImage(depthImage1, cameraMatrix, Eigen::Isometry3f::Identity(), 10);
-
-  result = depthImage1.save("test5.pgm");
-  if (! result){
-    cout << "save failed" << endl;
-    return 0;
-  }
-
-  /***********************************************************************************/
-
-  cout << "Test 6 integral image validation";
-  MatrixXi indexImage(depthImage0.rows(), depthImage0.cols());
-  Eigen::MatrixXf zBuffer(depthImage0.rows(), depthImage0.cols());
   
-  points0.toIndexImage(indexImage, zBuffer, cameraMatrix, Eigen::Isometry3f::Identity(), 10);
-  IntegralPointImage integralImage;
-  integralImage.compute(indexImage,points0);
-
-  int xmin = .25 *indexImage.cols();
-  int ymin = .25 *indexImage.rows();
-  int xmax = .5 *indexImage.cols();
-  int ymax  = .5 *indexImage.rows();
-  PointAccumulator accTest = integralImage.getRegion(xmin, xmax, ymin, ymax);
-  PointAccumulator accTest2;
-  int _n = 0;
-  Vector3f _mean;
-  _mean.setZero();
-  for(int c=xmin; c<xmax; c++){
-    for(int r=ymin; r<ymax;  r++){
-      int index = indexImage(r,c);
-      if (index>0){
-	accTest2 += points0[index].head<3>();
-	_mean+=points0[index].head<3>();
-	_n++;
-      }
-    }
-  }
-  _mean *= 1./(float) _n;
-
-  // covariance
-  Eigen::Matrix3f _cov;
-  _cov.setZero();
-  for(int c=xmin; c<xmax; c++){
-    for(int r=ymin; r<ymax;  r++){
-      int index = indexImage(r,c);
-      if (index>0){
-	Vector3f dp = points0[index].head<3>() - _mean;
-	_cov += dp*dp.transpose();
-      }
-    }
-  }
-  _cov *= 1./(float) _n;
-
-  cerr << "ideal " << endl;
-  cerr << "\t nPoints: " << _n << endl;
-  cerr << "\t mean: " << _mean.transpose() << endl;
-  cerr << "\t cov: " << endl <<  _cov << endl;
-
-  cerr << "iterative " << endl;
-  cerr << "\t nPoints: " << accTest2.n() << endl;
-  cerr << "\t mean: " << accTest2.mean().transpose() << endl;
-  cerr << "\t cov: " << endl << accTest2.covariance() << endl;
-
-  cerr << "integralimage " << endl;
-  cerr << "\t nPoints: " << accTest.n() << endl;
-  cerr << "\t mean: " << accTest.mean().transpose() << endl;
-  cerr << "\t cov: " << endl << accTest.covariance() << endl;
-
-
-  /***********************************************************************************/
-
-  cout << "Test 7 normals computation";
-
-  double nStart = g2o::get_time();
-  PointWithNormalStatistcsGenerator normalGenerator;
-  int cycles = 10;
-  PointWithNormalSVDVector svds0(points0.size());
-  for (int i=0; i<cycles; i++){
-    normalGenerator.computeNormalsAndSVD(points0, svds0, indexImage, cameraMatrix);
-    cerr << ".";
-  }
-  double nEnd = g2o::get_time() - nStart;
-  cerr << "took "  << nEnd/cycles  << " secs/iteration" << endl;
-
-  points0.save("test7.pwn");
-  ofstream os;
-  os.open("test7.dat");
-  savegnuplot(os, points0, 0.1, 10);
-  os.close();
+  // Input parameters handling.
+  g2o::CommandArgs arg;
   
-  /***********************************************************************************/
-  cout << "Test 8 aligment";
-  PointWithNormalAligner aligner;
-  aligner.setImageSize(indexImage.rows(), indexImage.cols());
-  aligner.setScale(.25);
-  aligner.setReferenceCloud(&points0, &svds0);
-  aligner.setCurrentCloud(&points0, &svds0);
-  aligner.setOuterIterations(3);
-  aligner.setLinearIterations(1);
-  aligner.setNonLinearIterations(1);
-  aligner.setLambda(1e3);
-  aligner.setDebug(false);
-  Eigen::Isometry3f X;
-  X.setIdentity();
-  X.translation() = Vector3f(.1, .1, -.1);
-  float error = 0;
-  double ostart = get_time();
-  result = aligner.align(error, X);
-  cerr << "result=" << result << endl;
-  cerr << "transform: " << endl;
-  cerr << X.matrix() << endl;
-  double oend = get_time();
-  cerr << "alignment took: " << oend-ostart << " sec." << endl;
+  // Optional input parameters.
+  arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image. [float]");
+  arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded. [float]");
+  
+  // Last parameter has to be the depth image file.
+  arg.paramLeftOver("depthImageFile1", referenceFilename, "./test1.pgm", "First depth image file (.pgm image) to analyze. [string]", true);
+  arg.paramLeftOver("depthImageFile2", currentFilename, "./test2.pgm", "Secodn depth image file (.pgm image) to analyze. [string]", true);
 
-  /***********************************************************************************/
-  cout << "Test 9 load and save (binary)";
-  points0.save("test9_txt.pwn");
-  points0.save("test9.pwn",1,true);
-  PointWithNormalVector points3b;
-  points3b.load("test9.pwn");
-  points3b.save("test9_txt_b.pwn");
+  // Set parser input.
+  arg.parseArgs(argc, argv);
+  
+  // The DepthImage object is used read a depth image from a .pgm image file. It is an extended Eigen 
+  // matrix of unsigned char. 
+  DepthImage referenceDepthImage, currentDepthImage;
+  // Try to read the depth images given in input.
+  if(!referenceDepthImage.load(referenceFilename.c_str())) {
+    cout << "Failure while loading the depth image: " << referenceFilename<< ", quitting program!" << endl;
+    exit(-1);
+  }
+  if(!currentDepthImage.load(currentFilename.c_str())) {
+    cout << "Failure while loading the depth image: " << currentFilename << ", quitting program!" << endl;
+    exit(-1);
+  }
+
+  // This is an hack since in the old code the images are loaded column-wise. 
+  referenceDepthImage.transposeInPlace();
+  currentDepthImage.transposeInPlace();
+  cout << endl << "Loaded first depth image of size: " << referenceDepthImage.rows() << "x" << referenceDepthImage.cols() << endl;
+  cout << endl << "Loaded second depth image of size: " << currentDepthImage.rows() << "x" << currentDepthImage.cols() << endl;
+  
+  /************************************************************************
+   *                         Normal Computation                           *
+   ************************************************************************/
+  cout << "Computing normals...";
+  // Creating the normal generator object and setting some parameters. 
+  NormalGenerator referenceNormalGenerator, currentNormalGenerator;
+  // Set the scale factor to apply on the depth image.
+  referenceNormalGenerator.setScale(ng_scale);
+  currentNormalGenerator.setScale(ng_scale);
+  // Set the camera matrix
+  referenceNormalGenerator.setCameraMatrix(cameraMatrix);
+  currentNormalGenerator.setCameraMatrix(cameraMatrix);
+  
+  // Here will go the points.
+  HomogeneousPoint3fVector referenceImagePoints; 
+  HomogeneousPoint3fVector currentImagePoints; 
+  // Here will go the normals.
+  HomogeneousNormal3fVector referenceImageNormals;
+  HomogeneousNormal3fVector currentImageNormals;
+
+  // Normals computation.
+  referenceNormalGenerator.compute(referenceImagePoints, referenceImageNormals, referenceDepthImage, ng_curvatureThreshold);
+  currentNormalGenerator.compute(currentImagePoints, currentImageNormals, currentDepthImage, ng_curvatureThreshold);
+  cout << " done." << endl;
+
+  /************************************************************************
+   *                         Omega Computation                            *
+   ************************************************************************/
+  cout << "Computing omegas...";
+  // Creating the omegas generators objects.
+  PointOmegaGenerator pointOmegaGenerator;
+  NormalOmegaGenerator normalOmegaGenerator;
+  // Here will go the omegas.
+  //HomogeneousPoint3fOmegaVector referencePointOmega;
+  //HomogeneousPoint3fOmegaVector referenceNormalOmega;
+  HomogeneousPoint3fOmegaVector currentPointOmega;
+  HomogeneousPoint3fOmegaVector currentNormalOmega;
+
+  // Omegas computation.
+  //pointOmegaGenerator.compute(referencePointOmega, referenceNormalGenerator.scaledStats, referenceImageNormals);
+  //normalOmegaGenerator.compute(referenceNormalOmega, referenceNormalGenerator.scaledStats, referenceImageNormals);
+  pointOmegaGenerator.compute(currentPointOmega, currentNormalGenerator.scaledStats, currentImageNormals);
+  normalOmegaGenerator.compute(currentNormalOmega, currentNormalGenerator.scaledStats, currentImageNormals);
+  cout << " done." << endl;
+
+  Isometry3f T = Isometry3f::Identity();
+  for (int i = 0; i < 2; i++) {
+    cerr << "****************** ITERATION " << i << " ******************" << endl;
+    /************************************************************************
+     *                         Correspondence Computation                   *
+     ************************************************************************/
+    cout << "Computing correspondences...";
+    // Creating the correspondences generator objects.
+    CorrespondenceGenerator correspondenceGenerator;
+    // Here will go the omegas.
+    CorrespondenceVector correspondences;
+    
+    referenceNormalGenerator.projector.setTransform(T.inverse());
+    referenceNormalGenerator.projector.project(referenceNormalGenerator.scaledIndexImage,
+					       referenceDepthImage,
+					       referenceImagePoints);
+    
+    // Correspondences computation.    
+    correspondenceGenerator.compute(correspondences,
+				    referenceImagePoints, currentImagePoints,
+				    referenceImageNormals, currentImageNormals,
+				    referenceNormalGenerator.scaledIndexImage, currentNormalGenerator.scaledIndexImage,
+				    referenceNormalGenerator.scaledStats, currentNormalGenerator.scaledStats,
+				    T);
+  
+    cout << " done." << endl;
+    cout << "# inliers found: " << correspondenceGenerator.getNumCorrespondences() << endl;
+
+    /************************************************************************
+     *                            Alignment                                 *
+     ************************************************************************/
+    cout << "Computing alignment transformation...";
+    Aligner aligner;
+    Linearizer linearizer;
+    aligner.setProjector(&currentNormalGenerator.projector);
+    aligner.setLinearizer(&linearizer);
+    aligner.setPoints(&referenceImagePoints, &currentImagePoints);
+    aligner.setNormals(&referenceImageNormals, &currentImageNormals);
+    aligner.setStats(&referenceNormalGenerator.scaledStats, &currentNormalGenerator.scaledStats);
+    aligner.setCurrentOmegas(&currentPointOmega, &currentNormalOmega);
+    aligner.setCorrespondences(&correspondences);
+    aligner.setNumCorrespondences(correspondenceGenerator.getNumCorrespondences());
+    linearizer.setAligner(&aligner);
+    for (int k = 0; k < 1; k++) {
+      Matrix6f& H = linearizer.H();
+      Vector6f& b = linearizer.b();
+      H.setZero();
+      b.setZero();
+      linearizer.setT(T);
+      linearizer.update();
+      Vector6f dx = linearizer.H().ldlt().solve(-linearizer.b());
+      Eigen::Isometry3f dT = v2t(dx);
+      T = dT * T;
+    }
+    cout << " done." << endl;
+    cout << "H: " << endl << linearizer.H() << endl;
+    cout << "b: " << endl << linearizer.b() << endl;
+  }
+
+  cerr << "Final transformation: " << endl << T.matrix() << endl;
+ 
+
+  // This is just to check that the result is correct
+  PointWithNormalVector referencePWNV(referenceImagePoints.size());
+  for(size_t i = 0; i < referencePWNV.size(); ++i) {
+    referencePWNV[i].head<3>() = referenceImagePoints[i].head<3>();
+    referencePWNV[i].tail<3>() = referenceImageNormals[i].head<3>();
+  }
+  referencePWNV.save("reference.pwn", true);
+  
+  PointWithNormalVector currentPWNV(currentImagePoints.size());
+  for(size_t i = 0; i < currentPWNV.size(); ++i) {
+    currentPWNV[i].head<3>() = currentImagePoints[i].head<3>();
+    currentPWNV[i].tail<3>() = currentImageNormals[i].head<3>();
+  }
+  currentPWNV.save("current.pwn", true);
+
+  PointWithNormalVector alignedPWNV(currentImagePoints.size());
+  for(size_t i = 0; i < alignedPWNV.size(); ++i) {
+    alignedPWNV[i].head<3>() = T.linear()*currentImagePoints[i].head<3>() + T.translation();
+    alignedPWNV[i].tail<3>() = T.linear()*currentImageNormals[i].head<3>();
+  }
+  alignedPWNV.save("aligned.pwn", true);
+
+  return 0;
 }
