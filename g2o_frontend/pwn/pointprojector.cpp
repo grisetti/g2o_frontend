@@ -82,3 +82,9 @@ void PointProjector::unProject(HomogeneousPoint3fVector& points,
   points.resize(count);
 }
 
+bool PointProjector::project(int&, int&, float&, const HomogeneousPoint3f&) const { return false; }
+
+int PointProjector::projectInterval(int, int, float, float) const { return 0; }
+
+bool PointProjector::unProject(HomogeneousPoint3f&, int, int, float) const { return false; }
+

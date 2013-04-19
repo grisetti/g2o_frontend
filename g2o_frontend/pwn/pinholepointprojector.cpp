@@ -58,7 +58,6 @@ void PinholePointProjector::project(Eigen::MatrixXi& indexImage,
   indexImage.fill(-1);
   const HomogeneousPoint3f* point = &points[0];
   for (size_t i=0; i<points.size(); i++, point++){
-    asm("#test_projection_begin");
     int x, y;
     float d;
     if (!_project(x,y,d,*point)||
@@ -73,7 +72,6 @@ void PinholePointProjector::project(Eigen::MatrixXi& indexImage,
       otherDistance = d;
       otherIndex    = i;
     }
-    asm("#test_projection_end");
   }
 }
 

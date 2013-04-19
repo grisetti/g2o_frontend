@@ -30,8 +30,20 @@ class CorrespondenceGenerator {
   _numCorrespondences = 0;
 }
 
-  int getNumCorrespondences() { return _numCorrespondences; }
-
+  inline int numCorrespondences() { return _numCorrespondences; }
+  inline float squaredThreshold() { return _squaredThreshold; }
+  inline float inlierDistanceThreshold() { return _inlierDistanceThreshold; }
+  inline void setInlierDistanceThreshold(float inlierDistanceThreshold_) {
+    _inlierDistanceThreshold = inlierDistanceThreshold_;
+    _squaredThreshold = _inlierDistanceThreshold * _inlierDistanceThreshold;
+  }
+  inline float flatCurvatureThreshold() { return _flatCurvatureThreshold; }
+  inline void setFlatCurvatureThreshold(float flatCurvatureThreshold_) { _flatCurvatureThreshold = flatCurvatureThreshold_; }
+  inline float inlierCurvatureRatioThreshold() { return _inlierCurvatureRatioThreshold; }
+  inline void setInlierCurvatureRatioThreshold(float inlierCurvatureRatioThreshold_) { _inlierCurvatureRatioThreshold = inlierCurvatureRatioThreshold_; }
+  inline float inlierNormalAngularThreshold() { return _inlierNormalAngularThreshold; }
+  inline void setInlierNormalAngularThreshold(float inlierNormalAngularThreshold_) { _inlierNormalAngularThreshold = inlierNormalAngularThreshold_; }
+  
   void compute(CorrespondenceVector &correspondences,
 	       const HomogeneousPoint3fVector &referencePoints, const HomogeneousPoint3fVector &currentPoints,
 	       const HomogeneousNormal3fVector &referenceNormals, const HomogeneousNormal3fVector &currentNormals,

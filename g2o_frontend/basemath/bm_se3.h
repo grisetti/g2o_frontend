@@ -60,6 +60,19 @@ inline Eigen::Matrix3f skew(const Eigen::Vector3f& v)
     return S;
 }
 
+inline Eigen::Matrix4f skew4f(const Eigen::Vector3f& v)
+{
+    const float& tx = v.x();
+    const float& ty = v.y();
+    const float& tz = v.z();
+    Eigen::Matrix4f S;
+    S << 0, (2*tz), (-2*ty), 0,
+      (-2*tz), 0, (2*tx), 0,				
+      (2*ty),  (-2*tx), 0, 0,
+      0, 0, 0, 0;
+    return S;
+}
+
 inline Vector12f homogeneous2vector(const Eigen::Matrix4f& transform){
   Vector12f x;
   x.block<3,1>(0,0)=transform.block<1,3>(0,0).transpose();
@@ -136,6 +149,18 @@ inline Eigen::Matrix3d skew(const Eigen::Vector3d& v)
     return S;
 }
 
+inline Eigen::Matrix4d skew4d(const Eigen::Vector3d& v)
+{
+    const double& tx = v.x();
+    const double& ty = v.y();
+    const double& tz = v.z();
+    Eigen::Matrix4d S;
+    S << 0, (2*tz), (-2*ty), 0,
+      (-2*tz), 0, (2*tx), 0,				
+      (2*ty),  (-2*tx), 0, 0,
+      0, 0, 0, 0;
+    return S;
+}
 
 inline Vector12d homogeneous2vector(const Eigen::Matrix4d& transform){
   Vector12d x;

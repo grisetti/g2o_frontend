@@ -21,7 +21,7 @@ void HomogeneousPoint3fStatsGenerator::compute(HomogeneousPoint3fStatsVector& st
   assert(integralImage.rows()==indexImage.rows());
   assert(integralImage.cols()==indexImage.cols());
 
-  #pragma omp parallel for
+#pragma omp parallel for
   for (int c=0; c<indexImage.cols(); ++c){
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigenSolver;
     const int* index = &indexImage.coeffRef(0,c);

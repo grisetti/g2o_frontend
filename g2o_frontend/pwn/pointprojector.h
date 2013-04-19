@@ -120,7 +120,7 @@ public:
    *  @return a bool value which is true if the depth value of the input point falls in the range
    *  defined by the minimum and maximum distance variables values, false otherwise.
    */
-  virtual bool project(int& x, int&y, float&f, const HomogeneousPoint3f& p) const = 0;
+  virtual bool project(int& x, int&y, float&f, const HomogeneousPoint3f& p) const;
 
   /**
    *  Pure virtual method that has to be implemented in all classes that extend this class. 
@@ -135,7 +135,7 @@ public:
    *  @return an integer containing the value of the side of the square region used to compute the 
    *  stats of the point.
    */
-  virtual int projectInterval(int x, int y, float d, float worldRadius) const = 0;
+  virtual int projectInterval(int x, int y, float d, float worldRadius) const;
 
   /**
    *  Pure virtual method that has to be implemented in all classes that extend this class. 
@@ -151,7 +151,7 @@ public:
    *  @return a bool value which is true if the depth value of the input point falls in the range
    *  defined by the minimum and maximum distance variables values, false otherwise. 
    */
-  virtual bool unProject(HomogeneousPoint3f& p, int x, int y, float d) const = 0;
+  virtual bool unProject(HomogeneousPoint3f& p, int x, int y, float d) const;
 
 
 
