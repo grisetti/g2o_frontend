@@ -38,6 +38,6 @@ void SE3OffsetErrorFunction::_updateTemporaries()  {
 }
 
 void foo(const SE3OffsetErrorFunction& f, const Vector6f& x){
-  AffineVectorFunction<SE3OffsetErrorFunction::DomainType, SE3OffsetErrorFunction::CodomainType>
+  AffineVectorFunction<float, 6, 6>
     taylor = f.taylorExpansion(x);
 }

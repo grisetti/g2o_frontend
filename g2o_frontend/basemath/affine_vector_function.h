@@ -2,58 +2,64 @@
 #define _AFFINE_VECTOR_FUNCTION_H_
 
 #include <Eigen/Core>
-#include "gaussian.h"
 
-template <typename DomainType_, typename CodomainType_> 
-class AffineVectorFunction : public MultivariateVectorFunction <DomainType_, CodomainType_> {
+template <typename Scalar_, int DomainDimensionAtCompileTime_, int CodomainDimensionAtCompileTime_> 
+class AffineVectorFunction : public MultivariateVectorFunction <Scalar_, DomainDimensionAtCompileTime_, CodomainDimensionAtCompileTime_> {
 public:
-  typedef typename MultivariateVectorFunction <DomainType_, CodomainType_>::DomainScalarType DomainScalarType;
-  typedef typename MultivariateVectorFunction <DomainType_, CodomainType_>::CodomainScalarType CodomainScalarType;
+  typedef Scalar_ ScalarType;
+  typedef Eigen::Matrix<Scalar_, DomainDimensionAtCompileTime_, 1> DomainType;
+  typedef Eigen::Matrix<Scalar_, CodomainDimensionAtCompileTime_, 1> CodomainType;
+  typedef Eigen::Matrix<Scalar_, CodomainDimensionAtCompileTime_, DomainDimensionAtCompileTime_> JacobianType;
+  typedef Eigen::Matrix<Scalar_, CodomainDimensionAtCompileTime_, DomainDimensionAtCompileTime_> MatrixType;
 
-  typedef typename MultivariateVectorFunction <DomainType_, CodomainType_>::JacobianType MatrixType;
-  typedef Eigen::Matrix< typename MultivariateVectorFunction <DomainType_, CodomainType_>::CodomainScalarType, CodomainType_::RowsAtCompileTime, 1> VectorType;
+  AffineVectorFunction() : 
+    MultivariateVectorFunction <ScalarType, DomainDimensionAtCompileTime_, CodomainDimensionAtCompileTime_>(),
+    _A(this->codomainDimension(), this->domainDimension()),
+    _b(this->codomainDimension())
+  {}
+
+  AffineVectorFunction(int domainDimension_, int codomainDimension_):
+     MultivariateVectorFunction <ScalarType, DomainDimensionAtCompileTime_, CodomainDimensionAtCompileTime_>(),
+     _A(codomainDimension_, domainDimension_),
+    _b(codomainDimension_)
+ {}
 
   inline const MatrixType& matrix() const {
     return _A;
   }
 
   inline void setMatrix(const MatrixType& A) {
+    assert (A.rows()==codomainDimension() && A.cols == domainDimension() && "Sizes of the matrix shuould match the affine function parameters");
     _A = A;
   }
 
-  inline const VectorType& vector() const {
+  inline const CodomainType& vector() const {
     return _b;
   }
 
-  inline void setVector(const VectorType& b) {
+  inline void setVector(const CodomainType& b) {
+    assert(b.rows()==codomainDimension() && "Size of the vector shuould match the affine function parameters");
     _b = b;
   }
 
-  virtual typename MultivariateVectorFunction <DomainType_, CodomainType_>::CodomainType operator()(const typename MultivariateVectorFunction <DomainType_, CodomainType_>::DomainType& x) const {
+  virtual CodomainType operator()(const DomainType& x) const {
     return _A * x + _b;
   }
 
-  virtual typename MultivariateVectorFunction <DomainType_, CodomainType_>::JacobianType jacobian(const typename MultivariateVectorFunction <DomainType_, CodomainType_>::DomainType&) const {
+  virtual JacobianType jacobian(const DomainType&) const {
     return _A;
-  }
-
-  virtual typename MultivariateVectorFunction <DomainType_, CodomainType_>::JacobianType jacobian() const {
-    return _A;
-  }
-
-  Gaussian<CodomainScalarType, CodomainType_::RowsAtCompileTime> apply(const Gaussian<CodomainScalarType, DomainType_::RowsAtCompileTime >
-& g){
-    return Gaussian<CodomainScalarType, CodomainType_::RowsAtCompileTime>(_A*g.mean()+_b, _A*g.covariance()*_A.transpose());
   }
 
 protected:
   MatrixType _A;
-  VectorType _b;
+  CodomainType _b;
 };
 
-template <typename DomainType_, typename CodomainType_> 
-AffineVectorFunction<DomainType_,CodomainType_> MultivariateVectorFunction<DomainType_,CodomainType_>::taylorExpansion(const DomainType& x) const {
-  AffineVectorFunction<DomainType_,CodomainType_> affine;
+template <typename Scalar_, int DomainDimensionAtCompileTime_, int CodomainDimensionAtCompileTime_> 
+AffineVectorFunction<Scalar_, DomainDimensionAtCompileTime_, CodomainDimensionAtCompileTime_> 
+MultivariateVectorFunction<Scalar_, DomainDimensionAtCompileTime_, CodomainDimensionAtCompileTime_>
+::taylorExpansion(const MultivariateVectorFunction<Scalar_, DomainDimensionAtCompileTime_, CodomainDimensionAtCompileTime_>::DomainType& x) const {
+  AffineVectorFunction<Scalar_,DomainDimensionAtCompileTime_, CodomainDimensionAtCompileTime_> affine(domainDimension(), codomainDimension());
   affine.setVector(this->operator()(x));
   affine.setMatrix(this->jacobian(x));
   return affine;
