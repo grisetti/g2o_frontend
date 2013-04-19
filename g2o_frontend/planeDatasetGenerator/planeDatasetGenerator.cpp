@@ -141,6 +141,12 @@ int main(int argc, char**argv)
     fillPlanes(file2,size,pianoR);
     fillTransform(file3,trasformata);
 
+    cout << "trasformata"<<endl;
+    Vector6d trasformataV=g2o::internal::toVectorMQT(trasformata);
+    printVector6dAsRow(trasformataV,1);
+
+    cout << trasformata.matrix()<<endl;
+    cout << endl;
 
     //stampe di debug
     cout << "piani nel frame 0"<<endl;
@@ -153,13 +159,30 @@ int main(int argc, char**argv)
     cout << "piani nel frame 1"<<endl;
     for(int i=0;i<size;i++)
     {
-        printVector4dAsRow(pianoR[i],1);
+        cout << pianoR[i].transpose()<<endl;
     }
     cout << endl;
 
-    cout << "trasformata"<<endl;
-    Vector6d trasformataV=g2o::internal::toVectorMQT(trasformata);
-    printVector6dAsRow(trasformataV,1);
+
+    cout << "piani rimappati da 0 a 1"<<endl;
+    for(int i=0;i<size;i++)
+    {
+
+        Isometry3d t=trasformata.inverse();
+        Plane3D p;
+        p.fromVector(piano[i]);
+        cout << piano[i].transpose() <<" -> "<<(t*p).coeffs().transpose()<<endl;
+    }
+
+    cout << "piani rimappati da 1 a 0"<<endl;
+    for(int i=0;i<size;i++)
+    {
+
+        Plane3D p;
+        p.fromVector(pianoR[i]);
+        cout << pianoR[i].transpose() <<" -> "<<(trasformata*p).coeffs().transpose()<<endl;
+    }
+
     cout << endl;
 
     cout << endl << endl <<"================================================================"<<endl<<endl;
@@ -213,8 +236,8 @@ int main(int argc, char**argv)
         plane.fromVector(piano[i]);
         vPlane->setEstimate(plane);
         vPlane->setId(planeID);
-        vPlane->color=Vector3d(0,0,0);
-        cout << "[1] Adding normalized vertex plane: "<<endl;
+        vPlane->color=Vector3d(0.3,0.7,0.3);
+        cout << "[1]"<<endl<<"Adding normalized vertex plane: ";
         graph.addVertex(vPlane);
         printPlaneCoeffsAsRow(plane,1);
 
@@ -227,7 +250,7 @@ int main(int argc, char**argv)
 
         eSE3calib->setInformation(info);
 
-        cout <<"Adding edge plane"<<endl;
+        cout <<"Adding edge plane "<<plane.coeffs().transpose() <<endl<<endl;
         graph.addEdge(eSE3calib);
         planeID++;
     }
@@ -237,11 +260,11 @@ int main(int argc, char**argv)
     {
         VertexPlane* vPlane=new VertexPlane;
         Plane3D plane;
-        plane.fromVector(pianoR[i]);
+        plane.fromVector(piano[i]);
         vPlane->setEstimate(plane);
         vPlane->setId(planeID);
-        vPlane->color=Vector3d(0,0,0);
-        cout << "[2] Adding normalized vertex plane: "<<endl;
+        vPlane->color=Vector3d(0.7,0.3,0.3);
+        cout << "[2]"<<endl<<"Adding normalized vertex plane: ";
         graph.addVertex(vPlane);
         printPlaneCoeffsAsRow(plane,1);
         EdgeSE3PlaneSensorCalib* eSE3calib= new EdgeSE3PlaneSensorCalib;
@@ -251,11 +274,11 @@ int main(int argc, char**argv)
         eSE3calib->setInformation(info);
         //--------------------------------> IMPORTANT <-----------------------------------------
         eSE3calib->setMeasurement(v2->estimate().inverse()*plane);
-        eSE3calib->setMeasurement(plane);
+        //eSE3calib->setMeasurement(plane);
         //--------------------------------> IMPORTANT <-----------------------------------------
 
         eSE3calib->color=Vector3d(1,0,0);
-        cout <<"Adding edge plane"<<endl;
+        cout <<"Adding edge plane "<<(eSE3calib->measurement()).coeffs().transpose() <<endl<<endl;
         graph.addEdge(eSE3calib);
 
         planeID++;
@@ -263,204 +286,11 @@ int main(int argc, char**argv)
 
 
     cout << "salvo grafo intermedio...";
-    ofstream saver ("grafene.g2o");
+    ofstream saver (outfilename.c_str());
     graph.save(saver);
     cout << "salvato"<<endl;
 
     cout << endl <<"================================================================"<<endl<<endl;
-
-
-    //*****************************************************************************************
-    //**                                                                                      *
-    //**               A questo punto un grafo salvato in memoria e su file                   *
-    //**                                                                                      *
-    //*****************************************************************************************
-    //-----------------------------------------------------------------------------------------
-    //Struttura del grafo:
-    // verticeSE3(0) in (0,0,0,0,0,0)
-    // verticeSE3(1) nella posa determinata dalla trasformata
-    // EdgeSE3(0,1)  trasformata relativa (letta dal file
-    //-----------------------------------------------------------------------------------------
-
-
-    //recupero il vertice richiesto in input
-    OptimizableGraph::Vertex* _v=graph.vertex(0);
-    _v->setFixed(true);
-
-    v1=dynamic_cast<VertexSE3*>(_v);
-    //v2=new VertexSE3;
-    EdgeSE3 * eSE3=new EdgeSE3;
-
-    if(v1)
-    {
-        get_next_vertexSE3(&graph,v1,v2,odometry,eSE3);
-        outgraph.addEdge(eSE3);
-    }
-
-    //a questo punto:
-    //  v1   vertice iniziale
-    //  v2   vertice successivo
-
-    cout<<endl;
-    outgraph.addVertex(v1);
-    outgraph.addVertex(v2);
-    cout<<endl;
-
-
-
-    vector<container> plane_1_container;
-    vector<container> plane_2_container;
-    vector<container> plane_2_container_REMAPPED;
-
-
-
-    //cout << "V1"<<endl;
-    getCalibPlanes(v1,&plane_1_container,Vector3d(1,0,0),info);
-    //cout << "V2"<<endl;
-    getCalibPlanes(v2,&plane_2_container,Vector3d(0,1,0),info);
-
-    //--------------------------INIZIO DEBUG
-    cout << "Il primo   container è composta da " <<plane_1_container.size()<<" elemento"<< endl;
-
-    for(unsigned int i=0;i<plane_1_container.size();i++)
-    {
-        Plane3D tmpPlane=((plane_1_container.at(i)).plane)->estimate();
-        printPlaneCoeffsAsRow(tmpPlane,1);
-    }
-
-    cout << "Il secondo container è composta da " <<plane_2_container.size()<<" elemento"<<endl;
-
-    for(unsigned int i=0;i<plane_2_container.size();i++)
-    {
-        Plane3D tmpPlane=((plane_2_container.at(i).plane))->estimate();
-        printPlaneCoeffsAsRow(tmpPlane,1);
-    }
-
-    cout << "Il secondo container di piani rimappati" <<endl;
-
-    for(unsigned int i=0;i<plane_2_container.size();i++)
-    {
-
-
-        Plane3D tmpPlane=((plane_2_container.at(i)).plane)->estimate();
-        tmpPlane=odometry*tmpPlane;
-        container c;
-
-        c.id=(plane_2_container.at(i)).id;
-
-        c.plane=new VertexPlane;
-        c.plane->setEstimate(tmpPlane);
-
-        plane_2_container_REMAPPED.push_back(c);
-
-        printPlaneCoeffsAsRow(tmpPlane,1);
-
-    }
-
-
-    //--------------------------FINE DEBUG
-
-    cout <<"--------------------------------------------------"<<endl;
-    cout <<"--------------------------------------------------"<<endl;
-    cout <<"Computazione Errore"<<endl;
-    cout <<"--------------------------------------------------"<<endl;
-    cout <<"--------------------------------------------------"<<endl;
-
-
-
-
-    //Creazione del vettore delle corrispondenze e calcolo degli errori.
-    compute_Correspondance_Vector(plane_1_container,plane_2_container,plane_2_container_REMAPPED,mycorrVector);
-
-    //***************************************************************************************************************************
-
-    if(ransac)
-    {
-        Isometry3d tresult;
-        IndexVector iv;
-
-        executeRansac(mycorrVector,iv,tresult,1000,0.02,0.015);
-
-        //--------------------------INIZIO DEBUG
-        Vector6d result_DIRECT=g2o::internal::toVectorMQT(tresult);
-        Vector6d result_INVERSE=g2o::internal::toVectorMQT(tresult.inverse());
-        Vector6d ground_truth=g2o::internal::toVectorMQT(trasformata);
-
-        cerr << "Transformation result from ransac"<<endl;
-        printVector6dAsRow(result_DIRECT,1);
-        cout << endl;
-        cerr << "Transformation result (inverse) from ransac"<<endl;
-        printVector6dAsRow(result_INVERSE,1);
-        cout << endl;
-
-        Vector6d error=g2o::internal::toVectorMQT(trasformata*tresult);
-        cerr<< "MPLY transformations..."<<endl;
-        cerr <<error.transpose() <<endl;
-        cerr<< "MPLY..."<<endl;
-        cerr <<error.squaredNorm() <<endl;
-
-
-
-        cerr << "Odometry from robot"<<endl;
-        printVector6dAsRow(ground_truth,1);
-        cout << endl;
-
-        cout << "SIZE INLIERS "<<iv.size()<<endl;
-
-        cout << "INDEX VECTOR"<<endl;
-        for(unsigned int i=0;i<iv.size();i++)
-        {
-            cout << "["<<iv.at(i)<<"]"<<endl;
-            Correspondence corr=mycorrVector.at(iv.at(i));
-            VertexPlane* v1=dynamic_cast<VertexPlane*>(corr.edge()->vertex(0));
-            VertexPlane* v2=dynamic_cast<VertexPlane*>(corr.edge()->vertex(1));
-            Plane3D tmp=v1->estimate();
-
-            printPlaneCoeffsAsRow(tmp);
-            cout << " == ";
-            tmp=v2->estimate();
-            printPlaneCoeffsAsRow(tmp,1);
-        }
-
-        cout << endl << endl;
-
-        cout << "salvo grafo intermedio...";
-        ofstream notmerged ("notmerged.g2o");
-        graph.save(notmerged);
-        cout << "salvato"<<endl;
-
-
-
-        cout << "CORRESPONDANCE VECTOR"<<endl;
-        for(unsigned int i =0;i<mycorrVector.size();i++)
-        {
-            Correspondence corr=mycorrVector.at(i);
-            VertexPlane* v1=dynamic_cast<VertexPlane*>(corr.edge()->vertex(0));
-            VertexPlane* v2=dynamic_cast<VertexPlane*>(corr.edge()->vertex(1));
-            //Plane3D tmp=v1->estimate();
-
-//            cout << "["<< v1->id() <<"]";
-//            printPlaneCoeffsAsRow(tmp);
-//            cout << " <> ";
-//            cout << "["<< v2->id() <<"]";
-//            tmp=v2->estimate();
-//            printPlaneCoeffsAsRow(tmp,0);
-//            cout << " ["<<corr.score()<<"] "<<endl;
-
-
-            //cout <<"]]]]]]>>>"<< v1->edges().size()<<endl;
-            //cout << "MERDGING ["<< v1->id()<<"] > ["<< v2->id()<<"] result: ";
-            cout << graph.mergeVertices(v1,v2,1)<<endl;
-        }
-        //--------------------------FINE DEBUG
-
-
-
-        cout << "salvo grafo finale...";
-        ofstream merged ("merged.g2o");
-        graph.save(merged);
-        cout << "salvato"<<endl;
-    }
     exit(0);
 }
 

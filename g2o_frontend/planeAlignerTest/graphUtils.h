@@ -143,30 +143,25 @@ void compute_Correspondance_Vector(vector<container> &c1,
 
             double error = computeError(p1,p2R);
 
-
-
-            //DEBUG INFO ----
             printPlaneCoeffsAsRow(p1);
             cout << " <> ";
             printPlaneCoeffsAsRow(p2);
             cout <<" ["<<error<<"]"<<endl;
-            //DEBUG INFO ----
-
             //FILLING CORRESPONDANCE VECTOR
             EdgePlane* eplane = new EdgePlane;
 
             eplane->setVertex(0,c1.at(i).plane);
-            eplane->setVertex(1,c2.at(i).plane);
+            eplane->setVertex(1,c2.at(j).plane);
             g2o_frontend::Correspondence corr(eplane,error);
-            if(error<0.0001)
-                correspondanceVector.push_back(corr);
+            if(error<1)
+            correspondanceVector.push_back(corr);
 
         }
-        cout << endl;
+
     }
 }
 
-void executeRansac(CorrespondenceVector &correspondanceVector,
+void executeRansac(const CorrespondenceVector &correspondanceVector,
                    std::vector<int> &Indeces,
                    Isometry3d &transform,
                    int iterations,
@@ -181,7 +176,7 @@ void executeRansac(CorrespondenceVector &correspondanceVector,
     ransac.setMaxIterations(iterations);
     ransac.setInlierErrorThreshold(inliersThreshold);
     ransac.setInlierStopFraction(inliersStop);
-    ransac(transform,Indeces);
+    cout << "RESULT "<< ransac(transform,Indeces,1)<<endl;
 }
 
 void merge_vertices(OptimizableGraph* graph,CorrespondenceVector &correspondanceVector)
