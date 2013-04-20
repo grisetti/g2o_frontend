@@ -15,7 +15,14 @@ class OmegaGenerator {
     _nonFlatOmega.diagonal() = HomogeneousNormal3f(Eigen::Vector3f(1.0f, 1.0f, 1.0f));
     _curvatureThreshold = 1.0f;
   }
-  
+
+  inline HomogeneousPoint3fOmega flatOmega() { return _flatOmega; }
+  inline void setFlatOmega(HomogeneousPoint3fOmega flatOmega_) { _flatOmega = flatOmega_; }
+  inline HomogeneousPoint3fOmega nonFlatOmega() { return _nonFlatOmega; }
+  inline void setNonFlatOmega(HomogeneousPoint3fOmega nonFlatOmega_) { _nonFlatOmega = nonFlatOmega_; }
+  inline float curvatureThreshold() { return _curvatureThreshold; }
+  inline void setCurvatureThreshold(float curvatureThreshold_) { _curvatureThreshold = curvatureThreshold_; }
+
   virtual void compute(HomogeneousPoint3fOmegaVector& omegas, 
 		       HomogeneousPoint3fStatsVector& stats,
 		       HomogeneousNormal3fVector& imageNormals) = 0;
@@ -34,9 +41,6 @@ class PointOmegaGenerator : OmegaGenerator {
     _curvatureThreshold = 0.02f;
   }
 
-  // Check why if i put this on the super class it does not work
-  float curvatureThreshold() { return _curvatureThreshold; }
-
   virtual void compute(HomogeneousPoint3fOmegaVector& omegas, 
 		       HomogeneousPoint3fStatsVector& stats,
 		       HomogeneousNormal3fVector& imageNormals);
@@ -49,8 +53,6 @@ class NormalOmegaGenerator : OmegaGenerator {
     _nonFlatOmega.diagonal() = HomogeneousNormal3f(Eigen::Vector3f(1.0f, 1.0f, 1.0f));
     _curvatureThreshold = 0.02f;
   }
-
-  float curvatureThreshold() { return _curvatureThreshold; }
 
   virtual void compute(HomogeneousPoint3fOmegaVector& omegas, 
 		       HomogeneousPoint3fStatsVector& stats,

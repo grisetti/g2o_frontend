@@ -1,14 +1,15 @@
 #include "omegagenerator.h"
-#include <iostream>
+#include <omp.h>
 
 using namespace Eigen;
-using namespace std;
 
 void PointOmegaGenerator::compute(HomogeneousPoint3fOmegaVector& omegas, 
 				  HomogeneousPoint3fStatsVector& stats,
 				  HomogeneousNormal3fVector& imageNormals) {
   HomogeneousPoint3fOmega U = Matrix4f::Zero();
   omegas.resize(stats.size());
+
+#pragma omp parallel for
   for(size_t i = 0; i < stats.size(); i++) {
     HomogeneousPoint3fStats& pointStats = stats[i];
     U.block<3, 3>(0, 0) = pointStats.eigenVectors(); 
@@ -31,6 +32,8 @@ void NormalOmegaGenerator::compute(HomogeneousPoint3fOmegaVector& omegas,
 				   HomogeneousPoint3fStatsVector& stats,
 				   HomogeneousNormal3fVector& imageNormals) {
   omegas.resize(stats.size());
+
+#pragma omp parallel for
   for(size_t i = 0; i < stats.size(); i++) {
     HomogeneousPoint3fStats& pointStats = stats[i];
     if(imageNormals[i] != Vector4f::Zero()) {

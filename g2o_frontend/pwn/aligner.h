@@ -41,9 +41,9 @@ class Aligner {
   
   inline HomogeneousPoint3fStatsVector* getReferenceStats() { return _referenceStats; }
   inline HomogeneousPoint3fStatsVector* getCurrentStats() { return _currentStats; }
-  inline void setStats(HomogeneousPoint3fStatsVector* referenceStats_, HomogeneousPoint3fStatsVector* currentStats_) { 
+  inline void setStats(HomogeneousPoint3fStatsVector* referenceStats_, HomogeneousPoint3fStatsVector* currentStats_) {
     _referenceStats = referenceStats_;
-    _currentStats = currentStats_; 
+    _currentStats = currentStats_;
   }
   
   inline HomogeneousPoint3fOmegaVector* currentPointOmegas() { return _currentPointOmegas; }

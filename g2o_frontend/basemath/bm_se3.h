@@ -64,6 +64,20 @@ inline Eigen::Matrix<typename Derived::Scalar, 3, 3> skew(const Eigen::MatrixBas
 }
 
 template <typename Derived>
+inline Eigen::Matrix<typename Derived::Scalar, 4, 4> skew4(const Eigen::MatrixBase<Derived>& v)
+{
+    const typename Derived::Scalar& tx = 2*v.x();
+    const typename Derived::Scalar& ty = 2*v.y();
+    const typename Derived::Scalar& tz = 2*v.z();
+    Eigen::Matrix<typename Derived::Scalar, 4, 4> S;
+    S <<  0,    tz, -ty, 0,
+      -tz,   0,   tx, 0,
+      ty,  -tx,  0, 0,
+      0, 0, 0, 0;
+    return S;
+}
+
+template <typename Derived>
 inline Eigen::Matrix<typename Derived::Scalar, 12, 1> homogeneous2vector(const Eigen::MatrixBase<Derived>& transform){
   Eigen::Matrix<typename Derived::Scalar, 12, 1> x;
   x.template block<3,1>(0,0)=transform.template block<1,3>(0,0).transpose();
@@ -72,7 +86,8 @@ inline Eigen::Matrix<typename Derived::Scalar, 12, 1> homogeneous2vector(const E
   x.template block<3,1>(9,0)=transform.template block<3,1>(0,3);
   return x;
 }
-  
+
+
 template <typename Derived>
 inline Eigen::Matrix<typename Derived::Scalar, 4, 4> vector2homogeneous(const Eigen::MatrixBase<Derived>& x){
   Eigen::Matrix<typename Derived::Scalar, 4, 4> transform= Eigen::Matrix<typename Derived::Scalar, 4, 4>::Identity();
@@ -81,6 +96,20 @@ inline Eigen::Matrix<typename Derived::Scalar, 4, 4> vector2homogeneous(const Ei
   transform.template block<1,3>(2,0)=x.template block<3,1>(6,0).transpose();
   transform.template block<1,3>(3,0)=x.template block<3,1>(9,0);
   return transform;
+}
+
+
+inline Eigen::Matrix4f skew4f(const Eigen::Vector3f& v)
+{
+    const float& tx = v.x();
+    const float& ty = v.y();
+    const float& tz = v.z();
+    Eigen::Matrix4f S;
+    S << 0, (2*tz), (-2*ty), 0,
+      (-2*tz), 0, (2*tx), 0,				
+      (2*ty),  (-2*tx), 0, 0,
+      0, 0, 0, 0;
+    return S;
 }
 
 

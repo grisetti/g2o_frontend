@@ -42,9 +42,9 @@ void DrawableCovariances::draw() {
       Eigen::Vector3f lambda = cov.eigenValues();
       Eigen::Isometry3f I = Eigen::Isometry3f::Identity();
       I.linear() = cov.eigenVectors();
-      if (cov._n == 0 )
+      if (cov.n() == 0 )
 	continue;
-      I.translation() = Eigen::Vector3f(cov._mean[0],cov._mean[1],cov._mean[2]);
+      I.translation() = Eigen::Vector3f(cov.mean()[0],cov.mean()[1],cov.mean()[2]);
       float sx = sqrt(lambda[0])*ellipsoidScale;
       float sy = sqrt(lambda[1])*ellipsoidScale;
       float sz = sqrt(lambda[2])*ellipsoidScale;

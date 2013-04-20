@@ -94,9 +94,12 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
    */
   inline float curvature() const { return coeffRef(0,3)/(coeffRef(0,3)+coeffRef(1,3)+coeffRef(2,3)+1e-9); }
   
-  void setN(int n_) { _n = n_; }
-  void setMean(HomogeneousPoint3f mean_) { _mean = mean_; }
-  	
+  inline int n() { return _n; }
+  inline void setN(int n_) { _n = n_; }
+  inline HomogeneousPoint3f mean() { return _mean; }
+  inline void setMean(HomogeneousPoint3f mean_) { _mean = mean_; }
+
+ protected:  	
   int _n;
   HomogeneousPoint3f _mean;
 };
