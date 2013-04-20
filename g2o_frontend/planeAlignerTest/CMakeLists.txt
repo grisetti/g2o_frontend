@@ -1,12 +1,16 @@
-
 ADD_EXECUTABLE(
-  plane_aligner
-  plane_aligner.cpp
+  planeAlignerTest
+  planeAlignerTest.cpp
+  fileReading.h
+  printHelper.h
+  planesTransformations.h
+  graphUtils.h
+  ransacDeclarations.h
 )
-SET_TARGET_PROPERTIES(plane_aligner PROPERTIES OUTPUT_NAME plane_aligner)
-INCLUDE_DIRECTORIES(plane_aligner ${CSPARSE_INCLUDE_DIR} )
+SET_TARGET_PROPERTIES(planeAlignerTest PROPERTIES OUTPUT_NAME planeAlignerTest)
+INCLUDE_DIRECTORIES(planeAlignerTest ${CSPARSE_INCLUDE_DIR} )
 
-TARGET_LINK_LIBRARIES(plane_aligner
+TARGET_LINK_LIBRARIES(planeAlignerTest
     sensor_data_library
     types_data
     ransac

@@ -20,19 +20,27 @@
 #include "g2o_frontend/data/point_cloud_data.h"
 #include "g2o_frontend/sensor_data/rgbd_data.h"
 
+#include "Eigen/StdVector"
+
 using namespace Eigen;
 using namespace g2o;
 
-void fillPlanes(char* filename,int size,Vector4d* planes)
+typedef std::vector<Vector4d,Eigen::aligned_allocator<Vector4d> > Vektor;
+
+void fillPlanes(char* filename,int size,Vektor &planes)
 {
     std::ifstream p1(filename);
     //leggo i piani
     for(int i =0;i<size;i++)
     {
+        Vector4d p;
         for(int j=0;j<4;j++)
         {
-            p1 >> planes[i][j];
+
+
+            p1 >> p(j);
         }
+        planes.push_back(p);
     }
 }
 
