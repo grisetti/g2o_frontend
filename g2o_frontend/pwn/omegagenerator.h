@@ -11,6 +11,8 @@ class OmegaGenerator {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   
   OmegaGenerator() {
+    _flatOmega.setZero();
+    _nonFlatOmega.setZero();
     _flatOmega.diagonal() = HomogeneousNormal3f(Eigen::Vector3f(1.0f, 1.0f, 1.0f));
     _nonFlatOmega.diagonal() = HomogeneousNormal3f(Eigen::Vector3f(1.0f, 1.0f, 1.0f));
     _curvatureThreshold = 1.0f;

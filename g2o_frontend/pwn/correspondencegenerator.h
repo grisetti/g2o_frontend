@@ -47,9 +47,9 @@ class CorrespondenceGenerator {
   void compute(CorrespondenceVector &correspondences,
 	       const HomogeneousPoint3fVector &referencePoints, const HomogeneousPoint3fVector &currentPoints,
 	       const HomogeneousNormal3fVector &referenceNormals, const HomogeneousNormal3fVector &currentNormals,
-	       Eigen::MatrixXi &referenceIndexImage, const Eigen::MatrixXi &currentIndexImage,
+	       const Eigen::MatrixXi &referenceIndexImage, const Eigen::MatrixXi &currentIndexImage,
 	       const HomogeneousPoint3fStatsVector &referenceStats, const HomogeneousPoint3fStatsVector &currentStats,
-	       Eigen::Isometry3f &T);
+	       const Eigen::Isometry3f &T);
 
  protected:
   float _squaredThreshold;

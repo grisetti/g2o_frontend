@@ -27,6 +27,7 @@ void PinholePointProjector::setCameraMatrix(const Eigen::Matrix3f& cameraMatrix_
 
 void PinholePointProjector::_updateMatrices(){
   Eigen::Isometry3f t=_transform.inverse();
+  t.matrix().block<1,4>(3,0) << 0,0,0,1;
   _iK=_cameraMatrix.inverse();
   _KR = _cameraMatrix*t.linear();
   _Kt = _cameraMatrix*t.translation();

@@ -51,29 +51,16 @@ inline Eigen::Matrix<Scalar, 6, 1> t2v(const Eigen::Transform<Scalar, 3, Eigen::
 }
 
 template <typename Derived>
-inline Eigen::Matrix<typename Derived::Scalar, 3, 3> skew(const Eigen::MatrixBase<Derived>& v)
+inline Eigen::Matrix<typename Derived::Scalar, Eigen::MatrixBase<Derived>::RowsAtCompileTime, Eigen::MatrixBase<Derived>::RowsAtCompileTime> skew(const Eigen::MatrixBase<Derived>& v)
 {
-    const typename Derived::Scalar& tx = 2*v.x();
-    const typename Derived::Scalar& ty = 2*v.y();
-    const typename Derived::Scalar& tz = 2*v.z();
-    Eigen::Matrix<typename Derived::Scalar, 3, 3> S;
-    S <<  0,    tz, -ty,
-         -tz,   0,   tx,
-          ty,  -tx,  0;
-    return S;
-}
+    typename Derived::Scalar tx = 2*v.x();
+    typename Derived::Scalar ty = 2*v.y();
+    typename Derived::Scalar tz = 2*v.z();
+    Eigen::Matrix<typename Derived::Scalar, Eigen::MatrixBase<Derived>::RowsAtCompileTime, Eigen::MatrixBase<Derived>::RowsAtCompileTime> S = Eigen::Matrix<typename Derived::Scalar, Eigen::MatrixBase<Derived>::RowsAtCompileTime, Eigen::MatrixBase<Derived>::RowsAtCompileTime>::Zero();
+    S.coeffRef(0,1)= tz;  S.coeffRef(1,0)=-tz;
+    S.coeffRef(0,2)=-ty;  S.coeffRef(2,0)= ty;
+    S.coeffRef(1,2)= tx;  S.coeffRef(2,1)=-tx;
 
-template <typename Derived>
-inline Eigen::Matrix<typename Derived::Scalar, 4, 4> skew4(const Eigen::MatrixBase<Derived>& v)
-{
-    const typename Derived::Scalar& tx = 2*v.x();
-    const typename Derived::Scalar& ty = 2*v.y();
-    const typename Derived::Scalar& tz = 2*v.z();
-    Eigen::Matrix<typename Derived::Scalar, 4, 4> S;
-    S <<  0,    tz, -ty, 0,
-      -tz,   0,   tx, 0,
-      ty,  -tx,  0, 0,
-      0, 0, 0, 0;
     return S;
 }
 

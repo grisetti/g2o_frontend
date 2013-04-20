@@ -22,6 +22,8 @@
 #include "g2o/stuff/timeutil.h"
 
 #include <iostream>
+#include <fstream>
+
 
 #include "g2o_frontend/pwn/pointwithnormal.h"
 #include "g2o_frontend/basemath/bm_se3.h"
@@ -131,11 +133,50 @@ int main(int argc, char** argv) {
   normalOmegaGenerator.compute(currentNormalOmega, currentNormalGenerator.scaledStats, currentImageNormals);
   cout << " done." << endl;
 
+
+  // {
+  //   ofstream os("ref.dat");
+  //   for (size_t i =0; i<referenceImagePoints.size(); i++){
+  //     os << referenceImagePoints[i].transpose() << " " << referenceImageNormals[i].transpose() << endl;
+  //   }
+  // }
+
+  // {
+  //   ofstream os("curr.dat");
+  //   for (size_t i =0; i<currentImagePoints.size(); i++){
+  //     os << currentImagePoints[i].transpose() << " " << currentImageNormals[i].transpose() << endl;
+  //   }
+  // }
+
+  // {
+  //   ofstream os("currStats.dat");
+  //   for (size_t i =0; i<currentNormalGenerator.scaledStats.size(); i++){
+  //     os << currentNormalGenerator.scaledStats[i] << endl;
+  //   }
+  // }
+
+
+
+
+  
   Isometry3f initialGuess = Isometry3f::Identity();
   Isometry3f T = initialGuess;
   float inliers = 0;
   // Here will go the correspondences.
   CorrespondenceVector correspondences;
+
+  // Creating the correspondences generator objects.
+  CorrespondenceGenerator correspondenceGenerator;
+
+  Aligner aligner;
+  Linearizer linearizer;
+  aligner.setProjector(&currentNormalGenerator.projector);
+  aligner.setLinearizer(&linearizer);
+  linearizer.setAligner(&aligner);
+
+  double tProjectionTotal = 0;
+  double tCorrespondencesTotal = 0;
+  double tLeastSquaresTotal = 0;
   for(int i = 0; i < al_outerIterations; i++) {
     cout << "********************* Iteration " << i << " *********************" << endl;
     
@@ -144,14 +185,15 @@ int main(int argc, char** argv) {
      ************************************************************************/
     cout << "Computing correspondences...";
     
-    // Creating the correspondences generator objects.
-    CorrespondenceGenerator correspondenceGenerator;
-   
+    double tProjectionStart = g2o::get_time();
+		      
     referenceNormalGenerator.projector.setTransform(T.inverse());
     referenceNormalGenerator.projector.project(referenceNormalGenerator.scaledIndexImage,
     					       referenceDepthImage,
     					       referenceImagePoints);
+    double tProjectionEnd = g2o::get_time();
     
+    double tCorrespondencesStart = g2o::get_time();
     // Correspondences computation.    
     correspondenceGenerator.compute(correspondences,
     				    referenceImagePoints, currentImagePoints,
@@ -159,6 +201,8 @@ int main(int argc, char** argv) {
     				    referenceNormalGenerator.scaledIndexImage, currentNormalGenerator.scaledIndexImage,
     				    referenceNormalGenerator.scaledStats, currentNormalGenerator.scaledStats,
     				    T);
+
+    double tCorrespondencesEnd = g2o::get_time();
     
     cout << " done." << endl;
     inliers = correspondenceGenerator.numCorrespondences();
@@ -168,36 +212,47 @@ int main(int argc, char** argv) {
      *                            Alignment                                 *
      ************************************************************************/
     cout << "Computing alignment transformation...";
-    Aligner aligner;
-    Linearizer linearizer;
-    aligner.setProjector(&currentNormalGenerator.projector);
-    aligner.setLinearizer(&linearizer);
     aligner.setPoints(&referenceImagePoints, &currentImagePoints);
     aligner.setNormals(&referenceImageNormals, &currentImageNormals);
     aligner.setStats(&referenceNormalGenerator.scaledStats, &currentNormalGenerator.scaledStats);
     aligner.setCurrentOmegas(&currentPointOmega, &currentNormalOmega);
     aligner.setCorrespondences(&correspondences);
     aligner.setNumCorrespondences(inliers);
-    linearizer.setAligner(&aligner);
-    Matrix6f H = Matrix6f::Zero();
-    Vector6f b = Vector6f::Zero();
-    float error = 0;
+
+    double tLeastSquaresStart = g2o::get_time();
     for (int k = 0; k < al_innerIterations; k++) {      
+      Matrix6f H;
+	Vector6f b;
+      float error = 0;
+      T.matrix().block<1,4>(3,0) << 0,0,0,1;
       linearizer.setT(T);
-      error += linearizer.update();
-      H += linearizer.H();
-      b += linearizer.b();
-      H = H + Matrix6f::Identity() * 10.0f;
+      error = linearizer.update();
+      H = linearizer.H() + Matrix6f::Identity() * 10.0f;;
+      b = linearizer.b();
       Vector6f dx = H.ldlt().solve(-b);
       Eigen::Isometry3f dT = v2t(dx);
       T = dT * T;
+      T.matrix().block<1,4>(3,0) << 0,0,0,1;
+      
+      // cout << "H: " << endl << H << endl;
+      // cout << "b: " << endl << b.transpose() << endl;
+      // cout << "dx: " << endl << dx.transpose() << endl;
+      // cout << "Error: " << error << endl;
     }
-    cout << " done." << endl;
-    cout << "H: " << endl << H << endl;
-    cout << "b: " << endl << b << endl;
-    cout << "Error: " << error << endl;
-    }
+    double tLeastSquaresEnd = g2o::get_time();
+    cerr << "tProjection:\t" << tProjectionEnd - tProjectionStart << endl;
+    cerr << "tCorrespondences:\t" << tCorrespondencesEnd - tCorrespondencesStart << endl;
+    cerr << "tLeastSquares:\t" << tLeastSquaresEnd - tLeastSquaresStart << endl;
+    tProjectionTotal += tProjectionEnd - tProjectionStart;
+    tCorrespondencesTotal += tCorrespondencesEnd - tCorrespondencesStart;
+    tLeastSquaresTotal += tLeastSquaresEnd - tLeastSquaresStart;
+  }
 
+  cerr << "tProjectionTotal:\t" << tProjectionTotal << endl;
+  cerr << "tCorrespondencesTotal:\t" << tCorrespondencesTotal << endl;
+  cerr << "tLeastSquaresTotal:\t" << tLeastSquaresTotal << endl;
+  
+  
   cout << "Final transformation: " << endl << T.matrix() << endl;
 
   // This is just to check that the result is correct

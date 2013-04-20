@@ -9,7 +9,12 @@ struct HomogeneousPoint3fOmega: public Eigen::Matrix4f{
 
   typedef Eigen::Matrix4f Base;
 
-  inline HomogeneousPoint3fOmega() { setZero(); }
+  inline HomogeneousPoint3fOmega() : Base() { setZero(); }
+
+  inline HomogeneousPoint3fOmega(const Base& other) : Base(other) {
+    block<1,4>(3,0).setZero();
+    block<4,1>(0,3).setZero();
+  }
 
   template<typename OtherDerived>
   inline HomogeneousPoint3fOmega(const Eigen::MatrixBase<OtherDerived>& other) : Eigen::Matrix4f(other) { 

@@ -59,14 +59,14 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
    *  the HomogeneousPoint3fStats object.
    *  @return a 3 element vector containing the eigenvalues extracted.
    */
-  inline Eigen::Vector3f eigenValues() {return block<3,1>(0,3);}
+  inline Eigen::Vector3f eigenValues() const {return block<3,1>(0,3);}
 
   /**
    *  This method extract the eigenvectors of the covariance matrix of the point associated to 
    *  the HomogeneousPoint3fStats object.
    *  @return a 3x3 matrix containing the eigenvalues extracted, where each column represent an eigenvector.
    */
-  inline Eigen::Matrix3f eigenVectors(){return block<3,3>(0,0);};
+  inline Eigen::Matrix3f eigenVectors() const {return block<3,3>(0,0);};
   
 
 
