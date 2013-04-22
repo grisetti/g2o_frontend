@@ -71,7 +71,7 @@ public:
    *  @param filename is a pointer to a string containing the filename of a .pgm depth image
    *  to load.
    */
-  bool load(const char* filename); 
+  bool load(const char* filename, bool transposed = false); 
   
   /**
    *  This method saves the current depth values of the DepthImage object to an image file.
@@ -79,7 +79,7 @@ public:
    *  @param filename is a pointer to a string containing the filename of the .pgm depth 
    *  image to save.
    */
-  bool save(const char* filename) const;
+  bool save(const char* filename, bool transposed = false) const;
 };
 
 

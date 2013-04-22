@@ -41,6 +41,7 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
   inline HomogeneousPoint3fStats(const Eigen::MatrixBase<OtherDerived>& other)
     :Eigen::Matrix4f(other){
     block<1,4>(3,0).setZero();
+    _curvatureComputed = false;
   }
 
   /**
@@ -92,7 +93,12 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
    *  an high curvature (a corner).
    *  @return a float value between 0 and 1 representing the curvature.
    */
-  inline float curvature() const { return coeffRef(0,3)/(coeffRef(0,3)+coeffRef(1,3)+coeffRef(2,3)+1e-9); }
+  inline float curvature() const {
+    if (! _curvatureComputed)
+      _curvature = coeffRef(0,3)/(coeffRef(0,3)+coeffRef(1,3)+coeffRef(2,3)+1e-9);
+    _curvatureComputed = true;
+    return _curvature;
+  }
   
   inline int n() { return _n; }
   inline void setN(int n_) { _n = n_; }
@@ -102,6 +108,8 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
  protected:  	
   int _n;
   HomogeneousPoint3f _mean;
+  mutable bool  _curvatureComputed;
+  mutable float _curvature;
 };
 
 /** \typedef HomogeneousPoint3fStatsVector

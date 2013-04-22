@@ -26,7 +26,7 @@ class CorrespondenceGenerator {
   _squaredThreshold = _inlierDistanceThreshold * _inlierDistanceThreshold;
   _inlierNormalAngularThreshold = cos(M_PI/6);
   _flatCurvatureThreshold = 0.02f;
-  _inlierCurvatureRatioThreshold = 0.2f;
+  _inlierCurvatureRatioThreshold = 1.3f;
   _numCorrespondences = 0;
 }
 

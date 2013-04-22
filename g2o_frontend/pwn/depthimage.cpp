@@ -1,5 +1,7 @@
 #include <cstdio>
 #include "depthimage.h"
+#include <iostream>
+using namespace std;
 
 #define HI(num) (((num) & 0x0000FF00) >> 8)
 #define LO(num) ((num) & 0x000000FF)
@@ -24,7 +26,7 @@ void _skipComments(FILE *fp)
 }
 
 // Read and load an image from a .pgm file.
-bool _readPgm(MatrixXus &image, FILE *pgmFile) {
+bool _readPgm(MatrixXus &image, FILE *pgmFile, bool transposed) {
   char version[3];
   int height, width;
   int max_value;
@@ -58,7 +60,11 @@ bool _readPgm(MatrixXus &image, FILE *pgmFile) {
   fgetc(pgmFile);
   
   // Read image data (expected 16 bit unsigned char).
-  image = MatrixXus(height, width);
+  if (transposed) {
+    image.resize(width,height);
+  } else {
+    image.resize(height, width);
+  }
   int pixel;
   if (max_value>0xFF){
     for (i=0; i<height; ++i){
@@ -66,7 +72,10 @@ bool _readPgm(MatrixXus &image, FILE *pgmFile) {
 	hi = fgetc(pgmFile);
 	lo = fgetc(pgmFile);
 	pixel = (hi << 8) + lo;
-	image(i, j) = pixel;
+	if (transposed)
+	  image(j, i) = pixel;
+	else
+	  image(i, j) = pixel;
       }
     }
   }
@@ -74,16 +83,18 @@ bool _readPgm(MatrixXus &image, FILE *pgmFile) {
     for (i=0; i<height; ++i){
       for (j=0; j<width; ++j){
 	pixel = fgetc(pgmFile);
-	image(i, j) = pixel;
+	if (transposed)
+	  image(j, i) = pixel;
+	else
+	  image(i, j) = pixel;
       }
     }
   }
-  
   return true;
 }
 
 // Write an image to a .pgm file.
-bool _writePgm(const MatrixXus& img, FILE *pgmFile) {
+bool _writePgm(const MatrixXus& img, FILE *pgmFile, bool transposed) {
   int i, j;
   int hi, lo;
   unsigned int max_value = 0xFFFF;
@@ -93,16 +104,30 @@ bool _writePgm(const MatrixXus& img, FILE *pgmFile) {
 
   // Write header for a .pgm file.
   fprintf(pgmFile, "P5 ");
-  fprintf(pgmFile, "%d %d ", (int)img.cols(), (int)img.rows());
+  if (transposed)
+    fprintf(pgmFile, "%d %d ", (int)img.rows(), (int)img.cols());
+  else
+    fprintf(pgmFile, "%d %d ", (int)img.cols(), (int)img.rows());
   fprintf(pgmFile, "%d ", max_value);
 
   // Write image data.
-  for (i=0; i<img.rows(); i++){
-    for (j=0; j<img.cols(); j++){
-      hi = HI(img(i, j));
-      lo = LO(img(i, j));
-      fputc(hi, pgmFile);
-      fputc(lo, pgmFile);
+  if (transposed){
+    for (j=0; j<img.cols(); j++) {
+      for (i=0; i<img.rows(); i++){
+	hi = HI(img(i, j));
+	lo = LO(img(i, j));
+	fputc(hi, pgmFile);
+	fputc(lo, pgmFile);
+      }
+    }
+  } else {
+    for (i=0; i<img.rows(); i++){
+      for (j=0; j<img.cols(); j++){
+	hi = HI(img(i, j));
+	lo = LO(img(i, j));
+	fputc(hi, pgmFile);
+	fputc(lo, pgmFile);
+      }
     }
   }
   
@@ -137,10 +162,10 @@ void DepthImage::fromUnsignedShort(const MatrixXus& m){
     *f = (*us) ? 0.001f*(*us) : std::numeric_limits<float>::max();
 }
 
- bool DepthImage::load(const char* filename){
+bool DepthImage::load(const char* filename, bool transposed){
    MatrixXus usm;
    FILE* f=fopen(filename, "rb");
-   bool result = _readPgm(usm, f);
+   bool result = _readPgm(usm, f, transposed);
    fclose(f);
    if (! result)
      return false;
@@ -148,10 +173,10 @@ void DepthImage::fromUnsignedShort(const MatrixXus& m){
    return true;
  }
 
- bool DepthImage::save(const char* filename) const{
+bool DepthImage::save(const char* filename, bool transposed) const{
    MatrixXus usm;
    toUnsignedShort(usm, 15.0f);
    FILE* f=fopen(filename, "wb");
-   return _writePgm(usm.transpose(), f);
+   return _writePgm(usm, f, transposed);
 }
 

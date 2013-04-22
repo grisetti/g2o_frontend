@@ -4,31 +4,24 @@ using namespace std;
 
 #include <omp.h>
 
-inline void _computeHb_tq(Matrix4f& Htt, Matrix4f& Htr, Matrix4f& Hrr,
-			  Vector4f& bt, Vector4f& br, 
-			  const HomogeneousPoint3f& p, const HomogeneousNormal3f& n, 
-			  const Vector4f& pointError, const Vector4f& normalError, 
-			  const HomogeneousPoint3fOmega& pointOmega, const HomogeneousPoint3fOmega& normalOmega) {
-    Matrix4f Sp = skew(p);
-    Matrix4f Sn = skew(n);
-    Eigen::Matrix4f omegaP = pointOmega;
-    Eigen::Matrix4f omegaN = normalOmega;
-    //omegaP.block<4,1>(0,3).setZero();
-    //omegaP.block<1,4>(3,0).setZero();
-    //omegaN.block<4,1>(0,3).setZero();
-    //omegaN.block<1,4>(3,0).setZero();
+// inline void _computeHb_tq(Matrix4f& Htt, Matrix4f& Htr, Matrix4f& Hrr,
+// 			  Vector4f& bt, Vector4f& br, 
+// 			  const HomogeneousPoint3f& p, const HomogeneousNormal3f& n, 
+// 			  const Vector4f& pointError, const Vector4f& normalError, 
+// 			  const HomogeneousPoint3fOmega& pointOmega, const HomogeneousPoint3fOmega& normalOmega) {
+//     Matrix4f Sp = skew(p);
+//     Matrix4f Sn = skew(n);
+//     Eigen::Matrix4f omegaP = pointOmega;
+//     Eigen::Matrix4f omegaN = normalOmega;
 
-    Htt += omegaP;
-    Htr += omegaP*Sp;
-    Hrr +=Sp.transpose()*omegaP*Sp + Sn.transpose()*omegaN*Sn;
-    // H.block<3,3>(0,0) += pointOmega.block<3,3>(0,0);
-    // H.block<3,3>(0,3) += (pointOmega*Sp).block<3,3>(0,0);
-    // H.block<3,3>(3,3) += (Sp.transpose()*pointOmega*Sp + Sn.transpose()*normalOmega*Sn).block<3,3>(0,0);
-    const HomogeneousNormal3f ep = omegaP*pointError;
-    const HomogeneousNormal3f en = omegaN*normalError;
-    bt += ep;
-    br += Sp.transpose()*ep + Sn.transpose()*en;
-  }
+//     Htt += omegaP;
+//     Htr += omegaP*Sp;
+//     Hrr +=Sp.transpose()*omegaP*Sp + Sn.transpose()*omegaN*Sn;
+//     const HomogeneousNormal3f ep = omegaP*pointError;
+//     const HomogeneousNormal3f en = omegaN*normalError;
+//     bt += ep;
+//     br += Sp.transpose()*ep + Sn.transpose()*en;
+//   }
 
 float Linearizer::update() {
   // Variables initialization.
@@ -73,32 +66,32 @@ float Linearizer::update() {
     inliers = 0;
     
     for(int i = imin; i < imax; i++) {
+      __asm__("#here the loop begins");
       const Correspondence& correspondence = _aligner->correspondences()->at(i);
-      const HomogeneousPoint3f& referencePoint = _T*_aligner->referencePoints()->at(correspondence.referenceIndex);
-      const HomogeneousNormal3f& referenceNormal = _T*_aligner->referenceNormals()->at(correspondence.referenceIndex);
+      const HomogeneousPoint3f referencePoint = _T*_aligner->referencePoints()->at(correspondence.referenceIndex);
+      const HomogeneousNormal3f referenceNormal = _T*_aligner->referenceNormals()->at(correspondence.referenceIndex);
       const HomogeneousPoint3f& currentPoint = _aligner->currentPoints()->at(correspondence.currentIndex);
       const HomogeneousNormal3f& currentNormal = _aligner->currentNormals()->at(correspondence.currentIndex);
-      const HomogeneousPoint3fOmega& pointOmega = pointOmegas->at(correspondence.currentIndex);
-      const HomogeneousPoint3fOmega& normalOmega = normalOmegas->at(correspondence.currentIndex);
+      const HomogeneousPoint3fOmega& omegaP = pointOmegas->at(correspondence.currentIndex);
+      const HomogeneousPoint3fOmega& omegaN = normalOmegas->at(correspondence.currentIndex);
       
-      Vector4f pointError = referencePoint - currentPoint;
-      pointError(3) = 0;
-      Vector4f normalError = referenceNormal - currentNormal;
-      normalError(3) = 0;
-      float pointLocalError = pointError.transpose()*pointOmega*pointError;
-      float normalLocalError = normalError.transpose()*normalOmega*normalError;
-      float localError = pointLocalError + normalLocalError;
-      if(localError > _inlierMaxChi2)
-	continue;
-      
+      const Vector4f pointError = referencePoint - currentPoint;
+      const Vector4f normalError = referenceNormal - currentNormal;
+      const Vector4f ep = omegaP*pointError;
+      const Vector4f en = omegaN*normalError;
+
+      float localError = pointError.dot(ep) + normalError.dot(en);
+      if(localError > _inlierMaxChi2) 	continue;
       inliers++;
       error += localError;
-      
-      _computeHb_tq(Htt, Htr, Hrr, bt, br, 
-		    referencePoint, referenceNormal, 
-		    pointError, normalError, 
-		    pointOmega, normalOmega);
-      
+      Matrix4f Sp = skew(referencePoint);
+      Matrix4f Sn = skew(referenceNormal);
+      Htt.noalias() += omegaP;
+      Htr.noalias() += omegaP*Sp;
+      Hrr.noalias() +=Sp.transpose()*omegaP*Sp + Sn.transpose()*omegaN*Sn;
+      bt.noalias() += ep;
+      br.noalias() += Sp.transpose()*ep + Sn.transpose()*en;
+      __asm__("#here the loop ends");
     }
   }
   // now do the reduce
@@ -117,41 +110,6 @@ float Linearizer::update() {
     inliers += _inliers[t];
     error += _errors[t];
   }
-  
-  
-  // for(int i = 0; i < _aligner->numCorrespondences(); i++) {
-  //   const Correspondence& correspondence = _aligner->correspondences()->at(i);
-  //   const HomogeneousPoint3f& referencePoint = _T*_aligner->referencePoints()->at(correspondence.referenceIndex);
-  //   const HomogeneousNormal3f& referenceNormal = _T*_aligner->referenceNormals()->at(correspondence.referenceIndex);
-  //   const HomogeneousPoint3f& currentPoint = _aligner->currentPoints()->at(correspondence.currentIndex);
-  //   const HomogeneousNormal3f& currentNormal = _aligner->currentNormals()->at(correspondence.currentIndex);
-  //   const HomogeneousPoint3fOmega& pointOmega = pointOmegas->at(correspondence.currentIndex);
-  //   const HomogeneousPoint3fOmega& normalOmega = normalOmegas->at(correspondence.currentIndex);
-    
-  //   //if (pointOmega.squaredNorm() == 0 || normalOmega.squaredNorm() == 0) continue;
-
-  //   Vector4f pointError = referencePoint - currentPoint;
-  //   pointError(3) = 0;
-  //   Vector4f normalError = referenceNormal - currentNormal;
-  //   normalError(3) = 0;
-  //   float pointLocalError = pointError.transpose()*pointOmega*pointError;
-  //   float normalLocalError = normalError.transpose()*normalOmega*normalError;
-  //   float localError = pointLocalError + normalLocalError;
-  //   if(localError > _inlierMaxChi2)
-  //     continue;
-
-  //   //et += pointError.squaredNorm();
-  //   //en += normalError.squaredNorm();
-    
-  //   inliers++;
-  //   error += localError;
-
-  //   _computeHb_tq(Htt, Htr, Hrr, bt, br, 
-  // 		  referencePoint, referenceNormal, 
-  // 		  pointError, normalError, 
-  // 		  pointOmega, normalOmega);
-    
-  // }
   _H.block<3,3>(0,0) = Htt.block<3,3>(0,0);
   _H.block<3,3>(0,3) = Htr.block<3,3>(0,0);
   _H.block<3,3>(3,3) = Hrr.block<3,3>(0,0);

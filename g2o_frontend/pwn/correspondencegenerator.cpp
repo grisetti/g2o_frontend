@@ -16,6 +16,8 @@ void CorrespondenceGenerator::compute(CorrespondenceVector &correspondences,
   if((int)correspondences.size() != referenceIndexImage.rows()*referenceIndexImage.cols())
     correspondences.resize(referenceIndexImage.rows()*referenceIndexImage.cols());
 
+  float minCurvatureRatio = 1./_inlierCurvatureRatioThreshold;
+  float maxCurvatureRatio = _inlierCurvatureRatioThreshold;
   
 
   // construct an array of counters;
@@ -39,45 +41,54 @@ void CorrespondenceGenerator::compute(CorrespondenceVector &correspondences,
     int& correspondenceIndex = localCorrespondenceIndex[threadId];
     for (int c = cMin;  c < cMax; c++) {
       for (int r = 0; r < referenceIndexImage.rows(); r++) {
-	int referenceIndex = referenceIndexImage(r, c);
-	int currentIndex = currentIndexImage(r, c);
+	const int referenceIndex = referenceIndexImage(r, c);
+	const int currentIndex = currentIndexImage(r, c);
 	if (referenceIndex < 0 || currentIndex < 0)
 	  continue;
+
 	const HomogeneousNormal3f& currentNormal = currentNormals.at(currentIndex);      
 	const HomogeneousPoint3f& _referenceNormal=referenceNormals.at(referenceIndex);
-	if (_referenceNormal.squaredNorm()<1e-3 || currentNormal.squaredNorm()<1e-3)
-	  continue;
 	const HomogeneousPoint3f& currentPoint = currentPoints.at(currentIndex);
 	const HomogeneousPoint3f& _referencePoint=referencePoints.at(referenceIndex);
 	
+
 	// remappings
 	HomogeneousPoint3f referencePoint = T*_referencePoint;
+	HomogeneousNormal3f referenceNormal = T*_referenceNormal;
+	// this condition captures the angluar offset, and is moved to the end of the loop
+	if (currentNormal.dot(referenceNormal) < _inlierNormalAngularThreshold) 
+	  continue;
+
 	Eigen::Vector4f pointsDistance = currentPoint - referencePoint;
-	//dtot += pointsDistance.squaredNorm() ;
-	//ndtot += (referenceNormal-currentNormal).squaredNorm() ;
+	// the condition below has moved to the increment, fill the pipeline, baby
 	if (pointsDistance.squaredNorm() > _squaredThreshold)
 	  continue;      
 	
-	HomogeneousNormal3f referenceNormal = T*_referenceNormal;
 	
-	if (currentNormal.dot(referenceNormal) < _inlierNormalAngularThreshold) 
-	  continue;
 	
 	float referenceCurvature = referenceStats[referenceIndex].curvature();
 	float currentCurvature = currentStats[currentIndex].curvature();
 	if (referenceCurvature < _flatCurvatureThreshold)
 	  referenceCurvature = _flatCurvatureThreshold;
+
 	if (currentCurvature < _flatCurvatureThreshold)
 	  currentCurvature = _flatCurvatureThreshold;
-	
-	float logRatio = log(referenceCurvature + 1e-5) - log(currentCurvature + 1e-5);
-	if (fabs(logRatio) > _inlierCurvatureRatioThreshold)
+
+	float curvatureRatio = (referenceCurvature + 1e-5)/(currentCurvature + 1e-5);
+	// the condition below has moved to the increment, fill the pipeline, baby
+	if (curvatureRatio < minCurvatureRatio || curvatureRatio > maxCurvatureRatio)
 	  continue;
-	
+
+	// bool increment = 
+	//   (currentNormal.dot(referenceNormal) > _inlierNormalAngularThreshold) &&
+	//   (pointsDistance.squaredNorm() < _squaredThreshold) &&
+	//   (curvatureRatio > minCurvatureRatio) && 
+	//   (curvatureRatio < maxCurvatureRatio);
+
 	correspondences[correspondenceIndex].referenceIndex = referenceIndex;
 	correspondences[correspondenceIndex].currentIndex = currentIndex;
-	
 	correspondenceIndex++;
+
       }
     }
   }

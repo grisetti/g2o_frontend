@@ -51,6 +51,9 @@ public:
     return _iKRt*ip;
   }
 
+  static void mergeProjections(Eigen::MatrixXf& depth, Eigen::MatrixXi& indexImage,
+			       Eigen::MatrixXf* depths, Eigen::MatrixXi*, int numImages);
+
 protected:
   void updateTransform();
   Eigen::Matrix3f _KR;

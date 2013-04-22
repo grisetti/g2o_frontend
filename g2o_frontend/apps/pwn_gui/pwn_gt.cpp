@@ -77,18 +77,18 @@ int main(int argc, char** argv) {
   // matrix of unsigned char. 
   DepthImage referenceDepthImage, currentDepthImage;
   // Try to read the depth images given in input.
-  if(!referenceDepthImage.load(referenceFilename.c_str())) {
+  if(!referenceDepthImage.load(referenceFilename.c_str(), true)) {
     cout << "Failure while loading the depth image: " << referenceFilename<< ", quitting program!" << endl;
     exit(-1);
   }
-  if(!currentDepthImage.load(currentFilename.c_str())) {
+  if(!currentDepthImage.load(currentFilename.c_str(), true)) {
     cout << "Failure while loading the depth image: " << currentFilename << ", quitting program!" << endl;
     exit(-1);
   }
 
   // This is an hack since in the old code the images are loaded column-wise. 
-  referenceDepthImage.transposeInPlace();
-  currentDepthImage.transposeInPlace();
+  //referenceDepthImage.transposeInPlace();
+  //currentDepthImage.transposeInPlace();
   cout << endl << "Loaded first depth image of size: " << referenceDepthImage.rows() << "x" << referenceDepthImage.cols() << endl;
   cout << endl << "Loaded second depth image of size: " << currentDepthImage.rows() << "x" << currentDepthImage.cols() << endl;
   
