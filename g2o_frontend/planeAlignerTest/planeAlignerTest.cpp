@@ -84,17 +84,16 @@ int main(int argc, char**argv)
     //**************************************************************************************************************************************
     hasToStop = false;
     string filename;
-    string outfilename;
     CommandArgs arg;
-    int theError;
     int vertex1;
     int ransac;
-    int size;       //number of planes to read from the .dat file
+    double errorREF;
     //**************************************************************************************************************************************
 
     //Inits arguments
     //**************************************************************************************************************************************
     arg.param("v1",vertex1,0,"primo vertice");
+    arg.param("e",errorREF,1,"errore per il merging");
     arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
     arg.parseArgs(argc, argv);
     //**************************************************************************************************************************************
@@ -102,7 +101,6 @@ int main(int argc, char**argv)
     //Reading graph
     //**************************************************************************************************************************************
     OptimizableGraph graph;
-    OptimizableGraph outgraph;
     VertexSE3* v1;
     VertexSE3* v2;
     //**************************************************************************************************************************************
@@ -115,7 +113,6 @@ int main(int argc, char**argv)
 
     //Ransac Things
     //**************************************************************************************************************************************
-    Isometry3d trasformata;
     CorrespondenceVector mycorrVector;
     Matrix3d info= Matrix3d::Identity();
     info*=1000;
@@ -136,7 +133,7 @@ int main(int argc, char**argv)
     if(v1)
     {
         get_next_vertexSE3(&graph,v1,v2,odometry,eSE3);
-        outgraph.addEdge(eSE3);
+        graph.addEdge(eSE3);
     }
 
     //a questo punto:
@@ -144,8 +141,8 @@ int main(int argc, char**argv)
     //  v2   vertice successivo
 
     cout<<endl;
-    outgraph.addVertex(v1);
-    outgraph.addVertex(v2);
+    graph.addVertex(v1);
+    graph.addVertex(v2);
     cout<<endl;
 
 
@@ -170,6 +167,7 @@ int main(int argc, char**argv)
 
     for(unsigned int i=0;i<plane_1_container.size();i++)
     {
+        graph.addVertex(plane_1_container.at(i).plane);
         Plane3D tmpPlane=((plane_1_container.at(i)).plane)->estimate();
         printPlaneCoeffsAsRow(tmpPlane,1);
     }
@@ -178,6 +176,7 @@ int main(int argc, char**argv)
 
     for(unsigned int i=0;i<plane_2_container.size();i++)
     {
+        graph.addVertex(plane_2_container.at(i).plane);
         Plane3D tmpPlane=((plane_2_container.at(i).plane))->estimate();
         printPlaneCoeffsAsRow(tmpPlane,1);
     }
@@ -216,7 +215,7 @@ int main(int argc, char**argv)
 
 
     //Creazione del vettore delle corrispondenze e calcolo degli errori.
-    compute_Correspondance_Vector(plane_1_container,plane_2_container,plane_2_container_REMAPPED,mycorrVector);
+    compute_Correspondance_Vector(plane_1_container,plane_2_container,plane_2_container_REMAPPED,mycorrVector,errorREF);
 
 
 
@@ -248,7 +247,7 @@ int main(int argc, char**argv)
     //--------------------------INIZIO DEBUG
     Vector6d result_DIRECT=g2o::internal::toVectorMQT(tresult);
     Vector6d result_INVERSE=g2o::internal::toVectorMQT(tresult.inverse());
-    Vector6d ground_truth=g2o::internal::toVectorMQT(trasformata);
+    Vector6d ground_truth=g2o::internal::toVectorMQT(odometry);
 
     cerr << "Transformation result from ransac"<<endl;
     printVector6dAsRow(result_DIRECT,1);
@@ -257,7 +256,7 @@ int main(int argc, char**argv)
     printVector6dAsRow(result_INVERSE,1);
     cout << endl;
 
-    Vector6d error=g2o::internal::toVectorMQT(trasformata*tresult.inverse());
+    Vector6d error=g2o::internal::toVectorMQT(odometry*tresult.inverse());
     cerr<< "MPLY transformations..."<<endl;
     cerr <<error.transpose() <<endl;
     cerr<< "MPLY..."<<endl;
@@ -271,10 +270,10 @@ int main(int argc, char**argv)
 
     cout << "SIZE INLIERS "<<iv.size()<<endl;
 
-    cout << "salvo grafo intermedio...";
-    ofstream notmerged ("notmerged.g2o");
-    graph.save(notmerged);
-    cout << "salvato"<<endl;
+//    cout << "salvo grafo intermedio...";
+//    ofstream notmerged ("notmerged.g2o");
+//    graph.save(notmerged);
+//    cout << "salvato"<<endl;
 
 
 
@@ -284,17 +283,40 @@ int main(int argc, char**argv)
         Correspondence corr=mycorrVector.at(i);
         VertexPlane* v1=dynamic_cast<VertexPlane*>(corr.edge()->vertex(0));
         VertexPlane* v2=dynamic_cast<VertexPlane*>(corr.edge()->vertex(1));
-        graph.mergeVertices(v1,v2,1);
+        graph.mergeVertices(v1,v2,0);
     }
     cout << "done"<<endl;
 
+    EdgeSE3* anotherEdge=new EdgeSE3;
+    anotherEdge->setVertex(0,v1);
+    anotherEdge->setVertex(1,v2);
+    anotherEdge->setMeasurement(tresult);
+
+    graph.addEdge(anotherEdge);
+
+    //RIMUOVERE ROBA INUTILE
+
+
+    for (OptimizableGraph::VertexIDMap::iterator it = graph.vertices().begin(); it!=graph.vertices().end(); it++)
+    {
+        VertexSE3* vs3= dynamic_cast<VertexSE3*>(it->second);
+        if(vs3)
+        {
+            if( !(vs3->id()==2545 || vs3->id()==v1->id() || vs3->id()==v2->id()) )
+            {
+                //cout << "DELETING VERTEX "<<vs3->id()<<endl;
+                graph.removeVertex(vs3,1);
+
+            }
+
+        }
+
+    }
 
 
     cout << "salvo grafo finale...";
     ofstream merged ("merged.g2o");
     graph.save(merged);
     cout << "salvato"<<endl;
-
-    exit(0);
 }
 

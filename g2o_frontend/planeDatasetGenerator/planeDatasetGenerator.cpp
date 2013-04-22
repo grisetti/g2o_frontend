@@ -90,16 +90,22 @@ int main(int argc, char**argv)
     int vertex1;
     int ransac;
     int size;       //number of planes to read from the .dat file
+    int f1;
+    int fA;
+    int fP;
+    double noise;
     //**************************************************************************************************************************************
 
     //Inits arguments
     //**************************************************************************************************************************************
     arg.param("o", outfilename, "otest.g2o", "output file name");
-    arg.param("e",theError,5,"errore");
-    arg.param("r",ransac,0,"ransac");
     arg.param("s",size,1,"size");
     arg.param("v1",vertex1,1,"primo vertice");
-    arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
+    arg.param("f1",f1,1,"fisso primo vertice");
+    arg.param("fA",fA,1,"fisso tutti i vertici");
+    arg.param("fP",fP,1,"fisso parametro");
+    arg.param("noise",noise,0,"rumore");
+
     arg.parseArgs(argc, argv);
     //**************************************************************************************************************************************
 
@@ -211,11 +217,21 @@ int main(int argc, char**argv)
     VertexSE3* offset=new VertexSE3;
     offset->setId(2545);
     offset->setEstimate(Isometry3d::Identity());
+
+    if(fP) //se il flag FIX PARAM è settato
+    {
     offset->setFixed(1);
+    }
     graph.addVertex(offset);
 
+    if(f1 || fA) //se il flag FIX 1 o FIX ALL è settato
+    {
     v1->setFixed(1);
+    }
+    if(fA) //se il flag FIX ALL è settato
+    {
     v2->setFixed(1);
+    }
 
     graph.addVertex(v1);
     graph.addVertex(v2);
@@ -260,20 +276,28 @@ int main(int argc, char**argv)
     {
         VertexPlane* vPlane=new VertexPlane;
         Plane3D plane;
-        plane.fromVector(piano[i]);
+        plane.fromVector(pianoR[i]);
+
+        perturbate_plane(plane,noise);
+
+
         vPlane->setEstimate(plane);
         vPlane->setId(planeID);
         vPlane->color=Vector3d(0.7,0.3,0.3);
         cout << "[2]"<<endl<<"Adding normalized vertex plane: ";
         graph.addVertex(vPlane);
         printPlaneCoeffsAsRow(plane,1);
+
+
+
+
         EdgeSE3PlaneSensorCalib* eSE3calib= new EdgeSE3PlaneSensorCalib;
         eSE3calib->setVertex(0,v2);
         eSE3calib->setVertex(1,vPlane);
         eSE3calib->setVertex(2,offset);
         eSE3calib->setInformation(info);
         //--------------------------------> IMPORTANT <-----------------------------------------
-        eSE3calib->setMeasurement(v2->estimate().inverse()*plane);
+        eSE3calib->setMeasurement(v2->estimate().inverse()*v2->estimate()*plane);
         //eSE3calib->setMeasurement(plane);
         //--------------------------------> IMPORTANT <-----------------------------------------
 

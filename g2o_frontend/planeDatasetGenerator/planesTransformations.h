@@ -19,6 +19,7 @@
 #include "g2o/types/slam3d_addons/types_slam3d_addons.h"
 #include "g2o_frontend/data/point_cloud_data.h"
 #include "g2o_frontend/sensor_data/rgbd_data.h"
+#include <stdlib.h>
 
 using namespace Eigen;
 using namespace g2o;
@@ -28,6 +29,20 @@ Vector4d remapPlane(Vector4d &plane, Isometry3d t)
 {
     Vector4d remappedPlane=t*plane;
     return remappedPlane;
+}
+
+void perturbate_plane(Plane3D &plane, double noise_magnitude)
+{
+    double thenoise=(double)rand()/RAND_MAX;
+    thenoise=(thenoise*noise_magnitude)-noise_magnitude/2;
+    Vector4d coff=plane.toVector();
+
+    coff[0]+=thenoise;
+    coff[1]+=thenoise;
+    coff[2]+=thenoise;
+    coff[3]+=thenoise;
+
+    plane.fromVector(coff);
 }
 
 #endif

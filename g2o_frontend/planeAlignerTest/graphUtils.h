@@ -124,7 +124,7 @@ void get_next_vertexSE3(OptimizableGraph* graph,VertexSE3* v1, VertexSE3* & v2,I
 void compute_Correspondance_Vector(vector<container> &c1,
                                    vector<container> &c2,
                                    vector<container> &c2R,
-                                   CorrespondenceVector &correspondanceVector)
+                                   CorrespondenceVector &correspondanceVector, double THEerrorREF)
 {
     // C1 plane container 1
     // C2 plane container 2
@@ -153,8 +153,12 @@ void compute_Correspondance_Vector(vector<container> &c1,
             eplane->setVertex(0,c1.at(i).plane);
             eplane->setVertex(1,c2.at(j).plane);
             g2o_frontend::Correspondence corr(eplane,error);
-            if(error<1)
+
+            if(error<THEerrorREF)
+            {
+
             correspondanceVector.push_back(corr);
+            }
 
         }
 
