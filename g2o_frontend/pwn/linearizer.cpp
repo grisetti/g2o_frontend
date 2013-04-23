@@ -67,7 +67,7 @@ float Linearizer::update() {
     
     for(int i = imin; i < imax; i++) {
       __asm__("#here the loop begins");
-      const Correspondence& correspondence = _aligner->correspondences()->at(i);
+      const Correspondence& correspondence = _aligner->correspondences()[i];
       const HomogeneousPoint3f referencePoint = _T*_aligner->referencePoints()->at(correspondence.referenceIndex);
       const HomogeneousNormal3f referenceNormal = _T*_aligner->referenceNormals()->at(correspondence.referenceIndex);
       const HomogeneousPoint3f& currentPoint = _aligner->currentPoints()->at(correspondence.currentIndex);

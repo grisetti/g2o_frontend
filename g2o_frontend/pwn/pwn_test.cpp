@@ -115,64 +115,64 @@ int main(int argc, char** argv) {
   cout << " done." << endl;
 
   Isometry3f T = Isometry3f::Identity();
-  for (int i = 0; i < 2; i++) {
-    cerr << "****************** ITERATION " << i << " ******************" << endl;
-    /************************************************************************
-     *                         Correspondence Computation                   *
-     ************************************************************************/
-    cout << "Computing correspondences...";
-    // Creating the correspondences generator objects.
-    CorrespondenceGenerator correspondenceGenerator;
-    // Here will go the omegas.
-    CorrespondenceVector correspondences;
+  // for (int i = 0; i < 2; i++) {
+  //   cerr << "****************** ITERATION " << i << " ******************" << endl;
+  //   /************************************************************************
+  //    *                         Correspondence Computation                   *
+  //    ************************************************************************/
+  //   cout << "Computing correspondences...";
+  //   // Creating the correspondences generator objects.
+  //   CorrespondenceGenerator correspondenceGenerator;
+  //   // Here will go the omegas.
+  //   CorrespondenceVector correspondences;
     
-    referenceNormalGenerator.projector.setTransform(T.inverse());
-    referenceNormalGenerator.projector.project(referenceNormalGenerator.scaledIndexImage,
-					       referenceDepthImage,
-					       referenceImagePoints);
+  //   referenceNormalGenerator.projector.setTransform(T.inverse());
+  //   referenceNormalGenerator.projector.project(referenceNormalGenerator.scaledIndexImage,
+  // 					       referenceDepthImage,
+  // 					       referenceImagePoints);
     
-    // Correspondences computation.    
-    correspondenceGenerator.compute(correspondences,
-				    referenceImagePoints, currentImagePoints,
-				    referenceImageNormals, currentImageNormals,
-				    referenceNormalGenerator.scaledIndexImage, currentNormalGenerator.scaledIndexImage,
-				    referenceNormalGenerator.scaledStats, currentNormalGenerator.scaledStats,
-				    T);
+  //   // Correspondences computation.    
+  //   correspondenceGenerator.compute(correspondences,
+  // 				    referenceImagePoints, currentImagePoints,
+  // 				    referenceImageNormals, currentImageNormals,
+  // 				    referenceNormalGenerator.scaledIndexImage, currentNormalGenerator.scaledIndexImage,
+  // 				    referenceNormalGenerator.scaledStats, currentNormalGenerator.scaledStats,
+  // 				    T);
   
-    cout << " done." << endl;
-    cout << "# inliers found: " << correspondenceGenerator.numCorrespondences() << endl;
+  //   cout << " done." << endl;
+  //   cout << "# inliers found: " << correspondenceGenerator.numCorrespondences() << endl;
 
-    /************************************************************************
-     *                            Alignment                                 *
-     ************************************************************************/
-    cout << "Computing alignment transformation...";
-    Aligner aligner;
-    Linearizer linearizer;
-    aligner.setProjector(&currentNormalGenerator.projector);
-    aligner.setLinearizer(&linearizer);
-    aligner.setPoints(&referenceImagePoints, &currentImagePoints);
-    aligner.setNormals(&referenceImageNormals, &currentImageNormals);
-    aligner.setStats(&referenceNormalGenerator.scaledStats, &currentNormalGenerator.scaledStats);
-    aligner.setCurrentOmegas(&currentPointOmega, &currentNormalOmega);
-    aligner.setCorrespondences(&correspondences);
-    linearizer.setAligner(&aligner);
-    for (int k = 0; k < 1; k++) {
-      Matrix6f& H = linearizer.H();
-      Vector6f& b = linearizer.b();
-      H.setZero();
-      b.setZero();
-      linearizer.setT(T);
-      linearizer.update();
-      Vector6f dx = linearizer.H().ldlt().solve(-linearizer.b());
-      Eigen::Isometry3f dT = v2t(dx);
-      T = dT * T;
-    }
-    cout << " done." << endl;
-    cout << "H: " << endl << linearizer.H() << endl;
-    cout << "b: " << endl << linearizer.b() << endl;
-  }
+  //   /************************************************************************
+  //    *                            Alignment                                 *
+  //    ************************************************************************/
+  //   cout << "Computing alignment transformation...";
+  //   Aligner aligner;
+  //   Linearizer linearizer;
+  //   aligner.setProjector(&currentNormalGenerator.projector);
+  //   aligner.setLinearizer(&linearizer);
+  //   aligner.setPoints(&referenceImagePoints, &currentImagePoints);
+  //   aligner.setNormals(&referenceImageNormals, &currentImageNormals);
+  //   aligner.setStats(&referenceNormalGenerator.scaledStats, &currentNormalGenerator.scaledStats);
+  //   aligner.setCurrentOmegas(&currentPointOmega, &currentNormalOmega);
+  //   aligner.setCorrespondences(&correspondences);
+  //   linearizer.setAligner(&aligner);
+  //   for (int k = 0; k < 1; k++) {
+  //     Matrix6f& H = linearizer.H();
+  //     Vector6f& b = linearizer.b();
+  //     H.setZero();
+  //     b.setZero();
+  //     linearizer.setT(T);
+  //     linearizer.update();
+  //     Vector6f dx = linearizer.H().ldlt().solve(-linearizer.b());
+  //     Eigen::Isometry3f dT = v2t(dx);
+  //     T = dT * T;
+  //   }
+  //   cout << " done." << endl;
+  //   cout << "H: " << endl << linearizer.H() << endl;
+  //   cout << "b: " << endl << linearizer.b() << endl;
+  // }
 
-  cerr << "Final transformation: " << endl << T.matrix() << endl;
+  // cerr << "Final transformation: " << endl << T.matrix() << endl;
  
 
   // This is just to check that the result is correct

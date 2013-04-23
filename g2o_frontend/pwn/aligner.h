@@ -13,7 +13,15 @@ class Aligner {
     _currentPoints = 0;
     _referenceNormals = 0;
     _currentNormals = 0;
+    _referenceStats = 0;
     _currentStats = 0;
+    _currentPointOmegas = 0;
+    _currentNormalOmegas = 0;
+    _numCorrespondences = 0;
+    _outerIterations = 0;
+    _innerIterations = 0;
+    _rows = 0;
+    _cols = 0;
     _T = Eigen::Isometry3f::Identity();
     _initialGuess = Eigen::Isometry3f::Identity();
     _sensorOffset = Eigen::Isometry3f::Identity();
@@ -53,11 +61,26 @@ class Aligner {
     _currentNormalOmegas = currentNormalOmegas_;
   }
 
-  inline CorrespondenceVector* correspondences() { return _correspondences; }
-  inline void setCorrespondences(CorrespondenceVector* correspondences_) { _correspondences = correspondences_; }
+  inline CorrespondenceVector& correspondences() { return _correspondences; }
+  inline void setCorrespondences(CorrespondenceVector& correspondences_) { _correspondences = correspondences_; }
   
   inline int numCorrespondences() { return _numCorrespondences; }
   inline void setNumCorrespondences(int numCorrespondences_) { _numCorrespondences = numCorrespondences_; }
+  inline int outerIterations() { return _outerIterations; }
+  inline void setOuterIterations(int outerIterations_) { _outerIterations = outerIterations_; }
+  inline int innerIterations() { return _innerIterations; }
+  inline void setInnerIterations(int innerIterations_) { _innerIterations = innerIterations_; }
+  
+  inline int rows() { return _rows; }
+  inline int cols() { return _cols; }
+  inline void setImageSize(int rows_, int cols_) { 
+    _rows = rows_; 
+    _cols = cols_;
+    _referenceIndexImage.resize(_rows, _cols);
+    _currentIndexImage.resize(_rows, _cols); 
+  }
+
+
 
   inline Eigen::Isometry3f& T() { return _T; }
   inline void setT(Eigen::Isometry3f T_) { _T = T_; }
@@ -66,18 +89,28 @@ class Aligner {
   inline Eigen::Isometry3f& sensorOffset() { return _sensorOffset; }
   inline void setSensorOffset(Eigen::Isometry3f sensorOffset_) { _sensorOffset = sensorOffset_; }
 
+  void align();
+
  protected:
   PointProjector *_projector;
   Linearizer *_linearizer;
+
+  CorrespondenceGenerator _correspondenceGenerator;
   
   HomogeneousPoint3fVector *_referencePoints, *_currentPoints;
   HomogeneousNormal3fVector *_referenceNormals,* _currentNormals;
   HomogeneousPoint3fStatsVector *_referenceStats, *_currentStats;
   HomogeneousPoint3fOmegaVector *_currentPointOmegas;
   HomogeneousPoint3fOmegaVector *_currentNormalOmegas;
-  CorrespondenceVector* _correspondences;
-  int _numCorrespondences;
   
+  int _numCorrespondences;
+  int _outerIterations, _innerIterations;
+  int _rows, _cols;
+
+  CorrespondenceVector _correspondences;
+  MatrixXi _referenceIndexImage, _currentIndexImage;
+  DepthImage _referenceDepthImage, _currentDepthImage;
+
   Eigen::Isometry3f _T;
   Eigen::Isometry3f _initialGuess;
   Eigen::Isometry3f _sensorOffset;

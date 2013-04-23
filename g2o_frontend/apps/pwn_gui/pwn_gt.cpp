@@ -34,8 +34,6 @@ int main(int argc, char** argv) {
    *                           Input Handling                             *
    ************************************************************************/
   
-  //Matrix4f prova = skew4f(Vector3f(2.0f, 3.0f, 5.0f));
-  //cout << prova << endl;
   // Depth image file (path+filename).
   string currentFilename, referenceFilename;
 
@@ -85,10 +83,6 @@ int main(int argc, char** argv) {
     cout << "Failure while loading the depth image: " << currentFilename << ", quitting program!" << endl;
     exit(-1);
   }
-
-  // This is an hack since in the old code the images are loaded column-wise. 
-  //referenceDepthImage.transposeInPlace();
-  //currentDepthImage.transposeInPlace();
   cout << endl << "Loaded first depth image of size: " << referenceDepthImage.rows() << "x" << referenceDepthImage.cols() << endl;
   cout << endl << "Loaded second depth image of size: " << currentDepthImage.rows() << "x" << currentDepthImage.cols() << endl;
   
@@ -132,129 +126,32 @@ int main(int argc, char** argv) {
   pointOmegaGenerator.compute(currentPointOmega, currentNormalGenerator.scaledStats, currentImageNormals);
   normalOmegaGenerator.compute(currentNormalOmega, currentNormalGenerator.scaledStats, currentImageNormals);
   cout << " done." << endl;
-
-
-  // {
-  //   ofstream os("ref.dat");
-  //   for (size_t i =0; i<referenceImagePoints.size(); i++){
-  //     os << referenceImagePoints[i].transpose() << " " << referenceImageNormals[i].transpose() << endl;
-  //   }
-  // }
-
-  // {
-  //   ofstream os("curr.dat");
-  //   for (size_t i =0; i<currentImagePoints.size(); i++){
-  //     os << currentImagePoints[i].transpose() << " " << currentImageNormals[i].transpose() << endl;
-  //   }
-  // }
-
-  // {
-  //   ofstream os("currStats.dat");
-  //   for (size_t i =0; i<currentNormalGenerator.scaledStats.size(); i++){
-  //     os << currentNormalGenerator.scaledStats[i] << endl;
-  //   }
-  // }
-
-
-
-
   
-  Isometry3f initialGuess = Isometry3f::Identity();
-  Isometry3f T = initialGuess;
-  float inliers = 0;
-  // Here will go the correspondences.
-  CorrespondenceVector correspondences;
-
-  // Creating the correspondences generator objects.
-  CorrespondenceGenerator correspondenceGenerator;
-
+  /************************************************************************
+   *                         Alignment Computation                        *
+   ************************************************************************/
   Aligner aligner;
   Linearizer linearizer;
   aligner.setProjector(&currentNormalGenerator.projector);
   aligner.setLinearizer(&linearizer);
   linearizer.setAligner(&aligner);
-
-  double tProjectionTotal = 0;
-  double tCorrespondencesTotal = 0;
-  double tLeastSquaresTotal = 0;
-  for(int i = 0; i < al_outerIterations; i++) {
-    cout << "********************* Iteration " << i << " *********************" << endl;
-    
-    /************************************************************************
-     *                         Correspondence Computation                   *
-     ************************************************************************/
-    cout << "Computing correspondences...";
-    
-    double tProjectionStart = g2o::get_time();
-		      
-    referenceNormalGenerator.projector.setTransform(T.inverse());
-    referenceNormalGenerator.projector.project(referenceNormalGenerator.scaledIndexImage,
-    					       referenceDepthImage,
-    					       referenceImagePoints);
-    double tProjectionEnd = g2o::get_time();
-    
-    double tCorrespondencesStart = g2o::get_time();
-    // Correspondences computation.    
-    correspondenceGenerator.compute(correspondences,
-    				    referenceImagePoints, currentImagePoints,
-    				    referenceImageNormals, currentImageNormals,
-    				    referenceNormalGenerator.scaledIndexImage, currentNormalGenerator.scaledIndexImage,
-    				    referenceNormalGenerator.scaledStats, currentNormalGenerator.scaledStats,
-    				    T);
-
-    double tCorrespondencesEnd = g2o::get_time();
-    
-    cout << " done." << endl;
-    inliers = correspondenceGenerator.numCorrespondences();
-    cout << "# inliers found: " << inliers << endl;
- 
-    /************************************************************************
-     *                            Alignment                                 *
-     ************************************************************************/
-    cout << "Computing alignment transformation...";
-    aligner.setPoints(&referenceImagePoints, &currentImagePoints);
-    aligner.setNormals(&referenceImageNormals, &currentImageNormals);
-    aligner.setStats(&referenceNormalGenerator.scaledStats, &currentNormalGenerator.scaledStats);
-    aligner.setCurrentOmegas(&currentPointOmega, &currentNormalOmega);
-    aligner.setCorrespondences(&correspondences);
-    aligner.setNumCorrespondences(inliers);
-
-    double tLeastSquaresStart = g2o::get_time();
-    for (int k = 0; k < al_innerIterations; k++) {      
-      Matrix6f H;
-	Vector6f b;
-      float error = 0;
-      T.matrix().block<1,4>(3,0) << 0,0,0,1;
-      linearizer.setT(T);
-      error = linearizer.update();
-      H = linearizer.H() + Matrix6f::Identity() * 10.0f;;
-      b = linearizer.b();
-      Vector6f dx = H.ldlt().solve(-b);
-      Eigen::Isometry3f dT = v2t(dx);
-      T = dT * T;
-      T.matrix().block<1,4>(3,0) << 0,0,0,1;
-      
-      // cout << "H: " << endl << H << endl;
-      // cout << "b: " << endl << b.transpose() << endl;
-      // cout << "dx: " << endl << dx.transpose() << endl;
-      // cout << "Error: " << error << endl;
-    }
-    double tLeastSquaresEnd = g2o::get_time();
-    cerr << "tProjection:\t" << tProjectionEnd - tProjectionStart << endl;
-    cerr << "tCorrespondences:\t" << tCorrespondencesEnd - tCorrespondencesStart << endl;
-    cerr << "tLeastSquares:\t" << tLeastSquaresEnd - tLeastSquaresStart << endl;
-    tProjectionTotal += tProjectionEnd - tProjectionStart;
-    tCorrespondencesTotal += tCorrespondencesEnd - tCorrespondencesStart;
-    tLeastSquaresTotal += tLeastSquaresEnd - tLeastSquaresStart;
-  }
-
-  cerr << "tProjectionTotal:\t" << tProjectionTotal << endl;
-  cerr << "tCorrespondencesTotal:\t" << tCorrespondencesTotal << endl;
-  cerr << "tLeastSquaresTotal:\t" << tLeastSquaresTotal << endl;
+  aligner.setPoints(&referenceImagePoints, &currentImagePoints);
+  aligner.setNormals(&referenceImageNormals, &currentImageNormals);
+  aligner.setStats(&referenceNormalGenerator.scaledStats, &currentNormalGenerator.scaledStats);
+  aligner.setCurrentOmegas(&currentPointOmega, &currentNormalOmega);
+  aligner.setOuterIterations(al_outerIterations);
+  aligner.setInnerIterations(al_innerIterations);
+  aligner.setImageSize(currentNormalGenerator.scaledIndexImage.rows(), currentNormalGenerator.scaledIndexImage.cols());
   
+  Isometry3f initialGuess = Isometry3f::Identity();
+  Isometry3f sensorOffset = Isometry3f::Identity();
+  aligner.setInitialGuess(initialGuess);
+  aligner.setSensorOffset(sensorOffset);
   
-  cout << "Final transformation: " << endl << T.matrix() << endl;
-
+  aligner.align();
+  
+  cout << "Final transformation: " << endl << aligner.T().matrix() << endl;
+  
   // This is just to check that the result is correct
   PointWithNormalVector* referencePWNV = new PointWithNormalVector(referenceImagePoints.size());
   for(size_t i = 0; i < referencePWNV->size(); ++i) {
@@ -262,7 +159,7 @@ int main(int argc, char** argv) {
     referencePWNV->at(i).tail<3>() = referenceImageNormals[i].head<3>();
   }
   
-  Isometry3f finalT = T.inverse();
+  Isometry3f finalT = aligner.T().inverse();
   PointWithNormalVector* currentPWNV = new PointWithNormalVector(currentImagePoints.size());
   for(size_t i = 0; i < currentPWNV->size(); ++i) {
     currentPWNV->at(i).head<3>() = currentImagePoints[i].head<3>();
@@ -295,8 +192,8 @@ int main(int argc, char** argv) {
   DrawableCorrespondences* dcorr = new DrawableCorrespondences(finalT, (GLParameter*)corrParam, 0, 0);
   dcorr->setPoints1(referencePWNV);
   dcorr->setPoints2(currentPWNV);
-  dcorr->setCorrespondences(&correspondences);
-  dcorr->setNumCorrespondences(inliers);
+  dcorr->setCorrespondences(&aligner.correspondences());
+  dcorr->setNumCorrespondences(aligner.numCorrespondences());
 
   pwnGMW.viewer_3d->addDrawable((Drawable*)dpReference);
   //pwnGMW.viewer_3d->addDrawable((Drawable*)dnReference);
