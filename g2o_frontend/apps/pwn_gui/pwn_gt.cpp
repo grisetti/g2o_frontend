@@ -27,6 +27,7 @@
 
 #include "g2o_frontend/pwn/pointwithnormal.h"
 #include "g2o_frontend/basemath/bm_se3.h"
+
 using namespace std;
 
 int main(int argc, char** argv) {
@@ -131,10 +132,7 @@ int main(int argc, char** argv) {
    *                         Alignment Computation                        *
    ************************************************************************/
   Aligner aligner;
-  Linearizer linearizer;
   aligner.setProjector(&currentNormalGenerator.projector);
-  aligner.setLinearizer(&linearizer);
-  linearizer.setAligner(&aligner);
   aligner.setPoints(&referenceImagePoints, &currentImagePoints);
   aligner.setNormals(&referenceImageNormals, &currentImageNormals);
   aligner.setStats(&referenceNormalGenerator.scaledStats, &currentNormalGenerator.scaledStats);

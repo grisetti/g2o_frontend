@@ -3,7 +3,7 @@
 
 #include "homogeneouspoint3fstats.h"
 #include "homogeneouspoint3fintegralimage.h"
-#include "pointprojector.h"
+//#include "pointprojector.h"
 
 /**
  *  Base class for 3D point stats computation. 

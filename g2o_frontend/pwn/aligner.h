@@ -8,7 +8,8 @@ class Aligner {
  public:
   Aligner() {
     _projector = 0;
-    _linearizer = 0;
+    _linearizer = new Linearizer();
+    _linearizer->setAligner(this);
     _referencePoints = 0;
     _currentPoints = 0;
     _referenceNormals = 0;
