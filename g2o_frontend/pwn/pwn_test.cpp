@@ -1,31 +1,20 @@
-#include "normalgenerator.h"
-#include "omegagenerator.h"
-#include "correspondencegenerator.h"
-#include "pinholepointprojector.h"
-#include "aligner.h"
-
-#include "g2o/stuff/command_args.h"
-#include "g2o/stuff/timeutil.h"
-
-#include <iostream>
-
-#include "pointwithnormal.h"
-
 using namespace std;
+using namespace Eigen;
 
 int main(int argc, char** argv) {
   /************************************************************************
    *                           Input Handling                             *
    ************************************************************************/
-  
-  
-  // Depth image file (path+filename).
+  // Depth image files (path+filename).
   string currentFilename, referenceFilename;
 
   // Variables for the input parameters. Just type on the command line
   // ./pwn_normal_extraction -h to have more details about them.
   float ng_scale = 1.0f;
   float ng_curvatureThreshold = 1.0f;
+  int al_innerIterations = 5;
+  int al_outerIterations = 5;
+  int vz_step = 5;
 
   // Define the camera matrix, place here the values for the particular 
   // depth camera used (Kinect, Xtion or any other type). This particular
@@ -42,7 +31,10 @@ int main(int argc, char** argv) {
   // Optional input parameters.
   arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image. [float]");
   arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded. [float]");
-  
+  arg.param("al_innerIterations", al_innerIterations, 5, "Specify the inner iterations. [int]");
+  arg.param("al_outerIterations", al_outerIterations, 5, "Specify the outer iterations. [int]");
+  arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements. [int]");
+
   // Last parameter has to be the depth image file.
   arg.paramLeftOver("depthImageFile1", referenceFilename, "./test1.pgm", "First depth image file (.pgm image) to analyze. [string]", true);
   arg.paramLeftOver("depthImageFile2", currentFilename, "./test2.pgm", "Secodn depth image file (.pgm image) to analyze. [string]", true);
@@ -64,8 +56,8 @@ int main(int argc, char** argv) {
   }
 
   // This is an hack since in the old code the images are loaded column-wise. 
-  referenceDepthImage.transposeInPlace();
-  currentDepthImage.transposeInPlace();
+  //referenceDepthImage.transposeInPlace();
+  //currentDepthImage.transposeInPlace();
   cout << endl << "Loaded first depth image of size: " << referenceDepthImage.rows() << "x" << referenceDepthImage.cols() << endl;
   cout << endl << "Loaded second depth image of size: " << currentDepthImage.rows() << "x" << currentDepthImage.cols() << endl;
   
