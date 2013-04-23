@@ -1,3 +1,17 @@
+#include "homogeneousvector4f.h"
+#include "depthimage.h"
+#include "pinholepointprojector.h"
+#include "homogeneouspoint3fintegralimage.h"
+#include "homogeneouspoint3fstatsgenerator.h"
+#include "omegagenerator.h"
+#include "correspondencegenerator.h"
+#include "aligner.h"
+
+#include "g2o/stuff/command_args.h"
+#include "g2o/stuff/timeutil.h"
+
+#include "pointwithnormal.h"
+
 using namespace std;
 using namespace Eigen;
 
@@ -12,8 +26,8 @@ int main(int argc, char** argv) {
   // ./pwn_normal_extraction -h to have more details about them.
   float ng_scale = 1.0f;
   float ng_curvatureThreshold = 1.0f;
-  int al_innerIterations = 5;
-  int al_outerIterations = 5;
+  int al_innerIterations = 1;
+  int al_outerIterations = 10;
   int vz_step = 5;
 
   // Define the camera matrix, place here the values for the particular 
@@ -31,8 +45,8 @@ int main(int argc, char** argv) {
   // Optional input parameters.
   arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image. [float]");
   arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded. [float]");
-  arg.param("al_innerIterations", al_innerIterations, 5, "Specify the inner iterations. [int]");
-  arg.param("al_outerIterations", al_outerIterations, 5, "Specify the outer iterations. [int]");
+  arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations. [int]");
+  arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations. [int]");
   arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements. [int]");
 
   // Last parameter has to be the depth image file.
@@ -56,136 +70,150 @@ int main(int argc, char** argv) {
   }
 
   // This is an hack since in the old code the images are loaded column-wise. 
-  //referenceDepthImage.transposeInPlace();
-  //currentDepthImage.transposeInPlace();
-  cout << endl << "Loaded first depth image of size: " << referenceDepthImage.rows() << "x" << referenceDepthImage.cols() << endl;
-  cout << endl << "Loaded second depth image of size: " << currentDepthImage.rows() << "x" << currentDepthImage.cols() << endl;
+  referenceDepthImage.transposeInPlace();
+  currentDepthImage.transposeInPlace();
+  cout << "Loaded first depth image of size: " << referenceDepthImage.rows() << "x" << referenceDepthImage.cols() << endl;
+  cout << "Loaded second depth image of size: " << currentDepthImage.rows() << "x" << currentDepthImage.cols() << endl;
   
   /************************************************************************
    *                         Normal Computation                           *
    ************************************************************************/
   cout << "Computing normals...";
-  // Creating the normal generator object and setting some parameters. 
-  NormalGenerator referenceNormalGenerator, currentNormalGenerator;
-  // Set the scale factor to apply on the depth image.
-  referenceNormalGenerator.setScale(ng_scale);
-  currentNormalGenerator.setScale(ng_scale);
-  // Set the camera matrix
-  referenceNormalGenerator.setCameraMatrix(cameraMatrix);
-  currentNormalGenerator.setCameraMatrix(cameraMatrix);
-  
-  // Here will go the points.
-  HomogeneousPoint3fVector referenceImagePoints; 
-  HomogeneousPoint3fVector currentImagePoints; 
-  // Here will go the normals.
-  HomogeneousNormal3fVector referenceImageNormals;
-  HomogeneousNormal3fVector currentImageNormals;
 
-  // Normals computation.
-  referenceNormalGenerator.compute(referenceImagePoints, referenceImageNormals, referenceDepthImage, ng_curvatureThreshold);
-  currentNormalGenerator.compute(currentImagePoints, currentImageNormals, currentDepthImage, ng_curvatureThreshold);
+  PinholePointProjector projector;
+  HomogeneousPoint3fVector referencePoints, currentPoints;
+  MatrixXi referenceIndexImage, currentIndexImage;
+    
+  // Set the transformation and the camera matrix of the projector object.
+  projector.setTransform(Isometry3f::Identity());
+  projector.setCameraMatrix(cameraMatrix);
+  // Get the points of the reference depth image in the 3d euclidean space.
+  projector.unProject(referencePoints, referenceIndexImage, referenceDepthImage);
+  // Get the points of the current depth image in the 3d euclidean space.
+  projector.unProject(currentPoints, currentIndexImage, currentDepthImage);
+
+  HomogeneousPoint3fIntegralImage referenceIntegralImage, currentIntegralImage;
+  // Compute the integral images.
+  referenceIntegralImage.compute(referenceIndexImage, referencePoints);
+  currentIntegralImage.compute(currentIndexImage, currentPoints);
+  
+  MatrixXi referenceIntervalImage, currentIntervalImage;
+  // Compute interval images.
+  projector.projectIntervals(referenceIntervalImage, referenceDepthImage, 0.1f);
+  projector.projectIntervals(currentIntervalImage, currentDepthImage, 0.1f);
+  
+  HomogeneousNormal3fVector referenceNormals, currentNormals;
+  HomogeneousPoint3fStatsVector referenceStats, currentStats;
+  HomogeneousPoint3fStatsGenerator statsGenerator;
+  // Resize the vector containing normals and stats to have the same length of the vector of points.
+  referenceNormals.resize(referencePoints.size());
+  currentNormals.resize(currentPoints.size());
+  referenceStats.resize(referencePoints.size());
+  currentStats.resize(currentPoints.size());
+  // Compute stats and normals.
+  statsGenerator.compute(referenceNormals, referenceStats, referencePoints, referenceIntegralImage, referenceIntervalImage, referenceIndexImage, 0.02f);
+  statsGenerator.compute(currentNormals, currentStats, currentPoints, currentIntegralImage, currentIntervalImage, currentIndexImage, 0.02f);
+  
   cout << " done." << endl;
 
   /************************************************************************
    *                         Omega Computation                            *
    ************************************************************************/
   cout << "Computing omegas...";
+  
   // Creating the omegas generators objects.
   PointOmegaGenerator pointOmegaGenerator;
   NormalOmegaGenerator normalOmegaGenerator;
-  // Here will go the omegas.
-  //HomogeneousPoint3fOmegaVector referencePointOmega;
-  //HomogeneousPoint3fOmegaVector referenceNormalOmega;
+  
   HomogeneousPoint3fOmegaVector currentPointOmega;
   HomogeneousPoint3fOmegaVector currentNormalOmega;
-
   // Omegas computation.
-  //pointOmegaGenerator.compute(referencePointOmega, referenceNormalGenerator.scaledStats, referenceImageNormals);
-  //normalOmegaGenerator.compute(referenceNormalOmega, referenceNormalGenerator.scaledStats, referenceImageNormals);
-  pointOmegaGenerator.compute(currentPointOmega, currentNormalGenerator.scaledStats, currentImageNormals);
-  normalOmegaGenerator.compute(currentNormalOmega, currentNormalGenerator.scaledStats, currentImageNormals);
+  pointOmegaGenerator.compute(currentPointOmega, currentStats, currentNormals);
+  normalOmegaGenerator.compute(currentNormalOmega, currentStats, currentNormals);
+
   cout << " done." << endl;
 
   Isometry3f T = Isometry3f::Identity();
-  // for (int i = 0; i < 2; i++) {
-  //   cerr << "****************** ITERATION " << i << " ******************" << endl;
-  //   /************************************************************************
-  //    *                         Correspondence Computation                   *
-  //    ************************************************************************/
-  //   cout << "Computing correspondences...";
-  //   // Creating the correspondences generator objects.
-  //   CorrespondenceGenerator correspondenceGenerator;
-  //   // Here will go the omegas.
-  //   CorrespondenceVector correspondences;
+  for (int i = 0; i < al_outerIterations; i++) {
+    cerr << "****************** ITERATION " << i << " ******************" << endl;
+    /************************************************************************
+     *                         Correspondence Computation                   *
+     ************************************************************************/
+    cout << "Computing correspondences...";
+    // Creating the correspondences generator objects.
+    CorrespondenceGenerator correspondenceGenerator;
+    // Here will go the omegas.
+    CorrespondenceVector correspondences;
     
-  //   referenceNormalGenerator.projector.setTransform(T.inverse());
-  //   referenceNormalGenerator.projector.project(referenceNormalGenerator.scaledIndexImage,
-  // 					       referenceDepthImage,
-  // 					       referenceImagePoints);
+    projector.setTransform(T.inverse());
+    projector.project(referenceIndexImage,
+		      referenceDepthImage,
+		      referencePoints);
     
-  //   // Correspondences computation.    
-  //   correspondenceGenerator.compute(correspondences,
-  // 				    referenceImagePoints, currentImagePoints,
-  // 				    referenceImageNormals, currentImageNormals,
-  // 				    referenceNormalGenerator.scaledIndexImage, currentNormalGenerator.scaledIndexImage,
-  // 				    referenceNormalGenerator.scaledStats, currentNormalGenerator.scaledStats,
-  // 				    T);
+    // Correspondences computation.    
+    correspondenceGenerator.compute(correspondences,
+  				    referencePoints, currentPoints,
+  				    referenceNormals, currentNormals,
+  				    referenceIndexImage, currentIndexImage,
+  				    referenceStats, currentStats,
+  				    T);
   
-  //   cout << " done." << endl;
-  //   cout << "# inliers found: " << correspondenceGenerator.numCorrespondences() << endl;
+    cout << " done." << endl;
+    cout << "# inliers found: " << correspondenceGenerator.numCorrespondences() << endl;
 
-  //   /************************************************************************
-  //    *                            Alignment                                 *
-  //    ************************************************************************/
-  //   cout << "Computing alignment transformation...";
-  //   Aligner aligner;
-  //   Linearizer linearizer;
-  //   aligner.setProjector(&currentNormalGenerator.projector);
-  //   aligner.setLinearizer(&linearizer);
-  //   aligner.setPoints(&referenceImagePoints, &currentImagePoints);
-  //   aligner.setNormals(&referenceImageNormals, &currentImageNormals);
-  //   aligner.setStats(&referenceNormalGenerator.scaledStats, &currentNormalGenerator.scaledStats);
-  //   aligner.setCurrentOmegas(&currentPointOmega, &currentNormalOmega);
-  //   aligner.setCorrespondences(&correspondences);
-  //   linearizer.setAligner(&aligner);
-  //   for (int k = 0; k < 1; k++) {
-  //     Matrix6f& H = linearizer.H();
-  //     Vector6f& b = linearizer.b();
-  //     H.setZero();
-  //     b.setZero();
-  //     linearizer.setT(T);
-  //     linearizer.update();
-  //     Vector6f dx = linearizer.H().ldlt().solve(-linearizer.b());
-  //     Eigen::Isometry3f dT = v2t(dx);
-  //     T = dT * T;
-  //   }
-  //   cout << " done." << endl;
-  //   cout << "H: " << endl << linearizer.H() << endl;
-  //   cout << "b: " << endl << linearizer.b() << endl;
-  // }
+    /************************************************************************
+     *                            Alignment                                 *
+     ************************************************************************/
+    cout << "Computing alignment transformation...";
+    Aligner aligner;
+    Linearizer linearizer;
+    aligner.setProjector(&projector);
+    aligner.setLinearizer(&linearizer);
+    aligner.setPoints(&referencePoints, &currentPoints);
+    aligner.setNormals(&referenceNormals, &currentNormals);
+    aligner.setStats(&referenceStats, &currentStats);
+    aligner.setCurrentOmegas(&currentPointOmega, &currentNormalOmega);
+    aligner.setCorrespondences(correspondences);
+    aligner.setNumCorrespondences(correspondenceGenerator.numCorrespondences());
+    linearizer.setAligner(&aligner);
+    for (int k = 0; k < al_innerIterations; k++) {
+      Matrix6f& H = linearizer.H();
+      Vector6f& b = linearizer.b();
+      H.setZero();
+      b.setZero();
+      linearizer.setT(T);
+      linearizer.update();
+      Vector6f dx = linearizer.H().ldlt().solve(-linearizer.b());
+      Eigen::Isometry3f dT = v2t(dx);
+      T = dT * T;
+    }
+    cout << " done." << endl;
+    cout << "H: " << endl << linearizer.H() << endl;
+    cout << "b: " << endl << linearizer.b() << endl;
+  }
 
-  // cerr << "Final transformation: " << endl << T.matrix() << endl;
- 
+  T = T.inverse();
+  cerr << "Final transformation: " << endl << T.matrix() << endl;  
 
   // This is just to check that the result is correct
-  PointWithNormalVector referencePWNV(referenceImagePoints.size());
-  for(size_t i = 0; i < referencePWNV.size(); ++i) {
-    referencePWNV[i].head<3>() = referenceImagePoints[i].head<3>();
-    referencePWNV[i].tail<3>() = referenceImageNormals[i].head<3>();
-  }
-  referencePWNV.save("reference.pwn", true);
+   PointWithNormalVector referencePWNV(referencePoints.size());
+   for(size_t i = 0; i < referencePWNV.size(); ++i) {
+     referencePWNV[i].head<3>() = referencePoints[i].head<3>();
+     referencePWNV[i].tail<3>() = referenceNormals[i].head<3>();
+   }
+   referencePWNV.save("reference.pwn", true);
   
-  PointWithNormalVector currentPWNV(currentImagePoints.size());
-  for(size_t i = 0; i < currentPWNV.size(); ++i) {
-    currentPWNV[i].head<3>() = currentImagePoints[i].head<3>();
-    currentPWNV[i].tail<3>() = currentImageNormals[i].head<3>();
-  }
-  currentPWNV.save("current.pwn", true);
+   PointWithNormalVector currentPWNV(currentPoints.size());
+   for(size_t i = 0; i < currentPWNV.size(); ++i) {
+     currentPWNV[i].head<3>() = currentPoints[i].head<3>();
+     currentPWNV[i].tail<3>() = currentNormals[i].head<3>();
+   }
+   currentPWNV.save("current.pwn", true);
 
-  PointWithNormalVector alignedPWNV(currentImagePoints.size());
+  PointWithNormalVector alignedPWNV(currentPoints.size());
   for(size_t i = 0; i < alignedPWNV.size(); ++i) {
-    alignedPWNV[i].head<3>() = T.linear()*currentImagePoints[i].head<3>() + T.translation();
-    alignedPWNV[i].tail<3>() = T.linear()*currentImageNormals[i].head<3>();
+    alignedPWNV[i].head<3>() = T.linear()*currentPoints[i].head<3>() + T.translation();
+    alignedPWNV[i].tail<3>() = T.linear()*currentNormals[i].head<3>();
   }
   alignedPWNV.save("aligned.pwn", true);
 

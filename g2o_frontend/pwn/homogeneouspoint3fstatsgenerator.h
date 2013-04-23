@@ -41,6 +41,14 @@ class HomogeneousPoint3fStatsGenerator {
 	       const Eigen::MatrixXi& _intervalImage,
 	       const Eigen::MatrixXi& _indexImage);
 
+  void compute(HomogeneousNormal3fVector& normals,
+	       HomogeneousPoint3fStatsVector& stats,
+	       const HomogeneousPoint3fVector& points,
+	       const HomogeneousPoint3fIntegralImage& integralImage,
+	       const Eigen::MatrixXi& intervalImage,
+	       const Eigen::MatrixXi& indexImage,
+	       float curvatureThreshold);
+  
  protected:
   /**
    *  Variable containing the max distance in the 3D euclidean space 
