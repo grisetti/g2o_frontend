@@ -169,15 +169,14 @@ int main(int argc, char** argv) {
   /************************************************************************
    *                         Alignment Computation                        *
    ************************************************************************/
+  cout << "Computing alignment transformation...";
+
   Aligner aligner;
   aligner.setProjector(&projector);
-  aligner.setPoints(&referenceScene.points(), &currentScene.points());
-  aligner.setNormals(&referenceScene.normals(), &currentScene.normals());
-  aligner.setStats(&referenceScene.stats(), &currentScene.stats());
-  aligner.setCurrentOmegas(&currentScene.pointOmegas(), &currentScene.normalOmegas());
+  aligner.setReferenceScene(&referenceScene);
+  aligner.setCurrentScene(&currentScene);
   aligner.setOuterIterations(al_outerIterations);
   aligner.setInnerIterations(al_innerIterations);
-  aligner.setImageSize(currentScene.indexImage().rows(), currentScene.indexImage().cols());
   
   Isometry3f initialGuess = Isometry3f::Identity();
   Isometry3f sensorOffset = Isometry3f::Identity();
@@ -186,6 +185,8 @@ int main(int argc, char** argv) {
   
   aligner.align();
   
+  cout << " done." << endl;
+
   cout << "Final transformation: " << endl << aligner.T().matrix() << endl;
   
   // This is just to check that the result is correct
@@ -195,7 +196,7 @@ int main(int argc, char** argv) {
     referencePWNV->at(i).tail<3>() = referenceScene.normals()[i].head<3>();
   }
   
-  Isometry3f finalT = aligner.T().inverse();
+  Isometry3f finalT = aligner.T();
   PointWithNormalVector* currentPWNV = new PointWithNormalVector(currentScene.points().size());
   for(size_t i = 0; i < currentPWNV->size(); ++i) {
     currentPWNV->at(i).head<3>() = currentScene.points()[i].head<3>();
