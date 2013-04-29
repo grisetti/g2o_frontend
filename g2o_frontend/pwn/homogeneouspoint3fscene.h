@@ -43,6 +43,4 @@ class HomogeneousPoint3fScene {
   Eigen::Isometry3f _cameraPose;
 };
 
-std::vector<HomogeneousPoint3fScene> HomogeneousPoint3fSceneVector;
-
 #endif
