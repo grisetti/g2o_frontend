@@ -7,12 +7,13 @@ using namespace std;
 DrawablePoints::DrawablePoints() : Drawable() {
   GLParameterPoints* pointsParameter = new GLParameterPoints();
   _parameter = (GLParameter*)pointsParameter;
-  _points = 0;
 }
 
-DrawablePoints::DrawablePoints(const Eigen::Isometry3f& transformation_, GLParameter *parameter_,  const PointWithNormalVector *points_) : Drawable(transformation_) {
+DrawablePoints::DrawablePoints(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, 
+			       const HomogeneousPoint3fVector &points_, const HomogeneousNormal3fVector &normals_) : Drawable(transformation_) {
   setParameter(parameter_);
   _points = points_;
+  _normals = normals_;
 }
 
 bool DrawablePoints::setParameter(GLParameter *parameter_) {
@@ -28,18 +29,17 @@ bool DrawablePoints::setParameter(GLParameter *parameter_) {
 // Drawing function of the class object.
 void DrawablePoints::draw() {
   GLParameterPoints *pointsParameter = dynamic_cast<GLParameterPoints*>(_parameter);
-  
-  if (_points && pointsParameter && pointsParameter->isShown() && pointsParameter->pointSize() > 0.0f) {
+  if (_points.size() > 0 && pointsParameter && pointsParameter->isShown() && pointsParameter->pointSize() > 0.0f) {
     glPushMatrix();
     glMultMatrixf(_transformation.data());
     pointsParameter->applyGLParameter();
     glBegin(GL_POINTS);
-    for (size_t i = 0; i < _points->size(); i += pointsParameter->step()) {
-      const PointWithNormal& p = (*_points)[i];
-      if (p.tail<3>().squaredNorm() > 0.0f) {
-	glNormal3f(p[3], p[4], p[5]);
-      }
-      glVertex3f(p[0], p[1], p[2]);
+    
+    for (size_t i = 0; i < _points.size(); i += pointsParameter->step()) {
+      const HomogeneousPoint3f p = _points[i];
+      const HomogeneousNormal3f n = _normals[i];
+      glNormal3f(n.x(), n.y(), n.z());
+      glVertex3f(p.x(), p.y(), p.z());
     }
     glEnd();
     glPopMatrix();
