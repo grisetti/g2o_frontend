@@ -67,9 +67,11 @@ float Linearizer::update() {
       Matrix4f Sn = skew(referenceNormal);
       Htt.noalias() += omegaP;
       Htr.noalias() += omegaP*Sp;
-      Hrr.noalias() +=Sp.transpose()*omegaP*Sp + Sn.transpose()*omegaN*Sn;
+      //Hrr.noalias() +=Sp.transpose()*omegaP*Sp + Sn.transpose()*omegaN*Sn;  // the transposed of a skew is its opposite
+      Hrr.noalias() -=Sp*omegaP*Sp + Sn*omegaN*Sn;
       bt.noalias() += ep;
-      br.noalias() += Sp.transpose()*ep + Sn.transpose()*en;
+      //br.noalias() += Sp.transpose()*ep + Sn.transpose()*en; // the transposed of a skew is its opposite
+      br.noalias() -= Sp*ep + Sn*en;
       __asm__("#here the loop ends");
     }
   }
