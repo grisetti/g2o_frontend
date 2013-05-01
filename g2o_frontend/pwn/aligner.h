@@ -9,8 +9,8 @@ class Aligner {
  public:
   Aligner() {
     _projector = 0;
-    _linearizer = new Linearizer();
-    _linearizer->setAligner(this);
+    _linearizer = 0;
+    _correspondenceGenerator = 0;
     _referenceScene = 0;
     _currentScene = 0;
     _numCorrespondences = 0;
@@ -22,6 +22,7 @@ class Aligner {
   };
 
   inline PointProjector* projector() const { return _projector; }
+  inline CorrespondenceGenerator* correspondenceGenerator() const {return _correspondenceGenerator;}
   inline Linearizer* linearizer() const { return _linearizer; }
   inline HomogeneousPoint3fScene* referenceScene() { return _referenceScene; }
   inline HomogeneousPoint3fScene* currentScene() { return _currentScene; }
@@ -34,7 +35,8 @@ class Aligner {
   inline Eigen::Isometry3f& sensorOffset() { return _sensorOffset; }
 
   inline void setProjector(PointProjector* projector_) { _projector = projector_; }  
-  inline void setLinearizer(Linearizer* linearizer_) { _linearizer = linearizer_; }
+  inline void setLinearizer(Linearizer* linearizer_) { _linearizer = linearizer_; if (_linearizer) _linearizer->setAligner(this); }
+  inline void setCorrespondenceGenerator(CorrespondenceGenerator* correspondenceGenerator_) { _correspondenceGenerator = correspondenceGenerator_; }
   inline void setReferenceScene(HomogeneousPoint3fScene* referenceScene_) { _referenceScene = referenceScene_; }
   inline void setCurrentScene(HomogeneousPoint3fScene* currentScene_) { _currentScene = currentScene_; }
   inline void setCorrespondences(CorrespondenceVector& correspondences_) { _correspondences = correspondences_; }  
@@ -54,7 +56,7 @@ class Aligner {
   HomogeneousPoint3fScene *_referenceScene;
   HomogeneousPoint3fScene *_currentScene;
 
-  CorrespondenceGenerator _correspondenceGenerator;
+  CorrespondenceGenerator* _correspondenceGenerator;
   CorrespondenceVector _correspondences;
   int _numCorrespondences;
   

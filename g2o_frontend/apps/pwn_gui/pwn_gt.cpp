@@ -93,18 +93,18 @@ int main(int argc, char** argv) {
   cout << "Unprojecting points...";
 
   // Projector object.
-  PinholePointProjector projector;
+  PinholePointProjector* projector = new PinholePointProjector;
 
   // Update the size of the index image.
   referenceScene.indexImage().resize(referenceScene.depthImage().rows(), referenceScene.depthImage().cols());
   currentScene.indexImage().resize(currentScene.depthImage().rows(), currentScene.depthImage().cols());
 
   // Set the camera matrix of the projector object.
-  projector.setCameraMatrix(cameraMatrix);
+  projector->setCameraMatrix(cameraMatrix);
   
   // Get the points in the 3d euclidean space.
-  projector.unProject(referenceScene.points(), referenceScene.indexImage(), referenceScene.depthImage());
-  projector.unProject(currentScene.points(), currentScene.indexImage(), currentScene.depthImage());
+  projector->unProject(referenceScene.points(), referenceScene.indexImage(), referenceScene.depthImage());
+  projector->unProject(currentScene.points(), currentScene.indexImage(), currentScene.depthImage());
 
   cout << " done." << endl;
 
@@ -121,8 +121,8 @@ int main(int argc, char** argv) {
   currentIntegralImage.compute(currentScene.indexImage(), currentScene.points());
 
   // Compute the intervals.
-  projector.projectIntervals(referenceIntervalImage, referenceScene.depthImage(), 0.1f);
-  projector.projectIntervals(currentIntervalImage, currentScene.depthImage(), 0.1f);
+  projector->projectIntervals(referenceIntervalImage, referenceScene.depthImage(), 0.1f);
+  projector->projectIntervals(currentIntervalImage, currentScene.depthImage(), 0.1f);
   
   // Resize the vector containing the stats to have the same length of the vector of points.
   referenceScene.stats().resize(referenceScene.points().size());
@@ -171,37 +171,30 @@ int main(int argc, char** argv) {
    ************************************************************************/
   cout << "Computing alignment transformation...";
 
-  Aligner aligner;
-  aligner.setProjector(&projector);
-  aligner.setReferenceScene(&referenceScene);
-  aligner.setCurrentScene(&currentScene);
-  aligner.setOuterIterations(al_outerIterations);
-  aligner.setInnerIterations(al_innerIterations);
+  Linearizer* linearizer = new Linearizer;
+  CorrespondenceGenerator* correspondenceGenerator= new CorrespondenceGenerator;
+  Aligner* aligner = new Aligner;
+  aligner->setProjector(projector);
+  aligner->setLinearizer(linearizer);
+  aligner->setCorrespondenceGenerator(correspondenceGenerator);
+  aligner->setReferenceScene(&referenceScene);
+  aligner->setCurrentScene(&currentScene);
+  aligner->setOuterIterations(al_outerIterations);
+  aligner->setInnerIterations(al_innerIterations);
   
   Isometry3f initialGuess = Isometry3f::Identity();
   Isometry3f sensorOffset = Isometry3f::Identity();
-  aligner.setInitialGuess(initialGuess);
-  aligner.setSensorOffset(sensorOffset);
+  aligner->setInitialGuess(initialGuess);
+  aligner->setSensorOffset(sensorOffset);
   
-  aligner.align();
+  double tStart = g2o::get_time();
+  aligner->align();
+  double tEnd = g2o::get_time();
   
-  cout << " done." << endl;
-
-  cout << "Final transformation: " << endl << aligner.T().matrix() << endl;
-  
-  // This is just to check that the result is correct
-  PointWithNormalVector* referencePWNV = new PointWithNormalVector(referenceScene.points().size());
-  for(size_t i = 0; i < referencePWNV->size(); ++i) {
-    referencePWNV->at(i).head<3>() = referenceScene.points()[i].head<3>();
-    referencePWNV->at(i).tail<3>() = referenceScene.normals()[i].head<3>();
-  }
-  
-  Isometry3f finalT = aligner.T();
-  PointWithNormalVector* currentPWNV = new PointWithNormalVector(currentScene.points().size());
-  for(size_t i = 0; i < currentPWNV->size(); ++i) {
-    currentPWNV->at(i).head<3>() = currentScene.points()[i].head<3>();
-    currentPWNV->at(i).tail<3>() = currentScene.normals()[i].head<3>();
-  }
+  cout << " done in. " << (tEnd - tStart)*1000.0f << "ms " << endl;
+  cerr << 1./(tEnd - tStart) << " fps" << endl;
+  cout << "Final transformation: " << endl << aligner->T().matrix() << endl;
+  Isometry3f finalT = aligner->T();
   
   QApplication qApplication(argc, argv);
   PWNGuiMainWindow pwnGMW;
@@ -221,16 +214,13 @@ int main(int argc, char** argv) {
   corrParam->setStep(vz_step);
   
   vector<Drawable*> drawableList = pwnGMW.viewer_3d->drawableList();
-  DrawablePoints* dpReference = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParamReference, referencePWNV);
-  DrawableNormals *dnReference = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)nParamReference, referencePWNV);
-  DrawablePoints* dpCurrent = new DrawablePoints(finalT, (GLParameter*)pParamCurrent, currentPWNV);
-  DrawableNormals *dnCurrent = new DrawableNormals(finalT, (GLParameter*)nParamCurrent, currentPWNV);
-  DrawableCovariances *dcov = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)cParam, &referenceScene.stats());
-  DrawableCorrespondences* dcorr = new DrawableCorrespondences(finalT, (GLParameter*)corrParam, 0, 0);
-  dcorr->setPoints1(referencePWNV);
-  dcorr->setPoints2(currentPWNV);
-  dcorr->setCorrespondences(&aligner.correspondences());
-  dcorr->setNumCorrespondences(aligner.numCorrespondences());
+  DrawablePoints* dpReference = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParamReference, referenceScene.points(), referenceScene.normals());
+  DrawableNormals *dnReference = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)nParamReference, referenceScene.points(), referenceScene.normals());
+  DrawablePoints* dpCurrent = new DrawablePoints(finalT, (GLParameter*)pParamCurrent, currentScene.points(), currentScene.normals());
+  DrawableNormals *dnCurrent = new DrawableNormals(finalT, (GLParameter*)nParamCurrent, currentScene.points(), currentScene.normals());
+  DrawableCovariances *dcov = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)cParam, referenceScene.stats());
+  DrawableCorrespondences* dcorr = new DrawableCorrespondences(finalT, (GLParameter*)corrParam, aligner->numCorrespondences(), referenceScene.points(), currentScene.points(), aligner->correspondences());
+  dcorr->setNumCorrespondences(aligner->numCorrespondences());
 
   pwnGMW.viewer_3d->addDrawable((Drawable*)dpReference);
   //pwnGMW.viewer_3d->addDrawable((Drawable*)dnReference);

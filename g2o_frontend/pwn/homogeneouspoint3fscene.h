@@ -4,7 +4,7 @@
 #include "homogeneousvector4f.h"
 #include "homogeneouspoint3fstats.h"
 #include "homogeneouspoint3fomega.h"
-#include "correspondencegenerator.h"
+#include "depthimage.h"
 
 class HomogeneousPoint3fScene {
  public:

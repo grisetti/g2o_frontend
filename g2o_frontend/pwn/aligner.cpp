@@ -4,6 +4,17 @@
 using namespace std;
 
 void Aligner::align() {
+  if (! _projector) {
+    cerr << "FATAL: " << __PRETTY_FUNCTION__ << ", Projector not set";
+  }
+  if (! _correspondenceGenerator) {
+    cerr << "FATAL: " <<  __PRETTY_FUNCTION__ << ", Correspondence Generator not set";
+  }
+  if (! _linearizer) {
+    cerr << "FATAL: " <<  __PRETTY_FUNCTION__ << ", Linearizer not set";
+  }
+  if (!_projector || !_correspondenceGenerator || !_linearizer)
+    return;
   _projector->setTransform(Isometry3f::Identity());
   _projector->project(_currentScene->indexImage(),
 		      _currentScene->depthImage(),
@@ -23,7 +34,7 @@ void Aligner::align() {
 			_referenceScene->points());
     
     // Correspondences computation.    
-    _correspondenceGenerator.compute(_correspondences,
+    _correspondenceGenerator->compute(_correspondences,
 				     _referenceScene->points(), _currentScene->points(),
 				     _referenceScene->normals(), _currentScene->normals(),
 				     _referenceScene->indexImage(), _currentScene->indexImage(),
@@ -31,7 +42,7 @@ void Aligner::align() {
 				     _T);
 
     cout << " done." << endl;
-    _numCorrespondences = _correspondenceGenerator.numCorrespondences();
+    _numCorrespondences = _correspondenceGenerator->numCorrespondences();
     cout << "# inliers found: " << _numCorrespondences << endl;
  
     /************************************************************************
