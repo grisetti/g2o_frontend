@@ -2,6 +2,7 @@
 ADD_EXECUTABLE(
   plane_g2o_application
   plane_g2o.cpp
+  extractionUtils.h
 )
 SET_TARGET_PROPERTIES(plane_g2o_application PROPERTIES OUTPUT_NAME plane_g2o_application)
 INCLUDE_DIRECTORIES(plane_g2o_application ${CSPARSE_INCLUDE_DIR} )

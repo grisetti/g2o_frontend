@@ -1,27 +1,8 @@
 #include "aligner.h"
 #include <iostream>
-using namespace std;
-
 #include <omp.h>
 
-// inline void _computeHb_tq(Matrix4f& Htt, Matrix4f& Htr, Matrix4f& Hrr,
-// 			  Vector4f& bt, Vector4f& br, 
-// 			  const HomogeneousPoint3f& p, const HomogeneousNormal3f& n, 
-// 			  const Vector4f& pointError, const Vector4f& normalError, 
-// 			  const HomogeneousPoint3fOmega& pointOmega, const HomogeneousPoint3fOmega& normalOmega) {
-//     Matrix4f Sp = skew(p);
-//     Matrix4f Sn = skew(n);
-//     Eigen::Matrix4f omegaP = pointOmega;
-//     Eigen::Matrix4f omegaN = normalOmega;
-
-//     Htt += omegaP;
-//     Htr += omegaP*Sp;
-//     Hrr +=Sp.transpose()*omegaP*Sp + Sn.transpose()*omegaN*Sn;
-//     const HomogeneousNormal3f ep = omegaP*pointError;
-//     const HomogeneousNormal3f en = omegaN*normalError;
-//     bt += ep;
-//     br += Sp.transpose()*ep + Sn.transpose()*en;
-//   }
+using namespace std;
 
 float Linearizer::update() {
   // Variables initialization.
@@ -29,10 +10,8 @@ float Linearizer::update() {
   _H = Matrix6f::Zero();
   float error = 0.0f;
   int inliers = 0;
-  HomogeneousPoint3fOmegaVector* pointOmegas = _aligner->currentPointOmegas();
-  HomogeneousPoint3fOmegaVector* normalOmegas = _aligner->currentNormalOmegas();
-
-  //double et = 0, en = 0;
+  HomogeneousPoint3fOmegaVector& pointOmegas = _aligner->currentScene()->pointOmegas();
+  HomogeneousPoint3fOmegaVector& normalOmegas = _aligner->currentScene()->normalOmegas();
 
   // allocate the variables for the sum reduction;
   int numThreads = omp_get_max_threads();
@@ -68,12 +47,12 @@ float Linearizer::update() {
     for(int i = imin; i < imax; i++) {
       __asm__("#here the loop begins");
       const Correspondence& correspondence = _aligner->correspondences()[i];
-      const HomogeneousPoint3f referencePoint = _T*_aligner->referencePoints()->at(correspondence.referenceIndex);
-      const HomogeneousNormal3f referenceNormal = _T*_aligner->referenceNormals()->at(correspondence.referenceIndex);
-      const HomogeneousPoint3f& currentPoint = _aligner->currentPoints()->at(correspondence.currentIndex);
-      const HomogeneousNormal3f& currentNormal = _aligner->currentNormals()->at(correspondence.currentIndex);
-      const HomogeneousPoint3fOmega& omegaP = pointOmegas->at(correspondence.currentIndex);
-      const HomogeneousPoint3fOmega& omegaN = normalOmegas->at(correspondence.currentIndex);
+      const HomogeneousPoint3f referencePoint = _T*_aligner->referenceScene()->points()[correspondence.referenceIndex];
+      const HomogeneousNormal3f referenceNormal = _T*_aligner->referenceScene()->normals()[correspondence.referenceIndex];
+      const HomogeneousPoint3f& currentPoint = _aligner->currentScene()->points()[correspondence.currentIndex];
+      const HomogeneousNormal3f& currentNormal = _aligner->currentScene()->normals()[correspondence.currentIndex];
+      const HomogeneousPoint3fOmega& omegaP = pointOmegas[correspondence.currentIndex];
+      const HomogeneousPoint3fOmega& omegaN = normalOmegas[correspondence.currentIndex];
       
       const Vector4f pointError = referencePoint - currentPoint;
       const Vector4f normalError = referenceNormal - currentNormal;

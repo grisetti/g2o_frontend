@@ -38,7 +38,7 @@ int main (int argc, char** argv) {
   arg.param("normalLenght",normalLenght,0,"lenght of the normals") ;
   arg.param("alpha",alpha,1.0f,"alpha channel for points") ;
   arg.param("pointStep",pointStep,1,"step of the points") ;
-  arg.param("normalStep",normalStep,10,"step of the normals") ;
+  arg.param("normalStep",normalStep,1,"step of the normals") ;
   arg.paramLeftOver("filenames", filenames[0], "", "filenames", true);
   for (int i=1; i<maxFiles; i++){
     arg.paramLeftOver("", filenames[i], "", "", true);
@@ -69,10 +69,11 @@ int main (int argc, char** argv) {
   for (int i=0; i<maxFiles; i++){
     if (filenames[i]=="")
       break;
-    //float r=0.85+0.15*drand48();
-    //float g=0.85+0.15*drand48();
-    //float b=0.85+0.15*drand48();
-
+    float r=0.0f + 0.5f*rand()/double(RAND_MAX);
+    float g=0.0f + 0.5f*rand()/double(RAND_MAX);
+    float b=0.0f + 0.5f*rand()/double(RAND_MAX);
+    
+    cout << r << " -- " << g << " -- " << b << endl; 
     PointWithNormalVector* points = new PointWithNormalVector;
     
     if (! points->load(filenames[i].c_str())){
@@ -81,7 +82,7 @@ int main (int argc, char** argv) {
     } else {
       listWidget->addItem(QString(filenames[i].c_str()));
     }
-    GLParameterPoints* pointsParams = new GLParameterPoints(pointSize,Eigen::Vector4f(0.0f,0.0f,1.0f,alpha));
+    GLParameterPoints* pointsParams = new GLParameterPoints(pointSize,Eigen::Vector4f(r,g,b,alpha));
     DrawablePoints* drawablePoints = new DrawablePoints(T, pointsParams, points);
     pointsParams->setStep(normalStep);
     
@@ -98,7 +99,7 @@ int main (int argc, char** argv) {
   mainWindow->show();
   viewer->show();
   listWidget->show();
-  while (1) {
+  while (mainWindow->isVisible()) {
     bool selectionChanged= false;
     for (int i=0; i<listWidget->count(); i++){
       QListWidgetItem* item = listWidget->item(i);
@@ -120,17 +121,6 @@ int main (int argc, char** argv) {
     }
     if (selectionChanged)
       viewer->updateGL();
-    /*    
-      for (int i=0; i<listWidget....; i++){
-      if (the widget is selected){
-	unselect it;
-	set the corresponding points to 0;
-      } else {
-	select itl
-	  set the co
-      }
-    }
-    */
     application.processEvents();
   }
 }

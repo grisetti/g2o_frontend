@@ -5,9 +5,9 @@ using namespace std;
 
 void Aligner::align() {
   _projector->setTransform(Isometry3f::Identity());
-  _projector->project(_currentIndexImage,
-		      _currentDepthImage,
-		      *_currentPoints);
+  _projector->project(_currentScene->indexImage(),
+		      _currentScene->depthImage(),
+		      _currentScene->points());
   _T = _initialGuess;
   for(int i = 0; i < _outerIterations; i++) {
     cout << "********************* Iteration " << i << " *********************" << endl;
@@ -18,16 +18,16 @@ void Aligner::align() {
     cout << "Computing correspondences...";
     
     _projector->setTransform(_T.inverse());
-    _projector->project(_referenceIndexImage,
-			_referenceDepthImage,
-			*_referencePoints);
+    _projector->project(_referenceScene->indexImage(),
+			_referenceScene->depthImage(),
+			_referenceScene->points());
     
     // Correspondences computation.    
     _correspondenceGenerator.compute(_correspondences,
-				     *_referencePoints, *_currentPoints,
-				     *_referenceNormals, *_currentNormals,
-				     _referenceIndexImage, _currentIndexImage,
-				     *_referenceStats, *_currentStats,
+				     _referenceScene->points(), _currentScene->points(),
+				     _referenceScene->normals(), _currentScene->normals(),
+				     _referenceScene->indexImage(), _currentScene->indexImage(),
+				     _referenceScene->stats(), _currentScene->stats(),
 				     _T);
 
     cout << " done." << endl;
@@ -51,5 +51,5 @@ void Aligner::align() {
       _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
     }    
   }
-  _T = _sensorOffset * _T;
+  _T = _sensorOffset * _T.inverse();
 }

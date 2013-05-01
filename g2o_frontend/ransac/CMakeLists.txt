@@ -52,17 +52,17 @@ TARGET_LINK_LIBRARIES(alignment_test
   )
 SET_TARGET_PROPERTIES(alignment_test PROPERTIES OUTPUT_NAME g2o_alignment_test${EXE_POSTFIX})
 
-ADD_EXECUTABLE(ransac_test   ransac_test.cpp)
+#ADD_EXECUTABLE(ransac_test   ransac_test.cpp)
 
-TARGET_LINK_LIBRARIES(ransac_test
-  ransac
-  ${G2O_TYPES_SLAM2D}
-  ${G2O_TYPES_SLAM3D}
-  ${G2O_TYPES_SLAM2D_ADDONS}
-  ${G2O_TYPES_SLAM3D_ADDONS}
-  ${G2O_STUFF_LIBRARY}
-  ${G2O_CORE_LIBRARY}
-  )
+#TARGET_LINK_LIBRARIES(ransac_test
+#  ransac
+#  ${G2O_TYPES_SLAM2D}
+#  ${G2O_TYPES_SLAM3D}
+#  ${G2O_TYPES_SLAM2D_ADDONS}
+#  ${G2O_TYPES_SLAM3D_ADDONS}
+#  ${G2O_STUFF_LIBRARY}
+#  ${G2O_CORE_LIBRARY}
+#  )
 
 ADD_EXECUTABLE(aligner_test   aligner_test.cpp)
 
@@ -75,7 +75,8 @@ TARGET_LINK_LIBRARIES(aligner_test
   ${G2O_STUFF_LIBRARY} 
   ${G2O_CORE_LIBRARY} 
   )
-SET_TARGET_PROPERTIES(ransac_test PROPERTIES OUTPUT_NAME g2o_ransac_test${EXE_POSTFIX})
+
+#SET_TARGET_PROPERTIES(ransac_test PROPERTIES OUTPUT_NAME g2o_ransac_test${EXE_POSTFIX})
 
 
 ADD_EXECUTABLE(ellipse_descriptor   ellipse_descriptor.cpp)
