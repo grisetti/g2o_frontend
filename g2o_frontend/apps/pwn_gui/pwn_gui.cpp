@@ -58,133 +58,6 @@ set<string> readDir(std::string dir) {
   return filenames;
 }
 
-struct Frame {
-  Frame(string f, int s) {
-    filename = f;
-    step = s;
-
-    pPoints = new GLParameterPoints(1.0f, Vector4f(1.0f, 0.5f, 0.0f, 1.0f));
-    pPoints->setStep(step);
-    pNormals = new GLParameterNormals(1.0f, Vector4f(0.0f, 0.0f, 1.0f, 1.0f), 0.0f);
-    pNormals->setStep(step);
-    pCovariances = new GLParameterCovariances(1.0f, 
-					      Vector4f(0.0f, 1.0f, 0.0f, 1.0f), Vector4f(1.0f, 0.0f, 0.0f, 1.0f),
-					      0.02f, 0.0f);
-    pCovariances->setStep(step);
-    pCorrespondences = new GLParameterCorrespondences(1.0f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f), 0.0f);
-    pCorrespondences->setStep(step);
-
-    dPoints = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pPoints, scene.points(), scene.normals());
-    dNormals = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)pNormals, scene.points(), scene.normals());
-    dCovariances = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)pCovariances, scene.stats());
-    dCorrespondences = new DrawableCorrespondences(Isometry3f::Identity(), (GLParameter*)pCorrespondences, 0,
-						   scene.points(), scene.points(), correspondences);
-  }
-  
-  void computeStats() {
-    Eigen::Matrix3f cameraMatrix;
-    cameraMatrix << 
-      525.0f, 0.0f, 319.5f,
-      0.0f, 525.0f, 239.5f,
-      0.0f, 0.0f, 1.0f;
-    
-    float ng_curvatureThreshold = 1.0f;
-
-    if(!scene.depthImage().load(filename.c_str(), true)) {
-      cout << "Failure while loading the depth image: " << filename<< " skipping image!" << endl;
-      return;
-    }
-    cout << endl << "Loaded depth image " << filename << " of size: " << scene.depthImage().rows() << "x" << scene.depthImage().cols() << endl;
-    
-    /************************************************************************
-     *                         Point Unprojection                           *
-     ************************************************************************/
-    cout << "Unprojecting points...";
-
-    // Projector object.
-    PinholePointProjector projector;
-
-    // Update the size of the index image.
-    scene.indexImage().resize(scene.depthImage().rows(), scene.depthImage().cols());
-    
-    // Set the camera matrix of the projector object.
-    projector.setCameraMatrix(cameraMatrix);
-  
-    // Get the points in the 3d euclidean space.
-    projector.unProject(scene.points(), scene.indexImage(), scene.depthImage());
-    
-    cout << " done." << endl;
-
-    /************************************************************************
-     *                         Normal Computation                           *
-     ************************************************************************/
-    cout << "Computing normals...";
-
-    HomogeneousPoint3fIntegralImage integralImage;
-    MatrixXi intervalImage;
-  
-    // Compute the integral images.
-    integralImage.compute(scene.indexImage(), scene.points());
-    
-    // Compute the intervals.
-    projector.projectIntervals(intervalImage, scene.depthImage(), 0.1f);
-    
-    // Resize the vector containing the stats to have the same length of the vector of points.
-    scene.stats().resize(scene.points().size());
-    std::fill(scene.stats().begin(), scene.stats().end(), HomogeneousPoint3fStats());
-    
-    // Creating the stas generator object. 
-    HomogeneousPoint3fStatsGenerator statsGenerator;
-  
-    // Stats and normals computation.
-    statsGenerator.compute(scene.normals(),
-			   scene.stats(),
-			   scene.points(),
-			   integralImage,
-			   intervalImage,
-			   scene.indexImage(),
-			   ng_curvatureThreshold);
-    
-    cout << " done." << endl;
-
-    /************************************************************************
-     *                         Omega Computation                            *
-     ************************************************************************/
-    cout << "Computing omegas...";
-
-    // Creating the omegas generators objects.
-    PointOmegaGenerator pointOmegaGenerator;
-    NormalOmegaGenerator normalOmegaGenerator;
-  
-    // Omegas computation.
-    pointOmegaGenerator.compute(scene.pointOmegas(), scene.stats(), scene.normals());
-    normalOmegaGenerator.compute(scene.normalOmegas(), scene.stats(), scene.normals());
-
-    cout << " done." << endl;
-
-    dPoints->setPoints(scene.points());
-    dPoints->setNormals(scene.normals());
-    dNormals->setPoints(scene.points());
-    dNormals->setNormals(scene.normals());
-    dCovariances->setCovariances(scene.stats());
-  }
-
-  HomogeneousPoint3fScene scene;
-  CorrespondenceVector correspondences;
-  string filename;
-  int step;
-
-  GLParameterPoints *pPoints;
-  GLParameterNormals *pNormals;
-  GLParameterCovariances *pCovariances;
-  GLParameterCorrespondences *pCorrespondences;
-
-  DrawablePoints *dPoints;
-  DrawableNormals *dNormals;
-  DrawableCovariances *dCovariances;
-  DrawableCorrespondences *dCorrespondences;
-};
-
 int main(int argc, char** argv) {
   /************************************************************************
    *                           Input Handling                             *
@@ -195,9 +68,9 @@ int main(int argc, char** argv) {
   // ./pwn_normal_extraction -h to have more details about them.
   float ng_scale = 1.0f;
   float ng_curvatureThreshold = 1.0f;
-  int al_innerIterations = 1;
-  int al_outerIterations = 10;
-  int vz_step = 1;
+  int al_innerIterations = 5;
+  int al_outerIterations = 5;
+  int vz_step = 5;
 
   // Define the camera matrix, place here the values for the particular 
   // depth camera used (Kinect, Xtion or any other type). This particular
@@ -215,11 +88,11 @@ int main(int argc, char** argv) {
   arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image. [float]");
   arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded. [float]");
   arg.param("al_innerIterations", al_innerIterations, 5, "Specify the inner iterations. [int]");
-  arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations. [int]");
-  arg.param("vz_step", vz_step, 1, "A graphic element is drawn each vz_step elements. [int]");
+  arg.param("al_outerIterations", al_outerIterations, 5, "Specify the outer iterations. [int]");
+  arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements. [int]");
 
   // Last parameter has to be the working directory.
-  arg.paramLeftOver("workingDirectory", workingDirectory, ".", "Path of the working directory. [string]", true);
+  arg.paramLeftOver("workingDirectory", workingDirectory, "./", "Path of the working directory. [string]", true);
 
   // Set parser input.
   arg.parseArgs(argc, argv);
@@ -249,57 +122,20 @@ int main(int argc, char** argv) {
   NormalOmegaGenerator normalOmegaGenerator;
 
   // Creating and setting aligner object.
+  Isometry3f initialGuess = Isometry3f::Identity();
+  Isometry3f sensorOffset = Isometry3f::Identity();
   Aligner aligner;
   aligner.setOuterIterations(al_outerIterations);
   aligner.setInnerIterations(al_innerIterations);
+  aligner.setInitialGuess(initialGuess);
+  aligner.setSensorOffset(sensorOffset);
     
   pwnGMW.show();
   refScn = pwnGMW.scene0();
   currScn = pwnGMW.scene1();
 
-  bool *addCloud = 0, *clearLast = 0, *clearAll = 0;;
-  QListWidgetItem* itemList = 0;
-  
-  std::vector<Frame> frameVector;
-  
   while (!(*pwnGMW.closing())) {
     qApplication.processEvents();
-
-    // Check window status changes.
-    addCloud = pwnGMW.addCloud();
-    clearLast = pwnGMW.clearLast();    
-    clearAll = pwnGMW.clearAll();
-    itemList = pwnGMW.itemList();
-    
-    // Add cloud was pressed.
-    if(*addCloud) {
-      if(itemList) {
-	Frame frame(itemList->text().toStdString(), vz_step);
-	frame.computeStats();
-	frameVector.push_back(frame);
-	
-	// Add drawable items.
-	pwnGMW.viewer_3d->addDrawable((Drawable*)frameVector[frameVector.size()-1].dPoints);
-	pwnGMW.viewer_3d->addDrawable((Drawable*)frameVector[frameVector.size()-1].dNormals);
-	pwnGMW.viewer_3d->addDrawable((Drawable*)frameVector[frameVector.size()-1].dCovariances);
-	pwnGMW.viewer_3d->addDrawable((Drawable*)frameVector[frameVector.size()-1].dCorrespondences);	
-      }
-      *addCloud = 0;
-    }
-    // clear buttons pressed.
-    else if(*clearAll) {
-      pwnGMW.viewer_3d->clearDrawableList();
-      *clearAll = 0;
-    }
-    else if(*clearLast) {
-      if(pwnGMW.viewer_3d->drawableList().size() >= 3) {	
-        pwnGMW.viewer_3d->popBack();
-        pwnGMW.viewer_3d->popBack();
-        pwnGMW.viewer_3d->popBack();
-        pwnGMW.viewer_3d->popBack();
-      }
-      *clearLast = 0;
-    }
 
     pwnGMW.viewer_3d->updateGL();
 

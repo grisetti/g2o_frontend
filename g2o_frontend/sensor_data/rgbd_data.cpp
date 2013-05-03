@@ -75,7 +75,7 @@ bool RGBDData::write(std::ostream& os) const
 void RGBDData::writeOut() const
 {
   if (_intensityImageModified && _intensityImage) {
-    string intensityName=_baseFilename+ "_intensity.pgm";
+  string intensityName=_baseFilename+"_intensity.pgm";
     cv::imwrite(intensityName.c_str(), *_intensityImage);
     _intensityImageModified = false;
   }

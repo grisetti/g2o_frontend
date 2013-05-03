@@ -142,6 +142,8 @@ void create_cloud(std::vector<Vec3f> &Cloud,const Mat &imageToProcess,int maxDis
 
 void voxelize(std::vector<Vec3f> &theCloud,float res)
 {
+    cout << "\t\t starting voxelization"<<endl;
+
     accumulatorMap accMap;
     float ires=1./res;
 

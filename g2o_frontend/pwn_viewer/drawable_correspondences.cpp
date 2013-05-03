@@ -1,25 +1,25 @@
 #include "drawable_correspondences.h"
 #include "gl_parameter_correspondences.h"
 #include <iostream>
-
 using namespace std;
 
 DrawableCorrespondences::DrawableCorrespondences() : Drawable() {
   GLParameterCorrespondences* correspondencesParameter = new GLParameterCorrespondences();
-  _transformation = Eigen::Isometry3f::Identity();
   _parameter = (GLParameter*)correspondencesParameter;
+  _correspondences = 0;
   _numCorrespondences = 0;
+  _points1 = 0;
+  _points2 = 0;
+  _points2Transform.setIdentity();
 }
 
-DrawableCorrespondences::DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_,  int numCorrespondences_, 
-						 HomogeneousPoint3fVector &referencePoints_, HomogeneousPoint3fVector &currentPoints_, 
-						 CorrespondenceVector &correspondences_) {
-  _transformation = transformation_;
+DrawableCorrespondences::DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_,  int numCorrespondences_, CorrespondenceVector *correspondences_) : Drawable(transformation_) {
   setParameter(parameter_);
   _numCorrespondences = numCorrespondences_;
-  _referencePoints = referencePoints_;
-  _currentPoints = currentPoints_;
   _correspondences = correspondences_;
+  _points1 = 0;
+  _points2 = 0;
+  _points2Transform.setIdentity();
 }
 
 bool DrawableCorrespondences::setParameter(GLParameter *parameter_) {
@@ -35,22 +35,24 @@ bool DrawableCorrespondences::setParameter(GLParameter *parameter_) {
 // Drawing function of the class object.
 void DrawableCorrespondences::draw() {
   GLParameterCorrespondences* correspondencesParameter = dynamic_cast<GLParameterCorrespondences*>(_parameter);
-  if (_referencePoints.size() > 0 &&
-      _currentPoints.size() > 0 &&
-      _correspondences.size() > 0 && 
-      correspondencesParameter && 
-      correspondencesParameter->isShown() && 
-      correspondencesParameter->lineWidth() > 0.0f) {
+   if (_points1 && 
+       _points2 && 
+       _correspondences && 
+       correspondencesParameter && 
+       correspondencesParameter->isShown() && 
+       correspondencesParameter->lineWidth() > 0.0f) {
+    
+     //Eigen::Isometry3f p2transform = _transformation * _points2Transform;
     
     glPushMatrix();
     correspondencesParameter->applyGLParameter();
     glBegin(GL_LINES);
     for (int i = 0; i < _numCorrespondences; i += correspondencesParameter->step()) {
-      const Correspondence& correspondence = _correspondences[i];
-      HomogeneousPoint3f referencePoint = _referencePoints[correspondence.referenceIndex];
-      HomogeneousPoint3f currentPoint = _transformation * (_currentPoints[correspondence.currentIndex]);
-      glVertex3f(referencePoint.x(), referencePoint.y(), referencePoint.z());
-      glVertex3f(currentPoint.x(), currentPoint.y(), currentPoint.z());
+      const Correspondence& correspondence = _correspondences->at(i);
+      Eigen::Vector3f p0 = _points1->at(correspondence.referenceIndex).point();
+      Eigen::Vector3f p1 = _transformation * (_points2->at(correspondence.currentIndex).point());
+      glVertex3f(p1[0], p1[1], p1[2]);
+      glVertex3f(p0[0], p0[1], p0[2]);
     }
     glEnd();
     glPopMatrix();

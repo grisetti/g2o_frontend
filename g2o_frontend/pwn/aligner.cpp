@@ -4,21 +4,10 @@
 using namespace std;
 
 void Aligner::align() {
-  if (! _projector) {
-    cerr << "FATAL: " << __PRETTY_FUNCTION__ << ", Projector not set";
-  }
-  if (! _correspondenceGenerator) {
-    cerr << "FATAL: " <<  __PRETTY_FUNCTION__ << ", Correspondence Generator not set";
-  }
-  if (! _linearizer) {
-    cerr << "FATAL: " <<  __PRETTY_FUNCTION__ << ", Linearizer not set";
-  }
-  if (!_projector || !_correspondenceGenerator || !_linearizer)
-    return;
   _projector->setTransform(Isometry3f::Identity());
-  _projector->project(_currentScene->indexImage(),
-		      _currentScene->depthImage(),
-		      _currentScene->points());
+  _projector->project(_currentIndexImage,
+		      _currentDepthImage,
+		      *_currentPoints);
   _T = _initialGuess;
   for(int i = 0; i < _outerIterations; i++) {
     cout << "********************* Iteration " << i << " *********************" << endl;
@@ -29,20 +18,20 @@ void Aligner::align() {
     cout << "Computing correspondences...";
     
     _projector->setTransform(_T.inverse());
-    _projector->project(_referenceScene->indexImage(),
-			_referenceScene->depthImage(),
-			_referenceScene->points());
+    _projector->project(_referenceIndexImage,
+			_referenceDepthImage,
+			*_referencePoints);
     
     // Correspondences computation.    
-    _correspondenceGenerator->compute(_correspondences,
-				     _referenceScene->points(), _currentScene->points(),
-				     _referenceScene->normals(), _currentScene->normals(),
-				     _referenceScene->indexImage(), _currentScene->indexImage(),
-				     _referenceScene->stats(), _currentScene->stats(),
+    _correspondenceGenerator.compute(_correspondences,
+				     *_referencePoints, *_currentPoints,
+				     *_referenceNormals, *_currentNormals,
+				     _referenceIndexImage, _currentIndexImage,
+				     *_referenceStats, *_currentStats,
 				     _T);
 
     cout << " done." << endl;
-    _numCorrespondences = _correspondenceGenerator->numCorrespondences();
+    _numCorrespondences = _correspondenceGenerator.numCorrespondences();
     cout << "# inliers found: " << _numCorrespondences << endl;
  
     /************************************************************************
@@ -62,5 +51,5 @@ void Aligner::align() {
       _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
     }    
   }
-  _T = _sensorOffset * _T.inverse();
+  _T = _sensorOffset * _T;
 }

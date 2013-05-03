@@ -84,7 +84,7 @@ public:
    *  matrix. The indexImage matrix is used to place the unprojected inside the vector of points in a
    *  consistent position. This method stores the unprojected points in a vector of points.
    *  @param points is the output parameter containing the set of points unprojected to 3D euclidean space.
-   *  @param indexImage is an output parameter containing indices. Each element of this matrix contains 
+   *  @param indexImage is an input parameter containing indices. Each element of this matrix contains 
    *  the index where to place the corresponding point in the output vector of points.
    *  @param depthImage is an input parameter containing the depth values of the points.
    */
