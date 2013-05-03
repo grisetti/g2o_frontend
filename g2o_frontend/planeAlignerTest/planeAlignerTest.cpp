@@ -86,7 +86,7 @@ int main(int argc, char**argv)
     string filename;
     CommandArgs arg;
     int vertex1;
-    int ransac;
+    int parameterID;
     double errorREF;
     //**************************************************************************************************************************************
 
@@ -94,6 +94,7 @@ int main(int argc, char**argv)
     //**************************************************************************************************************************************
     arg.param("v1",vertex1,0,"primo vertice");
     arg.param("e",errorREF,1,"errore per il merging");
+    arg.param("p",parameterID,30,"id del vertice del parametro");
     arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
     arg.parseArgs(argc, argv);
     //**************************************************************************************************************************************
@@ -270,12 +271,12 @@ int main(int argc, char**argv)
 
     cout << "SIZE INLIERS "<<iv.size()<<endl;
 
-//    cout << "salvo grafo intermedio...";
-//    ofstream notmerged ("notmerged.g2o");
-//    graph.save(notmerged);
-//    cout << "salvato"<<endl;
+    //    cout << "salvo grafo intermedio...";
+    //    ofstream notmerged ("notmerged.g2o");
+    //    graph.save(notmerged);
+    //    cout << "salvato"<<endl;
 
-
+    std::set<int> vertexPlaneIds;
 
     cout << "Merging vertices...";
     for(unsigned int i =0;i<mycorrVector.size();i++)
@@ -284,8 +285,10 @@ int main(int argc, char**argv)
         VertexPlane* v1=dynamic_cast<VertexPlane*>(corr.edge()->vertex(0));
         VertexPlane* v2=dynamic_cast<VertexPlane*>(corr.edge()->vertex(1));
         graph.mergeVertices(v1,v2,0);
+        vertexPlaneIds.insert(v1->id());
     }
     cout << "done"<<endl;
+
 
     EdgeSE3* anotherEdge=new EdgeSE3;
     anotherEdge->setVertex(0,v1);
@@ -302,13 +305,25 @@ int main(int argc, char**argv)
         VertexSE3* vs3= dynamic_cast<VertexSE3*>(it->second);
         if(vs3)
         {
-            if( !(vs3->id()==2545 || vs3->id()==v1->id() || vs3->id()==v2->id()) )
+            if( !(vs3->id()==parameterID || vs3->id()==v1->id() || vs3->id()==v2->id()) )
             {
                 //cout << "DELETING VERTEX "<<vs3->id()<<endl;
                 graph.removeVertex(vs3,1);
-
             }
-
+        }
+        else
+        {
+            VertexPlane* vp=dynamic_cast<VertexPlane*>(it->second);
+            if(vp)
+            {
+                std::set<int>::iterator it= vertexPlaneIds.find(vp->id());
+                cout <<endl<< "check "<<vp->id()<< " ";
+                if(it==vertexPlaneIds.end())
+                {
+                    cout << "deleting!"<<endl;
+                    graph.removeVertex(vp,1);
+                }
+            }
         }
 
     }
