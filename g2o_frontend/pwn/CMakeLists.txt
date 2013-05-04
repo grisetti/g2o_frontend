@@ -66,3 +66,10 @@ TARGET_LINK_LIBRARIES( pwn_g2o_movingRef pwn_library  ${G2O_STUFF_LIBRARY} )
 ADD_EXECUTABLE(homogeneous_normals homogeneous_normals.cpp)
 SET_TARGET_PROPERTIES(homogeneous_normals PROPERTIES OUTPUT_NAME homogeneous_normals)
 TARGET_LINK_LIBRARIES( homogeneous_normals pwn_library  ${G2O_STUFF_LIBRARY} ) 
+
+
+find_package(CUDA)
+if(CUDA_FOUND)
+  set(CUDA_NVCC_FLAGS "-arch=sm_30; -rdc=true")
+  CUDA_ADD_LIBRARY(pwn_aligner_cuda cudaaligner.cu)
+  endif(CUDA_FOUND)

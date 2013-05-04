@@ -1,35 +1,34 @@
 #ifndef _CUDASLA_H_
 #define _CUDASLA_H_
 
-
-__device__ void vecFill(float* v, float x, int n){
+__host__ __device__ void vecFill(float* v, float x, int n){
   for(int i=0; i<n; i++)
     v[i]=x;
 }
 
-__device__ void vecScale(float* v, float s, int n){
+__host__ __device__ void vecScale(float* v, float s, int n){
   for(int i=0; i<n; i++)
     v[i]*=s;
 }
 
-__device__ void vecCopy(float* dest, const float* src, int n){
+__host__ __device__ void vecCopy(float* dest, const float* src, int n){
   for(int i=0; i<n; i++)
     dest[i]=src[i];
 }
 
-__device__ void vecSum(float*dest, const float* src, float scale, int n){
+__host__ __device__ void vecSum(float*dest, const float* src, float scale, int n){
   for(int i=0; i<n; i++)
     dest[i]+=scale*src[i];
 }
 
-__device__ float vecDot(const float* v1, float* v2, int n){
+__host__ __device__ float vecDot(const float* v1, float* v2, int n){
   float a=0;
   for(int i=0; i<n; i++)
     a+=v1[i]*v2[i];
   return a;
 }
 
-__device__ void matVecMul(float* dest, const float* A, const float*b, int rows, int cols){
+__host__ __device__ void matVecMul(float* dest, const float* A, const float*b, int rows, int cols){
   vecFill(dest, 0, rows);
   for (int i=0; i<cols; i++){
     vecSum(dest,A,b[i],rows);
@@ -37,7 +36,7 @@ __device__ void matVecMul(float* dest, const float* A, const float*b, int rows, 
   }
 }
 
-__device__ void matMatMul(float* dest, const float* A, const float*B, int ra, int ca, int cb){
+__host__ __device__ void matMatMul(float* dest, const float* A, const float*B, int ra, int ca, int cb){
   float* dptr = dest;
   const float* bptr = B;
   for (int i=0; i<cb; i++){
@@ -48,7 +47,7 @@ __device__ void matMatMul(float* dest, const float* A, const float*B, int ra, in
 }
 
 
-__device__ void matTranspose(float* dest, const float* src, int rows, int cols){
+__host__ __device__ void matTranspose(float* dest, const float* src, int rows, int cols){
   for (int i=0; i<cols; i++)
     for (int j=0; j<rows; j++)
       dest[j*cols+i] = src[i*rows+j];
@@ -56,31 +55,31 @@ __device__ void matTranspose(float* dest, const float* src, int rows, int cols){
 
 
 template <int n>
-__device__ void vecFill(float* v, float x){
+__host__ __device__ void vecFill(float* v, float x){
   for(int i=0; i<n; i++)
     v[i]=x;
 }
 
 template <int n>
-__device__ void vecScale(float* v, float s){
+__host__ __device__ void vecScale(float* v, float s){
   for(int i=0; i<n; i++)
     v[i]*=s;
 }
 
 template <int n>
-__device__ void vecCopy(float* dest, const float* src){
+__host__ __device__ void vecCopy(float* dest, const float* src){
   for(int i=0; i<n; i++)
     dest[i]=src[i];
 }
 
 template <int n>
-__device__ void vecSum(float*dest, const float* src, float scale){
+__host__ __device__ void vecSum(float*dest, const float* src, float scale){
   for(int i=0; i<n; i++)
     dest[i]+=scale*src[i];
 }
 
 template <int n>
-__device__ float vecDot(const float* v1, const float* v2){
+__host__ __device__ float vecDot(const float* v1, const float* v2){
   float a=0;
   for(int i=0; i<n; i++)
     a+=v1[i]*v2[i];
@@ -88,7 +87,7 @@ __device__ float vecDot(const float* v1, const float* v2){
 }
 
 template <int rows, int cols>
-__device__ void matVecMul(float* dest, const float* A, const float*b){
+__host__ __device__ void matVecMul(float* dest, const float* A, const float*b){
   vecFill<rows>(dest, 0);
   for (int i=0; i<cols; i++){
     vecSum<rows>(dest,A,b[i]);
@@ -97,7 +96,7 @@ __device__ void matVecMul(float* dest, const float* A, const float*b){
 }
 
 template <int ra, int ca, int cb>
-__device__ void matMatMul(float* dest, const float* A, const float*B){
+__host__ __device__ void matMatMul(float* dest, const float* A, const float*B){
   float* dptr = dest;
   const float* bptr = B;
   for (int i=0; i<cb; i++){
@@ -109,13 +108,13 @@ __device__ void matMatMul(float* dest, const float* A, const float*B){
 
 
 template <int rows, int cols>
-__device__ void matTranspose(float* dest, const float* src){
+__host__ __device__ void matTranspose(float* dest, const float* src){
   for (int i=0; i<cols; i++)
     for (int j=0; j<rows; j++)
       dest[j*cols+i] = src[i*rows+j];
 }
 
-__device__ void matBuildSkew(float* m, const float* v){
+__host__ __device__ void matBuildSkew(float* m, const float* v){
   const float x = 2*v[0];
   const float y = 2*v[1];
   const float z = 2*v[2];
@@ -125,7 +124,7 @@ __device__ void matBuildSkew(float* m, const float* v){
   m[3] =  0;   m[7] =  0;  m[11] =  0; m[15] = 0;   
 }
 
-__device__ void transformInverse(float* d, const float* s) {
+__host__ __device__ void transformInverse(float* d, const float* s) {
   d[0] =  s[0];   d[4] =  s[1];  d[8]  = s[2];  d[12] = 0;   
   d[1] =  s[4];   d[5] =  s[5];  d[9]  = s[6];  d[13] = 0;   
   d[2] =  s[8];   d[6] =  s[9];  d[10] = s[10]; d[14] = 0;   
@@ -137,7 +136,7 @@ __device__ void transformInverse(float* d, const float* s) {
   d[14] = -t[2];
 }
 
-__device__ void _v2t(float* m, const float* v) {
+__host__ __device__ void _v2t(float* m, const float* v) {
   const float& tx = v[0];
   const float& ty = v[1];
   const float& tz = v[2];
@@ -153,7 +152,7 @@ __device__ void _v2t(float* m, const float* v) {
   vecCopy<16>(m,_m);
 }
 
-__device__ void _t2v(float* v, const float* m) {
+__host__ __device__ void _t2v(float* v, const float* m) {
   const float& m00 = m[0];
   const float& m10 = m[1];
   const float& m20 = m[2];

@@ -1,63 +1,78 @@
-#ifndef _CUDA_MATRIX_CUH_
-#define _CUDA_MATRIX_CUH_
-#include "cudaptr.cuh"
+#ifndef _CUDAMATRIX_CUH_
+#define _CUDAMATRIX_CUH_
 
-template <typename T, int RowsAtCompileTime>
-struct CudaMatrix{
-  __host__ inline void init() {
-    _rows = RowsAtCompileTime == -1 ? 0 : RowsAtCompileTime;
-    _cols = 0;
-    _values.init();
-  }
-  
-  __host__ cudaError_t map(int r, int c, T* x){
-    if (RowsAtCompileTime!=-1 && RowsAtCompileTime != r){
-      assert (0 && "this is a fixed size column matrix, you cant give it arbitrary column size");
-    }
-    _rows = r;
+template <class T, int RowsAtCompileTime>
+struct Matrix {
+  inline __host__ void map(int r, int c, T* v=0){
+    assert(r == RowsAtCompileTime);
     _cols = c;
-    return _values.map(x,_rows*_cols);
+    if (v)
+      _values = v;
   }
   
-  __device__ inline const T* rowAt(int i) const {
-    if (RowsAtCompileTime == -1){
-      return _values.dptr()+(RowsAtCompileTime*i);
-    } else {
-      return _values.dptr()+(_rows*i);
-    }
+  __host__ __device__  inline int pointAt(int r, T c) const {
+    return *(_values+c*RowsAtCompileTime+r);
   }
 
-  __device__  inline T* rowAt(int i) {
-    if (RowsAtCompileTime == -1){
-      return _values.dptr()+(RowsAtCompileTime*i);
-    } else {
-      return _values.dptr()+(_rows*i);
-    }
-  }
-  
-  __device__  inline T elementAt(int r, int c) const {return *(rowAt(c)+r);}
-
-  __device__  inline void setElementAt(int r, int c, const T& v) const {*(rowAt(c)+r) = v;}
-
-  __host__ __device__  inline int rows() const {return _rows;}
-
-  __host__ __device__  inline int cols() const {return _cols;}
-
-  __host__ cudaError_t copyToDevice() {
-    
+  __host__ __device__ inline void setPointAt(int r, int c, T p){
+    return *(_values+c*RowsAtCompileTime+r) = p;
   }
 
-  __host__
+  __host__ __device__ inline const T* columnAt(int c) const{
+    return _values+(c*RowsAtCompileTime);
+  }
+
+  __host__ __device__ inline T* columnAt(int c) {
+    return _values+ (c*RowsAtCompileTime);
+  }
+  __host__ __device__ inline int rows() const {return RowsAtCompileTime;}
+  __host__ __device__ inline int cols() const {return _cols;}
+  __host__ __device__ inline const T* values() const {return _values;}
+  __host__ __device__ inline T* values() { return _values;}
 protected:
-
   int _cols;
-  int _rows;
-  CudaPointer<T> _values;
+  T* _values;
 };
 
 
-typedef CudaMatrix<float,16> MatrixFloat16x;
-typedef CudaMatrix<float,4> MatrixFloat4x;
-typedef CudaMatrix<int,-1>  MatrixIntXX;
+template <class T>
+struct Matrix<T, -1> {
+  inline __host__ void map(int r, int c, T* v=0){
+    _rows = r;
+    _cols = c;
+    if (v)
+      _values = v;
+  }
+  
+  __host__ __device__  inline int pointAt(int r, T c) const {
+    return *(_values+c*_rows+r);
+  }
+
+  __host__ __device__ inline void setPointAt(int r, int c, T p){
+    return *(_values+c*_rows+r) = p;
+  }
+
+  __host__ __device__ inline const T* columnAt(int c) const{
+    return _values+(c*_rows);
+  }
+
+  __host__ __device__ inline T* columnAt(int c) {
+    return _values+(c*_rows);
+  }
+  __host__ __device__ inline int rows() const {return _rows;}
+  __host__ __device__ inline int cols() const {return _cols;}
+  __host__ __device__ inline const T* values() const {return _values;}
+  __host__ __device__ inline T* values() { return _values;}
+protected:
+  int _cols;
+  int _rows;
+  T* _values;
+};
+
+
+
+typedef Matrix<int,-1> IntMatrix;
+typedef Matrix<float,4> FloatMatrix4N;
+typedef Matrix<float,16> FloatMatrix16N;
 
 #endif
