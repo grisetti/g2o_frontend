@@ -1,9 +1,13 @@
 #ifndef _CUDAMATRIX_CUH_
 #define _CUDAMATRIX_CUH_
+#include <assert.h>
+
+namespace CudaAligner{
+
 
 template <class T, int RowsAtCompileTime>
 struct Matrix {
-  inline __host__ void map(int r, int c, T* v=0){
+  inline __host__ void map(int /*r*/, int c, T* v=0){
     assert(r == RowsAtCompileTime);
     _cols = c;
     if (v)
@@ -28,6 +32,7 @@ struct Matrix {
   __host__ __device__ inline int rows() const {return RowsAtCompileTime;}
   __host__ __device__ inline int cols() const {return _cols;}
   __host__ __device__ inline const T* values() const {return _values;}
+
   __host__ __device__ inline T* values() { return _values;}
 protected:
   int _cols;
@@ -75,4 +80,5 @@ typedef Matrix<int,-1> IntMatrix;
 typedef Matrix<float,4> FloatMatrix4N;
 typedef Matrix<float,16> FloatMatrix16N;
 
+} // end namespace
 #endif

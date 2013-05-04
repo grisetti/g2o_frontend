@@ -27,9 +27,9 @@
 
 #include "g2o_frontend/pwn/pointwithnormal.h"
 #include "g2o_frontend/basemath/bm_se3.h"
-
+#include "g2o_frontend/pwn/cudaaligner.h"
+							     
 using namespace std;
-
 int main(int argc, char** argv) {
   /************************************************************************
    *                           Input Handling                             *

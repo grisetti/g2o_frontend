@@ -1,15 +1,58 @@
 #include "aligner.h"
 #include <iostream>
+#include "cudaaligner.h"
 
 using namespace std;
 
+static CudaAligner::AlignerContext* context = 0 ;
+
 void Aligner::align() {
+  CudaAligner::AlignerStatus status;
+  char buf[1024];
+  if (! context){
+    status = CudaAligner::createContext(&context, 640*480, 640*480, 640, 480);
+    status.toString(buf);
+    cerr << "STATUS: " << buf << endl; 
+  }
   _projector->setTransform(Isometry3f::Identity());
   _projector->project(_currentIndexImage,
 		      _currentDepthImage,
 		      *_currentPoints);
+  Vector6f v;
+
+  // v << .1, .1, .1, .2, .2, .2;
+
+  // _T = v2t(v);
+
   _T = _initialGuess;
+
+  float referenceCurvatures[_referenceStats->size()];
+  float currentCurvatures[_currentStats->size()];
+  for (int i=0; i<_referenceStats->size(); i++)
+    referenceCurvatures[i]=_referenceStats->at(i).curvature();
+  for (int i=0; i<_currentStats->size(); i++)
+    currentCurvatures[i]=_currentStats->at(i).curvature();
+  {
+    
+    cerr << "INIT" << endl;
+    status = CudaAligner::initComputation(context,
+					  &(_referencePoints->at(0).coeffRef(0)),
+					  &(_referenceNormals->at(0).coeffRef(0)),
+					  referenceCurvatures,
+					  _referencePoints->size(),
+					  &(_currentPoints->at(0).coeffRef(0)),
+					  &(_currentNormals->at(0).coeffRef(0)),
+					  currentCurvatures,
+					  &(_currentPointOmegas->at(0).coeffRef(0,0)),
+					  &(_currentNormalOmegas->at(0).coeffRef(0,0)),
+					  _currentPoints->size());
+    
+    status.toString(buf);
+    cerr << "STATUS: " << buf << endl; 
+  }
   for(int i = 0; i < _outerIterations; i++) {
+    _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
+      
     cout << "********************* Iteration " << i << " *********************" << endl;
     
     /************************************************************************
@@ -30,6 +73,39 @@ void Aligner::align() {
 				     *_referenceStats, *_currentStats,
 				     _T);
 
+    Matrix6f myH;
+    Vector6f myb;
+    {
+      cerr << "ITERATE" << endl;
+      status = CudaAligner::simpleIteration(context,
+					    & (_referenceIndexImage.coeffRef(0,0)),
+					    & (_currentIndexImage.coeffRef(0,0)),
+					    &(_T.matrix().coeffRef(0,0)));
+    
+      status.toString(buf);
+      cerr << "STATUS: " << buf << endl; 
+      Eigen::Matrix4f Htt, Htr, Hrr;
+      Eigen::Vector4f bt, br;
+      CudaAligner::getHb(context,
+			 &(Htt.coeffRef(0,0)), 
+			 &(Htr.coeffRef(0,0)), 
+			 &(Hrr.coeffRef(0,0)), 
+			 &(bt.coeffRef(0,0)), 
+			 &(br.coeffRef(0,0)));
+      myH.block<3,3>(0,0) = Htt.block<3,3>(0,0);
+      myH.block<3,3>(0,3) = Htr.block<3,3>(0,0);
+      myH.block<3,3>(3,3) = Hrr.block<3,3>(0,0);
+      myH.block<3,3>(3,0) = myH.block<3,3>(0,3).transpose();
+      myb.block<3,1>(0,0) = bt.block<3,1>(0,0);
+      myb.block<3,1>(3,0) = br.block<3,1>(0,0);
+    }
+    int acc = 0;
+    for (int i=0; i<_currentIndexImage.cols(); i++)
+      for (int j=0; j<_currentIndexImage.rows(); j++)
+	acc += _referenceIndexImage.coeffRef(j,i) - _currentIndexImage.coeffRef(j,i);
+
+    cerr  << "rows: "<<  _currentIndexImage.rows() << " cols: " << _currentIndexImage.cols() <<"  checksum: " << acc<< endl;
+
     cout << " done." << endl;
     _numCorrespondences = _correspondenceGenerator.numCorrespondences();
     cout << "# inliers found: " << _numCorrespondences << endl;
@@ -41,15 +117,29 @@ void Aligner::align() {
       Matrix6f H;
       Vector6f b;
       _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
-      _linearizer->setT(_T);
-      _linearizer->update();
-      H = _linearizer->H() + Matrix6f::Identity() * 10.0f;;
-      b = _linearizer->b();
+      // _linearizer->setT(_T);
+      // _linearizer->update();
+      // H = _linearizer->H() + Matrix6f::Identity() * 10.0f;;
+      // b = _linearizer->b();
+
+
+      H = myH;
+      b = myb;
       Vector6f dx = H.ldlt().solve(-b);
       Eigen::Isometry3f dT = v2t(dx);
       _T = dT * _T;
       _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
+      cerr << "Hreal: " << endl << H-myH << endl;
+      cerr << "breal: " << endl << b-myb << endl;
     }    
   }
   _T = _sensorOffset * _T;
+
+  {
+    cerr << "Destroy" << endl;
+    status = CudaAligner::destroyContext(context);
+    status.toString(buf);
+    cerr << "STATUS: " << buf << endl; 
+  }
+  
 }

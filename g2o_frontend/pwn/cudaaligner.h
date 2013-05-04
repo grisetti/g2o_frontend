@@ -3,9 +3,8 @@
 #include <assert.h>
 #include <cstdio>
 #include <cuda.h>
-#include "cudamatrix.cuh"
 
-struct AlignerContext {
+namespace CudaAligner {
 
   enum Operation {
     Ok=0x0, 
@@ -39,12 +38,10 @@ struct AlignerContext {
     Indices=0x6
   };
 
-  static const char* strOperation[];
-  static const char* strObject[];
-  static const char* strObjectDetail[];
-
-
   struct AlignerStatus{
+    static const char* strOperation[];
+    static const char* strObject[];
+    static const char* strObjectDetail[];
     AlignerStatus(Operation op=Ok, Object object=NoObject, ObjectDetail detail=NoDetail){
       _operation=op;
       _object=object;
@@ -55,45 +52,15 @@ struct AlignerContext {
     ObjectDetail _detail;
     void toString(char* s);
   };
+
+  struct AlignerContext;
   
-  int _maxReferencePoints, _maxCurrentPoints;
-  int _numReferencePoints, _numCurrentPoints;
-  int _rows, _cols;
+  AlignerStatus createContext(AlignerContext** context, int maxReferencePoints, int maxCurrentPoints, int rows, int cols);
 
-  // to be passed only once
-  FloatMatrix4N _referencePoints;
-  FloatMatrix4N _referenceNormals;
-  float* _referenceCurvatures;
-  FloatMatrix4N _currentPoints;
-  FloatMatrix4N _currentNormals;
-  FloatMatrix16N _currentOmegaPs;
-  FloatMatrix16N _currentOmegaNs;
-  float* _currentCurvatures;
+  AlignerStatus destroyContext(AlignerContext* context);
 
-  
-  // to be passed once per iteration
-  IntMatrix   _currentIndices;
-  IntMatrix   _referenceIndices;
-  IntMatrix   _depthBuffer;
-  // cuda temporaries for the reduce;
-
-
- // parameters
-  float _distanceThreshold;
-  float _normalThreshold;
-  float _flatCurvatureThreshold;
-  float _minCurvatureRatio;
-  float _maxCurvatureRatio;
-  float _inlierThreshold;
-  float _maxDepth;
-  float _transform[16];
-  float _KT[16];
-
-    // initializes the default values and sets the base parameters
-  AlignerStatus init(int maxReferencePoints, int maxCurrentPoints, int rows, int cols);
-
-  // initializes the computation by passing all the values that will not change during the iterations
-  AlignerStatus initComputation(float* referencePointsPtr, 
+  AlignerStatus initComputation(AlignerContext* context,
+				float* referencePointsPtr, 
 				float* referenceNormalsPtr, 
 				float* referenceCurvaturesPtr, 
 				int numReferencePoints_, 
@@ -104,48 +71,12 @@ struct AlignerContext {
 				float* currentOmegaNPtr, 
 				int numCurrentPoints_);
 
-  AlignerStatus simpleIteration(int* referenceIndices, int* currentIndices, float* transform);
+  AlignerStatus simpleIteration(AlignerContext* context,
+				int* referenceIndices,
+				int* currentIndices,
+				float* transform);
 
-  // frees the cuda context
-  AlignerStatus free();
-
-
-// private cuda context
-//private:
-  AlignerContext* _cudaDeviceContext, *_cudaHostContext ;
-  float* _accumulationBuffer;
-  __device__ inline int processCorrespondence(float* error,
-					      float* Htt,
-					      float* Hrr,
-					      float* Htr,
-					      float* bt,
-					      float* br,
-					      int referenceIndex, int currentIndex);
-  
-};
-/*
-
-void matPrint(const float* m, int r, int c, const char* msg=0);
-
-
-void Aligner_fillContext(AlignerContext* context,
-			 float* referencePointsPtr, float* referenceNormalsPtr, float* referenceCurvatres, 
-			 int numReferencePoints, 
-			 float* currentPointsPtr, float* currentNormalsPtr, float* currentCurvatures, 
-			 float* currentOmegaPsPtr, float* currentOmegaNsPtr,
-			 int numCurrentPoints,
-			 
-			 int* referenceIndicesPtr,
-			 int* currentIndicesPtr,
-			 int imageRows,
-			 int imageCols,
-			 float* transform);
-
-int Aligner_processCorrespondences(float* globalError,
-				   float* Htt_,
-				   float* Htr_,
-				   float* Hrr_,
-				   float* bt_,
-				   float* br_, const AlignerContext* context);
-*/
+  int getHb(AlignerContext* context, float* Htt, float* Hrt, float* Hrr, float*bt, float* br);
+				    
+}
 #endif

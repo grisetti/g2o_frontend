@@ -1,6 +1,8 @@
 #ifndef _CUDASLA_H_
 #define _CUDASLA_H_
 
+namespace CudaAligner {
+
 __host__ __device__ void vecFill(float* v, float x, int n){
   for(int i=0; i<n; i++)
     v[i]=x;
@@ -199,5 +201,7 @@ __host__ __device__ void _t2v(float* v, const float* m) {
   v[4] = qy;
   v[5] = qz;
 }
+
+} // end namespace
 
 #endif
