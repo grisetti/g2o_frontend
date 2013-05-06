@@ -16,8 +16,7 @@ ADD_LIBRARY(pwn_library
   pinholepointprojector.cpp pinholepointprojector.h
   homogeneouspoint3fintegralimage.cpp homogeneouspoint3fintegralimage.h
   normalgenerator.h	
-  #homogeneouspoint3fscene.cpp 
-  homogeneouspoint3fscene.h
+  homogeneouspoint3fscene.cpp homogeneouspoint3fscene.h
   homogeneouspoint3fstatsgenerator.cpp homogeneouspoint3fstatsgenerator.h
   homogeneouspoint3faccumulator.h
   homogeneouspoint3fstats.h
@@ -39,9 +38,9 @@ ADD_LIBRARY(pwn_library
 
 SET_TARGET_PROPERTIES(pwn_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}pwn_library)
 
-#ADD_EXECUTABLE(pwn_test pwn_test.cpp)
-#SET_TARGET_PROPERTIES(pwn_test PROPERTIES OUTPUT_NAME pwn_test)
-#TARGET_LINK_LIBRARIES( pwn_test pwn_library ${G2O_STUFF_LIBRARY})
+ADD_EXECUTABLE(pwn_test pwn_test.cpp)
+SET_TARGET_PROPERTIES(pwn_test PROPERTIES OUTPUT_NAME pwn_test)
+TARGET_LINK_LIBRARIES( pwn_test pwn_library ${G2O_STUFF_LIBRARY})
 
 ADD_EXECUTABLE(pwn_align pwn_align.cpp)
 SET_TARGET_PROPERTIES(pwn_align PROPERTIES OUTPUT_NAME pwn_align)

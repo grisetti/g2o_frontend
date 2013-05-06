@@ -230,7 +230,7 @@ int main(int argc, char** argv) {
 
   QApplication qApplication(argc, argv);
   PWNGuiMainWindow pwnGMW;
-  QGraphicsScene *refScn, *currScn;
+  //QGraphicsScene *refScn, *currScn;
   
   std::vector<string> filenames;
   std::set<string> filenamesset = readDir(workingDirectory);
@@ -257,8 +257,8 @@ int main(int argc, char** argv) {
   aligner.setInnerIterations(al_innerIterations);
   
   pwnGMW.show();
-  refScn = pwnGMW.scene0();
-  currScn = pwnGMW.scene1();
+  //refScn = pwnGMW.scene0();
+  //currScn = pwnGMW.scene1();
 
   bool newCloudAdded = false, wasInitialGuess = false;
   bool *initialGuessViewer = 0, *optimizeViewer = 0, *addCloud = 0, *clearLast = 0, *clearAll = 0;

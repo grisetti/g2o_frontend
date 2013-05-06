@@ -21,6 +21,11 @@ class HomogeneousPoint3fScene {
   void setPointOmegas(HomogeneousPoint3fOmegaVector pointOmegas_) { _pointOmegas = pointOmegas_; }
   void setNormalOmegas(HomogeneousPoint3fOmegaVector normalOmegas_) { _normalOmegas = normalOmegas_; }
 
+  bool load(const char* filename);
+  bool load(std::istream & is);
+  bool save(const char* filename, int step, bool binary);
+  bool save(std::ostream &os, int step=1, bool binary=false) ;
+
  protected:
   HomogeneousPoint3fVector _points;
   HomogeneousNormal3fVector _normals;
