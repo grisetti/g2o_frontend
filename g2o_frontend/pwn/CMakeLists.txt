@@ -8,14 +8,6 @@ endif(OPENMP_FOUND)
 
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 
-
-find_package(CUDA)
-if(CUDA_FOUND)
-  set(CUDA_NVCC_FLAGS "-O3 -gencode arch=compute_30,code=sm_30")
-  set(BUILD_SHARED_LIBS OFF) 
-  CUDA_ADD_LIBRARY(pwn_aligner_cuda_library cudaaligner.cu)
-endif(CUDA_FOUND)
-
 ADD_LIBRARY(pwn_library
 	../basemath/bm_se3.h
 	aligner.cpp aligner.h
@@ -46,7 +38,6 @@ ADD_LIBRARY(pwn_library
 )
 
 SET_TARGET_PROPERTIES(pwn_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}pwn_library)
-TARGET_LINK_LIBRARIES( pwn_library pwn_aligner_cuda_library)
 
 ADD_EXECUTABLE(pwn_test pwn_test.cpp)
 SET_TARGET_PROPERTIES(pwn_test PROPERTIES OUTPUT_NAME pwn_test)
@@ -74,5 +65,5 @@ TARGET_LINK_LIBRARIES( pwn_g2o_movingRef pwn_library  ${G2O_STUFF_LIBRARY} )
 
 ADD_EXECUTABLE(homogeneous_normals homogeneous_normals.cpp)
 SET_TARGET_PROPERTIES(homogeneous_normals PROPERTIES OUTPUT_NAME homogeneous_normals)
-TARGET_LINK_LIBRARIES( homogeneous_normals pwn_library  ${G2O_STUFF_LIBRARY} pwn_aligner_cuda_library ) 
+TARGET_LINK_LIBRARIES( homogeneous_normals pwn_library  ${G2O_STUFF_LIBRARY}) 
 
