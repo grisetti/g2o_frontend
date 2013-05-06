@@ -21,6 +21,8 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
     setZero();
     _n = 0;
     _mean = HomogeneousPoint3f::Zero();
+    _curvatureComputed = false;
+    _curvature = 1.0f;	
   }
 
   /** \typedef Base
