@@ -11,7 +11,7 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 
 find_package(CUDA)
 if(CUDA_FOUND)
-  set(CUDA_NVCC_FLAGS "-gencode arch=compute_30,code=sm_30")
+  set(CUDA_NVCC_FLAGS "-O3 -gencode arch=compute_30,code=sm_30")
   set(BUILD_SHARED_LIBS OFF) 
   CUDA_ADD_LIBRARY(pwn_aligner_cuda_library cudaaligner.cu)
 endif(CUDA_FOUND)

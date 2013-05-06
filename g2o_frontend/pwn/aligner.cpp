@@ -1,6 +1,7 @@
 #include "aligner.h"
 #include <iostream>
 #include "cudaaligner.h"
+#include "pinholepointprojector.h"
 
 using namespace std;
 
@@ -33,9 +34,12 @@ void Aligner::align() {
   for (int i=0; i<_currentStats->size(); i++)
     currentCurvatures[i]=_currentStats->at(i).curvature();
   {
-    
+
+    PinholePointProjector *pprojector = (PinholePointProjector *) _projector;
     cerr << "INIT" << endl;
+    cerr << "camera amtrix: " << pprojector->cameraMatrix() << endl;
     status = CudaAligner::initComputation(context,
+					  &(pprojector->cameraMatrix().coeffRef(0,0)),
 					  &(_referencePoints->at(0).coeffRef(0)),
 					  &(_referenceNormals->at(0).coeffRef(0)),
 					  referenceCurvatures,
@@ -58,30 +62,33 @@ void Aligner::align() {
     /************************************************************************
      *                         Correspondence Computation                   *
      ************************************************************************/
-    cout << "Computing correspondences...";
+    //cout << "Computing correspondences...";
     
-    _projector->setTransform(_T.inverse());
-    _projector->project(_referenceIndexImage,
-			_referenceDepthImage,
-			*_referencePoints);
+    // _projector->setTransform(_T.inverse());
+    // _projector->project(_referenceIndexImage,
+    // 			_referenceDepthImage,
+    // 			*_referencePoints);
     
-    // Correspondences computation.    
-    _correspondenceGenerator.compute(_correspondences,
-				     *_referencePoints, *_currentPoints,
-				     *_referenceNormals, *_currentNormals,
-				     _referenceIndexImage, _currentIndexImage,
-				     *_referenceStats, *_currentStats,
-				     _T);
+    // // Correspondences computation.    
+    // _correspondenceGenerator.compute(_correspondences,
+    // 				     *_referencePoints, *_currentPoints,
+    // 				     *_referenceNormals, *_currentNormals,
+    // 				     _referenceIndexImage, _currentIndexImage,
+    // 				     *_referenceStats, *_currentStats,
+    // 				     _T);
 
     Matrix6f myH;
     Vector6f myb;
     {
       cerr << "ITERATE" << endl;
       status = CudaAligner::simpleIteration(context,
-					    & (_referenceIndexImage.coeffRef(0,0)),
-					    & (_currentIndexImage.coeffRef(0,0)),
 					    &(_T.matrix().coeffRef(0,0)));
-    
+      /*
+      for (int i=0; i<_referenceIndexImage.cols(); i++)
+      	for (int j=0; j<_referenceIndexImage.rows(); j++){
+      	  cout << _referenceIndexImage.coeffRef(j,i) << " ";
+      	}
+      */
       status.toString(buf);
       cerr << "STATUS: " << buf << endl; 
       Eigen::Matrix4f Htt, Htr, Hrr;
@@ -100,13 +107,6 @@ void Aligner::align() {
       myb.block<3,1>(3,0) = br.block<3,1>(0,0);
     }
     int acc = 0;
-    for (int i=0; i<_currentIndexImage.cols(); i++)
-      for (int j=0; j<_currentIndexImage.rows(); j++)
-	acc += _referenceIndexImage.coeffRef(j,i) - _currentIndexImage.coeffRef(j,i);
-
-    cerr  << "rows: "<<  _currentIndexImage.rows() << " cols: " << _currentIndexImage.cols() <<"  checksum: " << acc<< endl;
-
-    cout << " done." << endl;
     _numCorrespondences = _correspondenceGenerator.numCorrespondences();
     cout << "# inliers found: " << _numCorrespondences << endl;
  
@@ -129,8 +129,8 @@ void Aligner::align() {
       Eigen::Isometry3f dT = v2t(dx);
       _T = dT * _T;
       _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
-      cerr << "Hreal: " << endl << H-myH << endl;
-      cerr << "breal: " << endl << b-myb << endl;
+      //cerr << "Hreal: " << endl << H-myH << endl;
+      //cerr << "breal: " << endl << b-myb << endl;
     }    
   }
   _T = _sensorOffset * _T;

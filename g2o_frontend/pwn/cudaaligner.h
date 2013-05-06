@@ -18,12 +18,13 @@ namespace CudaAligner {
 
 
   enum Object    {
-    NoObject=0x0, 
+    NoObject=0x0,
     Reference=0x1, 
     Current=0x2, 
     Context=0x3, 
     DepthBuffer=0x4, 
-    AccumulationBuffer=0x5
+    AccumulationBuffer=0x5,
+    ReductionBuffer=0x6
   };
 
 
@@ -60,6 +61,7 @@ namespace CudaAligner {
   AlignerStatus destroyContext(AlignerContext* context);
 
   AlignerStatus initComputation(AlignerContext* context,
+				const float* cameraMatrix, // this is a 3x3 matrix (9 elements)
 				float* referencePointsPtr, 
 				float* referenceNormalsPtr, 
 				float* referenceCurvaturesPtr, 
@@ -72,8 +74,6 @@ namespace CudaAligner {
 				int numCurrentPoints_);
 
   AlignerStatus simpleIteration(AlignerContext* context,
-				int* referenceIndices,
-				int* currentIndices,
 				float* transform);
 
   int getHb(AlignerContext* context, float* Htt, float* Hrt, float* Hrr, float*bt, float* br);

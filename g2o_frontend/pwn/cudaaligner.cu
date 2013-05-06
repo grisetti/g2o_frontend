@@ -1,5 +1,6 @@
 #include "cudaaligner.cuh"
 #include <cstdio>
+#include <iostream>
 using namespace std;
 
 #include "cudaaligner.cuh"
@@ -8,417 +9,603 @@ using namespace std;
 
 namespace CudaAligner {
 
-//#define __device__ inline
-//#define __host__ inline
 
-const char* AlignerStatus::strOperation[]  = {
-  "Ok", 
-  "Allocation", 
-  "Deallocation", 
-  "CopyToDevice", 
-  "CopyFromDevice", 
-  "KernelLaunch", 
-  "InitComputation"
-};
-
-const char* AlignerStatus::strObject[] = {
-  "NoObject", 
-  "Reference", 
-  "Current", 
-  "Context", 
-  "DepthBuffer", 
-  "AccumulationBuffer"
-};
-
-const char* AlignerStatus::strObjectDetail[] =  {
-  "NoDetail", 
-  "Points", 
-  "Normals", 
-  "Curvatures", 
-  "OmegaPs", 
-  "OmegaNs", 
-  "Indices"
-};
-
-void AlignerStatus::toString(char* s) {
-  sprintf(s, "Operation: %s, Object: %s, ObjectDetail: %s", 
-	  strOperation[_operation],
-	  strObject[_object],
-	  strObjectDetail[_detail]);
-}
-#define allocateVar(vtype, name, size, errorcode) \
-  vtype * name; \
-  { \
-    err = cudaMalloc(& name, (size) * sizeof(vtype) ); \
-    if ( err != cudaSuccess) \
-      return errorcode; \
-  }
-
-#define freeVar(name, errorcode) \
-  { \
-    err = cudaFree(name); \
-    if ( err != cudaSuccess) \
-      return errorcode; \
-  }
-
-
-
-__host__ AlignerStatus AlignerContext::init(int maxReferencePoints_, int maxCurrentPoints_, int rows_, int cols_) {
-  
-  _inlierThreshold =  9e3;
-  _distanceThreshold = 3.0f;
-  _distanceThreshold *= _distanceThreshold;
-  _normalThreshold = cos(M_PI/6);
-  _flatCurvatureThreshold = 0.02f;
-  _maxCurvatureRatio = 1.3f;
-  _minCurvatureRatio = 1./_maxCurvatureRatio;
-
-  _numReferencePoints = 0;
-  _numCurrentPoints = 0;
-  _maxReferencePoints = maxReferencePoints_;
-  _maxCurrentPoints = maxCurrentPoints_;
-  _rows = rows_;
-  _cols = cols_;
-  
-
-  // allocate the things
-  cudaError_t err;
-  allocateVar(float, d_referencePointsPtr, _maxReferencePoints*4, AlignerStatus(Allocation,Reference,Points));
-  allocateVar(float, d_referenceNormalsPtr, _maxReferencePoints*4, AlignerStatus(Allocation,Reference,Normals));
-  allocateVar(float, d_referenceCurvaturesPtr, _maxReferencePoints, AlignerStatus(Allocation,Reference,Curvatures));
-  allocateVar(float, d_currentPointsPtr, _maxCurrentPoints*4, AlignerStatus(Allocation,Current,Points));
-  allocateVar(float, d_currentNormalsPtr, _maxCurrentPoints*4, AlignerStatus(Allocation,Current,Normals));
-  allocateVar(float, d_currentCurvaturesPtr, _maxCurrentPoints, AlignerStatus(Allocation,Current,Curvatures));
-  allocateVar(float, d_currentOmegaPsPtr, _maxCurrentPoints*16, AlignerStatus(Allocation,Current,OmegaPs));
-  allocateVar(float, d_currentOmegaNsPtr, _maxCurrentPoints*16, AlignerStatus(Allocation,Current,OmegaNs));
-  allocateVar(int,   d_referenceIndicesPtr, _rows*_cols, AlignerStatus(Allocation,Reference,Indices));
-  allocateVar(int,   d_currentIndicesPtr, _rows*_cols,  AlignerStatus(Allocation,Current,Indices));
-  allocateVar(int,   d_depthBufferPtr, _rows*_cols, AlignerStatus(Allocation,DepthBuffer));
-
-  
-  // construct the temp buffers
-  const int bufferElement = 16*3+8;
-  const int bsize = bufferElement*_rows*_cols;
-  _accumulationBuffer = new float [bsize];
-  allocateVar(float, d_accumulationBuffer, bsize*sizeof(float), AlignerStatus(Allocation,AccumulationBuffer));
-  
-
-  err = cudaMalloc(&_cudaDeviceContext,sizeof(AlignerContext));
-  if (err!=cudaSuccess)
-    return AlignerStatus(Allocation,Context);
-
-  
-  _cudaHostContext = new AlignerContext;
-  *_cudaHostContext = *this;
-  _cudaHostContext->_referencePoints.map(4,_maxReferencePoints, d_referencePointsPtr);
-  _cudaHostContext->_referenceNormals.map(4,_maxReferencePoints, d_referenceNormalsPtr);
-  _cudaHostContext->_referenceCurvatures = d_referenceCurvaturesPtr;
-  _cudaHostContext->_currentPoints.map(4,_maxCurrentPoints, d_currentPointsPtr);
-  _cudaHostContext->_currentNormals.map(4,_maxCurrentPoints, d_currentNormalsPtr);
-  _cudaHostContext->_currentCurvatures = d_currentCurvaturesPtr;
-  _cudaHostContext->_currentOmegaPs.map(16,_maxCurrentPoints, d_currentOmegaPsPtr);
-  _cudaHostContext->_currentOmegaNs.map(16,_maxCurrentPoints, d_currentOmegaNsPtr);
-  _cudaHostContext->_currentIndices.map(_rows, _cols, d_currentIndicesPtr);
-
-
-  _cudaHostContext->_referenceIndices.map(_rows, _cols, d_referenceIndicesPtr);
-  _cudaHostContext->_currentIndices.map(_rows, _cols, d_currentIndicesPtr);
-  _cudaHostContext->_depthBuffer.map(_rows, _cols, d_depthBufferPtr);
-  _cudaHostContext->_accumulationBuffer=d_accumulationBuffer;
-  err = cudaMemcpy(_cudaDeviceContext,_cudaHostContext, sizeof(AlignerContext), cudaMemcpyHostToDevice);
-  if (err!=cudaSuccess)
-    return AlignerStatus(CopyToDevice,Context);
-
-  return AlignerStatus();
-}
-
-
-
-__host__ AlignerStatus AlignerContext::free(){
-  cudaError_t err;
-  freeVar(_cudaHostContext->_referencePoints.values(), AlignerStatus(Deallocation,Reference,Points));
-  freeVar(_cudaHostContext->_referenceNormals.values(), AlignerStatus(Deallocation,Reference,Normals));
-  freeVar(_cudaHostContext->_referenceCurvatures, AlignerStatus(Deallocation,Reference,Curvatures));
-  freeVar(_cudaHostContext->_currentPoints.values(), AlignerStatus(Deallocation,Current,Points));
-  freeVar(_cudaHostContext->_currentNormals.values(), AlignerStatus(Deallocation,Current,Normals));
-  freeVar(_cudaHostContext->_currentCurvatures, AlignerStatus(Deallocation,Current,Curvatures));
-  freeVar(_cudaHostContext->_currentOmegaPs.values(), AlignerStatus(Deallocation,Current,OmegaPs));
-  freeVar(_cudaHostContext->_currentOmegaNs.values(), AlignerStatus(Deallocation,Current,OmegaNs));
-  freeVar(_cudaHostContext->_referenceIndices.values(), AlignerStatus(Deallocation,Reference,Indices));
-  freeVar(_cudaHostContext->_currentIndices.values(), AlignerStatus(Deallocation,Current,Indices));
-  freeVar(_cudaHostContext->_depthBuffer.values(), AlignerStatus(Deallocation,DepthBuffer));
-  freeVar(_cudaHostContext->_accumulationBuffer, AlignerStatus(Deallocation,AccumulationBuffer));
-  delete [] _accumulationBuffer;
-  freeVar(_cudaDeviceContext, AlignerStatus(Deallocation,Context));
-  delete _cudaHostContext;
-  _cudaHostContext=0;
-  _cudaDeviceContext =0;
-  return AlignerStatus();
-}
-
-
-
-// initializes the computation by passing all the values that will not change during the iterations
-__host__ AlignerStatus AlignerContext::initComputation(
-						       float* referencePointsPtr, 
-						       float* referenceNormalsPtr, 
-						       float* referenceCurvaturesPtr, 
-						       int numReferencePoints_, 
-						       float* currentPointsPtr, 
-						       float* currentNormalsPtr, 
-						       float* currentCurvaturesPtr, 
-						       float* currentOmegaPsPtr, 
-						       float* currentOmegaNsPtr, 
-						       int numCurrentPoints_){
-  if (numReferencePoints_>_maxReferencePoints)
-    return AlignerStatus(InitComputation,Reference);
-  if (numCurrentPoints_>_maxCurrentPoints)
-    return AlignerStatus(InitComputation,Current);
-
-  _numReferencePoints = numReferencePoints_;
-  _numCurrentPoints = numCurrentPoints_;
-
-  // adjust the pointers on the host
-  _referencePoints.map(4,_numReferencePoints,referencePointsPtr);
-  _referenceNormals.map(4,_numReferencePoints,referenceNormalsPtr);
-  _referenceCurvatures=referenceCurvaturesPtr;
-  _currentPoints.map(4,_numCurrentPoints,currentPointsPtr);
-  _currentNormals.map(4,_numCurrentPoints,currentNormalsPtr);
-  _currentCurvatures=currentCurvaturesPtr;
-  _currentOmegaPs.map(16,_numCurrentPoints, currentOmegaPsPtr);
-  _currentOmegaNs.map(16,_numCurrentPoints, currentOmegaNsPtr);
-  
-
-  // adjust the parameters on the host copy of the device, without changing the buffers
-  _cudaHostContext->_referencePoints.map(4,_numReferencePoints);
-  _cudaHostContext->_referenceNormals.map(4,_numReferencePoints);
-  _cudaHostContext->_currentPoints.map(4,_numCurrentPoints);
-  _cudaHostContext->_currentNormals.map(4,_numCurrentPoints);
-  _cudaHostContext->_currentOmegaPs.map(16,_numCurrentPoints);
-  _cudaHostContext->_currentOmegaNs.map(16,_numCurrentPoints);
-  
-  // do the copy of the buffers
-  cudaError_t err ;
-  err = cudaMemcpy(_cudaHostContext->_referencePoints.values(), 
-		   _referencePoints.values(), 4*sizeof(float)*_numReferencePoints, cudaMemcpyHostToDevice);
-  if (err != cudaSuccess)
-    return AlignerStatus(CopyToDevice,Reference,Points);
-
-  err = cudaMemcpy(_cudaHostContext->_referenceNormals.values(), 
-		   _referenceNormals.values(), 4*sizeof(float)*_numReferencePoints, cudaMemcpyHostToDevice);
-  if (err != cudaSuccess)
-    return AlignerStatus(CopyToDevice,Reference,Normals);
-  err = cudaMemcpy(_cudaHostContext->_referenceCurvatures, 
-		   _referenceCurvatures, sizeof(float)*_numReferencePoints, cudaMemcpyHostToDevice);
-  if (err != cudaSuccess)
-    return AlignerStatus(CopyToDevice,Reference,Curvatures);
-
-  err = cudaMemcpy(_cudaHostContext->_currentPoints.values(), 
-		   _currentPoints.values(), 4*sizeof(float)*_numCurrentPoints, cudaMemcpyHostToDevice);
-  if (err != cudaSuccess)
-    return AlignerStatus(CopyToDevice,Current,Points);
-
-  err = cudaMemcpy(_cudaHostContext->_currentNormals.values(), 
-		   _currentNormals.values(), 4*sizeof(float)*_numCurrentPoints, cudaMemcpyHostToDevice);
-  if (err != cudaSuccess)
-    return AlignerStatus(CopyToDevice,Current,Normals);
-
-  err = cudaMemcpy(_cudaHostContext->_currentCurvatures, 
-		   _currentCurvatures, sizeof(float)*_numCurrentPoints, cudaMemcpyHostToDevice);
-  if (err != cudaSuccess)
-    return AlignerStatus(CopyToDevice,Current,Curvatures);
-
-  err = cudaMemcpy(_cudaHostContext->_currentOmegaPs.values(), 
-		   _currentOmegaPs.values(), 16*sizeof(float)*_numCurrentPoints, cudaMemcpyHostToDevice);
-  if (err != cudaSuccess)
-    return AlignerStatus(CopyToDevice,Current,OmegaPs);
-
-  err = cudaMemcpy(_cudaHostContext->_currentOmegaNs.values(), 
-		   _currentOmegaNs.values(), 16*sizeof(float)*_numCurrentPoints, cudaMemcpyHostToDevice);
-  if (err != cudaSuccess)
-    return AlignerStatus(CopyToDevice,Current,OmegaNs);
-  
-  // now do the copy of the high level structure (which includes all the internal variables, including
-  // the parameters
-  err = cudaMemcpy(_cudaDeviceContext,_cudaHostContext, sizeof(AlignerContext), cudaMemcpyHostToDevice);
-  if (err!=cudaSuccess)
-    return AlignerStatus(CopyToDevice,Context);
-  return  AlignerStatus();
-}
-  /*
-  __global__ void computeDepthBuffer(int* depthBuffer, float* cameraMatrix float* points, int numPoints, int maxDepth, int rows, int cols){
-  }
-
-  __global__ void computeIndexBuffer(int* indexBuffer, int* depthBuffer, float* cameraMatrix float* points, int numPoints, int rows, int cols){
-  }
-  */
-
-  __global__ void Aligner_clearDepthBuffer(AlignerContext* context){
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
-    if (i<context->_rows * context->_cols){
-      context->_depthBuffer.values()[i]=context->_maxDepth + 1;
+  void matPrint(const float* m, int r, int c, const char* msg){
+    if (msg){
+      printf("%s r:%d c:%d\n", msg, r, c);
     }
-    __syncthreads();
-  }
-
-  __global__ void Aligner_computeReferenceDepthBuffer(AlignerContext* context, float* KT){
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
-    float point[4];
-    if (i<context->_numReferencePoints){
-      float* referencePoint=context->_referencePoints.columnAt(i);
-      matVecMul<4,4>(point,KT,referencePoint);
-      float iw= 1./point[2];
-      int d = 1000 * point[2];
-      int x = (int)(point[0]*iw);
-      int y = (int)(point[1]*iw);
-      int offset = y*context->_rows+x;
-      if ( d > 0 && d < context-> _maxDepth && offset >= 0  && offset <= context->_rows * context->_cols){
-	  atomicMin(context->_depthBuffer.values()+offset, d);
+    for (int i=0; i<r; i++) {
+      for (int j=0; j<c; j++) {
+	printf("%f ",m[j*r+i]);
       }
-	__syncthreads();
+      printf("\n");
     }
   }
 
-  __global__ void Aligner_computeReferenceIndexBuffer(AlignerContext* context, float* KT){
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
-    float point[4];
-    if (i<context->_numReferencePoints){
-      float* referencePoint=context->_referencePoints.columnAt(i);
-      matVecMul<4,4>(point,KT,referencePoint);
-      float iw= 1./point[2];
-      int d = 1000 * point[2];
-      int x = (int)(point[0]*iw);
-      int y = (int)(point[1]*iw);
-      int offset = y*context->_rows+x;
-      if ( d > 0 && d < context-> _maxDepth && offset >= 0  && offset <= context->_rows * context->_cols){
-	  int otherDptr = *(context->_depthBuffer.values()+offset);
-	  if (abs(otherDptr-d)<1)
-	    context->_referencePoints.values()[offset]=i;
-      }
-	__syncthreads();
-      }
+  //#define __device__ inline
+  //#define __host__ inline
+
+  const char* AlignerStatus::strOperation[]  = {
+    "Ok", 
+    "Allocation", 
+    "Deallocation", 
+    "CopyToDevice", 
+    "CopyFromDevice", 
+    "KernelLaunch", 
+    "InitComputation"
+  };
+
+  const char* AlignerStatus::strObject[] = {
+    "NoObject", 
+    "Reference", 
+    "Current", 
+    "Context", 
+    "DepthBuffer", 
+    "AccumulationBuffer",
+    "ReductionBuffer",
+  };
+
+  const char* AlignerStatus::strObjectDetail[] =  {
+    "NoDetail", 
+    "Points", 
+    "Normals", 
+    "Curvatures", 
+    "OmegaPs", 
+    "OmegaNs", 
+    "Indices"
+  };
+
+  void AlignerStatus::toString(char* s) {
+    sprintf(s, "Operation: %s, Object: %s, ObjectDetail: %s", 
+	    strOperation[_operation],
+	    strObject[_object],
+	    strObjectDetail[_detail]);
   }
 
 
 
-  __global__ void Aligner_simpleIterationKernel(AlignerContext* context){
-  int i = blockDim.x * blockIdx.x + threadIdx.x;
- 
-  if (i < context->_rows*context->_cols) {
+  template <class T>
+  __global__ void fillBuffer(T* buffer, int numElems, T value){
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+    float ip[4];
+    if (i<numElems){
+      buffer[i] = value;
+    }
+  }
 
-    int retval = 0;
-    float error;
-    float Htt[16];
-    float Hrr[16];
-    float Htr[16];
-    float bt[4];
-    float br[4];
 
-    int referenceIndex=*(context->_referenceIndices.values()+i);
-    int currentIndex=*(context->_currentIndices.values()+i);
-    atomicAdd(&context->_checksum, referenceIndex - currentIndex);
+  __global__ void computeDepthBuffer(int* buffer, int rows, int cols, 
+				     const float* KT, const float* points, int numPoints,
+				     int dmin, int dmax){
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+    float ip[4];
+    if (i<numPoints){
+      const float* wp=points+4*i;
+      matVecMul<4,4>(ip,KT,wp);
+      float iw= 1./ip[2];
+      int d = ip[2] * 1000.0f;
+      int x = (int)(ip[0]*iw);
+      int y = (int)(ip[1]*iw);
+      int offset = y*rows+x;
+      if (d > dmin && d > dmax &&
+	   x >= 0 && x<= rows && 
+	   y>=0 && y<=cols){
+	atomicMin(buffer+offset,x);
+      }
+    }
+  }
+
+
+  __global__ void computeIndexBuffer(int* ibuffer, const int* zbuffer, int rows, int cols, 
+				     const float* KT, const float* points, int numPoints){
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+    float ip[4];
+    if (i<numPoints){
+      const float* wp=points+4*i;
+      matVecMul<4,4>(ip,KT,wp);
+      float iw= 1./ip[2];
+      int d = ip[2] * 1000.0f;
+      int x = (int)(ip[0]*iw);
+      int y = (int)(ip[1]*iw);
+      int offset = y*rows+x;
+      if ( x >= 0 && x<= rows && 
+	   y>=0 && y<=cols){
+	ibuffer[offset]=i;
+      }
+    }
+  }
+
+
+
+#define allocateVar(vtype, name, size, errorcode)	\
+  vtype * name;						\
+  {							\
+    err = cudaMalloc(& name, (size) * sizeof(vtype) );	\
+    if ( err != cudaSuccess)				\
+      return errorcode;					\
+  }
+
+#define freeVar(name, errorcode)		\
+  {						\
+    err = cudaFree(name);			\
+    if ( err != cudaSuccess)			\
+      return errorcode;				\
+  }
+
+
+
+  __host__ AlignerStatus AlignerContext::init(int maxReferencePoints_, int maxCurrentPoints_, int rows_, int cols_) {
+  
+    _inlierThreshold =  9e3;
+    _distanceThreshold = 3.0f;
+    _distanceThreshold *= _distanceThreshold;
+    _normalThreshold = cos(M_PI/6);
+    _flatCurvatureThreshold = 0.02f;
+    _maxCurvatureRatio = 1.3f;
+    _minCurvatureRatio = 1./_maxCurvatureRatio;
+    _maxDepth = 100000;
+
+    _numReferencePoints = 0;
+    _numCurrentPoints = 0;
+    _maxReferencePoints = maxReferencePoints_;
+    _maxCurrentPoints = maxCurrentPoints_;
+    _rows = rows_;
+    _cols = cols_;
+  
+
+    // allocate the things
+    cudaError_t err;
+    allocateVar(float, d_referencePointsPtr, _maxReferencePoints*4, AlignerStatus(Allocation,Reference,Points));
+    allocateVar(float, d_referenceNormalsPtr, _maxReferencePoints*4, AlignerStatus(Allocation,Reference,Normals));
+    allocateVar(float, d_referenceCurvaturesPtr, _maxReferencePoints, AlignerStatus(Allocation,Reference,Curvatures));
+    allocateVar(float, d_currentPointsPtr, _maxCurrentPoints*4, AlignerStatus(Allocation,Current,Points));
+    allocateVar(float, d_currentNormalsPtr, _maxCurrentPoints*4, AlignerStatus(Allocation,Current,Normals));
+    allocateVar(float, d_currentCurvaturesPtr, _maxCurrentPoints, AlignerStatus(Allocation,Current,Curvatures));
+    allocateVar(float, d_currentOmegaPsPtr, _maxCurrentPoints*16, AlignerStatus(Allocation,Current,OmegaPs));
+    allocateVar(float, d_currentOmegaNsPtr, _maxCurrentPoints*16, AlignerStatus(Allocation,Current,OmegaNs));
+    allocateVar(int,   d_referenceIndicesPtr, _rows*_cols, AlignerStatus(Allocation,Reference,Indices));
+    allocateVar(int,   d_currentIndicesPtr, _rows*_cols,  AlignerStatus(Allocation,Current,Indices));
+    allocateVar(int,   d_depthBufferPtr, _rows*_cols, AlignerStatus(Allocation,DepthBuffer));
+
+  
+    // construct the temp buffers
+    const int bufferElement = 16*3+8;
+    const int bsize = bufferElement*_rows*_cols;
+    _accumulationBuffer = new float [bsize];
+    allocateVar(float, d_accumulationBuffer, bsize*sizeof(float), AlignerStatus(Allocation,AccumulationBuffer));
+    allocateVar(float, d_reductionBuffer,    bsize*sizeof(float), AlignerStatus(Allocation,AccumulationBuffer));
+
+    err = cudaMalloc(&_cudaDeviceContext,sizeof(AlignerContext));
+    if (err!=cudaSuccess)
+      return AlignerStatus(Allocation,Context);
+
+  
+    _cudaHostContext = new AlignerContext;
+    *_cudaHostContext = *this;
+    _cudaHostContext->_referencePoints.map(4,_maxReferencePoints, d_referencePointsPtr);
+    _cudaHostContext->_referenceNormals.map(4,_maxReferencePoints, d_referenceNormalsPtr);
+    _cudaHostContext->_referenceCurvatures = d_referenceCurvaturesPtr;
+    _cudaHostContext->_currentPoints.map(4,_maxCurrentPoints, d_currentPointsPtr);
+    _cudaHostContext->_currentNormals.map(4,_maxCurrentPoints, d_currentNormalsPtr);
+    _cudaHostContext->_currentCurvatures = d_currentCurvaturesPtr;
+    _cudaHostContext->_currentOmegaPs.map(16,_maxCurrentPoints, d_currentOmegaPsPtr);
+    _cudaHostContext->_currentOmegaNs.map(16,_maxCurrentPoints, d_currentOmegaNsPtr);
+    _cudaHostContext->_currentIndices.map(_rows, _cols, d_currentIndicesPtr);
+
+
+    _cudaHostContext->_referenceIndices.map(_rows, _cols, d_referenceIndicesPtr);
+    _cudaHostContext->_currentIndices.map(_rows, _cols, d_currentIndicesPtr);
+    _cudaHostContext->_depthBuffer.map(_rows, _cols, d_depthBufferPtr);
+    _cudaHostContext->_accumulationBuffer=d_accumulationBuffer;
+    _cudaHostContext->_reductionBuffer=d_reductionBuffer;
+
+    err = cudaMemcpy(_cudaDeviceContext,_cudaHostContext, sizeof(AlignerContext), cudaMemcpyHostToDevice);
+    if (err!=cudaSuccess)
+      return AlignerStatus(CopyToDevice,Context);
+    return AlignerStatus();
+  }
+
+
+
+  __host__ AlignerStatus AlignerContext::free(){
+    cudaError_t err;
+    freeVar(_cudaHostContext->_referencePoints.values(), AlignerStatus(Deallocation,Reference,Points));
+    freeVar(_cudaHostContext->_referenceNormals.values(), AlignerStatus(Deallocation,Reference,Normals));
+    freeVar(_cudaHostContext->_referenceCurvatures, AlignerStatus(Deallocation,Reference,Curvatures));
+    freeVar(_cudaHostContext->_currentPoints.values(), AlignerStatus(Deallocation,Current,Points));
+    freeVar(_cudaHostContext->_currentNormals.values(), AlignerStatus(Deallocation,Current,Normals));
+    freeVar(_cudaHostContext->_currentCurvatures, AlignerStatus(Deallocation,Current,Curvatures));
+    freeVar(_cudaHostContext->_currentOmegaPs.values(), AlignerStatus(Deallocation,Current,OmegaPs));
+    freeVar(_cudaHostContext->_currentOmegaNs.values(), AlignerStatus(Deallocation,Current,OmegaNs));
+    freeVar(_cudaHostContext->_referenceIndices.values(), AlignerStatus(Deallocation,Reference,Indices));
+    freeVar(_cudaHostContext->_currentIndices.values(), AlignerStatus(Deallocation,Current,Indices));
+    freeVar(_cudaHostContext->_depthBuffer.values(), AlignerStatus(Deallocation,DepthBuffer));
+    freeVar(_cudaHostContext->_accumulationBuffer, AlignerStatus(Deallocation,AccumulationBuffer));
+    freeVar(_cudaHostContext->_reductionBuffer, AlignerStatus(Deallocation,ReductionBuffer));
+    delete [] _accumulationBuffer;
+    freeVar(_cudaDeviceContext, AlignerStatus(Deallocation,Context));
+    delete _cudaHostContext;
+    _cudaHostContext=0;
+    _cudaDeviceContext =0;
+    return AlignerStatus();
+  }
+
+
+
+  // initializes the computation by passing all the values that will not change during the iterations
+  __host__ AlignerStatus AlignerContext::initComputation(const float* cameraMatrix,
+							 float* referencePointsPtr, 
+							 float* referenceNormalsPtr, 
+							 float* referenceCurvaturesPtr, 
+							 int numReferencePoints_, 
+							 float* currentPointsPtr, 
+							 float* currentNormalsPtr, 
+							 float* currentCurvaturesPtr, 
+							 float* currentOmegaPsPtr, 
+							 float* currentOmegaNsPtr, 
+							 int numCurrentPoints_){
+    cerr << "INIT_CUDA_ALIGNER" << endl;
+    if (numReferencePoints_>_maxReferencePoints)
+      return AlignerStatus(InitComputation,Reference);
+    if (numCurrentPoints_>_maxCurrentPoints)
+      return AlignerStatus(InitComputation,Current);
     
-    vecFill<16>(Htt,0);
-    vecFill<16>(Htr,0);
-    vecFill<16>(Hrr,0);
-    vecFill<4>(bt,0);
-    vecFill<4>(br,0);
+    _numReferencePoints = numReferencePoints_;
+    _numCurrentPoints = numCurrentPoints_;
+    _cudaHostContext->_numReferencePoints = _numReferencePoints;
+    _cudaHostContext->_numCurrentPoints = _numCurrentPoints;
 
-    if (referenceIndex >=0  && currentIndex >=0){
-      retval = context->processCorrespondence(&error, Htt, Hrr, Htr,
-					      bt, br,
-					      referenceIndex, 
-					      currentIndex);
+    // adjust the pointers on the host
+    _referencePoints.map(4,_numReferencePoints,referencePointsPtr);
+    _referenceNormals.map(4,_numReferencePoints,referenceNormalsPtr);
+    _referenceCurvatures=referenceCurvaturesPtr;
+    _currentPoints.map(4,_numCurrentPoints,currentPointsPtr);
+    _currentNormals.map(4,_numCurrentPoints,currentNormalsPtr);
+    _currentCurvatures=currentCurvaturesPtr;
+    _currentOmegaPs.map(16,_numCurrentPoints, currentOmegaPsPtr);
+    _currentOmegaNs.map(16,_numCurrentPoints, currentOmegaNsPtr);
+
+    // adjust the parameters on the host copy of the device, without changing the buffers
+    _cudaHostContext->_referencePoints.map(4,_numReferencePoints);
+    _cudaHostContext->_referenceNormals.map(4,_numReferencePoints);
+    _cudaHostContext->_currentPoints.map(4,_numCurrentPoints);
+    _cudaHostContext->_currentNormals.map(4,_numCurrentPoints);
+    _cudaHostContext->_currentOmegaPs.map(16,_numCurrentPoints);
+    _cudaHostContext->_currentOmegaNs.map(16,_numCurrentPoints);
+
+    vecFill<16>(_cameraMatrix,0.0f);
+    for (int c=0; c<3; c++)
+      for (int r=0; r<3; r++){
+	_cameraMatrix[4*c+r]=cameraMatrix[3*c+r];
+      }
+    vecCopy<16>(_cudaHostContext->_cameraMatrix, _cameraMatrix);
+    
+    // do the copy of the buffers
+    cudaError_t err ;
+    err = cudaMemcpy(_cudaHostContext->_referencePoints.values(), 
+		     _referencePoints.values(), 4*sizeof(float)*_numReferencePoints, cudaMemcpyHostToDevice);
+    if (err != cudaSuccess)
+      return AlignerStatus(CopyToDevice,Reference,Points);
+
+    err = cudaMemcpy(_cudaHostContext->_referenceNormals.values(), 
+		     _referenceNormals.values(), 4*sizeof(float)*_numReferencePoints, cudaMemcpyHostToDevice);
+    if (err != cudaSuccess)
+      return AlignerStatus(CopyToDevice,Reference,Normals);
+    err = cudaMemcpy(_cudaHostContext->_referenceCurvatures, 
+		     _referenceCurvatures, sizeof(float)*_numReferencePoints, cudaMemcpyHostToDevice);
+    if (err != cudaSuccess)
+      return AlignerStatus(CopyToDevice,Reference,Curvatures);
+
+    err = cudaMemcpy(_cudaHostContext->_currentPoints.values(), 
+		     _currentPoints.values(), 4*sizeof(float)*_numCurrentPoints, cudaMemcpyHostToDevice);
+    if (err != cudaSuccess)
+      return AlignerStatus(CopyToDevice,Current,Points);
+
+    err = cudaMemcpy(_cudaHostContext->_currentNormals.values(), 
+		     _currentNormals.values(), 4*sizeof(float)*_numCurrentPoints, cudaMemcpyHostToDevice);
+    if (err != cudaSuccess)
+      return AlignerStatus(CopyToDevice,Current,Normals);
+
+    err = cudaMemcpy(_cudaHostContext->_currentCurvatures, 
+		     _currentCurvatures, sizeof(float)*_numCurrentPoints, cudaMemcpyHostToDevice);
+    if (err != cudaSuccess)
+      return AlignerStatus(CopyToDevice,Current,Curvatures);
+
+    err = cudaMemcpy(_cudaHostContext->_currentOmegaPs.values(), 
+		     _currentOmegaPs.values(), 16*sizeof(float)*_numCurrentPoints, cudaMemcpyHostToDevice);
+    if (err != cudaSuccess)
+      return AlignerStatus(CopyToDevice,Current,OmegaPs);
+
+    err = cudaMemcpy(_cudaHostContext->_currentOmegaNs.values(), 
+		     _currentOmegaNs.values(), 16*sizeof(float)*_numCurrentPoints, cudaMemcpyHostToDevice);
+    if (err != cudaSuccess)
+      return AlignerStatus(CopyToDevice,Current,OmegaNs);
+  
+    // now do the copy of the high level structure (which includes all the internal variables, including
+    // the parameters
+    err = cudaMemcpy(_cudaDeviceContext,_cudaHostContext, sizeof(AlignerContext), cudaMemcpyHostToDevice);
+    if (err!=cudaSuccess)
+      return AlignerStatus(CopyToDevice,Context);
+
+    if (1){
+      struct timeval tvStart, tvEnd;
+      int numElements = _rows*_cols;
+      int threadsPerBlock = 256;
+      int blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
+      //printf("clearBuffer: CUDA kernel launch on %d elements with %d blocks of %d threads\n", numElements, blocksPerGrid, threadsPerBlock);
+      gettimeofday(&tvStart,0);
+      fillBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_depthBuffer.values(),_rows*_cols, 
+						    _maxDepth+1);
+      fillBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_currentIndices.values(),_rows*_cols, 
+       						    -1);
+						    
+      cudaDeviceSynchronize();
+      
+      numElements = _numCurrentPoints;
+      threadsPerBlock = 256;
+      blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
+      //printf("Buffer: CUDA kernel launch on %d elements with %d blocks of %d threads\n", numElements, blocksPerGrid, threadsPerBlock);
+
+      computeDepthBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_depthBuffer.values(),
+							    _rows, _cols, _cudaDeviceContext->_cameraMatrix,
+							    _cudaHostContext->_currentPoints.values(),
+							    _cudaHostContext->_numCurrentPoints,
+							    0, _cudaHostContext->_maxDepth);
+      cudaDeviceSynchronize();
+      computeIndexBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_currentIndices.values(),
+							    _cudaHostContext->_depthBuffer.values(),
+							    _rows, _cols, _cudaDeviceContext->_cameraMatrix,
+							    _cudaHostContext->_currentPoints.values(),
+							    _cudaHostContext->_numCurrentPoints);
+
+      err = cudaGetLastError();
+      if (err != cudaSuccess)
+      {
+	return AlignerStatus(KernelLaunch,DepthBuffer);
+      }
+      cudaDeviceSynchronize();
+      gettimeofday(&tvEnd,0);
+      double tStart = tvStart.tv_sec*1000+tvStart.tv_usec*0.001;
+      double tEnd = tvEnd.tv_sec*1000+tvEnd.tv_usec*0.001;
+      printf("\t zbuffer time: %lf",tEnd-tStart);
     }
+    return  AlignerStatus();
+  }
+
+  __global__ void Aligner_coolIterationKernel(AlignerContext* context){
+    extern __shared__ float sdata[];
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+    const int K = 2;
+    const int dim = 56;
+    int sdataOffset = threadIdx.x*dim;
+    float x[dim];
+    float* buf= sdata + sdataOffset;
+
+    //int retval = 0;
+    if (i < context->_rows*context->_cols) {
+      vecFill<56>(x, 0.0f);
+      float error;
+      float* Htt = x;
+      float* Htr = x + 16;
+      float* Hrr = x + 32;
+      float* bt  = x + 48;
+      float* br  = x + 52;
+
+      int referenceIndex=*(context->_referenceIndices.values()+i);
+      int currentIndex=*(context->_currentIndices.values()+i);
+      if (referenceIndex >=0  && currentIndex >=0){
+	/*retval = */
+	context->processCorrespondence(&error, Htt, Hrr, Htr,
+				       bt, br,
+				       referenceIndex, 
+				       currentIndex);
+      }
+    }
+    vecCopy<dim>(sdata+sdataOffset,x);
+    __syncthreads();
+    float* reductionBuffer = context->_reductionBuffer;
 
     __syncthreads();
-    int offset = i*56;
-    float* dest = context->_accumulationBuffer+offset;
-    vecCopy<16>(dest,Htt);
-    vecCopy<16>(dest+16,Htr);
-    vecCopy<16>(dest+32,Hrr);
-    vecCopy<4>(dest+48,bt);
-    vecCopy<4>(dest+52,br);
-  }
-  __syncthreads();
-};
-
-
-__host__ AlignerStatus AlignerContext::simpleIteration(int* referenceIndices, int* currentIndices, float* transform){
-
-  // copy the reference indices and the current indices in the context buffers
-  _referenceIndices.map(_rows,_cols,referenceIndices);
-  cudaError_t err ;
-  err = cudaMemcpy(_cudaHostContext->_referenceIndices.values(), _referenceIndices.values(), _rows*_cols*sizeof(int), cudaMemcpyHostToDevice);
-  if (err!=cudaSuccess)
-    return AlignerStatus(CopyToDevice,Reference, Indices);
-
-  _currentIndices.map(_rows,_cols,currentIndices);
-  err = cudaMemcpy(_cudaHostContext->_currentIndices.values(), _currentIndices.values(), _rows*_cols*sizeof(int), cudaMemcpyHostToDevice);
-  if (err!=cudaSuccess)
-    return AlignerStatus(CopyToDevice,Current, Indices);
-
-
-  struct timeval tvStart;
-  gettimeofday(&tvStart,0);
-
-  vecCopy<16>(_cudaHostContext->_transform, transform);
-  _cudaHostContext->_checksum = 0;
-  err = cudaMemcpy(_cudaDeviceContext,_cudaHostContext, sizeof(AlignerContext), cudaMemcpyHostToDevice);
-  if (err!=cudaSuccess)
-    return AlignerStatus(CopyToDevice,Context);
-
-  
-  
-  int numElements = _rows * _cols;
-  int threadsPerBlock = 256;
-  int blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
-  printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsPerBlock);
-  Aligner_simpleIterationKernel<<<blocksPerGrid,threadsPerBlock>>>(_cudaDeviceContext); 
-  err = cudaGetLastError();
-  if (err != cudaSuccess)
-    {
-       return AlignerStatus(KernelLaunch);
+    if (threadIdx.x<dim){
+      float xi = 0;
+      float  *sptr = sdata+threadIdx.x;
+      for (int j=0; j<blockDim.x; j++){
+    	xi += *sptr;
+    	sptr += dim;
+      }
+      *(reductionBuffer + (blockIdx.x*dim+threadIdx.x)) = xi;
     }
+    __syncthreads();
+  };
 
-  struct timeval tvEnd;
-  gettimeofday(&tvEnd,0);
+  template <int dim>
+  __global__ void vector_block_sum(const float *input,
+			    float *per_block_results,
+			    const size_t n)
+  {
+    extern __shared__ float sdata[];
 
-  const int bufferElement = 16*3+8;
-  const int bsize = bufferElement*_rows*_cols;
-  err = cudaMemcpy(_accumulationBuffer, _cudaHostContext->_accumulationBuffer, bsize*sizeof(float), cudaMemcpyDeviceToHost);
-  if (err !=cudaSuccess)
-    return AlignerStatus(CopyFromDevice,AccumulationBuffer);
+    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    int sdataOffset = threadIdx.x*dim;
+    int inputOffset = i*dim;
+    // load input into __shared__ memory
+    float x[dim];
+    vecFill<dim>(x,0);
+    if(i < n)
+      {
+	vecCopy<dim>(x,input + (i*dim));
+      }
+    //sdata[threadIdx.x] = x;
+    vecCopy<dim>(sdata+sdataOffset,x);
+    __syncthreads();
+    
+    
+    // contiguous range pattern
+    for(int offset = blockDim.x / 2;
+	offset > 0;
+	offset >>= 1)
+      {
+	if(threadIdx.x < offset)
+	  {
+	    // add a partial sum upstream to our own
+	    //sdata[threadIdx.x] += sdata[threadIdx.x + offset];
+	    vecSum<dim>(sdata+sdataOffset, sdata+dim*(threadIdx.x + offset), 1.0f);
+	  }
+
+	// wait until all threads in the block have
+	// updated their partial sums
+	__syncthreads();
+      }
+    // thread 0 writes the final result
+    if(threadIdx.x == 0)
+      {
+	//per_block_results[blockIdx.x] = sdata[0];
+	vecCopy<dim>(per_block_results + (blockIdx.x*dim ), sdata);
+      }
+  }
 
 
-  err = cudaMemcpy(_cudaHostContext,_cudaDeviceContext, sizeof(AlignerContext), cudaMemcpyDeviceToHost);
-  if (err!=cudaSuccess)
-    return AlignerStatus(CopyFromDevice,Context);
-  printf("$$$$$$$$$$$$$$$$$$$$$checksum: %d\n", _cudaHostContext->_checksum);
-  fflush(stdout);
-  double tStart = tvStart.tv_sec*1000+tvStart.tv_usec*0.001;
-  double tEnd = tvEnd.tv_sec*1000+tvEnd.tv_usec*0.001;
 
-  printf("\n@@@@@@@@@@@@@@@@@@@@time: %lf",tEnd-tStart);
 
-  return AlignerStatus();
-}
-// frees the cuda context
+  __host__ AlignerStatus AlignerContext::simpleIteration(float* transform){
 
-/*
-__device__ void Aligner_projectPoint(const AlignerContext* context, const float* point){
-  float ip[4];
-  matVecMul<4,4>(ip, context->KT, point);
-  float iw=1./ip[2];
-  int x = iw*ip[0];
-  int y = iw*ip[1];
-  int d = 1000*ip[2];
-  int pixelPos =context->referenceDepths.rows*y + x;
-  if (d<0 || d > context->maxDepth || pixelPos > context->referenceDepths.rows*context->referenceDepths.cols)
-    return;
-  atomicMin((context->referenceDepths.values+pixelPos),d);
-}
-*/
+    struct timeval tvStart, tvEnd;
+    cudaError_t err ;
+    gettimeofday(&tvStart,0);
+
+    // resize the local matrices (kinda useless)
+    _referenceIndices.map(_rows,_cols);
+    _currentIndices.map(_rows,_cols);
+
+    // copy the reference indices and the current indices in the context buffers
+    /*
+    _referenceIndices.map(_rows,_cols,referenceIndices);
+    err = cudaMemcpy(_cudaHostContext->_referenceIndices.values(), _referenceIndices.values(), _rows*_cols*sizeof(int), cudaMemcpyHostToDevice);
+    if (err!=cudaSuccess)
+      return AlignerStatus(CopyToDevice,Reference, Indices);
+    */
+
+    /*
+    _currentIndices.map(_rows,_cols,currentIndices);
+    err = cudaMemcpy(_cudaHostContext->_currentIndices.values(), _currentIndices.values(), _rows*_cols*sizeof(int), cudaMemcpyHostToDevice);
+    if (err!=cudaSuccess)
+      return AlignerStatus(CopyToDevice,Current, Indices);
+    */
+
+    vecCopy<16>(_transform, transform);
+    vecCopy<16>(_cudaHostContext->_transform, transform);
+    
+    vecFill<16>(_KT,0.0f);
+    matMatMul<4,4,4>(_KT,_cameraMatrix,_transform);
+    matVecMul<4,4>(_KT+12,_cameraMatrix,_transform+12);
+    vecCopy<16>(_cudaHostContext->_KT, _KT);
+    
+    //matPrint(_cudaHostContext->_transform,4,4,"Transform");
+    //matPrint(_cudaHostContext->_cameraMatrix,4,4,"_cameraMatrix");
+    //matPrint(_cudaHostContext->_KT,4,4,"KT");
+
+    _cudaHostContext->_checksum = 0;
+    _cudaHostContext->_maxDepth = 10000;
+    err = cudaMemcpy(_cudaDeviceContext,_cudaHostContext, sizeof(AlignerContext), cudaMemcpyHostToDevice);
+    //matPrint(_cudaHostContext->_KT,4,4,"KT:");
+    if (err!=cudaSuccess)
+      return AlignerStatus(CopyToDevice,Context);
+
+    if (1){
+      int numElements = _rows*_cols;
+      int threadsPerBlock = 256;
+      int blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
+      //printf("clearBuffer: CUDA kernel launch on %d elements with %d blocks of %d threads\n", numElements, blocksPerGrid, threadsPerBlock);
+      fillBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_depthBuffer.values(),_rows*_cols, 
+						    _maxDepth+1);
+      fillBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_referenceIndices.values(),_rows*_cols, 
+       						    -1);
+						    
+      cudaDeviceSynchronize();
+      
+      numElements = _numReferencePoints;
+      threadsPerBlock = 256;
+      blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
+      //printf("Buffer: CUDA kernel launch on %d elements with %d blocks of %d threads\n", numElements, blocksPerGrid, threadsPerBlock);
+      
+      //computeAlignerDepthBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaDeviceContext);
+      /*
+      __device__ void computeDepthBuffer(int* buffer, int rows, int cols, 
+					 const float* KT, const float* points, int numPoints,
+					 int dmin, int dmax);
+      */
+      computeDepthBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_depthBuffer.values(),
+							    _rows, _cols, _cudaDeviceContext->_KT,
+							    _cudaHostContext->_referencePoints.values(),
+							    _cudaHostContext->_numReferencePoints,
+							    0, _cudaHostContext->_maxDepth);
+      cudaDeviceSynchronize();
+      computeIndexBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_referenceIndices.values(),
+							    _cudaHostContext->_depthBuffer.values(),
+							    _rows, _cols, _cudaDeviceContext->_KT,
+							    _cudaHostContext->_referencePoints.values(),
+							    _cudaHostContext->_numReferencePoints);
+      cudaDeviceSynchronize();
+
+      
+      /*cudaMemcpy(_referenceIndices.values(), _cudaHostContext->_referenceIndices.values(), _rows * _cols * sizeof(float), cudaMemcpyDeviceToHost);
+       */
+
+      err = cudaGetLastError();
+      if (err != cudaSuccess)
+      {
+	return AlignerStatus(KernelLaunch,DepthBuffer);
+      }
+
+    }
+    
+
+  
+  
+    int numElements = _rows * _cols;
+    int threadsPerBlock = 64;
+    int blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
+    int sharedMemorySize = threadsPerBlock * 56 * sizeof(float);
+    //printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsPerBlock);
+    Aligner_coolIterationKernel<<<blocksPerGrid,threadsPerBlock, sharedMemorySize>>>(_cudaDeviceContext); 
+    //Aligner_simpleIterationKernel<<<blocksPerGrid,threadsPerBlock>>>(_cudaDeviceContext); 
+    err = cudaGetLastError();
+    if (err != cudaSuccess)
+      {
+	return AlignerStatus(KernelLaunch);
+      }
+    cudaDeviceSynchronize();
+    numElements = blocksPerGrid;
+    while(numElements>1){
+      int threadsPerBlock = 32;
+      int sharedMemorySize = threadsPerBlock * 56 * sizeof(float);
+      blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
+      //printf("CUDA kernel launch with %d blocks of %d threads on %d elements\n", blocksPerGrid, threadsPerBlock, numElements);
+      vector_block_sum<56><<<blocksPerGrid, threadsPerBlock, sharedMemorySize>>>(_cudaHostContext->_reductionBuffer,
+										 _cudaHostContext->_reductionBuffer,
+										 numElements);
+      if (err != cudaSuccess)
+	{
+	  return AlignerStatus(KernelLaunch);
+	}
+      numElements = blocksPerGrid;
+    }
+    cudaDeviceSynchronize();
+    cudaMemcpy(_cudaDeviceContext->_Hb, _cudaHostContext->_reductionBuffer, 56*sizeof(float), cudaMemcpyDeviceToDevice);
+
+    err = cudaMemcpy(_cudaHostContext,_cudaDeviceContext, sizeof(AlignerContext), cudaMemcpyDeviceToHost);
+    if (err!=cudaSuccess)
+      return AlignerStatus(CopyFromDevice,Context);
+    gettimeofday(&tvEnd,0);
+    fflush(stdout);
+
+    double tStart = tvStart.tv_sec*1000+tvStart.tv_usec*0.001;
+    double tEnd = tvEnd.tv_sec*1000+tvEnd.tv_usec*0.001;
+    printf("\ttime: %lf",tEnd-tStart);
+
+    return AlignerStatus();
+  }
 
 
 __device__ int AlignerContext::processCorrespondence(float* error,
@@ -429,9 +616,12 @@ __device__ int AlignerContext::processCorrespondence(float* error,
 						     float* br,
 						     int referenceIndex, int currentIndex){
 
-
+  vecFill<16>(Htt, 0);
+  vecFill<16>(Htr, 0);
+  vecFill<16>(Hrr, 0);
+  vecFill<4>(bt,0);
+  vecFill<4>(br,0);
   const float* T=_transform;
-
   float referencePoint[4];
   {
     const float* referencePoint_  =  _referencePoints.columnAt(referenceIndex);
@@ -446,6 +636,7 @@ __device__ int AlignerContext::processCorrespondence(float* error,
 
   float referenceCurvature      =  _referenceCurvatures[referenceIndex];
   referenceCurvature = (referenceCurvature<_flatCurvatureThreshold)?_flatCurvatureThreshold:referenceCurvature;
+
 
   const float* currentPoint     =  _currentPoints.columnAt(currentIndex);
   const float* currentNormal    =  _currentNormals.columnAt(currentIndex);
@@ -471,18 +662,10 @@ __device__ int AlignerContext::processCorrespondence(float* error,
   bool curvatureFail = ((curvatureRatio < _minCurvatureRatio) ||
 			(curvatureRatio > _maxCurvatureRatio));
 
-  // vecCopy<4>(Htt,referencePoint);
-  // vecCopy<4>(Htt+4,referenceNormal);
-  // vecCopy<4>(Htt+8,currentPoint);
-  // vecCopy<4>(Htt+12,currentNormal);
-
-  // vecFill<16>(Htr,pointsDistance);
-  // vecFill<16>(Hrr,curvatureRatio);
   int increment = ! normalFail && ! distanceFail && ! curvatureFail;
   if (! increment)  
     return 0;
 
-  
   float normalsDifference[4];
   vecCopy<4>(normalsDifference,referenceNormal);
   vecSum<4>(normalsDifference,currentNormal,-1.0f);
@@ -495,11 +678,6 @@ __device__ int AlignerContext::processCorrespondence(float* error,
   //const Vector4f en = omegaN*normalError;
   float en[4];
   matVecMul<4,4>(en, omegaN, normalsDifference);
-
-  //matPrint(ep,4,1,"ep");
-  //matPrint(en,4,1,"en");
-
-  //float localError = pointError.dot(ep) + normalError.dot(en);
   
   float localError = vecDot<4>(ep,pointsDifference) + vecDot<4>(en,normalsDifference);
 
@@ -510,7 +688,6 @@ __device__ int AlignerContext::processCorrespondence(float* error,
   //Matrix4f Sp = skew(referencePoint);
   float Sp[16];
   matBuildSkew(Sp,referencePoint);
-  // compute the transposed (for the skew is mult by -1)
 
   //Matrix4f Sn = skew(referenceNormal);
   float Sn[16];
@@ -562,17 +739,20 @@ __device__ int AlignerContext::processCorrespondence(float* error,
   }
 
   __host__  AlignerStatus initComputation(AlignerContext* context,
-				      float* referencePointsPtr, 
-				      float* referenceNormalsPtr, 
-				      float* referenceCurvaturesPtr, 
-				      int numReferencePoints_, 
-				      float* currentPointsPtr, 
-				      float* currentNormalsPtr, 
-				      float* currentCurvaturesPtr, 
-				      float* currentOmegaPsPtr, 
-				      float* currentOmegaNPtr, 
-				      int numCurrentPoints_){
-    return context->initComputation(referencePointsPtr, 
+					  const float* cameraMatrix,
+					  float* referencePointsPtr, 
+					  float* referenceNormalsPtr, 
+					  float* referenceCurvaturesPtr, 
+					  int numReferencePoints_, 
+					  float* currentPointsPtr, 
+					  float* currentNormalsPtr, 
+					  float* currentCurvaturesPtr, 
+					  float* currentOmegaPsPtr, 
+					  float* currentOmegaNPtr, 
+					  int numCurrentPoints_){
+
+    return context->initComputation(cameraMatrix,
+				    referencePointsPtr, 
 				    referenceNormalsPtr, 
 				    referenceCurvaturesPtr,
 				    numReferencePoints_, 
@@ -585,26 +765,17 @@ __device__ int AlignerContext::processCorrespondence(float* error,
   }
 
   __host__  AlignerStatus simpleIteration(AlignerContext* context,
-				int* referenceIndices,
-				int* currentIndices,
-				float* transform){
-    return context->simpleIteration(referenceIndices, currentIndices, transform);
+					  float* transform){
+    return context->simpleIteration(transform);
   }
 
   int AlignerContext::getHb(float* Htt, float* Htr, float* Hrr, float*bt, float* br){
-    vecFill<16>(Htt,0);
-    vecFill<16>(Htr,0);
-    vecFill<16>(Hrr,0);
-    vecFill<16>(bt,0);
-    vecFill<16>(br,0);
-    float* bptr = _accumulationBuffer;
-    for (int i=0; i<_rows*_cols; i++){
-      vecSum<16>(Htt,bptr,1.0f); bptr += 16;
-      vecSum<16>(Htr,bptr,1.0f); bptr += 16;
-      vecSum<16>(Hrr,bptr,1.0f); bptr += 16;
-      vecSum<4>(bt,bptr,1.0f);   bptr += 4;
-      vecSum<4>(br,bptr,1.0f);   bptr += 4;
-    }
+    vecCopy<16>(Htt, _cudaHostContext->_Hb);
+    vecCopy<16>(Htr, _cudaHostContext->_Hb+16);
+    vecCopy<16>(Hrr, _cudaHostContext->_Hb+32);
+    vecCopy<4>(bt,   _cudaHostContext->_Hb+48);
+    vecCopy<4>(br,   _cudaHostContext->_Hb+52);
+    
     return _rows*_cols;
   }
 
@@ -614,20 +785,3 @@ __device__ int AlignerContext::processCorrespondence(float* error,
   }
 } // end namespace
 
-
-#ifdef __TEST
-int main(int argc, char**argv){
-  AlignerContext context;
-  AlignerStatus status;
-  printf("Initialization\n");
-  status = context.init(640*480,640*480, 640, 480);
-  char buf [1024];
-  status.toString(buf);
-  printf("%s\n",buf);
-
-  printf("Termination\n");
-  status = context.free();
-  status.toString(buf);
-  printf("%s\n",buf);
-}
-#endif

@@ -108,6 +108,27 @@ __host__ __device__ void matMatMul(float* dest, const float* A, const float*B){
   }
 }
 
+template <int rows, int cols>
+__host__ __device__ void matVecMul3(float* dest, const float* A, const float*b){
+  vecFill<rows>(dest, 0);
+  for (int i=0; i<3; i++){
+    vecSum<3>(dest,A,b[i]);
+    A+=rows;
+  }
+}
+
+template <int ra, int ca, int cb>
+__host__ __device__ void matMatMul3(float* dest, const float* A, const float*B){
+  float* dptr = dest;
+  const float* bptr = B;
+  for (int i=0; i<3; i++){
+    matVecMul3<ra,ca>(dptr,A,bptr);
+    dptr += ra;
+    bptr += ca;
+  }
+  vecFill<4>(dptr,0.0f);
+}
+
 
 template <int rows, int cols>
 __host__ __device__ void matTranspose(float* dest, const float* src){

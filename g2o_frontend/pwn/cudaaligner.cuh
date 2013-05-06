@@ -41,14 +41,18 @@ struct AlignerContext {
   float _maxCurvatureRatio;
   float _inlierThreshold;
   int _maxDepth;
+  int _minDepth;
   float _transform[16];
+  float _cameraMatrix[16];
+  float _Hb[56];
   float _KT[16];
   int _checksum;
     // initializes the default values and sets the base parameters
   __host__ AlignerStatus init(int maxReferencePoints, int maxCurrentPoints, int rows, int cols);
 
   // initializes the computation by passing all the values that will not change during the iterations
-  __host__ AlignerStatus initComputation(float* referencePointsPtr, 
+  __host__ AlignerStatus initComputation(const float* cameraMatrix,
+					 float* referencePointsPtr, 
 					 float* referenceNormalsPtr, 
 					 float* referenceCurvaturesPtr, 
 					 int numReferencePoints_, 
@@ -59,7 +63,7 @@ struct AlignerContext {
 					 float* currentOmegaNPtr, 
 					 int numCurrentPoints_);
 
-  AlignerStatus simpleIteration(int* referenceIndices, int* currentIndices, float* transform);
+  AlignerStatus simpleIteration(float* transform);
 
   // frees the cuda context
   __host__ AlignerStatus free();
@@ -69,6 +73,7 @@ struct AlignerContext {
 //private:
   AlignerContext* _cudaDeviceContext, *_cudaHostContext ;
   float* _accumulationBuffer;
+  float* _reductionBuffer;
   __device__ inline int processCorrespondence(float* error,
 				   float* Htt,
 				   float* Hrr,
