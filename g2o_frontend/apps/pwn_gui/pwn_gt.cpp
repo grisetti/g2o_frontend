@@ -186,7 +186,7 @@ int main(int argc, char** argv) {
   
   Isometry3f initialGuess = Isometry3f::Identity();
   Isometry3f sensorOffset = Isometry3f::Identity();
-  aligner.setInitialGuess(initialGuess.inverse());
+  aligner.setInitialGuess(initialGuess);
   aligner.setSensorOffset(sensorOffset);
   
   aligner.align();
