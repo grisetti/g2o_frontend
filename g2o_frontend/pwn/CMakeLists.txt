@@ -16,8 +16,7 @@ ADD_LIBRARY(pwn_library
   pinholepointprojector.cpp pinholepointprojector.h
   homogeneouspoint3fintegralimage.cpp homogeneouspoint3fintegralimage.h
   normalgenerator.h	
-  #homogeneouspoint3fscene.cpp 
-  homogeneouspoint3fscene.h
+  homogeneouspoint3fscene.cpp homogeneouspoint3fscene.h
   homogeneouspoint3fstatsgenerator.cpp homogeneouspoint3fstatsgenerator.h
   homogeneouspoint3faccumulator.h
   homogeneouspoint3fstats.h

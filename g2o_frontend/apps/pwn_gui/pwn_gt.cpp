@@ -42,9 +42,9 @@ int main(int argc, char** argv) {
   // ./pwn_normal_extraction -h to have more details about them.
   float ng_scale = 1.0f;
   float ng_curvatureThreshold = 1.0f;
-  int al_innerIterations = 5;
-  int al_outerIterations = 5;
-  int vz_step = 5;
+  int al_innerIterations = 1;
+  int al_outerIterations = 10;
+  int vz_step = 1;
 
   // Define the camera matrix, place here the values for the particular 
   // depth camera used (Kinect, Xtion or any other type). This particular
@@ -61,9 +61,9 @@ int main(int argc, char** argv) {
   // Optional input parameters.
   arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image. [float]");
   arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded. [float]");
-  arg.param("al_innerIterations", al_innerIterations, 5, "Specify the inner iterations. [int]");
-  arg.param("al_outerIterations", al_outerIterations, 5, "Specify the outer iterations. [int]");
-  arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements. [int]");
+  arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations. [int]");
+  arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations. [int]");
+  arg.param("vz_step", vz_step, 1, "A graphic element is drawn each vz_step elements. [int]");
 
   // Last parameter has to be the depth image file.
   arg.paramLeftOver("depthImageFile1", referenceFilename, "./test1.pgm", "First depth image file (.pgm image) to analyze. [string]", true);
@@ -72,6 +72,9 @@ int main(int argc, char** argv) {
   // Set parser input.
   arg.parseArgs(argc, argv);
   
+  /************************************************************************
+   *                         Reading Depth Image                          *
+   ************************************************************************/ 
   // The DepthImage object is used read a depth image from a .pgm image file. It is an extended Eigen 
   // matrix of unsigned char. 
   DepthImage referenceDepthImage, currentDepthImage;
@@ -88,122 +91,168 @@ int main(int argc, char** argv) {
   cout << endl << "Loaded second depth image of size: " << currentDepthImage.rows() << "x" << currentDepthImage.cols() << endl;
   
   /************************************************************************
+   *                         Point Unprojection                           *
+   ************************************************************************/
+  cout << "Unprojecting points...";
+
+  // Update the size of the index image.
+  Eigen::MatrixXi referenceIndexImage, currentIndexImage;
+  referenceIndexImage.resize(referenceDepthImage.rows(), referenceDepthImage.cols());
+  currentIndexImage.resize(currentDepthImage.rows(), currentDepthImage.cols());
+    
+  // Set the camera matrix of the projector object.
+  PinholePointProjector projector;
+  projector.setCameraMatrix(cameraMatrix);
+  
+  // Get the points in the 3d euclidean space.
+  HomogeneousPoint3fScene referenceScene, currentScene;
+  projector.unProject(referenceScene.points(), referenceIndexImage, referenceDepthImage);
+  projector.unProject(currentScene.points(), currentIndexImage, currentDepthImage);
+  
+  cout << " done." << endl;
+
+  /************************************************************************
    *                         Normal Computation                           *
    ************************************************************************/
   cout << "Computing normals...";
-  // Creating the normal generator object and setting some parameters. 
-  NormalGenerator referenceNormalGenerator, currentNormalGenerator;
-  // Set the scale factor to apply on the depth image.
-  referenceNormalGenerator.setScale(ng_scale);
-  currentNormalGenerator.setScale(ng_scale);
-  // Set the camera matrix
-  referenceNormalGenerator.setCameraMatrix(cameraMatrix);
-  currentNormalGenerator.setCameraMatrix(cameraMatrix);
-  
-  // Here will go the points.
-  HomogeneousPoint3fVector referenceImagePoints; 
-  HomogeneousPoint3fVector currentImagePoints; 
-  // Here will go the normals.
-  HomogeneousNormal3fVector referenceImageNormals;
-  HomogeneousNormal3fVector currentImageNormals;
 
-  // Normals computation.
-  referenceNormalGenerator.compute(referenceImagePoints, referenceImageNormals, referenceDepthImage, ng_curvatureThreshold);
-  currentNormalGenerator.compute(currentImagePoints, currentImageNormals, currentDepthImage, ng_curvatureThreshold);
+  HomogeneousPoint3fIntegralImage referenceIntegralImage, currentIntegralImage;
+  MatrixXi referenceIntervalImage, currentIntervalImage;
+  
+  // Compute the integral images.
+  referenceIntegralImage.compute(referenceIndexImage, referenceScene.points());
+  currentIntegralImage.compute(currentIndexImage, currentScene.points());
+    
+  // Compute the intervals.
+  projector.projectIntervals(referenceIntervalImage, referenceDepthImage, 0.1f);
+  projector.projectIntervals(currentIntervalImage, currentDepthImage, 0.1f);
+    
+  // Resize the vector containing the stats to have the same length of the vector of points.
+  referenceScene.stats().resize(referenceScene.points().size());
+  currentScene.stats().resize(currentScene.points().size());
+  std::fill(referenceScene.stats().begin(), referenceScene.stats().end(), HomogeneousPoint3fStats());
+  std::fill(currentScene.stats().begin(), currentScene.stats().end(), HomogeneousPoint3fStats());
+    
+  // Creating the stas generator object. 
+  HomogeneousPoint3fStatsGenerator statsGenerator;
+  
+  // Stats and normals computation.
+  statsGenerator.compute(referenceScene.normals(),
+			 referenceScene.stats(),
+			 referenceScene.points(),
+			 referenceIntegralImage,
+			 referenceIntervalImage,
+			 referenceIndexImage,
+			 ng_curvatureThreshold);
+  statsGenerator.compute(currentScene.normals(),
+			 currentScene.stats(),
+			 currentScene.points(),
+			 currentIntegralImage,
+			 currentIntervalImage,
+			 currentIndexImage,
+			 ng_curvatureThreshold);
+    
   cout << " done." << endl;
 
   /************************************************************************
    *                         Omega Computation                            *
    ************************************************************************/
   cout << "Computing omegas...";
+
   // Creating the omegas generators objects.
   PointOmegaGenerator pointOmegaGenerator;
   NormalOmegaGenerator normalOmegaGenerator;
-  // Here will go the omegas.
-  HomogeneousPoint3fOmegaVector currentPointOmega;
-  HomogeneousPoint3fOmegaVector currentNormalOmega;
-
-  // Omegas computation.
-  pointOmegaGenerator.compute(currentPointOmega, currentNormalGenerator.scaledStats, currentImageNormals);
-  normalOmegaGenerator.compute(currentNormalOmega, currentNormalGenerator.scaledStats, currentImageNormals);
-  cout << " done." << endl;
   
+  // Omegas computation.
+  pointOmegaGenerator.compute(referenceScene.pointOmegas(), referenceScene.stats(), referenceScene.normals());
+  pointOmegaGenerator.compute(currentScene.pointOmegas(), currentScene.stats(), currentScene.normals());
+  normalOmegaGenerator.compute(referenceScene.normalOmegas(), referenceScene.stats(), referenceScene.normals());
+  normalOmegaGenerator.compute(currentScene.normalOmegas(), currentScene.stats(), currentScene.normals());
+
+  cout << " done." << endl;
+
   /************************************************************************
    *                         Alignment Computation                        *
    ************************************************************************/
+  //CudaAligner::CuAligner aligner;
   Aligner aligner;
-  aligner.setProjector(&currentNormalGenerator.projector);
-  aligner.setPoints(&referenceImagePoints, &currentImagePoints);
-  aligner.setNormals(&referenceImageNormals, &currentImageNormals);
-  aligner.setStats(&referenceNormalGenerator.scaledStats, &currentNormalGenerator.scaledStats);
-  aligner.setCurrentOmegas(&currentPointOmega, &currentNormalOmega);
   aligner.setOuterIterations(al_outerIterations);
   aligner.setInnerIterations(al_innerIterations);
-  aligner.setImageSize(currentNormalGenerator.scaledIndexImage.rows(), currentNormalGenerator.scaledIndexImage.cols());
+
+  aligner.correspondenceGenerator().setSize(referenceIndexImage.rows(), referenceIndexImage.cols());
+  
+  aligner.setProjector(&projector);
+  aligner.setReferenceScene(referenceScene);
+  aligner.setCurrentScene(currentScene);
   
   Isometry3f initialGuess = Isometry3f::Identity();
   Isometry3f sensorOffset = Isometry3f::Identity();
-  aligner.setInitialGuess(initialGuess);
+  aligner.setInitialGuess(initialGuess.inverse());
   aligner.setSensorOffset(sensorOffset);
   
   aligner.align();
-  
+  	
   cout << "Final transformation: " << endl << aligner.T().matrix() << endl;
   
-  // This is just to check that the result is correct
-  PointWithNormalVector* referencePWNV = new PointWithNormalVector(referenceImagePoints.size());
-  for(size_t i = 0; i < referencePWNV->size(); ++i) {
-    referencePWNV->at(i).head<3>() = referenceImagePoints[i].head<3>();
-    referencePWNV->at(i).tail<3>() = referenceImageNormals[i].head<3>();
-  }
-  
-  Isometry3f finalT = aligner.T().inverse();
-  PointWithNormalVector* currentPWNV = new PointWithNormalVector(currentImagePoints.size());
-  for(size_t i = 0; i < currentPWNV->size(); ++i) {
-    currentPWNV->at(i).head<3>() = currentImagePoints[i].head<3>();
-    currentPWNV->at(i).tail<3>() = currentImageNormals[i].head<3>();
-  }
-  
+  /************************************************************************
+   *                         Visualization                                *
+   ************************************************************************/
   QApplication qApplication(argc, argv);
   PWNGuiMainWindow pwnGMW;
   pwnGMW.show();
 
-  GLParameterPoints *pParamReference = new GLParameterPoints(1.0f, Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
-  pParamReference->setStep(vz_step);
-  GLParameterNormals *nParamReference = new GLParameterNormals(1.0f, Vector4f(1.0f, 1.0f, 0.0f, 1.0f), 0.02f);
-  nParamReference->setStep(vz_step);
-  GLParameterPoints *pParamCurrent = new GLParameterPoints(1.0f, Vector4f(1.0f, 0.5f, 0.0f, 1.0f));
-  pParamCurrent->setStep(vz_step);
-  GLParameterNormals *nParamCurrent = new GLParameterNormals(1.0f, Vector4f(1.0f, 1.0f, 0.0f, 1.0f), 0.02f);
-  nParamCurrent->setStep(vz_step);
-  GLParameterCovariances *cParam = new GLParameterCovariances(0.5f, Vector4f(0.0f, 1.0f, 0.0f, 1.0f), Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 0.02f, 0.03f);
-  cParam->setStep(vz_step);
-  GLParameterCorrespondences *corrParam = new GLParameterCorrespondences(1.0f, Vector4f(0.0f, 0.0f, 1.0f, 1.0f), 1.0f);
-  corrParam->setStep(vz_step);
+  // Uncomment what you want to see in the viewer. 
+  GLParameterPoints *pPointsRef,*pPointsCur;
+  // GLParameterNormals *pNormalsRef, *pNormalsCur;
+  // GLParameterCovariances *pCovariancesRef, *pCovariancesCur;
+  // GLParameterCorrespondences *pCorrespondences;
+
+  DrawablePoints *dPointsRef,*dPointsCur;
+  // DrawableNormals *dNormalsRef, *dNormalsCur;
+  // DrawableCovariances *dCovariancesRef, *dCovariancesCur;
+  // DrawableCorrespondences *dCorrespondences;
   
-  vector<Drawable*> drawableList = pwnGMW.viewer_3d->drawableList();
-  DrawablePoints* dpReference = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pParamReference, referencePWNV);
-  DrawableNormals *dnReference = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)nParamReference, referencePWNV);
-  DrawablePoints* dpCurrent = new DrawablePoints(finalT, (GLParameter*)pParamCurrent, currentPWNV);
-  DrawableNormals *dnCurrent = new DrawableNormals(finalT, (GLParameter*)nParamCurrent, currentPWNV);
-  DrawableCovariances *dcov = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)cParam, &referenceNormalGenerator.scaledStats);
-  DrawableCorrespondences* dcorr = new DrawableCorrespondences(finalT, (GLParameter*)corrParam, 0, 0);
-  dcorr->setPoints1(referencePWNV);
-  dcorr->setPoints2(currentPWNV);
-  dcorr->setCorrespondences(&aligner.correspondences());
-  dcorr->setNumCorrespondences(aligner.numCorrespondences());
+  pPointsRef = new GLParameterPoints(1.0f, Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+  pPointsRef->setStep(vz_step);
+  pPointsCur = new GLParameterPoints(1.0f, Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
+  pPointsCur->setStep(vz_step);
+  // pNormalsRef = new GLParameterNormals(1.0f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f), 0.03f);
+  // pNormalsRef->setStep(vz_step);
+  // pNormalsCur = new GLParameterNormals(1.0f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f), 0.03f);
+  // pNormalsCur->setStep(vz_step);
+  // pCovariancesRef = new GLParameterCovariances(1.0f, 
+  // 					    Vector4f(0.0f, 1.0f, 0.0f, 1.0f), Vector4f(1.0f, 0.0f, 0.0f, 1.0f),
+  // 					    0.02f, 0.03f);
+  // pCovariancesRef->setStep(vz_step);
+  // pCovariancesCur = new GLParameterCovariances(1.0f, 
+  // 					    Vector4f(0.0f, 1.0f, 0.0f, 1.0f), Vector4f(1.0f, 0.0f, 0.0f, 1.0f),
+  // 					    0.02f, 0.03f);
+  // pCovariancesCur->setStep(vz_step);
+  // pCorrespondences = new GLParameterCorrespondences(1.0f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f), 1.0f);
+  // pCorrespondences->setStep(vz_step);
+  
+  dPointsRef = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pPointsRef, referenceScene.points(), referenceScene.normals());
+  dPointsCur = new DrawablePoints(aligner.T(), (GLParameter*)pPointsCur, currentScene.points(), currentScene.normals());
+  // dNormalsRef = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)pNormalsRef, referenceScene.points(), referenceScene.normals());
+  // dNormalsCur = new DrawableNormals(aligner.T(), (GLParameter*)pNormalsCur, currentScene.points(), currentScene.normals());
+  // dCovariancesRef = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)pCovariancesRef, referenceScene.stats());
+  // dCovariancesCur = new DrawableCovariances(aligner.T(), (GLParameter*)pCovariancesCur, currentScene.stats());
+  // dCorrespondences = new DrawableCorrespondences(aligner.T(), (GLParameter*)pCorrespondences, aligner.correspondenceGenerator().numCorrespondences(),
+  // 						 referenceScene.points(), currentScene.points(), aligner.correspondenceGenerator().correspondences());  
 
-  pwnGMW.viewer_3d->addDrawable((Drawable*)dpReference);
-  //pwnGMW.viewer_3d->addDrawable((Drawable*)dnReference);
-  pwnGMW.viewer_3d->addDrawable((Drawable*)dpCurrent);
-  //pwnGMW.viewer_3d->addDrawable((Drawable*)dnCurrent);
-  //pwnGMW.viewer_3d->addDrawable((Drawable*)dcov);
-  //pwnGMW.viewer_3d->addDrawable((Drawable*)dcorr);
-
-  while (!(*pwnGMW.closing())) {
+  pwnGMW.viewer_3d->addDrawable((Drawable*)dPointsRef);
+  pwnGMW.viewer_3d->addDrawable((Drawable*)dPointsCur);
+  // pwnGMW.viewer_3d->addDrawable((Drawable*)dNormalsRef);
+  // pwnGMW.viewer_3d->addDrawable((Drawable*)dNormalsCur);
+  // pwnGMW.viewer_3d->addDrawable((Drawable*)dCovariancesRef);
+  // pwnGMW.viewer_3d->addDrawable((Drawable*)dCovariancesCur);
+  // pwnGMW.viewer_3d->addDrawable((Drawable*)dCorrespondences);
+  
+  while(!(*pwnGMW.closing())) {
     qApplication.processEvents();
+  
     pwnGMW.viewer_3d->updateGL();
+
     usleep(10000);
   }
-  return 0;
 }
