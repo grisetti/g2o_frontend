@@ -5,9 +5,9 @@ using namespace std;
 
 void Aligner::align() {
   _projector->setTransform(Isometry3f::Identity());
-  _projector->project(_currentIndexImage,
-		      _currentDepthImage,
-		      *_currentPoints);
+  _projector->project(_correspondenceGenerator.currentIndexImage(),
+		     _correspondenceGenerator.currentDepthImage(),
+		     _currentScene.points());
   _T = _initialGuess;
   for(int i = 0; i < _outerIterations; i++) {
     cout << "********************* Iteration " << i << " *********************" << endl;
@@ -18,21 +18,15 @@ void Aligner::align() {
     cout << "Computing correspondences...";
     
     _projector->setTransform(_T.inverse());
-    _projector->project(_referenceIndexImage,
-			_referenceDepthImage,
-			*_referencePoints);
+    _projector->project(_correspondenceGenerator.referenceIndexImage(),
+		       _correspondenceGenerator.referenceDepthImage(),
+		       _referenceScene.points());
     
     // Correspondences computation.    
-    _correspondenceGenerator.compute(_correspondences,
-				     *_referencePoints, *_currentPoints,
-				     *_referenceNormals, *_currentNormals,
-				     _referenceIndexImage, _currentIndexImage,
-				     *_referenceStats, *_currentStats,
-				     _T);
+    _correspondenceGenerator.compute(_referenceScene, _currentScene, _T);
 
     cout << " done." << endl;
-    _numCorrespondences = _correspondenceGenerator.numCorrespondences();
-    cout << "# inliers found: " << _numCorrespondences << endl;
+    cout << "# inliers found: " << _correspondenceGenerator.numCorrespondences() << endl;
  
     /************************************************************************
      *                            Alignment                                 *
@@ -41,15 +35,16 @@ void Aligner::align() {
       Matrix6f H;
       Vector6f b;
       _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
-      _linearizer->setT(_T);
-      _linearizer->update();
-      H = _linearizer->H() + Matrix6f::Identity() * 10.0f;;
-      b = _linearizer->b();
+      _linearizer.setT(_T);
+      _linearizer.update();
+      H = _linearizer.H() + Matrix6f::Identity() * 10.0f;;
+      b = _linearizer.b();
       Vector6f dx = H.ldlt().solve(-b);
       Eigen::Isometry3f dT = v2t(dx);
       _T = dT * _T;
       _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
     }    
   }
-  _T = _sensorOffset * _T;
+  _T = _sensorOffset * _T.inverse();
+
 }

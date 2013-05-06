@@ -29,8 +29,8 @@ float Linearizer::update() {
   _H = Matrix6f::Zero();
   float error = 0.0f;
   int inliers = 0;
-  HomogeneousPoint3fOmegaVector* pointOmegas = _aligner->currentPointOmegas();
-  HomogeneousPoint3fOmegaVector* normalOmegas = _aligner->currentNormalOmegas();
+  HomogeneousPoint3fOmegaVector &pointOmegas = _aligner->currentScene().pointOmegas();
+  HomogeneousPoint3fOmegaVector &normalOmegas = _aligner->currentScene().normalOmegas();
 
   //double et = 0, en = 0;
 
@@ -40,14 +40,14 @@ float Linearizer::update() {
   Vector4f _bt[numThreads], _br[numThreads];
   int _inliers[numThreads];
   float _errors[numThreads];
-  int iterationsPerThread = _aligner->numCorrespondences()/numThreads;
+  int iterationsPerThread = _aligner->correspondenceGenerator().numCorrespondences()/numThreads;
   #pragma omp parallel
   {
     int threadId=omp_get_thread_num();
     int imin = iterationsPerThread*threadId;
     int imax = imin + iterationsPerThread;
-    if (imax > _aligner->numCorrespondences())
-      imax = _aligner->numCorrespondences();
+    if (imax > _aligner->correspondenceGenerator().numCorrespondences())
+      imax = _aligner->correspondenceGenerator().numCorrespondences();
 
     Eigen::Matrix4f& Htt= _Htt[threadId];
     Eigen::Matrix4f& Htr= _Htr[threadId];
@@ -67,13 +67,13 @@ float Linearizer::update() {
     
     for(int i = imin; i < imax; i++) {
       __asm__("#here the loop begins");
-      const Correspondence& correspondence = _aligner->correspondences()[i];
-      const HomogeneousPoint3f referencePoint = _T*_aligner->referencePoints()->at(correspondence.referenceIndex);
-      const HomogeneousNormal3f referenceNormal = _T*_aligner->referenceNormals()->at(correspondence.referenceIndex);
-      const HomogeneousPoint3f& currentPoint = _aligner->currentPoints()->at(correspondence.currentIndex);
-      const HomogeneousNormal3f& currentNormal = _aligner->currentNormals()->at(correspondence.currentIndex);
-      const HomogeneousPoint3fOmega& omegaP = pointOmegas->at(correspondence.currentIndex);
-      const HomogeneousPoint3fOmega& omegaN = normalOmegas->at(correspondence.currentIndex);
+      const Correspondence& correspondence = _aligner->correspondenceGenerator().correspondences()[i];
+      const HomogeneousPoint3f referencePoint = _T * _aligner->referenceScene().points()[correspondence.referenceIndex];
+      const HomogeneousNormal3f referenceNormal = _T * _aligner->referenceScene().normals()[correspondence.referenceIndex];
+      const HomogeneousPoint3f& currentPoint = _aligner->currentScene().points()[correspondence.currentIndex];
+      const HomogeneousNormal3f& currentNormal = _aligner->currentScene().normals()[correspondence.currentIndex];
+      const HomogeneousPoint3fOmega& omegaP = pointOmegas[correspondence.currentIndex];
+      const HomogeneousPoint3fOmega& omegaN = normalOmegas[correspondence.currentIndex];
       
       const Vector4f pointError = referencePoint - currentPoint;
       const Vector4f normalError = referenceNormal - currentNormal;

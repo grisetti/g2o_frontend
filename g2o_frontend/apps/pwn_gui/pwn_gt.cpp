@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
     currentPWNV->at(i).tail<3>() = currentImageNormals[i].head<3>();
   }
   
-  QApplication qApplication(argc, argv);
+  /*QApplication qApplication(argc, argv);
   PWNGuiMainWindow pwnGMW;
   pwnGMW.show();
 
@@ -205,5 +205,5 @@ int main(int argc, char** argv) {
     pwnGMW.viewer_3d->updateGL();
     usleep(10000);
   }
-  return 0;
+  return 0;*/
 }

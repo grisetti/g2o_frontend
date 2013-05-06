@@ -66,7 +66,7 @@ int main (int argc, char** argv) {
   Eigen::Isometry3f T;
   T.setIdentity();
 
-  for (int i=0; i<maxFiles; i++){
+  /*  for (int i=0; i<maxFiles; i++){
     if (filenames[i]=="")
       break;
     //float r=0.85+0.15*drand48();
@@ -120,17 +120,7 @@ int main (int argc, char** argv) {
     }
     if (selectionChanged)
       viewer->updateGL();
-    /*    
-      for (int i=0; i<listWidget....; i++){
-      if (the widget is selected){
-	unselect it;
-	set the corresponding points to 0;
-      } else {
-	select itl
-	  set the co
-      }
-    }
-    */
+    
     application.processEvents();
-  }
+  }*/
 }

@@ -1,21 +1,27 @@
 #ifndef DRAWABLE_POINTS
 #define DRAWABLE_POINTS
 
-#include "../pwn/pointwithnormal.h"
+#include "../pwn/homogeneousvector4f.h"
 #include "drawable.h"
 
 class DrawablePoints : public Drawable {
  public:
   DrawablePoints();
-  DrawablePoints(const Eigen::Isometry3f& transformation_, GLParameter *parameter_,  const PointWithNormalVector *points_);
-  virtual void setPoints(PointWithNormalVector *points_) { _points = points_; }
+  DrawablePoints(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, const HomogeneousPoint3fVector &points_, const HomogeneousNormal3fVector &normals_);
+
+  virtual void setPoints(HomogeneousPoint3fVector &points_) { _points = points_; }
+  virtual void setNormals(HomogeneousNormal3fVector &normals_) { _normals = normals_; }
   virtual bool setParameter(GLParameter *parameter_);
-  virtual const PointWithNormalVector* points() { return _points; }
+  
+  virtual const HomogeneousPoint3fVector& points() { return _points; }
+  virtual const HomogeneousNormal3fVector& normals() { return _normals; }
   virtual GLParameter* parameter() { return _parameter; };
+  
   virtual void draw();
 
  protected:
-  const PointWithNormalVector *_points;
+  HomogeneousPoint3fVector _points;
+  HomogeneousNormal3fVector _normals;
 };  
 
 #endif
