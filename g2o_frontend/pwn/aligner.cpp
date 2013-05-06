@@ -37,7 +37,7 @@ void Aligner::align() {
       _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
       _linearizer.setT(_T.inverse());
       _linearizer.update();
-      H = _linearizer.H() + Matrix6f::Identity() * 10.0f;;
+      H = _linearizer.H() + Matrix6f::Identity() * 10.0f;
       b = _linearizer.b();
       Vector6f dx = H.ldlt().solve(-b);
       Eigen::Isometry3f dT = v2t(dx);

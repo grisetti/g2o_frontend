@@ -230,7 +230,7 @@ int main(int argc, char** argv) {
 
   QApplication qApplication(argc, argv);
   PWNGuiMainWindow pwnGMW;
-  //QGraphicsScene *refScn, *currScn;
+  QGraphicsScene *refScn, *currScn;
   
   std::vector<string> filenames;
   std::set<string> filenamesset = readDir(workingDirectory);
@@ -257,8 +257,8 @@ int main(int argc, char** argv) {
   aligner.setInnerIterations(al_innerIterations);
   
   pwnGMW.show();
-  //refScn = pwnGMW.scene0();
-  //currScn = pwnGMW.scene1();
+  refScn = pwnGMW.scene0();
+  currScn = pwnGMW.scene1();
 
   bool newCloudAdded = false, wasInitialGuess = false;
   bool *initialGuessViewer = 0, *optimizeViewer = 0, *addCloud = 0, *clearLast = 0, *clearAll = 0;
@@ -369,6 +369,20 @@ int main(int argc, char** argv) {
       frameVector[frameVector.size()-1]->dCorrespondences->setCorrespondences(frameVector[frameVector.size()-1]->correspondences);
       frameVector[frameVector.size()-1]->dCorrespondences->setNumCorrespondences(aligner.correspondenceGenerator().numCorrespondences());
 
+      // Show zBuffers.
+      refScn->clear();
+      currScn->clear();
+      QImage refQImage;
+      QImage currQImage;
+      DepthImageView div;
+      div.computeColorMap(300, 2000, 128);
+      div.convertToQImage(refQImage, aligner.correspondenceGenerator().referenceDepthImage()); 
+      div.convertToQImage(currQImage, aligner.correspondenceGenerator().currentDepthImage());
+      refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)refQImage.width()/(ng_scale*3), (int)(refQImage.height()/(ng_scale*3)))));
+      currScn->addPixmap((QPixmap::fromImage(currQImage)).scaled(QSize((int)currQImage.width()/(ng_scale*3), (int)(currQImage.height()/(ng_scale*3)))));
+      pwnGMW.graphicsView1_2d->show();
+      pwnGMW.graphicsView2_2d->show();
+      
       wasInitialGuess = false;
       newCloudAdded = false;
       *initialGuessViewer = 0;
@@ -414,6 +428,20 @@ int main(int argc, char** argv) {
       frameVector[frameVector.size()-1]->correspondences = CorrespondenceVector(aligner.correspondenceGenerator().correspondences());
       frameVector[frameVector.size()-1]->dCorrespondences->setCorrespondences(frameVector[frameVector.size()-1]->correspondences);
       frameVector[frameVector.size()-1]->dCorrespondences->setNumCorrespondences(aligner.correspondenceGenerator().numCorrespondences());
+
+      // Show zBuffers.
+      refScn->clear();
+      currScn->clear();
+      QImage refQImage;
+      QImage currQImage;
+      DepthImageView div;
+      div.computeColorMap(300, 2000, 128);
+      div.convertToQImage(refQImage, aligner.correspondenceGenerator().referenceDepthImage()); 
+      div.convertToQImage(currQImage, aligner.correspondenceGenerator().currentDepthImage());
+      refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)refQImage.width()/(ng_scale*3), (int)(refQImage.height()/(ng_scale*3)))));
+      currScn->addPixmap((QPixmap::fromImage(currQImage)).scaled(QSize((int)currQImage.width()/(ng_scale*3), (int)(currQImage.height()/(ng_scale*3)))));
+      pwnGMW.graphicsView1_2d->show();
+      pwnGMW.graphicsView2_2d->show();
 
       wasInitialGuess = false;
       newCloudAdded = false;
