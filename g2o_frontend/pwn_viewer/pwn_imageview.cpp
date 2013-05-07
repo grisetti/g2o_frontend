@@ -1,4 +1,5 @@
 #include "pwn_imageview.h"
+#include <iostream>
 
 DepthImageView::DepthImageView() {
   computeColorMap (0, 255, 0xff);
@@ -20,26 +21,22 @@ void DepthImageView::computeColorMap(int cmin, int cmax, unsigned char alpha){
   }
 }
 
-
 void DepthImageView::convertToQImage(QImage& img, const MatrixXus& m) const {
-  if (img.size().width()!=m.cols() || img.size().height()!=m.rows() || img.format() != QImage::Format_ARGB32)
-    img = QImage(m.cols(), m.rows(), QImage::Format_ARGB32);
-  unsigned int * pix = (unsigned int*) img.bits();
+  if (img.size().height()!=m.cols() || img.size().width()!=m.rows() || img.format() != QImage::Format_ARGB32)
+    img = QImage(m.rows(), m.cols(), QImage::Format_ARGB32);
   for (int i=0; i<m.rows(); i++){
     for (int j=0; j<m.cols(); j++){
-      *pix++ = color(m(i,j));
+      img.setPixel(i, j, color(m(i, j)));
     }
   }
 }
 
-
 void DepthImageView::convertToQImage(QImage& img, const Eigen::MatrixXf& m) const {
-  if (img.size().width()!=m.cols() || img.size().height()!=m.rows() || img.format() != QImage::Format_ARGB32)
-    img = QImage(m.cols(), m.rows(), QImage::Format_ARGB32);
-  unsigned int * pix = (unsigned int*) img.bits();
+  if (img.size().height()!=m.cols() || img.size().width()!=m.rows() || img.format() != QImage::Format_ARGB32)
+    img = QImage(m.rows(), m.cols(), QImage::Format_ARGB32);
   for (int i=0; i<m.rows(); i++){
     for (int j=0; j<m.cols(); j++){
-      *pix++ = color(1000.0f*m(i,j));
+      img.setPixel(i, j, color(1000.0f*m(i, j)));
     }
   }
 }

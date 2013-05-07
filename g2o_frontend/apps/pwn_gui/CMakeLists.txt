@@ -13,6 +13,13 @@ if(OPENMP_FOUND)
  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif(OPENMP_FOUND)
 
+find_package(CUDA)
+if(CUDA_FOUND)
+  set(CUDA_SEPARATE_COMPILATION ON)
+  set(CUDA_NVCC_FLAGS "-gencode arch=compute_30,code=sm_30")
+  set(BUILD_SHARED_LIBS OFF) 
+endif(CUDA_FOUND)
+
 ADD_EXECUTABLE(pwn_gui
   pwn_gui.cpp  
   pwn_gui_main_window.cpp	
@@ -37,7 +44,7 @@ CUDA_ADD_EXECUTABLE(pwn_gt
 )
 
 TARGET_LINK_LIBRARIES(pwn_gt 
-  pwn_viewer_library pwn_cuda_library pwn_library 
+  pwn_viewer_library pwn_library 
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
-  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY})
+  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${CUDA_CUDART_LIBRARY})

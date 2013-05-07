@@ -8,6 +8,8 @@ endif(OPENMP_FOUND)
 
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 
+
+
 ADD_LIBRARY(pwn_library
 	../basemath/bm_se3.h
 	aligner.cpp aligner.h
@@ -64,5 +66,5 @@ TARGET_LINK_LIBRARIES( pwn_g2o_movingRef pwn_library  ${G2O_STUFF_LIBRARY} )
 
 ADD_EXECUTABLE(homogeneous_normals homogeneous_normals.cpp)
 SET_TARGET_PROPERTIES(homogeneous_normals PROPERTIES OUTPUT_NAME homogeneous_normals)
-TARGET_LINK_LIBRARIES( homogeneous_normals pwn_library  ${G2O_STUFF_LIBRARY}) 
+TARGET_LINK_LIBRARIES( homogeneous_normals pwn_library  ${G2O_STUFF_LIBRARY} ) 
 

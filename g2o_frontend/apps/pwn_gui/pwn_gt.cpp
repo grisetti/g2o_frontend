@@ -3,7 +3,6 @@
 #include "g2o_frontend/pwn/correspondencegenerator.h"
 #include "g2o_frontend/pwn/pinholepointprojector.h"
 #include "g2o_frontend/pwn/aligner.h"
-#include "g2o_frontend/pwn_cuda/cualigner.h"
 
 #include <qapplication.h>
 #include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
@@ -28,6 +27,7 @@
 
 #include "g2o_frontend/pwn/pointwithnormal.h"
 #include "g2o_frontend/basemath/bm_se3.h"
+#include "g2o_frontend/pwn_cuda/cualigner.h"
 							     
 using namespace std;
 int main(int argc, char** argv) {
@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
 			 ng_curvatureThreshold);
     
   cout << " done." << endl;
-
+  
   /************************************************************************
    *                         Omega Computation                            *
    ************************************************************************/
@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
   
   Isometry3f initialGuess = Isometry3f::Identity();
   Isometry3f sensorOffset = Isometry3f::Identity();
-  aligner.setInitialGuess(initialGuess.inverse());
+  aligner.setInitialGuess(initialGuess);
   aligner.setSensorOffset(sensorOffset);
   
   aligner.align();

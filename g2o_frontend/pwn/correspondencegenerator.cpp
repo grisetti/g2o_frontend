@@ -1,5 +1,8 @@
 #include "correspondencegenerator.h"
-#include<omp.h>
+#include <omp.h>
+
+#include <iostream>
+using namespace std;
 
 void CorrespondenceGenerator::compute(HomogeneousPoint3fScene &referenceScene, HomogeneousPoint3fScene &currentScene, Eigen::Isometry3f T) {
   T.matrix().block<1,4>(3, 0) << 0,0,0,1;
@@ -42,6 +45,9 @@ void CorrespondenceGenerator::compute(HomogeneousPoint3fScene &referenceScene, H
 	const HomogeneousPoint3f& currentPoint = currentScene.points()[currentIndex];
 	const HomogeneousPoint3f& _referencePoint = referenceScene.points()[referenceIndex];
 	
+	//if(currentNormal.squaredNorm() == 0.0f || _referenceNormal.squaredNorm() == 0.0f)
+	//continue;
+
 	// remappings
 	HomogeneousPoint3f referencePoint = T * _referencePoint;
 	HomogeneousNormal3f referenceNormal = T * _referenceNormal;
@@ -70,20 +76,22 @@ void CorrespondenceGenerator::compute(HomogeneousPoint3fScene &referenceScene, H
 	_correspondences[correspondenceIndex].referenceIndex = referenceIndex;
 	_correspondences[correspondenceIndex].currentIndex = currentIndex;
 	correspondenceIndex++;
-
       }
     }
   }
   // assemble the solution
   int k=0;
   for (int t=0; t<numThreads; t++){
-    //cerr << "assembling from " << localOffset[t] << " until " << localCorrespondenceIndex[t] << endl;
-    for (int i=localOffset[t]; i< localCorrespondenceIndex[t]; i++)
+    for (int i=localOffset[t]; i < localCorrespondenceIndex[t]; i++)
       _correspondences[k++] = _correspondences[i];
   }
   _numCorrespondences = k;
 
-  //std::cerr << "dtot: " << dtot << " ndtot: " << ndtot << std::endl;
   for (size_t i = _numCorrespondences; i < _correspondences.size(); i++)
     _correspondences[i] = Correspondence();
+
+  // cerr << endl << referenceScene.points()[_correspondences[k-1].referenceIndex].transpose() << endl;
+  // cerr << referenceScene.normals()[_correspondences[k-1].referenceIndex].transpose() << endl;
+  // cerr << currentScene.points()[_correspondences[k-1].currentIndex].transpose() << endl;
+  // cerr << currentScene.normals()[_correspondences[k-1].currentIndex].transpose() << endl; 
 }

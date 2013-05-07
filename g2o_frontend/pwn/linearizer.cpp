@@ -1,27 +1,5 @@
 #include "aligner.h"
-#include <iostream>
-using namespace std;
-
 #include <omp.h>
-
-// inline void _computeHb_tq(Matrix4f& Htt, Matrix4f& Htr, Matrix4f& Hrr,
-// 			  Vector4f& bt, Vector4f& br, 
-// 			  const HomogeneousPoint3f& p, const HomogeneousNormal3f& n, 
-// 			  const Vector4f& pointError, const Vector4f& normalError, 
-// 			  const HomogeneousPoint3fOmega& pointOmega, const HomogeneousPoint3fOmega& normalOmega) {
-//     Matrix4f Sp = skew(p);
-//     Matrix4f Sn = skew(n);
-//     Eigen::Matrix4f omegaP = pointOmega;
-//     Eigen::Matrix4f omegaN = normalOmega;
-
-//     Htt += omegaP;
-//     Htr += omegaP*Sp;
-//     Hrr +=Sp.transpose()*omegaP*Sp + Sn.transpose()*omegaN*Sn;
-//     const HomogeneousNormal3f ep = omegaP*pointError;
-//     const HomogeneousNormal3f en = omegaN*normalError;
-//     bt += ep;
-//     br += Sp.transpose()*ep + Sn.transpose()*en;
-//   }
 
 float Linearizer::update() {
   // Variables initialization.
