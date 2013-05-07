@@ -27,7 +27,7 @@ void Aligner::align() {
 
     cout << " done." << endl;
     cout << "# inliers found: " << _correspondenceGenerator.numCorrespondences() << endl;
- 
+
     /************************************************************************
      *                            Alignment                                 *
      ************************************************************************/
@@ -38,6 +38,7 @@ void Aligner::align() {
       _linearizer.setT(_T.inverse());
       _linearizer.update();
       H = _linearizer.H() + Matrix6f::Identity() * 10.0f;
+      cout << "H: " << endl << H << endl;
       b = _linearizer.b();
       Vector6f dx = H.ldlt().solve(-b);
       Eigen::Isometry3f dT = v2t(dx);

@@ -1,8 +1,8 @@
 #include <Eigen/Eigenvalues>
 #include "homogeneouspoint3fstatsgenerator.h"
-#include <iostream>
 #include <omp.h>
 
+#include <iostream>
 using namespace std;
 
 HomogeneousPoint3fStatsGenerator::HomogeneousPoint3fStatsGenerator(){
@@ -21,7 +21,7 @@ void HomogeneousPoint3fStatsGenerator::compute(HomogeneousPoint3fStatsVector& st
   assert(integralImage.rows()==indexImage.rows());
   assert(integralImage.cols()==indexImage.cols());
 
-  #pragma omp parallel for
+#pragma omp parallel for
   for (int c=0; c<indexImage.cols(); ++c){
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigenSolver;
     const int* index = &indexImage.coeffRef(0,c);
@@ -74,8 +74,9 @@ void HomogeneousPoint3fStatsGenerator::compute(HomogeneousNormal3fVector& normal
     normals.resize(points.size());
   if(stats.size() != points.size())
     stats.resize(points.size());
+  //fill(normals.begin(), normals.end(), HomogeneousNormal3f());
 
-  #pragma omp parallel for
+  //#pragma omp parallel for
   for (int c=0; c<indexImage.cols(); ++c){
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigenSolver;
     const int* index = &indexImage.coeffRef(0,c);
@@ -118,6 +119,8 @@ void HomogeneousPoint3fStatsGenerator::compute(HomogeneousNormal3fVector& normal
       } else {
 	normal.setZero();
       }
+      if(normal.squaredNorm() > 10.0f)
+	cout << normal.transpose() << endl;
     }
   }
 }
