@@ -174,8 +174,8 @@ int main(int argc, char** argv) {
   /************************************************************************
    *                         Alignment Computation                        *
    ************************************************************************/
-  //CudaAligner::CuAligner aligner;
-  Aligner aligner;
+  CudaAligner::CuAligner aligner;
+  //Aligner aligner;
   aligner.setOuterIterations(al_outerIterations);
   aligner.setInnerIterations(al_innerIterations);
 
