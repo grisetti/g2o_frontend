@@ -69,7 +69,7 @@ struct NormalGenerator {
     statsGenerator.compute(scaledStats, scaledIntegralImage, scaledIntervalImage, scaledIndexImage);
 
     // Step six, extract the normals from the statistics.
-    imageNormals.resize(imagePoints.size());
+    imageNormals.resize(imagePoints.size(),HomogeneousNormal3f::Zero());
     for(size_t i = 0; i < imagePoints.size(); i++) {
       HomogeneousPoint3f& p = imagePoints[i];
       const HomogeneousPoint3fStats& pstats = scaledStats[i];

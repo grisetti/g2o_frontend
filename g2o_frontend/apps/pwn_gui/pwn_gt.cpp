@@ -130,8 +130,10 @@ int main(int argc, char** argv) {
   // Resize the vector containing the stats to have the same length of the vector of points.
   referenceScene.stats().resize(referenceScene.points().size());
   currentScene.stats().resize(currentScene.points().size());
-  std::fill(referenceScene.stats().begin(), referenceScene.stats().end(), HomogeneousPoint3fStats());
-  std::fill(currentScene.stats().begin(), currentScene.stats().end(), HomogeneousPoint3fStats());
+  HomogeneousPoint3fStats zeroStats;
+  zeroStats.setZero();
+  std::fill(referenceScene.stats().begin(), referenceScene.stats().end(), zeroStats);
+  std::fill(currentScene.stats().begin(), currentScene.stats().end(), zeroStats);
     
   // Creating the stas generator object. 
   HomogeneousPoint3fStatsGenerator statsGenerator;
