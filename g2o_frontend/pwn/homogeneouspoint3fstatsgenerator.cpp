@@ -74,8 +74,7 @@ void HomogeneousPoint3fStatsGenerator::compute(HomogeneousNormal3fVector& normal
     normals.resize(points.size());
   if(stats.size() != points.size())
     stats.resize(points.size());
-  //fill(normals.begin(), normals.end(), HomogeneousNormal3f());
-
+ 
   //#pragma omp parallel for
   for (int c=0; c<indexImage.cols(); ++c){
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigenSolver;
