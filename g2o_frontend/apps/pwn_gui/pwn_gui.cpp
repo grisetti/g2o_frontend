@@ -21,6 +21,8 @@
 #include "g2o/stuff/command_args.h"
 #include "g2o/stuff/timeutil.h"
 
+//#include "g2o_frontend/pwn_cuda/cualigner.h"
+
 #include <qapplication.h>
 #include <iostream>
 #include <fstream>
@@ -254,6 +256,7 @@ int main(int argc, char** argv) {
 
   // Creating and setting aligner object.
   Aligner aligner;
+  //CudaAligner::CuAligner aligner;
   aligner.setInnerIterations(al_innerIterations);
   
   pwnGMW.show();

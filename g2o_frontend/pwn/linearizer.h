@@ -1,3 +1,5 @@
+#ifndef _LINEARIZER_H_
+#define _LINEARIZER_H_
 #include "homogeneousvector4f.h"
 #include "homogeneouspoint3fomega.h"
 #include "g2o_frontend/basemath/bm_se3.h"
@@ -41,3 +43,4 @@ class Linearizer {
 };
 
 
+#endif

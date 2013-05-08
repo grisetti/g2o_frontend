@@ -176,22 +176,23 @@ int main(int argc, char** argv) {
   /************************************************************************
    *                         Alignment Computation                        *
    ************************************************************************/
-  CudaAligner::CuAligner aligner;
-  //Aligner aligner;
+  //CudaAligner::CuAligner aligner;
+  Aligner aligner;
   aligner.setOuterIterations(al_outerIterations);
   aligner.setInnerIterations(al_innerIterations);
 
   aligner.correspondenceGenerator().setSize(referenceIndexImage.rows(), referenceIndexImage.cols());
   
   aligner.setProjector(&projector);
-  aligner.setReferenceScene(referenceScene);
-  aligner.setCurrentScene(currentScene);
+  aligner.setReferenceScene(&referenceScene);
+  aligner.setCurrentScene(&currentScene);
   
   Isometry3f initialGuess = Isometry3f::Identity();
   Isometry3f sensorOffset = Isometry3f::Identity();
   aligner.setInitialGuess(initialGuess);
   aligner.setSensorOffset(sensorOffset);
   
+  cout << "doing something: " << endl;
   aligner.align();
   	
   cout << "Final transformation: " << endl << aligner.T().matrix() << endl;
@@ -233,8 +234,8 @@ int main(int argc, char** argv) {
   // pCorrespondences = new GLParameterCorrespondences(1.0f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f), 1.0f);
   // pCorrespondences->setStep(vz_step);
   
-  dPointsRef = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pPointsRef, referenceScene.points(), referenceScene.normals());
-  dPointsCur = new DrawablePoints(aligner.T(), (GLParameter*)pPointsCur, currentScene.points(), currentScene.normals());
+  dPointsRef = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pPointsRef, &referenceScene.points(), &referenceScene.normals());
+  dPointsCur = new DrawablePoints(aligner.T(), (GLParameter*)pPointsCur, &currentScene.points(), &currentScene.normals());
   // dNormalsRef = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)pNormalsRef, referenceScene.points(), referenceScene.normals());
   // dNormalsCur = new DrawableNormals(aligner.T(), (GLParameter*)pNormalsCur, currentScene.points(), currentScene.normals());
   // dCovariancesRef = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)pCovariancesRef, referenceScene.stats());

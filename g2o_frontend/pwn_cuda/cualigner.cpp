@@ -21,12 +21,12 @@ void CuAligner::align() {
     cerr << "STATUS: " << buf << endl; 
   }
   _T = _initialGuess;
-  float referenceCurvatures[_referenceScene.stats().size()];
-  float currentCurvatures[_currentScene.stats().size()];
-  for (int i=0; i<_referenceScene.stats().size(); i++)
-    referenceCurvatures[i]=_referenceScene.stats().at(i).curvature();
-  for (int i=0; i<_currentScene.stats().size(); i++)
-    currentCurvatures[i]=_currentScene.stats().at(i).curvature();
+  float referenceCurvatures[_referenceScene->stats().size()];
+  float currentCurvatures[_currentScene->stats().size()];
+  for (int i=0; i<_referenceScene->stats().size(); i++)
+    referenceCurvatures[i]=_referenceScene->stats().at(i).curvature();
+  for (int i=0; i<_currentScene->stats().size(); i++)
+    currentCurvatures[i]=_currentScene->stats().at(i).curvature();
 
   
   PinholePointProjector *pprojector = (PinholePointProjector *) _projector;
@@ -34,16 +34,16 @@ void CuAligner::align() {
   cerr << "camera camera: " << pprojector->cameraMatrix() << endl;
   status = initComputation(context,
 			   &(pprojector->cameraMatrix().coeffRef(0,0)),
-			   &(_referenceScene.points().at(0).coeffRef(0)),
-			   &(_referenceScene.normals().at(0).coeffRef(0)),
+			   &(_referenceScene->points().at(0).coeffRef(0)),
+			   &(_referenceScene->normals().at(0).coeffRef(0)),
 			   referenceCurvatures,
-			   _referenceScene.points().size(),
-			   &(_currentScene.points().at(0).coeffRef(0)),
-			   &(_currentScene.normals().at(0).coeffRef(0)),
+			   _referenceScene->points().size(),
+			   &(_currentScene->points().at(0).coeffRef(0)),
+			   &(_currentScene->normals().at(0).coeffRef(0)),
 			   currentCurvatures,
-			   &(_currentScene.pointOmegas().at(0).coeffRef(0,0)),
-			   &(_currentScene.normalOmegas().at(0).coeffRef(0,0)),
-			   _currentScene.points().size());
+			   &(_currentScene->pointOmegas().at(0).coeffRef(0,0)),
+			   &(_currentScene->normalOmegas().at(0).coeffRef(0,0)),
+			   _currentScene->points().size());
   
   status.toString(buf);
   cerr << "STATUS: " << buf << endl; 
