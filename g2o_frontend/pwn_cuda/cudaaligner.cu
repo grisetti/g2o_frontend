@@ -67,7 +67,6 @@ namespace CudaAligner {
   template <class T>
   __global__ void fillBuffer(T* buffer, int numElems, T value){
     int i = blockDim.x * blockIdx.x + threadIdx.x;
-    float ip[4];
     if (i<numElems){
       buffer[i] = value;
     }
@@ -87,10 +86,10 @@ namespace CudaAligner {
       int x = (int)(ip[0]*iw);
       int y = (int)(ip[1]*iw);
       int offset = y*rows+x;
-      if (d > dmin && d > dmax &&
-	   x >= 0 && x<= rows && 
-	   y>=0 && y<=cols){
-	atomicMin(buffer+offset,x);
+      if (d > dmin && d < dmax &&
+	   x >= 0 && x<rows && 
+	   y>=0 && y<cols){
+	atomicMin(buffer+offset,d);
       }
     }
   }
@@ -108,8 +107,8 @@ namespace CudaAligner {
       int x = (int)(ip[0]*iw);
       int y = (int)(ip[1]*iw);
       int offset = y*rows+x;
-      if ( x >= 0 && x<= rows && 
-	   y>=0 && y<=cols){
+      if ( x >= 0 && x<rows && 
+	   y>=0 && y<cols && d == zbuffer[offset]){
 	ibuffer[offset]=i;
       }
     }
@@ -375,12 +374,10 @@ namespace CudaAligner {
   __global__ void Aligner_coolIterationKernel(AlignerContext* context){
     extern __shared__ float sdata[];
     int i = blockDim.x * blockIdx.x + threadIdx.x;
-    const int K = 2;
     const int dim = 56;
     int sdataOffset = threadIdx.x*dim;
     float x[dim];
-    float* buf= sdata + sdataOffset;
-
+    
     //int retval = 0;
     if (i < context->_rows*context->_cols) {
       vecFill<56>(x, 0.0f);
@@ -428,7 +425,6 @@ namespace CudaAligner {
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
 
     int sdataOffset = threadIdx.x*dim;
-    int inputOffset = i*dim;
     // load input into __shared__ memory
     float x[dim];
     vecFill<dim>(x,0);
@@ -522,7 +518,7 @@ namespace CudaAligner {
       fillBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_referenceIndices.values(),_rows*_cols, 
        						    -1);
 						    
-      cudaDeviceSynchronize();
+      //cudaDeviceSynchronize();
       
       numElements = _numReferencePoints;
       threadsPerBlock = 256;
@@ -540,13 +536,13 @@ namespace CudaAligner {
 							    _cudaHostContext->_referencePoints.values(),
 							    _cudaHostContext->_numReferencePoints,
 							    0, _cudaHostContext->_maxDepth);
-      cudaDeviceSynchronize();
+      //cudaDeviceSynchronize();
       computeIndexBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_referenceIndices.values(),
 							    _cudaHostContext->_depthBuffer.values(),
 							    _rows, _cols, _cudaDeviceContext->_KT,
 							    _cudaHostContext->_referencePoints.values(),
 							    _cudaHostContext->_numReferencePoints);
-      cudaDeviceSynchronize();
+      //cudaDeviceSynchronize();
 
       
       /*cudaMemcpy(_referenceIndices.values(), _cudaHostContext->_referenceIndices.values(), _rows * _cols * sizeof(float), cudaMemcpyDeviceToHost);
@@ -575,7 +571,7 @@ namespace CudaAligner {
       {
 	return AlignerStatus(KernelLaunch);
       }
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
     numElements = blocksPerGrid;
     while(numElements>1){
       int threadsPerBlock = 32;
@@ -591,9 +587,9 @@ namespace CudaAligner {
 	}
       numElements = blocksPerGrid;
     }
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
     cudaMemcpy(_cudaDeviceContext->_Hb, _cudaHostContext->_reductionBuffer, 56*sizeof(float), cudaMemcpyDeviceToDevice);
-
+    
     err = cudaMemcpy(_cudaHostContext,_cudaDeviceContext, sizeof(AlignerContext), cudaMemcpyDeviceToHost);
     if (err!=cudaSuccess)
       return AlignerStatus(CopyFromDevice,Context);
@@ -603,6 +599,9 @@ namespace CudaAligner {
     double tStart = tvStart.tv_sec*1000+tvStart.tv_usec*0.001;
     double tEnd = tvEnd.tv_sec*1000+tvEnd.tv_usec*0.001;
     printf("\ttime: %lf",tEnd-tStart);
+
+    cerr << "inliers: " << *(_cudaHostContext->_Hb+16*3+3) << endl;
+    cerr << "error  : " << *(_cudaHostContext->_Hb+16*3+4+3) << endl;
 
     return AlignerStatus();
   }
@@ -717,9 +716,9 @@ __device__ int AlignerContext::processCorrespondence(float* error,
   matVecMul<4,4>(temp,Sn,en);
   vecSum<4>(br,temp,+1.0f);
   vecScale<4>(br,-1.0f);
-
-
   *error = localError;
+  *(bt+3)=1;
+  *(br+3)= localError;
   return 1;
 }
 

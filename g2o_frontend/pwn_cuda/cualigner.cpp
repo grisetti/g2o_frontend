@@ -16,7 +16,7 @@ void CuAligner::align() {
   cerr << "context rows: " << _rows << " _cols:" << _cols << endl;
   if (! context){
     cerr << "initializing cuda context" << endl;
-    status = createContext(&context, _rows*_cols*4, _rows*_cols*4, _cols, _rows);
+    status = createContext(&context, _rows*_cols*4, _rows*_cols*4, _rows, _cols);
     status.toString(buf);
     cerr << "STATUS: " << buf << endl; 
   }
@@ -48,16 +48,15 @@ void CuAligner::align() {
   status.toString(buf);
   cerr << "STATUS: " << buf << endl; 
     
+  Eigen::Isometry3f invT = _T.inverse();
   for(int i = 0; i < _outerIterations; i++) {
-    _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
- 
-
     cout << " done." << endl;
     cout << "********************* Iteration " << i << " *********************" << endl;
+    invT.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
     
     
     cerr << "ITERATE" << endl;
-    status = simpleIteration(context, &(_T.matrix().coeffRef(0,0)));
+    status = simpleIteration(context, &(invT.matrix().coeffRef(0,0)));
     status.toString(buf);
     cerr << "STATUS: " << buf << endl; 
     Eigen::Matrix4f Htt, Htr, Hrr;
@@ -80,22 +79,19 @@ void CuAligner::align() {
     int acc = 0;
     //_numCorrespondences = _correspondenceGenerator.numCorrespondences();
     //cout << "# inliers found: " << _numCorrespondences << endl;
-    cerr << "b" << b.transpose() << endl;
-    cerr << "H" << endl;
-    cerr << H << endl;
-    H += Matrix6f::Identity() * 100.0f;
+    H += Matrix6f::Identity() * 10.0f;
     
     Vector6f dx = H.ldlt().solve(-b);
     Eigen::Isometry3f dT = v2t(dx);
     cerr << "dt = " << t2v(dT).transpose() << endl;
 					
-    _T =  dT * _T ;
-    cerr << "tfinal = " << t2v(_T).transpose() << endl;
+    invT =  dT * invT ;
     //cerr << "Hreal: " << endl << H-myH << endl;
     //cerr << "breal: " << endl << b-myb << endl;
   }
+  _T = invT.inverse();
   _T = _sensorOffset * _T;
-  _T = _T.inverse();
+  cerr << "T = " << t2v(_T).transpose() << endl;
   {
     cerr << "Destroy" << endl;
     status = destroyContext(context);
