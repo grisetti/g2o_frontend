@@ -167,8 +167,9 @@ endif(OPENMP_FOUND)
 # Find CUDA
 find_package(CUDA)
 if(CUDA_FOUND)
-  set(CUDA_NVCC_FLAGS "-gencode arch=compute_20,code=sm_20")
   #set(CUDA_NVCC_FLAGS "-gencode arch=compute_20,code=sm_20")
+  set(CUDA_NVCC_FLAGS "-gencode arch=compute_30,code=sm_30")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_PWN_USE_CUDA_")
 endif(CUDA_FOUND)
 
 # Find PCL

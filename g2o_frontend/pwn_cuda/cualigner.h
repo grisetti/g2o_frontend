@@ -6,8 +6,13 @@ namespace CudaAligner {
   struct AlignerContext;
   class CuAligner: public Aligner {
   public:
+    CuAligner();
     void align();
+    virtual ~CuAligner();
+  protected:
+    AlignerContext* _context;
   };
+
 };
 
 #endif

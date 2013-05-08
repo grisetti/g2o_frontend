@@ -21,7 +21,9 @@
 #include "g2o/stuff/command_args.h"
 #include "g2o/stuff/timeutil.h"
 
-//#include "g2o_frontend/pwn_cuda/cualigner.h"
+#ifdef _PWN_USE_CUDA_
+#include "g2o_frontend/pwn_cuda/cualigner.h"
+#endif// PWN_CUDA
 
 #include <qapplication.h>
 #include <iostream>
@@ -255,8 +257,8 @@ int main(int argc, char** argv) {
   NormalOmegaGenerator normalOmegaGenerator;
 
   // Creating and setting aligner object.
-  Aligner aligner;
-  //CudaAligner::CuAligner aligner;
+  //Aligner aligner;
+  CudaAligner::CuAligner aligner;
   aligner.setInnerIterations(al_innerIterations);
   
   pwnGMW.show();

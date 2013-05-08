@@ -6,20 +6,31 @@
 namespace CudaAligner {
   using namespace std;
 
-static CudaAligner::AlignerContext* context = 0 ;
+  CuAligner::CuAligner() {
+    int _rows = 640;
+    int _cols = 480;
+    AlignerStatus status;
+    cerr << "initializing cuda context" << endl;
+    status = createContext(&_context, _rows*_cols*4, _rows*_cols*4, _rows, _cols);
+    char buf[1024];
+    status.toString(buf);
+    cerr << "STATUS: " << buf << endl; 
+  }
+
+  CuAligner::~CuAligner() {
+    AlignerStatus status;
+
+    cerr << "destroying cuda context" << endl;
+    status = destroyContext(_context);
+    char buf[1024];
+    status.toString(buf);
+    cerr << "STATUS: " << buf << endl; 
+
+  }
 
 void CuAligner::align() {
   AlignerStatus status;
   char buf[1024];
-  int _rows = _correspondenceGenerator.rows();
-  int _cols = _correspondenceGenerator.cols();
-  cerr << "context rows: " << _rows << " _cols:" << _cols << endl;
-  if (! context){
-    cerr << "initializing cuda context" << endl;
-    status = createContext(&context, _rows*_cols*4, _rows*_cols*4, _rows, _cols);
-    status.toString(buf);
-    cerr << "STATUS: " << buf << endl; 
-  }
   _T = _initialGuess;
   float referenceCurvatures[_referenceScene->stats().size()];
   float currentCurvatures[_currentScene->stats().size()];
@@ -31,8 +42,8 @@ void CuAligner::align() {
   
   PinholePointProjector *pprojector = (PinholePointProjector *) _projector;
   cerr << "initializing context computation" << endl;
-  cerr << "camera camera: " << pprojector->cameraMatrix() << endl;
-  status = initComputation(context,
+  cerr << "camera: " << pprojector->cameraMatrix() << endl;
+  status = initComputation(_context,
 			   &(pprojector->cameraMatrix().coeffRef(0,0)),
 			   &(_referenceScene->points().at(0).coeffRef(0)),
 			   &(_referenceScene->normals().at(0).coeffRef(0)),
@@ -56,12 +67,12 @@ void CuAligner::align() {
     
     
     cerr << "ITERATE" << endl;
-    status = simpleIteration(context, &(invT.matrix().coeffRef(0,0)));
+    status = simpleIteration(_context, &(invT.matrix().coeffRef(0,0)));
     status.toString(buf);
     cerr << "STATUS: " << buf << endl; 
     Eigen::Matrix4f Htt, Htr, Hrr;
     Eigen::Vector4f bt, br;
-    getHb(context,
+    getHb(_context,
 	  &(Htt.coeffRef(0,0)), 
 	  &(Htr.coeffRef(0,0)), 
 	  &(Hrr.coeffRef(0,0)), 
@@ -92,13 +103,6 @@ void CuAligner::align() {
   _T = invT.inverse();
   _T = _sensorOffset * _T;
   cerr << "T = " << t2v(_T).transpose() << endl;
-  {
-    cerr << "Destroy" << endl;
-    status = destroyContext(context);
-    status.toString(buf);
-    cerr << "STATUS: " << buf << endl; 
-  }
-  
 }
 
 }
