@@ -54,7 +54,7 @@ struct HomogeneousVector4f: public Eigen::Vector4f {
    *  @param other is the 3 elements vector used to fill the first three coordinates of the
    *  HomogeneousVector4f object.
    */
-  inline HomogeneousVector4f(const Eigen::Vector3f& other) {
+  inline HomogeneousVector4f(const Eigen::Vector3f &other) {
     this->data()[0] = other.data()[0];
     this->data()[1] = other.data()[1];
     this->data()[2] = other.data()[2];
@@ -70,7 +70,7 @@ struct HomogeneousVector4f: public Eigen::Vector4f {
    *  HomogeneousVector4f object.
    */
   template<typename OtherDerived>
-  inline HomogeneousVector4f(const Eigen::MatrixBase<OtherDerived>& other) : Eigen::Vector4f(other) {
+  inline HomogeneousVector4f(const Eigen::MatrixBase<OtherDerived> &other) : Eigen::Vector4f(other) {
     this->data()[3] = wCoordinate;
   }
 
@@ -79,7 +79,7 @@ struct HomogeneousVector4f: public Eigen::Vector4f {
    *  MatrixBase object and an HomogeneousVector4f object.
    */
   template<typename OtherDerived>
-  inline HomogeneousVector4f& operator = (const Eigen::MatrixBase<OtherDerived>& other) {
+  inline HomogeneousVector4f& operator = (const Eigen::MatrixBase<OtherDerived> &other) {
     this->Base::operator = (other);
     this->data()[3] = wCoordinate;
     return *this;
@@ -89,7 +89,7 @@ struct HomogeneousVector4f: public Eigen::Vector4f {
    *  This method define the assignment operator between an Eigen
    *  Vector3f object and an HomogeneousVector4f object.
    */
-  inline HomogeneousVector4f& operator = (const Eigen::Vector3f& other) {
+  inline HomogeneousVector4f& operator = (const Eigen::Vector3f &other) {
     this->data()[0] = other.data()[0];
     this->data()[1] = other.data()[1];
     this->data()[2] = other.data()[2];

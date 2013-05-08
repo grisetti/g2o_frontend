@@ -26,22 +26,22 @@ public:
   virtual ~PinholePointProjector();
   
   /**
-   *  Method that return the camera matrix.
-   *  @return a reference to the camera matrix.
-   */
-  inline const Eigen::Matrix3f& cameraMatrix() const {return _cameraMatrix;}
-  
-  /**
    *  Virtual method that set the camera pose transformation to the one given in input.
    *  @param transform_ is the isometry used to update the camera pose transformation variable. 
    */
-  virtual void setTransform(const Eigen::Isometry3f& transform_);
+  virtual inline void setTransform(const Eigen::Isometry3f &transform_);
+
+  /**
+   *  Method that return the camera matrix.
+   *  @return a reference to the camera matrix.
+   */
+  inline const Eigen::Matrix3f& cameraMatrix() const { return _cameraMatrix;}
   
   /**
    *  Virtual method that set the camera matrix to the one given in input.
    *  @param transform_ is the 3x3 matrix used to update the camera matrix variable. 
    */
-  virtual void setCameraMatrix(const Eigen::Matrix3f& cameraMatrix_);
+  virtual void setCameraMatrix(const Eigen::Matrix3f &cameraMatrix_);
 
   /**
    *  Virtual method that projects a given set of homogeneous points from the 3D euclidean space to 
@@ -53,8 +53,8 @@ public:
    *  @param depthImage is an output parameter containing the depth values of the projected points.
    *  @param points is the input parameter containing the set of points to project.
    */
-  virtual void project(Eigen::MatrixXi& indexImage, 
-		       Eigen::MatrixXf& depthImage, 
+  virtual void project(Eigen::MatrixXi &indexImage, 
+		       Eigen::MatrixXf &depthImage, 
 		       const HomogeneousPoint3fVector& points) const;
 
   /**
@@ -67,30 +67,23 @@ public:
    *  to determine the side of the square region for the given point.
    *  @param x is an input parameter that contains the row of the matrix where the projected point
    *  falls.
-   *  @param y is an input parameter that contains the column of the matrix where the projected point
-   *  falls.
-   *  @param d is an input parameter that contains the depth value of the projected point.
-   *  @param worldRadius is the input parameter containing the radius in the 3D euclidean space used
-   *  to determine the side of the square region for the given point.
-   *  @return an integer containing the value of the side of the square region that will be used to compute the 
-   *  stats of the point.
    */
-  void projectIntervals(Eigen::MatrixXi& intervalImage, 
-			const Eigen::MatrixXf& depthImage, 
-			float worldRadius) const;
+  void projectIntervals(Eigen::MatrixXi &intervalImage, 
+			const Eigen::MatrixXf &depthImage, 
+			const float worldRadius) const;
   
   /**
    *  Virtual method that unprojects to the 3D euclidean space the points contained in the depthImage
    *  matrix. The indexImage matrix is used to place the unprojected inside the vector of points in a
    *  consistent position. This method stores the unprojected points in a vector of points.
    *  @param points is the output parameter containing the set of points unprojected to 3D euclidean space.
-   *  @param indexImage is an input parameter containing indices. Each element of this matrix contains 
+   *  @param indexImage is an output parameter containing indices. Each element of this matrix contains 
    *  the index where to place the corresponding point in the output vector of points.
    *  @param depthImage is an input parameter containing the depth values of the points.
    */
-  virtual void unProject(HomogeneousPoint3fVector& points, 
-			 Eigen::MatrixXi& indexImage, 
-                         const Eigen::MatrixXf& depthImage) const;
+  virtual void unProject(HomogeneousPoint3fVector &points, 
+			 Eigen::MatrixXi &indexImage, 
+                         const Eigen::MatrixXf &depthImage) const;
 
   /**
    *  Virtual method that projects the side of the square region used to compute the stats of the given point. 
@@ -104,7 +97,7 @@ public:
    *  @return an integer containing the value of the side of the square region that will be used to compute the 
    *  stats of the point.
    */
-  virtual int projectInterval(int x, int y, float d, float worldRadius) const;
+  virtual inline int projectInterval(const int x, const int y, const float d, const float worldRadius) const;
   
   /**
    *  Virtual method that projects a given homogeneous point from the 3D euclidean space to the iamge plane. 
@@ -118,7 +111,7 @@ public:
    *  @return a bool value which is true if the depth value of the input point falls in the range
    *  defined by the minimum and maximum distance variables values, false otherwise.
    */
-  virtual bool project(int& x, int& y, float&f, const HomogeneousPoint3f& p) const;
+  virtual inline bool project(int &x, int &y, float &f, const HomogeneousPoint3f &p) const;
   
   /**
    *  Virtual method that unprojects a given point defined through its depth value and its matrix coordinates to the 3D 
@@ -132,8 +125,56 @@ public:
    *  @return a bool value which is true if the depth value of the input point falls in the range
    *  defined by the minimum and maximum distance variables values, false otherwise. 
    */
-  virtual bool unProject(HomogeneousPoint3f& p, int x, int y, float d) const;
+  virtual inline bool unProject(HomogeneousPoint3f &p, const int x, const int y, const float d) const;
  
+  /**
+   *  This method update all the matrices used for projection/unprojection operation.
+   *  It is called each time the transformation or the camera matrix variable are modified,
+   *  constructors included.
+   */
+  void _updateMatrices();
+
+  /**
+   *  Point projection method.
+   *  @see project(). 
+   */
+  inline bool _project(int &x, int &y, float &d, const HomogeneousPoint3f &p) const {
+    Eigen::Vector4f ip = _KRt*p;
+    d=ip.coeff(2);
+    if (d<_minDistance || d>_maxDistance)
+      return false;
+    ip*= (1./d);
+    x=(int)round(ip.coeff(0));
+    y=(int)round(ip.coeff(1)); 
+    return true;
+  }
+  
+  /**
+   *  Point unprojection method.
+   *  @see unProject(). 
+   */
+  inline bool _unProject(HomogeneousPoint3f& p, const int x, const int y, const float d) const {
+    if (d<_minDistance || d>_maxDistance)
+      return false;
+    p=_iKRt*Eigen::Vector4f(x*d,y*d,d,1.0);
+    return true;
+  }
+  
+  /**
+   *  Square region's side projection method.
+   *  @see projectInterval(). 
+   */
+  inline int _projectInterval(const int, const int, const float d, const float worldRadius) const {
+    if (d<_minDistance || d>_maxDistance)
+      return -1;
+    Eigen::Matrix<float, 3,2> range;
+    Eigen::Vector3f p=_cameraMatrix*Eigen::Vector3f(worldRadius,worldRadius,0);
+    p*=(1./d);
+    if (p.coeff(0)>p.coeff(1))
+      return p.coeff(0);
+    return p.coeff(1);
+  }
+
   /**
    *  This variable contains the 3x3 camera matrix associated to the pinholePointProjector object.
    */
@@ -151,54 +192,7 @@ public:
    */
   Eigen::Matrix4f _iKRt;
   
-  /**
-   *  This method update all the matrices used for projection/unprojection operation.
-   *  It is called each time the transformation or the camera matrix variable are modified,
-   *  constructors included.
-   *  @see project(). 
-   */
-  void _updateMatrices();
-
-  /**
-   *  Point projection method.
-   *  @see project(). 
-   */
-  inline bool _project(int& x, int& y, float& d, const HomogeneousPoint3f& p) const {
-    Eigen::Vector4f ip=_KRt*p;
-    d=ip.coeff(2);
-    if (d<_minDistance || d>_maxDistance)
-      return false;
-    ip*= (1./d);
-    x=(int)round(ip.coeff(0));
-    y=(int)round(ip.coeff(1)); 
-    return true;
-  }
   
-  /**
-   *  Point unprojection method.
-   *  @see unProject(). 
-   */
-  inline bool _unProject(HomogeneousPoint3f& p, int x, int y, float d) const {
-    if (d<_minDistance || d>_maxDistance)
-      return false;
-    p=_iKRt*Eigen::Vector4f(x*d,y*d,d,1.0);
-    return true;
-  }
-  
-  /**
-   *  Square region's side projection method.
-   *  @see projectInterval(). 
-   */
-  inline int _projectInterval(int, int, float d, float worldRadius) const {
-    if (d<_minDistance || d>_maxDistance)
-      return -1;
-    Eigen::Matrix<float, 3,2> range;
-    Eigen::Vector3f p=_cameraMatrix*Eigen::Vector3f(worldRadius,worldRadius,0);
-    p*=(1./d);
-    if (p.coeff(0)>p.coeff(1))
-      return p.coeff(0);
-    return p.coeff(1);
-}
 
 private:
   Eigen::Matrix3f _iK;

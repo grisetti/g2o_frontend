@@ -18,16 +18,17 @@ class OmegaGenerator {
     _curvatureThreshold = 1.0f;
   }
 
-  inline HomogeneousPoint3fOmega flatOmega() { return _flatOmega; }
-  inline void setFlatOmega(HomogeneousPoint3fOmega flatOmega_) { _flatOmega = flatOmega_; }
-  inline HomogeneousPoint3fOmega nonFlatOmega() { return _nonFlatOmega; }
-  inline void setNonFlatOmega(HomogeneousPoint3fOmega nonFlatOmega_) { _nonFlatOmega = nonFlatOmega_; }
-  inline float curvatureThreshold() { return _curvatureThreshold; }
-  inline void setCurvatureThreshold(float curvatureThreshold_) { _curvatureThreshold = curvatureThreshold_; }
+  inline HomogeneousPoint3fOmega flatOmega() const { return _flatOmega; }
+  inline HomogeneousPoint3fOmega nonFlatOmega() const { return _nonFlatOmega; }
+  inline float curvatureThreshold() const { return _curvatureThreshold; }
 
-  virtual void compute(HomogeneousPoint3fOmegaVector& omegas, 
-		       HomogeneousPoint3fStatsVector& stats,
-		       HomogeneousNormal3fVector& imageNormals) = 0;
+  inline void setFlatOmega(const HomogeneousPoint3fOmega flatOmega_) { _flatOmega = flatOmega_; }
+  inline void setNonFlatOmega(const HomogeneousPoint3fOmega nonFlatOmega_) { _nonFlatOmega = nonFlatOmega_; }
+  inline void setCurvatureThreshold(const float curvatureThreshold_) { _curvatureThreshold = curvatureThreshold_; }
+
+  virtual void compute(HomogeneousPoint3fOmegaVector &omegas, 
+		       const HomogeneousPoint3fStatsVector &stats,
+		       const HomogeneousNormal3fVector &imageNormals) = 0;
   
  protected:
   HomogeneousPoint3fOmega _flatOmega;
@@ -43,9 +44,9 @@ class PointOmegaGenerator : OmegaGenerator {
     _curvatureThreshold = 0.02f;
   }
 
-  virtual void compute(HomogeneousPoint3fOmegaVector& omegas, 
-		       HomogeneousPoint3fStatsVector& stats,
-		       HomogeneousNormal3fVector& imageNormals);
+  virtual void compute(HomogeneousPoint3fOmegaVector &omegas, 
+		       const HomogeneousPoint3fStatsVector &stats,
+		       const HomogeneousNormal3fVector &imageNormals);
 };
 
 class NormalOmegaGenerator : OmegaGenerator {
@@ -56,9 +57,9 @@ class NormalOmegaGenerator : OmegaGenerator {
     _curvatureThreshold = 0.02f;
   }
 
-  virtual void compute(HomogeneousPoint3fOmegaVector& omegas, 
-		       HomogeneousPoint3fStatsVector& stats,
-		       HomogeneousNormal3fVector& imageNormals);
+  virtual void compute(HomogeneousPoint3fOmegaVector &omegas, 
+		       const HomogeneousPoint3fStatsVector &stats,
+		       const HomogeneousNormal3fVector &imageNormals);
 };
 
 #endif

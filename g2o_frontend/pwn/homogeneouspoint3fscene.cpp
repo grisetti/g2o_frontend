@@ -3,14 +3,14 @@
 
 using namespace std;
 
-bool HomogeneousPoint3fScene::load(const char* filename) {
+bool HomogeneousPoint3fScene::load(const char *filename) {
   ifstream is(filename);
   if (!is)
     return false;
   return load(is);
 }
 
-bool HomogeneousPoint3fScene::load(istream & is) {
+bool HomogeneousPoint3fScene::load(istream &is) {
   _points.clear();
   _normals.clear();
   char buf[1024];
@@ -52,14 +52,14 @@ bool HomogeneousPoint3fScene::load(istream & is) {
   return is.good();
 }
 
-bool HomogeneousPoint3fScene::save(const char* filename, int step, bool binary) {
+bool HomogeneousPoint3fScene::save(const char *filename, int step, bool binary) {
   ofstream os(filename);
   if (!os)
     return false;
   return save(os, step, binary);
 }
 
-bool HomogeneousPoint3fScene::save(ostream& os, int step, bool binary) {
+bool HomogeneousPoint3fScene::save(ostream &os, int step, bool binary) {
   os << "POINTWITHNORMALVECTOR " << _points.size()/step << " " << binary << endl; 
   for(size_t i = 0; i < _points.size(); i+=step) {
     const HomogeneousPoint3f& point = _points[i];

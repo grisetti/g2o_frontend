@@ -33,37 +33,37 @@ public:
    *  Virtual method that return the camera pose transformation.
    *  @return a reference to the camera pose transformation.
    */
-  virtual const Eigen::Isometry3f& transform() const;
+  virtual inline const Eigen::Isometry3f &transform() const { return _transform; };
   
   /**
    *  Virtual method that set the camera pose transformation to the one given in input.
    *  @param transform_ is the isometry used to update the camera pose transformation variable. 
    */
-  virtual void setTransform(const Eigen::Isometry3f& transform_);
+  virtual inline void setTransform(const Eigen::Isometry3f &transform_) { _transform = transform_; }
 
   /**
    *  Method that return the minimum distance value.
    *  @return the minimum distance value.
    */
-  inline float minDistance() const {return _minDistance;}
+  inline float minDistance() const { return _minDistance; }
   
   /**
    *  Method that set the minimum distance value to the one given in input.
    *  @param minDistance_ is the value used to update the minimum distance variable. 
    */
-  inline void  setMinDistance(const float& minDistance_) {_minDistance = minDistance_;}
+  inline void setMinDistance(const float minDistance_) { _minDistance = minDistance_; }
   
   /**
    *  Method that return the maximum distance value.
    *  @return the maximum distance value.
    */
-  inline float maxDistance() const {return _maxDistance;}
+  inline float maxDistance() const { return _maxDistance; }
   
   /**
    *  Method that set the maximum distance value to the one given in input.
    *  @param maxDistance_ is the value used to update the maximum distance variable. 
    */
-  inline void  setMaxDistance(const float& maxDistance_) {_maxDistance = maxDistance_;}
+  inline void setMaxDistance(const float maxDistance_) { _maxDistance = maxDistance_; }
   
   /**
    *  Virtual method that projects a given set of homogeneous points from the 3D euclidean space to 
@@ -75,9 +75,9 @@ public:
    *  @param depthImage is an output parameter containing the depth values of the projected points.
    *  @param points is the input parameter containing the set of points to project.
    */
-  virtual void project(Eigen::MatrixXi& indexImage, 
-		       Eigen::MatrixXf& depthImage, 
-		       const HomogeneousPoint3fVector& points) const;
+  virtual void project(Eigen::MatrixXi &indexImage, 
+		       Eigen::MatrixXf &depthImage, 
+		       const HomogeneousPoint3fVector &points) const;
 
   /**
    *  Virtual method that projects on an image the sides of the square regions that will be used to compute
@@ -88,9 +88,9 @@ public:
    *  @param worldRadius is the input parameter containing radius in the 3D euclidean space used to determine
    *  the side of the square regions.
    */
-  virtual void projectIntervals(Eigen::MatrixXi& intervalImage, 
-			      const Eigen::MatrixXf& depthImage, 
-			      float worldRadius) const;
+  virtual void projectIntervals(Eigen::MatrixXi &intervalImage, 
+				const Eigen::MatrixXf &depthImage, 
+				const float worldRadius) const;
 
   /**
    *  Virtual method that unprojects to the 3D euclidean space the points contained in the depthImage
@@ -98,13 +98,13 @@ public:
    *  consistent position. The unprojection operation is specific for the projection space defined by the class  
    *  extending this class. This method stores the unprojected points in a vector of points.
    *  @param points is the output parameter containing the set of points unprojected to 3D euclidean space.
-   *  @param indexImage is an input parameter containing indices. Each element of this matrix contains 
+   *  @param indexImage is an output parameter containing indices. Each element of this matrix contains 
    *  the index where to place the corresponding point in the output vector of points.
    *  @param depthImage is an input parameter containing the depth values of the points.
    */
-  virtual void unProject(HomogeneousPoint3fVector& points, 
-			 Eigen::MatrixXi& indexImage, 
-                         const Eigen::MatrixXf& depthImage) const;
+  virtual void unProject(HomogeneousPoint3fVector &points, 
+			 Eigen::MatrixXi &indexImage, 
+                         const Eigen::MatrixXf &depthImage) const;
 
   /**
    *  Pure virtual method that has to be implemented in all classes that extend this class. 
@@ -120,7 +120,7 @@ public:
    *  @return a bool value which is true if the depth value of the input point falls in the range
    *  defined by the minimum and maximum distance variables values, false otherwise.
    */
-  virtual bool project(int& x, int&y, float&f, const HomogeneousPoint3f& p) const;
+  virtual bool project(int &x, int &y, float &f, const HomogeneousPoint3f &p) const;
 
   /**
    *  Pure virtual method that has to be implemented in all classes that extend this class. 
@@ -135,7 +135,7 @@ public:
    *  @return an integer containing the value of the side of the square region used to compute the 
    *  stats of the point.
    */
-  virtual int projectInterval(int x, int y, float d, float worldRadius) const;
+  virtual int projectInterval(const int x, const int y, const float d, const float worldRadius) const;
 
   /**
    *  Pure virtual method that has to be implemented in all classes that extend this class. 
@@ -151,9 +151,7 @@ public:
    *  @return a bool value which is true if the depth value of the input point falls in the range
    *  defined by the minimum and maximum distance variables values, false otherwise. 
    */
-  virtual bool unProject(HomogeneousPoint3f& p, int x, int y, float d) const;
-
-
+  virtual bool unProject(HomogeneousPoint3f& p, const int x, const int y, const float d) const;
 
 protected:
   /**
