@@ -15,27 +15,24 @@ class Linearizer {
     _inlierMaxChi2 = 9e3;
   }
   
-  
-  inline void setH(Matrix6f H_) { _H = H_; }
-  inline void setb(Vector6f b_) { _b = b_; }
-  inline void setAligner(Aligner* aligner_) { _aligner = aligner_; }
-  inline void setT(Isometry3f T_) { 
+  inline void setAligner(Aligner * const aligner_) { _aligner = aligner_; }
+  inline void setT(const Isometry3f T_) { 
     _T = T_; 
-    _T.matrix().block<1,4>(3,0) << 0,0,0,1; 
+    _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1; 
   }
-  inline void setInlierMaxChi2(float inlierMaxChi2_) { _inlierMaxChi2 = inlierMaxChi2_; }
+  inline void setInlierMaxChi2(const float inlierMaxChi2_) { _inlierMaxChi2 = inlierMaxChi2_; }
 
-  inline Matrix6f& H() { return _H; }  
-  inline Vector6f& b() { return _b; }  
-  inline Aligner* aligner() { return _aligner; }
-  inline Isometry3f T() { return _T; }  
+  inline Aligner *aligner() const { return _aligner; }  
+  inline Isometry3f T() const { return _T; }  
   inline float inlierMaxChi2() const { return _inlierMaxChi2; }
-
+  inline Matrix6f H() const { return _H; }  
+  inline Vector6f b() const { return _b; }  
 
   float update();
  
  protected:
-  Aligner* _aligner;
+  Aligner *_aligner;
+
   Isometry3f _T;
   float _inlierMaxChi2;
 

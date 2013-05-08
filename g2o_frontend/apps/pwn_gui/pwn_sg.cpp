@@ -1,7 +1,21 @@
-#include "pinholepointprojector.h"
-#include "homogeneouspoint3fstatsgenerator.h"
-#include "omegagenerator.h"
-#include "aligner.h"
+#include "g2o_frontend/pwn/pinholepointprojector.h"
+#include "g2o_frontend/pwn/homogeneouspoint3fstatsgenerator.h"
+#include "g2o_frontend/pwn/omegagenerator.h"
+#include "g2o_frontend/pwn/aligner.h"
+
+#include <qapplication.h>
+#include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
+#include "g2o_frontend/pwn_viewer/pwn_imageview.h"
+#include "g2o_frontend/pwn_viewer/drawable_points.h"
+#include "g2o_frontend/pwn_viewer/drawable_normals.h"
+#include "g2o_frontend/pwn_viewer/drawable_covariances.h"
+#include "g2o_frontend/pwn_viewer/drawable_correspondences.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_points.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_normals.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_covariances.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_correspondences.h"
+#include "pwn_gui_main_window.h"
 
 #include "g2o/stuff/command_args.h"
 #include "g2o/stuff/timeutil.h"
@@ -168,16 +182,66 @@ int main(int argc, char** argv) {
   cout << "Final transformation: " << endl << aligner.T().matrix() << endl;
 
   /************************************************************************
-   *                           Saving data                                *
+   *                         Visualization                                *
    ************************************************************************/
-  referenceScene.save("reference.pwn", vz_step, true);
-  currentScene.save("current.pwn", vz_step, true);
+  QApplication qApplication(argc, argv);
+  PWNGuiMainWindow pwnGMW;
+  pwnGMW.show();
 
-  HomogeneousPoint3fVector &points = currentScene.points();
-  HomogeneousNormal3fVector &normals = currentScene.normals();
-  points.transformInPlace(aligner.T());
-  normals.transformInPlace(aligner.T());
-  currentScene.save("aligned.pwn", vz_step, true);
+  // Uncomment what you want to see in the viewer. 
+  GLParameterPoints *pPointsRef, *pPointsCur;
+  // GLParameterNormals *pNormalsRef, *pNormalsCur;
+  // GLParameterCovariances *pCovariancesRef, *pCovariancesCur;
+  // GLParameterCorrespondences *pCorrespondences;
 
+  DrawablePoints *dPointsRef, *dPointsCur;
+  // DrawableNormals *dNormalsRef, *dNormalsCur;
+  // DrawableCovariances *dCovariancesRef, *dCovariancesCur;
+  //  DrawableCorrespondences *dCorrespondences;
+  
+  pPointsRef = new GLParameterPoints(1.0f, Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+  pPointsRef->setStep(vz_step);
+  pPointsCur = new GLParameterPoints(1.0f, Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
+  pPointsCur->setStep(vz_step);
+  // pNormalsRef = new GLParameterNormals(1.0f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f), 0.03f);
+  // pNormalsRef->setStep(vz_step);
+  // pNormalsCur = new GLParameterNormals(1.0f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f), 0.03f);
+  // pNormalsCur->setStep(vz_step);
+  // pCovariancesRef = new GLParameterCovariances(1.0f, 
+  // 					    Vector4f(0.0f, 1.0f, 0.0f, 1.0f), Vector4f(1.0f, 0.0f, 0.0f, 1.0f),
+  // 					    0.02f, 0.03f);
+  // pCovariancesRef->setStep(vz_step);
+  // pCovariancesCur = new GLParameterCovariances(1.0f, 
+  // 					    Vector4f(0.0f, 1.0f, 0.0f, 1.0f), Vector4f(1.0f, 0.0f, 0.0f, 1.0f),
+  // 					    0.02f, 0.03f);
+  // pCovariancesCur->setStep(vz_step);
+  // pCorrespondences = new GLParameterCorrespondences(1.0f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f), 1.0f);
+  // pCorrespondences->setStep(vz_step);
+  
+  dPointsRef = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pPointsRef, &referenceScene.points(), &referenceScene.normals());
+  dPointsCur = new DrawablePoints(aligner.T(), (GLParameter*)pPointsCur, &currentScene.points(), &currentScene.normals());
+  // dNormalsRef = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)pNormalsRef, &referenceScene.points(), &referenceScene.normals());
+  // dNormalsCur = new DrawableNormals(aligner.T(), (GLParameter*)pNormalsCur, &currentScene.points(), &currentScene.normals());
+  // dCovariancesRef = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)pCovariancesRef, &referenceScene.stats());
+  // dCovariancesCur = new DrawableCovariances(aligner.T(), (GLParameter*)pCovariancesCur, &currentScene.stats());
+  // dCorrespondences = new DrawableCorrespondences(aligner.T(), (GLParameter*)pCorrespondences, aligner.correspondenceGenerator().numCorrespondences(),
+  // 						 &referenceScene.points(), &currentScene.points(), &aligner.correspondenceGenerator().correspondences());  
+
+  pwnGMW.viewer_3d->addDrawable((Drawable*)dPointsRef);
+  pwnGMW.viewer_3d->addDrawable((Drawable*)dPointsCur);
+  // pwnGMW.viewer_3d->addDrawable((Drawable*)dNormalsRef);
+  // pwnGMW.viewer_3d->addDrawable((Drawable*)dNormalsCur);
+  // pwnGMW.viewer_3d->addDrawable((Drawable*)dCovariancesRef);
+  // pwnGMW.viewer_3d->addDrawable((Drawable*)dCovariancesCur);
+  // pwnGMW.viewer_3d->addDrawable((Drawable*)dCorrespondences);
+  
+  while(!(*pwnGMW.closing())) {
+    qApplication.processEvents();
+  
+    pwnGMW.viewer_3d->updateGL();
+
+    usleep(10000);
+  }
+  
   return 0;
 }

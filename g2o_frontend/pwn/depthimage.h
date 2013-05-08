@@ -5,6 +5,7 @@
 
 #ifndef _DEPTH_IMAGE_H_
 #define _DEPTH_IMAGE_H_
+
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
@@ -37,7 +38,7 @@ public:
    *  @param c is optional and can be used to define the number of rows of the matrix
    *  representing a depth image.
    */
-  DepthImage(int r=0, int c=0);
+  DepthImage(int r = 0, int c = 0);
   
   /**
    *  Constructor using a matrix of unsigned short.
@@ -46,7 +47,7 @@ public:
    *  @param m is a matrix of unsigned short containing the depth values expressed 
    *  in millimeters.
    */
-  DepthImage(const MatrixXus& m);
+  DepthImage(const MatrixXus &m);
   
   /**
    *  This method generates a matrix of unsigned short containing the values of the 
@@ -55,7 +56,7 @@ public:
    *  @param m is a matrix of unsigned short where the output values are stored.
    *  @param dmax is optional and can be used to prune depth values above its value.
    */
-  void toUnsignedShort(MatrixXus& m, float dmax = std::numeric_limits<float>::max()) const;
+  void toUnsignedShort(MatrixXus &m, float dmax = std::numeric_limits<float>::max()) const;
   
   /**
    *  This method updates the current depth values of the DepthImage object using the values
@@ -63,7 +64,7 @@ public:
    *  @param m is a matrix of unsigned short containing the depth values expressed 
    *  in millimeters.
    */
-  void fromUnsignedShort(const MatrixXus& m);
+  void fromUnsignedShort(const MatrixXus &m);
   
   /**
    *  This method laods the values of a depth image file in the DepthImage object. 
@@ -81,6 +82,5 @@ public:
    */
   bool save(const char* filename, bool transposed = false) const;
 };
-
 
 #endif

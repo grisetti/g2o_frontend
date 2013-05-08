@@ -1,7 +1,5 @@
-#include <cstdio>
 #include "depthimage.h"
-#include <iostream>
-using namespace std;
+#include <cstdio>
 
 #define HI(num) (((num) & 0x0000FF00) >> 8)
 #define LO(num) ((num) & 0x000000FF)
@@ -94,7 +92,7 @@ bool _readPgm(MatrixXus &image, FILE *pgmFile, bool transposed) {
 }
 
 // Write an image to a .pgm file.
-bool _writePgm(const MatrixXus& img, FILE *pgmFile, bool transposed) {
+bool _writePgm(const MatrixXus &img, FILE *pgmFile, bool transposed) {
   int i, j;
   int hi, lo;
   unsigned int max_value = 0xFFFF;
@@ -139,11 +137,11 @@ DepthImage::DepthImage(int r, int c): Eigen::MatrixXf(r,c){
   fill(std::numeric_limits<float>::max());
 }
 
-DepthImage::DepthImage(const MatrixXus& m): Eigen::MatrixXf(m.rows(),m.cols()){
+DepthImage::DepthImage(const MatrixXus &m): Eigen::MatrixXf(m.rows(),m.cols()){
     fromUnsignedShort(m);
 }
 
-void DepthImage::toUnsignedShort(MatrixXus& m, float dmax) const {
+void DepthImage::toUnsignedShort(MatrixXus &m, float dmax) const {
   m.resize(rows(), cols());
   unsigned short* us=m.data();
   const float* f=data();
@@ -153,7 +151,7 @@ void DepthImage::toUnsignedShort(MatrixXus& m, float dmax) const {
   }
 }
 
-void DepthImage::fromUnsignedShort(const MatrixXus& m){
+void DepthImage::fromUnsignedShort(const MatrixXus &m){
   resize(m.rows(), m.cols());
   const unsigned short* us=m.data();
   float* f=data();

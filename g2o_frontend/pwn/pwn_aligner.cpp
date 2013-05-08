@@ -178,6 +178,6 @@ int main(int argc, char** argv) {
   points.transformInPlace(aligner.T());
   normals.transformInPlace(aligner.T());
   currentScene.save("aligned.pwn", vz_step, true);
-
+  
   return 0;
 }
