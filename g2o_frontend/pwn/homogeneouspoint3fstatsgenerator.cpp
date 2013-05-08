@@ -115,7 +115,7 @@ void HomogeneousPoint3fStatsGenerator::compute(HomogeneousNormal3fVector& normal
       stat = covariance4f;
       stat.setN(acc.n());
       stat.setMean(acc.mean());
-      normal.block<3, 1>(0, 0) = eigenSolver.eigenvectors().block<3, 1>(0, 2);
+      normal.block<4, 1>(0, 0) = stat.block<4, 1>(0, 0);
       if(stat.curvature() < curvatureThreshold) {
 	if(normal.dot(point) > 0)
 	  normal = -normal;

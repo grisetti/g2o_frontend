@@ -33,6 +33,8 @@ class CorrespondenceGenerator {
   _currentDepthImage = 0;
 }
 
+	inline CorrespondenceVector& correspondences() { return _correspondences; }
+
   inline int numCorrespondences() const { return _numCorrespondences; }
   inline const CorrespondenceVector& correspondences() const { return _correspondences; }
   inline float squaredThreshold() const { return _squaredThreshold; }

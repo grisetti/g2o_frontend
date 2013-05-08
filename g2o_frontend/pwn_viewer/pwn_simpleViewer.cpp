@@ -84,13 +84,13 @@ int main (int argc, char** argv) {
       listWidget->addItem(QString(filenames[i].c_str()));
     }
     GLParameterPoints* pointsParams = new GLParameterPoints(pointSize, Eigen::Vector4f(r, g, b, alpha));
-    DrawablePoints* drawablePoints = new DrawablePoints(T, pointsParams, scene->points(), scene->normals());
+    DrawablePoints* drawablePoints = new DrawablePoints(T, pointsParams, &scene->points(), &scene->normals());
     pointsParams->setStep(pointStep);
     
     viewer->addDrawable(drawablePoints);
     
     GLParameterNormals* normalParams = new GLParameterNormals(pointSize, Eigen::Vector4f(0.0f,0.0f,1.0f,alpha), normalLenght);
-    DrawableNormals* drawableNormals = new DrawableNormals(T, normalParams, scene->points(), scene->normals());
+    DrawableNormals* drawableNormals = new DrawableNormals(T, normalParams, &scene->points(), &scene->normals());
     normalParams->setStep(normalStep);
     normalParams->setNormalLength(normalLenght);
     viewer->addDrawable(drawableNormals);
