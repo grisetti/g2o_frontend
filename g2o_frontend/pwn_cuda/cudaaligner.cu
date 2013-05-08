@@ -1,13 +1,13 @@
-#include "cudaaligner.cuh"
+#include <sys/time.h>
 #include <cstdio>
 #include <iostream>
-using namespace std;
 
-#include "cudaaligner.cuh"
 #include "cudasla.cuh"
-#include <sys/time.h>
+#include "cudautils.cuh"
+#include "cudaaligner.cuh"
 
 namespace CudaAligner {
+using namespace std;
 
 
   void matPrint(const float* m, int r, int c, const char* msg){
@@ -61,59 +61,6 @@ namespace CudaAligner {
 	    strObject[_object],
 	    strObjectDetail[_detail]);
   }
-
-
-
-  template <class T>
-  __global__ void fillBuffer(T* buffer, int numElems, T value){
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
-    if (i<numElems){
-      buffer[i] = value;
-    }
-  }
-
-
-  __global__ void computeDepthBuffer(int* buffer, int rows, int cols, 
-				     const float* KT, const float* points, int numPoints,
-				     int dmin, int dmax){
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
-    float ip[4];
-    if (i<numPoints){
-      const float* wp=points+4*i;
-      matVecMul<4,4>(ip,KT,wp);
-      float iw= 1./ip[2];
-      int d = ip[2] * 1000.0f;
-      int x = (int)(ip[0]*iw);
-      int y = (int)(ip[1]*iw);
-      int offset = y*rows+x;
-      if (d > dmin && d < dmax &&
-	   x >= 0 && x<rows && 
-	   y>=0 && y<cols){
-	atomicMin(buffer+offset,d);
-      }
-    }
-  }
-
-
-  __global__ void computeIndexBuffer(int* ibuffer, const int* zbuffer, int rows, int cols, 
-				     const float* KT, const float* points, int numPoints){
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
-    float ip[4];
-    if (i<numPoints){
-      const float* wp=points+4*i;
-      matVecMul<4,4>(ip,KT,wp);
-      float iw= 1./ip[2];
-      int d = ip[2] * 1000.0f;
-      int x = (int)(ip[0]*iw);
-      int y = (int)(ip[1]*iw);
-      int offset = y*rows+x;
-      if ( x >= 0 && x<rows && 
-	   y>=0 && y<cols && d == zbuffer[offset]){
-	ibuffer[offset]=i;
-      }
-    }
-  }
-
 
 
 #define allocateVar(vtype, name, size, errorcode)	\
@@ -333,10 +280,23 @@ namespace CudaAligner {
       int blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
       //printf("clearBuffer: CUDA kernel launch on %d elements with %d blocks of %d threads\n", numElements, blocksPerGrid, threadsPerBlock);
       gettimeofday(&tvStart,0);
+      cerr << "clearDepth" << endl;
       fillBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_depthBuffer.values(),_rows*_cols, 
 						    _maxDepth+1);
+      err = cudaGetLastError();
+      if (err != cudaSuccess)
+      {
+	return AlignerStatus(KernelLaunch,DepthBuffer);
+      }
+
+      cerr << "clearIndices" << endl;
       fillBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_currentIndices.values(),_rows*_cols, 
        						    -1);
+      err = cudaGetLastError();
+      if (err != cudaSuccess)
+      {
+	return AlignerStatus(KernelLaunch,DepthBuffer);
+      }
 						    
       cudaDeviceSynchronize();
       
@@ -345,17 +305,31 @@ namespace CudaAligner {
       blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
       //printf("Buffer: CUDA kernel launch on %d elements with %d blocks of %d threads\n", numElements, blocksPerGrid, threadsPerBlock);
 
+      cerr << "computeDepth" << endl;
+      fillBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_currentIndices.values(),_rows*_cols, 
+       						    -1);
       computeDepthBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_depthBuffer.values(),
 							    _rows, _cols, _cudaDeviceContext->_cameraMatrix,
 							    _cudaHostContext->_currentPoints.values(),
 							    _cudaHostContext->_numCurrentPoints,
 							    0, _cudaHostContext->_maxDepth);
+      err = cudaGetLastError();
+      if (err != cudaSuccess)
+      {
+	return AlignerStatus(KernelLaunch,DepthBuffer);
+      }
       cudaDeviceSynchronize();
+      cerr << "computeIndices" << endl;
       computeIndexBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_currentIndices.values(),
 							    _cudaHostContext->_depthBuffer.values(),
 							    _rows, _cols, _cudaDeviceContext->_cameraMatrix,
 							    _cudaHostContext->_currentPoints.values(),
 							    _cudaHostContext->_numCurrentPoints);
+      err = cudaGetLastError();
+      if (err != cudaSuccess)
+      {
+	return AlignerStatus(KernelLaunch,DepthBuffer);
+      }
 
       err = cudaGetLastError();
       if (err != cudaSuccess)
@@ -415,51 +389,6 @@ namespace CudaAligner {
     __syncthreads();
   };
 
-  template <int dim>
-  __global__ void vector_block_sum(const float *input,
-			    float *per_block_results,
-			    const size_t n)
-  {
-    extern __shared__ float sdata[];
-
-    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
-
-    int sdataOffset = threadIdx.x*dim;
-    // load input into __shared__ memory
-    float x[dim];
-    vecFill<dim>(x,0);
-    if(i < n)
-      {
-	vecCopy<dim>(x,input + (i*dim));
-      }
-    //sdata[threadIdx.x] = x;
-    vecCopy<dim>(sdata+sdataOffset,x);
-    __syncthreads();
-    
-    
-    // contiguous range pattern
-    for(int offset = blockDim.x / 2;
-	offset > 0;
-	offset >>= 1)
-      {
-	if(threadIdx.x < offset)
-	  {
-	    // add a partial sum upstream to our own
-	    //sdata[threadIdx.x] += sdata[threadIdx.x + offset];
-	    vecSum<dim>(sdata+sdataOffset, sdata+dim*(threadIdx.x + offset), 1.0f);
-	  }
-
-	// wait until all threads in the block have
-	// updated their partial sums
-	__syncthreads();
-      }
-    // thread 0 writes the final result
-    if(threadIdx.x == 0)
-      {
-	//per_block_results[blockIdx.x] = sdata[0];
-	vecCopy<dim>(per_block_results + (blockIdx.x*dim ), sdata);
-      }
-  }
 
 
 
@@ -782,5 +711,6 @@ __device__ int AlignerContext::processCorrespondence(float* error,
   int getHb(AlignerContext* context, float* Htt, float* Hrt, float* Hrr, float*bt, float* br){
     return context->getHb(Htt, Hrt, Hrr, bt, br);
   }
+
 } // end namespace
 

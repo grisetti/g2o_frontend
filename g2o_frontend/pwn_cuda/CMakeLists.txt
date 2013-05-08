@@ -1,14 +1,11 @@
-set(CUDA_NVCC_FLAGS "-gencode arch=compute_30,code=sm_30")
 set(BUILD_SHARED_LIBS OFF) 
 
 CUDA_ADD_LIBRARY(pwn_cuda_library 
-  cudaaligner.cu
-  cudaaligner.h
-  cudaaligner.cuh  
-  cudamatrix.cuh  
-  cudaptr.cuh  
-  cudasla.cuh
   cualigner.cpp cualigner.h
+  cudaaligner.cu cudaaligner.cuh  cudaaligner.h
+  cudautils.cuh
+  cudamatrix.cuh  
+  cudasla.cuh
 )
 
 TARGET_LINK_LIBRARIES(pwn_cuda_library pwn_library )
