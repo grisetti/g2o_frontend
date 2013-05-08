@@ -167,5 +167,17 @@ int main(int argc, char** argv) {
   	
   cout << "Final transformation: " << endl << aligner.T().matrix() << endl;
 
+  /************************************************************************
+   *                           Saving data                                *
+   ************************************************************************/
+  referenceScene.save("reference.pwn", vz_step, true);
+  currentScene.save("current.pwn", vz_step, true);
+
+  HomogeneousPoint3fVector &points = currentScene.points();
+  HomogeneousNormal3fVector &normals = currentScene.normals();
+  points.transformInPlace(aligner.T());
+  normals.transformInPlace(aligner.T());
+  currentScene.save("aligned.pwn", vz_step, true);
+
   return 0;
 }

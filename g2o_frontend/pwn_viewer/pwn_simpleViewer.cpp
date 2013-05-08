@@ -100,7 +100,7 @@ int main (int argc, char** argv) {
   mainWindow->show();
   viewer->show();
   listWidget->show();
-  while (1) {
+  while (mainWindow->isVisible()) {
     bool selectionChanged= false;
     for (int i=0; i<listWidget->count(); i++){
       QListWidgetItem* item = listWidget->item(i);

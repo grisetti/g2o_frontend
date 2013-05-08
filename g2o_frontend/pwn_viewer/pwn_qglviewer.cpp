@@ -87,11 +87,11 @@ void PWNQGLViewer::draw() {
   QGLViewer::draw();
   
   // Draw camera object.
-  glPushMatrix();
-  glColor4f(1.0f, 0.0f, 1.0f, 0.5f);
-  glScalef(0.05f, 0.05f, 0.1f);
-  glCallList(_pyramidDrawList);
-  glPopMatrix();
+  // glPushMatrix();
+  // glColor4f(1.0f, 0.0f, 1.0f, 0.5f);
+  // glScalef(0.05f, 0.05f, 0.1f);
+  // glCallList(_pyramidDrawList);
+  // glPopMatrix();
 
   // Draw the vector of drawable objects.
   for (size_t i = 0; i < _drawableList.size(); i++) {

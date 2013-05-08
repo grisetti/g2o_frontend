@@ -78,11 +78,11 @@ struct Frame {
     pCorrespondences = new GLParameterCorrespondences(1.0f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f), 0.0f);
     pCorrespondences->setStep(step);
 
-    dPoints = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pPoints, scene.points(), scene.normals());
-    dNormals = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)pNormals, scene.points(), scene.normals());
-    dCovariances = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)pCovariances, scene.stats());
+    dPoints = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pPoints, &scene.points(), &scene.normals());
+    dNormals = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)pNormals, &scene.points(), &scene.normals());
+    dCovariances = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)pCovariances, &scene.stats());
     dCorrespondences = new DrawableCorrespondences(Isometry3f::Identity(), (GLParameter*)pCorrespondences, 0,
-						   scene.points(), scene.points(), correspondences);
+						   &scene.points(), &scene.points(), &correspondences);
   }
   
   void computeStats() {
@@ -163,11 +163,11 @@ struct Frame {
 
     cout << " done." << endl;
 
-    dPoints->setPoints(scene.points());
-    dPoints->setNormals(scene.normals());
-    dNormals->setPoints(scene.points());
-    dNormals->setNormals(scene.normals());
-    dCovariances->setCovariances(scene.stats());
+    dPoints->setPoints(&scene.points());
+    dPoints->setNormals(&scene.normals());
+    dNormals->setPoints(&scene.points());
+    dNormals->setNormals(&scene.normals());
+    dCovariances->setCovariances(&scene.stats());
   }
 
   HomogeneousPoint3fScene scene;
@@ -340,12 +340,17 @@ int main(int argc, char** argv) {
     // Optimize pressed with no step by step mode.
     else if(newCloudAdded && frameVector.size() > 1 && *optimizeViewer && !(*stepByStepViewer)) {
       if(!wasInitialGuess) {
-	aligner.correspondenceGenerator().setSize(frameVector[frameVector.size()-2]->indexImage.rows(), frameVector[frameVector.size()-2]->indexImage.cols());
 	aligner.setOuterIterations(al_outerIterations);
+
+	aligner.correspondenceGenerator().setReferenceIndexImage(&frameVector[frameVector.size()-2]->indexImage);
+	aligner.correspondenceGenerator().setCurrentIndexImage(&frameVector[frameVector.size()-1]->indexImage);
+	aligner.correspondenceGenerator().setReferenceDepthImage(&frameVector[frameVector.size()-2]->depthImage);
+	aligner.correspondenceGenerator().setCurrentDepthImage(&frameVector[frameVector.size()-1]->depthImage);
+	aligner.correspondenceGenerator().setSize(frameVector[frameVector.size()-2]->indexImage.rows(), frameVector[frameVector.size()-2]->indexImage.cols());
 	
 	aligner.setProjector(&frameVector[frameVector.size()-2]->projector);
-	aligner.setReferenceScene(frameVector[frameVector.size()-2]->scene);
-	aligner.setCurrentScene(frameVector[frameVector.size()-1]->scene);
+	aligner.setReferenceScene(&frameVector[frameVector.size()-2]->scene);
+	aligner.setCurrentScene(&frameVector[frameVector.size()-1]->scene);
 	
 	aligner.setInitialGuess(initialGuess);
 	aligner.setSensorOffset(sensorOffset);
@@ -363,10 +368,10 @@ int main(int argc, char** argv) {
       frameVector[frameVector.size()-1]->dCovariances->setTransformation(globalT);
       frameVector[frameVector.size()-1]->dCorrespondences->setReferencePointsTransformation(globalT * localT[localT.size()-1].inverse());
       frameVector[frameVector.size()-1]->dCorrespondences->setTransformation(globalT);
-      frameVector[frameVector.size()-1]->dCorrespondences->setReferencePoints(frameVector[frameVector.size()-2]->scene.points());
-      frameVector[frameVector.size()-1]->dCorrespondences->setCurrentPoints(frameVector[frameVector.size()-1]->scene.points());
+      frameVector[frameVector.size()-1]->dCorrespondences->setReferencePoints(&frameVector[frameVector.size()-2]->scene.points());
+      frameVector[frameVector.size()-1]->dCorrespondences->setCurrentPoints(&frameVector[frameVector.size()-1]->scene.points());
       frameVector[frameVector.size()-1]->correspondences = CorrespondenceVector(aligner.correspondenceGenerator().correspondences());
-      frameVector[frameVector.size()-1]->dCorrespondences->setCorrespondences(frameVector[frameVector.size()-1]->correspondences);
+      frameVector[frameVector.size()-1]->dCorrespondences->setCorrespondences(&frameVector[frameVector.size()-1]->correspondences);
       frameVector[frameVector.size()-1]->dCorrespondences->setNumCorrespondences(aligner.correspondenceGenerator().numCorrespondences());
 
       // Show zBuffers.
@@ -376,8 +381,8 @@ int main(int argc, char** argv) {
       QImage currQImage;
       DepthImageView div;
       div.computeColorMap(300, 2000, 128);
-      div.convertToQImage(refQImage, aligner.correspondenceGenerator().referenceDepthImage()); 
-      div.convertToQImage(currQImage, aligner.correspondenceGenerator().currentDepthImage());
+      div.convertToQImage(refQImage, *aligner.correspondenceGenerator().referenceDepthImage()); 
+      div.convertToQImage(currQImage, *aligner.correspondenceGenerator().currentDepthImage());
       refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)refQImage.width()/(ng_scale*3), (int)(refQImage.height()/(ng_scale*3)))));
       currScn->addPixmap((QPixmap::fromImage(currQImage)).scaled(QSize((int)currQImage.width()/(ng_scale*3), (int)(currQImage.height()/(ng_scale*3)))));
       pwnGMW.graphicsView1_2d->show();
@@ -393,12 +398,17 @@ int main(int argc, char** argv) {
       if(newCloudAdded)
 	stepByStepInit = globalT;
       if(!wasInitialGuess) {
-	aligner.correspondenceGenerator().setSize(frameVector[frameVector.size()-2]->indexImage.rows(), frameVector[frameVector.size()-2]->indexImage.cols());
 	aligner.setOuterIterations(1);
+
+	aligner.correspondenceGenerator().setReferenceIndexImage(&frameVector[frameVector.size()-2]->indexImage);
+	aligner.correspondenceGenerator().setCurrentIndexImage(&frameVector[frameVector.size()-1]->indexImage);
+	aligner.correspondenceGenerator().setReferenceDepthImage(&frameVector[frameVector.size()-2]->depthImage);
+	aligner.correspondenceGenerator().setCurrentDepthImage(&frameVector[frameVector.size()-1]->depthImage);
+	aligner.correspondenceGenerator().setSize(frameVector[frameVector.size()-2]->indexImage.rows(), frameVector[frameVector.size()-2]->indexImage.cols());
 	
 	aligner.setProjector(&frameVector[frameVector.size()-2]->projector);
-	aligner.setReferenceScene(frameVector[frameVector.size()-2]->scene);
-	aligner.setCurrentScene(frameVector[frameVector.size()-1]->scene);
+	aligner.setReferenceScene(&frameVector[frameVector.size()-2]->scene);
+	aligner.setCurrentScene(&frameVector[frameVector.size()-1]->scene);
 	
 	if(newCloudAdded)
 	  aligner.setInitialGuess(initialGuess);
@@ -423,10 +433,10 @@ int main(int argc, char** argv) {
       frameVector[frameVector.size()-1]->dCovariances->setTransformation(globalT);
       frameVector[frameVector.size()-1]->dCorrespondences->setReferencePointsTransformation(globalT * localT[localT.size()-1].inverse());
       frameVector[frameVector.size()-1]->dCorrespondences->setTransformation(globalT);
-      frameVector[frameVector.size()-1]->dCorrespondences->setReferencePoints(frameVector[frameVector.size()-2]->scene.points());
-      frameVector[frameVector.size()-1]->dCorrespondences->setCurrentPoints(frameVector[frameVector.size()-1]->scene.points());
+      frameVector[frameVector.size()-1]->dCorrespondences->setReferencePoints(&frameVector[frameVector.size()-2]->scene.points());
+      frameVector[frameVector.size()-1]->dCorrespondences->setCurrentPoints(&frameVector[frameVector.size()-1]->scene.points());
       frameVector[frameVector.size()-1]->correspondences = CorrespondenceVector(aligner.correspondenceGenerator().correspondences());
-      frameVector[frameVector.size()-1]->dCorrespondences->setCorrespondences(frameVector[frameVector.size()-1]->correspondences);
+      frameVector[frameVector.size()-1]->dCorrespondences->setCorrespondences(&frameVector[frameVector.size()-1]->correspondences);
       frameVector[frameVector.size()-1]->dCorrespondences->setNumCorrespondences(aligner.correspondenceGenerator().numCorrespondences());
 
       // Show zBuffers.
@@ -436,8 +446,8 @@ int main(int argc, char** argv) {
       QImage currQImage;
       DepthImageView div;
       div.computeColorMap(300, 2000, 128);
-      div.convertToQImage(refQImage, aligner.correspondenceGenerator().referenceDepthImage()); 
-      div.convertToQImage(currQImage, aligner.correspondenceGenerator().currentDepthImage());
+      div.convertToQImage(refQImage, *aligner.correspondenceGenerator().referenceDepthImage()); 
+      div.convertToQImage(currQImage, *aligner.correspondenceGenerator().currentDepthImage());
       refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)refQImage.width()/(ng_scale*3), (int)(refQImage.height()/(ng_scale*3)))));
       currScn->addPixmap((QPixmap::fromImage(currQImage)).scaled(QSize((int)currQImage.width()/(ng_scale*3), (int)(currQImage.height()/(ng_scale*3)))));
       pwnGMW.graphicsView1_2d->show();
@@ -475,6 +485,9 @@ int main(int argc, char** argv) {
       frameVector.clear();
       globalT = Isometry3f::Identity();
       localT.clear();
+      refScn->clear();
+      currScn->clear();
+      wasInitialGuess = false;
       newCloudAdded = false;
       *clearAll = 0;
     }
@@ -486,12 +499,13 @@ int main(int argc, char** argv) {
         pwnGMW.viewer_3d->popBack();
 	delete(frameVector[frameVector.size()-1]);
 	frameVector.pop_back();
-      
       }
       if(localT.size() > 0) { 
 	globalT = globalT * localT[localT.size()-1].inverse();
 	localT.pop_back();
       }
+      refScn->clear();
+      currScn->clear();
       wasInitialGuess = false;
       newCloudAdded = false;
       *clearLast = 0;

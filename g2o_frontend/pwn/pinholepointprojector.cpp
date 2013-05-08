@@ -10,11 +10,6 @@ PinholePointProjector::PinholePointProjector() : PointProjector() {
 
 PinholePointProjector::~PinholePointProjector() {}
 
-void inline PinholePointProjector::setTransform(const Eigen::Isometry3f &transform_) {
-  _transform = transform_;
-  _updateMatrices();
-}
-
 void inline PinholePointProjector::setCameraMatrix(const Eigen::Matrix3f &cameraMatrix_) {
   _cameraMatrix = cameraMatrix_;
   _updateMatrices();

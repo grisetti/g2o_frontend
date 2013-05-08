@@ -29,7 +29,10 @@ public:
    *  Virtual method that set the camera pose transformation to the one given in input.
    *  @param transform_ is the isometry used to update the camera pose transformation variable. 
    */
-  virtual inline void setTransform(const Eigen::Isometry3f &transform_);
+  virtual inline void setTransform(const Eigen::Isometry3f &transform_) {   
+    _transform = transform_;
+    _updateMatrices();
+  }
 
   /**
    *  Method that return the camera matrix.
