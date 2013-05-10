@@ -147,11 +147,11 @@ int main(int argc, char** argv) {
   aligner.setOuterIterations(al_outerIterations);
   aligner.setInnerIterations(al_innerIterations);
   
-  aligner.correspondenceGenerator().setReferenceIndexImage(&referenceIndexImage);
-  aligner.correspondenceGenerator().setCurrentIndexImage(&currentIndexImage);
-  aligner.correspondenceGenerator().setReferenceDepthImage(&referenceDepthImage);
-  aligner.correspondenceGenerator().setCurrentDepthImage(&currentDepthImage);
-  aligner.correspondenceGenerator().setSize(referenceIndexImage.rows(), referenceIndexImage.cols());
+  aligner.correspondenceGenerator()->setReferenceIndexImage(&referenceIndexImage);
+  aligner.correspondenceGenerator()->setCurrentIndexImage(&currentIndexImage);
+  aligner.correspondenceGenerator()->setReferenceDepthImage(&referenceDepthImage);
+  aligner.correspondenceGenerator()->setCurrentDepthImage(&currentDepthImage);
+  aligner.correspondenceGenerator()->setSize(referenceIndexImage.rows(), referenceIndexImage.cols());
   
   aligner.setProjector(&projector);
   

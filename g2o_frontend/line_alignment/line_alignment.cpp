@@ -571,7 +571,8 @@ int main(int argc, char**argv){
 			ransac.setInlierStopFraction(0.5);
 			RansacLine2DLinear::TransformType transform = t0;
 			ScopeTime t("ransac aligned");
-			bool resultRansac = ransac(transform);
+			std::vector<int> myInliers;
+			bool resultRansac = ransac(transform, myInliers);
 			
 			
 			if(resultRansac)

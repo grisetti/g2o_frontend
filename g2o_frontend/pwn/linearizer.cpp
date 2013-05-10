@@ -16,14 +16,14 @@ float Linearizer::update() {
   Vector4f _bt[numThreads], _br[numThreads];
   int _inliers[numThreads];
   float _errors[numThreads];
-  int iterationsPerThread = _aligner->correspondenceGenerator().numCorrespondences()/numThreads;
+  int iterationsPerThread = _aligner->correspondenceGenerator()->numCorrespondences()/numThreads;
   #pragma omp parallel
   {
     int threadId = omp_get_thread_num();
     int imin = iterationsPerThread*threadId;
     int imax = imin + iterationsPerThread;
-    if (imax > _aligner->correspondenceGenerator().numCorrespondences())
-      imax = _aligner->correspondenceGenerator().numCorrespondences();
+    if (imax > _aligner->correspondenceGenerator()->numCorrespondences())
+      imax = _aligner->correspondenceGenerator()->numCorrespondences();
 
     Eigen::Matrix4f &Htt= _Htt[threadId];
     Eigen::Matrix4f &Htr= _Htr[threadId];
@@ -42,7 +42,7 @@ float Linearizer::update() {
     inliers = 0;
     
     for(int i = imin; i < imax; i++) {
-      const Correspondence &correspondence = _aligner->correspondenceGenerator().correspondences()[i];
+      const Correspondence &correspondence = _aligner->correspondenceGenerator()->correspondences()[i];
       const HomogeneousPoint3f referencePoint = _T * _aligner->referenceScene()->points()[correspondence.referenceIndex];
       const HomogeneousNormal3f referenceNormal = _T * _aligner->referenceScene()->normals()[correspondence.referenceIndex];
       const HomogeneousPoint3f &currentPoint = _aligner->currentScene()->points()[correspondence.currentIndex];

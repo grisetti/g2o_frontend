@@ -8,7 +8,8 @@
 class Aligner {
  public:
   Aligner() {
-    _linearizer.setAligner(this);    
+    _linearizer = 0;
+    _correspondenceGenerator = 0;
     _referenceScene = 0;
     _currentScene = 0;
     _outerIterations = 0;
@@ -28,23 +29,25 @@ class Aligner {
   inline void setSensorOffset(const Eigen::Isometry3f sensorOffset_) { _sensorOffset = sensorOffset_; }
 
   inline const PointProjector* projector() const { return _projector; }
-  inline Linearizer& linearizer() { return _linearizer; }
-  inline CorrespondenceGenerator& correspondenceGenerator() { return _correspondenceGenerator; } 
+  inline Linearizer* linearizer() { return _linearizer; }
+  inline void setLinearizer(Linearizer* linearizer_) { _linearizer = linearizer_; _linearizer->setAligner(this); }
+  inline CorrespondenceGenerator* correspondenceGenerator() { return _correspondenceGenerator; } 
+  inline void setCorrespondenceGenerator(CorrespondenceGenerator* correspondenceGenerator_) { _correspondenceGenerator = correspondenceGenerator_; } 
   inline const HomogeneousPoint3fScene* referenceScene() const { return _referenceScene; }
   inline const HomogeneousPoint3fScene* currentScene() const { return _currentScene; }  
   inline int outerIterations() const { return _outerIterations; }
   inline int innerIterations() const { return _innerIterations; }
-  inline Eigen::Isometry3f T() const { return _T; }
-  inline Eigen::Isometry3f initialGuess() const { return _initialGuess; }
-  inline Eigen::Isometry3f sensorOffset() const { return _sensorOffset; }
+  inline const Eigen::Isometry3f& T() const { return _T; }
+  inline const Eigen::Isometry3f& initialGuess() const { return _initialGuess; }
+  inline const Eigen::Isometry3f& sensorOffset() const { return _sensorOffset; }
 
   void align();
 
  protected:
   PointProjector *_projector;
-  Linearizer _linearizer;
+  Linearizer *_linearizer;
 
-  CorrespondenceGenerator _correspondenceGenerator;
+  CorrespondenceGenerator *_correspondenceGenerator;
 
   HomogeneousPoint3fScene *_referenceScene;
   HomogeneousPoint3fScene *_currentScene;

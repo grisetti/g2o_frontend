@@ -181,7 +181,7 @@ int main(int argc, char** argv) {
   aligner.setOuterIterations(al_outerIterations);
   aligner.setInnerIterations(al_innerIterations);
 
-  aligner.correspondenceGenerator().setSize(referenceIndexImage.rows(), referenceIndexImage.cols());
+  aligner.correspondenceGenerator()->setSize(referenceIndexImage.rows(), referenceIndexImage.cols());
   
   aligner.setProjector(&projector);
   aligner.setReferenceScene(&referenceScene);

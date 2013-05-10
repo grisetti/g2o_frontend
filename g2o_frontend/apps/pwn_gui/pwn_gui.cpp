@@ -258,7 +258,11 @@ int main(int argc, char** argv) {
 
   // Creating and setting aligner object.
   //Aligner aligner;
+  CorrespondenceGenerator correspondenceGenerator;
+  Linearizer linearizer;
   CudaAligner::CuAligner aligner;
+  aligner.setLinearizer(&linearizer);
+  aligner.setCorrespondenceGenerator(&correspondenceGenerator);
   aligner.setInnerIterations(al_innerIterations);
   
   pwnGMW.show();
@@ -347,11 +351,11 @@ int main(int argc, char** argv) {
       if(!wasInitialGuess) {
 	aligner.setOuterIterations(al_outerIterations);
 
-	aligner.correspondenceGenerator().setReferenceIndexImage(&frameVector[frameVector.size()-2]->indexImage);
-	aligner.correspondenceGenerator().setCurrentIndexImage(&frameVector[frameVector.size()-1]->indexImage);
-	aligner.correspondenceGenerator().setReferenceDepthImage(&frameVector[frameVector.size()-2]->depthImage);
-	aligner.correspondenceGenerator().setCurrentDepthImage(&frameVector[frameVector.size()-1]->depthImage);
-	aligner.correspondenceGenerator().setSize(frameVector[frameVector.size()-2]->indexImage.rows(), frameVector[frameVector.size()-2]->indexImage.cols());
+	aligner.correspondenceGenerator()->setReferenceIndexImage(&frameVector[frameVector.size()-2]->indexImage);
+	aligner.correspondenceGenerator()->setCurrentIndexImage(&frameVector[frameVector.size()-1]->indexImage);
+	aligner.correspondenceGenerator()->setReferenceDepthImage(&frameVector[frameVector.size()-2]->depthImage);
+	aligner.correspondenceGenerator()->setCurrentDepthImage(&frameVector[frameVector.size()-1]->depthImage);
+	aligner.correspondenceGenerator()->setSize(frameVector[frameVector.size()-2]->indexImage.rows(), frameVector[frameVector.size()-2]->indexImage.cols());
 	
 	aligner.setProjector(&frameVector[frameVector.size()-2]->projector);
 	aligner.setReferenceScene(&frameVector[frameVector.size()-2]->scene);
@@ -375,9 +379,9 @@ int main(int argc, char** argv) {
       frameVector[frameVector.size()-1]->dCorrespondences->setTransformation(globalT);
       frameVector[frameVector.size()-1]->dCorrespondences->setReferencePoints(&frameVector[frameVector.size()-2]->scene.points());
       frameVector[frameVector.size()-1]->dCorrespondences->setCurrentPoints(&frameVector[frameVector.size()-1]->scene.points());
-      frameVector[frameVector.size()-1]->correspondences = CorrespondenceVector(aligner.correspondenceGenerator().correspondences());
+      frameVector[frameVector.size()-1]->correspondences = CorrespondenceVector(aligner.correspondenceGenerator()->correspondences());
       frameVector[frameVector.size()-1]->dCorrespondences->setCorrespondences(&frameVector[frameVector.size()-1]->correspondences);
-      frameVector[frameVector.size()-1]->dCorrespondences->setNumCorrespondences(aligner.correspondenceGenerator().numCorrespondences());
+      frameVector[frameVector.size()-1]->dCorrespondences->setNumCorrespondences(aligner.correspondenceGenerator()->numCorrespondences());
 
       // Show zBuffers.
       refScn->clear();
@@ -386,8 +390,8 @@ int main(int argc, char** argv) {
       QImage currQImage;
       DepthImageView div;
       div.computeColorMap(300, 2000, 128);
-      div.convertToQImage(refQImage, *aligner.correspondenceGenerator().referenceDepthImage()); 
-      div.convertToQImage(currQImage, *aligner.correspondenceGenerator().currentDepthImage());
+      div.convertToQImage(refQImage, *aligner.correspondenceGenerator()->referenceDepthImage()); 
+      div.convertToQImage(currQImage, *aligner.correspondenceGenerator()->currentDepthImage());
       refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)refQImage.width()/(ng_scale*3), (int)(refQImage.height()/(ng_scale*3)))));
       currScn->addPixmap((QPixmap::fromImage(currQImage)).scaled(QSize((int)currQImage.width()/(ng_scale*3), (int)(currQImage.height()/(ng_scale*3)))));
       pwnGMW.graphicsView1_2d->show();
@@ -405,11 +409,11 @@ int main(int argc, char** argv) {
       if(!wasInitialGuess) {
 	aligner.setOuterIterations(1);
 
-	aligner.correspondenceGenerator().setReferenceIndexImage(&frameVector[frameVector.size()-2]->indexImage);
-	aligner.correspondenceGenerator().setCurrentIndexImage(&frameVector[frameVector.size()-1]->indexImage);
-	aligner.correspondenceGenerator().setReferenceDepthImage(&frameVector[frameVector.size()-2]->depthImage);
-	aligner.correspondenceGenerator().setCurrentDepthImage(&frameVector[frameVector.size()-1]->depthImage);
-	aligner.correspondenceGenerator().setSize(frameVector[frameVector.size()-2]->indexImage.rows(), frameVector[frameVector.size()-2]->indexImage.cols());
+	aligner.correspondenceGenerator()->setReferenceIndexImage(&frameVector[frameVector.size()-2]->indexImage);
+	aligner.correspondenceGenerator()->setCurrentIndexImage(&frameVector[frameVector.size()-1]->indexImage);
+	aligner.correspondenceGenerator()->setReferenceDepthImage(&frameVector[frameVector.size()-2]->depthImage);
+	aligner.correspondenceGenerator()->setCurrentDepthImage(&frameVector[frameVector.size()-1]->depthImage);
+	aligner.correspondenceGenerator()->setSize(frameVector[frameVector.size()-2]->indexImage.rows(), frameVector[frameVector.size()-2]->indexImage.cols());
 	
 	aligner.setProjector(&frameVector[frameVector.size()-2]->projector);
 	aligner.setReferenceScene(&frameVector[frameVector.size()-2]->scene);
@@ -440,9 +444,9 @@ int main(int argc, char** argv) {
       frameVector[frameVector.size()-1]->dCorrespondences->setTransformation(globalT);
       frameVector[frameVector.size()-1]->dCorrespondences->setReferencePoints(&frameVector[frameVector.size()-2]->scene.points());
       frameVector[frameVector.size()-1]->dCorrespondences->setCurrentPoints(&frameVector[frameVector.size()-1]->scene.points());
-      frameVector[frameVector.size()-1]->correspondences = CorrespondenceVector(aligner.correspondenceGenerator().correspondences());
+      frameVector[frameVector.size()-1]->correspondences = CorrespondenceVector(aligner.correspondenceGenerator()->correspondences());
       frameVector[frameVector.size()-1]->dCorrespondences->setCorrespondences(&frameVector[frameVector.size()-1]->correspondences);
-      frameVector[frameVector.size()-1]->dCorrespondences->setNumCorrespondences(aligner.correspondenceGenerator().numCorrespondences());
+      frameVector[frameVector.size()-1]->dCorrespondences->setNumCorrespondences(aligner.correspondenceGenerator()->numCorrespondences());
 
       // Show zBuffers.
       refScn->clear();
@@ -451,8 +455,8 @@ int main(int argc, char** argv) {
       QImage currQImage;
       DepthImageView div;
       div.computeColorMap(300, 2000, 128);
-      div.convertToQImage(refQImage, *aligner.correspondenceGenerator().referenceDepthImage()); 
-      div.convertToQImage(currQImage, *aligner.correspondenceGenerator().currentDepthImage());
+      div.convertToQImage(refQImage, *aligner.correspondenceGenerator()->referenceDepthImage()); 
+      div.convertToQImage(currQImage, *aligner.correspondenceGenerator()->currentDepthImage());
       refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)refQImage.width()/(ng_scale*3), (int)(refQImage.height()/(ng_scale*3)))));
       currScn->addPixmap((QPixmap::fromImage(currQImage)).scaled(QSize((int)currQImage.width()/(ng_scale*3), (int)(currQImage.height()/(ng_scale*3)))));
       pwnGMW.graphicsView1_2d->show();
