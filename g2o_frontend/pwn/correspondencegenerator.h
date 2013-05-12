@@ -27,25 +27,25 @@ class CorrespondenceGenerator {
   _numCorrespondences = 0;
   _rows = 0;
   _cols = 0;
-  _referenceIndexImage = 0;
-  _currentIndexImage = 0;
-  _referenceDepthImage = 0;
-  _currentDepthImage = 0;
 }
 
-	inline CorrespondenceVector& correspondences() { return _correspondences; }
-
-  inline int numCorrespondences() const { return _numCorrespondences; }
   inline const CorrespondenceVector& correspondences() const { return _correspondences; }
+  inline CorrespondenceVector& correspondences() { return _correspondences; }
+  inline int numCorrespondences() const { return _numCorrespondences; }
+  inline const Eigen::MatrixXi& currentIndexImage() const {return _currentIndexImage;}
+  inline Eigen::MatrixXi& currentIndexImage() {return _currentIndexImage;}
+  inline const Eigen::MatrixXi& referenceIndexImage() const {return _referenceIndexImage;}
+  inline Eigen::MatrixXi& referenceIndexImage() {return _referenceIndexImage;}
+  inline const DepthImage& currentDepthImage() const {return _currentDepthImage;}
+  inline DepthImage& currentDepthImage() {return _currentDepthImage;}
+  inline const DepthImage& referenceDepthImage() const {return _referenceDepthImage;}
+  inline DepthImage& referenceDepthImage() {return _referenceDepthImage;}
+
   inline float squaredThreshold() const { return _squaredThreshold; }
   inline float inlierDistanceThreshold() const { return _inlierDistanceThreshold; }
   inline float flatCurvatureThreshold() const { return _flatCurvatureThreshold; }
   inline float inlierCurvatureRatioThreshold() const { return _inlierCurvatureRatioThreshold; }
   inline float inlierNormalAngularThreshold() const { return _inlierNormalAngularThreshold; }
-  inline Eigen::MatrixXi *referenceIndexImage() { return _referenceIndexImage; }
-  inline Eigen::MatrixXi *currentIndexImage() { return _currentIndexImage; }
-  inline DepthImage *referenceDepthImage() { return _referenceDepthImage; }
-  inline DepthImage *currentDepthImage() { return _currentDepthImage; }
   inline int rows() const { return _rows; }
   inline int cols() const { return _cols; }
 
@@ -56,16 +56,13 @@ class CorrespondenceGenerator {
   inline void setFlatCurvatureThreshold(const float flatCurvatureThreshold_) { _flatCurvatureThreshold = flatCurvatureThreshold_; }  
   inline void setInlierCurvatureRatioThreshold(const float inlierCurvatureRatioThreshold_) { _inlierCurvatureRatioThreshold = inlierCurvatureRatioThreshold_; }
   inline void setInlierNormalAngularThreshold(const float inlierNormalAngularThreshold_) { _inlierNormalAngularThreshold = inlierNormalAngularThreshold_; }
-  inline void setReferenceIndexImage(Eigen::MatrixXi *referenceIndexImage_) { _referenceIndexImage = referenceIndexImage_; }
-  inline void setCurrentIndexImage(Eigen::MatrixXi *currentIndexImage_) { _currentIndexImage = currentIndexImage_; }
-  inline void setReferenceDepthImage(DepthImage *referenceDepthImage_) { _referenceDepthImage = referenceDepthImage_; }
-  inline void setCurrentDepthImage(DepthImage *currentDepthImage_) { _currentDepthImage = currentDepthImage_; }
+
   inline void setSize(const int rows_, const int cols_) {
     if(_rows != rows_ || _cols != cols_) {
       _rows = rows_;
       _cols = cols_;
-      _referenceIndexImage->resize(_rows, _cols);
-      _currentIndexImage->resize(_rows, _cols);
+      _referenceIndexImage.resize(_rows, _cols);
+      _currentIndexImage.resize(_rows, _cols);
     }
   }
 
@@ -83,8 +80,8 @@ class CorrespondenceGenerator {
 
   int _rows, _cols;
 
-  Eigen::MatrixXi *_referenceIndexImage, *_currentIndexImage;
-  DepthImage *_referenceDepthImage, *_currentDepthImage;
+  Eigen::MatrixXi _referenceIndexImage, _currentIndexImage;
+  DepthImage _referenceDepthImage, _currentDepthImage;
 };
 
 #endif

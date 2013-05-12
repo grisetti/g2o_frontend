@@ -41,8 +41,8 @@ void CuAligner::align() {
 
   
   PinholePointProjector *pprojector = (PinholePointProjector *) _projector;
-  cerr << "initializing context computation" << endl;
-  cerr << "camera: " << pprojector->cameraMatrix() << endl;
+  //cerr << "initializing context computation" << endl;
+  //cerr << "camera: " << pprojector->cameraMatrix() << endl;
   status = initComputation(_context,
 			   &(pprojector->cameraMatrix().coeffRef(0,0)),
 			   &(_referenceScene->points().at(0).coeffRef(0)),
@@ -57,7 +57,7 @@ void CuAligner::align() {
 			   _currentScene->points().size());
   
   status.toString(buf);
-  cerr << "STATUS: " << buf << endl; 
+  //cerr << "STATUS: " << buf << endl; 
     
   Eigen::Isometry3f invT = _T.inverse();
   for(int i = 0; i < _outerIterations; i++) {
@@ -66,10 +66,10 @@ void CuAligner::align() {
     invT.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
     
     
-    cerr << "ITERATE" << endl;
+    //cerr << "ITERATE" << endl;
     status = simpleIteration(_context, &(invT.matrix().coeffRef(0,0)));
     status.toString(buf);
-    cerr << "STATUS: " << buf << endl; 
+    //cerr << "STATUS: " << buf << endl; 
     Eigen::Matrix4f Htt, Htr, Hrr;
     Eigen::Vector4f bt, br;
     getHb(_context,
@@ -94,7 +94,7 @@ void CuAligner::align() {
     
     Vector6f dx = H.ldlt().solve(-b);
     Eigen::Isometry3f dT = v2t(dx);
-    cerr << "dt = " << t2v(dT).transpose() << endl;
+    //cerr << "dt = " << t2v(dT).transpose() << endl;
 					
     invT =  dT * invT ;
     //cerr << "Hreal: " << endl << H-myH << endl;
@@ -102,7 +102,7 @@ void CuAligner::align() {
   }
   _T = invT.inverse();
   _T = _sensorOffset * _T;
-  cerr << "T = " << t2v(_T).transpose() << endl;
+  //cerr << "T = " << t2v(_T).transpose() << endl;
 }
 
 }

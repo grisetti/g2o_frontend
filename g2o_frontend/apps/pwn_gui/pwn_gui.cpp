@@ -21,6 +21,8 @@
 #include "g2o/stuff/command_args.h"
 #include "g2o/stuff/timeutil.h"
 
+#undef _PWN_USE_CUDA_
+
 #ifdef _PWN_USE_CUDA_
 #include "g2o_frontend/pwn_cuda/cualigner.h"
 #endif// PWN_CUDA
@@ -260,7 +262,13 @@ int main(int argc, char** argv) {
   //Aligner aligner;
   CorrespondenceGenerator correspondenceGenerator;
   Linearizer linearizer;
+
+#ifdef _PWN_USE_CUDA_
   CudaAligner::CuAligner aligner;
+#else
+  Aligner aligner;
+#endif
+
   aligner.setLinearizer(&linearizer);
   aligner.setCorrespondenceGenerator(&correspondenceGenerator);
   aligner.setInnerIterations(al_innerIterations);
@@ -351,10 +359,6 @@ int main(int argc, char** argv) {
       if(!wasInitialGuess) {
 	aligner.setOuterIterations(al_outerIterations);
 
-	aligner.correspondenceGenerator()->setReferenceIndexImage(&frameVector[frameVector.size()-2]->indexImage);
-	aligner.correspondenceGenerator()->setCurrentIndexImage(&frameVector[frameVector.size()-1]->indexImage);
-	aligner.correspondenceGenerator()->setReferenceDepthImage(&frameVector[frameVector.size()-2]->depthImage);
-	aligner.correspondenceGenerator()->setCurrentDepthImage(&frameVector[frameVector.size()-1]->depthImage);
 	aligner.correspondenceGenerator()->setSize(frameVector[frameVector.size()-2]->indexImage.rows(), frameVector[frameVector.size()-2]->indexImage.cols());
 	
 	aligner.setProjector(&frameVector[frameVector.size()-2]->projector);
@@ -390,8 +394,8 @@ int main(int argc, char** argv) {
       QImage currQImage;
       DepthImageView div;
       div.computeColorMap(300, 2000, 128);
-      div.convertToQImage(refQImage, *aligner.correspondenceGenerator()->referenceDepthImage()); 
-      div.convertToQImage(currQImage, *aligner.correspondenceGenerator()->currentDepthImage());
+      div.convertToQImage(refQImage, aligner.correspondenceGenerator()->referenceDepthImage()); 
+      div.convertToQImage(currQImage, aligner.correspondenceGenerator()->currentDepthImage());
       refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)refQImage.width()/(ng_scale*3), (int)(refQImage.height()/(ng_scale*3)))));
       currScn->addPixmap((QPixmap::fromImage(currQImage)).scaled(QSize((int)currQImage.width()/(ng_scale*3), (int)(currQImage.height()/(ng_scale*3)))));
       pwnGMW.graphicsView1_2d->show();
@@ -409,10 +413,6 @@ int main(int argc, char** argv) {
       if(!wasInitialGuess) {
 	aligner.setOuterIterations(1);
 
-	aligner.correspondenceGenerator()->setReferenceIndexImage(&frameVector[frameVector.size()-2]->indexImage);
-	aligner.correspondenceGenerator()->setCurrentIndexImage(&frameVector[frameVector.size()-1]->indexImage);
-	aligner.correspondenceGenerator()->setReferenceDepthImage(&frameVector[frameVector.size()-2]->depthImage);
-	aligner.correspondenceGenerator()->setCurrentDepthImage(&frameVector[frameVector.size()-1]->depthImage);
 	aligner.correspondenceGenerator()->setSize(frameVector[frameVector.size()-2]->indexImage.rows(), frameVector[frameVector.size()-2]->indexImage.cols());
 	
 	aligner.setProjector(&frameVector[frameVector.size()-2]->projector);
@@ -455,8 +455,8 @@ int main(int argc, char** argv) {
       QImage currQImage;
       DepthImageView div;
       div.computeColorMap(300, 2000, 128);
-      div.convertToQImage(refQImage, *aligner.correspondenceGenerator()->referenceDepthImage()); 
-      div.convertToQImage(currQImage, *aligner.correspondenceGenerator()->currentDepthImage());
+      div.convertToQImage(refQImage, aligner.correspondenceGenerator()->referenceDepthImage()); 
+      div.convertToQImage(currQImage, aligner.correspondenceGenerator()->currentDepthImage());
       refScn->addPixmap((QPixmap::fromImage(refQImage)).scaled(QSize((int)refQImage.width()/(ng_scale*3), (int)(refQImage.height()/(ng_scale*3)))));
       currScn->addPixmap((QPixmap::fromImage(currQImage)).scaled(QSize((int)currQImage.width()/(ng_scale*3), (int)(currQImage.height()/(ng_scale*3)))));
       pwnGMW.graphicsView1_2d->show();

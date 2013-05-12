@@ -54,7 +54,12 @@ int main(int argc, char** argv) {
     525.0f, 0.0f, 319.5f,
     0.0f, 525.0f, 239.5f,
     0.0f, 0.0f, 1.0f;
-  
+
+  cameraMatrix << 
+    570.342f, 0.0f, 319.5f,
+    0.0f, 570.342f, 239.5f,
+    0.0f, 0.0f, 1.0f;
+
   // Input parameters handling.
   g2o::CommandArgs arg;
   
@@ -176,14 +181,22 @@ int main(int argc, char** argv) {
   /************************************************************************
    *                         Alignment Computation                        *
    ************************************************************************/
-  //CudaAligner::CuAligner aligner;
-  Aligner aligner;
-  aligner.setOuterIterations(al_outerIterations);
+  CudaAligner::CuAligner aligner;
+  CorrespondenceGenerator correspondenceGenerator;
+  Linearizer linearizer;
+  //Aligner aligner;
+  aligner.setProjector(&projector);
+  aligner.setLinearizer(&linearizer);
+  linearizer.setAligner(&aligner);
+  aligner.setCorrespondenceGenerator(&correspondenceGenerator);
+ 
+ aligner.setOuterIterations(al_outerIterations);
   aligner.setInnerIterations(al_innerIterations);
 
-  aligner.correspondenceGenerator()->setSize(referenceIndexImage.rows(), referenceIndexImage.cols());
+
+  //aligner.correspondenceGenerator()->setSize(referenceIndexImage.rows(), referenceIndexImage.cols());
+  cerr << "constructingObjects " << endl;
   
-  aligner.setProjector(&projector);
   aligner.setReferenceScene(&referenceScene);
   aligner.setCurrentScene(&currentScene);
   

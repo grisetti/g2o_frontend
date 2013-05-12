@@ -141,6 +141,33 @@ DepthImage::DepthImage(const MatrixXus &m): Eigen::MatrixXf(m.rows(),m.cols()){
     fromUnsignedShort(m);
 }
 
+void DepthImage::scale(Eigen::MatrixXf& dest, const Eigen::MatrixXf& src, int step){
+  int rows = src.rows()/step;
+  int cols = src.cols()/step;
+  dest.resize(rows,cols);
+  dest.fill(0);
+  for (int c = 0; c<dest.cols(); c++){
+    for (int r = 0; r<dest.rows(); r++){
+      float acc=0;
+      int np=0;
+      int sc = c*step;
+      int sr = r*step;
+      for (int i=0; i<step; i++){
+	for (int j=0; j<step; j++){
+	  if (sc + i < src.cols()&&
+	      sr + j < src.rows()) {
+	    acc += src(sr+j,sc+i);
+	    np += src(sr+j,sc+i) > 0;
+	  }
+	}
+      }
+      if (np)
+	dest(r,c) = acc;
+    }
+  }
+}
+
+
 void DepthImage::toUnsignedShort(MatrixXus &m, float dmax) const {
   m.resize(rows(), cols());
   unsigned short* us=m.data();

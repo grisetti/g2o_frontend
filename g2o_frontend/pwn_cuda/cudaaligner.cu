@@ -527,10 +527,9 @@ using namespace std;
 
     double tStart = tvStart.tv_sec*1000+tvStart.tv_usec*0.001;
     double tEnd = tvEnd.tv_sec*1000+tvEnd.tv_usec*0.001;
-    printf("\ttime: %lf",tEnd-tStart);
-
-    cerr << "inliers: " << *(_cudaHostContext->_Hb+16*3+3) << endl;
-    cerr << "error  : " << *(_cudaHostContext->_Hb+16*3+4+3) << endl;
+    cerr << "\ttime: " << tEnd-tStart;
+    cerr << " inliers: " << *(_cudaHostContext->_Hb+16*3+3);
+    cerr << " error  : " << *(_cudaHostContext->_Hb+16*3+4+3) << endl;
 
     return AlignerStatus();
   }

@@ -18,10 +18,15 @@ using namespace std;
     _indexImage.resize(480,640);
     _zBuffer.resize(480,540);
     _maxPointDepth = 10;
+    // _cameraMatrix << 
+    //   525.0f, 0.0f, 319.5f,
+    //   0.0f, 525.0f, 239.5f,
+    //   0.0f, 0.0f, 1.0f;
     _cameraMatrix << 
-      525.0f, 0.0f, 319.5f,
-      0.0f, 525.0f, 239.5f,
-      0.0f, 0.0f, 1.0f;
+    570.342f, 0.0f, 319.5f,
+    0.0f, 570.342f, 239.5f,
+    0.0f, 0.0f, 1.0f;
+
 
   }
     

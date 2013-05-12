@@ -41,7 +41,7 @@ class Aligner {
   inline const Eigen::Isometry3f& initialGuess() const { return _initialGuess; }
   inline const Eigen::Isometry3f& sensorOffset() const { return _sensorOffset; }
 
-  void align();
+  virtual void align();
 
  protected:
   PointProjector *_projector;

@@ -78,3 +78,20 @@ bool HomogeneousPoint3fScene::save(ostream &os, int step, bool binary) {
   }
   return os.good();
 }
+
+void HomogeneousPoint3fScene::clear(){
+  _points.clear();
+  _normals.clear(); 
+  _stats.clear();
+  _pointOmegas.clear();
+  _normalOmegas.clear();
+}
+
+void HomogeneousPoint3fScene::transformInPlace(const Eigen::Isometry3f& T){
+  _points.transformInPlace(T);
+  _normals.transformInPlace(T);
+  _pointOmegas.transformInPlace(T);
+  _stats.transformInPlace(T);
+  _normalOmegas.transformInPlace(T);
+}
+

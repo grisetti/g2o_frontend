@@ -19,6 +19,7 @@ ADD_LIBRARY(pwn_library
   homogeneouspoint3fintegralimage.cpp homogeneouspoint3fintegralimage.h
   normalgenerator.h	
   homogeneouspoint3fscene.cpp homogeneouspoint3fscene.h
+  depthimageconverter.cpp depthimageconverter.h
   homogeneouspoint3fstatsgenerator.cpp homogeneouspoint3fstatsgenerator.h
   homogeneouspoint3faccumulator.h
   homogeneouspoint3fstats.h
@@ -67,4 +68,8 @@ TARGET_LINK_LIBRARIES( pwn_g2o_movingRef pwn_library  ${G2O_STUFF_LIBRARY} )
 ADD_EXECUTABLE(homogeneous_normals homogeneous_normals.cpp)
 SET_TARGET_PROPERTIES(homogeneous_normals PROPERTIES OUTPUT_NAME homogeneous_normals)
 TARGET_LINK_LIBRARIES( homogeneous_normals pwn_library  ${G2O_STUFF_LIBRARY} ) 
+
+ADD_EXECUTABLE(depth_converter_test depth_converter_test.cpp)
+SET_TARGET_PROPERTIES(depth_converter_test PROPERTIES OUTPUT_NAME depth_converter_test)
+TARGET_LINK_LIBRARIES (depth_converter_test pwn_library  ${G2O_STUFF_LIBRARY} ) 
 

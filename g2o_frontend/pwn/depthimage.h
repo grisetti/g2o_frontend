@@ -81,6 +81,17 @@ public:
    *  image to save.
    */
   bool save(const char* filename, bool transposed = false) const;
+
+
+  /**
+   *  This static methos scales an input image of a desired integet
+   *  fator. To have an image that is 1/2 of the original, you should
+   *  set the step at 2;
+   *  @param dest: the destination image that will be scaled
+   *  @param src: source image
+   *  @param sstep: the inverse of the scaling factor
+   */
+  static void scale(Eigen::MatrixXf& dest, const Eigen::MatrixXf& src, int step);
 };
 
 #endif
