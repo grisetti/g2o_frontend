@@ -74,7 +74,7 @@ namespace CudaAligner {
 				int numCurrentPoints_);
 
   AlignerStatus simpleIteration(AlignerContext* context,
-				float* transform);
+				float* transform, int* inliers=0, float*error=0);
 
   int getHb(AlignerContext* context, float* Htt, float* Hrt, float* Hrr, float*bt, float* br);
 				    

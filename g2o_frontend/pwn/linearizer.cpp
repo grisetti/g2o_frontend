@@ -1,12 +1,17 @@
 #include "aligner.h"
 #include <omp.h>
 
-float Linearizer::update() {
+Linearizer::Linearizer() {
+  _aligner = 0;
+  _H.setZero();
+  _b.setZero();
+  _inlierMaxChi2 = 9e3;
+}
+
+void Linearizer::update() {
   // Variables initialization.
   _b = Vector6f::Zero();
   _H = Matrix6f::Zero();
-  float error = 0.0f;
-  int inliers = 0;
   const HomogeneousPoint3fOmegaVector &pointOmegas = _aligner->currentScene()->pointOmegas();
   const HomogeneousPoint3fOmegaVector &normalOmegas = _aligner->currentScene()->normalOmegas();
 
@@ -76,14 +81,16 @@ float Linearizer::update() {
   Eigen::Matrix4f Hrr =  Eigen::Matrix4f::Zero();
   Eigen::Vector4f bt  =  Eigen::Vector4f::Zero();
   Eigen::Vector4f br  =  Eigen::Vector4f::Zero();
+  this->_inliers = 0;
+  this->_error = 0;
   for (int t = 0; t < numThreads; t++) {
     Htt += _Htt[t];
     Htr += _Htr[t];
     Hrr += _Hrr[t];
     bt  += _bt[t];
     br  += _br[t];
-    inliers += _inliers[t];
-    error += _errors[t];
+    this->_inliers += _inliers[t];
+    this->_error += _errors[t];
   }
   _H.block<3, 3>(0, 0) = Htt.block<3, 3>(0, 0);
   _H.block<3, 3>(0, 3) = Htr.block<3, 3>(0, 0);
@@ -91,6 +98,4 @@ float Linearizer::update() {
   _H.block<3, 3>(3, 0) = _H.block<3, 3>(0, 3).transpose();
   _b.block<3, 1>(0, 0) = bt.block<3, 1>(0, 0);
   _b.block<3, 1>(3, 0) = br.block<3, 1>(0, 0);
-
-  return error;
 }

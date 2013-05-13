@@ -17,9 +17,9 @@ DepthImageConverter::DepthImageConverter(  PointProjector* projector_,
 
 void DepthImageConverter::compute(HomogeneousPoint3fScene& scene, 
 				  const Eigen::MatrixXf& depthImage, 
-				  const Eigen::Isometry3f& sensorOffset){
+				  const Eigen::Isometry3f& /*sensorOffset*/){
   scene.clear();
-  double tStart = g2o::get_time();
+  //double tStart = g2o::get_time();
   // resizing the temporaries
   if (depthImage.rows()!=_indexImage.rows() ||
       depthImage.rows()!=_indexImage.cols()){
@@ -53,9 +53,9 @@ void DepthImageConverter::compute(HomogeneousPoint3fScene& scene,
   // scene is labeled, now we need to transform all the elements by considering the position
   // of the sensor
   //scene.transformInPlace(sensorOffset);
-  double tEnd = g2o::get_time();
   //double tEnd = g2o::get_time();
-  cerr << "time: " << (tEnd-tStart)*1000.0f << endl;
+  //double tEnd = g2o::get_time();
+  //cerr << "time: " << (tEnd-tStart)*1000.0f << endl;
  
 }
 

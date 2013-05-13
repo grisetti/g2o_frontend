@@ -1,9 +1,28 @@
 #include "aligner.h"
 #include <iostream>
+#include <sys/time.h>
 
 using namespace std;
 
+Aligner::Aligner() {
+  _linearizer = 0;
+  _correspondenceGenerator = 0;
+  _referenceScene = 0;
+  _currentScene = 0;
+  _outerIterations = 0;
+  _innerIterations = 0;
+  _T = Eigen::Isometry3f::Identity();
+  _initialGuess = Eigen::Isometry3f::Identity();
+  _sensorOffset = Eigen::Isometry3f::Identity();
+  _totalTime = 0;
+  _error = 0;
+  _inliers = 0;
+};
+
 void Aligner::align() {
+  struct timeval tvStart, tvEnd;
+  gettimeofday(&tvStart,0);
+
   if (! _projector || !_linearizer || !_correspondenceGenerator){
     cerr << "I do nothing since you did not set all required algorithms" << endl;
     return;
@@ -15,12 +34,12 @@ void Aligner::align() {
 		      _currentScene->points());
   _T = _initialGuess;
   for(int i = 0; i < _outerIterations; i++) {
-    cout << "********************* Iteration " << i << " *********************" << endl;
+    //cout << "********************* Iteration " << i << " *********************" << endl;
     
     /************************************************************************
      *                         Correspondence Computation                   *
      ************************************************************************/
-    cout << "Computing correspondences...";
+    //cout << "Computing correspondences...";
     
     // compute the indices of the current scene from the point of view of the sensor
     _projector->setTransform(_T*_sensorOffset);
@@ -31,8 +50,8 @@ void Aligner::align() {
     // Correspondences computation.    
     _correspondenceGenerator->compute(*_referenceScene, *_currentScene, _T.inverse());
 
-    cout << " done." << endl;
-    cout << "# inliers found: " << _correspondenceGenerator->numCorrespondences() << endl;
+    //cout << " done." << endl;
+    //cout << "# inliers found: " << _correspondenceGenerator->numCorrespondences() << endl;
 
     /************************************************************************
      *                            Alignment                                 *
@@ -52,4 +71,10 @@ void Aligner::align() {
       _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
     }
   }
+  gettimeofday(&tvEnd, 0);
+  double tStart = tvStart.tv_sec*1000+tvStart.tv_usec*0.001;
+  double tEnd = tvEnd.tv_sec*1000+tvEnd.tv_usec*0.001;
+  _totalTime = tEnd - tStart;
+  _error = _linearizer->error();
+  _inliers = _linearizer->inliers();
 }

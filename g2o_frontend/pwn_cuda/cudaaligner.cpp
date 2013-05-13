@@ -145,8 +145,8 @@ int Aligner_processCorrespondences(float* globalError,
   }
 
   //os.close();
-  printf ("gpu: inliers:%d, noPoint:%d, badNormals:%d, tooDistant:%d, badCurvature:%d\n",
-	  inliers, noPoint, badNormals,tooDistant,badCurvature);
+  //printf ("gpu: inliers:%d, noPoint:%d, badNormals:%d, tooDistant:%d, badCurvature:%d\n",
+  //inliers, noPoint, badNormals,tooDistant,badCurvature);
   return inliers;
 }
 

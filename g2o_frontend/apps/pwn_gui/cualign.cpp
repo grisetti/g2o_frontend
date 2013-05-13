@@ -20,10 +20,13 @@
 #include "g2o_frontend/pwn/correspondencegenerator.h"
 #include "g2o_frontend/pwn/aligner.h"
 
-#undef _PWN_USE_CUDA_
+//#undef _PWN_USE_CUDA_
 
 #ifdef _PWN_USE_CUDA_
 #include "g2o_frontend/pwn_cuda/cualigner.h"
+#define failneim "cooda.dat"
+#else
+#define failneim "no_cooda.dat"
 #endif
 
 using namespace Eigen;
@@ -96,22 +99,27 @@ struct ParallelCudaAligner{
     return s;
   }
   
+  
   static void* threadFn(ParallelCudaAligner* pr){
     HomogeneousPoint3fScene* previous = 0;
+    ofstream os(failneim);
     while (pr->run){
-      cerr << "queueSize : " << pr->scenes.size() << endl;
       HomogeneousPoint3fScene * s = pr->popScene();
       if (s) {
 	if (previous) {
 	  pr->aligner->setReferenceScene(previous);
 	  pr->aligner->setCurrentScene(s);
 	  pr->aligner->align();
+	  os << "time: " << pr->aligner->totalTime() 
+	     << " inliers: " << pr->aligner->inliers()
+	     << " error: " << pr->aligner-> error() << endl;
 	  delete previous;
 	}
 	previous = s;
       }
       usleep(1000);
     }
+    os.close();
     if (previous)
       delete previous;
     return 0;
@@ -183,16 +191,15 @@ int
   aligner.setLinearizer(&linearizer);
   linearizer.setAligner(&aligner);
   aligner.setCorrespondenceGenerator(&correspondenceGenerator);
-  aligner.setOuterIterations(10);
+  aligner.setOuterIterations(20);
   aligner.setInnerIterations(1);
 
   ParallelCudaAligner alignerThread(&aligner);
   alignerThread.start();
-  HomogeneousPoint3fScene* previousScene=0;
 
   for (size_t i=0; i<filenames.size(); i++) {
-    cerr << endl << endl << endl;
     cerr << ">>>>>>>>>>>>>>>>>>>>>>>> PROCESSING " << filenames[i] << " <<<<<<<<<<<<<<<<<<<<" <<  endl;
+    cerr << "queueSize : " << alignerThread.scenes.size() << endl;
     if (!depthImage.load(filenames[i].c_str())){
       cerr << " skipping " << filenames[i] << endl;
       continue;
@@ -200,16 +207,12 @@ int
     HomogeneousPoint3fScene* scene=new HomogeneousPoint3fScene();
     DepthImage::scale(scaledDepthImage, depthImage, 1);
     converter.compute(*scene, scaledDepthImage);
-    int numNormals = 0;
-    for (size_t i = 0; i<scene->normals().size(); i++){
-      numNormals += (scene->normals()[i].squaredNorm()>0);
-    }
     correspondenceGenerator.setSize(scaledDepthImage.rows(), scaledDepthImage.cols());
-    cerr << "# points"  << scene->points().size() << " normals: " << numNormals << endl;
     while (alignerThread.scenes.size()>20) {
       usleep(10000);
     }
     alignerThread.addScene(scene);
+    //delete scene;
   }
   cerr << "waiting for the queue to terminate" << endl;
   while(alignerThread.scenes.size()){

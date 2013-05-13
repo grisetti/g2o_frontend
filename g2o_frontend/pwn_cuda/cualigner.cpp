@@ -1,6 +1,7 @@
 #include "cualigner.h"
 #include <iostream>
 #include "cudaaligner.h"
+#include <sys/time.h>
 #include "g2o_frontend/pwn/pinholepointprojector.h"
 
 namespace CudaAligner {
@@ -29,14 +30,20 @@ namespace CudaAligner {
   }
 
 void CuAligner::align() {
+  struct timeval tvStart, tvEnd;
+  gettimeofday(&tvStart,0);
+
+  _error = 0;
+  _inliers = 0;
+  _totalTime = 0;
   AlignerStatus status;
   char buf[1024];
   _T = _initialGuess;
   float referenceCurvatures[_referenceScene->stats().size()];
   float currentCurvatures[_currentScene->stats().size()];
-  for (int i=0; i<_referenceScene->stats().size(); i++)
+  for (size_t i=0; i<_referenceScene->stats().size(); i++)
     referenceCurvatures[i]=_referenceScene->stats().at(i).curvature();
-  for (int i=0; i<_currentScene->stats().size(); i++)
+  for (size_t i=0; i<_currentScene->stats().size(); i++)
     currentCurvatures[i]=_currentScene->stats().at(i).curvature();
 
   
@@ -61,13 +68,13 @@ void CuAligner::align() {
     
   Eigen::Isometry3f invT = _T.inverse();
   for(int i = 0; i < _outerIterations; i++) {
-    cout << " done." << endl;
-    cout << "********************* Iteration " << i << " *********************" << endl;
+    //cout << " done." << endl;
+    //cout << "********************* Iteration " << i << " *********************" << endl;
     invT.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
     
     
     //cerr << "ITERATE" << endl;
-    status = simpleIteration(_context, &(invT.matrix().coeffRef(0,0)));
+    status = simpleIteration(_context, &(invT.matrix().coeffRef(0,0)), &_inliers, &_error);
     status.toString(buf);
     //cerr << "STATUS: " << buf << endl; 
     Eigen::Matrix4f Htt, Htr, Hrr;
@@ -87,7 +94,7 @@ void CuAligner::align() {
     b.block<3,1>(0,0) = bt.block<3,1>(0,0);
     b.block<3,1>(3,0) = br.block<3,1>(0,0);
 
-    int acc = 0;
+    //int acc = 0;
     //_numCorrespondences = _correspondenceGenerator.numCorrespondences();
     //cout << "# inliers found: " << _numCorrespondences << endl;
     H += Matrix6f::Identity() * 10.0f;
@@ -100,9 +107,11 @@ void CuAligner::align() {
     //cerr << "Hreal: " << endl << H-myH << endl;
     //cerr << "breal: " << endl << b-myb << endl;
   }
+  gettimeofday(&tvEnd,0);
+
   _T = invT.inverse();
   _T = _sensorOffset * _T;
-  //cerr << "T = " << t2v(_T).transpose() << endl;
+  _totalTime = (tvEnd.tv_sec*1000+tvEnd.tv_usec*0.001) - (tvStart.tv_sec*1000+tvStart.tv_usec*0.001) ;
 }
 
 }
