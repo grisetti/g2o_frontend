@@ -1,7 +1,7 @@
-#include "g2o_frontend/pwn/pinholepointprojector.h"
-#include "g2o_frontend/pwn/homogeneouspoint3fstatsgenerator.h"
-#include "g2o_frontend/pwn/omegagenerator.h"
-#include "g2o_frontend/pwn/aligner.h"
+#include "g2o_frontend/pwn2/pinholepointprojector.h"
+#include "g2o_frontend/pwn2/statsfinder.h"
+#include "g2o_frontend/pwn2/informationmatrixfinder.h"
+#include "g2o_frontend/pwn2/aligner.h"
 
 #include <qapplication.h>
 #include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
@@ -99,9 +99,9 @@ int main(int argc, char** argv) {
   projector.setCameraMatrix(cameraMatrix);
   
   // Get the points in the 3d euclidean space.
-  HomogeneousPoint3fScene referenceScene, currentScene;
-  projector.unProject(referenceScene.points(), referenceIndexImage, referenceDepthImage);
-  projector.unProject(currentScene.points(), currentIndexImage, currentDepthImage);
+  Frame referenceFrame, currentFrame;
+  projector.unProject(referenceFrame.points(), referenceIndexImage, referenceDepthImage);
+  projector.unProject(currentFrame.points(), currentIndexImage, currentDepthImage);
   
   cout << " done." << endl;
   
@@ -110,27 +110,27 @@ int main(int argc, char** argv) {
    ************************************************************************/
   cout << "Computing normals...";
 
-  HomogeneousPoint3fIntegralImage referenceIntegralImage, currentIntegralImage;
+  PointIntegralImage referenceIntegralImage, currentIntegralImage;
   MatrixXi referenceIntervalImage, currentIntervalImage;
   
   // Compute the integral images.
-  referenceIntegralImage.compute(referenceIndexImage, referenceScene.points());
-  currentIntegralImage.compute(currentIndexImage, currentScene.points());
+  referenceIntegralImage.compute(referenceIndexImage, referenceFrame.points());
+  currentIntegralImage.compute(currentIndexImage, currentFrame.points());
     
   // Compute the intervals.
   projector.projectIntervals(referenceIntervalImage, referenceDepthImage, 0.1f);
   projector.projectIntervals(currentIntervalImage, currentDepthImage, 0.1f);
     
   // Creating the stas generator object. 
-  HomogeneousPoint3fStatsGenerator statsGenerator;
+  StatsFinder statsGenerator;
   
   // Stats and normals computation.
-  statsGenerator.compute(referenceScene.normals(), referenceScene.stats(),
-   			 referenceScene.points(),
+  statsGenerator.compute(referenceFrame.normals(), referenceFrame.stats(),
+             referenceFrame.points(),
    			 referenceIntegralImage, referenceIntervalImage, referenceIndexImage,
    			 ng_curvatureThreshold);
-  statsGenerator.compute(currentScene.normals(), currentScene.stats(),
-  			 currentScene.points(), 
+  statsGenerator.compute(currentFrame.normals(), currentFrame.stats(),
+             currentFrame.points(),
   			 currentIntegralImage, currentIntervalImage, currentIndexImage,
   			 ng_curvatureThreshold);
     
@@ -142,14 +142,14 @@ int main(int argc, char** argv) {
   cout << "Computing omegas...";
 
   // Creating the omegas generators objects.
-  PointOmegaGenerator pointOmegaGenerator;
-  NormalOmegaGenerator normalOmegaGenerator;
+  PointInformationMatrixFinder pointInformationMatrixFinder;
+  NormalInformationMatrixFinder normalInformationMatrixFinder;
   
   // Omegas computation.
-  pointOmegaGenerator.compute(referenceScene.pointOmegas(), referenceScene.stats(), referenceScene.normals());
-  normalOmegaGenerator.compute(referenceScene.normalOmegas(), referenceScene.stats(), referenceScene.normals());
-  pointOmegaGenerator.compute(currentScene.pointOmegas(), currentScene.stats(), currentScene.normals());
-  normalOmegaGenerator.compute(currentScene.normalOmegas(), currentScene.stats(), currentScene.normals());
+  pointInformationMatrixFinder.compute(referenceFrame.pointInformationMatrix(), referenceFrame.stats(), referenceFrame.normals());
+  normalInformationMatrixFinder.compute(referenceFrame.normalInformationMatrix(), referenceFrame.stats(), referenceFrame.normals());
+  pointInformationMatrixFinder.compute(currentFrame.pointInformationMatrix(), currentFrame.stats(), currentFrame.normals());
+  normalInformationMatrixFinder.compute(currentFrame.normalInformationMatrix(), currentFrame.stats(), currentFrame.normals());
 
   cout << " done." << endl;
 
@@ -157,22 +157,22 @@ int main(int argc, char** argv) {
    *                         Alignment Computation                        *
    ************************************************************************/
   Aligner aligner;
-  CorrespondenceGenerator correspondenceGenerator;
+  CorrespondenceFinder correspondenceFinder;
   Linearizer linearizer;
   aligner.setLinearizer(&linearizer);
-  aligner.setCorrespondenceGenerator(&correspondenceGenerator);
+  aligner.setCorrespondenceFinder(&correspondenceFinder);
   aligner.setInnerIterations(al_innerIterations);
 
   
   aligner.setOuterIterations(al_outerIterations);
   aligner.setInnerIterations(al_innerIterations);
   
-  aligner.correspondenceGenerator()->setSize(referenceIndexImage.rows(), referenceIndexImage.cols());
+  aligner.correspondenceFinder()->setSize(referenceIndexImage.rows(), referenceIndexImage.cols());
   
   aligner.setProjector(&projector);
   
-  aligner.setReferenceScene(&referenceScene);
-  aligner.setCurrentScene(&currentScene);
+  aligner.setReferenceFrame(&referenceFrame);
+  aligner.setCurrentFrame(&currentFrame);
   
   Isometry3f initialGuess = Isometry3f::Identity();
   Isometry3f sensorOffset = Isometry3f::Identity();
@@ -220,14 +220,14 @@ int main(int argc, char** argv) {
   // pCorrespondences = new GLParameterCorrespondences(1.0f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f), 1.0f);
   // pCorrespondences->setStep(vz_step);
   
-  dPointsRef = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pPointsRef, &referenceScene.points(), &referenceScene.normals());
-  dPointsCur = new DrawablePoints(aligner.T(), (GLParameter*)pPointsCur, &currentScene.points(), &currentScene.normals());
-  // dNormalsRef = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)pNormalsRef, &referenceScene.points(), &referenceScene.normals());
-  // dNormalsCur = new DrawableNormals(aligner.T(), (GLParameter*)pNormalsCur, &currentScene.points(), &currentScene.normals());
-  // dCovariancesRef = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)pCovariancesRef, &referenceScene.stats());
-  // dCovariancesCur = new DrawableCovariances(aligner.T(), (GLParameter*)pCovariancesCur, &currentScene.stats());
-  // dCorrespondences = new DrawableCorrespondences(aligner.T(), (GLParameter*)pCorrespondences, aligner.correspondenceGenerator().numCorrespondences(),
-  // 						 &referenceScene.points(), &currentScene.points(), &aligner.correspondenceGenerator().correspondences());  
+  dPointsRef = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pPointsRef, &referenceFrame.points(), &referenceFrame.normals());
+  dPointsCur = new DrawablePoints(aligner.T(), (GLParameter*)pPointsCur, &currentFrame.points(), &currentFrame.normals());
+  // dNormalsRef = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)pNormalsRef, &referenceFrame.points(), &referenceFrame.normals());
+  // dNormalsCur = new DrawableNormals(aligner.T(), (GLParameter*)pNormalsCur, &currentFrame.points(), &currentFrame.normals());
+  // dCovariancesRef = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)pCovariancesRef, &referenceFrame.stats());
+  // dCovariancesCur = new DrawableCovariances(aligner.T(), (GLParameter*)pCovariancesCur, &currentFrame.stats());
+  // dCorrespondences = new DrawableCorrespondences(aligner.T(), (GLParameter*)pCorrespondences, aligner.CorrespondenceFinder().numCorrespondences(),
+  // 						 &referenceFrame.points(), &currentFrame.points(), &aligner.CorrespondenceFinder().correspondences());
 
   pwnGMW.viewer_3d->addDrawable((Drawable*)dPointsRef);
   pwnGMW.viewer_3d->addDrawable((Drawable*)dPointsCur);

@@ -2,6 +2,7 @@
 ADD_SUBDIRECTORY(basemath)
 ADD_SUBDIRECTORY(data)
 ADD_SUBDIRECTORY(pwn)
+ADD_SUBDIRECTORY(pwn2)
 if(CUDA_FOUND)
   ADD_SUBDIRECTORY(pwn_cuda)
 endif(CUDA_FOUND)
@@ -17,13 +18,13 @@ ADD_SUBDIRECTORY(slam)
 
 
 if(PCL_FOUND)
-  ADD_SUBDIRECTORY(PlaneEx)
-  ADD_SUBDIRECTORY(PlaneEx_gui)
+  #ADD_SUBDIRECTORY(PlaneEx)
+  #ADD_SUBDIRECTORY(PlaneEx_gui)
   #ADD_SUBDIRECTORY(planeAligner)
   #ADD_SUBDIRECTORY(planeAlignerJustTwo)
-  ADD_SUBDIRECTORY(planeAlignerTest)
-  ADD_SUBDIRECTORY(planeAlignerMultiTest)
-  ADD_SUBDIRECTORY(planeDatasetGenerator)
+  #ADD_SUBDIRECTORY(planeAlignerTest)
+  #ADD_SUBDIRECTORY(planeAlignerMultiTest)
+  #ADD_SUBDIRECTORY(planeDatasetGenerator)
 endif(PCL_FOUND)
 
 #old stuff

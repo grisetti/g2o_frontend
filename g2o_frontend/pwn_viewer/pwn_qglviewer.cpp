@@ -1,4 +1,3 @@
-#include <iostream>
 #include <GL/gl.h>
 #include "pwn_qglviewer.h"
 #include "g2o/stuff/opengl_primitives.h"

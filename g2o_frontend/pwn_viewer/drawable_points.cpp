@@ -8,7 +8,7 @@ DrawablePoints::DrawablePoints() : Drawable() {
   _normals = 0;
 }
 
-DrawablePoints::DrawablePoints(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, HomogeneousPoint3fVector *points_,  HomogeneousNormal3fVector *normals_) : Drawable(transformation_) {
+DrawablePoints::DrawablePoints(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, PointVector *points_,  NormalVector *normals_) : Drawable(transformation_) {
   setParameter(parameter_);
   _points = points_;
   _normals = normals_;
@@ -38,8 +38,8 @@ void DrawablePoints::draw() {
     pointsParameter->applyGLParameter();
     glBegin(GL_POINTS);
     for (size_t i = 0; i < _points->size(); i += pointsParameter->step()) {
-      const HomogeneousPoint3f &p = _points->at(i);
-      const HomogeneousNormal3f &n = _normals->at(i);
+      const Point &p = _points->at(i);
+      const Normal &n = _normals->at(i);
       glNormal3f(n[0], n[1], n[2]);
       glVertex3f(p[0], p[1], p[2]);
     }

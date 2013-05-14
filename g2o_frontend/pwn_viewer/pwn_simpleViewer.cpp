@@ -19,7 +19,7 @@
 
 #include "g2o/stuff/command_args.h"
 
-#include "../pwn/homogeneouspoint3fscene.h"
+#include "../pwn2/frame.h"
 
 using namespace Eigen;
 using namespace g2o;
@@ -75,7 +75,7 @@ int main (int argc, char** argv) {
     float g = 0.0f + 0.75f*rand()/double(RAND_MAX);
     float b = 0.0f + 0.75f*rand()/double(RAND_MAX);
 
-    HomogeneousPoint3fScene *scene = new HomogeneousPoint3fScene();
+    Frame *scene = new Frame();
     
     if (! scene->load(filenames[i].c_str())){
       cerr << "unable to load points from file [" << filenames[i] << "]" << endl;

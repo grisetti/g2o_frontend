@@ -1,5 +1,5 @@
 #include "gl_parameter_points.h"
-#include <iostream>
+
 using namespace std;
 GLParameterPoints::GLParameterPoints() {
   _pointSize = 1.0f;

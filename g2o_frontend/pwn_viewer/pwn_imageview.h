@@ -1,6 +1,7 @@
 #ifndef PWN_IMAGEVIEW_H_
 #define PWN_IMAGEVIEW_H_
-#include "../pwn/depthimage.h"
+
+#include "../pwn2/depthimage.h"
 #include <qimage.h>
 #include <qlabel.h>
 

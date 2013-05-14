@@ -8,7 +8,7 @@ DrawableCovariances::DrawableCovariances() : Drawable() {
   _covariances = 0;
 }
 
-DrawableCovariances::DrawableCovariances(Eigen::Isometry3f transformation_, GLParameter *parameter_, HomogeneousPoint3fStatsVector *covariances_) : Drawable(transformation_){
+DrawableCovariances::DrawableCovariances(Eigen::Isometry3f transformation_, GLParameter *parameter_, PointStatsVector *covariances_) : Drawable(transformation_){
   setParameter(parameter_);
   _covariances = covariances_;
 }
@@ -38,7 +38,7 @@ void DrawableCovariances::draw() {
     Eigen::Vector4f colorHighCurvature = covariancesParameter->colorHighCurvature();
     float curvatureThreshold = covariancesParameter->curvatureThreshold();
     for (size_t i = 0; i < _covariances->size(); i += covariancesParameter->step()) {
-      HomogeneousPoint3fStats cov = _covariances->at(i);
+      PointStats cov = _covariances->at(i);
       Eigen::Vector3f lambda = cov.eigenValues();
       Eigen::Isometry3f I = Eigen::Isometry3f::Identity();
       I.linear() = cov.eigenVectors();

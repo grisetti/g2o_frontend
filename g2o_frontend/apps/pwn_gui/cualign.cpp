@@ -12,13 +12,13 @@
 #include <pthread.h>
 
 #include "g2o/stuff/command_args.h"
-#include "g2o_frontend/pwn/depthimage.h"
-#include "g2o_frontend/pwn/depthimageconverter.h"
-#include "g2o_frontend/pwn/pinholepointprojector.h"
+#include "g2o_frontend/pwn2/depthimage.h"
+#include "g2o_frontend/pwn2/depthimageconverter.h"
+#include "g2o_frontend/pwn2/pinholepointprojector.h"
 
-#include "g2o_frontend/pwn/linearizer.h"
-#include "g2o_frontend/pwn/correspondencegenerator.h"
-#include "g2o_frontend/pwn/aligner.h"
+#include "g2o_frontend/pwn2/linearizer.h"
+#include "g2o_frontend/pwn2/correspondencefinder.h"
+#include "g2o_frontend/pwn2/aligner.h"
 
 //#undef _PWN_USE_CUDA_
 
@@ -59,7 +59,7 @@ set<string> readDir(std::string dir){
 
 
 struct ParallelCudaAligner{
-  std::queue<HomogeneousPoint3fScene*> scenes;
+  std::queue<Frame*> scenes;
   pthread_mutex_t insertionMutex;
   volatile bool run;
   Aligner* aligner;
@@ -74,7 +74,7 @@ struct ParallelCudaAligner{
   ~ParallelCudaAligner(){
     pthread_mutex_destroy(&insertionMutex);
     stop();
-    HomogeneousPoint3fScene* s=0;
+    Frame* s=0;
     do {
       s=popScene();
       if (s)
@@ -82,14 +82,14 @@ struct ParallelCudaAligner{
     } while (s);
   }
 
-  void addScene(HomogeneousPoint3fScene* s){
+  void addScene(Frame* s){
     pthread_mutex_lock(&insertionMutex);
     scenes.push(s);
     pthread_mutex_unlock(&insertionMutex);
   }
 
-  HomogeneousPoint3fScene* popScene(){
-    HomogeneousPoint3fScene* s=0;
+  Frame* popScene(){
+    Frame* s=0;
     pthread_mutex_lock(&insertionMutex);
     if (scenes.size()){
       s = scenes.front();
@@ -101,14 +101,14 @@ struct ParallelCudaAligner{
   
   
   static void* threadFn(ParallelCudaAligner* pr){
-    HomogeneousPoint3fScene* previous = 0;
+    Frame* previous = 0;
     ofstream os(failneim);
     while (pr->run){
-      HomogeneousPoint3fScene * s = pr->popScene();
+      Frame * s = pr->popScene();
       if (s) {
 	if (previous) {
-	  pr->aligner->setReferenceScene(previous);
-	  pr->aligner->setCurrentScene(s);
+      pr->aligner->setReferenceFrame(previous);
+      pr->aligner->setCurrentFrame(s);
 	  pr->aligner->align();
 	  os << "time: " << pr->aligner->totalTime() 
 	     << " inliers: " << pr->aligner->inliers()
@@ -142,13 +142,13 @@ int
   string dirname;
   
   PinholePointProjector projector;
-  HomogeneousPoint3fStatsGenerator statsGenerator;
-  PointOmegaGenerator pointOmegaGenetator;
-  NormalOmegaGenerator normalOmegaGenerator;
+  StatsFinder statsFinder;
+  PointInformationMatrixFinder pointInformationMatrixFinder;
+  NormalInformationMatrixFinder normalInformationMatrixFinder;
   DepthImageConverter converter(&projector, 
-				&statsGenerator, 
-				&pointOmegaGenetator, 
-				&normalOmegaGenerator);
+                &statsFinder,
+                &pointInformationMatrixFinder,
+                &normalInformationMatrixFinder);
   
   g2o::CommandArgs arg;
   arg.paramLeftOver("dirname", dirname, "", "", true);
@@ -177,7 +177,7 @@ int
   cerr << "there are " << filenames.size() << " files  in the pool" << endl; 
 
   Linearizer linearizer;
-  CorrespondenceGenerator correspondenceGenerator;
+  CorrespondenceFinder correspondenceFinder;
 
 #ifdef _PWN_USE_CUDA_
   CudaAligner::CuAligner aligner;
@@ -190,7 +190,7 @@ int
   projector.setCameraMatrix(scaledCameraMatrix);
   aligner.setLinearizer(&linearizer);
   linearizer.setAligner(&aligner);
-  aligner.setCorrespondenceGenerator(&correspondenceGenerator);
+  aligner.setCorrespondenceFinder(&correspondenceFinder);
   aligner.setOuterIterations(20);
   aligner.setInnerIterations(1);
 
@@ -204,10 +204,10 @@ int
       cerr << " skipping " << filenames[i] << endl;
       continue;
     }
-    HomogeneousPoint3fScene* scene=new HomogeneousPoint3fScene();
+    Frame* scene = new Frame();
     DepthImage::scale(scaledDepthImage, depthImage, 1);
     converter.compute(*scene, scaledDepthImage);
-    correspondenceGenerator.setSize(scaledDepthImage.rows(), scaledDepthImage.cols());
+    correspondenceFinder.setSize(scaledDepthImage.rows(), scaledDepthImage.cols());
     while (alignerThread.scenes.size()>20) {
       usleep(10000);
     }

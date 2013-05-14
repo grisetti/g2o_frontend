@@ -1,5 +1,4 @@
 #include "pwn_imageview.h"
-#include <iostream>
 
 DepthImageView::DepthImageView() {
   computeColorMap (0, 255, 0xff);
