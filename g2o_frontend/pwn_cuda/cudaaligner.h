@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <cuda.h>
 
-namespace CudaAligner {
+namespace pwn {
 
   enum Operation {
     Ok=0x0, 

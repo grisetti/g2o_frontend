@@ -1,7 +1,7 @@
 #ifndef DRAWABLE_CORRESPONDENCES
 #define DRAWABLE_CORRESPONDENCES
 
-#include "../pwn2/correspondencefinder.h"
+#include "g2o_frontend/pwn2/correspondencefinder.h"
 #include "drawable.h"
 
 using namespace pwn;

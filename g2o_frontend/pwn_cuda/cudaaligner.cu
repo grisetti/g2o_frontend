@@ -6,7 +6,7 @@
 #include "cudautils.cuh"
 #include "cudaaligner.cuh"
 
-namespace CudaAligner {
+namespace pwn {
   using namespace std;
 
 

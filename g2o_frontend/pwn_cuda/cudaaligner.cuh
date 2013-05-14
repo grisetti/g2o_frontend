@@ -7,7 +7,7 @@
 #include "cudamatrix.cuh"
 
 
-namespace CudaAligner {
+namespace pwn {
   
 struct AlignerContext {
   

@@ -20,7 +20,7 @@
 #include "g2o/stuff/command_args.h"
 #include "g2o/stuff/timeutil.h"
 
-#undef _PWN_USE_CUDA_
+//#undef _PWN_USE_CUDA_
 
 #ifdef _PWN_USE_CUDA_
 #include "g2o_frontend/pwn_cuda/cualigner.h"
@@ -253,7 +253,7 @@ int main(int argc, char** argv) {
   Linearizer linearizer;
 
 #ifdef _PWN_USE_CUDA_
-  CudaAligner::CuAligner aligner;
+  CuAligner aligner;
 #else
   Aligner aligner;
 #endif

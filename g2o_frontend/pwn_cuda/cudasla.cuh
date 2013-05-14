@@ -1,7 +1,7 @@
 #ifndef _CUDASLA_CUH_
 #define _CUDASLA_CUH_
 
-namespace CudaAligner {
+namespace pwn {
 
   __host__ __device__ void vecFill(float* v, float x, int n);
 

@@ -1,4 +1,4 @@
-namespace CudaAligner{
+namespace pwn {
 
   template <class T>
   __global__ void fillBuffer(T* buffer, int numElems, T value){
@@ -16,7 +16,7 @@ namespace CudaAligner{
     float ip[4];
     if (i<numPoints){
       const float* wp=points+4*i;
-      CudaAligner::matVecMul<4,4>(ip,KT,wp);
+      pwn::matVecMul<4,4>(ip,KT,wp);
       float iw= 1./ip[2];
       int d = ip[2] * 1000.0f;
       int x = (int)(ip[0]*iw);
@@ -37,7 +37,7 @@ namespace CudaAligner{
     float ip[4];
     if (i<numPoints){
       const float* wp=points+4*i;
-      CudaAligner::matVecMul<4,4>(ip,KT,wp);
+      pwn::matVecMul<4,4>(ip,KT,wp);
       float iw= 1./ip[2];
       int d = ip[2] * 1000.0f;
       int x = (int)(ip[0]*iw);

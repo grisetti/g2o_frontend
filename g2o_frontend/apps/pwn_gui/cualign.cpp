@@ -181,7 +181,7 @@ int
   CorrespondenceFinder correspondenceFinder;
 
 #ifdef _PWN_USE_CUDA_
-  CudaAligner::CuAligner aligner;
+  CuAligner aligner;
   // Aligner aligner;
 #else
   Aligner aligner;

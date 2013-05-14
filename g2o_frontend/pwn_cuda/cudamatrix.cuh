@@ -2,7 +2,7 @@
 #define _CUDAMATRIX_CUH_
 #include <assert.h>
 
-namespace CudaAligner{
+namespace pwn{
 
 
 template <class T, int RowsAtCompileTime>

@@ -2,9 +2,9 @@
 #include <iostream>
 #include "cudaaligner.h"
 #include <sys/time.h>
-#include "g2o_frontend/pwn/pinholepointprojector.h"
+#include "g2o_frontend/pwn2/pinholepointprojector.h"
 
-namespace CudaAligner {
+namespace pwn {
   using namespace std;
 
   CuAligner::CuAligner() {
@@ -39,12 +39,12 @@ void CuAligner::align() {
   AlignerStatus status;
   char buf[1024];
   _T = _initialGuess;
-  float referenceCurvatures[_referenceScene->stats().size()];
-  float currentCurvatures[_currentScene->stats().size()];
-  for (size_t i=0; i<_referenceScene->stats().size(); i++)
-    referenceCurvatures[i]=_referenceScene->stats().at(i).curvature();
-  for (size_t i=0; i<_currentScene->stats().size(); i++)
-    currentCurvatures[i]=_currentScene->stats().at(i).curvature();
+  float referenceCurvatures[_referenceFrame->stats().size()];
+  float currentCurvatures[_currentFrame->stats().size()];
+  for (size_t i=0; i<_referenceFrame->stats().size(); i++)
+    referenceCurvatures[i]=_referenceFrame->stats().at(i).curvature();
+  for (size_t i=0; i<_currentFrame->stats().size(); i++)
+    currentCurvatures[i]=_currentFrame->stats().at(i).curvature();
 
   
   PinholePointProjector *pprojector = (PinholePointProjector *) _projector;
@@ -52,16 +52,16 @@ void CuAligner::align() {
   //cerr << "camera: " << pprojector->cameraMatrix() << endl;
   status = initComputation(_context,
 			   &(pprojector->cameraMatrix().coeffRef(0,0)),
-			   &(_referenceScene->points().at(0).coeffRef(0)),
-			   &(_referenceScene->normals().at(0).coeffRef(0)),
+			   &(_referenceFrame->points().at(0).coeffRef(0)),
+			   &(_referenceFrame->normals().at(0).coeffRef(0)),
 			   referenceCurvatures,
-			   _referenceScene->points().size(),
-			   &(_currentScene->points().at(0).coeffRef(0)),
-			   &(_currentScene->normals().at(0).coeffRef(0)),
+			   _referenceFrame->points().size(),
+			   &(_currentFrame->points().at(0).coeffRef(0)),
+			   &(_currentFrame->normals().at(0).coeffRef(0)),
 			   currentCurvatures,
-			   &(_currentScene->pointOmegas().at(0).coeffRef(0,0)),
-			   &(_currentScene->normalOmegas().at(0).coeffRef(0,0)),
-			   _currentScene->points().size());
+			   &(_currentFrame->pointInformationMatrix().at(0).coeffRef(0,0)),
+			   &(_currentFrame->normalInformationMatrix().at(0).coeffRef(0,0)),
+			   _currentFrame->points().size());
   
   status.toString(buf);
   //cerr << "STATUS: " << buf << endl; 
