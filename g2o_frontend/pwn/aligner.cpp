@@ -19,6 +19,16 @@ Aligner::Aligner() {
   _inliers = 0;
 };
 
+
+void Aligner::addPrior(const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix){
+  _priors.push_back(SE3Prior(mean,informationMatrix));
+}
+
+void Aligner::clearPriors(){
+  _priors.clear();
+}
+
+
 void Aligner::align() {
   struct timeval tvStart, tvEnd;
   gettimeofday(&tvStart,0);
@@ -56,21 +66,41 @@ void Aligner::align() {
     /************************************************************************
      *                            Alignment                                 *
      ************************************************************************/
+
+    Eigen::Isometry3f invT = _T.inverse();
     for (int k = 0; k < _innerIterations; k++) {      
+      invT.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
       Matrix6f H;
       Vector6f b;
-      _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
-      _linearizer->setT(_T.inverse());
+
+      _linearizer->setT(invT);
       _linearizer->update();
       H = _linearizer->H() + Matrix6f::Identity() * 10.0f;
       b = _linearizer->b();
+      
+      // add the priors
+      for (size_t i=0; i<_priors.size(); i++){
+	const SE3Prior& prior = _priors[i];
+	Vector6f priorError = prior.error(invT);
+	Matrix6f priorJacobian = prior.jacobian(invT);
+	Matrix6f priorInformationRemapped = prior.errorInformation(invT);
+
+	Matrix6f Hp = priorJacobian.transpose()*priorInformationRemapped*priorJacobian;
+	Vector6f bp = priorJacobian.transpose()*priorInformationRemapped*priorError;
+
+	H += Hp;
+	b += bp;
+      }
+
+
       Vector6f dx = H.ldlt().solve(-b);
       Eigen::Isometry3f dT = v2t(dx);
-      _T = (dT * _T.inverse()).inverse();
-      //_T = _T.inverse();
-      _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
+      invT = dT * invT;
     }
+    _T = invT.inverse();
+    _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
   }
+
   gettimeofday(&tvEnd, 0);
   double tStart = tvStart.tv_sec*1000+tvStart.tv_usec*0.001;
   double tEnd = tvEnd.tv_sec*1000+tvEnd.tv_usec*0.001;

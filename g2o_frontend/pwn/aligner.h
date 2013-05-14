@@ -4,14 +4,15 @@
 #include "pointprojector.h"
 #include "homogeneouspoint3fscene.h"
 #include "correspondencegenerator.h"
+#include "se3_prior.h"
 
 class Aligner {
  public:
   Aligner();
 
   inline void setProjector(PointProjector *projector_) { _projector = projector_; }
-  inline void setReferenceScene(HomogeneousPoint3fScene *referenceScene_) { _referenceScene = referenceScene_; }
-  inline void setCurrentScene(HomogeneousPoint3fScene *currentScene_) { _currentScene = currentScene_; }
+  inline void setReferenceScene(HomogeneousPoint3fScene *referenceScene_) { _referenceScene = referenceScene_; clearPriors();}
+  inline void setCurrentScene(HomogeneousPoint3fScene *currentScene_) { _currentScene = currentScene_; clearPriors();}
   inline void setOuterIterations(const int outerIterations_) { _outerIterations = outerIterations_; }
   inline void setInnerIterations(const int innerIterations_) { _innerIterations = innerIterations_; }
   inline void setT(const Eigen::Isometry3f T_) { _T = T_; }
@@ -35,6 +36,10 @@ class Aligner {
   inline float error() const {return _error;}
   inline int inliers() const {return _inliers; }
   inline double totalTime() const {return _totalTime; }
+  
+  void addPrior(const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix);
+  void clearPriors();
+
  protected:
   PointProjector *_projector;
   Linearizer *_linearizer;
@@ -52,7 +57,7 @@ class Aligner {
   int _inliers;
   double _totalTime;
   float _error;
-  
+  std::vector<SE3Prior, Eigen::aligned_allocator<SE3Prior> > _priors;
 };
 
 #endif

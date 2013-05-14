@@ -34,6 +34,7 @@ ADD_LIBRARY(pwn_library
   pointwithnormalstatsgenerator.cpp pointwithnormalstatsgenerator.h
   pointwithnormalaligner.cpp pointwithnormalaligner.h
   pointwithnormalmerger.cpp pointwithnormalmerger.h
+  se3_prior.cpp se3_prior.h
   scene.cpp scene.h
   scene_merger.cpp scene_merger.h
   correspondencegenerator.cpp correspondencegenerator.h 
