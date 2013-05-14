@@ -1,5 +1,7 @@
 #include "se3_prior.h"
 
+namespace pwn {
+
 SE3Prior::SE3Prior(const Eigen::Isometry3f& priorMean_, const Matrix6f& priorInformation_):
   _priorMean(priorMean_), _priorInformation(priorInformation_){
 }
@@ -55,4 +57,6 @@ Matrix6f SE3Prior::errorInformation(const Eigen::Isometry3f& invT) const {
   Matrix6f Jz=jacobianZ(invT);
   Matrix6f iJz = Jz.inverse();
   return iJz.transpose()*_priorInformation*iJz;
+}
+
 }

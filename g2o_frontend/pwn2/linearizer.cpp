@@ -1,6 +1,8 @@
 #include "aligner.h"
 #include <omp.h>
 
+namespace pwn {
+
 Linearizer::Linearizer() {
   _aligner = 0;
   _H.setZero();
@@ -98,4 +100,6 @@ void Linearizer::update() {
   _H.block<3, 3>(3, 0) = _H.block<3, 3>(0, 3).transpose();
   _b.block<3, 1>(0, 0) = bt.block<3, 1>(0, 0);
   _b.block<3, 1>(3, 0) = br.block<3, 1>(0, 0);
+}
+
 }

@@ -3,6 +3,8 @@
 
 #include "homogeneousvector4f.h"
 
+namespace pwn {
+
 struct InformationMatrix: public Eigen::Matrix4f {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -49,5 +51,7 @@ typedef Eigen::Matrix<float, 6, 6> Matrix6f;
 typedef std::vector<Matrix6f, Eigen::aligned_allocator<Matrix6f> > Matrix6fVector;
 
 typedef TransformableVector<InformationMatrix> InformationMatrixVector;
+
+}
 
 #endif

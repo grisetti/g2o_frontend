@@ -4,6 +4,8 @@
 #include "../pwn2/homogeneousvector4f.h"
 #include "drawable.h"
 
+using namespace pwn;
+
 class DrawableNormals : public Drawable {
  public:
   DrawableNormals();

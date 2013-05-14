@@ -5,6 +5,8 @@
 #include <qimage.h>
 #include <qlabel.h>
 
+using namespace pwn;
+
 struct DepthImageView{
   DepthImageView();
   void computeColorMap(int cmin, int cmax, unsigned char alpha);

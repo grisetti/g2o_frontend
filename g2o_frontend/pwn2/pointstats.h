@@ -3,6 +3,8 @@
 
 #include "homogeneousvector4f.h"
 
+namespace pwn {
+
 /** \struct HomogeneousPoint3fStats
  *  \brief Class for 3D points stats representation.
  *
@@ -117,5 +119,7 @@ struct PointStats : public Eigen::Matrix4f {
  *  The HomogeneousPoint3fStatsVector type it's a TrasformableVector of stats associated to 3D points.
 */
 typedef TransformableVector<PointStats> PointStatsVector;
+
+}
 
 #endif

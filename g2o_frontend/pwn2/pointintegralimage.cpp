@@ -1,6 +1,8 @@
 #include "pointintegralimage.h"
 #include <omp.h>
 
+namespace pwn {
+
 PointIntegralImage::PointIntegralImage() : Eigen::Matrix<PointAccumulator, Eigen::Dynamic, Eigen::Dynamic>(0, 0) {}
 
 void PointIntegralImage::compute(const Eigen::MatrixXi &indices, const PointVector &points) {
@@ -62,4 +64,6 @@ PointAccumulator PointIntegralImage::getRegion(int xmin, int xmax, int ymin, int
   pa -= coeffRef(xmin, ymax);  //upper rectangle
   pa -= coeffRef(xmax, ymin);  //rightmost rectangle
   return pa;
+}
+
 }

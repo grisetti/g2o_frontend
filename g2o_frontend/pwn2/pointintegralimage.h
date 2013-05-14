@@ -3,6 +3,8 @@
 
 #include "pointaccumulator.h"
 
+namespace pwn {
+
 /** \struct HomogeneousPoint3fIntegralImage
  *  \brief Base class for integral images representation.
  *
@@ -45,5 +47,7 @@ struct PointIntegralImage : public Eigen::Matrix<PointAccumulator, Eigen::Dynami
    */
   PointAccumulator getRegion(int xmin, int xmax, int ymin, int ymax) const;
 };
+
+}
 
 #endif

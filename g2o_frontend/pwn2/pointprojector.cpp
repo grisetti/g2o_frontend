@@ -1,5 +1,7 @@
 #include "pointprojector.h"
 
+namespace pwn {
+
 PointProjector::PointProjector() {
   _transform.setIdentity();
   _minDistance = 0.01;
@@ -77,3 +79,4 @@ inline int PointProjector::projectInterval(const int, const int, const float, co
 
 inline bool PointProjector::unProject(Point &, const int, const int, const float) const { return false; }
 
+}

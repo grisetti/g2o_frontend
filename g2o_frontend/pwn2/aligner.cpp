@@ -4,6 +4,8 @@
 
 using namespace std;
 
+namespace pwn {
+
 Aligner::Aligner() {
   _linearizer = 0;
   _correspondenceFinder = 0;
@@ -101,4 +103,6 @@ void Aligner::align() {
   _totalTime = tEnd - tStart;
   _error = _linearizer->error();
   _inliers = _linearizer->inliers();
+}
+
 }

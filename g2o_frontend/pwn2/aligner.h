@@ -1,10 +1,13 @@
 #ifndef _ALINGER_H_
 #define _ALINGER_H_
+
 #include "linearizer.h"
 #include "pointprojector.h"
 #include "frame.h"
 #include "correspondencefinder.h"
 #include "se3_prior.h"
+
+namespace pwn {
 
 class Aligner {
  public:
@@ -59,5 +62,7 @@ class Aligner {
   float _error;
   std::vector<SE3Prior, Eigen::aligned_allocator<SE3Prior> > _priors;
 };
+
+}
 
 #endif

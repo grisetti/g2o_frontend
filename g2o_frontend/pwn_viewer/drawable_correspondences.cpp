@@ -1,6 +1,8 @@
 #include "drawable_correspondences.h"
 #include "gl_parameter_correspondences.h"
 
+using namespace pwn;
+
 DrawableCorrespondences::DrawableCorrespondences() : Drawable() {
   GLParameterCorrespondences* correspondencesParameter = new GLParameterCorrespondences();
   _parameter = (GLParameter*)correspondencesParameter;

@@ -6,6 +6,8 @@
 
 using namespace Eigen;
 
+namespace pwn {
+
 class Aligner;
 
 class Linearizer {
@@ -36,5 +38,6 @@ class Linearizer {
   int _inliers;
 };
 
+}
 
 #endif

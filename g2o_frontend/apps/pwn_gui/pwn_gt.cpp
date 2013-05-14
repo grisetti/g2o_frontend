@@ -30,6 +30,8 @@
 #include "g2o_frontend/pwn_cuda/cualigner.h"
 							     
 using namespace std;
+using namespace pwn;
+
 int main(int argc, char** argv) {
   /************************************************************************
    *                           Input Handling                             *

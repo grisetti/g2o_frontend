@@ -1,6 +1,8 @@
 #include "drawable_points.h"
 #include "gl_parameter_points.h"
 
+using namespace pwn;
+
 DrawablePoints::DrawablePoints() : Drawable() {
   GLParameterPoints* pointsParameter = new GLParameterPoints();
   _parameter = (GLParameter*)pointsParameter;

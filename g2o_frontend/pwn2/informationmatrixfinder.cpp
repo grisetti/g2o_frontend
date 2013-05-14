@@ -3,6 +3,8 @@
 
 using namespace Eigen;
 
+namespace pwn {
+
 void PointInformationMatrixFinder::compute(InformationMatrixVector &informationMatrix,
                   const PointStatsVector &stats,
                   const NormalVector &imageNormals) {
@@ -43,5 +45,7 @@ void NormalInformationMatrixFinder::compute(InformationMatrixVector &information
     informationMatrix[i] = _nonFlatInformationMatrix;
     } else 
       informationMatrix[i] = InformationMatrix();
-  }
+ }
+}
+
 }

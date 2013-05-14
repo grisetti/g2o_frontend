@@ -4,6 +4,8 @@
 
 using namespace std;
 
+namespace pwn {
+
 DepthImageConverter::DepthImageConverter(  PointProjector* projector_,
                        StatsFinder* statsFinder_,
                        PointInformationMatrixFinder* pointInformationMatrixFinder_,
@@ -55,8 +57,7 @@ void DepthImageConverter::compute(Frame& frame,
   //frame.transformInPlace(sensorOffset);
   //double tEnd = g2o::get_time();
   //double tEnd = g2o::get_time();
-  //cerr << "time: " << (tEnd-tStart)*1000.0f << endl;
- 
+  //cerr << "time: " << (tEnd-tStart)*1000.0f << endl; 
 }
 
-
+}

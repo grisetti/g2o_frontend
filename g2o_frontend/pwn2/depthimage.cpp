@@ -1,6 +1,8 @@
 #include "depthimage.h"
 #include <cstdio>
 
+namespace pwn {
+
 #define HI(num) (((num) & 0x0000FF00) >> 8)
 #define LO(num) ((num) & 0x000000FF)
 
@@ -203,5 +205,7 @@ bool DepthImage::save(const char* filename, bool transposed) const{
    toUnsignedShort(usm, 15.0f);
    FILE* f=fopen(filename, "wb");
    return _writePgm(usm, f, transposed);
+}
+
 }
 

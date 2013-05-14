@@ -3,6 +3,8 @@
 
 using namespace std;
 
+namespace pwn {
+
 bool Frame::load(const char *filename) {
   ifstream is(filename);
   if (!is)
@@ -95,3 +97,4 @@ void Frame::transformInPlace(const Eigen::Isometry3f& T){
   _normalInformationMatrix.transformInPlace(T);
 }
 
+}

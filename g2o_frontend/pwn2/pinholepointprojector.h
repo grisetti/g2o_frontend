@@ -3,6 +3,8 @@
 
 #include "pointprojector.h"
 
+namespace pwn {
+
 /**
  *  PointProjector class extension for operations on pinhole camera model points. 
  *  This class extend the PointProjector class allowing projection/unprojection
@@ -204,5 +206,7 @@ private:
   Eigen::Matrix3f _iKR;
   Eigen::Vector3f _iKt;
 };
+
+}
 
 #endif

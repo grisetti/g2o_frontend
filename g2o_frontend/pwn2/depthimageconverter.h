@@ -6,6 +6,7 @@
 #include "statsfinder.h"
 #include "informationmatrixfinder.h"
 
+namespace pwn {
 
 class DepthImageConverter {
 public:
@@ -37,5 +38,7 @@ public:
   static const float _curvatureThreshold = 0.02;
 
 };
+
+}
 
 #endif

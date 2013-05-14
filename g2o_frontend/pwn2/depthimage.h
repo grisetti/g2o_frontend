@@ -9,6 +9,8 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+namespace pwn {
+
 /** \typedef MatrixXus
  *  \brief Unsigned short matrix type.
  *
@@ -93,5 +95,7 @@ public:
    */
   static void scale(Eigen::MatrixXf& dest, const Eigen::MatrixXf& src, int step);
 };
+
+}
 
 #endif

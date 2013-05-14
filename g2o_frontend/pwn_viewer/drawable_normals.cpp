@@ -1,6 +1,8 @@
 #include "drawable_normals.h"
 #include "gl_parameter_normals.h"
 
+using namespace pwn;
+
 DrawableNormals::DrawableNormals() : Drawable(){
   GLParameterNormals* normalsParameter = new GLParameterNormals();
   _parameter = (GLParameter*)normalsParameter;

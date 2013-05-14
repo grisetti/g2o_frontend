@@ -4,6 +4,8 @@
 #include "pointstats.h"
 #include "informationmatrix.h"
 
+namespace pwn {
+
 class Frame {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -36,5 +38,7 @@ class Frame {
   InformationMatrixVector _pointInformationMatrix;
   InformationMatrixVector _normalInformationMatrix;
 };
+
+}
 
 #endif

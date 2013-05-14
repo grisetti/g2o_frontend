@@ -4,6 +4,8 @@
 #include "../pwn2/pointstats.h"
 #include "drawable.h"
 
+using namespace pwn;
+
 class DrawableCovariances : public Drawable {
  public:
   DrawableCovariances();

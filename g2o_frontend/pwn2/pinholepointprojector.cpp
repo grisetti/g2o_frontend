@@ -1,5 +1,7 @@
 #include "pinholepointprojector.h"
 
+namespace pwn {
+
 PinholePointProjector::PinholePointProjector() : PointProjector() {
   _cameraMatrix << 
     1.0, 0.0, 0.5, 
@@ -106,4 +108,6 @@ void PinholePointProjector::unProject(PointVector& points,
     }
   }
   points.resize(count);
+}
+
 }

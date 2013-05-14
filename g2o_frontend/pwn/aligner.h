@@ -1,5 +1,6 @@
 #ifndef _ALINGER_H_
 #define _ALINGER_H_
+
 #include "linearizer.h"
 #include "pointprojector.h"
 #include "homogeneouspoint3fscene.h"

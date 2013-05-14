@@ -4,6 +4,8 @@
 #include "pointstats.h"
 #include "pointintegralimage.h"
 
+namespace pwn {
+
 /**
  *  Base class for 3D point stats computation. 
  *  This class allows the computation of the stats for 3D points 
@@ -82,5 +84,7 @@ class StatsFinder {
    */
   int _minPoints;
 };
+
+}
 
 #endif

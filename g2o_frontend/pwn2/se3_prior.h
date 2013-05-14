@@ -3,6 +3,8 @@
 
 #include "g2o_frontend/basemath/bm_se3.h"
 
+namespace pwn {
+
 /**
    class that implements a simple prior on te transformation to be used in SE2 pose.
    The prior is defined as a gaussian distribution centered in a certain value (priorMean),
@@ -49,5 +51,7 @@ protected:
   mutable Eigen::Isometry3f  _priorMean;
   Matrix6f    _priorInformation;
 };
+
+}
 
 #endif

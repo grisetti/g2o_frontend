@@ -4,6 +4,8 @@
 #include "pointstats.h"
 #include "informationmatrix.h"
 
+namespace pwn {
+
 typedef Eigen::DiagonalMatrix<float, 4> Diagonal4f;
 
 class InformationMatrixFinder {
@@ -61,5 +63,7 @@ class NormalInformationMatrixFinder : InformationMatrixFinder {
                const PointStatsVector &stats,
                const NormalVector &imageNormals);
 };
+
+}
 
 #endif

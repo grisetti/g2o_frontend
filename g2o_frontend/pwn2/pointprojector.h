@@ -4,6 +4,8 @@
 #include "homogeneousvector4f.h"
 #include "depthimage.h"
 
+namespace pwn {
+
 /**
  *  Generic class for projection/unprojection operations of points. 
  *  Points in the 3D euclidean space can be projected to a subspace, which can be a plane,
@@ -173,5 +175,6 @@ protected:
   float _maxDistance;
 };
 
+}
 
 #endif

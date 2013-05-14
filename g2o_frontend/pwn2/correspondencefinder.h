@@ -4,6 +4,8 @@
 #include "depthimage.h"
 #include "frame.h"
 
+namespace pwn {
+
 struct Correspondence {
   Correspondence(int referenceIndex_ = -1, int currentIndex_ = -1) {
     referenceIndex = referenceIndex_;
@@ -83,5 +85,7 @@ class CorrespondenceFinder {
   Eigen::MatrixXi _referenceIndexImage, _currentIndexImage;
   DepthImage _referenceDepthImage, _currentDepthImage;
 };
+
+}
 
 #endif

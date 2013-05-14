@@ -3,6 +3,8 @@
 
 #include "homogeneousvector4f.h"
 
+namespace pwn {
+
 /** \struct HomogeneousPoint3fAccumulator
  *  \brief Point accumulator class.
  *
@@ -116,5 +118,7 @@ protected:
    */
   Eigen::Matrix4f  _squaredSum;
 };
+
+}
 
 #endif

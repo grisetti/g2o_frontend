@@ -1,6 +1,8 @@
 #include "correspondencefinder.h"
 #include <omp.h>
 
+namespace pwn {
+
 void CorrespondenceFinder::compute(const Frame &referenceScene, const Frame &currentScene, Eigen::Isometry3f T) {
   T.matrix().block<1,4>(3, 0) << 0, 0, 0, 1;
   _numCorrespondences = 0;
@@ -87,4 +89,6 @@ void CorrespondenceFinder::compute(const Frame &referenceScene, const Frame &cur
 
   for (size_t i = _numCorrespondences; i < _correspondences.size(); i++)
     _correspondences[i] = Correspondence();
+}
+
 }

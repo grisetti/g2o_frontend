@@ -4,6 +4,8 @@
 
 #include <iostream>
 
+namespace pwn {
+
 StatsFinder::StatsFinder(){
   _worldRadius = 0.1;
   _maxImageRadius = 30;
@@ -124,4 +126,6 @@ void StatsFinder::compute(NormalVector& normals,
       }    
     }
   }
+}
+
 }

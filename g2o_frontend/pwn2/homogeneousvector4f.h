@@ -11,6 +11,8 @@
 #include <Eigen/StdVector>
 #include "../basemath/transformable_vector.h"
 
+namespace pwn {
+
 /** \struct HomogeneousVector4f
  *  \brief Base class used for 4 elements homogeneous vectors.
  *
@@ -130,5 +132,7 @@ typedef TransformableVector<Point> PointVector;
  *  homogeneous coordinates.
 */
 typedef TransformableVector<Normal> NormalVector;
+
+}
 
 #endif

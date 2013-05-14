@@ -4,6 +4,8 @@
 #include "../pwn2/correspondencefinder.h"
 #include "drawable.h"
 
+using namespace pwn;
+
 class DrawableCorrespondences : public Drawable {
  public:
   DrawableCorrespondences();
