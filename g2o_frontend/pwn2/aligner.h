@@ -36,6 +36,7 @@ class Aligner {
   inline const Eigen::Isometry3f& sensorOffset() const { return _sensorOffset; }
 
   virtual void align();
+
   inline float error() const {return _error;}
   inline int inliers() const {return _inliers; }
   inline double totalTime() const {return _totalTime; }

@@ -99,6 +99,8 @@ int main(int argc, char**argv) {
 
   sort(vertexIds.begin(), vertexIds.end());
 
+  int counter = 0;
+
   Factory* factory = Factory::instance();
   VertexSE3* vOld = 0;
   RGBDData*  oldData = 0;
@@ -111,6 +113,8 @@ int main(int argc, char**argv) {
     OptimizableGraph::Data* d = v->userData();
     k = 0;
     while(d) {
+      if(counter >= 100)
+	break;
       if(d) {
 	cerr << "\t payload: " << factory->tag(d) << endl;
 	RGBDData* rgbdData = dynamic_cast<RGBDData*>(d);
@@ -157,16 +161,14 @@ int main(int argc, char**argv) {
 	  } 
 	  
 	  Eigen::Isometry3d currentRobotPose = vse3->estimate();
-	  Eigen::Isometry3d currentCameraPose = vse3->estimate()*pNew->offset();
+	  Eigen::Isometry3d currentCameraPose = currentRobotPose*pNew->offset();
 	  if (referenceFrame && oldData && vOld ) {
 	    Eigen::Isometry3d oldRobotPose = vOld->estimate();
 	    g2o::Parameter* _pOld = graph->parameter(oldData->paramIndex());
 	    ParameterCamera* pOld = dynamic_cast<ParameterCamera*>(_pOld);
 	    g2o::Parameter* pOffsetOld = graph->parameter(oldData->paramIndex()+10);
-	    Eigen::Isometry3d oldCameraPose = vOld->estimate()*pOld->offset();
+	    Eigen::Isometry3d oldCameraPose = oldRobotPose*pOld->offset();
 	    Eigen::Isometry3d oldCameraMovement = oldCameraPose.inverse()*currentCameraPose;
-
-	    Eigen::Isometry3f X(oldCameraMovement);
 	    
 	    aligner->setProjector(projector);
 	    aligner->setLinearizer(linearizer);
@@ -181,15 +183,36 @@ int main(int argc, char**argv) {
 	    aligner->setReferenceFrame(referenceFrame);
 	    aligner->setCurrentFrame(currentFrame);
 	    
-	    Isometry3f initialGuess = Isometry3f::Identity();
+	    Isometry3f initialGuess(oldCameraMovement);
 	    Isometry3f sensorOffset = Isometry3f::Identity();
 	    aligner->setInitialGuess(initialGuess);
 	    aligner->setSensorOffset(sensorOffset);
 	    
+	    Matrix6f priorInformationMatrix = Matrix6f::Identity();
+	    aligner->addPrior(initialGuess, priorInformationMatrix);
+
 	    aligner->align();
 	    
 	    cout << "Inliers: " << aligner->inliers() << endl;
 	    cout << "Final transformation: " << endl << aligner->T().matrix() << endl;
+
+	    EdgeSE3Offset* eNew = new EdgeSE3Offset;
+	    Vector6f _measNew = t2v(initialGuess);
+	    Vector6d measNew;
+	    Matrix6d omegaNew;
+	    for (int i=0; i<6; i++){
+	      measNew(i) = double(_measNew(i));
+	      for (int j=0; j<6; j++){
+		omegaNew(i, j) = double(priorInformationMatrix(i,j));
+	      }
+	    }
+	    eNew->setVertex(0, vOld);
+	    eNew->setParameterId(0, pOffsetOld->id());
+	    eNew->setVertex(1, vse3);
+	    eNew->setParameterId(1, pOffsetNew->id());
+	    eNew->setMeasurement(v2t(measNew));
+	    eNew->setInformation(omegaNew);
+	    graph->addEdge(eNew);
 	  }
 	  
 	  if (referenceFrame) {
@@ -204,6 +227,7 @@ int main(int argc, char**argv) {
 	k++;
       }
       d = d->next();
+      counter++;
     }
   }
   
