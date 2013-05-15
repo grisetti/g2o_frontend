@@ -40,6 +40,8 @@ class InformationMatrixFinder {
 
 class PointInformationMatrixFinder : InformationMatrixFinder {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
   PointInformationMatrixFinder() {
     _flatInformationMatrix.diagonal() = Normal(Eigen::Vector3f(1000.0f, 1.0f, 1.0f));
     _nonFlatInformationMatrix.diagonal() = Normal(Eigen::Vector3f(1.0f, 1.0f, 1.0f));
@@ -53,6 +55,8 @@ class PointInformationMatrixFinder : InformationMatrixFinder {
 
 class NormalInformationMatrixFinder : InformationMatrixFinder {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
   NormalInformationMatrixFinder() {
     _flatInformationMatrix.diagonal() = Normal(Eigen::Vector3f(100.0f, 100.0f, 100.0f));
     _nonFlatInformationMatrix.diagonal() = Normal(Eigen::Vector3f(1.0f, 1.0f, 1.0f));

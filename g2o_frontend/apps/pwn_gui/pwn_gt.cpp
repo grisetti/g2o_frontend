@@ -25,8 +25,6 @@
 #include <iostream>
 #include <fstream>
 
-
-#include "g2o_frontend/pwn/pointwithnormal.h"
 #include "g2o_frontend/basemath/bm_se3.h"
 #include "g2o_frontend/pwn_cuda/cualigner.h"
 							     
@@ -185,19 +183,17 @@ int main(int argc, char** argv) {
    *                         Alignment Computation                        *
    ************************************************************************/
   CuAligner aligner;
-  CorrespondenceFinder correspondenceGenerator;
+  CorrespondenceFinder correspondenceFinder;
   Linearizer linearizer;
   //Aligner aligner;
   aligner.setProjector(&projector);
   aligner.setLinearizer(&linearizer);
   linearizer.setAligner(&aligner);
-  aligner.setCorrespondenceFinder(&correspondenceGenerator);
+  aligner.setCorrespondenceFinder(&correspondenceFinder);
  
  aligner.setOuterIterations(al_outerIterations);
   aligner.setInnerIterations(al_innerIterations);
 
-
-  //aligner.correspondenceGenerator()->setSize(referenceIndexImage.rows(), referenceIndexImage.cols());
   cerr << "constructingObjects " << endl;
   
   aligner.setReferenceFrame(&referenceFrame);
@@ -256,8 +252,8 @@ int main(int argc, char** argv) {
   // dNormalsCur = new DrawableNormals(aligner.T(), (GLParameter*)pNormalsCur, currentFrame.points(), currentFrame.normals());
   // dCovariancesRef = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)pCovariancesRef, referenceFrame.stats());
   // dCovariancesCur = new DrawableCovariances(aligner.T(), (GLParameter*)pCovariancesCur, currentFrame.stats());
-  // dCorrespondences = new DrawableCorrespondences(aligner.T(), (GLParameter*)pCorrespondences, aligner.correspondenceGenerator().numCorrespondences(),
-  // 						 referenceFrame.points(), currentFrame.points(), aligner.correspondenceGenerator().correspondences());  
+  // dCorrespondences = new DrawableCorrespondences(aligner.T(), (GLParameter*)pCorrespondences, aligner.correspondenceFinder().numCorrespondences(),
+  // 						 referenceFrame.points(), currentFrame.points(), aligner.correspondenceFinder().correspondences());  
 
   pwnGMW.viewer_3d->addDrawable((Drawable*)dPointsRef);
   pwnGMW.viewer_3d->addDrawable((Drawable*)dPointsCur);

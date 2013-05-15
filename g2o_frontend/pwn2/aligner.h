@@ -57,9 +57,11 @@ class Aligner {
   Eigen::Isometry3f _T;
   Eigen::Isometry3f _initialGuess;
   Eigen::Isometry3f _sensorOffset;
+
   int _inliers;
   double _totalTime;
   float _error;
+
   std::vector<SE3Prior, Eigen::aligned_allocator<SE3Prior> > _priors;
 };
 

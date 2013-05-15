@@ -145,8 +145,8 @@ struct DrawableFrame {
   
     // Stats and normals computation.
     statsGenerator.compute(frame.normals(),
-               frame.stats(),
-               frame.points(),
+			   frame.stats(),
+			   frame.points(),
 			   integralImage,
 			   intervalImage,
 			   indexImage,

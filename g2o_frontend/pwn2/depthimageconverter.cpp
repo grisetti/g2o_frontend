@@ -24,7 +24,7 @@ void DepthImageConverter::compute(Frame& frame,
   //double tStart = g2o::get_time();
   // resizing the temporaries
   if (depthImage.rows()!=_indexImage.rows() ||
-      depthImage.rows()!=_indexImage.cols()){
+      depthImage.cols()!=_indexImage.cols()){
     _indexImage.resize(depthImage.rows(), depthImage.cols());
     _integralImage.resize(depthImage.rows(), depthImage.cols());
     _intervalImage.resize(depthImage.rows(), depthImage.cols());
@@ -44,12 +44,12 @@ void DepthImageConverter::compute(Frame& frame,
   _projector->projectIntervals(_intervalImage,depthImage, _normalWorldRadius);
     
   _statsFinder->compute(frame.normals(),
-               frame.stats(),
-               frame.points(),
-			   _integralImage,
-			  _intervalImage,
-			  _indexImage,
-			  _curvatureThreshold);
+			frame.stats(),
+			frame.points(),
+			_integralImage,
+			_intervalImage,
+			_indexImage,
+			_curvatureThreshold);
   _pointInformationMatrixFinder->compute(frame.pointInformationMatrix(), frame.stats(), frame.normals());
   _normalInformationMatrixFinder->compute(frame.normalInformationMatrix(), frame.stats(), frame.normals());
   // frame is labeled, now we need to transform all the elements by considering the position

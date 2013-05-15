@@ -6,7 +6,7 @@
 namespace pwn {
 
 /**
-   class that implements a simple prior on te transformation to be used in SE2 pose.
+   class that implements a simple prior on the transformation to be used in SE2 pose.
    The prior is defined as a gaussian distribution centered in a certain value (priorMean),
    and having a certain information matrix;
    

@@ -1,12 +1,14 @@
 #include "correspondencefinder.h"
 #include <omp.h>
 
+#include <iostream>
+using namespace std;
+
 namespace pwn {
 
 void CorrespondenceFinder::compute(const Frame &referenceScene, const Frame &currentScene, Eigen::Isometry3f T) {
   T.matrix().block<1,4>(3, 0) << 0, 0, 0, 1;
   _numCorrespondences = 0;
-  
   if((int)_correspondences.size() != _referenceIndexImage.rows() * _referenceIndexImage.cols())
     _correspondences.resize(_referenceIndexImage.rows() * _referenceIndexImage.cols());
 

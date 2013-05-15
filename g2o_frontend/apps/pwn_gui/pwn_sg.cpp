@@ -127,11 +127,11 @@ int main(int argc, char** argv) {
   
   // Stats and normals computation.
   statsGenerator.compute(referenceFrame.normals(), referenceFrame.stats(),
-             referenceFrame.points(),
+			 referenceFrame.points(),
    			 referenceIntegralImage, referenceIntervalImage, referenceIndexImage,
    			 ng_curvatureThreshold);
   statsGenerator.compute(currentFrame.normals(), currentFrame.stats(),
-             currentFrame.points(),
+			 currentFrame.points(),
   			 currentIntegralImage, currentIntervalImage, currentIndexImage,
   			 ng_curvatureThreshold);
     
