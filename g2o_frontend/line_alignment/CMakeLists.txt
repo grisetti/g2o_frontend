@@ -1,10 +1,12 @@
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${CSPARSE_INCLUDE_DIR})
 
-ADD_EXECUTABLE(line_alignment   line_alignment.cpp)
+ADD_EXECUTABLE(line_alignment   
+line_alignment.cpp
+alignment_utils.h)
 
 TARGET_LINK_LIBRARIES(line_alignment
   ransac
-	sensor_data_library
+  sensor_data_library
   types_data
   ${G2O_TYPES_SLAM2D}
   ${G2O_TYPES_SLAM3D}

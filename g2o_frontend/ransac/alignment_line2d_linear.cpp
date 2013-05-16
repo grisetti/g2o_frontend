@@ -29,7 +29,7 @@ namespace g2o_frontend{
     Vector4d b;
     b.setZero();
     Matrix2x4d A;
-		
+
     //to compute the error
     double err = 0;
 		

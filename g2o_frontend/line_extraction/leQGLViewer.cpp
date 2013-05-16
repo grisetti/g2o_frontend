@@ -35,11 +35,11 @@ void leQGLViewer::init()
 // 	glDisable(GL_LIGHT0);
 // 	glDisable(GL_LIGHT1);
 
-	setBackgroundColor(QColor::fromRgb(150, 150, 150));
+	setBackgroundColor(QColor::fromRgb(100, 100, 100));
 
   // some default settings i like
   glEnable(GL_LINE_SMOOTH);
-	glEnable(GL_POINT_SMOOTH);
+  glEnable(GL_POINT_SMOOTH);
   glEnable(GL_BLEND); 
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_NORMALIZE);

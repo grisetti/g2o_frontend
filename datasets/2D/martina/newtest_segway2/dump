@@ -1,0 +1,570 @@
+[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModelPlane::optimizeModelCoefficients] Not enough inliers found to support a model (3)! Returning the same coefficients.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModelPlane::optimizeModelCoefficients] Not enough inliers found to support a model (3)! Returning the same coefficients.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 2!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 2!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModelPlane::optimizeModelCoefficients] Not enough inliers found to support a model (3)! Returning the same coefficients.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModelPlane::optimizeModelCoefficients] Not enough inliers found to support a model (3)! Returning the same coefficients.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 2!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModelPlane::optimizeModelCoefficients] Not enough inliers found to support a model (3)! Returning the same coefficients.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModelPlane::optimizeModelCoefficients] Not enough inliers found to support a model (3)! Returning the same coefficients.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 2!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 2!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModelPlane::optimizeModelCoefficients] Not enough inliers found to support a model (3)! Returning the same coefficients.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 2!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 2!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModelPlane::optimizeModelCoefficients] Not enough inliers found to support a model (3)! Returning the same coefficients.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 2!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 2!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModelPlane::optimizeModelCoefficients] Not enough inliers found to support a model (3)! Returning the same coefficients.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModelPlane::optimizeModelCoefficients] Not enough inliers found to support a model (3)! Returning the same coefficients.
+[0;m[1;31m[pcl::SampleConsensusModelPlane::optimizeModelCoefficients] Not enough inliers found to support a model (3)! Returning the same coefficients.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 0!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m[1;31m[pcl::SampleConsensusModel::getSamples] Can not select 0 unique points out of 1!
+[0;m[1;31m[pcl::RandomSampleConsensus::computeModel] No samples could be selected!
+[0;m[1;31m[pcl::SACSegmentation::segment] Error segmenting the model! No solution found.
+[0;m
