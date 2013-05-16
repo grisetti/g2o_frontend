@@ -19,7 +19,7 @@ DepthImageConverter::DepthImageConverter(  PointProjector* projector_,
 
 void DepthImageConverter::compute(Frame& frame,
 				  const Eigen::MatrixXf& depthImage, 
-				  const Eigen::Isometry3f& /*sensorOffset*/){
+				  const Eigen::Isometry3f& sensorOffset){
   frame.clear();
   //double tStart = g2o::get_time();
   // resizing the temporaries
@@ -54,7 +54,7 @@ void DepthImageConverter::compute(Frame& frame,
   _normalInformationMatrixFinder->compute(frame.normalInformationMatrix(), frame.stats(), frame.normals());
   // frame is labeled, now we need to transform all the elements by considering the position
   // of the sensor
-  //frame.transformInPlace(sensorOffset);
+  frame.transformInPlace(sensorOffset);
   //double tEnd = g2o::get_time();
   //double tEnd = g2o::get_time();
   //cerr << "time: " << (tEnd-tStart)*1000.0f << endl; 

@@ -113,6 +113,15 @@ struct PointStats : public Eigen::Matrix4f {
   mutable float _curvature;
 };
 
+
+ template<typename OtherDerived>
+   inline PointStats operator *(const Eigen::MatrixBase<OtherDerived> &other, const PointStats& stats) {
+   const Eigen::Matrix3f& R = other.block(3,3,0,0);
+   PointStats s=stats;
+   s.block<3,3>(0,0) = R * stats.block<3,3>(0,0);
+   return s;
+ }
+
 /** \typedef HomogeneousPoint3fStatsVector
  *  \brief TransformableVector of HomogeneousPoint3fStats.
  *

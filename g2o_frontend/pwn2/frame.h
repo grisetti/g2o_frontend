@@ -26,7 +26,9 @@ class Frame {
 
   bool load(const char *filename);
   bool load(std::istream &is);
+  bool save(const char *filename, Eigen::Isometry3f T, int step = 1, bool binary = false);
   bool save(const char *filename, int step = 1, bool binary = false);
+  bool save(ostream &os, Eigen::Isometry3f T, int step, bool binary);
   bool save(std::ostream &os, int step = 1, bool binary = false);
   void clear();
   void transformInPlace(const Eigen::Isometry3f& T);

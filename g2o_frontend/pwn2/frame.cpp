@@ -54,6 +54,33 @@ bool Frame::load(istream &is) {
   return is.good();
 }
 
+bool Frame::save(const char *filename, Eigen::Isometry3f T, int step, bool binary) {
+  ofstream os(filename);
+  if (!os)
+    return false;
+  return save(os, T, step, binary);
+}
+
+bool Frame::save(ostream &os, Eigen::Isometry3f T, int step, bool binary) {
+  os << "POINTWITHNORMALVECTOR " << _points.size()/step << " " << binary << endl; 
+  for(size_t i = 0; i < _points.size(); i+=step) {
+    const Point& point = T * _points[i];
+    const Normal& normal = T * _normals[i];
+    if (! binary) {
+      os << "POINTWITHNORMAL ";
+      for (int k=0; k<3; k++)
+	os << point[k] << " ";
+      for (int k=0; k<3; k++)
+	os << normal[k] << " ";
+      os << endl;
+    } else {
+      os.write((const char*) &point, sizeof(Point));
+      os.write((const char*) &normal, sizeof(Normal));
+    }
+  }
+  return os.good();
+}
+
 bool Frame::save(const char *filename, int step, bool binary) {
   ofstream os(filename);
   if (!os)
@@ -90,11 +117,14 @@ void Frame::clear(){
 }
 
 void Frame::transformInPlace(const Eigen::Isometry3f& T){
-  _points.transformInPlace(T);
-  _normals.transformInPlace(T);
-  _pointInformationMatrix.transformInPlace(T);
-  _stats.transformInPlace(T);
-  _normalInformationMatrix.transformInPlace(T);
+  Eigen::Matrix4f m = T.matrix();
+  m.row(3) << 0,0,0,0;
+  m.col(3) << 0,0,0,0;
+  _points.transformInPlace(m);
+  _normals.transformInPlace(m);
+  _stats.transformInPlace(m);
+  _pointInformationMatrix.transformInPlace(m);
+  _normalInformationMatrix.transformInPlace(m);
 }
 
 }

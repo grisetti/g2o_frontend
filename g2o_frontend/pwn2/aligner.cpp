@@ -1,6 +1,7 @@
 #include "aligner.h"
 #include <iostream>
 #include <sys/time.h>
+#include <fstream>
 
 using namespace std;
 
@@ -45,20 +46,28 @@ void Aligner::align() {
               _correspondenceFinder->currentDepthImage(),
               _currentFrame->points());
   _T = _initialGuess;
+  
+  _correspondenceFinder->currentDepthImage().save("current.pgm", false);
+
+  char buf[1024];
   for(int i = 0; i < _outerIterations; i++) {
     /************************************************************************
      *                         Correspondence Computation                   *
      ************************************************************************/
 
     // compute the indices of the current scene from the point of view of the sensor
+    _T.matrix().row(3) << 0,0,0,1;
     _projector->setTransform(_T*_sensorOffset);
     _projector->project(_correspondenceFinder->referenceIndexImage(),
             _correspondenceFinder->referenceDepthImage(),
             _referenceFrame->points());
     
+    sprintf(buf, "reference-%02d.pgm", i);
+    _correspondenceFinder->referenceDepthImage().save(buf, false);
+
     // Correspondences computation.    
     _correspondenceFinder->compute(*_referenceFrame, *_currentFrame, _T.inverse());
-
+    cerr << "cf, numFound:" << _correspondenceFinder->numCorrespondences() << endl;
     /************************************************************************
      *                            Alignment                                 *
      ************************************************************************/
@@ -73,7 +82,6 @@ void Aligner::align() {
       _linearizer->update();
       H = _linearizer->H() + Matrix6f::Identity() * 10.0f;
       b = _linearizer->b();
-      
       // add the priors
       for (size_t i=0; i<_priors.size(); i++){
 	const SE3Prior& prior = _priors[i];
@@ -83,18 +91,19 @@ void Aligner::align() {
 
 	Matrix6f Hp = priorJacobian.transpose()*priorInformationRemapped*priorJacobian;
 	Vector6f bp = priorJacobian.transpose()*priorInformationRemapped*priorError;
-
+	
 	H += Hp;
 	b += bp;
       }
 
-
+      
       Vector6f dx = H.ldlt().solve(-b);
       Eigen::Isometry3f dT = v2t(dx);
       invT = dT * invT;
     }
     _T = invT.inverse();
     _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
+    cerr << _T.matrix() << endl; 
   }
 
   gettimeofday(&tvEnd, 0);

@@ -3,6 +3,9 @@
 
 #include "homogeneousvector4f.h"
 
+#include <iostream>
+using namespace std; 
+
 namespace pwn {
 
 struct InformationMatrix: public Eigen::Matrix4f {
@@ -34,23 +37,60 @@ struct InformationMatrix: public Eigen::Matrix4f {
 
   template<typename OtherDerived>
   inline InformationMatrix transform(const Eigen::MatrixBase<OtherDerived> &other) const {
-    InformationMatrix s(other*(*this)*other.transpose());
+    Eigen::Matrix4f T = other;
+    T.block<1, 4>(3, 0).setZero();
+    T.block<4, 1>(0, 3).setZero();
+    InformationMatrix s(T*(*this)*T.transpose());
     return s;
   }
 
   template<typename OtherDerived>
   inline InformationMatrix& transformInPlace(const Eigen::MatrixBase<OtherDerived> &other) const {
-    InformationMatrix s(other*(*this)*other.transpose());
-    *this = s;
+    const Eigen::Matrix3f& R = other.block<3,3>(0,0);
+    block<3,3>(0,0) = R * block<3,3>(0,0) * R.transpose(); 
     return *this;
   }
 };
 
+
+ class InformationMatrixVector: public TransformableVector<InformationMatrix> {
+
+ public: 
+  template<typename OtherDerived>
+    inline void transformInPlace(const OtherDerived& m) {
+    cerr << "tuMadre" << endl;
+    Eigen::Matrix4f T=m;
+    T.row(3).setZero();
+    T.col(3).setZero();
+    Eigen::Matrix4f Tt=T.transpose();
+    InformationMatrix* t = &(*this)[0];
+    for (size_t i = 0; i < size(); i++, t++) {
+      *t = T * (*t) * Tt;
+    }
+  }
+
+  template<typename OtherDerived>
+  inline void transform(TransformableVector& dest, const OtherDerived& m) const {
+    Eigen::Matrix4f T=m;
+    T.row(3).setZero();
+    T.col(3).setZero();
+    Eigen::Matrix4f Tt=T.transpose();
+
+    dest.resize(this->size());
+    const InformationMatrix* tSrc= &(*this)[0];
+    InformationMatrix* tDest= &dest[0];
+    for (size_t i = 0; i < size(); ++i, ++tSrc, ++tDest ) {
+      *tDest = T * (*tSrc) * Tt;
+    }
+  }
+
+
+};
+
+
 typedef Eigen::Matrix<float, 6, 6> Matrix6f;
 
 typedef std::vector<Matrix6f, Eigen::aligned_allocator<Matrix6f> > Matrix6fVector;
-
-typedef TransformableVector<InformationMatrix> InformationMatrixVector;
 
 }
 
