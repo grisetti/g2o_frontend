@@ -126,9 +126,14 @@ int
   int processEachN;
   int chunkEachN;
   Eigen::Matrix3f cameraMatrix;
+  // cameraMatrix << 
+  //   525.0f, 0.0f, 319.5f,
+  //   0.0f, 525.0f, 239.5f,
+  //   0.0f, 0.0f, 1.0f;
+
   cameraMatrix << 
-    525.0f, 0.0f, 319.5f,
-    0.0f, 525.0f, 239.5f,
+    570.342f, 0.0f, 319.5f,
+    0.0f, 570.342f, 239.5f,
     0.0f, 0.0f, 1.0f;
 
   PointWithNormalStatistcsGenerator normalGenerator;

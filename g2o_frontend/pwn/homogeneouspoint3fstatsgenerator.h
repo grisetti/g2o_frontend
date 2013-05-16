@@ -3,7 +3,6 @@
 
 #include "homogeneouspoint3fstats.h"
 #include "homogeneouspoint3fintegralimage.h"
-#include "pointprojector.h"
 
 /**
  *  Base class for 3D point stats computation. 
@@ -25,6 +24,16 @@ class HomogeneousPoint3fStatsGenerator {
    */
   HomogeneousPoint3fStatsGenerator();
   
+  inline void setWorldRadius(const float worldRadius_) { _worldRadius = worldRadius_; }
+  inline void setMaxImageRadius(const int maxImageRadius_) { _maxImageRadius = maxImageRadius_; }
+  inline void setMinImageRadius(const int minImageRadius_) { _minImageRadius = minImageRadius_; }
+  inline void setMinPoints(const int minPoints_) { _minPoints = minPoints_; }
+
+  inline float worldRadius() const { return _worldRadius; }
+  inline int maxImageRadius() const { return _maxImageRadius; }
+  inline int minImageRadius() const { return _minImageRadius; }
+  inline int minPoints() const { return _minPoints; }
+
   /**
    *  This method computes the stats for each point using the given points associated 
    *  integral image and index image. The interval image is used to get the region side 
@@ -36,11 +45,19 @@ class HomogeneousPoint3fStatsGenerator {
    *  @param _indexImage is a matrix containing the indices of the vector's elements
    *  to fill.
    */
-  void compute(HomogeneousPoint3fStatsVector& stats, 
-	       const HomogeneousPoint3fIntegralImage& _integralImage,
-	       const Eigen::MatrixXi& _intervalImage,
-	       const Eigen::MatrixXi& _indexImage);
+  void compute(HomogeneousPoint3fStatsVector &stats, 
+	       const HomogeneousPoint3fIntegralImage &_integralImage,
+	       const Eigen::MatrixXi &_intervalImage,
+	       const Eigen::MatrixXi &_indexImage);
 
+  void compute(HomogeneousNormal3fVector &normals,
+	       HomogeneousPoint3fStatsVector &stats,
+	       const HomogeneousPoint3fVector &points,
+	       const HomogeneousPoint3fIntegralImage &integralImage,
+	       const Eigen::MatrixXi &intervalImage,
+	       const Eigen::MatrixXi &indexImage,
+	       const float curvatureThreshold);
+  
  protected:
   /**
    *  Variable containing the max distance in the 3D euclidean space 

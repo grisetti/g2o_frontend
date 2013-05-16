@@ -1,5 +1,6 @@
 #ifndef PWN_QGLVIEWER
 #define PWN_QGLVIEWER
+
 #include <QGLViewer/qglviewer.h>
 #include <vector>
 #include "drawable.h"

@@ -1,9 +1,6 @@
-#include <iostream>
 #include <GL/gl.h>
 #include "pwn_qglviewer.h"
 #include "g2o/stuff/opengl_primitives.h"
-
-using namespace std;
 
 class StandardCamera : public qglviewer::Camera {
 public:
@@ -87,11 +84,11 @@ void PWNQGLViewer::draw() {
   QGLViewer::draw();
   
   // Draw camera object.
-  glPushMatrix();
-  glColor4f(1.0f, 0.0f, 1.0f, 0.5f);
-  glScalef(0.05f, 0.05f, 0.1f);
-  glCallList(_pyramidDrawList);
-  glPopMatrix();
+  // glPushMatrix();
+  // glColor4f(1.0f, 0.0f, 1.0f, 0.5f);
+  // glScalef(0.05f, 0.05f, 0.1f);
+  // glCallList(_pyramidDrawList);
+  // glPopMatrix();
 
   // Draw the vector of drawable objects.
   for (size_t i = 0; i < _drawableList.size(); i++) {

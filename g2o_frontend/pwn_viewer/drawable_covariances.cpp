@@ -2,13 +2,15 @@
 #include "gl_parameter_covariances.h"
 #include "pwn_qglviewer.h"
 
+using namespace pwn;
+
 DrawableCovariances::DrawableCovariances() : Drawable() {
   GLParameterCovariances* covariancesParameter = new GLParameterCovariances();
   _parameter = (GLParameter*)covariancesParameter;
   _covariances = 0;
 }
 
-DrawableCovariances::DrawableCovariances(Eigen::Isometry3f transformation_, GLParameter *parameter_, HomogeneousPoint3fStatsVector *covariances_) : Drawable(transformation_){
+DrawableCovariances::DrawableCovariances(Eigen::Isometry3f transformation_, GLParameter *parameter_, PointStatsVector *covariances_) : Drawable(transformation_){
   setParameter(parameter_);
   _covariances = covariances_;
 }
@@ -38,13 +40,13 @@ void DrawableCovariances::draw() {
     Eigen::Vector4f colorHighCurvature = covariancesParameter->colorHighCurvature();
     float curvatureThreshold = covariancesParameter->curvatureThreshold();
     for (size_t i = 0; i < _covariances->size(); i += covariancesParameter->step()) {
-      HomogeneousPoint3fStats cov = (*_covariances)[i];
+      PointStats cov = _covariances->at(i);
       Eigen::Vector3f lambda = cov.eigenValues();
       Eigen::Isometry3f I = Eigen::Isometry3f::Identity();
       I.linear() = cov.eigenVectors();
-      if (cov._n == 0 )
+      if (cov.n() == 0 )
 	continue;
-      I.translation() = Eigen::Vector3f(cov._mean[0],cov._mean[1],cov._mean[2]);
+      I.translation() = Eigen::Vector3f(cov.mean()[0],cov.mean()[1],cov.mean()[2]);
       float sx = sqrt(lambda[0])*ellipsoidScale;
       float sy = sqrt(lambda[1])*ellipsoidScale;
       float sz = sqrt(lambda[2])*ellipsoidScale;

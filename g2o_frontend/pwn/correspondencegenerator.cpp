@@ -1,79 +1,90 @@
 #include "correspondencegenerator.h"
-#include <iostream>
+#include <omp.h>
 
-using namespace std;
+void CorrespondenceGenerator::compute(const HomogeneousPoint3fScene &referenceScene, const HomogeneousPoint3fScene &currentScene, Eigen::Isometry3f T) {
+  T.matrix().block<1,4>(3, 0) << 0, 0, 0, 1;
+  _numCorrespondences = 0;
+  
+  if((int)_correspondences.size() != _referenceIndexImage.rows() * _referenceIndexImage.cols())
+    _correspondences.resize(_referenceIndexImage.rows() * _referenceIndexImage.cols());
 
-void CorrespondenceGenerator::compute(CorrespondenceVector &correspondences,
-				      const HomogeneousPoint3fVector &referencePoints, const HomogeneousPoint3fVector &currentPoints,
-				      const HomogeneousNormal3fVector &referenceNormals, const HomogeneousNormal3fVector &currentNormals,
-				      Eigen::MatrixXi &referenceIndexImage, const Eigen::MatrixXi &currentIndexImage,
-				      const HomogeneousPoint3fStatsVector &referenceStats, const HomogeneousPoint3fStatsVector &currentStats,
-				      Eigen::Isometry3f &T) {
-  int correspondenceIndex = 0;
-  _numCorrespondences = correspondenceIndex;
-  correspondences.resize(referenceIndexImage.rows()*referenceIndexImage.cols());
-  std::fill(correspondences.begin(), correspondences.end(), Correspondence());
-  int tooFar = 0;
-  int noNormal = 0;
-  int tooDiffNormalAngle = 0;
-  int diffCurv = 0;
-  int noIndex = 0;
-  for (int c = 0; c < referenceIndexImage.cols(); c++) {
-    for (int r = 0; r < referenceIndexImage.rows(); r++) {
-      int referenceIndex = referenceIndexImage(r, c);
-      int currentIndex = currentIndexImage(r, c);
-      if (referenceIndex < 0 || currentIndex < 0) {
-	noIndex++;
-	continue;
-      }
-      
-      // compare euclidean distance and angle for the normals in the remapped frame
-      HomogeneousPoint3f referencePoint = T*referencePoints.at(referenceIndex);
-      HomogeneousNormal3f referenceNormal = T*referenceNormals.at(referenceIndex);
-      HomogeneousPoint3f currentPoint = currentPoints.at(currentIndex);
-      HomogeneousNormal3f currentNormal = currentNormals.at(currentIndex);
-      if (referenceNormal.squaredNorm() == 0 || currentNormal.squaredNorm() == 0) {
-	noNormal++;
-	continue;
-      }
-      HomogeneousPoint3f pointsDistance = currentPoint - referencePoint;
-      if (pointsDistance.head<3>().squaredNorm() > _squaredThreshold) {
-        tooFar++;
-        continue;
-      }
-      if (currentNormal.head<3>().dot(referenceNormal.head<3>()) < _inlierNormalAngularThreshold) {
-	tooDiffNormalAngle++;
-        continue;
-      }
-      float referenceCurvature = referenceStats[referenceIndex].curvature();
-      float currentCurvature = currentStats[currentIndex].curvature();
-      if (referenceCurvature < _flatCurvatureThreshold)
-	referenceCurvature = _flatCurvatureThreshold;
-      if (currentCurvature < _flatCurvatureThreshold)
-	currentCurvature = _flatCurvatureThreshold;
-      
-      float logRatio = log(referenceCurvature + 1e-5) - log(currentCurvature + 1e-5);
-      if (fabs(logRatio) > _inlierCurvatureRatioThreshold) {
-      	diffCurv++;
-	continue;
-      }
-      correspondences[correspondenceIndex].referenceIndex = referenceIndex;
-      correspondences[correspondenceIndex].currentIndex = currentIndex;
-      
-      correspondenceIndex++;
-    }
+  float minCurvatureRatio = 1./_inlierCurvatureRatioThreshold;
+  float maxCurvatureRatio = _inlierCurvatureRatioThreshold;
 
-    _numCorrespondences = correspondenceIndex;
-
-    for (size_t i = _numCorrespondences; i < correspondences.size(); i++) {
-      correspondences[i].referenceIndex = -1;
-      correspondences[i].currentIndex = -1;
-    }    
+  // construct an array of counters;
+  int numThreads = omp_get_max_threads();
+  
+  int localCorrespondenceIndex[numThreads];
+  int localOffset[numThreads];
+  int columnsPerThread = _referenceIndexImage.cols()/numThreads;
+  int iterationsPerThread = (_referenceIndexImage.rows() * _referenceIndexImage.cols())/numThreads;
+  for (int i=0; i<numThreads; i++){
+    localOffset[i] = i * iterationsPerThread;
+    localCorrespondenceIndex[i] = localOffset[i];
   }
-cout << "Num possible correspondences: " << correspondences.size() << endl;
-cout << "No normal: " << noNormal << endl;
-cout << "Too far: " << tooFar << endl;
-cout << "Angle: " << tooDiffNormalAngle << endl;
-cout << "Curvature: " << diffCurv << endl;
-cout << "No index: " << noIndex << endl;
+
+#pragma omp parallel 
+  {
+    int threadId = omp_get_thread_num();
+    int cMin = threadId * columnsPerThread;
+    int cMax = cMin + columnsPerThread;
+    if (cMax > _referenceIndexImage.cols())
+      cMax = _referenceIndexImage.cols();
+    int& correspondenceIndex = localCorrespondenceIndex[threadId];
+    for (int c = cMin;  c < cMax; c++) {
+      for (int r = 0; r < _referenceIndexImage.rows(); r++) {
+	const int referenceIndex = _referenceIndexImage(r, c);
+	const int currentIndex = _currentIndexImage(r, c);
+	if (referenceIndex < 0 || currentIndex < 0)
+	  continue;
+
+	const HomogeneousNormal3f &currentNormal = currentScene.normals()[currentIndex];      
+	const HomogeneousPoint3f &_referenceNormal = referenceScene.normals()[referenceIndex];
+	const HomogeneousPoint3f &currentPoint = currentScene.points()[currentIndex];
+	const HomogeneousPoint3f &_referencePoint = referenceScene.points()[referenceIndex];
+	
+	//if(currentNormal.squaredNorm() == 0.0f || _referenceNormal.squaredNorm() == 0.0f)
+	//continue;
+
+	// remappings
+	HomogeneousPoint3f referencePoint = T * _referencePoint;
+	HomogeneousNormal3f referenceNormal = T * _referenceNormal;
+	// this condition captures the angluar offset, and is moved to the end of the loop
+	if (currentNormal.dot(referenceNormal) < _inlierNormalAngularThreshold) 
+	  continue;
+
+	Eigen::Vector4f pointsDistance = currentPoint - referencePoint;
+	// the condition below has moved to the increment, fill the pipeline, baby
+	if (pointsDistance.squaredNorm() > _squaredThreshold)
+	  continue;     	
+	
+	float referenceCurvature = referenceScene.stats()[referenceIndex].curvature();
+	float currentCurvature = currentScene.stats()[currentIndex].curvature();
+	if (referenceCurvature < _flatCurvatureThreshold)
+	  referenceCurvature = _flatCurvatureThreshold;
+
+	if (currentCurvature < _flatCurvatureThreshold)
+	  currentCurvature = _flatCurvatureThreshold;
+
+	float curvatureRatio = (referenceCurvature + 1e-5)/(currentCurvature + 1e-5);
+	// the condition below has moved to the increment, fill the pipeline, baby
+	if (curvatureRatio < minCurvatureRatio || curvatureRatio > maxCurvatureRatio)
+	  continue;
+
+	_correspondences[correspondenceIndex].referenceIndex = referenceIndex;
+	_correspondences[correspondenceIndex].currentIndex = currentIndex;
+	correspondenceIndex++;
+      }
+    }
+  }
+  // assemble the solution
+  int k=0;
+  for (int t=0; t<numThreads; t++){
+    for (int i=localOffset[t]; i < localCorrespondenceIndex[t]; i++)
+      _correspondences[k++] = _correspondences[i];
+  }
+  _numCorrespondences = k;
+
+  for (size_t i = _numCorrespondences; i < _correspondences.size(); i++)
+    _correspondences[i] = Correspondence();
 }

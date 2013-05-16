@@ -22,7 +22,9 @@ struct NormalGenerator {
   // Method that computes the points with normals given a the depth image.
   // The resulting points and normals are stored in the first two input
   // parameters, the third parameter is the input depth image.
-  void compute(HomogeneousPoint3fVector& imagePoints, HomogeneousNormal3fVector& imageNormals, const DepthImage& depthImage, float curvatureThreshold, Isometry3f offset = Isometry3f::Identity()) {
+  void compute(HomogeneousPoint3fVector& imagePoints, HomogeneousNormal3fVector& imageNormals, 
+	       const DepthImage& depthImage, float curvatureThreshold, 
+	       Isometry3f offset = Isometry3f::Identity()) {
     // Update the size of the index image.
     indexImage.resize(depthImage.rows(), depthImage.cols());
     
@@ -67,7 +69,7 @@ struct NormalGenerator {
     statsGenerator.compute(scaledStats, scaledIntegralImage, scaledIntervalImage, scaledIndexImage);
 
     // Step six, extract the normals from the statistics.
-    imageNormals.resize(imagePoints.size());
+    imageNormals.resize(imagePoints.size(),HomogeneousNormal3f::Zero());
     for(size_t i = 0; i < imagePoints.size(); i++) {
       HomogeneousPoint3f& p = imagePoints[i];
       const HomogeneousPoint3fStats& pstats = scaledStats[i];

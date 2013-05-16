@@ -28,6 +28,7 @@ DepthImageData::DepthImageData() : g2o::OptimizableGraph::Data(){
 bool DepthImageData::read(std::istream& is) {
   is >> paramIndex >> _filename;
   is >> ts_sec >> ts_usec;
+  _filename = _filename + "_depth.pgm";
   update();
   return true;
 }

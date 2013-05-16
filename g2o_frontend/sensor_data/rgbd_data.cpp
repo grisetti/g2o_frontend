@@ -24,6 +24,8 @@
 #endif
 #endif
 
+#include <iostream>
+
 using namespace g2o;
 using namespace std;
 
@@ -57,7 +59,7 @@ bool RGBDData::read(std::istream& is)
   setTimeStamp(ts);
   _intensityImage = 0;
   _depthImage = 0;
-  //update(); disable the automatic update
+  //update();
   return true;
 }
 
@@ -75,7 +77,7 @@ bool RGBDData::write(std::ostream& os) const
 void RGBDData::writeOut() const
 {
   if (_intensityImageModified && _intensityImage) {
-    string intensityName=_baseFilename+ "_intensity.pgm";
+  string intensityName=_baseFilename+"_intensity.pgm";
     cv::imwrite(intensityName.c_str(), *_intensityImage);
     _intensityImageModified = false;
   }
@@ -147,11 +149,10 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
 
   if (_show && !_show->value())
     return this;
-
+  
   RGBDData* that = static_cast<RGBDData*>(element);
   if (! that->intensityImage() || ! that->depthImage())
     return this;
-
   glPushMatrix();
   int step = 1;
   if(_beamsDownsampling )

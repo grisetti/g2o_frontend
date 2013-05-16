@@ -11,14 +11,24 @@ class OmegaGenerator {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   
   OmegaGenerator() {
+    _flatOmega.setZero();
+    _nonFlatOmega.setZero();
     _flatOmega.diagonal() = HomogeneousNormal3f(Eigen::Vector3f(1.0f, 1.0f, 1.0f));
     _nonFlatOmega.diagonal() = HomogeneousNormal3f(Eigen::Vector3f(1.0f, 1.0f, 1.0f));
     _curvatureThreshold = 1.0f;
   }
-  
-  virtual void compute(HomogeneousPoint3fOmegaVector& omegas, 
-		       HomogeneousPoint3fStatsVector& stats,
-		       HomogeneousNormal3fVector& imageNormals) = 0;
+
+  inline HomogeneousPoint3fOmega flatOmega() const { return _flatOmega; }
+  inline HomogeneousPoint3fOmega nonFlatOmega() const { return _nonFlatOmega; }
+  inline float curvatureThreshold() const { return _curvatureThreshold; }
+
+  inline void setFlatOmega(const HomogeneousPoint3fOmega flatOmega_) { _flatOmega = flatOmega_; }
+  inline void setNonFlatOmega(const HomogeneousPoint3fOmega nonFlatOmega_) { _nonFlatOmega = nonFlatOmega_; }
+  inline void setCurvatureThreshold(const float curvatureThreshold_) { _curvatureThreshold = curvatureThreshold_; }
+
+  virtual void compute(HomogeneousPoint3fOmegaVector &omegas, 
+		       const HomogeneousPoint3fStatsVector &stats,
+		       const HomogeneousNormal3fVector &imageNormals) = 0;
   
  protected:
   HomogeneousPoint3fOmega _flatOmega;
@@ -34,12 +44,9 @@ class PointOmegaGenerator : OmegaGenerator {
     _curvatureThreshold = 0.02f;
   }
 
-  // Check why if i put this on the super class it does not work
-  float curvatureThreshold() { return _curvatureThreshold; }
-
-  virtual void compute(HomogeneousPoint3fOmegaVector& omegas, 
-		       HomogeneousPoint3fStatsVector& stats,
-		       HomogeneousNormal3fVector& imageNormals);
+  virtual void compute(HomogeneousPoint3fOmegaVector &omegas, 
+		       const HomogeneousPoint3fStatsVector &stats,
+		       const HomogeneousNormal3fVector &imageNormals);
 };
 
 class NormalOmegaGenerator : OmegaGenerator {
@@ -50,11 +57,9 @@ class NormalOmegaGenerator : OmegaGenerator {
     _curvatureThreshold = 0.02f;
   }
 
-  float curvatureThreshold() { return _curvatureThreshold; }
-
-  virtual void compute(HomogeneousPoint3fOmegaVector& omegas, 
-		       HomogeneousPoint3fStatsVector& stats,
-		       HomogeneousNormal3fVector& imageNormals);
+  virtual void compute(HomogeneousPoint3fOmegaVector &omegas, 
+		       const HomogeneousPoint3fStatsVector &stats,
+		       const HomogeneousNormal3fVector &imageNormals);
 };
 
 #endif

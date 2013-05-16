@@ -1,84 +1,64 @@
+#ifndef _ALINGER_H_
+#define _ALINGER_H_
+
 #include "linearizer.h"
 #include "pointprojector.h"
-#include "homogeneouspoint3fstats.h"
-#include "homogeneouspoint3fomega.h"
+#include "homogeneouspoint3fscene.h"
 #include "correspondencegenerator.h"
+#include "se3_prior.h"
 
 class Aligner {
  public:
-  Aligner() {
-    _projector = 0;
-    _linearizer = 0;
-    _referencePoints = 0;
-    _currentPoints = 0;
-    _referenceNormals = 0;
-    _currentNormals = 0;
-    _currentStats = 0;
-    _T = Eigen::Isometry3f::Identity();
-    _initialGuess = Eigen::Isometry3f::Identity();
-    _sensorOffset = Eigen::Isometry3f::Identity();
-  };
+  Aligner();
 
-  inline PointProjector* projector() const { return _projector; }
-  inline void setProjector(PointProjector* projector_) { _projector = projector_; }
-  inline Linearizer* linearizer() const { return _linearizer; }
-  inline void setLinearizer(Linearizer* linearizer_) { _linearizer = linearizer_; }
-  inline HomogeneousPoint3fVector* referencePoints() const { return _referencePoints; }
-  inline HomogeneousPoint3fVector* currentPoints() const { return _currentPoints; }
+  inline void setProjector(PointProjector *projector_) { _projector = projector_; }
+  inline void setReferenceScene(HomogeneousPoint3fScene *referenceScene_) { _referenceScene = referenceScene_; clearPriors();}
+  inline void setCurrentScene(HomogeneousPoint3fScene *currentScene_) { _currentScene = currentScene_; clearPriors();}
+  inline void setOuterIterations(const int outerIterations_) { _outerIterations = outerIterations_; }
+  inline void setInnerIterations(const int innerIterations_) { _innerIterations = innerIterations_; }
+  inline void setT(const Eigen::Isometry3f T_) { _T = T_; }
+  inline void setInitialGuess(const Eigen::Isometry3f initialGuess_) { _initialGuess = initialGuess_; }
+  inline void setSensorOffset(const Eigen::Isometry3f sensorOffset_) { _sensorOffset = sensorOffset_; }
 
-  inline void setPoints(HomogeneousPoint3fVector* referencePoints_, HomogeneousPoint3fVector* currentPoints_) {
-    _referencePoints = referencePoints_;
-    _currentPoints = currentPoints_;
-  }
+  inline const PointProjector* projector() const { return _projector; }
+  inline Linearizer* linearizer() { return _linearizer; }
+  inline void setLinearizer(Linearizer* linearizer_) { _linearizer = linearizer_; _linearizer->setAligner(this); }
+  inline CorrespondenceGenerator* correspondenceGenerator() { return _correspondenceGenerator; } 
+  inline void setCorrespondenceGenerator(CorrespondenceGenerator* correspondenceGenerator_) { _correspondenceGenerator = correspondenceGenerator_; } 
+  inline const HomogeneousPoint3fScene* referenceScene() const { return _referenceScene; }
+  inline const HomogeneousPoint3fScene* currentScene() const { return _currentScene; }  
+  inline int outerIterations() const { return _outerIterations; }
+  inline int innerIterations() const { return _innerIterations; }
+  inline const Eigen::Isometry3f& T() const { return _T; }
+  inline const Eigen::Isometry3f& initialGuess() const { return _initialGuess; }
+  inline const Eigen::Isometry3f& sensorOffset() const { return _sensorOffset; }
 
-  inline HomogeneousNormal3fVector* referenceNormals() const { return _referenceNormals; }
-  inline HomogeneousNormal3fVector* currentNormals() const { return _currentNormals; }
-
-  inline void setNormals(HomogeneousNormal3fVector* referenceNormals_, HomogeneousNormal3fVector* currentNormals_) {
-    _referenceNormals = referenceNormals_;
-    _currentNormals = currentNormals_;
-  }
+  virtual void align();
+  inline float error() const {return _error;}
+  inline int inliers() const {return _inliers; }
+  inline double totalTime() const {return _totalTime; }
   
-  inline HomogeneousPoint3fStatsVector* getReferenceStats() { return _referenceStats; }
-  inline HomogeneousPoint3fStatsVector* getCurrentStats() { return _currentStats; }
-  inline void setStats(HomogeneousPoint3fStatsVector* referenceStats_, HomogeneousPoint3fStatsVector* currentStats_) { 
-    _referenceStats = referenceStats_;
-    _currentStats = currentStats_; 
-  }
-  
-  inline HomogeneousPoint3fOmegaVector* currentPointOmegas() { return _currentPointOmegas; }
-  inline HomogeneousPoint3fOmegaVector* currentNormalOmegas() { return _currentNormalOmegas; }
-  inline void setCurrentOmegas(HomogeneousPoint3fOmegaVector* currentPointOmegas_, HomogeneousPoint3fOmegaVector* currentNormalOmegas_) {
-    _currentPointOmegas = currentPointOmegas_;
-    _currentNormalOmegas = currentNormalOmegas_;
-  }
-
-  inline CorrespondenceVector* correspondences() { return _correspondences; }
-  inline void setCorrespondences(CorrespondenceVector* correspondences_) { _correspondences = correspondences_; }
-  
-  inline int numCorrespondences() { return _numCorrespondences; }
-  inline void setNumCorrespondences(int numCorrespondences_) { _numCorrespondences = numCorrespondences_; }
-
-  inline Eigen::Isometry3f& T() { return _T; }
-  inline void setT(Eigen::Isometry3f T_) { _T = T_; }
-  inline Eigen::Isometry3f& initialGuess() { return _initialGuess; }
-  inline void setInitialGuess(Eigen::Isometry3f initialGuess_) { _initialGuess = initialGuess_; }
-  inline Eigen::Isometry3f& sensorOffset() { return _sensorOffset; }
-  inline void setSensorOffset(Eigen::Isometry3f sensorOffset_) { _sensorOffset = sensorOffset_; }
+  void addPrior(const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix);
+  void clearPriors();
 
  protected:
   PointProjector *_projector;
   Linearizer *_linearizer;
+
+  CorrespondenceGenerator *_correspondenceGenerator;
+
+  HomogeneousPoint3fScene *_referenceScene;
+  HomogeneousPoint3fScene *_currentScene;
   
-  HomogeneousPoint3fVector *_referencePoints, *_currentPoints;
-  HomogeneousNormal3fVector *_referenceNormals,* _currentNormals;
-  HomogeneousPoint3fStatsVector *_referenceStats, *_currentStats;
-  HomogeneousPoint3fOmegaVector *_currentPointOmegas;
-  HomogeneousPoint3fOmegaVector *_currentNormalOmegas;
-  CorrespondenceVector* _correspondences;
-  int _numCorrespondences;
-  
+  int _outerIterations, _innerIterations;
+
   Eigen::Isometry3f _T;
   Eigen::Isometry3f _initialGuess;
   Eigen::Isometry3f _sensorOffset;
+  int _inliers;
+  double _totalTime;
+  float _error;
+  std::vector<SE3Prior, Eigen::aligned_allocator<SE3Prior> > _priors;
 };
+
+#endif

@@ -6,13 +6,13 @@
 #include <Eigen/StdVector>
 #include <Eigen/Dense>
 
-template <typename Scalar_, int Dimension_>
+template <typename Scalar_, int DimensionAtCompileTime_>
 struct Gaussian {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   typedef Scalar_ Scalar;
-  typedef typename Eigen::Matrix<Scalar, Dimension_, Dimension_> MatrixType;
-  typedef typename Eigen::Matrix<Scalar, Dimension_, 1> VectorType;
-  static const int Dimension = Dimension_;
+  typedef typename Eigen::Matrix<Scalar, DimensionAtCompileTime_, DimensionAtCompileTime_> MatrixType;
+  typedef typename Eigen::Matrix<Scalar, DimensionAtCompileTime_, 1> VectorType;
+  static const int DimensionAtCompileTime = DimensionAtCompileTime_;
 
   Gaussian() {
     _covarianceMatrix.setZero();
@@ -20,6 +20,19 @@ struct Gaussian {
     _informationVector.setZero();
     _mean.setZero();
   }
+
+  Gaussian(int dimension_): 
+    _informationMatrix(dimension_, dimension_),
+    _informationVector(dimension_),
+    _covarianceMatrix(dimension_, dimension_),
+    _mean(dimension_)
+  {
+    _covarianceMatrix.setZero();
+    _informationMatrix.setZero();
+    _informationVector.setZero();
+    _mean.setZero();
+  }
+
   
   Gaussian(const VectorType& v, const MatrixType& m, bool useInfoForm = false) {
     _momentsUpdated = _infoUpdated = false; 
@@ -34,7 +47,7 @@ struct Gaussian {
     }
   }
 
-  inline Gaussian<Scalar_,Dimension_>& addInformation(const Gaussian<Scalar_,Dimension_>& g){
+  inline Gaussian<Scalar_,DimensionAtCompileTime_>& addInformation(const Gaussian<Scalar_,DimensionAtCompileTime_>& g){
     _updateInfo();
     _informationMatrix += g.informationMatrix();
     _informationVector += g.informationVector();
@@ -42,7 +55,7 @@ struct Gaussian {
     return *this;
   }
 
-  inline Gaussian<Scalar_,Dimension_>& addNoise(const Gaussian<Scalar_,Dimension_>& g){
+  inline Gaussian<Scalar_,DimensionAtCompileTime_>& addNoise(const Gaussian<Scalar_,DimensionAtCompileTime_>& g){
     _updateMoments();
     _covarianceMatrix += g.covarianceMatrix();
     _mean += g.mean();
@@ -51,6 +64,7 @@ struct Gaussian {
   }
 
 
+  inline int dimension() const {return _mean.rows();}
   inline const Eigen::Matrix3f& covarianceMatrix() const {_updateMoments(); return _covarianceMatrix; }
   inline const Eigen::Vector3f& mean() const {_updateMoments(); return _mean; }
   inline const Eigen::Matrix3f& informationMatrix() const { _updateInfo(); return _informationMatrix; }
