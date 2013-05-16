@@ -1,7 +1,7 @@
 #ifndef _HOMOGENEOUSPOINT3FSTATS_H_
 #define _HOMOGENEOUSPOINT3FSTATS_H_
+
 #include "homogeneousvector4f.h"
-#include <iostream>
 
 /** \struct HomogeneousPoint3fStats
  *  \brief Class for 3D points stats representation.
@@ -10,17 +10,19 @@
  *  a 3D point. In particular it is able to store the eigenvalues and eigenvectors of the covariance
  *  matrix associated to a point along with its curvature.
  */
-struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
+struct HomogeneousPoint3fStats : public Eigen::Matrix4f {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
   /**
    *  Empty constructor.
    *  This constructor creates an HomogeneousPoint3fStats object filling the matrix with zeros.
    */
-  inline HomogeneousPoint3fStats() {
-    setZero();
+  inline HomogeneousPoint3fStats() : Eigen::Matrix4f() {
     _n = 0;
+    setZero();
     _mean = HomogeneousPoint3f::Zero();
+    _curvatureComputed = false;
+    _curvature = 1.0f;	
   }
 
   /** \typedef Base
@@ -38,9 +40,9 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
    *  @param other is the Eigen MatrixBase object used to fill the matrix.
    */
   template<typename OtherDerived>
-  inline HomogeneousPoint3fStats(const Eigen::MatrixBase<OtherDerived>& other)
-    :Eigen::Matrix4f(other){
-    block<1,4>(3,0).setZero();
+  inline HomogeneousPoint3fStats(const Eigen::MatrixBase<OtherDerived> &other) : Eigen::Matrix4f(other){
+    block<1, 4>(3, 0).setZero();
+    _curvatureComputed = false;
   }
 
   /**
@@ -48,9 +50,9 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
    *  MatrixBase object and an HomogeneousPoint3fStats object.
    */
   template<typename OtherDerived>
-  inline HomogeneousPoint3fStats& operator = (const Eigen::MatrixBase<OtherDerived>& other) {
-    this->Base::operator=(other);    
-    block<1,4>(3,0).setZero();
+  inline HomogeneousPoint3fStats& operator = (const Eigen::MatrixBase<OtherDerived> &other) {
+    this->Base::operator = (other);    
+    block<1, 4>(3, 0).setZero();
     return *this;
   }
 
@@ -59,28 +61,26 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
    *  the HomogeneousPoint3fStats object.
    *  @return a 3 element vector containing the eigenvalues extracted.
    */
-  inline Eigen::Vector3f eigenValues() {return block<3,1>(0,3);}
+  inline Eigen::Vector3f eigenValues() const { return block<3, 1>(0, 3); }
 
   /**
    *  This method extract the eigenvectors of the covariance matrix of the point associated to 
    *  the HomogeneousPoint3fStats object.
    *  @return a 3x3 matrix containing the eigenvalues extracted, where each column represent an eigenvector.
    */
-  inline Eigen::Matrix3f eigenVectors(){return block<3,3>(0,0);};
+  inline Eigen::Matrix3f eigenVectors() const { return block<3, 3>(0, 0); }
   
-
-
   template<typename OtherDerived>
-  inline HomogeneousPoint3fStats transform(const Eigen::MatrixBase<OtherDerived>& other) const {
+  inline HomogeneousPoint3fStats transform(const Eigen::MatrixBase<OtherDerived> &other) const {
     HomogeneousPoint3fStats s(other*(*this));
-    s.col(3)=col(3);
+    s.col(3) = col(3);
     return s;
   }
 
   template<typename OtherDerived>
-  inline HomogeneousPoint3fStats& transformInPlace(const Eigen::MatrixBase<OtherDerived>& other) const {
+  inline HomogeneousPoint3fStats& transformInPlace(const Eigen::MatrixBase<OtherDerived> &other) const {
     HomogeneousPoint3fStats s(other*(*this));
-    s.col(3)=col(3);
+    s.col(3) = col(3);
     *this = s;
     return *this;
   }
@@ -92,13 +92,23 @@ struct HomogeneousPoint3fStats: public Eigen::Matrix4f{
    *  an high curvature (a corner).
    *  @return a float value between 0 and 1 representing the curvature.
    */
-  inline float curvature() const { return coeffRef(0,3)/(coeffRef(0,3)+coeffRef(1,3)+coeffRef(2,3)+1e-9); }
+  inline float curvature() const {
+    if(!_curvatureComputed)
+      _curvature = coeffRef(0, 3) / (coeffRef(0, 3) + coeffRef(1, 3) + coeffRef(2, 3) + 1e-9);
+    _curvatureComputed = true;
+    return _curvature;
+  }
   
-  void setN(int n_) { _n = n_; }
-  void setMean(HomogeneousPoint3f mean_) { _mean = mean_; }
-  	
+  inline int n() { return _n; }
+  inline void setN(const int n_) { _n = n_; }
+  inline HomogeneousPoint3f mean() { return _mean; }
+  inline void setMean(const HomogeneousPoint3f mean_) { _mean = mean_; }
+
+ protected:  	
   int _n;
   HomogeneousPoint3f _mean;
+  mutable bool  _curvatureComputed;
+  mutable float _curvature;
 };
 
 /** \typedef HomogeneousPoint3fStatsVector

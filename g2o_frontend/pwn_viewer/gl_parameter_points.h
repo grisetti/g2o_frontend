@@ -1,5 +1,6 @@
 #ifndef GL_PARAMETER_POINTS
 #define GL_PARAMETER_POINTS
+
 #include <Eigen/Geometry>
 #include <GL/gl.h>
 #include "gl_parameter.h"

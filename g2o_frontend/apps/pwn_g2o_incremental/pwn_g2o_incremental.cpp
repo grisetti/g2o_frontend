@@ -15,11 +15,6 @@
 #include "g2o/core/optimization_algorithm_levenberg.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 
-#include "g2o/types/slam3d/types_slam3d.h"
-#include "g2o/types/slam3d_addons/types_slam3d_addons.h"
-#include "g2o/types/slam2d/types_slam2d.h"
-#include "g2o/types/slam2d_addons/types_slam2d_addons.h"
-
 #include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "g2o_frontend/sensor_data/rgbd_data.h"
 #include "g2o_frontend/sensor_data/imu_data.h"
@@ -99,7 +94,6 @@ int main(int argc, char**argv){
   hasToStop = false;
   string filename;
   string outfilename;
-
 
   float numThreads;
 
@@ -265,7 +259,6 @@ int main(int argc, char**argv){
 	    g2o::Parameter* pOffsetOld = graph->parameter(oldData->paramIndex()+10);
 	    Eigen::Isometry3d oldCameraPose = vOld->estimate()*pOld->offset();
 	    Eigen::Isometry3d oldCameraMovement = oldCameraPose.inverse()*currentCameraPose;
-
 
 	    Matrix6f omega;
 	    Vector6f mean;

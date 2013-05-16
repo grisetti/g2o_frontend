@@ -1,39 +1,38 @@
 #ifndef DRAWABLE_CORRESPONDENCES
 #define DRAWABLE_CORRESPONDENCES
 
-//#include "../pwn/pointwithnormalaligner.h"
-#include "../pwn/pointwithnormal.h"
-#include "../pwn/correspondencegenerator.h"
+#include "g2o_frontend/pwn2/correspondencefinder.h"
 #include "drawable.h"
+
+using namespace pwn;
 
 class DrawableCorrespondences : public Drawable {
  public:
   DrawableCorrespondences();
-  DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_,  int numCorrespondences_, CorrespondenceVector *correspondences_);
+  DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_,  int numCorrespondences_, PointVector *referencePoints_, PointVector *currentPoints_, CorrespondenceVector *correspondences_);
   
+  void setReferencePointsTransformation(Eigen::Isometry3f referencePointsTransformation_) { _referencePointsTransformation = referencePointsTransformation_; }
   void setNumCorrespondences(int numCorrespondences_) { _numCorrespondences = numCorrespondences_; }
-  int numCorrespondances() { return _numCorrespondences; }
-
-  void setCorrespondences(const CorrespondenceVector *correspondences_) { _correspondences = correspondences_; }
-  const CorrespondenceVector* correspondences() { return _correspondences; }
-
-  void setPoints1(const PointWithNormalVector *points1_) { _points1 = points1_; }
-  const PointWithNormalVector* points1() { return _points1; }
-
-  void setPoints2(const PointWithNormalVector *points2_) { _points2 = points2_; }
-  const PointWithNormalVector* points2() { return _points2; }
-
+  void setCorrespondences(CorrespondenceVector *correspondences_) { _correspondences = correspondences_; }
+  void setReferencePoints(PointVector *referencePoints_) { _referencePoints = referencePoints_; }
+  void setCurrentPoints(PointVector *currentPoints_) { _currentPoints = currentPoints_; }
   virtual bool setParameter(GLParameter *parameter_);
+
+  Eigen::Isometry3f referencePointsTransformation() { return _referencePointsTransformation; }
+  int numCorrespondances() { return _numCorrespondences; }
+  CorrespondenceVector* correspondences() { return _correspondences; }
+  PointVector* referencePoints() { return _referencePoints; }
+  PointVector* currentPoints() { return _currentPoints; }
   virtual GLParameter* parameter() { return _parameter; };
+  
   virtual void draw();
  
-  Eigen::Isometry3f _points2Transform;
-
  protected:
+  Eigen::Isometry3f _referencePointsTransformation;
   int _numCorrespondences;
-  const CorrespondenceVector *_correspondences;
-  const PointWithNormalVector *_points1;
-  const PointWithNormalVector *_points2;
+  CorrespondenceVector *_correspondences;
+  PointVector *_referencePoints;
+  PointVector *_currentPoints;
  
 };  
 

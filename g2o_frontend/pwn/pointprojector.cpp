@@ -1,27 +1,16 @@
 #include "pointprojector.h"
-#include <iostream>
 
-PointProjector::PointProjector(){
+PointProjector::PointProjector() {
   _transform.setIdentity();
   _minDistance = 0.01;
   _maxDistance = 10.0f;
 }
 
-PointProjector::~PointProjector(){
-}
+PointProjector::~PointProjector() {}
 
-
-const Eigen::Isometry3f& PointProjector::transform() const {
-  return _transform;
-}
-
-void PointProjector::setTransform(const Eigen::Isometry3f& transform_) {
-  _transform=transform_;
-}
-
-void PointProjector::project(Eigen::MatrixXi& indexImage, 
-			     Eigen::MatrixXf& depthImage, 
-			     const HomogeneousPoint3fVector& points) const {
+void PointProjector::project(Eigen::MatrixXi &indexImage, 
+			     Eigen::MatrixXf &depthImage, 
+			     const HomogeneousPoint3fVector &points) const {
   depthImage.resize(indexImage.rows(), indexImage.cols());
   depthImage.fill(std::numeric_limits<float>::max());
   indexImage.fill(-1);
@@ -29,7 +18,7 @@ void PointProjector::project(Eigen::MatrixXi& indexImage,
   for (size_t i=0; i<points.size(); i++, point++){
     int x, y;
     float d;
-    if (!project(x,y,d,*point)||
+    if (!project(x, y, d, *point) ||
 	x<0 || x>=indexImage.rows() ||
 	y<0 || y>=indexImage.cols()  )
       continue;
@@ -37,14 +26,14 @@ void PointProjector::project(Eigen::MatrixXi& indexImage,
     int&   otherIndex=indexImage(x,y);
     if (otherDistance>d) {
       otherDistance = d;
-      otherIndex    = i;
+      otherIndex = i;
     }
   }
 }
 
-void PointProjector::projectIntervals(Eigen::MatrixXi& intervalImage, 
-			      const Eigen::MatrixXf& depthImage, 
-			      float worldRadius) const{
+void PointProjector::projectIntervals(Eigen::MatrixXi &intervalImage, 
+				      const Eigen::MatrixXf &depthImage, 
+				      const float worldRadius) const{
   intervalImage.resize(depthImage.rows(), depthImage.cols());
   int cpix=0;
   for (int c=0; c<depthImage.cols(); c++){
@@ -57,9 +46,9 @@ void PointProjector::projectIntervals(Eigen::MatrixXi& intervalImage,
   }
 }
 
-void PointProjector::unProject(HomogeneousPoint3fVector& points,
-			       Eigen::MatrixXi& indexImage,
-			       const Eigen::MatrixXf& depthImage) const {
+void PointProjector::unProject(HomogeneousPoint3fVector &points,
+			       Eigen::MatrixXi &indexImage,
+			       const Eigen::MatrixXf &depthImage) const {
   points.resize(depthImage.rows()*depthImage.cols());
   int count = 0;
   indexImage.resize(depthImage.rows(), depthImage.cols());
@@ -81,4 +70,10 @@ void PointProjector::unProject(HomogeneousPoint3fVector& points,
   }
   points.resize(count);
 }
+
+inline bool PointProjector::project(int &, int &, float &, const HomogeneousPoint3f &) const { return false; }
+
+inline int PointProjector::projectInterval(const int, const int, const float, const float) const { return 0; }
+
+inline bool PointProjector::unProject(HomogeneousPoint3f &, const int, const int, const float) const { return false; }
 

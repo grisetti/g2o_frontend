@@ -152,7 +152,7 @@ public:
     }
 
     //mal
-    bool operator()(TransformType& treturn, std::vector<int>& in, bool debug = false){
+    bool operator()(TransformType& treturn, std::vector<int>& inliers_, bool debug = false){
         if ((int)_correspondences.size()<minimalSetSize())
             return false;
         if (!_init())
@@ -239,7 +239,7 @@ public:
                     transformFound = true;
 
                     //mal
-                    in=bestInliers;
+                    inliers_=bestInliers;
                 }
                 if ((double)inliers.size()/(double)_correspondences.size() > _inlierStopFraction){
                     transformFound = true;

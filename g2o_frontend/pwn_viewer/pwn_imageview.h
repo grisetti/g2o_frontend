@@ -1,8 +1,11 @@
 #ifndef PWN_IMAGEVIEW_H_
 #define PWN_IMAGEVIEW_H_
-#include "../pwn/depthimage.h"
+
+#include "g2o_frontend/pwn2/depthimage.h"
 #include <qimage.h>
 #include <qlabel.h>
+
+using namespace pwn;
 
 struct DepthImageView{
   DepthImageView();

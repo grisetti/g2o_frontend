@@ -8,6 +8,8 @@ endif(OPENMP_FOUND)
 
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 
+
+
 ADD_LIBRARY(pwn_library
 	../basemath/bm_se3.h
 	aligner.cpp aligner.h
@@ -16,6 +18,8 @@ ADD_LIBRARY(pwn_library
   pinholepointprojector.cpp pinholepointprojector.h
   homogeneouspoint3fintegralimage.cpp homogeneouspoint3fintegralimage.h
   normalgenerator.h	
+  homogeneouspoint3fscene.cpp homogeneouspoint3fscene.h
+  depthimageconverter.cpp depthimageconverter.h
   homogeneouspoint3fstatsgenerator.cpp homogeneouspoint3fstatsgenerator.h
   homogeneouspoint3faccumulator.h
   homogeneouspoint3fstats.h
@@ -30,6 +34,7 @@ ADD_LIBRARY(pwn_library
   pointwithnormalstatsgenerator.cpp pointwithnormalstatsgenerator.h
   pointwithnormalaligner.cpp pointwithnormalaligner.h
   pointwithnormalmerger.cpp pointwithnormalmerger.h
+  se3_prior.cpp se3_prior.h
   scene.cpp scene.h
   scene_merger.cpp scene_merger.h
   correspondencegenerator.cpp correspondencegenerator.h 
@@ -64,3 +69,8 @@ TARGET_LINK_LIBRARIES( pwn_g2o_movingRef pwn_library  ${G2O_STUFF_LIBRARY} )
 ADD_EXECUTABLE(homogeneous_normals homogeneous_normals.cpp)
 SET_TARGET_PROPERTIES(homogeneous_normals PROPERTIES OUTPUT_NAME homogeneous_normals)
 TARGET_LINK_LIBRARIES( homogeneous_normals pwn_library  ${G2O_STUFF_LIBRARY} ) 
+
+ADD_EXECUTABLE(depth_converter_test depth_converter_test.cpp)
+SET_TARGET_PROPERTIES(depth_converter_test PROPERTIES OUTPUT_NAME depth_converter_test)
+TARGET_LINK_LIBRARIES (depth_converter_test pwn_library  ${G2O_STUFF_LIBRARY} ) 
+

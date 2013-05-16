@@ -6,7 +6,7 @@
 #include "multivariate_vector_function.h"
 #include "affine_vector_function.h"
 
-class SE3OffsetErrorFunction: public MultivariateVectorFunction<Vector6f, Vector6f> {
+class SE3OffsetErrorFunction: public MultivariateVectorFunction<float, 6, 6> {
 public:
   SE3OffsetErrorFunction(const Eigen::Isometry3f& odometryMeasurement_,
 			 const Eigen::Isometry3f& currentTransform_=Eigen::Isometry3f::Identity(),

@@ -77,8 +77,6 @@ SET_TARGET_PROPERTIES(ransac_test PROPERTIES OUTPUT_NAME g2o_ransac_test${EXE_PO
 #   ${G2O_CORE_LIBRARY} 
 #   )
   
-  
-  
 ADD_EXECUTABLE(ransac_test_fromGraph   ransac_test_fromGraph.cpp)
 
 TARGET_LINK_LIBRARIES(ransac_test_fromGraph
@@ -91,6 +89,7 @@ TARGET_LINK_LIBRARIES(ransac_test_fromGraph
   ${G2O_STUFF_LIBRARY} 
   ${G2O_CORE_LIBRARY} 
   )
+  
 SET_TARGET_PROPERTIES(ransac_test_fromGraph PROPERTIES OUTPUT_NAME g2o_ransac_test_fromGraph${EXE_POSTFIX})
 
 

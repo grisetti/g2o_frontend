@@ -13,7 +13,7 @@
  *  by HomogeneousPoint3fAccumulator. This class extends the Eigen Matrix class.
  */
 
-struct HomogeneousPoint3fIntegralImage: public Eigen::Matrix<HomogeneousPoint3fAccumulator, Eigen::Dynamic, Eigen::Dynamic> {
+struct HomogeneousPoint3fIntegralImage : public Eigen::Matrix<HomogeneousPoint3fAccumulator, Eigen::Dynamic, Eigen::Dynamic> {
   /**
    *  Empty constructor.
    *  This constructor creates an integral image using the constructor of the Eigen Matrix class.
@@ -27,7 +27,7 @@ struct HomogeneousPoint3fIntegralImage: public Eigen::Matrix<HomogeneousPoint3fA
    *  @param pointIndices is the index image containing the indices of the points to use.
    *  @param points is the vector of homogeneous point to use to compute the integral image.
    */
-  void compute(const Eigen::MatrixXi pointIndices, const HomogeneousPoint3fVector& points);
+  void compute(const Eigen::MatrixXi &pointIndices, const HomogeneousPoint3fVector &points);
   
   /**
    *  This method clears all the matrix elements.
