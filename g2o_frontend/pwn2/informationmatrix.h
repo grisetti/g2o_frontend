@@ -68,21 +68,6 @@ struct InformationMatrix: public Eigen::Matrix4f {
     }
   }
 
-  template<typename OtherDerived>
-  inline void transform(TransformableVector& dest, const OtherDerived& m) const {
-    Eigen::Matrix4f T=m;
-    T.row(3).setZero();
-    T.col(3).setZero();
-    Eigen::Matrix4f Tt=T.transpose();
-
-    dest.resize(this->size());
-    const InformationMatrix* tSrc= &(*this)[0];
-    InformationMatrix* tDest= &dest[0];
-    for (size_t i = 0; i < size(); ++i, ++tSrc, ++tDest ) {
-      *tDest = T * (*tSrc) * Tt;
-    }
-  }
-
 
 };
 

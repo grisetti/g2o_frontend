@@ -130,6 +130,7 @@ int main(int argc, char**argv) {
 	d=d->next();
 	continue;
       }
+      cerr << "got data" << endl;
       // retrieve from the rgb data the index of the parameter
       int paramIndex = rgbdData->paramIndex();
       // retrieve from the graph the parameter given the index  

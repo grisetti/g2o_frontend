@@ -44,17 +44,17 @@ void StatsFinder::compute(PointStatsVector &stats,
 								  c-imageRadius, c+imageRadius);
       if (acc.n() < _minPoints)
 	continue;
-      Eigen::Matrix4f covariance4f = acc.covariance();
-      Eigen::Matrix3f covariance3f = covariance4f.block<3,3>(0,0);
+      PointStats& stat = stats[*index];
+      Eigen::Matrix3f covariance3f = acc.covariance().block<3,3>(0,0);
       eigenSolver.computeDirect(covariance3f, Eigen::ComputeEigenvectors);
-      covariance4f.setZero();
-      covariance4f.block<3,3>(0,0) = eigenSolver.eigenvectors();
-      covariance4f.block<3,1>(0,3) = eigenSolver.eigenvalues();
-      if (covariance4f.coeffRef(0,3) < 0.0f)
-	covariance4f.coeffRef(0,3) = 0.0f;
-      stats[*index] = covariance4f;
-      stats[*index].setN(acc.n());
-      stats[*index].setMean(acc.mean());
+      Eigen::Vector4f eigenvalues;
+      if (eigenvalues(0) < 0.0f)
+	eigenvalues(0) = 0.0f;
+      stat.setZero();
+      stat.setEigenVectors(eigenSolver.eigenvectors());
+      stat.setEigenValues(eigenSolver.eigenvalues());
+      stat.setMean(acc.mean());
+      stat.setN(acc.n());
     }
   }
 }
@@ -103,27 +103,26 @@ void StatsFinder::compute(NormalVector& normals,
 								  c-imageRadius, c+imageRadius);
       if (acc.n() < _minPoints)
 	continue;
-      Eigen::Matrix4f covariance4f = acc.covariance();
-      Eigen::Matrix3f covariance3f = covariance4f.block<3, 3>(0, 0);
-      eigenSolver.computeDirect(covariance3f, Eigen::ComputeEigenvectors);
-      covariance4f.setZero();
-      covariance4f.block<3, 3>(0, 0) = eigenSolver.eigenvectors();
-      covariance4f.block<3, 1>(0, 3) = eigenSolver.eigenvalues();
-      if (covariance4f(0, 3) < 0.0f)
-	covariance4f(0, 3) = 0.0f;
+      eigenSolver.computeDirect(acc.covariance().block<3,3>(0,0), Eigen::ComputeEigenvectors);
+
       PointStats &stat = stats[*index];
-      Normal &normal = normals[*index];
-      const Point &point = points[*index];
-      stat = covariance4f;
-      stat.setN(acc.n());
+      Normal& normal = normals[*index];
+      const Point&  point = points[*index];
+      stat.setZero();
+      stat.setEigenVectors(eigenSolver.eigenvectors());
       stat.setMean(acc.mean());
-      normal.block<4, 1>(0, 0) = stat.block<4, 1>(0, 0);
+      Eigen::Vector3f eigenValues = eigenSolver.eigenvalues();
+      if(eigenValues(0) < 0.0f)
+	eigenValues(0) = 0.0f;
+      stat.setEigenValues(eigenValues);
+      stat.setN(acc.n());
+      
+      normal = stat.block<4, 1>(0, 0);
       if(stat.curvature() < curvatureThreshold) {
 	if(normal.dot(point) > 0)
 	  normal = -normal;
-      } else {
+      } else 
 	normal.setZero();
-      }    
     }
   }
 }

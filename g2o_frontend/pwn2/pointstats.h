@@ -1,6 +1,6 @@
 #ifndef _POINTSTATS_H_
 #define _POINTSTATS_H_
-
+#include <iostream>
 #include "homogeneousvector4f.h"
 
 namespace pwn {
@@ -19,134 +19,66 @@ struct PointStats : public Eigen::Matrix4f {
    *  Empty constructor.
    *  This constructor creates an HomogeneousPoint3fStats object filling the matrix with zeros.
    */
-  inline PointStats() : Eigen::Matrix4f() {
+  inline PointStats() {
     _n = 0;
-    setZero();
-    _mean = Point::Zero();
+    setIdentity();
+    _eigenValues.setZero();
     _curvatureComputed = false;
     _curvature = 1.0f;	
   }
 
-  /** \typedef Base
-   *  \brief 4 elements float vector type.
-   *
-   *  The Base type it's an Eigen Vector4f.
-   */
-  typedef Eigen::Matrix4f Base;
+  inline int n() { return _n; }
+  inline void setN(const int n_) { _n = n_; }
 
-  /**
-   *  Constructor using an Eigen MatrixBase object.
-   *  This constructor creates an HomogeneousPoint3fStats object using the constructor of the
-   *  Eigen Matrix4f class using as input the given generic Eigen MatrixBase object. Then it impose 
-   *  the fourth row of the matrix  to be equal to zero.
-   *  @param other is the Eigen MatrixBase object used to fill the matrix.
-   */
-  template<typename OtherDerived>
-  inline PointStats(const Eigen::MatrixBase<OtherDerived> &other) : Eigen::Matrix4f(other){
-    block<1, 4>(3, 0).setZero();
-    _curvatureComputed = false;
-  }
+  inline Point mean() { return block<4,1>(0,3); }
+  inline void setMean(const Point mean_) { block<4,1>(0,3) = mean_; }
 
-  /**
-   *  This method define the assignment operator between a generic Eigen
-   *  MatrixBase object and an HomogeneousPoint3fStats object.
-   */
-  template<typename OtherDerived>
-  inline PointStats& operator = (const Eigen::MatrixBase<OtherDerived> &other) {
-    this->Base::operator = (other);    
-    block<1, 4>(3, 0).setZero();
-    return *this;
-  }
+  inline const Eigen::Vector3f& eigenValues() const { return _eigenValues; }
+  inline void setEigenValues(const Eigen::Vector3f& eigenValues_)  { _eigenValues = eigenValues_; }
 
-  /**
-   *  This method extract the eigenvalues of the covariance matrix of the point associated to 
-   *  the HomogeneousPoint3fStats object.
-   *  @return a 3 element vector containing the eigenvalues extracted.
-   */
-  inline Eigen::Vector3f eigenValues() const { return block<3, 1>(0, 3); }
-
-  /**
-   *  This method extract the eigenvectors of the covariance matrix of the point associated to 
-   *  the HomogeneousPoint3fStats object.
-   *  @return a 3x3 matrix containing the eigenvalues extracted, where each column represent an eigenvector.
-   */
   inline Eigen::Matrix3f eigenVectors() const { return block<3, 3>(0, 0); }
-  
-  template<typename OtherDerived>
-  inline PointStats transform(const Eigen::MatrixBase<OtherDerived> &other) const {
-    PointStats s(other*(*this));
-    s.col(3) = col(3);
-    return s;
-  }
+  inline void  setEigenVectors(const Eigen::Matrix3f& eigenVectors_)  { block<3, 3>(0, 0) = eigenVectors_; }
 
-  template<typename OtherDerived>
-  inline PointStats& transformInPlace(const Eigen::MatrixBase<OtherDerived> &other) const {
-    PointStats s(other*(*this));
-    s.col(3) = col(3);
-    *this = s;
-    return *this;
-  }
-
-  /**
-   *  This method computes the curvature of the point associated to the HomogeneousPoint3fStats object.
-   *  The curvature values range between 0 and 1. When the curvature is near to zero means that the point
-   *  is lying on a flat surface (a plane), when it is near to 1 then the point is lying on a surface with
-   *  an high curvature (a corner).
-   *  @return a float value between 0 and 1 representing the curvature.
-   */
   inline float curvature() const {
     if(!_curvatureComputed)
-      _curvature = coeffRef(0, 3) / (coeffRef(0, 3) + coeffRef(1, 3) + coeffRef(2, 3) + 1e-9);
+      _curvature = _eigenValues(0) / (_eigenValues(1) + _eigenValues(1) + _eigenValues(2) + 1e-9);
     _curvatureComputed = true;
     return _curvature;
   }
   
-  inline int n() { return _n; }
-  inline void setN(const int n_) { _n = n_; }
-  inline Point mean() { return _mean; }
-  inline void setMean(const Point mean_) { _mean = mean_; }
 
  protected:  	
   int _n;
-  Point _mean;
+  Eigen::Vector3f _eigenValues;
   mutable bool  _curvatureComputed;
   mutable float _curvature;
 };
 
-
- template<typename OtherDerived>
-   inline PointStats operator *(const Eigen::MatrixBase<OtherDerived> &other, const PointStats& stats) {
-   const Eigen::Matrix3f& R = other.block(3,3,0,0);
-   PointStats s=stats;
-   s.block<3,3>(0,0) = R * stats.block<3,3>(0,0);
-   return s;
- }
 
 class PointStatsVector: public TransformableVector<PointStats> {
 
  public: 
   template<typename OtherDerived>
     inline void transformInPlace(const OtherDerived& m) {
-    Eigen::Matrix3f R =m.block(3,3,0,0) ;
+    const Eigen::Matrix4f R4 =m;
+    const Eigen::Matrix3f R = R4.block<3,3>(0,0);
+    std::cerr << "R " << std::endl;
+    std::cerr << R << std::endl;
     for (size_t i = 0; i < size(); ++i) {
-      at(i).block<3,3>(0,0) = R * at(i).block<3,3>(0,0);
-    }
-  }
+      if (i==0){
+	std::cerr << "before " << std::endl;
+	std::cerr << at(i) << std::endl;
+	std::cerr << at(i).eigenValues().transpose() << std::endl;
 
-  template<typename OtherDerived>
-  inline void transform(TransformableVector& dest, const OtherDerived& m) const {
-    Eigen::Matrix4f T=m;
-    T.row(3).setZero();
-    T.col(3).setZero();
- 
-    dest.resize(this->size());
-    const PointStats* tSrc= &(*this)[0];
-    Eigen::Vector4f tmp = (*tSrc).block<1, 4>(0, 3);    
-    PointStats* tDest= &dest[0];
-    for (size_t i = 0; i < size(); ++i, ++tSrc, ++tDest ) {
-      *tDest = T * (*tSrc);
+      }
+      at(i).block<4,4>(0,0) = R4 * at(i).block<4,4>(0,0);
+      if (i==0){
+	std::cerr << "after " << std::endl;
+	std::cerr << at(i) << std::endl;
+	std::cerr << at(i).eigenValues().transpose() << std::endl;
+      }
+	
     }
-    (*tDest).block<1, 4>(0, 3) = tmp;  
   }
 
 
