@@ -4,6 +4,7 @@
 #include "g2o_frontend/pwn2/aligner.h"
 #include "g2o_frontend/basemath/bm_se3.h"
 
+#include "g2o_frontend/pwn2/depthimageconverter.h"
 #include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
 #include "g2o_frontend/pwn_viewer/pwn_imageview.h"
 #include "g2o_frontend/pwn_viewer/drawable_points.h"
@@ -20,7 +21,7 @@
 #include "g2o/stuff/command_args.h"
 #include "g2o/stuff/timeutil.h"
 
-//#undef _PWN_USE_CUDA_
+#undef _PWN_USE_CUDA_
 
 #ifdef _PWN_USE_CUDA_
 #include "g2o_frontend/pwn_cuda/cualigner.h"
@@ -98,76 +99,24 @@ struct DrawableFrame {
       0.0f, 525.0f, 239.5f,
       0.0f, 0.0f, 1.0f;
     
-    float ng_curvatureThreshold = 1.0f;
-
     if(!depthImage.load(filename.c_str(), true)) {
       cout << "Failure while loading the depth image: " << filename<< " skipping image!" << endl;
       return;
     }
     cout << endl << "Loaded depth image " << filename << " of size: " << depthImage.rows() << "x" << depthImage.cols() << endl;
     
-    /************************************************************************
-     *                         Point Unprojection                           *
-     ************************************************************************/
-    cout << "Unprojecting points...";
-
-    // Update the size of the index image.
-    indexImage.resize(depthImage.rows(), depthImage.cols());
-    
     // Set the camera matrix of the projector object.
     projector.setCameraMatrix(cameraMatrix);
-  
-    // Get the points in the 3d euclidean space.
-    projector.unProject(frame.points(), indexImage, depthImage);
-    
-    cout << " done." << endl;
 
-    /************************************************************************
-     *                         Normal Computation                           *
-     ************************************************************************/
-    cout << "Computing normals...";
-
-    PointIntegralImage integralImage;
-    MatrixXi intervalImage;
-  
-    // Compute the integral images.
-    integralImage.compute(indexImage, frame.points());
-    
-    // Compute the intervals.
-    projector.projectIntervals(intervalImage, depthImage, 0.1f);
-    
-    // Resize the vector containing the stats to have the same length of the vector of points.
-    frame.stats().resize(frame.points().size());
-    std::fill(frame.stats().begin(), frame.stats().end(), PointStats());
-    
-    // Creating the stas generator object. 
-    StatsFinder statsGenerator;
-  
-    // Stats and normals computation.
-    statsGenerator.compute(frame.normals(),
-			   frame.stats(),
-			   frame.points(),
-			   integralImage,
-			   intervalImage,
-			   indexImage,
-			   ng_curvatureThreshold);
-    
-    cout << " done." << endl;
-
-    /************************************************************************
-     *                         Omega Computation                            *
-     ************************************************************************/
-    cout << "Computing omegas...";
-
-    // Creating the omegas generators objects.
-    PointInformationMatrixFinder pointInformationMatrixFinder;
-    NormalInformationMatrixFinder normalInformationMatrixFinder;
-  
-    // Omegas computation.
-    pointInformationMatrixFinder.compute(frame.pointInformationMatrix(), frame.stats(), frame.normals());
-    normalInformationMatrixFinder.compute(frame.normalInformationMatrix(), frame.stats(), frame.normals());
-
-    cout << " done." << endl;
+    DepthImageConverter depthImageConverter = DepthImageConverter(&projector, &statsFinder,
+								  &pointInformationMatrixFinder,
+								  &normalInformationMatrixFinder);
+    sensorOffset = Isometry3f::Identity();
+    //sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+    Quaternionf quat = Quaternionf(0.0f, 0.247404f, 0.0f, 0.968912f);
+    //sensorOffset.linear() = quat.toRotationMatrix();
+    sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    depthImageConverter.compute(frame, depthImage);//, sensorOffset);
 
     dPoints->setPoints(&frame.points());
     dPoints->setNormals(&frame.normals());
@@ -175,7 +124,13 @@ struct DrawableFrame {
     dNormals->setNormals(&frame.normals());
     dCovariances->setCovariances(&frame.stats());
   }
+  
+  // Creating the stas generator object. 
+  StatsFinder statsFinder;
 
+  // Creating the omegas generators objects.
+  PointInformationMatrixFinder pointInformationMatrixFinder;
+  NormalInformationMatrixFinder normalInformationMatrixFinder;
   Frame frame;
   CorrespondenceVector correspondences;
   PinholePointProjector projector;
@@ -183,6 +138,8 @@ struct DrawableFrame {
   int step;
   DepthImage depthImage;
   Eigen::MatrixXi indexImage;
+
+  Isometry3f sensorOffset;
 
   GLParameterPoints *pPoints;
   GLParameterNormals *pNormals;
@@ -238,6 +195,8 @@ int main(int argc, char** argv) {
   PWNGuiMainWindow pwnGMW;
   QGraphicsScene *refScn, *currScn;
   
+  pwnGMW.viewer_3d->setAxisIsDrawn(true);
+
   std::vector<string> filenames;
   std::set<string> filenamesset = readDir(workingDirectory);
   for (set<string>::const_iterator it = filenamesset.begin(); it != filenamesset.end(); it++) {
@@ -275,7 +234,6 @@ int main(int argc, char** argv) {
   std::vector<DrawableFrame*> drawableFrameVector;
   DrawableFrame *drawableFrame = 0;
   Isometry3f initialGuess = Isometry3f::Identity();
-  Isometry3f sensorOffset = Isometry3f::Identity();
   Isometry3f globalT = Isometry3f::Identity();
   Isometry3f stepByStepInit = Isometry3f::Identity();
   std::vector<Isometry3f> localT; 
@@ -348,14 +306,14 @@ int main(int argc, char** argv) {
       if(!wasInitialGuess) {
 	aligner.setOuterIterations(al_outerIterations);
 
-    aligner.correspondenceFinder()->setSize(drawableFrameVector[drawableFrameVector.size()-2]->indexImage.rows(), drawableFrameVector[drawableFrameVector.size()-2]->indexImage.cols());
+	aligner.correspondenceFinder()->setSize(drawableFrameVector[drawableFrameVector.size()-2]->depthImage.rows(), drawableFrameVector[drawableFrameVector.size()-2]->depthImage.cols());
 	
-    aligner.setProjector(&drawableFrameVector[drawableFrameVector.size()-2]->projector);
-    aligner.setReferenceFrame(&drawableFrameVector[drawableFrameVector.size()-2]->frame);
-    aligner.setCurrentFrame(&drawableFrameVector[drawableFrameVector.size()-1]->frame);
+	aligner.setProjector(&drawableFrameVector[drawableFrameVector.size()-2]->projector);
+	aligner.setReferenceFrame(&drawableFrameVector[drawableFrameVector.size()-2]->frame);
+	aligner.setCurrentFrame(&drawableFrameVector[drawableFrameVector.size()-1]->frame);
 	
 	aligner.setInitialGuess(initialGuess);
-	aligner.setSensorOffset(sensorOffset);
+	aligner.setSensorOffset(drawableFrameVector[drawableFrameVector.size()-1]->sensorOffset);
 	
 	aligner.align();
 	
@@ -402,7 +360,7 @@ int main(int argc, char** argv) {
       if(!wasInitialGuess) {
 	aligner.setOuterIterations(1);
 
-    aligner.correspondenceFinder()->setSize(drawableFrameVector[drawableFrameVector.size()-2]->indexImage.rows(), drawableFrameVector[drawableFrameVector.size()-2]->indexImage.cols());
+    aligner.correspondenceFinder()->setSize(drawableFrameVector[drawableFrameVector.size()-2]->depthImage.rows(), drawableFrameVector[drawableFrameVector.size()-2]->depthImage.cols());
 	
     aligner.setProjector(&drawableFrameVector[drawableFrameVector.size()-2]->projector);
     aligner.setReferenceFrame(&drawableFrameVector[drawableFrameVector.size()-2]->frame);
@@ -412,7 +370,7 @@ int main(int argc, char** argv) {
 	  aligner.setInitialGuess(initialGuess);
 	else
 	  aligner.setInitialGuess(localT[localT.size()-1]);
-	aligner.setSensorOffset(sensorOffset);
+	aligner.setSensorOffset(drawableFrameVector[drawableFrameVector.size()-1]->sensorOffset);
 	
 	aligner.align();
 	

@@ -58,7 +58,6 @@ struct InformationMatrix: public Eigen::Matrix4f {
  public: 
   template<typename OtherDerived>
     inline void transformInPlace(const OtherDerived& m) {
-    cerr << "tuMadre" << endl;
     Eigen::Matrix4f T=m;
     T.row(3).setZero();
     T.col(3).setZero();

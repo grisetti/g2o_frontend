@@ -47,7 +47,7 @@ void Aligner::align() {
               _currentFrame->points());
   _T = _initialGuess;
   
-  _correspondenceFinder->currentDepthImage().save("current.pgm", false);
+  //_correspondenceFinder->currentDepthImage().save("current.pgm", false);
 
   char buf[1024];
   for(int i = 0; i < _outerIterations; i++) {
@@ -63,7 +63,7 @@ void Aligner::align() {
             _referenceFrame->points());
     
     sprintf(buf, "reference-%02d.pgm", i);
-    _correspondenceFinder->referenceDepthImage().save(buf, false);
+    //_correspondenceFinder->referenceDepthImage().save(buf, false);
 
     // Correspondences computation.    
     _correspondenceFinder->compute(*_referenceFrame, *_currentFrame, _T.inverse());

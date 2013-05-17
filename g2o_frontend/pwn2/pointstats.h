@@ -122,12 +122,35 @@ struct PointStats : public Eigen::Matrix4f {
    return s;
  }
 
-/** \typedef HomogeneousPoint3fStatsVector
- *  \brief TransformableVector of HomogeneousPoint3fStats.
- *
- *  The HomogeneousPoint3fStatsVector type it's a TrasformableVector of stats associated to 3D points.
-*/
-typedef TransformableVector<PointStats> PointStatsVector;
+class PointStatsVector: public TransformableVector<PointStats> {
+
+ public: 
+  template<typename OtherDerived>
+    inline void transformInPlace(const OtherDerived& m) {
+    Eigen::Matrix3f R =m.block(3,3,0,0) ;
+    for (size_t i = 0; i < size(); ++i) {
+      at(i).block<3,3>(0,0) = R * at(i).block<3,3>(0,0);
+    }
+  }
+
+  template<typename OtherDerived>
+  inline void transform(TransformableVector& dest, const OtherDerived& m) const {
+    Eigen::Matrix4f T=m;
+    T.row(3).setZero();
+    T.col(3).setZero();
+ 
+    dest.resize(this->size());
+    const PointStats* tSrc= &(*this)[0];
+    Eigen::Vector4f tmp = (*tSrc).block<1, 4>(0, 3);    
+    PointStats* tDest= &dest[0];
+    for (size_t i = 0; i < size(); ++i, ++tSrc, ++tDest ) {
+      *tDest = T * (*tSrc);
+    }
+    (*tDest).block<1, 4>(0, 3) = tmp;  
+  }
+
+
+};
 
 }
 
