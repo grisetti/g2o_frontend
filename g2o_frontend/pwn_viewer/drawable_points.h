@@ -3,6 +3,7 @@
 
 #include "../pwn2/homogeneousvector4f.h"
 #include "drawable.h"
+#include "gl_parameter_points.h"
 
 using namespace pwn;
 
@@ -22,6 +23,7 @@ class DrawablePoints : public Drawable {
   virtual void draw();
 
  protected:
+  GLParameterPoints* _parameter;
   PointVector *_points;
   NormalVector *_normals;
 };  

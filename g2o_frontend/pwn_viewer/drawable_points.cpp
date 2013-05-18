@@ -4,8 +4,7 @@
 using namespace pwn;
 
 DrawablePoints::DrawablePoints() : Drawable() {
-  GLParameterPoints* pointsParameter = new GLParameterPoints();
-  _parameter = (GLParameter*)pointsParameter;
+  _parameter = 0;
   _points = 0;
   _normals = 0;
 }
@@ -22,7 +21,7 @@ bool DrawablePoints::setParameter(GLParameter *parameter_) {
     _parameter = 0;
     return false;
   }
-  _parameter = parameter_;
+  _parameter = pointsParameter;
   return true;
 }
 

@@ -2,6 +2,7 @@
 #define DRAWABLE_NORMALS
 
 #include "../pwn2/homogeneousvector4f.h"
+#include "gl_parameter_normals.h"
 #include "drawable.h"
 
 using namespace pwn;
@@ -22,6 +23,7 @@ class DrawableNormals : public Drawable {
   virtual void draw();
 
  protected:
+  GLParameterNormals* _parameter;
   PointVector *_points;
   NormalVector *_normals;
 };  

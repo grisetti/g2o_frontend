@@ -4,8 +4,7 @@
 using namespace pwn;
 
 DrawableNormals::DrawableNormals() : Drawable(){
-  GLParameterNormals* normalsParameter = new GLParameterNormals();
-  _parameter = (GLParameter*)normalsParameter;
+  _parameter = 0;
   _points = 0;
   _normals = 0;
 }
@@ -22,7 +21,7 @@ bool DrawableNormals::setParameter(GLParameter *parameter_) {
     _parameter = 0;
     return false;
   }
-  _parameter = parameter_;
+  _parameter = normalsParameter;
   return true;
 }
 

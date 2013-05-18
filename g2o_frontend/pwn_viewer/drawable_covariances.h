@@ -2,6 +2,7 @@
 #define DRAWABLE_COVARIANCES
 
 #include "../pwn2/pointstats.h"
+#include "gl_parameter_covariances.h"
 #include "drawable.h"
 
 using namespace pwn;
@@ -20,6 +21,7 @@ class DrawableCovariances : public Drawable {
   virtual void draw();
 
  protected:
+  GLParameterCovariances* _parameter;
   PointStatsVector *_covariances;
 };  
 
