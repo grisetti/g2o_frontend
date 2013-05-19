@@ -1,0 +1,286 @@
+/*
+    <one line to give the program's name and a brief idea of what it does.>
+    Copyright (C) 2013  <copyright holder> <email>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
+#include "object_data.h"
+#include "id_placeholder.h"
+
+#include <stdexcept>
+
+using namespace std;
+using namespace boss;
+
+//ValueData
+int ValueData::getInt() {
+  throw logic_error("getInt not allowed for type "+typeName());
+}
+
+double ValueData::getDouble() {
+  throw logic_error("getDouble not allowed for type "+typeName());
+}
+
+float ValueData::getFloat() {
+  throw logic_error("getFloat not allowed for type "+typeName());
+}
+
+bool ValueData::getBool() {
+  throw logic_error("getBool not allowed for type "+typeName());
+}
+
+const string& ValueData::getString() {
+  throw logic_error("getString not allowed for type "+typeName());
+}
+
+vector<ValueData*>& ValueData::getArray() {
+  throw logic_error("getArray not allowed for type "+typeName());
+}
+
+map<string,ValueData*>& ValueData::getMap() {
+  throw logic_error("getMap not allowed for type "+typeName());
+}
+
+Identifiable* ValueData::getPointer() {
+  throw logic_error("getPointer not allowed for type "+typeName());
+}
+
+void ValueData::bindPointer(Identifiable*& pvar __attribute__((unused))) {
+  throw logic_error("bindPointer not allowed for type "+typeName());
+}
+
+ValueData::~ValueData() {}
+
+const string& ValueData::typeName() {
+  static string boolTypeName="BoolData";
+  static string numberTypeName="NumberData";
+  static string stringTypeName="StringData";
+  static string arrayTypeName="ArrayData";
+  static string objectTypeName="ObjectData";
+  static string pointerTypeName="PointerData";
+  static string pointerRefTypeName="PointerReference";
+  static string unknown="unknown";
+  switch (type()) {
+    case BOOL:
+      return boolTypeName;
+    case NUMBER:
+      return numberTypeName;
+    case STRING:
+      return stringTypeName;
+    case ARRAY:
+      return arrayTypeName;
+    case OBJECT:
+      return objectTypeName;
+    case POINTER:
+      return pointerTypeName;
+    case POINTER_REF:
+      return pointerRefTypeName;
+    default:
+      return unknown;
+  }
+}
+
+//BoolData
+bool BoolData::getBool() {
+  return _value;
+}
+
+int BoolData::getInt() {
+  return (int) _value;
+}
+
+ValueType BoolData::type() {
+  return BOOL;
+}
+
+//NumberData
+double NumberData::getDouble() {
+  return _value;
+}
+
+int NumberData::getInt() {
+  return (int) _value;
+}
+
+bool NumberData::getBool() {
+  return _value!=0.0;
+}
+
+float NumberData::getFloat() {
+  return (float) _value;
+}
+
+ValueType NumberData::type() {
+    return NUMBER;
+}
+
+
+//StringData
+const string& StringData::getString() {
+  return _value;
+}
+
+ValueType StringData::type() {
+    return STRING;
+}
+
+//ArrayData
+vector<ValueData*>& ArrayData::getArray() {
+  return _value;
+}
+
+ValueType ArrayData::type() {
+  return ARRAY;
+}
+
+ArrayData::~ArrayData() {
+  for (vector<ValueData*>::iterator v_it=_value.begin();v_it!=_value.end();delete *(v_it++));
+}
+
+void ArrayData::add(ValueData* value) {
+  _value.push_back(value);
+}
+
+void ArrayData::add(double value) {
+  _value.push_back(new NumberData(value));
+}
+
+void ArrayData::add(float value) {
+  _value.push_back(new NumberData(value));
+}
+
+void ArrayData::add(int value) {
+  _value.push_back(new NumberData(value));
+}
+
+void ArrayData::add(bool value) {
+  _value.push_back(new BoolData(value));
+}
+
+void ArrayData::add(const string& value) {
+  _value.push_back(new StringData(value));
+}
+
+void ArrayData::add(const char* value) {
+  _value.push_back(new StringData(value));
+}
+
+
+
+//ObjectData
+map<string, ValueData*>& ObjectData::getMap() {
+  return _value;
+}
+
+ValueType ObjectData::type() {
+  return OBJECT;
+}
+
+ObjectData::~ObjectData() {
+  for (map<string, ValueData*>::iterator v_it=_value.begin();v_it!=_value.end();delete (*(v_it++)).second);
+}
+
+ValueData* ObjectData::getField(const string& name) {
+  map<string,ValueData*>::iterator field=_value.find(name);
+  if (field!=_value.end()) {
+    return (*field).second;
+  }
+  return 0;
+}
+
+void ObjectData::setField(const string& name, ValueData* value) {
+  ValueData*& field=_value[name];
+  if (field) {
+    delete field;
+  }
+  field=value;
+}
+
+void ObjectData::setInt(const string& name, int value) {
+  setField(name, new NumberData(value));
+}
+
+void ObjectData::setDouble(const string& name, double value) {
+  setField(name, new NumberData(value));
+}
+
+void ObjectData::setFloat(const string& name, float value) {
+  setField(name, new NumberData(value));
+}
+
+void ObjectData::setBool(const string& name, bool value) {
+  setField(name, new BoolData(value));
+}
+
+void ObjectData::setString(const string& name, const string& value) {
+  setField(name, new StringData(value));
+}
+
+void ObjectData::setString(const string& name, const char* value) {
+  setField(name, new StringData(value));
+}
+
+//PointerData
+ValueType PointerData::type() {
+  return POINTER;
+}
+
+Identifiable* PointerData::getPointer() {
+  return _pointer;
+}
+
+//PointerReference
+ValueType PointerReference::type() {
+  return POINTER_REF;
+}
+
+void PointerReference::bindPointer(Identifiable*& pvar) {
+  _ref->addVariable(pvar);
+}
+
+#define STREAM_OPS(field_type, setter, getter) \
+  std::pair<const std::string&, const field_type &> field(const std::string& nm, const field_type & val) { \
+    return std::pair<const std::string&, const field_type &>(nm, val); \
+  } \
+  std::pair<const std::string&, field_type &> field(const std::string& nm, field_type & val) { \
+    return std::pair<const std::string&, field_type &>(nm, val); \
+  } \
+  ObjectData& operator << (ObjectData& o, std::pair<const std::string&, field_type &> f) { \
+    o.setter(f.first,f.second); \
+    return o; \
+  } \
+  ObjectData& operator << (ObjectData& o, std::pair<const std::string&, const field_type &> f) { \
+    o.setter(f.first,f.second); \
+    return o; \
+  } \
+  ObjectData& operator >> (ObjectData& o, std::pair<const std::string&, field_type &> f) { \
+    ValueData* v=o.getField(f.first); \
+    if (v) { \
+      f.second=v->getter(); \
+    } \
+    return o; \
+  }
+
+
+namespace boss {
+  
+  STREAM_OPS(bool, setBool, getBool)
+  STREAM_OPS(int, setInt, getInt)
+  STREAM_OPS(float, setFloat, getFloat)
+  STREAM_OPS(double, setDouble, getDouble)
+  STREAM_OPS(string, setString, getString)
+
+}
