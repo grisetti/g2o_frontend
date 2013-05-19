@@ -20,6 +20,7 @@ ADD_SUBDIRECTORY(line_alignment)
 #ADD_SUBDIRECTORY(planeAlignerJustTwo)
 #ADD_SUBDIRECTORY(planeAlignerJustTwoTEST)
 ADD_SUBDIRECTORY(slam)
+ADD_SUBDIRECTORY(boss)
 
 
 if(PCL_FOUND)
