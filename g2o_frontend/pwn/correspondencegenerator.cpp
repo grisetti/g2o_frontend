@@ -5,8 +5,8 @@ void CorrespondenceGenerator::compute(const HomogeneousPoint3fScene &referenceSc
   T.matrix().block<1,4>(3, 0) << 0, 0, 0, 1;
   _numCorrespondences = 0;
   
-  if((int)_correspondences.size() != _referenceIndexImage->rows() * _referenceIndexImage->cols())
-    _correspondences.resize(_referenceIndexImage->rows() * _referenceIndexImage->cols());
+  if((int)_correspondences.size() != _referenceIndexImage.rows() * _referenceIndexImage.cols())
+    _correspondences.resize(_referenceIndexImage.rows() * _referenceIndexImage.cols());
 
   float minCurvatureRatio = 1./_inlierCurvatureRatioThreshold;
   float maxCurvatureRatio = _inlierCurvatureRatioThreshold;
@@ -16,8 +16,8 @@ void CorrespondenceGenerator::compute(const HomogeneousPoint3fScene &referenceSc
   
   int localCorrespondenceIndex[numThreads];
   int localOffset[numThreads];
-  int columnsPerThread = _referenceIndexImage->cols()/numThreads;
-  int iterationsPerThread = (_referenceIndexImage->rows() * _referenceIndexImage->cols())/numThreads;
+  int columnsPerThread = _referenceIndexImage.cols()/numThreads;
+  int iterationsPerThread = (_referenceIndexImage.rows() * _referenceIndexImage.cols())/numThreads;
   for (int i=0; i<numThreads; i++){
     localOffset[i] = i * iterationsPerThread;
     localCorrespondenceIndex[i] = localOffset[i];
@@ -28,13 +28,13 @@ void CorrespondenceGenerator::compute(const HomogeneousPoint3fScene &referenceSc
     int threadId = omp_get_thread_num();
     int cMin = threadId * columnsPerThread;
     int cMax = cMin + columnsPerThread;
-    if (cMax > _referenceIndexImage->cols())
-      cMax = _referenceIndexImage->cols();
+    if (cMax > _referenceIndexImage.cols())
+      cMax = _referenceIndexImage.cols();
     int& correspondenceIndex = localCorrespondenceIndex[threadId];
     for (int c = cMin;  c < cMax; c++) {
-      for (int r = 0; r < _referenceIndexImage->rows(); r++) {
-	const int referenceIndex = (*_referenceIndexImage)(r, c);
-	const int currentIndex = (*_currentIndexImage)(r, c);
+      for (int r = 0; r < _referenceIndexImage.rows(); r++) {
+	const int referenceIndex = _referenceIndexImage(r, c);
+	const int currentIndex = _currentIndexImage(r, c);
 	if (referenceIndex < 0 || currentIndex < 0)
 	  continue;
 

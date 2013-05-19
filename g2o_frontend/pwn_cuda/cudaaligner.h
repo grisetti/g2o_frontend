@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <cuda.h>
 
-namespace CudaAligner {
+namespace pwn {
 
   enum Operation {
     Ok=0x0, 
@@ -74,7 +74,7 @@ namespace CudaAligner {
 				int numCurrentPoints_);
 
   AlignerStatus simpleIteration(AlignerContext* context,
-				float* transform);
+				float* transform, int* inliers=0, float*error=0);
 
   int getHb(AlignerContext* context, float* Htt, float* Hrt, float* Hrr, float*bt, float* br);
 				    

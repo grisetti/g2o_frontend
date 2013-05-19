@@ -311,8 +311,8 @@ int main(int , char** ){
     }
   }
   
-      	  { // Line2d
-		cerr << "*************** TEST Line2D  *************** " <<endl;
+   { // Line2d
+    cerr << "*************** TEST Line2D  *************** " <<endl;
     std::vector<double> scales;
     std::vector<double> offsets;
     std::vector<double> noises;
@@ -338,8 +338,8 @@ int main(int , char** ){
 			cerr << t2v_2d(_t0) << endl;
 			cerr << "ground truth: " <<endl;
 			cerr << _t0.matrix() << endl;
-		SE2 tresult;
-		SE2 t0(_t0);
+    SE2 tresult;
+    SE2 t0(_t0);
     CorrespondenceValidatorPtrVector validators;
     bool result = testAligner<Line2DMapping, AlignmentAlgorithmLine2DLinear, EdgeLine2D>(tresult, 100, t0, scales, offsets, noises, true);
    if (result){
@@ -360,7 +360,7 @@ int main(int , char** ){
    } else {
      cerr << "unable to find a transform" << endl;
    }
-	}
+  }
 
 
 

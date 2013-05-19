@@ -1,27 +1,19 @@
 #ifndef _ALINGER_H_
 #define _ALINGER_H_
+
 #include "linearizer.h"
 #include "pointprojector.h"
 #include "homogeneouspoint3fscene.h"
 #include "correspondencegenerator.h"
+#include "se3_prior.h"
 
 class Aligner {
  public:
-  Aligner() {
-    _linearizer = 0;
-    _correspondenceGenerator = 0;
-    _referenceScene = 0;
-    _currentScene = 0;
-    _outerIterations = 0;
-    _innerIterations = 0;
-    _T = Eigen::Isometry3f::Identity();
-    _initialGuess = Eigen::Isometry3f::Identity();
-    _sensorOffset = Eigen::Isometry3f::Identity();
-  };
+  Aligner();
 
   inline void setProjector(PointProjector *projector_) { _projector = projector_; }
-  inline void setReferenceScene(HomogeneousPoint3fScene *referenceScene_) { _referenceScene = referenceScene_; }
-  inline void setCurrentScene(HomogeneousPoint3fScene *currentScene_) { _currentScene = currentScene_; }
+  inline void setReferenceScene(HomogeneousPoint3fScene *referenceScene_) { _referenceScene = referenceScene_; clearPriors();}
+  inline void setCurrentScene(HomogeneousPoint3fScene *currentScene_) { _currentScene = currentScene_; clearPriors();}
   inline void setOuterIterations(const int outerIterations_) { _outerIterations = outerIterations_; }
   inline void setInnerIterations(const int innerIterations_) { _innerIterations = innerIterations_; }
   inline void setT(const Eigen::Isometry3f T_) { _T = T_; }
@@ -41,7 +33,13 @@ class Aligner {
   inline const Eigen::Isometry3f& initialGuess() const { return _initialGuess; }
   inline const Eigen::Isometry3f& sensorOffset() const { return _sensorOffset; }
 
-  void align();
+  virtual void align();
+  inline float error() const {return _error;}
+  inline int inliers() const {return _inliers; }
+  inline double totalTime() const {return _totalTime; }
+  
+  void addPrior(const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix);
+  void clearPriors();
 
  protected:
   PointProjector *_projector;
@@ -57,6 +55,10 @@ class Aligner {
   Eigen::Isometry3f _T;
   Eigen::Isometry3f _initialGuess;
   Eigen::Isometry3f _sensorOffset;
+  int _inliers;
+  double _totalTime;
+  float _error;
+  std::vector<SE3Prior, Eigen::aligned_allocator<SE3Prior> > _priors;
 };
 
 #endif

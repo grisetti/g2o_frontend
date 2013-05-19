@@ -129,14 +129,16 @@ public:
             } else {
                 if (k==minimalSetSize()-1){
                     transformFound = _alignmentAlgorithm(t,_correspondences,_indices);
-                    // cerr << "Inner Iteration (" << k << ") : ";
+                    //cerr << "Inner Iteration (" << k << ") : ";
                     // pindex(cerr, _indices, k);
                     // cerr << endl;
                     _indices[k]++;
                 } else {
                     if (_indices[k+1]<_indices[k])
                         _indices[k+1]=_indices[k]+1;
-
+// 		    cerr << "aaaaaaaaaaaaaaaaaInner Iteration (" << k << ") : ";
+// 		    pindex(cerr, _indices, k);
+//                 cerr << endl;
                     transformFound = computeMinimalSet(t,k+1);
 
                     if(_indices[k+1]>maxIndex-((int)_indices.size()-k)){

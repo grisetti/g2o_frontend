@@ -7,7 +7,7 @@
 #include "cudamatrix.cuh"
 
 
-namespace CudaAligner {
+namespace pwn {
   
 struct AlignerContext {
   
@@ -24,7 +24,7 @@ struct AlignerContext {
   FloatMatrix16N _currentOmegaPs;
   FloatMatrix16N _currentOmegaNs;
   float* _currentCurvatures;
-
+  
   
   // to be passed once per iteration
   IntMatrix   _currentIndices;
@@ -47,6 +47,9 @@ struct AlignerContext {
   float _Hb[56];
   float _KT[16];
   int _checksum;
+  __host__ int inliers() const {return _inliers;}
+  __host__ float error() const {return _error;}
+  __host__ float time() const {return _time;}
     // initializes the default values and sets the base parameters
   __host__ AlignerStatus init(int maxReferencePoints, int maxCurrentPoints, int rows, int cols);
 
@@ -83,7 +86,9 @@ struct AlignerContext {
 				   int referenceIndex, int currentIndex);
   
   int getHb(float* Htt, float* Hrt, float* Hrr, float*bt, float* br);
-
+  float _error;
+  int _inliers;
+  double _time;
 };
 
 }// end namespace

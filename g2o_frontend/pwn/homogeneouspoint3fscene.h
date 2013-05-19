@@ -26,13 +26,12 @@ class HomogeneousPoint3fScene {
   bool load(std::istream &is);
   bool save(const char *filename, int step = 1, bool binary = false);
   bool save(std::ostream &os, int step = 1, bool binary = false);
-
+  void clear();
+  void transformInPlace(const Eigen::Isometry3f& T);
  protected:
   HomogeneousPoint3fVector _points;
   HomogeneousNormal3fVector _normals; 
-  
   HomogeneousPoint3fStatsVector _stats;
-  
   HomogeneousPoint3fOmegaVector _pointOmegas;
   HomogeneousPoint3fOmegaVector _normalOmegas;
 };

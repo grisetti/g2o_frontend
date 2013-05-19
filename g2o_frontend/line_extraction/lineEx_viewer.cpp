@@ -80,7 +80,7 @@ int main(int argc, char**argv){
   float minRange;
   bool odometryIsGood;
   int incrementalFeatureTrackingWindow;
-  arg.param("o", outfilename, "graphSE2_withLine_part09.g2o", "output file name"); 
+  arg.param("o", outfilename, "graphSE2_withLine_part10.g2o", "output file name");
   arg.param("maxRange", maxRange, 1e3, "maximum range to sense features"); 
   arg.param("minRange", minRange, 0.5, "minimum range to sense features");
   arg.param("minLandmarkCreationFrames", minLandmarkCreationFrames, 2, "minimum range to sense features");
@@ -122,16 +122,16 @@ int main(int argc, char**argv){
 // 	ofG2OLine.flush();
 	
   // graph construction
-//   typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
-//   typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
-//   SlamLinearSolver* linearSolver = new SlamLinearSolver();
-//   linearSolver->setBlockOrdering(false);
-//   SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
-//   OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
-  OptimizableGraph * graph = new OptimizableGraph(); //SparseOptimizer
-//   graph->setAlgorithm(solverGauss);
+  typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
+  typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
+  SlamLinearSolver* linearSolver = new SlamLinearSolver();
+  linearSolver->setBlockOrdering(false);
+  SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
+  OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
+  SparseOptimizer * graph = new SparseOptimizer();
+  graph->setAlgorithm(solverGauss);
   graph->load(filename.c_str());
-  graph->save("originalGraph.g2o");
+  graph->save("inputGraph_extraction.g2o");
 	
   // sort the vertices based on the id
   std::vector<int> vertexIds(graph->vertices().size());

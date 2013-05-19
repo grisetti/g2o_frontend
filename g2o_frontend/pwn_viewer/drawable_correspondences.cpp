@@ -1,6 +1,8 @@
 #include "drawable_correspondences.h"
 #include "gl_parameter_correspondences.h"
 
+using namespace pwn;
+
 DrawableCorrespondences::DrawableCorrespondences() : Drawable() {
   GLParameterCorrespondences* correspondencesParameter = new GLParameterCorrespondences();
   _parameter = (GLParameter*)correspondencesParameter;
@@ -11,7 +13,7 @@ DrawableCorrespondences::DrawableCorrespondences() : Drawable() {
   _referencePointsTransformation = Eigen::Isometry3f::Identity();
 }
 
-DrawableCorrespondences::DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_,  int numCorrespondences_, HomogeneousPoint3fVector *referencePoints_, HomogeneousPoint3fVector *currentPoints_, CorrespondenceVector *correspondences_) : Drawable(transformation_) {
+DrawableCorrespondences::DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_,  int numCorrespondences_, PointVector *referencePoints_, PointVector *currentPoints_, CorrespondenceVector *correspondences_) : Drawable(transformation_) {
   setParameter(parameter_);
   _numCorrespondences = numCorrespondences_;
   _correspondences = correspondences_;
@@ -45,8 +47,8 @@ void DrawableCorrespondences::draw() {
     glBegin(GL_LINES);
     for (int i = 0; i < _numCorrespondences; i += correspondencesParameter->step()) {
       const Correspondence &correspondence = _correspondences->at(i);
-      const HomogeneousPoint3f &referencePoint = _referencePointsTransformation * _referencePoints->at(correspondence.referenceIndex);
-      const HomogeneousPoint3f &currentPoint = _transformation * _currentPoints->at(correspondence.currentIndex);
+      const Point &referencePoint = _referencePointsTransformation * _referencePoints->at(correspondence.referenceIndex);
+      const Point &currentPoint = _transformation * _currentPoints->at(correspondence.currentIndex);
       glVertex3f(referencePoint.x(), referencePoint.y(), referencePoint.z());
       glVertex3f(currentPoint.x(), currentPoint.y(), currentPoint.z());
     }

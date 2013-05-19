@@ -1,4 +1,4 @@
-namespace CudaAligner {
+namespace pwn {
 
   __host__ __device__ void vecFill(float* v, float x, int n){
     for(int i=0; i<n; i++)

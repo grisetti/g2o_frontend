@@ -2,7 +2,7 @@
 #define _CUDAUTILS_CUH_
 #include "cudasla.cuh"
 
-namespace CudaAligner{
+namespace pwn {
 template <class T>
 __global__ void fillBuffer(T* buffer, int numElems, T value);
 

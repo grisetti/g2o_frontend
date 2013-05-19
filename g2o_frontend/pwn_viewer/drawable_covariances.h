@@ -1,24 +1,26 @@
 #ifndef DRAWABLE_COVARIANCES
 #define DRAWABLE_COVARIANCES
 
-#include "../pwn/homogeneouspoint3fstats.h"
+#include "../pwn2/pointstats.h"
 #include "drawable.h"
+
+using namespace pwn;
 
 class DrawableCovariances : public Drawable {
  public:
   DrawableCovariances();
-  DrawableCovariances(Eigen::Isometry3f transformation_, GLParameter *parameter_, HomogeneousPoint3fStatsVector *covariances_);
+  DrawableCovariances(Eigen::Isometry3f transformation_, GLParameter *parameter_, PointStatsVector *covariances_);
   
-  virtual void setCovariances(HomogeneousPoint3fStatsVector *covariances_) { _covariances = covariances_; }
+  virtual void setCovariances(PointStatsVector *covariances_) { _covariances = covariances_; }
   virtual bool setParameter(GLParameter *parameter_);
   
-  virtual HomogeneousPoint3fStatsVector* covariances() { return _covariances; }
+  virtual PointStatsVector* covariances() { return _covariances; }
   virtual GLParameter* parameter() { return _parameter; };
   
   virtual void draw();
 
  protected:
-  HomogeneousPoint3fStatsVector *_covariances;
+  PointStatsVector *_covariances;
 };  
 
 #endif
