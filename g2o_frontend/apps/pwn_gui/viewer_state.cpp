@@ -356,64 +356,65 @@ namespace pwn{
   }
 
   void ViewerState::addCloudSelected(){
-      if(listItem) {
-	cerr << "adding a frame" << endl;
-	int index = pwnGMW->listWidget->row(listItem);
-	cerr << "index: " << endl;
-	std::string fname = listAssociations[index]->baseFilename()+"_depth.pgm";
-	DepthImage depthImage;
-	if (!depthImage.load(fname.c_str(), true)){
-	  cerr << " skipping " << fname << endl;
-	  newCloudAdded = false;
-	  *addCloud = 0;
-	  return;
-	}
-	DepthImage scaledDepthImage;
-	DepthImage::scale(scaledDepthImage, depthImage, reduction);
-	imageRows = scaledDepthImage.rows();
-	imageCols = scaledDepthImage.cols();
-	correspondenceFinder->setSize(imageRows, imageCols);
-	Frame * frame=new Frame();
-	converter->compute(*frame, scaledDepthImage, sensorOffset);
+    if(listItem) {
+      cerr << "adding a frame" << endl;
+      int index = pwnGMW->listWidget->row(listItem);
+      cerr << "index: " << endl;
+      std::string fname = listAssociations[index]->baseFilename()+"_depth.pgm";
+      DepthImage depthImage;
+      if (!depthImage.load(fname.c_str(), true)){
+	cerr << " skipping " << fname << endl;
+	newCloudAdded = false;
+	*addCloud = 0;
+	return;
+      }
+      DepthImage scaledDepthImage;
+      DepthImage::scale(scaledDepthImage, depthImage, reduction);
+      imageRows = scaledDepthImage.rows();
+      imageCols = scaledDepthImage.cols();
+      correspondenceFinder->setSize(imageRows, imageCols);
+      Frame * frame=new Frame();
+      converter->compute(*frame, scaledDepthImage, sensorOffset);
 	
-	OptimizableGraph::DataContainer* dc =listAssociations[index]->dataContainer();
-	cerr << "datacontainer: " << dc << endl;
-	VertexSE3* v = dynamic_cast<VertexSE3*>(dc);
-	cerr << "vertex of the frame: " << v->id() << endl;
+      OptimizableGraph::DataContainer* dc =listAssociations[index]->dataContainer();
+      cerr << "datacontainer: " << dc << endl;
+      VertexSE3* v = dynamic_cast<VertexSE3*>(dc);
+      cerr << "vertex of the frame: " << v->id() << endl;
 
 		
-	// check if we have an imu
-	ImuData* imuData = 0;
-	OptimizableGraph::Data* d = v->userData();
-	while(d) {
-	  ImuData* imuData_ = dynamic_cast<ImuData*>(d);
-	  if (imuData_){
-	    imuData = imuData_;
-	  }
-	  d=d->next();
+      // check if we have an imu
+      ImuData* imuData = 0;
+      OptimizableGraph::Data* d = v->userData();
+      while(d) {
+	ImuData* imuData_ = dynamic_cast<ImuData*>(d);
+	if (imuData_){
+	  imuData = imuData_;
 	}
-	
-	DrawableFrame* drawableFrame = new DrawableFrame(globalT, drawableFrameParameters, frame);
-	drawableFrame->_vertex = v;
-	if (imuData){
-	  Eigen::Matrix3d R=imuData->getOrientation().matrix();
-	  Eigen::Matrix3d Omega = imuData->getOrientationCovariance().inverse();
-	  drawableFrame->_hasImu=true;
-	  drawableFrame->_imuMean.setIdentity();
-	  drawableFrame->_imuInformation.setZero();
-	  for (int c = 0; c<4; c++)
-	    for (int r = 0; r<3; r++)
-	      drawableFrame->_imuMean.linear()(r,c)=R(r,c);
-
-	  for (int c = 0; c<3; c++)
-	    for (int r = 0; r<3; r++)
-	      drawableFrame->_imuInformation(r+3,c+3)=Omega(r,c);
-	}
-    	drawableFrameVector.push_back(drawableFrame);
-	pwnGMW->viewer_3d->addDrawable(drawableFrame);
+	d=d->next();
       }
-      newCloudAdded = true;
-      *addCloud = 0;
+	
+      DrawableFrame* drawableFrame = new DrawableFrame(globalT, drawableFrameParameters, frame);
+      drawableFrame->_vertex = v;
+      if (imuData){
+	Eigen::Matrix3d R=imuData->getOrientation().matrix();
+	Eigen::Matrix3d Omega = imuData->getOrientationCovariance().inverse();
+	drawableFrame->_hasImu=true;
+	drawableFrame->_imuMean.setIdentity();
+	drawableFrame->_imuInformation.setZero();
+	for (int c = 0; c<3; c++)
+	  for (int r = 0; r<3; r++)
+	    drawableFrame->_imuMean.linear()(r,c)=R(r,c);
+
+	for (int c = 0; c<3; c++)
+	  for (int r = 0; r<3; r++)
+	    drawableFrame->_imuInformation(r+3,c+3)=Omega(r,c);
+      }
+      drawableFrameVector.push_back(drawableFrame);
+      pwnGMW->viewer_3d->addDrawable(drawableFrame);
+    }
+    newCloudAdded = true;
+    *addCloud = 0;
+    _meHasNewFrame = true;
   }
 
   void ViewerState::clearLastSelected(){
@@ -445,6 +446,7 @@ namespace pwn{
   }
 
   void ViewerState::processCommands(){
+    _meHasNewFrame = false;
     refreshFlags();
     updateDrawableParameters();
     if(!wasInitialGuess && !newCloudAdded && drawableFrameVector.size() > 1 && *initialGuessViewer) {

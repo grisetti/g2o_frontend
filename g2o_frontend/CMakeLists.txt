@@ -33,6 +33,11 @@ if(PCL_FOUND)
   #ADD_SUBDIRECTORY(planeDatasetGenerator)
 endif(PCL_FOUND)
 
+
+IF(TRAVERSABILITY_FOUND)
+  ADD_SUBDIRECTORY(traversability)
+endif(TRAVERSABILITY_FOUND)
+
 #old stuff
 #ADD_SUBDIRECTORY(slam2)
 #ADD_SUBDIRECTORY(dm_optimization)

@@ -168,8 +168,8 @@ int
     0.0f, 525.0f, 239.5f,
     0.0f, 0.0f, 1.0f;
 
-  //Eigen::Matrix3f scaledCameraMatrix = cameraMatrix* 0.5;
-  Eigen::Matrix3f scaledCameraMatrix = cameraMatrix;
+  Eigen::Matrix3f scaledCameraMatrix = cameraMatrix* 0.5;
+    //Eigen::Matrix3f scaledCameraMatrix = cameraMatrix;
   cameraMatrix(2,2) = 1.0f;
   
   projector.setCameraMatrix(scaledCameraMatrix);
@@ -192,7 +192,7 @@ int
   aligner.setLinearizer(&linearizer);
   linearizer.setAligner(&aligner);
   aligner.setCorrespondenceFinder(&correspondenceFinder);
-  aligner.setOuterIterations(20);
+  aligner.setOuterIterations(10);
   aligner.setInnerIterations(1);
 
   ParallelCudaAligner alignerThread(&aligner);
@@ -206,7 +206,7 @@ int
       continue;
     }
     Frame* scene = new Frame();
-    DepthImage::scale(scaledDepthImage, depthImage, 1);
+    DepthImage::scale(scaledDepthImage, depthImage, 2);
     converter.compute(*scene, scaledDepthImage);
     correspondenceFinder.setSize(scaledDepthImage.rows(), scaledDepthImage.cols());
     while (alignerThread.scenes.size()>20) {

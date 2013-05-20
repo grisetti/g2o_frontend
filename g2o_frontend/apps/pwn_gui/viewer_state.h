@@ -67,6 +67,8 @@ struct ViewerState{
   int al_outerIterations;
   int vz_step;
   
+  bool _meHasNewFrame;
+
   bool continuousMode;
 
   ViewerState(PWNGuiMainWindow* mwin);

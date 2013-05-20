@@ -197,3 +197,9 @@ PROJECT( g2o_frontend_proj )
 
 # Include the subdirectories
 ADD_SUBDIRECTORY(g2o_frontend)
+
+IF(EXISTS "${ROOT}/g2o_frontend/traversability")
+  SET(TRAVERSABILITY_FOUND true)
+ELSE()
+  SET(TRAVERSABILITY_FOUND false)
+ENDIF()
