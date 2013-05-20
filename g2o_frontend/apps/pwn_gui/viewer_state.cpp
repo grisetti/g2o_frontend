@@ -381,24 +381,34 @@ namespace pwn{
 	VertexSE3* v = dynamic_cast<VertexSE3*>(dc);
 	cerr << "vertex of the frame: " << v->id() << endl;
 
-	// // check if the element is the last in the list
-	// if (drawableFrameVector.size()){
-	//   DrawableFrame* reference = drawableFrameVector.back();
-	//   cerr << "reference= " << reference->frame() << endl;
-	  
-	//   // cerr computing initial guess based on the frame positions, just for convenience
-	//   Eigen::Isometry3d delta = reference->_vertex->estimate().inverse()*v->estimate();
-	//   Eigen::Isometry3f myDelta;
-	//   for(int c=0; c<4; c++)
-	//     for(int r=0; r<3; r++)
-	//       myDelta.matrix()(r,c) = delta.matrix()(r,c);
-	//   myDelta.matrix().row(3) << 0,0,0,1;
-	//   globalT = globalT*myDelta;
-	// } else {
-	//   globalT.setIdentity();
-	// }
+		
+	// check if we have an imu
+	ImuData* imuData = 0;
+	OptimizableGraph::Data* d = v->userData();
+	while(d) {
+	  ImuData* imuData_ = dynamic_cast<ImuData*>(d);
+	  if (imuData_){
+	    imuData = imuData_;
+	  }
+	  d=d->next();
+	}
+	
 	DrawableFrame* drawableFrame = new DrawableFrame(globalT, drawableFrameParameters, frame);
 	drawableFrame->_vertex = v;
+	if (imuData){
+	  Eigen::Matrix3d R=imuData->getOrientation().matrix();
+	  Eigen::Matrix3d Omega = imuData->getOrientationCovariance().inverse();
+	  drawableFrame->_hasImu=true;
+	  drawableFrame->_imuMean.setIdentity();
+	  drawableFrame->_imuInformation.setZero();
+	  for (int c = 0; c<4; c++)
+	    for (int r = 0; r<3; r++)
+	      drawableFrame->_imuMean.linear()(r,c)=R(r,c);
+
+	  for (int c = 0; c<3; c++)
+	    for (int r = 0; r<3; r++)
+	      drawableFrame->_imuInformation(r+3,c+3)=Omega(r,c);
+	}
     	drawableFrameVector.push_back(drawableFrame);
 	pwnGMW->viewer_3d->addDrawable(drawableFrame);
       }

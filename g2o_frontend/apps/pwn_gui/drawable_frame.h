@@ -73,7 +73,11 @@ struct DrawableFrame : public Drawable {
 
   void draw();
 
-  g2o::VertexSE3* _vertex; //HACK
+  //HEAVY TREMENDOUS HACK
+  g2o::VertexSE3* _vertex; 
+  bool _hasImu;
+  Eigen::Isometry3f _imuMean;
+  Matrix6f _imuInformation;
 };
 
 } // end namespace pwn

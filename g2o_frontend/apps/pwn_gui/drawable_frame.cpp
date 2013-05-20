@@ -20,6 +20,7 @@ namespace pwn {
     _pCovariances->setStep(step);
     _pCorrespondences = new GLParameterCorrespondences(1.0f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f), 0.0f);
     _pCorrespondences->setStep(step);
+
   };
 
   DrawableFrameParameters::~DrawableFrameParameters(){
@@ -44,6 +45,7 @@ namespace pwn {
     _dCovariances = 0;
     _dCorrespondences = 0;
     _previousDrawableFrame = 0;
+    _hasImu = false;
     constructDrawableObjects();
   }
 
