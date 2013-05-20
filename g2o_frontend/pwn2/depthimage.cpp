@@ -164,7 +164,7 @@ void DepthImage::scale(Eigen::MatrixXf& dest, const Eigen::MatrixXf& src, int st
 	}
       }
       if (np)
-	dest(r,c) = acc;
+	dest(r,c) = acc/np;
     }
   }
 }

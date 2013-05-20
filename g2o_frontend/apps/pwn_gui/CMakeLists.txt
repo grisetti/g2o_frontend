@@ -40,6 +40,8 @@ TARGET_LINK_LIBRARIES(pwn_gui2
   ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY})
 
 ADD_EXECUTABLE(pwn_g2o_gui
+  drawable_frame.cpp drawable_frame.h
+  viewer_state.cpp viewer_state.h
   pwn_g2o_gui.cpp  
   pwn_gui_main_window.cpp	
   ${UI_HEADERS}

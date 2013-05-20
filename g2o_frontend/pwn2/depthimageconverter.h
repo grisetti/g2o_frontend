@@ -34,8 +34,8 @@ public:
   Eigen::MatrixXf _zBuffer;
   
   // wannabe  class parameter
-  static const float _normalWorldRadius = 0.1;
-  static const float _curvatureThreshold = 0.02;
+  float _normalWorldRadius;
+  float _curvatureThreshold;
 
 };
 

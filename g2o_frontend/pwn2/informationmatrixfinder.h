@@ -38,7 +38,7 @@ class InformationMatrixFinder {
   float _curvatureThreshold;
 };
 
-class PointInformationMatrixFinder : InformationMatrixFinder {
+class PointInformationMatrixFinder : public InformationMatrixFinder {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -53,7 +53,7 @@ class PointInformationMatrixFinder : InformationMatrixFinder {
                const NormalVector &imageNormals);
 };
 
-class NormalInformationMatrixFinder : InformationMatrixFinder {
+class NormalInformationMatrixFinder : public InformationMatrixFinder {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 

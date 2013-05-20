@@ -16,6 +16,7 @@ class PWNGuiMainWindow : public QMainWindow, public Ui::PWNGuiBaseMainWindow {
   bool* addCloud() { return &_addCloud; }
   bool* merge() { return &_merge; }
   bool* unmerge() { return &_unmerge; }
+  bool* addAndOptimize() {return &_addAndOptimize;}
   int* stepByStep() { return &_stepByStep; }
   int* step() { return &_step[0]; }
   float* points() { return &_points[0]; }
@@ -59,6 +60,7 @@ class PWNGuiMainWindow : public QMainWindow, public Ui::PWNGuiBaseMainWindow {
   bool _closing;
   bool _initialGuess;
   bool _optimize;
+  bool _addAndOptimize;
   bool _clearLast;
   bool _clearAll;
   bool _addCloud;

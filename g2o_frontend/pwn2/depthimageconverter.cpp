@@ -14,6 +14,10 @@ DepthImageConverter::DepthImageConverter(  PointProjector* projector_,
   _statsFinder=statsFinder_;
   _pointInformationMatrixFinder=pointInformationMatrixFinder_;
   _normalInformationMatrixFinder = normalInformationMatrixFinder_;
+
+  // wannabe  class parameter
+  _normalWorldRadius = 0.1;
+  _curvatureThreshold = 0.2;
   
 }
 
