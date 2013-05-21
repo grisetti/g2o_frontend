@@ -36,7 +36,7 @@ namespace pwn{
     al_outerIterations = 10;
     vz_step = 5;
     if_curvatureThreshold = 0.1f;
-    reduction = 1;
+    reduction = 2;
 
 
     cameraMatrix <<     
@@ -158,7 +158,6 @@ namespace pwn{
 	  d=d->next();
 	  continue;
 	}
-	cerr << "got data" << endl;
 	// retrieve from the rgb data the index of the parameter
 	int paramIndex = rgbdData->paramIndex();
 	// retrieve from the graph the parameter given the index  
@@ -271,6 +270,62 @@ namespace pwn{
       *initialGuessViewer = 0;
   }
 
+  bool extractRelativePrior(Eigen::Isometry3f& priorMean, Matrix6f& priorInfo, 
+			    const DrawableFrame* reference, const DrawableFrame* current){
+    VertexSE3* referenceVertex =reference->_vertex;
+    VertexSE3* currentVertex =current->_vertex;
+    bool priorFound = false;
+    priorInfo.setZero();
+    for (HyperGraph::EdgeSet::const_iterator it=referenceVertex->edges().begin();
+	 it!= referenceVertex->edges().end(); it++){
+      const EdgeSE3* e = dynamic_cast<const EdgeSE3*>(*it);
+      if (e->vertex(0)==referenceVertex && e->vertex(1) == currentVertex){
+	priorFound=true;
+	for (int c=0; c<6; c++)
+	  for (int r=0; r<6; r++)
+	    priorInfo(r,c) = e->information()(r,c);
+
+	for(int c=0; c<4; c++)
+	  for(int r=0; r<3; r++)
+	    priorMean.matrix()(r,c) = e->measurement().matrix()(r,c);
+	priorMean.matrix().row(3) << 0,0,0,1;
+      }
+    }
+    return priorFound;
+  }
+
+
+  bool extractAbsolutePrior(Eigen::Isometry3f& priorMean, Matrix6f& priorInfo, 
+			    const DrawableFrame* current){
+    VertexSE3* currentVertex =current->_vertex;
+    ImuData* imuData = 0;
+    OptimizableGraph::Data* d = currentVertex->userData();
+    while(d) {
+      ImuData* imuData_ = dynamic_cast<ImuData*>(d);
+      if (imuData_){
+	imuData = imuData_;
+      }
+      d=d->next();
+    }
+	
+    if (imuData){
+      Eigen::Matrix3d R=imuData->getOrientation().matrix();
+      Eigen::Matrix3d Omega = imuData->getOrientationCovariance().inverse();
+      priorMean.setIdentity();
+      priorInfo.setZero();
+      for (int c = 0; c<3; c++)
+	for (int r = 0; r<3; r++)
+	  priorMean.linear()(r,c)=R(r,c);
+      
+      for (int c = 0; c<3; c++)
+	for (int r = 0; r<3; r++)
+	  priorInfo(r+3,c+3)=Omega(r,c);
+      return true;
+    }
+    return false;
+  }
+
+
   void ViewerState::optimizeSelected(){
       DrawableFrame* current = drawableFrameVector.back();
       DrawableFrame* reference = drawableFrameVector[drawableFrameVector.size()-2];
@@ -286,36 +341,19 @@ namespace pwn{
       for(int c=0; c<4; c++)
 	for(int r=0; r<3; r++)
 	  initialGuess.matrix()(r,c) = delta.matrix()(r,c);
+
+
+      Eigen::Isometry3f odometryMean;
+      Matrix6f odometryInfo;
+      bool hasOdometry = extractRelativePrior(odometryMean, odometryInfo, reference, current);
+      if (hasOdometry)
+	initialGuess=odometryMean;
+
+      Eigen::Isometry3f imuMean;
+      Matrix6f imuInfo;
+      bool hasImu = extractAbsolutePrior(imuMean, imuInfo, current);
+
       initialGuess.matrix().row(3) << 0,0,0,1;
-
-
-      Eigen::Isometry3f priorMean = initialGuess;
-      
-      bool priorFound = false;
-      Matrix6f priorInfo;
-      priorInfo.setZero();
-      VertexSE3* referenceVertex =reference->_vertex;
-      VertexSE3* currentVertex =current->_vertex;
-      for (HyperGraph::EdgeSet::const_iterator it=referenceVertex->edges().begin();
-	   it!= referenceVertex->edges().end(); it++){
-	const EdgeSE3* e = dynamic_cast<const EdgeSE3*>(*it);
-	if (e->vertex(0)==referenceVertex && e->vertex(1) == currentVertex){
-	  priorFound=true;
-	  for (int c=0; c<6; c++)
-	    for (int r=0; r<6; r++)
-	      priorInfo(r,c) = e->information()(r,c);
-	}
-      }
-      priorMean.matrix().row(3) << 0,0,0,1;
-      priorInfo*=1e3;
-      // priorInfo(2,2)*=1e6;
-      // priorInfo(3,3)*=1e6;
-      // priorInfo(4,4)*=1e6;
-      
-      if (priorFound){
-	cerr << "priorMean: " << t2v(priorMean).transpose() << endl;
-	cerr << "priorInfo: " << endl << priorInfo << endl;
-      }
       
       if(!wasInitialGuess) {
 	aligner->clearPriors();
@@ -324,13 +362,26 @@ namespace pwn{
 	aligner->setCurrentFrame(current->frame());
 	aligner->setInitialGuess(initialGuess);
 	aligner->setSensorOffset(sensorOffset);
-	if (priorFound)
-	  aligner->addRelativePrior(priorMean, priorInfo);
+	if (hasOdometry)
+	  aligner->addRelativePrior(odometryMean, odometryInfo);
+	if (hasImu)
+	  aligner->addAbsolutePrior(reference->transformation(), imuMean, imuInfo);
 	aligner->align();
       }
-      cout << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
 
+      Eigen::Isometry3f localTransformation =aligner->T();
+      if (aligner->inliers()<1000 || aligner->error()/aligner->inliers()>10){
+	cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+	cerr << "aligner: monster failure: inliers = " << aligner->inliers() << endl;
+	cerr << "aligner: monster failure: error/inliers = " << aligner->error()/aligner->inliers() << endl;
+	cerr  << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
+      	localTransformation = initialGuess;
+	sleep(1);
+      }
+      cout << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
+      
       globalT = reference->transformation()*aligner->T();
+      
       // Update cloud drawing position.
       current->setTransformation(globalT);
       current->setLocalTransformation(aligner->T());
@@ -381,34 +432,18 @@ namespace pwn{
       VertexSE3* v = dynamic_cast<VertexSE3*>(dc);
       cerr << "vertex of the frame: " << v->id() << endl;
 
-		
-      // check if we have an imu
-      ImuData* imuData = 0;
-      OptimizableGraph::Data* d = v->userData();
-      while(d) {
-	ImuData* imuData_ = dynamic_cast<ImuData*>(d);
-	if (imuData_){
-	  imuData = imuData_;
-	}
-	d=d->next();
-      }
-	
       DrawableFrame* drawableFrame = new DrawableFrame(globalT, drawableFrameParameters, frame);
       drawableFrame->_vertex = v;
-      if (imuData){
-	Eigen::Matrix3d R=imuData->getOrientation().matrix();
-	Eigen::Matrix3d Omega = imuData->getOrientationCovariance().inverse();
-	drawableFrame->_hasImu=true;
-	drawableFrame->_imuMean.setIdentity();
-	drawableFrame->_imuInformation.setZero();
-	for (int c = 0; c<3; c++)
-	  for (int r = 0; r<3; r++)
-	    drawableFrame->_imuMean.linear()(r,c)=R(r,c);
-
-	for (int c = 0; c<3; c++)
-	  for (int r = 0; r<3; r++)
-	    drawableFrame->_imuInformation(r+3,c+3)=Omega(r,c);
+      
+      Eigen::Isometry3f priorMean;
+      Matrix6f priorInfo;
+      bool hasImu =extractAbsolutePrior(priorMean, priorInfo, drawableFrame);
+      if (hasImu && drawableFrameVector.size()==0){
+	globalT.linear() = priorMean.linear();
+	cerr << "!!!! i found an imu for the first vertex, me happy" << endl;
+	drawableFrame->setTransformation(globalT);
       }
+
       drawableFrameVector.push_back(drawableFrame);
       pwnGMW->viewer_3d->addDrawable(drawableFrame);
     }
@@ -434,7 +469,7 @@ namespace pwn{
   }
 
   void ViewerState::polishOldThings(){
-    if(drawableFrameVector.size() > 10) {
+    if(drawableFrameVector.size() > 40) {
       pwnGMW->viewer_3d->drawableList().erase(pwnGMW->viewer_3d->drawableList().begin());
       DrawableFrame* firstDrawableFrame = drawableFrameVector.front();
       if (firstDrawableFrame->frame()){
