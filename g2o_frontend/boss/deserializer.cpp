@@ -14,7 +14,7 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 #include <stdexcept>
 #include <memory>
@@ -33,46 +33,46 @@ using namespace boss;
 
 static ValueData* processData(ValueData* vdata, SerializationContext& context, vector<int>& danglingRefs, vector<int>& declaredIDs) {
   switch (vdata->type()) {
-    case OBJECT: {
-      ObjectData* data=static_cast<ObjectData*>(vdata);
-      ValueData* pfield=data->getField("#pointer");
-      if (pfield) {
-	int id=pfield->getInt();
-	Identifiable* pointer=context.getById(id);
-	if (pointer) {
-	  return new PointerData(pointer);
-	}
-	danglingRefs.push_back(id);
-	return new PointerReference(context.createPlaceHolder(id));
+  case OBJECT: {
+    ObjectData* data=static_cast<ObjectData*>(vdata);
+    ValueData* pfield=data->getField("#pointer");
+    if (pfield) {
+      int id=pfield->getInt();
+      Identifiable* pointer=context.getById(id);
+      if (pointer) {
+        return new PointerData(pointer);
       }
-      ValueData* idfield=data->getField("#id");
-      if (idfield) {
-	declaredIDs.push_back(idfield->getInt());
-      }
-      map<string,ValueData*>& v_map=vdata->getMap();
-      for (map<string,ValueData*>::iterator v_it=v_map.begin();v_it!=v_map.end();v_it++) {
-	ValueData* replaceData=processData((*v_it).second, context, danglingRefs, declaredIDs);
-	if (replaceData) {
-	  delete (*v_it).second;
-	  (*v_it).second=replaceData;
-	}
-      }
-      break;
+      danglingRefs.push_back(id);
+      return new PointerReference(context.createPlaceHolder(id));
     }
-    case ARRAY: {
-      vector<ValueData*>& v_array=vdata->getArray();
-      for (vector<ValueData*>::iterator v_it=v_array.begin();v_it!=v_array.end();v_it++) {
-	ValueData* replaceData=processData(*v_it, context, danglingRefs, declaredIDs);
-	if (replaceData) {
-	  delete *v_it;
-	  *v_it=replaceData;
-	}
-      }
-      break;
+    ValueData* idfield=data->getField("#id");
+    if (idfield) {
+      declaredIDs.push_back(idfield->getInt());
     }
-    default:
-      //Nothing to do
-      break;
+
+    const vector<string>& fields=data->fields();
+    for (vector<string>::const_iterator f_it=fields.begin();f_it!=fields.end();f_it++) {
+      ValueData* fdata=data->getField(*f_it);
+      ValueData* replaceData=processData(fdata, context, danglingRefs, declaredIDs);
+      if (replaceData) {
+        data->setField(*f_it,replaceData);
+      }
+    }
+    break;
+  }
+  case ARRAY: {
+    ArrayData* v_array=static_cast<ArrayData*>(vdata);
+    for (vector<ValueData*>::const_iterator v_it=v_array->begin();v_it!=v_array->end();v_it++) {
+      ValueData* replaceData=processData(*v_it, context, danglingRefs, declaredIDs);
+      if (replaceData) {
+        v_array->set(v_it-v_array->begin(),replaceData);
+      }
+    }
+    break;
+  }
+  default:
+    //Nothing to do
+    break;
   }
   return 0;
 }
@@ -88,7 +88,7 @@ Message* Deserializer::readMessage() {
   if (!(*_datastream)) {
     return 0;
   }
-  
+
   //First parse the raw message data struct
   auto_ptr<MessageData> msgData(_parser->readMessage(*_datastream));
   if (!msgData.get()) {
@@ -100,14 +100,14 @@ Message* Deserializer::readMessage() {
   //Check if this is an Identifiable object
   ObjectData* odata=msgData->getData();
   ValueData* idValue=odata->getField("#id");
-  
+
   //Identifiable objects are overwritten if another message
   //with the same ID is read, so first check if the ID is already in the context
   Serializable* instance=0;
   if (idValue) {
     instance=getById(idValue->getInt());
   }
-  
+
   if (instance) {
     //Just to ensure that the found instance has right type
     if (instance->className()!=msgData->getType()) {
@@ -118,18 +118,18 @@ Message* Deserializer::readMessage() {
   } else {
     try {
       instance=Serializable::createInstance(msgData->getType());
-    } catch (logic_error e) {
+    } catch (logic_error& e) {
       //TODO Notify this occurrence
       return 0;
     }
   }
-  
+
   vector<int> danglingPointers;
   vector<int> declaredIDs;
-  
+
   processData(msgData->getData(), *this, danglingPointers,declaredIDs);
   instance->deserialize(*odata,*this);
-  
+
   for (vector<int>::iterator dp_it=danglingPointers.begin();dp_it!=danglingPointers.end();dp_it++) {
     _waitingInstances[instance].insert(*dp_it);
     _danglingReferences[*dp_it].insert(instance);
@@ -139,15 +139,15 @@ Message* Deserializer::readMessage() {
     if (getById(*id_it)) {
       map<int,set<Serializable*> >::iterator entry=_danglingReferences.find(*id_it);
       if (entry!=_danglingReferences.end()) {
-	set<Serializable*>& instSet=(*entry).second;
-	for (set<Serializable*>::iterator instance_it=instSet.begin();instance_it!=instSet.end();instance_it++) {
-	  _waitingInstances[*instance_it].erase(*id_it);
-	  if (_waitingInstances[*instance_it].empty()) {
-	    _waitingInstances.erase(*instance_it);
-	    //TODO Notify serialization complete to the instance
-	  }
-	}
-	_danglingReferences.erase(*id_it);
+        set<Serializable*>& instSet=(*entry).second;
+        for (set<Serializable*>::iterator instance_it=instSet.begin();instance_it!=instSet.end();instance_it++) {
+          _waitingInstances[*instance_it].erase(*id_it);
+          if (_waitingInstances[*instance_it].empty()) {
+            _waitingInstances.erase(*instance_it);
+            //TODO Notify serialization complete to the instance
+          }
+        }
+        _danglingReferences.erase(*id_it);
       }
     }
   }

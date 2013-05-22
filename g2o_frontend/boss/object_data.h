@@ -31,7 +31,7 @@ class Identifiable;
 class IdPlaceholder;
 
 enum ValueType {
-  BOOL, NUMBER, STRING, ARRAY, OBJECT, POINTER, POINTER_REF, BLOB_REF
+  BOOL, NUMBER, STRING, ARRAY, OBJECT, POINTER, POINTER_REF
 };
 
 class ValueData {
@@ -41,8 +41,6 @@ public:
   virtual float getFloat();
   virtual bool getBool();
   virtual const std::string& getString();
-  virtual std::vector<ValueData*>& getArray();
-  virtual std::map<std::string,ValueData*>& getMap();
   virtual Identifiable* getPointer();
   virtual void bindPointer(Identifiable*& pvar);
 
@@ -116,7 +114,6 @@ protected:
 
 class ArrayData: public ValueData {
 public:
-  virtual std::vector<ValueData*>& getArray();
   virtual ValueType type();
   virtual ~ArrayData();
   void add(bool value);
@@ -128,13 +125,44 @@ public:
   void add(ValueData* value);
   void addPointer(Identifiable* ptr);
 
+  void set(size_t idx, bool value);
+  void set(size_t idx, int value);
+  void set(size_t idx, double value);
+  void set(size_t idx, float value);
+  void set(size_t idx, const std::string& value);
+  void set(size_t idx, const char* value);
+  void set(size_t idx, ValueData* value);
+  void setPointer(size_t idx, Identifiable* ptr);
+
+  //minimal vector interface (read only)
+  std::vector<ValueData*>::const_iterator begin() {
+    return _value.begin();
+  }
+  std::vector<ValueData*>::const_iterator end() {
+    return _value.end();
+  }
+  size_t capacity() {
+    return _value.capacity();
+  }
+  void reserve(size_t n) {
+    _value.reserve(n);
+  }
+  ValueData* operator[](size_t n) {
+    return _value.at(n);
+  }
+  size_t size() {
+    return _value.size();
+  }
+  void push_back(ValueData* value) {
+    _value.push_back(value);
+  }
+
 protected:
   std::vector<ValueData*> _value;
 };
 
 class ObjectData: public ValueData {
 public:
-  virtual std::map<std::string,ValueData*>& getMap();
   virtual ValueType type();
   void setField(const std::string& name, ValueData* value);
   void setInt(const std::string& name, int value);
@@ -165,6 +193,10 @@ public:
     return getField(name)->getBool();
   }
   
+  const std::vector<std::string>& fields() {
+    return _fields;
+  }
+
   void getPointer(const std::string&name, Identifiable*& pvar);
   
   ValueData* getField(const std::string& name);
@@ -173,6 +205,7 @@ public:
 
 protected:
   std::map<std::string, ValueData*> _value;
+  std::vector<std::string> _fields;
 };
 
 class PointerData: public ValueData {
@@ -224,6 +257,10 @@ std::pair<const std::string&, std::string&> field(const std::string& nm, std::st
 ObjectData& operator << (ObjectData& o, std::pair<const std::string&, const std::string&> f);
 ObjectData& operator << (ObjectData& o, std::pair<const std::string&, std::string&> f);
 ObjectData& operator >> (ObjectData& o, std::pair<const std::string&, std::string&> f);
+
+std::pair<const std::string&, ValueData*&> field(const std::string& nm, ValueData*& val);
+ObjectData& operator << (ObjectData& o, std::pair<const std::string&, ValueData*&> f);
+ObjectData& operator >> (ObjectData& o, std::pair<const std::string&, ValueData*&> f);
 
 }
 

@@ -42,6 +42,9 @@ public:
    */
   virtual void deserialize(ObjectData& data, IdContext& context)=0;
   
+  virtual ~Serializable() {}
+
+  ObjectData* getSerializedData(IdContext& context);
   const std::string& className();
   
   static void registerFactory(const std::string& className, const std::string& typeIdName, Serializable* (*func)());

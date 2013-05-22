@@ -20,6 +20,7 @@
 #include <typeinfo>
 
 #include "serializable.h"
+#include "object_data.h"
 
 using namespace std;
 using namespace boss;
@@ -56,4 +57,8 @@ const string& Serializable::className() {
   return (*cname).second;
 }
 
-  
+ObjectData* Serializable::getSerializedData(IdContext& context) {
+  ObjectData* o=new ObjectData();
+  serialize(*o,context);
+  return o;
+}

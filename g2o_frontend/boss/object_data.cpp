@@ -46,14 +46,6 @@ const string& ValueData::getString() {
   throw logic_error("getString not allowed for type "+typeName());
 }
 
-vector<ValueData*>& ValueData::getArray() {
-  throw logic_error("getArray not allowed for type "+typeName());
-}
-
-map<string,ValueData*>& ValueData::getMap() {
-  throw logic_error("getMap not allowed for type "+typeName());
-}
-
 Identifiable* ValueData::getPointer() {
   throw logic_error("getPointer not allowed for type "+typeName());
 }
@@ -138,10 +130,6 @@ ValueType StringData::type() {
 }
 
 //ArrayData
-vector<ValueData*>& ArrayData::getArray() {
-  return _value;
-}
-
 ValueType ArrayData::type() {
   return ARRAY;
 }
@@ -178,13 +166,39 @@ void ArrayData::add(const char* value) {
   _value.push_back(new StringData(value));
 }
 
+void ArrayData::set(size_t idx, ValueData* value) {
+  if (_value.at(idx)) {
+    delete _value.at(idx);
+  }
+  _value[idx]=value;
+}
+
+void ArrayData::set(size_t idx, double value) {
+  set(idx, new NumberData(value));
+}
+
+void ArrayData::set(size_t idx, float value) {
+  set(idx, new NumberData(value));
+}
+
+void ArrayData::set(size_t idx, int value) {
+  set(idx, new NumberData(value));
+}
+
+void ArrayData::set(size_t idx, bool value) {
+  set(idx, new BoolData(value));
+}
+
+void ArrayData::set(size_t idx, const string& value) {
+  set(idx, new StringData(value));
+}
+
+void ArrayData::set(size_t idx, const char* value) {
+  set(idx, new StringData(value));
+}
 
 
 //ObjectData
-map<string, ValueData*>& ObjectData::getMap() {
-  return _value;
-}
-
 ValueType ObjectData::type() {
   return OBJECT;
 }
@@ -205,6 +219,8 @@ void ObjectData::setField(const string& name, ValueData* value) {
   ValueData*& field=_value[name];
   if (field) {
     delete field;
+  } else {
+    _fields.push_back(name);
   }
   field=value;
 }
@@ -252,17 +268,10 @@ void PointerReference::bindPointer(Identifiable*& pvar) {
 }
 
 #define STREAM_OPS(field_type, setter, getter) \
-  std::pair<const std::string&, const field_type &> field(const std::string& nm, const field_type & val) { \
-    return std::pair<const std::string&, const field_type &>(nm, val); \
-  } \
   std::pair<const std::string&, field_type &> field(const std::string& nm, field_type & val) { \
     return std::pair<const std::string&, field_type &>(nm, val); \
   } \
   ObjectData& operator << (ObjectData& o, std::pair<const std::string&, field_type &> f) { \
-    o.setter(f.first,f.second); \
-    return o; \
-  } \
-  ObjectData& operator << (ObjectData& o, std::pair<const std::string&, const field_type &> f) { \
     o.setter(f.first,f.second); \
     return o; \
   } \
@@ -272,8 +281,14 @@ void PointerReference::bindPointer(Identifiable*& pvar) {
       f.second=v->getter(); \
     } \
     return o; \
+  } \
+  std::pair<const std::string&, const field_type &> field(const std::string& nm, const field_type & val) { \
+    return std::pair<const std::string&, const field_type &>(nm, val); \
+  } \
+  ObjectData& operator << (ObjectData& o, std::pair<const std::string&, const field_type &> f) { \
+    o.setter(f.first,f.second); \
+    return o; \
   }
-
 
 namespace boss {
   
@@ -282,5 +297,17 @@ namespace boss {
   STREAM_OPS(float, setFloat, getFloat)
   STREAM_OPS(double, setDouble, getDouble)
   STREAM_OPS(string, setString, getString)
+
+  std::pair<const std::string&, ValueData*&> field(const std::string& nm, ValueData*& val) {
+    return std::pair<const std::string&, ValueData*&>(nm, val);
+  }
+  ObjectData& operator << (ObjectData& o, std::pair<const std::string&, ValueData*&> f) {
+    o.setField(f.first,f.second);
+    return o;
+  }
+  ObjectData& operator >> (ObjectData& o, std::pair<const std::string&, ValueData*&> f) {
+    f.second=o.getField(f.first);
+    return o;
+  }
 
 }
