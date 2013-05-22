@@ -1,5 +1,5 @@
-#ifndef _PWN_VIEWER_STATE_H_
-#define _PWN_VIEWER_STATE_H_
+#ifndef _PWN_VIEWER_STATE_TRAV_H_
+#define _PWN_VIEWER_STATE_TRAV_H_
 
 #include "g2o_frontend/basemath/bm_se3.h"
 #include "g2o_frontend/pwn2/frame.h"
@@ -11,15 +11,17 @@
 #include "pwn_gui_main_window.h"
 #include "drawable_frame.h"
 
+#include "g2o_frontend/traversability/traversability_analyzer.h"
 
 #include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "g2o_frontend/sensor_data/rgbd_data.h"
 #include "g2o_frontend/sensor_data/imu_data.h"
 #include "g2o/core/sparse_optimizer.h"
 
+
 namespace pwn{
 
-struct ViewerState{
+struct ViewerStateTrav {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   PWNGuiMainWindow* pwnGMW;
   QGraphicsScene *refScn, *currScn;
@@ -31,6 +33,7 @@ struct ViewerState{
   PointInformationMatrixFinder* pointInformationMatrixFinder;
   NormalInformationMatrixFinder* normalInformationMatrixFinder;
   DepthImageConverter* converter;
+  TraversabilityAnalyzer* traversabilityAnalyzer;
 
 
   Matrix3f cameraMatrix;
@@ -70,7 +73,7 @@ struct ViewerState{
 
   bool continuousMode;
 
-  ViewerState(PWNGuiMainWindow* mwin);
+  ViewerStateTrav(PWNGuiMainWindow* mwin);
 
   // sets up the structures and constructs the graph
   void init();

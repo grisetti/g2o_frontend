@@ -1,4 +1,4 @@
-#include "viewer_state.h"
+#include "viewer_state_trav.h"
 
 #include "g2o/core/block_solver.h"
 #include "g2o/core/factory.h"
@@ -20,12 +20,12 @@ namespace pwn{
   using namespace g2o;
 
 
-  ViewerState::ViewerState(PWNGuiMainWindow* mwin){
+  ViewerStateTrav::ViewerStateTrav(PWNGuiMainWindow* mwin){
     pwnGMW = mwin;
     graph = 0;
   }
 
-  void ViewerState::init(){
+  void ViewerStateTrav::init(){
     imageRows = 0;
     imageCols = 0;
     
@@ -69,6 +69,10 @@ namespace pwn{
     projector->setTransform(Eigen::Isometry3f::Identity());
     projector->setCameraMatrix(cameraMatrix);
 
+    traversabilityAnalyzer = new TraversabilityAnalyzer(30,
+                                0.04,
+                                0.2,
+                                1);
     // Creating and setting aligner object.
     //Aligner aligner;
     correspondenceFinder = new CorrespondenceFinder();
@@ -111,7 +115,7 @@ namespace pwn{
     continuousMode = false;
   }
 
-  void ViewerState::refreshFlags(){
+  void ViewerStateTrav::refreshFlags(){
     stepViewer = pwnGMW->step();
     mergePressed = pwnGMW->merge();
     pointsViewer = pwnGMW->points();
@@ -129,7 +133,7 @@ namespace pwn{
       continuousMode = ! continuousMode;
   }
 
-  void ViewerState::load(const std::string& filename){
+  void ViewerStateTrav::load(const std::string& filename){
     clear();
     listWidget->clear();
     graph->clear();
@@ -192,7 +196,7 @@ namespace pwn{
 
   }
 
-  void ViewerState::clear(){
+  void ViewerStateTrav::clear(){
     pwnGMW->viewer_3d->clearDrawableList();
     for(size_t i = 0; i < drawableFrameVector.size(); i++){
       if (drawableFrameVector[i]->frame())
@@ -207,7 +211,7 @@ namespace pwn{
     newCloudAdded = false;
   }
   
-  void ViewerState::addNextAndOptimizeSelected(){
+  void ViewerStateTrav::addNextAndOptimizeSelected(){
     // advance one row
     if (! listItem)
       return;
@@ -219,7 +223,7 @@ namespace pwn{
     *mergePressed = 0;
   }
 
-  void ViewerState::updateDrawableParameters(){
+  void ViewerStateTrav::updateDrawableParameters(){
     // Check feature visualization options.   
     if (stepViewer[0]) {
       drawableFrameParameters->_pPoints->setStep(stepViewer[1]);
@@ -259,7 +263,7 @@ namespace pwn{
       drawableFrameParameters->_pCorrespondences->setLineWidth(0.0f);
   }
 
-  void ViewerState::initialGuessSelected(){
+  void ViewerStateTrav::initialGuessSelected(){
       cerr << "initial guess" << endl;
       DrawableFrame* current = drawableFrameVector.back();
       DrawableFrame* reference = drawableFrameVector[drawableFrameVector.size()-2];
@@ -325,7 +329,7 @@ namespace pwn{
   }
 
 
-  void ViewerState::optimizeSelected(){
+  void ViewerStateTrav::optimizeSelected(){
       DrawableFrame* current = drawableFrameVector.back();
       DrawableFrame* reference = drawableFrameVector[drawableFrameVector.size()-2];
       cerr << "optimizing" << endl;
@@ -405,7 +409,7 @@ namespace pwn{
       *optimizeViewer = 0;
   }
 
-  void ViewerState::addCloudSelected(){
+  void ViewerStateTrav::addCloudSelected(){
     if(listItem) {
       cerr << "adding a frame" << endl;
       int index = pwnGMW->listWidget->row(listItem);
@@ -425,6 +429,10 @@ namespace pwn{
       correspondenceFinder->setSize(imageRows, imageCols);
       Frame * frame=new Frame();
       converter->compute(*frame, scaledDepthImage, sensorOffset);
+      traversabilityAnalyzer->createTraversabilityVector(frame->points(),
+                                frame->normals(),
+                                frame->traversabilityVector());
+	
       OptimizableGraph::DataContainer* dc =listAssociations[index]->dataContainer();
       cerr << "datacontainer: " << dc << endl;
       VertexSE3* v = dynamic_cast<VertexSE3*>(dc);
@@ -449,7 +457,7 @@ namespace pwn{
     _meHasNewFrame = true;
   }
 
-  void ViewerState::clearLastSelected(){
+  void ViewerStateTrav::clearLastSelected(){
     if(drawableFrameVector.size() > 0) {
       pwnGMW->viewer_3d->popBack();
       DrawableFrame* lastDrawableFrame = drawableFrameVector.back();
@@ -465,7 +473,7 @@ namespace pwn{
     } 
   }
 
-  void ViewerState::polishOldThings(){
+  void ViewerStateTrav::polishOldThings(){
     if(drawableFrameVector.size() > 40) {
       pwnGMW->viewer_3d->drawableList().erase(pwnGMW->viewer_3d->drawableList().begin());
       DrawableFrame* firstDrawableFrame = drawableFrameVector.front();
@@ -477,7 +485,7 @@ namespace pwn{
     }
   }
 
-  void ViewerState::processCommands(){
+  void ViewerStateTrav::processCommands(){
     _meHasNewFrame = false;
     refreshFlags();
     updateDrawableParameters();

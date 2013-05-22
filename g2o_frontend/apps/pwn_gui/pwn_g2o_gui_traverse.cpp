@@ -1,8 +1,7 @@
 #include "g2o_frontend/traversability/traversability_analyzer.h"
 #include <qapplication.h>
 #include "pwn_gui_main_window.h"
-#include "viewer_state.h"
-
+#include "viewer_state_trav.h"
 
 int main(int argc, char** argv) {
     /************************************************************************
@@ -55,7 +54,7 @@ int main(int argc, char** argv) {
 
     QApplication qApplication(argc, argv);
     PWNGuiMainWindow pwnGMW;
-    ViewerState viewerState(&pwnGMW);
+    ViewerStateTrav viewerState(&pwnGMW);
     viewerState.init();
     viewerState.load(g2oFilename);
     pwnGMW.show();

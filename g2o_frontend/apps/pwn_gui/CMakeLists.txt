@@ -129,7 +129,7 @@ TARGET_LINK_LIBRARIES(pwn_sg
 IF(TRAVERSABILITY_FOUND)
   ADD_EXECUTABLE(pwn_g2o_gui_traverse
     drawable_frame.cpp drawable_frame.h
-    viewer_state.cpp viewer_state.h
+    viewer_state_trav.cpp viewer_state_trav.h
     pwn_g2o_gui_traverse.cpp  
     pwn_gui_main_window.cpp	
     ${UI_HEADERS}
