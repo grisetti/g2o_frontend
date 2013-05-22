@@ -10,6 +10,9 @@
 #include <g2o/types/slam3d/isometry3d_mappings.h>
 #include <g2o_frontend/sensor_data/sensor_data.h>
 
+//HAKKE
+#include <g2o_frontend/sensor_data/rgbd_data.h>
+
 // kinect
 #include "SensorHandlerRGBDCamera.h"
 // laser
@@ -27,6 +30,7 @@
 
 using namespace g2o;
 
+std::deque<OptimizableGraph::Vertex*> hackedNodesForProcessingQueue;
 
 #define conditionalPrint(x)			\
   if(verbose>=x) cerr
@@ -202,7 +206,7 @@ void writeQueue() {
 	  conditionalPrint(annoyingLevel) << "flush" << endl;
 	  graph->addVertex(activeVertex);
 	  graph->saveVertex(ofG2O, activeVertex);
-					
+	  				
 	  if (previousVertex) {
 	    EdgeSE3* e = new EdgeSE3();
 	    e->setVertex(0, previousVertex);
@@ -213,7 +217,16 @@ void writeQueue() {
 	    e->setInformation(m);
 	    graph->addEdge(e);
 	    graph->saveEdge(ofG2O, e);
-	    graph->removeVertex(previousVertex);
+
+	    // JACP: do not do the remove, scan the data list and do a release() of the images which are big. The rest can stay in memory
+	    g2o::HyperGraph::Data* d = previousVertex->userData();
+	    while (d) {
+	      RGBDData* rgbd = dynamic_cast<RGBDData*> (d);
+	      if (rgbd)
+		rgbd->release();
+	      d = d->next();
+	    }
+	    hackedNodesForProcessingQueue.push_back(previousVertex);
 	  }
 					
 	  previousVertex = activeVertex;
