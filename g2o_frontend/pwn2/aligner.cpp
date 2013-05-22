@@ -56,7 +56,6 @@ void Aligner::align() {
   
   //_correspondenceFinder->currentDepthImage().save("current.pgm", false);
 
-  char buf[1024];
   for(int i = 0; i < _outerIterations; i++) {
     /************************************************************************
      *                         Correspondence Computation                   *
