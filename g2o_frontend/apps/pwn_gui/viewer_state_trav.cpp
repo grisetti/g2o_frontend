@@ -7,6 +7,8 @@
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 
+#include <unistd.h>
+
 #undef _PWN_USE_CUDA_
 
 #ifdef _PWN_USE_CUDA_
