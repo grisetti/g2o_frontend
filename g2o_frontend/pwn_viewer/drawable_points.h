@@ -10,6 +10,8 @@ using namespace pwn;
 class DrawablePoints : public Drawable {
  public:
   DrawablePoints();
+  DrawablePoints(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, PointVector *points_, NormalVector *normals_, 
+    std::vector<int> *traversabilityVector_ );
   DrawablePoints(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, PointVector *points_, NormalVector *normals_);
 
   virtual void setPoints(PointVector *points_) { _points = points_; }
@@ -26,6 +28,7 @@ class DrawablePoints : public Drawable {
   GLParameterPoints* _parameter;
   PointVector *_points;
   NormalVector *_normals;
+  std::vector<int> *_traversabilityVector;
 };  
 
 #endif

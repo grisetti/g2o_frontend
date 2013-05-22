@@ -32,6 +32,7 @@ struct ViewerState{
   PointInformationMatrixFinder* pointInformationMatrixFinder;
   NormalInformationMatrixFinder* normalInformationMatrixFinder;
   DepthImageConverter* converter;
+  TraversabilityAnalyzer* traversabilityAnalyzer;
 
 
   Matrix3f cameraMatrix;

@@ -195,6 +195,14 @@ include_directories(${PROJECT_BINARY_DIR})
 INSTALL(FILES ${PROJECT_BINARY_DIR}/g2o_frontend/config.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/g2o_frontend)
 PROJECT( g2o_frontend_proj )
 
+IF(EXISTS "${g2o_frontend_SOURCE_DIR}/g2o_frontend/traversability")
+  MESSAGE("TRAVERSABILITY FOUND")
+  SET(TRAVERSABILITY_FOUND true)
+ELSE()
+  MESSAGE("TRAVERSABILITY NOT FOUND")
+  SET(TRAVERSABILITY_FOUND false)
+ENDIF()
+
 # Include the subdirectories
 ADD_SUBDIRECTORY(g2o_frontend)
 

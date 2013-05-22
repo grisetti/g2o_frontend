@@ -20,6 +20,8 @@
 #include "g2o/stuff/command_args.h"
 #include "g2o/stuff/timeutil.h"
 
+#include <unistd.h>
+
 using namespace std;
 using namespace Eigen;
 using namespace pwn;

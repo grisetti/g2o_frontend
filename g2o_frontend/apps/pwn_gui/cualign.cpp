@@ -20,6 +20,8 @@
 #include "g2o_frontend/pwn2/correspondencefinder.h"
 #include "g2o_frontend/pwn2/aligner.h"
 
+#include <unistd.h>
+
 //#undef _PWN_USE_CUDA_
 
 #ifdef _PWN_USE_CUDA_

@@ -69,7 +69,10 @@ namespace pwn{
     projector->setTransform(Eigen::Isometry3f::Identity());
     projector->setCameraMatrix(cameraMatrix);
 
-
+    traversabilityAnalyzer = new TraversabilityAnalyzer(30,
+                                0.04,
+                                0.2,
+                                1);
     // Creating and setting aligner object.
     //Aligner aligner;
     correspondenceFinder = new CorrespondenceFinder();
@@ -363,10 +366,10 @@ namespace pwn{
       std::string fname = listAssociations[index]->baseFilename()+"_depth.pgm";
       DepthImage depthImage;
       if (!depthImage.load(fname.c_str(), true)){
-	cerr << " skipping " << fname << endl;
-	newCloudAdded = false;
-	*addCloud = 0;
-	return;
+      	cerr << " skipping " << fname << endl;
+      	newCloudAdded = false;
+      	*addCloud = 0;
+      	return;
       }
       DepthImage scaledDepthImage;
       DepthImage::scale(scaledDepthImage, depthImage, reduction);
@@ -375,6 +378,9 @@ namespace pwn{
       correspondenceFinder->setSize(imageRows, imageCols);
       Frame * frame=new Frame();
       converter->compute(*frame, scaledDepthImage, sensorOffset);
+      traversabilityAnalyzer->createTraversabilityVector(frame->points(),
+                                frame->normals(),
+                                frame->traversabilityVector());
 	
       OptimizableGraph::DataContainer* dc =listAssociations[index]->dataContainer();
       cerr << "datacontainer: " << dc << endl;
@@ -386,28 +392,29 @@ namespace pwn{
       ImuData* imuData = 0;
       OptimizableGraph::Data* d = v->userData();
       while(d) {
-	ImuData* imuData_ = dynamic_cast<ImuData*>(d);
-	if (imuData_){
-	  imuData = imuData_;
-	}
-	d=d->next();
+        	ImuData* imuData_ = dynamic_cast<ImuData*>(d);
+        	if (imuData_){
+        	  imuData = imuData_;
+        	}
+        	d=d->next();
       }
 	
       DrawableFrame* drawableFrame = new DrawableFrame(globalT, drawableFrameParameters, frame);
       drawableFrame->_vertex = v;
-      if (imuData){
-	Eigen::Matrix3d R=imuData->getOrientation().matrix();
-	Eigen::Matrix3d Omega = imuData->getOrientationCovariance().inverse();
-	drawableFrame->_hasImu=true;
-	drawableFrame->_imuMean.setIdentity();
-	drawableFrame->_imuInformation.setZero();
-	for (int c = 0; c<3; c++)
-	  for (int r = 0; r<3; r++)
-	    drawableFrame->_imuMean.linear()(r,c)=R(r,c);
+      if (imuData)
+      {
+        	Eigen::Matrix3d R=imuData->getOrientation().matrix();
+        	Eigen::Matrix3d Omega = imuData->getOrientationCovariance().inverse();
+        	drawableFrame->_hasImu=true;
+        	drawableFrame->_imuMean.setIdentity();
+        	drawableFrame->_imuInformation.setZero();
+        	for (int c = 0; c<3; c++)
+        	  for (int r = 0; r<3; r++)
+        	    drawableFrame->_imuMean.linear()(r,c)=R(r,c);
 
-	for (int c = 0; c<3; c++)
-	  for (int r = 0; r<3; r++)
-	    drawableFrame->_imuInformation(r+3,c+3)=Omega(r,c);
+        	for (int c = 0; c<3; c++)
+        	  for (int r = 0; r<3; r++)
+        	    drawableFrame->_imuInformation(r+3,c+3)=Omega(r,c);
       }
       drawableFrameVector.push_back(drawableFrame);
       pwnGMW->viewer_3d->addDrawable(drawableFrame);
@@ -422,7 +429,7 @@ namespace pwn{
       pwnGMW->viewer_3d->popBack();
       DrawableFrame* lastDrawableFrame = drawableFrameVector.back();
       if (lastDrawableFrame->frame()){
-	delete lastDrawableFrame->frame();
+	       delete lastDrawableFrame->frame();
       }
       delete lastDrawableFrame;
       drawableFrameVector.pop_back();
@@ -438,7 +445,7 @@ namespace pwn{
       pwnGMW->viewer_3d->drawableList().erase(pwnGMW->viewer_3d->drawableList().begin());
       DrawableFrame* firstDrawableFrame = drawableFrameVector.front();
       if (firstDrawableFrame->frame()){
-	delete firstDrawableFrame->frame();
+	       delete firstDrawableFrame->frame();
       }
       delete firstDrawableFrame;
       drawableFrameVector.erase(drawableFrameVector.begin());

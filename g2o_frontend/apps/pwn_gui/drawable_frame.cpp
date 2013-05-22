@@ -100,7 +100,7 @@ namespace pwn {
 
   void DrawableFrame::constructDrawableObjects(){
     if (_frame) {
-      _dPoints = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)_parameters->_pPoints, &_frame->points(), &_frame->normals());
+      _dPoints = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)_parameters->_pPoints, &_frame->points(), &_frame->normals(), &_frame->traversabilityVector());
       _dNormals = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)_parameters->_pNormals, &_frame->points(), &_frame->normals());
       _dCovariances = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)_parameters->_pCovariances, &_frame->stats());
       //_dCorrespondences = new DrawableCorrespondences(Isometry3f::Identity(), (GLParameter*)_parameters->_pCorrespondences, 0,

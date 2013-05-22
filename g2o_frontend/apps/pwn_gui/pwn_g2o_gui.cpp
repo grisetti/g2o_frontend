@@ -10,6 +10,8 @@
 #include <set>
 #include <sys/stat.h>
 
+#include <unistd.h>
+
 using namespace Eigen;
 using namespace g2o;
 using namespace std;
