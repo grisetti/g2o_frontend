@@ -1,6 +1,12 @@
+// kinect
+#include "SensorHandlerRGBDCamera.h"
+// laser
+#include "SensorHandlerLaserRobot.h"
+// imu
+#include "SensorHandlerImu.h"
+#include <tf/transform_listener.h>
 #include <ros/ros.h>
 #include <ros/time.h>
-#include <tf/transform_listener.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv/cv.hpp>
 #include <g2o/core/hyper_graph.h>
@@ -10,15 +16,21 @@
 #include <g2o/types/slam3d/isometry3d_mappings.h>
 #include <g2o_frontend/sensor_data/sensor_data.h>
 
+#include <g2o_frontend/pwn2/depthimage.h>
+#include <g2o_frontend/pwn2/depthimageconverter.h>
+#include <g2o_frontend/pwn2/pinholepointprojector.h>
+#include <g2o_frontend/pwn2/correspondencefinder.h>
+#include <g2o_frontend/pwn2/statsfinder.h>
+#include <g2o_frontend/pwn2/aligner.h>
+#include <g2o_frontend/pwn2/linearizer.h>
+
+#include "g2o_frontend/pwn_viewer/drawable_frame_hac.h"
+
+#include <g2o_frontend/traversability/traversability_analyzer.h>
+
 //HAKKE
 #include <g2o_frontend/sensor_data/rgbd_data.h>
-
-// kinect
-#include "SensorHandlerRGBDCamera.h"
-// laser
-#include "SensorHandlerLaserRobot.h"
-// imu
-#include "SensorHandlerImu.h"
+#include <g2o_frontend/sensor_data/imu_data.h>
 
 
 #include <g2o/stuff/command_args.h>
@@ -29,11 +41,15 @@
 
 
 using namespace g2o;
+using namespace pwn;
 
 std::deque<OptimizableGraph::Vertex*> hackedNodesForProcessingQueue;
 
 #define conditionalPrint(x)			\
   if(verbose>=x) cerr
+
+bool extractRelativePrior(Eigen::Isometry3f& priorMean, Matrix6f& priorInfo, VertexSE3* referenceVertex, VertexSE3* currentVertex);
+bool extractAbsolutePrior(Eigen::Isometry3f& priorMean, Matrix6f& priorInfo, VertexSE3* currentVertex);
 
 #define annoyingLevel 2
 #define defaultLevel  1 
@@ -92,6 +108,266 @@ Eigen::Isometry3d fromStampedTransform(const tf::StampedTransform& transform) {
 Eigen::Vector2d isometry2distance(const Eigen::Isometry3d& t) {
   return Eigen::Vector2d(t.translation().norm(),
 			 fabs(Eigen::AngleAxisd(t.rotation()).angle()));
+}
+
+bool readAndProcess(Frame *frame, int &imageRows, int &imageCols, std::string fname, int reduction, Eigen::Isometry3f sensorOffset, 
+		    DepthImageConverter &converter, TraversabilityAnalyzer &traversabilityAnalyzer) {
+  DepthImage depthImage;
+  if(!depthImage.load(fname.c_str(), true)){
+    cerr << " Skipping " << fname << endl;
+    return false;
+  }
+
+  DepthImage scaledDepthImage;
+  DepthImage::scale(scaledDepthImage, depthImage, reduction);
+  imageRows = scaledDepthImage.rows();
+  imageCols = scaledDepthImage.cols();
+	
+  converter.compute(*frame, scaledDepthImage, sensorOffset);
+  traversabilityAnalyzer.createTraversabilityVector(frame->points(),
+						    frame->normals(),
+						    frame->traversabilityVector());
+  return true;
+}
+
+void computeSensorOffsetAndK(Eigen::Isometry3f &sensorOffset, Eigen::Matrix3f &cameraMatrix, ParameterCamera *cameraParam, int reduction) {
+  sensorOffset = Isometry3f::Identity();
+  cameraMatrix.setZero();
+      
+  int cmax = 4;
+  int rmax = 3;
+  for (int c=0; c<cmax; c++){
+    for (int r=0; r<rmax; r++){
+      sensorOffset.matrix()(r, c) = cameraParam->offset()(r, c);
+      if (c<3)
+	cameraMatrix(r,c) = cameraParam->Kcam()(r, c);
+    }
+  }
+  sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+  Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
+  sensorOffset.linear() = quat.toRotationMatrix();
+  sensorOffset.matrix().block<1, 4>(3, 0) << 0.0f, 0.0f, 0.0f, 1.0f;
+	
+  float scale = 1./reduction;
+  cameraMatrix *= scale;
+  cameraMatrix(2,2) = 1;
+}
+
+void computeTraverse() {
+  float ng_worldRadius = 0.1f;
+  int ng_minImageRadius = 10;
+  float  ng_curvatureThreshold = 1.0f;
+  int al_innerIterations = 1;
+  int al_outerIterations = 10;
+  int vz_step = 5;
+  float if_curvatureThreshold = 0.1f;
+  int reduction = 1;
+
+  Eigen::Matrix3f cameraMatrix = Eigen::Matrix3f::Zero();
+  Eigen::Isometry3f sensorOffset = Eigen::Isometry3f::Identity();
+  sensorOffset.matrix().block<1, 4>(3, 0) << 0.0f, 0.0f, 0.0f, 1.0f;
+  Eigen::Isometry3f initialGuess = Eigen::Isometry3f::Identity();
+  initialGuess.matrix().block<1, 4>(3, 0) << 0.0f, 0.0f, 0.0f, 1.0f;
+  Eigen::Isometry3f globalT = Isometry3f::Identity();
+  globalT.matrix().block<1, 4>(3, 0) << 0.0f, 0.0f, 0.0f, 1.0f;
+
+  OptimizableGraph::Vertex *_v;
+  VertexSE3 *oldV = 0;
+  DrawableFrame *oldDrawableFrame = 0, *drawableFrame = 0;
+  int imageRows = 0;
+  int imageCols = 0;
+  PinholePointProjector projector;
+  StatsFinder statsFinder;
+
+  DrawableFrameParameters *drawableFrameParameters = new DrawableFrameParameters();
+
+  PointInformationMatrixFinder pointInformationMatrixFinder;
+  NormalInformationMatrixFinder normalInformationMatrixFinder;
+  DepthImageConverter converter = DepthImageConverter(&projector, &statsFinder, 
+						      &pointInformationMatrixFinder, &normalInformationMatrixFinder);
+  TraversabilityAnalyzer traversabilityAnalyzer = TraversabilityAnalyzer(30, 0.04, 0.2, 1);
+  
+  // Creating and setting aligner object.
+  CorrespondenceFinder correspondenceFinder;
+  Linearizer linearizer;
+#ifdef _PWN_USE_CUDA_
+  CuAligner aligner;
+#else
+  Aligner aligner;
+#endif
+    
+  aligner.setProjector(&projector);
+  aligner.setLinearizer(&linearizer);
+  linearizer.setAligner(&aligner);
+  aligner.setCorrespondenceFinder(&correspondenceFinder);
+    
+  statsFinder.setWorldRadius(ng_worldRadius);
+  statsFinder.setMinPoints(ng_minImageRadius);
+  aligner.setInnerIterations(al_innerIterations);
+  aligner.setOuterIterations(al_outerIterations);
+  converter._curvatureThreshold = ng_curvatureThreshold;
+  pointInformationMatrixFinder.setCurvatureThreshold(if_curvatureThreshold);
+  normalInformationMatrixFinder.setCurvatureThreshold(if_curvatureThreshold);
+  	
+  while(true) {
+    if(hackedNodesForProcessingQueue.size() > 3) {
+      _v = hackedNodesForProcessingQueue.front();
+      g2o::VertexSE3* v = dynamic_cast<g2o::VertexSE3*>(_v);
+      hackedNodesForProcessingQueue.pop_front();
+      if(!v)
+	continue;
+      OptimizableGraph::Data* d = v->userData();
+
+      while(d) {
+	RGBDData *rgbdData = dynamic_cast<RGBDData*>(d);
+	if(!rgbdData) {
+	  d = d->next();
+	  continue;
+	}
+	// retrieve from the rgb data the index of the parameter
+	int paramIndex = rgbdData->paramIndex();
+	// retrieve from the graph the parameter given the index  
+	g2o::Parameter* _cameraParam = graph->parameter(paramIndex);
+	// attempt a cast to a parameter camera  
+	ParameterCamera* cameraParam = dynamic_cast<ParameterCamera*>(_cameraParam);
+	if(!cameraParam){
+	  cerr << "shall thou be damned forever" << endl;
+	  return;
+	}	
+	// We got the parameter
+	computeSensorOffsetAndK(sensorOffset, cameraMatrix, cameraParam, reduction);
+
+	projector.setTransform(Eigen::Isometry3f::Identity());
+	projector.setCameraMatrix(cameraMatrix);
+
+	// Lets read a depth image and compute stuffs.
+	std::string fname = rgbdData->baseFilename() + "_depth.pgm";
+	Frame * frame = new Frame();
+	if(!readAndProcess(frame, imageRows, imageCols, fname, reduction, sensorOffset, 
+			   converter, traversabilityAnalyzer)) {
+	  continue;
+	}
+	correspondenceFinder.setSize(imageRows, imageCols);
+	drawableFrame = new DrawableFrame(globalT, drawableFrameParameters, frame);
+
+	// Imu retrieving.
+	cerr << "vertex of the frame: " << v->id() << endl;	
+	Eigen::Isometry3f priorMean;
+	Matrix6f priorInfo;
+	bool hasImu = extractAbsolutePrior(priorMean, priorInfo, v);
+	if(hasImu && !oldDrawableFrame) {
+	  globalT.linear() = priorMean.linear();
+	  drawableFrame->setTransformation(globalT);
+	}
+	
+	if(oldDrawableFrame && oldV) {
+	  Eigen::Isometry3d delta = oldV->estimate().inverse() * v->estimate();
+	  for(int c=0; c<4; c++)
+	    for(int r=0; r<3; r++)
+	      initialGuess.matrix()(r,c) = delta.matrix()(r,c);
+
+	  Eigen::Isometry3f odometryMean;
+	  Matrix6f odometryInfo;
+	  bool hasOdometry = extractRelativePrior(odometryMean, odometryInfo, oldV, v);
+	  if(hasOdometry)
+	    initialGuess = odometryMean;
+
+	  Eigen::Isometry3f imuMean;
+	  Matrix6f imuInfo;
+	  hasImu = extractAbsolutePrior(imuMean, imuInfo, v);
+	  initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+
+	  aligner.clearPriors();
+	  aligner.setOuterIterations(al_outerIterations);
+	  aligner.setReferenceFrame(oldDrawableFrame->frame());
+	  aligner.setCurrentFrame(drawableFrame->frame());
+	  aligner.setInitialGuess(initialGuess);
+	  aligner.setSensorOffset(sensorOffset);
+	  if(hasOdometry)
+	    aligner.addRelativePrior(odometryMean, odometryInfo);
+	  if(hasImu)
+	    aligner.addAbsolutePrior(oldDrawableFrame->transformation(), imuMean, imuInfo);
+	  aligner.align();
+
+	  Eigen::Isometry3f localTransformation = aligner.T();
+	  if(aligner.inliers() < 1000 || aligner.error() / aligner.inliers() > 10) {
+	    cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+	    cerr << "aligner: monster failure: inliers = " << aligner.inliers() << endl;
+	    cerr << "aligner: monster failure: error/inliers = " << aligner.error() / aligner.inliers() << endl;
+	    cerr  << "Local transformation: " << t2v(aligner.T()).transpose() << endl;
+	    localTransformation = initialGuess;
+	  }
+	  cerr << "Local transformation: " << t2v(aligner.T()).transpose() << endl;
+
+	  globalT = oldDrawableFrame->transformation() * aligner.T();
+      
+	  // Update cloud drawing position.
+	  drawableFrame->setTransformation(globalT);
+	  drawableFrame->setLocalTransformation(aligner.T());	  
+	}
+
+	d = d->next();
+      
+	delete oldDrawableFrame;
+	oldDrawableFrame = drawableFrame;	
+      } // while(d)
+
+      oldV = v;      
+    } // if queue size > 3
+    usleep(20e3);
+  }
+}
+
+bool extractRelativePrior(Eigen::Isometry3f& priorMean, Matrix6f& priorInfo, 
+			  VertexSE3* referenceVertex, VertexSE3* currentVertex) {
+  bool priorFound = false;
+  priorInfo.setZero();
+  for (HyperGraph::EdgeSet::const_iterator it=referenceVertex->edges().begin();
+       it!= referenceVertex->edges().end(); it++){
+    const EdgeSE3* e = dynamic_cast<const EdgeSE3*>(*it);
+    if (e->vertex(0)==referenceVertex && e->vertex(1) == currentVertex){
+      priorFound=true;
+      for (int c=0; c<6; c++)
+	for (int r=0; r<6; r++)
+	  priorInfo(r,c) = e->information()(r,c);
+
+      for(int c=0; c<4; c++)
+	for(int r=0; r<3; r++)
+	  priorMean.matrix()(r,c) = e->measurement().matrix()(r,c);
+      priorMean.matrix().row(3) << 0,0,0,1;
+    }
+  }
+  return priorFound;
+}
+
+
+bool extractAbsolutePrior(Eigen::Isometry3f& priorMean, Matrix6f& priorInfo, 
+			  VertexSE3* currentVertex){
+  ImuData* imuData = 0;
+  OptimizableGraph::Data* d = currentVertex->userData();
+  while(d) {
+    ImuData* imuData_ = dynamic_cast<ImuData*>(d);
+    if (imuData_){
+      imuData = imuData_;
+    }
+    d=d->next();
+  }
+	
+  if (imuData){
+    Eigen::Matrix3d R=imuData->getOrientation().matrix();
+    Eigen::Matrix3d Omega = imuData->getOrientationCovariance().inverse();
+    priorMean.setIdentity();
+    priorInfo.setZero();
+    for (int c = 0; c<3; c++)
+      for (int r = 0; r<3; r++)
+	priorMean.linear()(r,c)=R(r,c);
+      
+    for (int c = 0; c<3; c++)
+      for (int r = 0; r<3; r++)
+	priorInfo(r+3,c+3)=Omega(r,c);
+    return true;
+  }
+  return false;
 }
 
 void writeQueue() {
@@ -306,6 +582,9 @@ int main(int argc, char** argv) {
   // thread to process queue
   boost::thread thrd;
   thrd = boost::thread(writeQueue);
+  // thread to process the vertex queue
+  boost::thread thrdTraverse;
+  thrdTraverse = boost::thread(computeTraverse);
   ros::spin();
   return (0);
 }

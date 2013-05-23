@@ -15,6 +15,7 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${QGLVIEWER_INCLUDE_DIR} ${QT_INCLUDES}
 ADD_LIBRARY(pwn_viewer_library 
   pwn_imageview.cpp pwn_imageview.h
   drawable.cpp drawable.h
+  drawable_frame_hac.cpp drawable_frame_hac.h
   pwn_qglviewer.cpp pwn_qglviewer.h
   gl_parameter.cpp gl_parameter.h
 

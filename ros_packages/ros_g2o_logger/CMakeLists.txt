@@ -11,7 +11,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rosbuild_init()
 
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake_modules)
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/../../cmake_modules)
 
 #find eigen3
 FIND_PACKAGE(Eigen3 REQUIRED)
@@ -35,6 +35,9 @@ ENDIF(G2O_FOUND)
 #set the path for g2o_frontend
 set(G2O_FRONTEND $ENV{G2O_FRONTEND_ROOT})
 
+FIND_PACKAGE(Qt4)
+INCLUDE(${QT_USE_FILE})
+
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
@@ -45,7 +48,10 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
-include_directories(${G2O_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} ${G2O_FRONTEND})
+include_directories(${G2O_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} ${G2O_FRONTEND} ${QT_INCLUDES} 
+	#${QT_INCLUDES} ${QT_QTCORE_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR}/..
+	#${QGLVIEWER_INCLUDE_DIR} 
+	)
 link_directories(${G2O_FRONTEND}/lib)
 
 rosbuild_add_boost_directories()
@@ -60,7 +66,7 @@ src/SensorHandlerImu.cpp
 rosbuild_link_boost(SensorHandlers thread)
 rosbuild_add_executable(logger src/Logger.cpp)
 rosbuild_link_boost(logger signals)
-target_link_libraries(logger ${G2O_STUFF_LIBRARY} ${G2O_CORE_LIBRARY} g2o_types_slam3d SensorHandlers g2o_frontend_sensor_data)
+target_link_libraries(logger ${G2O_STUFF_LIBRARY} ${G2O_CORE_LIBRARY} g2o_types_slam3d SensorHandlers g2o_frontend_sensor_data g2o_frontend_pwn2_library g2o_frontend_pwn_viewer g2o_frontend_traverse_library)
 # just to know how to link_libraries
 #target_link_libraries(kinect2g2o_thrd ${G2O_TYPES_DATA} g2o_frontend_types_data ${G2O_TYPES_SLAM3D})
 

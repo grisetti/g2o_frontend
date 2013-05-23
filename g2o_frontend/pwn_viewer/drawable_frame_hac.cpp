@@ -1,6 +1,4 @@
-#include "drawable_frame.h"
-
-namespace pwn {
+#include "drawable_frame_hac.h"
 
   using namespace g2o;
   using namespace std;
@@ -144,5 +142,3 @@ namespace pwn {
       glPopMatrix();
     }
   }
-
-}

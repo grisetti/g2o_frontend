@@ -62,21 +62,21 @@ class PointStatsVector: public TransformableVector<PointStats> {
     inline void transformInPlace(const OtherDerived& m) {
     const Eigen::Matrix4f R4 =m;
     const Eigen::Matrix3f R = R4.block<3,3>(0,0);
-    std::cerr << "R " << std::endl;
-    std::cerr << R << std::endl;
+    /* std::cerr << "R " << std::endl; */
+    /* std::cerr << R << std::endl; */
     for (size_t i = 0; i < size(); ++i) {
-      if (i==0){
-	std::cerr << "before " << std::endl;
-	std::cerr << at(i) << std::endl;
-	std::cerr << at(i).eigenValues().transpose() << std::endl;
+      /* if (i==0){ */
+      /* 	std::cerr << "before " << std::endl; */
+      /* 	std::cerr << at(i) << std::endl; */
+      /* 	std::cerr << at(i).eigenValues().transpose() << std::endl; */
 
-      }
+      /* } */
       at(i).block<4,4>(0,0) = R4 * at(i).block<4,4>(0,0);
-      if (i==0){
-	std::cerr << "after " << std::endl;
-	std::cerr << at(i) << std::endl;
-	std::cerr << at(i).eigenValues().transpose() << std::endl;
-      }
+      /* if (i==0){ */
+      /* 	std::cerr << "after " << std::endl; */
+      /* 	std::cerr << at(i) << std::endl; */
+      /* 	std::cerr << at(i).eigenValues().transpose() << std::endl; */
+      /* } */
 	
     }
   }

@@ -2,16 +2,16 @@
 #ifndef SENSORHANDLERRGBDCAMERA_H
 #define SENSORHANDLERRGBDCAMERA_H
 
-#include <g2o_frontend/sensor_data/sensor_handler.h>
-#include <g2o_frontend/sensor_data/sensor_rgbd_camera.h>
-#include <g2o_frontend/sensor_data/priority_synchronous_data_queue.h>
-#include <ros/ros.h>
 #include <tf/transform_listener.h>
-#include <sensor_msgs/Image.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/time_synchronizer.h>
+#include <ros/ros.h>
+#include <sensor_msgs/Image.h>
+#include <g2o_frontend/sensor_data/sensor_handler.h>
+#include <g2o_frontend/sensor_data/sensor_rgbd_camera.h>
+#include <g2o_frontend/sensor_data/priority_synchronous_data_queue.h>
 
 typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> MySyncPolicy;
 
