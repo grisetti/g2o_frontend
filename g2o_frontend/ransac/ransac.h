@@ -136,9 +136,7 @@ public:
                 } else {
                     if (_indices[k+1]<_indices[k])
                         _indices[k+1]=_indices[k]+1;
-// 		    cerr << "aaaaaaaaaaaaaaaaaInner Iteration (" << k << ") : ";
-// 		    pindex(cerr, _indices, k);
-//                 cerr << endl;
+
                     transformFound = computeMinimalSet(t,k+1);
 
                     if(_indices[k+1]>maxIndex-((int)_indices.size()-k)){
@@ -193,12 +191,11 @@ public:
                 //cerr << "e: " << e->chi2() << endl;
                 if (e->chi2()<_inlierErrorTheshold){
                     if (debug) {
-                        cerr << "**************** INLIER ****************" << endl;
-                        cerr << "v1 ";
+		      cerr << "**************** INLIER ****************" << endl;                        cerr << endl << "v1 " << v1->id() << " ";
                         v1->write(cerr);
                         cerr << endl;
                         v2->setEstimate(ebackup);
-                        cerr << "v2 ";
+                        cerr <<  "v2 " << v2->id() << " ";
                         v2->write(cerr);
                         cerr << endl;
                         v2->setEstimate(t*ebackup);
@@ -227,21 +224,43 @@ public:
 
             if (inliers.size()>bestInliers.size()){
                 if(debug)
-                cerr << "enough inliers: " << (int)inliers.size() <<  endl;
+		  cerr << "enough inliers: " << (int)inliers.size() <<  endl;
                 double currentError = error/inliers.size();
                 if (currentError<bestError){
                     if(debug)
                         cerr << "good error: " << currentError <<  endl;
                     bestError= currentError;
                     bestInliers = inliers;
-                    _errors = currentErrors;
+		    _errors = currentErrors;
                     bestTransform = t;
                     transformFound = true;
 
                     //mal
                     inliers_=bestInliers;
+		    //debug martina
+		    //cerr << "AAAAA" << endl;
+		    for (size_t i = 0; i<inliers.size(); i++){
+		      cerr << inliers[i] << " ";
+		    }
+		    cerr << endl;
+		    //cerr << "BBBBB" << endl;
+		    for (size_t i = 0; i<inliers.size(); i++){
+		      int idx = inliers[i];
+		      cerr << _errors[idx] << " ";
+		    }
+		    cerr << endl;
+		    //cerr << "CCCCC" << endl;
+		    for (size_t i = 0; i<inliers.size(); i++){
+		      int idx = inliers[i];	
+		      Correspondence& c=_correspondences[idx];
+		      g2o::OptimizableGraph::Edge* e=c.edge();
+		      PointVertexType* v1=static_cast<PointVertexType*>(e->vertex(0));
+		      PointVertexType* v2=static_cast<PointVertexType*>(e->vertex(1));
+		      cerr << "inliers are: " << "(" << idx << ","<< e << ","<< v1->id() << "," << v2->id() << "), ";
+		    }
+		    cerr << endl;
                 }
-                if ((double)inliers.size()/(double)_correspondences.size() > _inlierStopFraction){
+                if ((double)bestInliers.size()/(double)_correspondences.size() > _inlierStopFraction){
                     transformFound = true;
                     if(debug)
                         cerr << "excellent inlier fraction: "
@@ -251,7 +270,7 @@ public:
             }
         }
         if (transformFound){
-            _alignmentAlgorithm(bestTransform,_correspondences,bestInliers);
+	  _alignmentAlgorithm(bestTransform,_correspondences,bestInliers);
         }
         treturn = bestTransform;
         if (!_cleanup())

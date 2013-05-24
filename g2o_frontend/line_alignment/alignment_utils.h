@@ -14,7 +14,7 @@
 #include "g2o/core/factory.h"
 #include "g2o/core/optimization_algorithm_gauss_newton.h"
 #include "g2o/core/optimization_algorithm_levenberg.h"
-#include "g2o/solvers/csparse/linear_solver_csparse.h"
+// #include "g2o/solvers/csparse/linear_solver_csparse.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "g2o/types/slam2d/types_slam2d.h"
 #include "g2o/types/slam2d_addons/types_slam2d_addons.h"
@@ -56,68 +56,49 @@ double computeError(Vector3d& l1_coeff, Vector3d& l2_coeff, int weight) {
     return err_tot.squaredNorm();
 }
 
-bool findCorrespondences(LineCorrs& _currCorrs,  LinesForMatching& _pairLinesSet/*LineCorrsVector& _lcorrsVector, LinesForMatchingVector& _linesSets*/){
+bool findCorrespondences(LineCorrs& _currCorrs,  LinesForMatching& _pairLinesSet){
 
-		LinesSet s1 = _pairLinesSet.first;
-		LinesSet s2 = _pairLinesSet.second;
-		cerr << "number of lines in the first set: " << s1.size() << endl;
-		cerr << "number of lines in the second set: " << s2.size() << endl;
-		for(size_t j = 0; j < s1.size(); j++)
-		{	
-			lineCorrespondence lc;
-			lc.error = 1e9;
-			lc.lid1 = -1;
-			lc.lid2 = -1;				
-// 			lineCorrespondence lc_second;
-// 			lc_second.error = 1e9;
-// 			lc_second.lid1 = -1;
-// 			lc_second.lid2 = -1;
-						
-			Line2D l1 = s1[j].line;
-			Vector3d l1_coeff(cos(l1(0)), sin(l1(0)), l1(1));
-			
-			for(size_t k = 0; k < s2.size(); k++)
-			{
-				Line2D l2 = s2[k].line;
-				Vector3d l2_coeff(cos(l2(0)), sin(l2(0)), l2(1));
-				
-// 				double err_n  = abs(l1_coeff[0]-l2_coeff[0] + l1_coeff[1]-l2_coeff[1]);
-// 				double err_rho = abs(l1_coeff[2]-l2_coeff[2]);
-// 	
-// 				double err_sum = err_n + err_rho;
-				
-				//computing the chi2
-				int weight = 10;
-				double err_chi2 = computeError(l1_coeff, l2_coeff, weight);
-				
-// 				cerr << "- err_sum between frame 0 line "<< j << " and frame 1 line " << k << ":\t" <<  err_sum <<endl;
-// 				cerr << "- err_chi2 between frame 0 line "<< j << " and frame 1 line " << k << ":\t" << err_chi2 <<endl<<endl;
-				
-				if(err_chi2 < lc.error)
-				{
-					//considering err_chi2, don't need this if
-// 					if(lc.error < th) {
-// 						lc_second.error = lc.error;
-// 						lc_second.lid1 = lc.lid1;
-// 						lc_second.lid2 = lc.lid2;
-// 					}
-					lc.error = err_chi2;
-					lc.lid1 = j;
-					lc.lid2 = k;
-				}
-				/* else if(err_chi2 < th && err_chi2 < lc_second.error)
-				{
-					lc_second.error = err_chi2;
-					lc_second.lid1 = j;
-					lc_second.lid2 = k;
-				}*/
-			}
-			_currCorrs.push_back(lc);
-// 			if(lc_second.error != 1e9){
-// 				currCorrs.push_back(lc_second);
-// 			}
-		}
-	return true;
+    LinesSet s1 = _pairLinesSet.first;
+    LinesSet s2 = _pairLinesSet.second;
+    cerr << "number of lines in the first set: " << s1.size() << endl;
+    cerr << "number of lines in the second set: " << s2.size() << endl;
+    for(size_t j = 0; j < s1.size(); j++)
+{	
+	lineCorrespondence lc;
+	lc.error = 1e9;
+	lc.lid1 = -1;
+	lc.lid2 = -1;
+
+	Line2D l1 = s1[j].line;
+	Vector3d l1_coeff(cos(l1(0)), sin(l1(0)), l1(1));
+	
+	for(size_t k = 0; k < s2.size(); k++)
+	{
+	    Line2D l2 = s2[k].line;
+	    Vector3d l2_coeff(cos(l2(0)), sin(l2(0)), l2(1));
+	    
+// 	    double err_n  = abs(l1_coeff[0]-l2_coeff[0] + l1_coeff[1]-l2_coeff[1]);
+// 	    double err_rho = abs(l1_coeff[2]-l2_coeff[2]);
+// 	    double err_sum = err_n + err_rho;
+	    
+	    //computing the chi2
+	    int weight = 10;
+	    double err_chi2 = computeError(l1_coeff, l2_coeff, weight);
+/*
+	    cerr << "- err_sum between frame 0 line "<< j << " and frame 1 line " << k << ":\t" <<  err_sum <<endl;
+	    cerr << "- err_chi2 between frame 0 line "<< j << " and frame 1 line " << k << ":\t" << err_chi2 <<endl<<endl;*/
+	    
+	    if(err_chi2 < lc.error)
+	    {
+		lc.error = err_chi2;
+		lc.lid1 = j;
+		lc.lid2 = k;
+	    }
+	}
+	_currCorrs.push_back(lc);
+    }
+    cerr << "Number of correspondances found: " << _currCorrs.size() << endl;
+    return true;
 }
 void mergePointVertex(OptimizableGraph* graph, VertexPointXY* pNew, VertexPointXY* pOld){
 	if (!pNew || !pOld || pNew == pOld)

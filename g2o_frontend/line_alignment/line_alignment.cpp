@@ -511,7 +511,7 @@ int main(int argc, char**argv){
 	  RansacLine2DLinear::TransformType transform = t0;
 	  std::vector<int> inliers;
 	  int iterations = 1000;
-	  float inliersThreshold = .1;
+	  float inliersThreshold = .15;
 	  float inliersStopFraction = .5;
 	  vector<double> err;
 	  ScopeTime t("ransac aligned");

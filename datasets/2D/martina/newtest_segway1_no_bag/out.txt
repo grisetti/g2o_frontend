@@ -1,0 +1,197 @@
+*************** TEST Line2D  *************** 
+salvo odometria
+ground truth           1 -0.00016106           0
+ 0.00016106           1           0
+          0           0           1
+vl1 id: 12vl1 estimate1:
+-2.24883
+2.16756
+vl1 id: 15vl1 estimate1:
+-2.87385
+0.535476
+vl1 id: 17vl1 estimate1:
+-2.11353
+2.86163
+vl1 id: 19vl1 estimate1:
+-0.638976
+4.29433
+vl1 id: 21vl1 estimate1:
+-2.1239
+2.34678
+vl1 id: 24vl1 estimate1:
+-0.36096
+7.19425
+vl1 id: 26vl1 estimate1:
+-1.11387
+8.09125
+vl1 id: 29vl1 estimate1:
+0.394666
+8.69686
+vl1 id: 31vl1 estimate1:
+-0.544273
+16.6243
+vl1 id: 34vl1 estimate1:
+-0.542213
+0.756076
+vl1 id: 36vl1 estimate1:
+1.01126
+0.490925
+vl2 id: 39vl2 estimate2:
+-2.2435
+2.17729
+vl2 id: 42vl2 estimate2:
+-2.93714
+0.321219
+vl2 id: 44vl2 estimate2:
+-2.11676
+2.85194
+vl2 id: 46vl2 estimate2:
+-0.692645
+4.42673
+vl2 id: 48vl2 estimate2:
+-2.12232
+2.34752
+vl2 id: 51vl2 estimate2:
+-0.45958
+7.59392
+vl2 id: 53vl2 estimate2:
+-1.09197
+8.13356
+vl2 id: 56vl2 estimate2:
+0.451479
+7.87778
+vl2 id: 58vl2 estimate2:
+-0.547553
+16.631
+vl2 id: 61vl2 estimate2:
+-0.554704
+0.756289
+vl2 id: 63vl2 estimate2:
+1.01416
+0.488324
+linesSets to be aligned: s1 dim = 11, s2 dim = 11
+number of lines in the first set: 11
+number of lines in the second set: 11
+Number of correspondances found: 11
+!!! Size of correspondances founded for the current pair of vertex: 11
+Correspondance 0-th, position in lines sets: 0, 0, with error:  0.00293556
+   DEBUG INFO: Edge dim2, omega.size 2
+id v1 12 == 12, id v2 39 == 39
+Correspondance 1-th, position in lines sets: 1, 1, with error:  0.446335
+   DEBUG INFO: Edge dim2, omega.size 2
+id v1 15 == 15, id v2 42 == 42
+Correspondance 2-th, position in lines sets: 2, 2, with error:  0.00113719
+   DEBUG INFO: Edge dim2, omega.size 2
+id v1 17 == 17, id v2 44 == 44
+Correspondance 3-th, position in lines sets: 3, 3, with error:  0.305497
+   DEBUG INFO: Edge dim2, omega.size 2
+id v1 19 == 19, id v2 46 == 46
+Correspondance 4-th, position in lines sets: 4, 4, with error:  0.000250188
+   DEBUG INFO: Edge dim2, omega.size 2
+id v1 21 == 21, id v2 48 == 48
+Correspondance 5-th, position in lines sets: 5, 5, with error:  1.13154
+   DEBUG INFO: Edge dim2, omega.size 2
+id v1 24 == 24, id v2 51 == 51
+Correspondance 6-th, position in lines sets: 6, 6, with error:  0.0497492
+   DEBUG INFO: Edge dim2, omega.size 2
+id v1 26 == 26, id v2 53 == 53
+Correspondance 7-th, position in lines sets: 7, 7, with error:  0.993577
+   DEBUG INFO: Edge dim2, omega.size 2
+id v1 29 == 29, id v2 56 == 56
+Correspondance 8-th, position in lines sets: 8, 8, with error:  0.00112073
+   DEBUG INFO: Edge dim2, omega.size 2
+id v1 31 == 31, id v2 58 == 58
+Correspondance 9-th, position in lines sets: 9, 9, with error:  0.0156024
+   DEBUG INFO: Edge dim2, omega.size 2
+id v1 34 == 34, id v2 61 == 61
+Correspondance 10-th, position in lines sets: 10, 10, with error:  0.000847765
+   DEBUG INFO: Edge dim2, omega.size 2
+id v1 36 == 36, id v2 63 == 63
+>>>> correspondances dim: 11
+R after reconditioning the rotation:
+   0.99958 -0.0289759
+ 0.0289759    0.99958
+t after recompute the translation: -0.271573 0.215939
+R after reconditioning the rotation:
+  0.999765 -0.0216558
+ 0.0216558   0.999765
+t after recompute the translation: -0.103299 0.0417194
+Erros size: 11
+error of 0-th correspondance: 0.117718
+error of 1-th correspondance: 0.117718
+error of 2-th correspondance: 0.0702981
+error of 3-th correspondance: 0.106986
+error of 4-th correspondance: 0.0959765
+error of 5-th correspondance: 0.488911
+error of 6-th correspondance: 0.336404
+error of 7-th correspondance: 1.65784
+error of 8-th correspondance: 0.179077
+error of 9-th correspondance: 0.144875
+error of 10-th correspondance: 0.103864
+Inliers: (size is 7)
+Inliers: 0-th correspondance:  with error: 0.117718
+Inliers: 1-th correspondance:  with error: 0.117718
+Inliers: 2-th correspondance:  with error: 0.0702981
+Inliers: 3-th correspondance:  with error: 0.106986
+Inliers: 4-th correspondance:  with error: 0.0959765
+Inliers: 9-th correspondance:  with error: 0.144875
+Inliers: 10-th correspondance:  with error: 0.103864
+Line frame1 id: 12estimate:
+-2.24883
+2.16756
+Line frame1 id: 15estimate:
+-2.87385
+0.535476
+Line frame1 id: 17estimate:
+-2.11353
+2.86163
+Line frame1 id: 19estimate:
+-0.638976
+4.29433
+Line frame1 id: 21estimate:
+-2.1239
+2.34678
+Line frame1 id: 24estimate:
+-0.36096
+7.19425
+Line frame1 id: 26estimate:
+-1.11387
+8.09125
+Line frame2 id: 39estimate:
+-2.2435
+2.17729
+Line frame2 id: 42estimate:
+-2.93714
+0.321219
+Line frame2 id: 44estimate:
+-2.11676
+2.85194
+Line frame2 id: 46estimate:
+-0.692645
+4.42673
+Line frame2 id: 48estimate:
+-2.12232
+2.34752
+Line frame2 id: 51estimate:
+-0.45958
+7.59392
+Line frame2 id: 53estimate:
+-1.09197
+8.13356
+***********FOUND!***********
+transform found vector: 
+-0.103299
+0.0417194
+0.0216574
+transform found: 
+  0.999765 -0.0216558  -0.103299
+ 0.0216558   0.999765  0.0417194
+         0          0          1
+transform error vector: 
+-0.103306
+0.0417028
+0.0218185
+transform error: 
+  0.999762 -0.0218168  -0.103306
+ 0.0218168   0.999762  0.0417028
+         0          0          1

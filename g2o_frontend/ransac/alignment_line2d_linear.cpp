@@ -18,8 +18,6 @@ namespace g2o_frontend{
       return false;
     Isometry2d transform = _transform.toIsometry();
     Vector6d _x = homogeneous2vector_2d(transform.matrix());
-    Eigen::Matrix3d Omega = Eigen::Matrix3d::Identity(); 
-    Omega.block<2,2>(0,0)*=1000;
     //	considering only the rotational part to first compute rotational part of the transformation
     Vector4d x;
     x.head<4>() = _x.head<4>();
@@ -34,6 +32,7 @@ namespace g2o_frontend{
     double err = 0;
 		
     for (size_t i=0; i<indices.size(); i++){
+      
       A.setZero();
       const Correspondence& c = correspondences[indices[i]];
       const EdgeLine2D* edge = static_cast<const EdgeLine2D*>(c.edge());
@@ -46,6 +45,16 @@ namespace g2o_frontend{
 //       cerr << "indices size: " << indices.size() << endl;
 //       cerr << "Li:\n" << li << endl;
 //       cerr << "Lj:\n" << lj << endl;
+      
+      Eigen::Matrix2d edgeOmega=edge->information();
+      Eigen::Matrix3d Omega = Eigen::Matrix3d::Identity(); 
+      Omega.block<2,2>(0,0)*=edgeOmega(0,0);
+      Omega(2,2)=edgeOmega(1,1);
+      Omega << 
+      	100,0,0,
+      	0,100,0,
+      	0, 0,  1;
+
       A.block<1,2>(0,0)=lj.head<2>().transpose();
       A.block<1,2>(1,2)=lj.head<2>().transpose();
 
@@ -77,7 +86,7 @@ namespace g2o_frontend{
     Isometry2d Xnew = Isometry2d::Identity();
     Xnew.linear() = R;
     Xnew.translation() = t;
-    cout << "R after reconditioning the rotation:\n" << R << endl;
+    //cout << "R after reconditioning the rotation:\n" << R << endl;
 
     Matrix2d H2 = Matrix2d::Zero();
     Vector2d b2 = Vector2d::Zero();
@@ -91,6 +100,17 @@ namespace g2o_frontend{
       const VertexLine2D* v2 = static_cast<const VertexLine2D*>(edge->vertex(1));
       const AlignmentAlgorithmLine2DLinear::PointEstimateType& l1= v1->estimate();//theta, rho
       const AlignmentAlgorithmLine2DLinear::PointEstimateType& l2= v2->estimate();
+
+      Eigen::Matrix2d edgeOmega=edge->information();
+      Eigen::Matrix3d Omega = Eigen::Matrix3d::Identity(); 
+      Omega.block<2,2>(0,0)*=edgeOmega(0,0);
+      Omega(2,2)=edgeOmega(1,1);
+
+      Omega << 
+      	100,0,0,
+      	0,100,0,
+      	0, 0,  1;
+  
       Vector3d li(cos(l1[0]), sin(l1[0]), l1[1]);
       Vector3d lj(cos(l2[0]), sin(l2[0]), l2[1]);
 			
@@ -105,7 +125,7 @@ namespace g2o_frontend{
     dt = H2.ldlt().solve(-b2);
     t+=dt;
     Xnew.translation() = t;
-    cout << "t after recompute the translation: " << t.transpose() << endl;
+    //cout << "t after recompute the translation: " << t.transpose() << endl;
 //     cout << "ERROR: partial (T) after rotation: " << err << endl;
 		
     transform = Xnew;
@@ -136,6 +156,16 @@ namespace g2o_frontend{
       const AlignmentAlgorithmLine2DLinear::PointEstimateType& l2= v2->estimate();
       Vector3d li(cos(l1[0]), sin(l1[0]), l1[1]);
       Vector3d lj(cos(l2[0]), sin(l2[0]), l2[1]);
+
+      Eigen::Matrix2d edgeOmega=edge->information();
+      Eigen::Matrix3d Omega = Eigen::Matrix3d::Identity(); 
+      Omega.block<2,2>(0,0)*=edgeOmega(0,0);
+      Omega(2,2)=edgeOmega(1,1);
+
+      Omega << 
+      	100,0,0,
+      	0,100,0,
+      	0, 0,  1;
 			
       Vector3d tlj = line2d_remapCartesian(transform, lj);
       Vector3d ek = tlj - li;
