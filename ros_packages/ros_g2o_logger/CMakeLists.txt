@@ -66,7 +66,8 @@ src/SensorHandlerImu.cpp
 rosbuild_link_boost(SensorHandlers thread)
 rosbuild_add_executable(logger src/Logger.cpp)
 rosbuild_link_boost(logger signals)
-target_link_libraries(logger ${G2O_STUFF_LIBRARY} ${G2O_CORE_LIBRARY} g2o_types_slam3d SensorHandlers g2o_frontend_sensor_data g2o_frontend_pwn2_library g2o_frontend_pwn_viewer g2o_frontend_traverse_library)
+target_link_libraries(logger ${G2O_STUFF_LIBRARY} ${G2O_CORE_LIBRARY} g2o_types_slam3d SensorHandlers 
+g2o_frontend_sensor_data g2o_frontend_pwn2_library g2o_frontend_pwn_viewer g2o_frontend_traverse_library pwn_mapper)
 # just to know how to link_libraries
 #target_link_libraries(kinect2g2o_thrd ${G2O_TYPES_DATA} g2o_frontend_types_data ${G2O_TYPES_SLAM3D})
 

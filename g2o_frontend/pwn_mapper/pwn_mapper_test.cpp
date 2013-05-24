@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
     VertexSE3* v = dynamic_cast<VertexSE3*>(graph->vertex(index));
     if (v) {
       bool added = false;
-      bool aligned = false;
+      //bool aligned = false;
       added = controller->addVertex(v);
       if (added) {
 	controller->alignIncrementally();

@@ -9,10 +9,12 @@
 #include "g2o_frontend/pwn2/depthimageconverter.h"
 #include "g2o_frontend/pwn2/aligner.h"
 
-
 #include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "g2o_frontend/sensor_data/rgbd_data.h"
 #include "g2o_frontend/sensor_data/imu_data.h"
+
+#include "g2o_frontend/traversability/traversability_analyzer.h"
+
 #include "g2o/core/sparse_optimizer.h"
 
 #include <deque>
@@ -48,11 +50,10 @@ namespace pwn{
       return _globalTransform;
     }
 
-    const Eigen::Isometry3f previousFrameTransform() const {
-      return _previousFrameTransform;
-    }
+    const Eigen::Isometry3f previousFrameTransform() const { return _previousFrameTransform; }
 
     G2OFrame* previousFrame() const {return _previousFrame;}
+
   protected:
     Eigen::Isometry3f _sensorOffset;
     Eigen::Matrix3f _cameraMatrix;
@@ -78,6 +79,8 @@ namespace pwn{
     // does the incremental alignment of the current vertex with the previous one(s) 
     bool alignIncrementally();
 
+    bool computeTraversability();
+
   protected:
     // these are the algorithms
     PinholePointProjector* projector;
@@ -85,7 +88,7 @@ namespace pwn{
     PointInformationMatrixFinder* pointInformationMatrixFinder;
     NormalInformationMatrixFinder* normalInformationMatrixFinder;
     DepthImageConverter* converter;
-
+    TraversabilityAnalyzer* traversabilityAnalyzer;
   
     CorrespondenceFinder* correspondenceFinder;
     Linearizer* linearizer;
@@ -105,7 +108,7 @@ namespace pwn{
     float if_curvatureThreshold;
     int al_innerIterations;
     int al_outerIterations;
-    int maxDequeSize;
+    size_t maxDequeSize;
     
     g2o::OptimizableGraph* graph;
   };

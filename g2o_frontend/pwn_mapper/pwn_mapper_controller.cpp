@@ -32,28 +32,7 @@ namespace pwn{
     if_curvatureThreshold = 0.1f;
     reduction = 2;
 
-    int maxDequeSize = 20;
-
-
-    
-    // cameraMatrix <<     
-    //   525.0f, 0.0f, 319.5f,
-    //   0.0f, 525.0f, 239.5f,
-    //   0.0f, 0.0f, 1.0f;
-    
-    // float scale = 1./reduction;
-    // cameraMatrix*=scale;
-    // cameraMatrix(2,2) = 1;
-
-    // if (0){
-    //   sensorOffset.setIdentity();
-    // } else {
-    //   sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
-    //   Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
-    //   sensorOffset.linear() = quat.toRotationMatrix();
-    // }
-
-    // sensorOffset.matrix().row(3) << 0,0,0,1;
+    maxDequeSize = 20;
 
     projector = new PinholePointProjector();
     statsFinder = new StatsFinder();
@@ -63,11 +42,9 @@ namespace pwn{
     converter= new DepthImageConverter (projector, statsFinder, 
 					pointInformationMatrixFinder, normalInformationMatrixFinder);
 
-    //projector->setTransform(Eigen::Isometry3f::Identity());
-    //projector->setCameraMatrix();
+    traversabilityAnalyzer = new TraversabilityAnalyzer(30, 0.04, 0.2, 1);
 
     // Creating and setting aligner object.
-    //Aligner aligner;
     correspondenceFinder = new CorrespondenceFinder();
     linearizer = new Linearizer() ;
     aligner = new Aligner();
@@ -76,10 +53,8 @@ namespace pwn{
     aligner->setLinearizer(linearizer);
     linearizer->setAligner(aligner);
     aligner->setCorrespondenceFinder(correspondenceFinder);
-
-    
+ 
     statsFinder->setWorldRadius(ng_worldRadius);
-    //statsFinder->setCurvatureThreshold(ng_curvatureThreshold);
     statsFinder->setMinPoints(ng_minImageRadius);
     aligner->setInnerIterations(al_innerIterations);
     aligner->setOuterIterations(al_outerIterations);
@@ -97,8 +72,6 @@ namespace pwn{
     globalT = Isometry3f::Identity();
   }
   
-
-
   bool extractRelativePrior(Eigen::Isometry3f& priorMean, 
 			    Matrix6f& priorInfo, 
 			    const G2OFrame* reference, 
@@ -157,6 +130,7 @@ namespace pwn{
     return false;
   }
 
+  ofstream os("boh.dat");
 
   bool  PWNMapperController::alignIncrementally(){
     if (framesDeque.size()<2)
@@ -214,13 +188,31 @@ namespace pwn{
     cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
     cout << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
       
-    globalT = reference->globalTransform()*aligner->T();
+    globalT = reference->globalTransform()*localTransformation;
       
+    os << globalT.translation().x() << " " << globalT.translation().y() << endl; 
     // Update cloud drawing position.
     current->_globalTransform = globalT;
     current->_previousFrameTransform = localTransformation;
+
+    cerr << "i aligned " << reference << " " << current << endl;
+      
     return true;
   }
+
+   bool PWNMapperController::computeTraversability() { 
+      G2OFrame* current = framesDeque.back();
+      cerr << "i compute the traversability on" << current << endl;
+      if (! current)
+	return false;
+      G2OFrame globalFrame(*current);
+      Eigen::Isometry3f globalTransform = current->globalTransform();
+      globalTransform.matrix().row(3) << 0,0,0,1;
+      globalFrame.transformInPlace(globalTransform);
+      cerr << "traverse frame coords" << t2v(globalTransform).transpose() << endl;
+      traversabilityAnalyzer->createTraversabilityVector(globalFrame.points(), globalFrame.normals(), globalFrame.traversabilityVector()); 
+      return true;
+    }
 
   bool PWNMapperController::addVertex(VertexSE3* v){
     OptimizableGraph::Data* d = v->userData();
@@ -260,6 +252,17 @@ namespace pwn{
       }
     }
     
+    cameraMatrix << 
+      525.0f, 0.0f, 319.5f,
+      0.0f, 525.0f, 239.5f,
+      0.0f, 0.0f, 1.0f;
+
+    sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+    Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
+    sensorOffset.linear() = quat.toRotationMatrix();
+
+    sensorOffset.matrix().row(3) << 0,0,0,1;
+
     std::string fname = rgbdData->baseFilename()+"_depth.pgm";
     // UGLY
     DepthImage depthImage;
@@ -283,7 +286,7 @@ namespace pwn{
     correspondenceFinder->setSize(imageRows, imageCols);
 
     // create the frame and set the parameters
-    G2OFrame * frame=new G2OFrame(v);
+    G2OFrame * frame = new G2OFrame(v);
     frame->_cameraMatrix = cameraMatrix;
     frame->_sensorOffset = sensorOffset;
     
@@ -302,7 +305,7 @@ namespace pwn{
       if (hasImu){
 	globalT.linear() = priorMean.linear();
 	cerr << "!!!! i found an imu for the first vertex, me happy" << endl;
-	frame->_globalTransform=globalT;
+	frame->_globalTransform = globalT;
       }
     }
 
@@ -313,12 +316,12 @@ namespace pwn{
     framesDeque.push_back(frame);
 
     // keep at max maxDequeSize elements in the queue
-    while (framesDeque.size()>maxDequeSize){
+    while (framesDeque.size() > maxDequeSize) {
       G2OFrame* frame=framesDeque.front();
       framesDeque.pop_front();
       framesDeque.front()->_previousFrame = 0;
+      delete frame;
     }
     return true;
   }
-
 } 

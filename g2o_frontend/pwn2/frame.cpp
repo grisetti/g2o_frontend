@@ -118,10 +118,11 @@ void Frame::clear(){
 
 void Frame::transformInPlace(const Eigen::Isometry3f& T){
   Eigen::Matrix4f m = T.matrix();
-  m.row(3) << 0,0,0,0;
-  m.col(3) << 0,0,0,0;
+  m.row(3) << 0,0,0,1;
   _points.transformInPlace(m);
   _normals.transformInPlace(m);
+  m.row(3) << 0,0,0,0;
+  m.col(3) << 0,0,0,0;
   _stats.transformInPlace(m);
   _pointInformationMatrix.transformInPlace(m);
   _normalInformationMatrix.transformInPlace(m);
