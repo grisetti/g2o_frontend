@@ -61,7 +61,7 @@ class PointStatsVector: public TransformableVector<PointStats> {
   template<typename OtherDerived>
     inline void transformInPlace(const OtherDerived& m) {
     const Eigen::Matrix4f R4 =m;
-    const Eigen::Matrix3f R = R4.block<3,3>(0,0);
+    //const Eigen::Matrix3f R = R4.block<3,3>(0,0);
     /* std::cerr << "R " << std::endl; */
     /* std::cerr << R << std::endl; */
     for (size_t i = 0; i < size(); ++i) {
