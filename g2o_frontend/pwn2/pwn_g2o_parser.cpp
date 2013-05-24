@@ -28,7 +28,6 @@
 using namespace std;
 using namespace g2o;
 using namespace pwn;
-
 volatile bool hasToStop;
 void sigquit_handler(int sig)
 {

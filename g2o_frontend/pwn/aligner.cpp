@@ -20,11 +20,17 @@ Aligner::Aligner() {
 };
 
 
-void Aligner::addPrior(const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix){
-  _priors.push_back(SE3Prior(mean,informationMatrix));
+void Aligner::addRelativePrior(const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix){
+  _priors.push_back(new SE3RelativePrior(mean,informationMatrix));
+}
+void Aligner::addAbsolutePrior(const Eigen::Isometry3f& referenceTransform, const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix){
+  _priors.push_back(new SE3AbsolutePrior(referenceTransform, mean,informationMatrix));
 }
 
 void Aligner::clearPriors(){
+  for (size_t i=0; i<_priors.size(); i++){
+    delete _priors[i];
+  }
   _priors.clear();
 }
 
@@ -80,10 +86,10 @@ void Aligner::align() {
       
       // add the priors
       for (size_t i=0; i<_priors.size(); i++){
-	const SE3Prior& prior = _priors[i];
-	Vector6f priorError = prior.error(invT);
-	Matrix6f priorJacobian = prior.jacobian(invT);
-	Matrix6f priorInformationRemapped = prior.errorInformation(invT);
+	const SE3Prior* prior = _priors[i];
+	Vector6f priorError = prior->error(invT);
+	Matrix6f priorJacobian = prior->jacobian(invT);
+	Matrix6f priorInformationRemapped = prior->errorInformation(invT);
 
 	Matrix6f Hp = priorJacobian.transpose()*priorInformationRemapped*priorJacobian;
 	Vector6f bp = priorJacobian.transpose()*priorInformationRemapped*priorError;

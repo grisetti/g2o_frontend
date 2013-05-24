@@ -5,9 +5,9 @@
 using namespace pwn;
 
 DrawableCovariances::DrawableCovariances() : Drawable() {
-  GLParameterCovariances* covariancesParameter = new GLParameterCovariances();
-  _parameter = (GLParameter*)covariancesParameter;
+  _parameter = 0;
   _covariances = 0;
+  _viewer = 0;
 }
 
 DrawableCovariances::DrawableCovariances(Eigen::Isometry3f transformation_, GLParameter *parameter_, PointStatsVector *covariances_) : Drawable(transformation_){
@@ -21,7 +21,7 @@ bool DrawableCovariances::setParameter(GLParameter *parameter_) {
     _parameter = 0;
     return false;
   }
-  _parameter = parameter_;
+  _parameter = covariancesParameter;
   return true;
 }
 

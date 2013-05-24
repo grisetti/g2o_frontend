@@ -3,6 +3,7 @@
 
 #include "g2o_frontend/pwn2/correspondencefinder.h"
 #include "drawable.h"
+#include "gl_parameter_correspondences.h"
 
 using namespace pwn;
 
@@ -28,6 +29,7 @@ class DrawableCorrespondences : public Drawable {
   virtual void draw();
  
  protected:
+  GLParameterCorrespondences* _parameter;
   Eigen::Isometry3f _referencePointsTransformation;
   int _numCorrespondences;
   CorrespondenceVector *_correspondences;

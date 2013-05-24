@@ -5,6 +5,7 @@
 #include "pointprojector.h"
 #include "statsfinder.h"
 #include "informationmatrixfinder.h"
+//#include "g2o_frontend/traversability/traversability_analyzer.h"
 
 namespace pwn {
 
@@ -13,7 +14,8 @@ public:
   DepthImageConverter(  PointProjector* _projector,
             StatsFinder* _statsFinder,
             PointInformationMatrixFinder* _pointInformationMatrixFinder,
-            NormalInformationMatrixFinder* _normalInformationMatrixFinder );
+            NormalInformationMatrixFinder* _normalInformationMatrixFinder
+            /*TraversabilityAnalyzer* _traversabilityAnalyzer = 0*/);
 
   void compute(Frame& frame,
 	       const Eigen::MatrixXf& depthImage, 
@@ -26,6 +28,7 @@ public:
   StatsFinder* _statsFinder;
   PointInformationMatrixFinder* _pointInformationMatrixFinder;
   NormalInformationMatrixFinder* _normalInformationMatrixFinder;
+  //TraversabilityAnalyzer* _traversabilityAnalyzer;
   // this is the workspace of the object
   PointIntegralImage _integralImage;
   Eigen::MatrixXi _indexImage;
@@ -34,8 +37,8 @@ public:
   Eigen::MatrixXf _zBuffer;
   
   // wannabe  class parameter
-  static const float _normalWorldRadius = 0.1;
-  static const float _curvatureThreshold = 0.02;
+  float _normalWorldRadius;
+  float _curvatureThreshold;
 
 };
 

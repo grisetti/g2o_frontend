@@ -9,11 +9,16 @@ namespace pwn {
 DepthImageConverter::DepthImageConverter(  PointProjector* projector_,
                        StatsFinder* statsFinder_,
                        PointInformationMatrixFinder* pointInformationMatrixFinder_,
-                       NormalInformationMatrixFinder* normalInformationMatrixFinder_ ){
+                       NormalInformationMatrixFinder* normalInformationMatrixFinder_
+                       /*TraversabilityAnalyzer* traversabilityAnalyzer_*/){
   _projector = projector_;
   _statsFinder=statsFinder_;
   _pointInformationMatrixFinder=pointInformationMatrixFinder_;
   _normalInformationMatrixFinder = normalInformationMatrixFinder_;
+  //_traversabilityAnalyzer = traversabilityAnalyzer_;
+  // wannabe  class parameter
+  _normalWorldRadius = 0.1;
+  _curvatureThreshold = 0.2;
   
 }
 
@@ -58,6 +63,11 @@ void DepthImageConverter::compute(Frame& frame,
   //double tEnd = g2o::get_time();
   //double tEnd = g2o::get_time();
   //cerr << "time: " << (tEnd-tStart)*1000.0f << endl; 
+
+//  if (_traversabilityAnalyzer)
+//  {
+//    _traversabilityAnalyzer->createTraversabilityVector(frame.points(), frame.normals(), frame.traversabilityVector());
+//  }
 }
 
 }

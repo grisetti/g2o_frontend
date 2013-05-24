@@ -17,12 +17,15 @@ class Frame {
   inline const PointStatsVector& stats() const { return _stats; }
   inline const InformationMatrixVector& pointInformationMatrix() const { return _pointInformationMatrix; }
   inline const InformationMatrixVector& normalInformationMatrix() const { return _normalInformationMatrix; }
+  inline const std::vector<int>& traversabilityVector() const { return _traversabilityVector; }
 
   inline PointVector& points() { return _points; }
   inline NormalVector& normals() { return _normals; }
   inline PointStatsVector& stats() { return _stats; }
   inline InformationMatrixVector& pointInformationMatrix() { return _pointInformationMatrix; }
   inline InformationMatrixVector& normalInformationMatrix() { return _normalInformationMatrix; }
+  inline std::vector<int>& traversabilityVector() { return _traversabilityVector; }
+
 
   bool load(const char *filename);
   bool load(std::istream &is);
@@ -37,6 +40,7 @@ class Frame {
   PointVector _points;
   NormalVector _normals;
   PointStatsVector _stats;
+  std::vector<int> _traversabilityVector;
   InformationMatrixVector _pointInformationMatrix;
   InformationMatrixVector _normalInformationMatrix;
 };

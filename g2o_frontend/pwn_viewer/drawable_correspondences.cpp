@@ -5,7 +5,7 @@ using namespace pwn;
 
 DrawableCorrespondences::DrawableCorrespondences() : Drawable() {
   GLParameterCorrespondences* correspondencesParameter = new GLParameterCorrespondences();
-  _parameter = (GLParameter*)correspondencesParameter;
+  _parameter = 0;
   _numCorrespondences = 0;
   _correspondences = 0;
   _referencePoints = 0;
@@ -28,7 +28,7 @@ bool DrawableCorrespondences::setParameter(GLParameter *parameter_) {
     _parameter = 0;
     return false;
   }
-  _parameter = parameter_;
+  _parameter = correspondencesParameter;
   return true;
 }
 

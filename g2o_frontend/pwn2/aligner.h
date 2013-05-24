@@ -41,7 +41,10 @@ class Aligner {
   inline int inliers() const {return _inliers; }
   inline double totalTime() const {return _totalTime; }
   
-  void addPrior(const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix);
+
+  
+  void addRelativePrior(const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix);
+  void addAbsolutePrior(const Eigen::Isometry3f& referenceTransform, const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix);
   void clearPriors();
 
  protected:
@@ -63,7 +66,7 @@ class Aligner {
   double _totalTime;
   float _error;
 
-  std::vector<SE3Prior, Eigen::aligned_allocator<SE3Prior> > _priors;
+  std::vector<SE3Prior*> _priors;
 };
 
 }

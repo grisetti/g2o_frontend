@@ -12,7 +12,7 @@ void CorrespondenceFinder::compute(const Frame &referenceScene, const Frame &cur
   if((int)_correspondences.size() != _referenceIndexImage.rows() * _referenceIndexImage.cols())
     _correspondences.resize(_referenceIndexImage.rows() * _referenceIndexImage.cols());
 
-  cerr << "cf: " << _referenceIndexImage.rows() << " " << _referenceIndexImage.cols() << endl;
+  //cerr << "cf: " << _referenceIndexImage.rows() << " " << _referenceIndexImage.cols() << endl;
   float minCurvatureRatio = 1./_inlierCurvatureRatioThreshold;
   float maxCurvatureRatio = _inlierCurvatureRatioThreshold;
 

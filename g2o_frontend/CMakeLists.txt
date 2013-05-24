@@ -20,6 +20,7 @@ ADD_SUBDIRECTORY(line_alignment)
 #ADD_SUBDIRECTORY(planeAlignerJustTwo)
 #ADD_SUBDIRECTORY(planeAlignerJustTwoTEST)
 ADD_SUBDIRECTORY(slam)
+ADD_SUBDIRECTORY(boss)
 
 
 if(PCL_FOUND)
@@ -31,6 +32,11 @@ if(PCL_FOUND)
   #ADD_SUBDIRECTORY(planeAlignerMultiTest)
   #ADD_SUBDIRECTORY(planeDatasetGenerator)
 endif(PCL_FOUND)
+
+
+IF(TRAVERSABILITY_FOUND)
+  ADD_SUBDIRECTORY(traversability)
+endif(TRAVERSABILITY_FOUND)
 
 #old stuff
 #ADD_SUBDIRECTORY(slam2)

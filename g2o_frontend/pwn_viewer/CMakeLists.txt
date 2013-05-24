@@ -15,6 +15,7 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${QGLVIEWER_INCLUDE_DIR} ${QT_INCLUDES}
 ADD_LIBRARY(pwn_viewer_library 
   pwn_imageview.cpp pwn_imageview.h
   drawable.cpp drawable.h
+  drawable_frame_hac.cpp drawable_frame_hac.h
   pwn_qglviewer.cpp pwn_qglviewer.h
   gl_parameter.cpp gl_parameter.h
 
@@ -36,14 +37,15 @@ ADD_LIBRARY(pwn_viewer_library
 SET_TARGET_PROPERTIES(pwn_viewer_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn_viewer)
 TARGET_LINK_LIBRARIES(pwn_viewer_library
   pwn2_library
+  #traverse_library
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
-  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
+  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${OpenCV_LIBS}
 )
 
 
 ADD_EXECUTABLE(pwn_simpleViewer pwn_simpleViewer.cpp )
-TARGET_LINK_LIBRARIES(pwn_simpleViewer  pwn_viewer_library pwn2_library
+TARGET_LINK_LIBRARIES(pwn_simpleViewer  pwn_viewer_library pwn2_library #traverse_library
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
   ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY})
