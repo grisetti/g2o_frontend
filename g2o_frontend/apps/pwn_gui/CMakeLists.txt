@@ -104,6 +104,7 @@ IF(CUDA_FOUND)
 
   TARGET_LINK_LIBRARIES(pwn_gt  pwn_cuda_library ${CUDA_CUDART_LIBRARY})
   TARGET_LINK_LIBRARIES(pwn_gui  pwn_cuda_library ${CUDA_CUDART_LIBRARY})
+  TARGET_LINK_LIBRARIES(pwn_g2o_gui  pwn_cuda_library ${CUDA_CUDART_LIBRARY})
   TARGET_LINK_LIBRARIES(cualign  pwn_cuda_library ${CUDA_CUDART_LIBRARY})
 ENDIF(CUDA_FOUND)
 
