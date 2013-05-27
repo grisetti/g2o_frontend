@@ -47,7 +47,9 @@ namespace pwn{
     // Creating and setting aligner object.
     correspondenceFinder = new CorrespondenceFinder();
     linearizer = new Linearizer() ;
+
     aligner = new Aligner();
+    //aligner = new CuAligner();
     
     aligner->setProjector(projector);
     aligner->setLinearizer(linearizer);
@@ -124,7 +126,7 @@ namespace pwn{
       
       for (int c = 0; c<3; c++)
 	for (int r = 0; r<3; r++)
-	  priorInfo(r+3,c+3)=Omega(r,c);
+	  priorInfo(r+3,c+3)=Omega(r,c)*100000;
       return true;
     }
     return false;
@@ -156,7 +158,12 @@ namespace pwn{
     bool hasOdometry = extractRelativePrior(odometryMean, odometryInfo, reference, current);
     if (hasOdometry)
       initialGuess=odometryMean;
-
+    else { //force a prior
+      hasOdometry = true;
+      odometryMean = initialGuess;
+      odometryInfo.setIdentity();
+      odometryInfo.block<3,3>(0,0) *= 100;
+    }
     Eigen::Isometry3f imuMean;
     Matrix6f imuInfo;
     bool hasImu = extractAbsolutePrior(imuMean, imuInfo, current);
@@ -189,7 +196,10 @@ namespace pwn{
     cout << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
       
     globalT = reference->globalTransform()*localTransformation;
-      
+    // recondition the rotation to prevent roundoff to accumulate
+
+    globalT = v2t(t2v(globalT));
+
     os << globalT.translation().x() << " " << globalT.translation().y() << endl; 
     // Update cloud drawing position.
     current->_globalTransform = globalT;

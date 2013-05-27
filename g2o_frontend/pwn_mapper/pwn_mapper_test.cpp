@@ -78,8 +78,10 @@ int main(int argc, char** argv) {
   
   PWNMapperController* controller = new PWNMapperController();
   controller->init(graph);
-  size_t maxCount = 200;
-  for(size_t i = 0; i < vertexIds.size() &&  i< maxCount; ++i) {
+  size_t maxCount = 30000;
+  int processed = 0;
+  ofstream os ("trajectory.dat");
+  for(size_t i = 0; i < vertexIds.size() &&  processed< maxCount; ++i) {
     int index = vertexIds[i];
     VertexSE3* v = dynamic_cast<VertexSE3*>(graph->vertex(index));
     if (v) {
@@ -88,6 +90,9 @@ int main(int argc, char** argv) {
       added = controller->addVertex(v);
       if (added) {
 	controller->alignIncrementally();
+	Eigen::Isometry3f globalT = controller->frames().front()->globalTransform();
+	os << v->id() << t2v(globalT).transpose() << endl;
+	processed ++;
       }
     }
   }

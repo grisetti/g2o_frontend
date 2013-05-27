@@ -1,3 +1,7 @@
+IF(CUDA_FOUND)  
+  set(BUILD_SHARED_LIBS OFF) 
+endif(CUDA_FOUND)
+
 FIND_PACKAGE(OpenMP)
 
 if(OPENMP_FOUND)
@@ -13,6 +17,7 @@ ADD_LIBRARY(pwn_mapper_library
 )
 
 SET_TARGET_PROPERTIES(pwn_mapper_library PROPERTIES OUTPUT_NAME pwn_mapper)
+
 
 TARGET_LINK_LIBRARIES(pwn_mapper_library
   pwn2_library
@@ -52,3 +57,8 @@ TARGET_LINK_LIBRARIES(
 
 
 
+IF(CUDA_FOUND)  
+  set(BUILD_SHARED_LIBS OFF) 
+  TARGET_LINK_LIBRARIES(pwn_mapper_library pwn_cuda_library ${CUDA_CUDART_LIBRARY}) 
+  TARGET_LINK_LIBRARIES(pwn_mapper_test pwn_cuda_library ${CUDA_CUDART_LIBRARY})
+ENDIF(CUDA_FOUND)

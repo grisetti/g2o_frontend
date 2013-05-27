@@ -181,6 +181,7 @@ namespace pwn {
 
   // initializes the computation by passing all the values that will not change during the iterations
   __host__ AlignerStatus AlignerContext::initComputation(const float* cameraMatrix,
+							 const float* sensorOffset,
 							 float* referencePointsPtr, 
 							 float* referenceNormalsPtr, 
 							 float* referenceCurvaturesPtr, 
@@ -227,6 +228,18 @@ namespace pwn {
       }
     vecCopy<16>(_cudaHostContext->_cameraMatrix, _cameraMatrix);
     
+    vecCopy<16>(_sensorOffset,sensorOffset);
+    vecCopy<16>(_cudaHostContext->_sensorOffset, _sensorOffset);
+
+    // handle the sensor offset in the current frame
+    vecFill<16>(_KO,0.0f);
+    matMatMul<4,4,4>(_KO,_cameraMatrix,_sensorOffset);
+    matVecMul<4,4>(_KO+12,_cameraMatrix,_sensorOffset+12);
+    vecCopy<16>(_cudaHostContext->_KO, _KO);
+    
+    //matPrint(_sensorOffset,4,4, "sensorOffset");
+    
+    //matPrint(_KO,4,4, "KO");
     // do the copy of the buffers
     cudaError_t err ;
     err = cudaMemcpy(_cudaHostContext->_referencePoints.values(), 
@@ -309,7 +322,7 @@ namespace pwn {
     fillBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_currentIndices.values(),_rows*_cols, 
 						  -1);
     computeDepthBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_depthBuffer.values(),
-							  _rows, _cols, _cudaDeviceContext->_cameraMatrix,
+							  _rows, _cols, _cudaDeviceContext->_KO,
 							  _cudaHostContext->_currentPoints.values(),
 							  _cudaHostContext->_numCurrentPoints,
 							  0, _cudaHostContext->_maxDepth);
@@ -322,7 +335,7 @@ namespace pwn {
     //cerr << "computeIndices" << endl;
     computeIndexBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_currentIndices.values(),
 							  _cudaHostContext->_depthBuffer.values(),
-							  _rows, _cols, _cudaDeviceContext->_cameraMatrix,
+							  _rows, _cols, _cudaDeviceContext->_KO,
 							  _cudaHostContext->_currentPoints.values(),
 							  _cudaHostContext->_numCurrentPoints);
     err = cudaGetLastError();
@@ -403,6 +416,7 @@ namespace pwn {
     _referenceIndices.map(_rows,_cols);
     _currentIndices.map(_rows,_cols);
 
+    //std::cerr << "Rows: " << _rows << " cols: " << _cols << endl;
     // copy the reference indices and the current indices in the context buffers
     /*
       _referenceIndices.map(_rows,_cols,referenceIndices);
@@ -421,14 +435,17 @@ namespace pwn {
     vecCopy<16>(_transform, transform);
     vecCopy<16>(_cudaHostContext->_transform, transform);
     
-    vecFill<16>(_KT,0.0f);
-    matMatMul<4,4,4>(_KT,_cameraMatrix,_transform);
-    matVecMul<4,4>(_KT+12,_cameraMatrix,_transform+12);
-    vecCopy<16>(_cudaHostContext->_KT, _KT);
+    float OT[16];
+    matMatMul<4,4,4>(OT,_sensorOffset,_transform);
+
+    vecFill<16>(_KOT,0.0f);
+    matMatMul<4,4,4>(_KOT,_cameraMatrix,OT);
+    matVecMul<4,4>(_KOT+12,_cameraMatrix,OT+12);
+    vecCopy<16>(_cudaHostContext->_KOT, _KOT);
     
-    //matPrint(_cudaHostContext->_transform,4,4,"Transform");
-    //matPrint(_cudaHostContext->_cameraMatrix,4,4,"_cameraMatrix");
-    //matPrint(_cudaHostContext->_KT,4,4,"KT");
+    // matPrint(_cudaHostContext->_transform,4,4,"Transform");
+    // matPrint(_cudaHostContext->_cameraMatrix,4,4,"_cameraMatrix");
+    // matPrint(_cudaHostContext->_KOT,4,4,"KOT");
 
     _cudaHostContext->_checksum = 0;
     _cudaHostContext->_maxDepth = 10000;
@@ -461,14 +478,14 @@ namespace pwn {
 	int dmin, int dmax);
       */
       computeDepthBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_depthBuffer.values(),
-							    _rows, _cols, _cudaDeviceContext->_KT,
+							    _rows, _cols, _cudaDeviceContext->_KOT,
 							    _cudaHostContext->_referencePoints.values(),
 							    _cudaHostContext->_numReferencePoints,
 							    0, _cudaHostContext->_maxDepth);
       //cudaDeviceSynchronize();
       computeIndexBuffer<<<blocksPerGrid,threadsPerBlock>>>(_cudaHostContext->_referenceIndices.values(),
 							    _cudaHostContext->_depthBuffer.values(),
-							    _rows, _cols, _cudaDeviceContext->_KT,
+							    _rows, _cols, _cudaDeviceContext->_KOT,
 							    _cudaHostContext->_referencePoints.values(),
 							    _cudaHostContext->_numReferencePoints);
       //cudaDeviceSynchronize();
@@ -670,6 +687,7 @@ namespace pwn {
 
   __host__  AlignerStatus initComputation(AlignerContext* context,
 					  const float* cameraMatrix,
+					  const float* sensorOffset,
 					  float* referencePointsPtr, 
 					  float* referenceNormalsPtr, 
 					  float* referenceCurvaturesPtr, 
@@ -682,6 +700,7 @@ namespace pwn {
 					  int numCurrentPoints_){
 
     return context->initComputation(cameraMatrix,
+				    sensorOffset,
 				    referencePointsPtr, 
 				    referenceNormalsPtr, 
 				    referenceCurvaturesPtr,

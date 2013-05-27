@@ -78,8 +78,9 @@ namespace pwn{
     bool addVertex(g2o::VertexSE3* vertex);
     // does the incremental alignment of the current vertex with the previous one(s) 
     bool alignIncrementally();
-
     bool computeTraversability();
+
+    const std::deque<G2OFrame*> frames() const {return framesDeque;}
 
   protected:
     // these are the algorithms
