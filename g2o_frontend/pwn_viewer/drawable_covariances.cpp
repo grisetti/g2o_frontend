@@ -15,6 +15,10 @@ DrawableCovariances::DrawableCovariances() : Drawable() {
   _covariances = 0;
   _viewer = 0;
   _covarianceDrawList = glGenLists(1);
+  _sphereDrawList = glGenLists(1);
+  glNewList(_sphereDrawList, GL_COMPILE);
+  g2o::opengl::drawSphere(1.0f);
+  glEndList();
   updateCovarianceDrawList();
 }
 
@@ -22,6 +26,10 @@ DrawableCovariances::DrawableCovariances(Eigen::Isometry3f transformation_, GLPa
   setParameter(parameter_);
   _covariances = covariances_;
   _covarianceDrawList = glGenLists(1);
+  _sphereDrawList = glGenLists(1);
+  glNewList(_sphereDrawList, GL_COMPILE);
+  g2o::opengl::drawSphere(1.0f);
+  glEndList();
   updateCovarianceDrawList();
 }
 
@@ -86,8 +94,7 @@ void DrawableCovariances::updateCovarianceDrawList() {
 	sz = ellipsoidScale;
       }
       glScalef(sx, sy, sz);
-      g2o::opengl::drawSphere(1.0f);
-      //glCallList(_viewer->ellipsoidDrawList());
+      glCallList(_sphereDrawList);
       glPopMatrix();	    
     }
     
