@@ -74,7 +74,7 @@ void DrawableCovariances::updateCovarianceDrawList() {
       I.linear() = cov.eigenVectors();
       if(cov.n() == 0 )
 	continue;
-      I.translation() = Eigen::Vector3f(cov.mean()[0],cov.mean()[1],cov.mean()[2]);
+      I.translation() = Eigen::Vector3f(cov.mean()[0], cov.mean()[1], cov.mean()[2]);
       float sx = sqrt(lambda[0])*ellipsoidScale;
       float sy = sqrt(lambda[1])*ellipsoidScale;
       float sz = sqrt(lambda[2])*ellipsoidScale;
@@ -96,8 +96,7 @@ void DrawableCovariances::updateCovarianceDrawList() {
       glScalef(sx, sy, sz);
       glCallList(_sphereDrawList);
       glPopMatrix();	    
-    }
-    
+    }   
   }
   glEndList();
 }

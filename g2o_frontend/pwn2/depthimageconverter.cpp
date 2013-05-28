@@ -26,7 +26,6 @@ void DepthImageConverter::compute(Frame& frame,
 				  const Eigen::MatrixXf& depthImage, 
 				  const Eigen::Isometry3f& sensorOffset){
   frame.clear();
-  //double tStart = g2o::get_time();
   // resizing the temporaries
   if (depthImage.rows()!=_indexImage.rows() ||
       depthImage.cols()!=_indexImage.cols()){
@@ -60,14 +59,6 @@ void DepthImageConverter::compute(Frame& frame,
   // frame is labeled, now we need to transform all the elements by considering the position
   // of the sensor
   frame.transformInPlace(sensorOffset);
-  //double tEnd = g2o::get_time();
-  //double tEnd = g2o::get_time();
-  //cerr << "time: " << (tEnd-tStart)*1000.0f << endl; 
-
-//  if (_traversabilityAnalyzer)
-//  {
-//    _traversabilityAnalyzer->createTraversabilityVector(frame.points(), frame.normals(), frame.traversabilityVector());
-//  }
 }
 
 }

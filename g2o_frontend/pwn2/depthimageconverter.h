@@ -14,8 +14,7 @@ public:
   DepthImageConverter(  PointProjector* _projector,
             StatsFinder* _statsFinder,
             PointInformationMatrixFinder* _pointInformationMatrixFinder,
-            NormalInformationMatrixFinder* _normalInformationMatrixFinder
-            /*TraversabilityAnalyzer* _traversabilityAnalyzer = 0*/);
+            NormalInformationMatrixFinder* _normalInformationMatrixFinder);
 
   void compute(Frame& frame,
 	       const Eigen::MatrixXf& depthImage, 

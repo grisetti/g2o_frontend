@@ -113,7 +113,7 @@ struct DrawableFrame {
     DepthImageConverter depthImageConverter = DepthImageConverter(&projector, &statsFinder,
 								  &pointInformationMatrixFinder,
 								  &normalInformationMatrixFinder);
-    //sensorOffset = Isometry3f::Identity();
+    sensorOffset = Isometry3f::Identity();
     sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
     Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
     sensorOffset.linear() = quat.toRotationMatrix();
