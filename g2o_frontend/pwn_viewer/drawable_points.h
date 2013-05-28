@@ -13,6 +13,7 @@ class DrawablePoints : public Drawable {
   DrawablePoints(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, PointVector *points_, NormalVector *normals_);
   DrawablePoints(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, PointVector *points_, NormalVector *normals_, 
 		 std::vector<int> *traversabilityVector_ );
+  virtual ~DrawablePoints();
 
   virtual GLParameter* parameter() { return _parameter; };
   virtual PointVector* points() { return _points; }

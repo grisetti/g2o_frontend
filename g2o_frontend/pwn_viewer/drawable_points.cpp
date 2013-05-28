@@ -32,6 +32,10 @@ DrawablePoints::DrawablePoints(const Eigen::Isometry3f& transformation_, GLParam
   _pointDrawList = glGenLists(1);
   updatePointDrawList();
 }
+  
+DrawablePoints::~DrawablePoints() {
+  glDeleteLists(_pointDrawList, 1);
+}
 
 bool DrawablePoints::setParameter(GLParameter *parameter_) {
   GLParameterPoints *pointsParameter = (GLParameterPoints*)parameter_;

@@ -33,6 +33,7 @@ class PWNMapperController {
   G2OFrame* firstFrame() { return _framesDeque.front(); }
   G2OFrame* lastFrame() { return _framesDeque.back(); }
   int numFrames() { return _framesDeque.size(); }
+  size_t maxDequeSize() { return _maxDequeSize; }
 
   void init(g2o::OptimizableGraph* graph_);
 
@@ -69,7 +70,7 @@ class PWNMapperController {
   float if_curvatureThreshold;
   int al_innerIterations;
   int al_outerIterations;
-  size_t maxDequeSize;
+  size_t _maxDequeSize;
   
   g2o::OptimizableGraph *graph;
 };

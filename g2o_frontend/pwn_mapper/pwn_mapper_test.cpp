@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
   PWNMapperController* controller = new PWNMapperController();
   controller->init(graph);
   size_t maxCount = 30000;
-  int processed = 0;
+  size_t processed = 0;
   ofstream os ("trajectory.dat");
   for(size_t i = 0; i < vertexIds.size() &&  processed < maxCount; ++i) {
     int index = vertexIds[i];

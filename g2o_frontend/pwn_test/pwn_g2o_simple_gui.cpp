@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
   
   sort(vertexIds.begin(), vertexIds.end());
   
-  size_t maxCount = 500;
+  size_t maxCount = 1000;
   for(size_t i = 0; i < vertexIds.size() &&  i < maxCount; ++i) {
     OptimizableGraph::Vertex *_v = graph->vertex(vertexIds[i]);
     g2o::VertexSE3 *v = dynamic_cast<g2o::VertexSE3*>(_v);
@@ -145,10 +145,10 @@ int main(int argc, char** argv) {
       globalTransform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
       DrawableFrame *drawableFrame = new DrawableFrame(globalTransform, parameterFrame, controller->lastFrame());
       viewer->addDrawable(drawableFrame);
-      while(viewer->drawableList().size() > 5) {
-	DrawableFrame *front = dynamic_cast<DrawableFrame*>(viewer->drawableList()[0]);
-	viewer->popFront();
-	delete front;
+      while(viewer->drawableList().size() > controller->maxDequeSize()) {
+       	DrawableFrame *front = dynamic_cast<DrawableFrame*>(viewer->drawableList()[0]);
+       	viewer->popFront();
+       	delete front;
       }
     }
     

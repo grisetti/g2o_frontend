@@ -27,7 +27,7 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   if_curvatureThreshold = 0.1f;
   reduction = 2;
 
-  maxDequeSize = 20;
+  _maxDequeSize = 20;
 
   projector = new PinholePointProjector();
   statsFinder = new StatsFinder();
@@ -127,10 +127,7 @@ bool PWNMapperController::alignIncrementally(){
 
   G2OFrame* current = _framesDeque.back();
   G2OFrame* reference = current->previousFrame();
-  cerr << "aligning" << endl;
-  cerr << "current=" << current << endl;
-  cerr << "reference= " << reference << endl;
-
+  
   Eigen::Isometry3f initialGuess;
 
   // cerr computing initial guess based on the frame positions, just for convenience
@@ -303,7 +300,7 @@ bool PWNMapperController::addVertex(VertexSE3 *v) {
   _framesDeque.push_back(frame);
 
   // Keep at max maxDequeSize elements in the queue
-  while (_framesDeque.size() > maxDequeSize) {
+  while (_framesDeque.size() > _maxDequeSize) {
     G2OFrame *frame = _framesDeque.front();
     _framesDeque.pop_front();
     _framesDeque.front()->setPreviousFrame(0);
