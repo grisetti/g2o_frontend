@@ -1,5 +1,7 @@
 #include "drawable_frame.h"
 
+#include <iostream>
+
 using namespace g2o;
 using namespace std;
 

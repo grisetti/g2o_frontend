@@ -2,17 +2,27 @@
 #include "gl_parameter_covariances.h"
 #include "pwn_qglviewer.h"
 
+#include "g2o/stuff/opengl_primitives.h"
+
+#include <iostream>
+
+using namespace std; 
+
 namespace pwn {
 
 DrawableCovariances::DrawableCovariances() : Drawable() {
   _parameter = 0;
   _covariances = 0;
   _viewer = 0;
+  _covarianceDrawList = glGenLists(1);
+  updateCovarianceDrawList();
 }
 
 DrawableCovariances::DrawableCovariances(Eigen::Isometry3f transformation_, GLParameter *parameter_, PointStatsVector *covariances_) : Drawable(transformation_) {
   setParameter(parameter_);
   _covariances = covariances_;
+  _covarianceDrawList = glGenLists(1);
+  updateCovarianceDrawList();
 }
 
 bool DrawableCovariances::setParameter(GLParameter *parameter_) {
@@ -27,13 +37,24 @@ bool DrawableCovariances::setParameter(GLParameter *parameter_) {
 
 void DrawableCovariances::draw() {
   GLParameterCovariances *covariancesParameter = dynamic_cast<GLParameterCovariances*>(_parameter);
-  if(_covariances && 
-     covariancesParameter && 
+  if(covariancesParameter && 
      covariancesParameter->show() && 
      covariancesParameter->ellipsoidScale() > 0.0f) {
     glPushMatrix();
     glMultMatrixf(_transformation.data());
     covariancesParameter->applyGLParameter();
+    glCallList(_covarianceDrawList);
+    glPopMatrix();
+  }
+}
+
+void DrawableCovariances::updateCovarianceDrawList() {
+  GLParameterCovariances *covariancesParameter = dynamic_cast<GLParameterCovariances*>(_parameter);
+  glNewList(_covarianceDrawList, GL_COMPILE); 
+  if(_covariances && 
+     covariancesParameter && 
+     covariancesParameter->show() && 
+     covariancesParameter->ellipsoidScale() > 0.0f) {
     float ellipsoidScale = covariancesParameter->ellipsoidScale();
     Eigen::Vector4f colorLowCurvature = covariancesParameter->colorLowCurvature();
     Eigen::Vector4f colorHighCurvature = covariancesParameter->colorHighCurvature();
@@ -52,7 +73,6 @@ void DrawableCovariances::draw() {
       float curvature = cov.curvature();
       glPushMatrix();
       glMultMatrixf(I.data());
-      
       if(curvature > curvatureThreshold) {
 	glColor4f(colorHighCurvature[0] - curvature, colorHighCurvature[1], colorHighCurvature[2], colorHighCurvature[3]);
 	sx = ellipsoidScale;
@@ -66,11 +86,13 @@ void DrawableCovariances::draw() {
 	sz = ellipsoidScale;
       }
       glScalef(sx, sy, sz);
-      glCallList(_viewer->ellipsoidDrawList());
-      glPopMatrix();
+      g2o::opengl::drawSphere(1.0f);
+      //glCallList(_viewer->ellipsoidDrawList());
+      glPopMatrix();	    
     }
-    glPopMatrix();
+    
   }
+  glEndList();
 }
 
 }

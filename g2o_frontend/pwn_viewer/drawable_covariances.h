@@ -11,18 +11,22 @@ class DrawableCovariances : public Drawable {
  public:
   DrawableCovariances();
   DrawableCovariances(Eigen::Isometry3f transformation_, GLParameter *parameter_, PointStatsVector *covariances_);
-  
+  virtual ~DrawableCovariances() { glDeleteLists(_covarianceDrawList, 1); }
+
   virtual GLParameter* parameter() { return _parameter; }
   virtual PointStatsVector* covariances() { return _covariances; }
+  inline GLuint covarianceDrawList() { return _covarianceDrawList; }
 
   virtual bool setParameter(GLParameter *parameter_);
   virtual void setCovariances(PointStatsVector *covariances_) { _covariances = covariances_; }
   
   virtual void draw();
+  void updateCovarianceDrawList();
 
  protected:
   GLParameterCovariances *_parameter;
   PointStatsVector *_covariances;
+  GLuint _covarianceDrawList; 
 };  
 
 }

@@ -12,13 +12,15 @@ class DrawableCorrespondences : public Drawable {
   DrawableCorrespondences();
   DrawableCorrespondences(Eigen::Isometry3f transformation_, GLParameter *parameter_,  int numCorrespondences_, PointVector *referencePoints_, 
 			  PointVector *currentPoints_, CorrespondenceVector *correspondences_);
-
+  virtual ~DrawableCorrespondences() { glDeleteLists(_correspondenceDrawList, 1); }
+  
   virtual GLParameter* parameter() { return _parameter; };
   Eigen::Isometry3f referencePointsTransformation() { return _referencePointsTransformation; }
   int numCorrespondances() { return _numCorrespondences; }
   CorrespondenceVector* correspondences() { return _correspondences; }
   PointVector* referencePoints() { return _referencePoints; }
   PointVector* currentPoints() { return _currentPoints; }
+  inline GLuint correspondenceDrawList() { return _correspondenceDrawList; }
 
   virtual bool setParameter(GLParameter *parameter_);
   void setReferencePointsTransformation(Eigen::Isometry3f referencePointsTransformation_) { _referencePointsTransformation = referencePointsTransformation_; }
@@ -28,6 +30,7 @@ class DrawableCorrespondences : public Drawable {
   void setCurrentPoints(PointVector *currentPoints_) { _currentPoints = currentPoints_; }
 
   virtual void draw();
+  void updateCorrespondenceDrawList();
  
  protected:
   Eigen::Isometry3f _referencePointsTransformation;
@@ -36,6 +39,7 @@ class DrawableCorrespondences : public Drawable {
   CorrespondenceVector *_correspondences;
   PointVector *_referencePoints;
   PointVector *_currentPoints;
+  GLuint _correspondenceDrawList; 
 };  
 
 }

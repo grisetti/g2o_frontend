@@ -2,12 +2,12 @@
 
 namespace pwn {
 
-GLParameterPoints::GLParameterPoints() {
+GLParameterPoints::GLParameterPoints() : GLParameter() {
   _pointSize = 1.0f;
   _color = Eigen::Vector4f(1.0f, 1.0f, 0.0f, 0.5f);
 }
 
-GLParameterPoints::GLParameterPoints(float pointSize_, const Eigen::Vector4f& color_) {
+  GLParameterPoints::GLParameterPoints(float pointSize_, const Eigen::Vector4f& color_) : GLParameter() {
   _pointSize = pointSize_;
   _color = color_;
 }

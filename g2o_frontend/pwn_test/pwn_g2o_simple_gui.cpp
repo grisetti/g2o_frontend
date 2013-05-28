@@ -140,10 +140,9 @@ int main(int argc, char** argv) {
       if(!controller->addVertex(v))
     	continue;
       controller->alignIncrementally();
-      
       Eigen::Isometry3f globalTransform = controller->lastFrame()->globalTransform();
       globalTransform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-      DrawableFrame *drawableFrame = new DrawableFrame(globalTransform, parameterFrame, controller->lastFrame());
+      DrawableFrame *drawableFrame = new DrawableFrame(globalTransform, parameterFrame, controller->lastFrame());      
       viewer->addDrawable(drawableFrame);
       while(viewer->drawableList().size() > controller->maxDequeSize()) {
        	DrawableFrame *front = dynamic_cast<DrawableFrame*>(viewer->drawableList()[0]);

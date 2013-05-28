@@ -2,7 +2,7 @@
 
 namespace pwn {
 
-GLParameterCovariances::GLParameterCovariances() {
+GLParameterCovariances::GLParameterCovariances() : GLParameter() {
   _pointSize = 0.5f;
   _colorLowCurvature = Eigen::Vector4f(0.0f, 1.0f, 0.0f, 0.5f);
   _colorHighCurvature = Eigen::Vector4f(1.0f, 0.0f, 0.0f, 0.5f);
@@ -12,7 +12,7 @@ GLParameterCovariances::GLParameterCovariances() {
 
 GLParameterCovariances::GLParameterCovariances(float pointSize_, 
 					       Eigen::Vector4f colorLowCurvature_, Eigen::Vector4f colorHighCurvature_, 
-					       float curvatureThreshold_, float ellipsoidScale_) {
+					       float curvatureThreshold_, float ellipsoidScale_) : GLParameter() {
   _pointSize = pointSize_;
   _colorLowCurvature = colorLowCurvature_;
   _colorHighCurvature = colorHighCurvature_;
