@@ -1,5 +1,7 @@
 #include "gl_parameter_normals.h"
 
+namespace pwn {
+
 GLParameterNormals::GLParameterNormals() {
   _pointSize = 0.1f;
   _color = Eigen::Vector4f(0.0f, 0.0f, 1.0f, 0.5f);
@@ -15,4 +17,6 @@ GLParameterNormals::GLParameterNormals(float pointSize_, Eigen::Vector4f color_,
 void GLParameterNormals::applyGLParameter() {
   glColor4f(_color[0], _color[1], _color[2], _color[3]);
   glPointSize(_pointSize);
+}
+
 }

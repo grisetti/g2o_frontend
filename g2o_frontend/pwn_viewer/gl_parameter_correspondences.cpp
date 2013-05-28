@@ -1,5 +1,7 @@
 #include "gl_parameter_correspondences.h"
 
+namespace pwn {
+
 GLParameterCorrespondences::GLParameterCorrespondences() {
   _pointSize = 0.1f;
   _color = Eigen::Vector4f(0.0f, 0.0f, 1.0f, 0.5f);
@@ -16,4 +18,6 @@ void GLParameterCorrespondences::applyGLParameter() {
   glColor4f(_color[0], _color[1], _color[2], _color[3]);
   glPointSize(_pointSize);
   glLineWidth(_lineWidth);
+}
+
 }

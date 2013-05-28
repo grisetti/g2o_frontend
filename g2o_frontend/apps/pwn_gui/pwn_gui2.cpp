@@ -206,7 +206,7 @@ struct DrawableFrame : public Drawable {
 
   // Drawing function of the class object.
   void draw() {
-    if(_parameters->isShown() && _frame){
+    if(_parameters->show() && _frame){
       glPushMatrix();
       glMultMatrixf(_transformation.data());
       if (_dPoints)

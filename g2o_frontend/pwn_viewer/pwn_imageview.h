@@ -5,20 +5,23 @@
 #include <qimage.h>
 #include <qlabel.h>
 
-using namespace pwn;
+namespace pwn {
 
-struct DepthImageView{
+struct DepthImageView {
   DepthImageView();
+  ~DepthImageView() {}
+
   void computeColorMap(int cmin, int cmax, unsigned char alpha);
-  inline unsigned int color (unsigned short idx) const {
-    return _colorMap[idx];
-  }
-  void convertToQImage(QImage& img, const MatrixXus& m) const;
-  void convertToQImage(QImage& img, const Eigen::MatrixXf& m) const;
+  
+  inline unsigned int color(unsigned short idx) const { return _colorMap[idx]; }
+  
+  void convertToQImage(QImage &img, const MatrixXus &m) const;
+  void convertToQImage(QImage &img, const Eigen::MatrixXf &m) const;
   
 protected:
   unsigned int _colorMap[0xffff];
 };
 
+}
 
 #endif

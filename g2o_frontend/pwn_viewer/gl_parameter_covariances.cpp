@@ -1,5 +1,7 @@
 #include "gl_parameter_covariances.h"
 
+namespace pwn {
+
 GLParameterCovariances::GLParameterCovariances() {
   _pointSize = 0.5f;
   _colorLowCurvature = Eigen::Vector4f(0.0f, 1.0f, 0.0f, 0.5f);
@@ -8,7 +10,9 @@ GLParameterCovariances::GLParameterCovariances() {
   _ellipsoidScale = 0.05f;
 }
 
-GLParameterCovariances::GLParameterCovariances(float pointSize_, Eigen::Vector4f colorLowCurvature_, Eigen::Vector4f colorHighCurvature_, float curvatureThreshold_, float ellipsoidScale_) {
+GLParameterCovariances::GLParameterCovariances(float pointSize_, 
+					       Eigen::Vector4f colorLowCurvature_, Eigen::Vector4f colorHighCurvature_, 
+					       float curvatureThreshold_, float ellipsoidScale_) {
   _pointSize = pointSize_;
   _colorLowCurvature = colorLowCurvature_;
   _colorHighCurvature = colorHighCurvature_;
@@ -18,4 +22,6 @@ GLParameterCovariances::GLParameterCovariances(float pointSize_, Eigen::Vector4f
 
 void GLParameterCovariances::applyGLParameter() {
   glPointSize(_pointSize);
+}
+
 }

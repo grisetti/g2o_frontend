@@ -14,23 +14,19 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${QGLVIEWER_INCLUDE_DIR} ${QT_INCLUDES}
 
 ADD_LIBRARY(pwn_viewer_library 
   pwn_imageview.cpp pwn_imageview.h
-  drawable.cpp drawable.h
-  drawable_frame_hac.cpp drawable_frame_hac.h
   pwn_qglviewer.cpp pwn_qglviewer.h
+  drawable.cpp drawable.h
   gl_parameter.cpp gl_parameter.h
-
+  drawable_frame.cpp drawable_frame.h
+  gl_parameter_frame.cpp gl_parameter_frame.h 
   drawable_points.cpp drawable_points.h
   gl_parameter_points.cpp gl_parameter_points.h
-  
   drawable_normals.cpp drawable_normals.h
   gl_parameter_normals.cpp gl_parameter_normals.h
-
   gl_parameter_covariances.cpp gl_parameter_covariances.h
   drawable_covariances.cpp drawable_covariances.h
-
   gl_parameter_correspondences.cpp gl_parameter_correspondences.h
   drawable_correspondences.cpp drawable_correspondences.h
-
   ${UI_HEADERS}
   ${UI_SOURCES}
 )

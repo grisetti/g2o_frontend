@@ -24,7 +24,7 @@
 #include <g2o_frontend/pwn2/aligner.h>
 #include <g2o_frontend/pwn2/linearizer.h>
 #include "g2o_frontend/pwn_mapper/pwn_mapper_controller.h"
-#include "g2o_frontend/pwn_viewer/drawable_frame_hac.h"
+#include "g2o_frontend/pwn_viewer/drawable_frame.h"
 
 #include <g2o_frontend/traversability/traversability_analyzer.h>
 

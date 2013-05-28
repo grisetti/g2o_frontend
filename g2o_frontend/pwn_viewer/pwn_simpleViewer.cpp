@@ -110,12 +110,12 @@ int main (int argc, char** argv) {
       Drawable* drawablePoints = viewer->drawableList().at(dpIndex);
       Drawable* drawableNormals = viewer->drawableList().at(dnIndex);
       if (item && item->isSelected()){
-	if(!drawablePoints->parameter()->isShown())
+	if(!drawablePoints->parameter()->show())
 	  selectionChanged = true;
 	drawablePoints->parameter()->setShow(true);
 	drawableNormals->parameter()->setShow(true);
       } else {
-	if(drawablePoints->parameter()->isShown())
+	if(drawablePoints->parameter()->show())
 	  selectionChanged = true;
 	drawablePoints->parameter()->setShow(false);
 	drawableNormals->parameter()->setShow(false);

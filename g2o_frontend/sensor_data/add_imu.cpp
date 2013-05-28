@@ -118,7 +118,7 @@ int main(int argc, char**argv){
 	    info.block<3,3>(3,3)= Eigen::Matrix3d::Identity() * 1000.0;
 	  }
 	  imuEdge->setInformation(info);
-	  bool result = graph->addEdge(imuEdge);
+	  graph->addEdge(imuEdge);
 	  cerr << "edge added to vertex " << v->id() << " parameter: " << imuData->paramIndex() << endl;
 	}
 	// write here something for doing something with the data you just pulled
