@@ -22,9 +22,26 @@ class DrawablePoints : public Drawable {
   inline GLuint pointDrawList() { return _pointDrawList; }
   
   virtual bool setParameter(GLParameter *parameter_);
-  virtual void setPoints(PointVector *points_) { _points = points_; }
-  virtual void setNormals(NormalVector *normals_) { _normals = normals_; }
-  virtual void setTraversabilityVector(std::vector<int> *traversabilityVector_) { _traversabilityVector = traversabilityVector_; }
+  virtual void setPoints(PointVector *points_) { 
+    _points = points_;
+    updatePointDrawList();
+  }
+  virtual void setNormals(NormalVector *normals_) { 
+    _normals = normals_; 
+    updatePointDrawList();
+  }
+  virtual void setTraversabilityVector(std::vector<int> *traversabilityVector_) { 
+    _traversabilityVector = traversabilityVector_; 
+    updatePointDrawList();
+  }
+  void setStep(int step_) {
+    _parameter->setStep(step_);
+    updatePointDrawList();
+  }
+  void setPointSize(float pointSize_) {
+    _parameter->setPointSize(pointSize_);
+    updatePointDrawList();
+  }
 
   virtual void draw();
   void updatePointDrawList();

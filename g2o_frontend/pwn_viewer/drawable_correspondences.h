@@ -23,11 +23,34 @@ class DrawableCorrespondences : public Drawable {
   inline GLuint correspondenceDrawList() { return _correspondenceDrawList; }
 
   virtual bool setParameter(GLParameter *parameter_);
-  void setReferencePointsTransformation(Eigen::Isometry3f referencePointsTransformation_) { _referencePointsTransformation = referencePointsTransformation_; }
-  void setNumCorrespondences(int numCorrespondences_) { _numCorrespondences = numCorrespondences_; }
-  void setCorrespondences(CorrespondenceVector *correspondences_) { _correspondences = correspondences_; }
-  void setReferencePoints(PointVector *referencePoints_) { _referencePoints = referencePoints_; }
-  void setCurrentPoints(PointVector *currentPoints_) { _currentPoints = currentPoints_; }
+  void setReferencePointsTransformation(Eigen::Isometry3f referencePointsTransformation_) { 
+    _referencePointsTransformation = referencePointsTransformation_; 
+    updateCorrespondenceDrawList();
+  }
+  void setNumCorrespondences(int numCorrespondences_) { 
+    _numCorrespondences = numCorrespondences_; 
+    updateCorrespondenceDrawList();
+  }
+  void setCorrespondences(CorrespondenceVector *correspondences_) { 
+    _correspondences = correspondences_;
+    updateCorrespondenceDrawList();
+  }
+  void setReferencePoints(PointVector *referencePoints_) { 
+    _referencePoints = referencePoints_; 
+    updateCorrespondenceDrawList();
+  }
+  void setCurrentPoints(PointVector *currentPoints_) { 
+    _currentPoints = currentPoints_; 
+    updateCorrespondenceDrawList();
+  }
+  void setStep(int step_) {
+    _parameter->setStep(step_);
+    updateCorrespondenceDrawList();
+  }
+  void setLineWidth(float lineWidth_) {
+    _parameter->setLineWidth(lineWidth_);
+    updateCorrespondenceDrawList();
+  }
 
   virtual void draw();
   void updateCorrespondenceDrawList();

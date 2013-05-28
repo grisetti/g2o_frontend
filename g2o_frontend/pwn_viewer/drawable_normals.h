@@ -19,8 +19,22 @@ class DrawableNormals : public Drawable {
   inline GLuint normalDrawList() { return _normalDrawList; }
 
   virtual bool setParameter(GLParameter *parameter_);
-  virtual void setPoints(PointVector *points_) { _points = points_; }
-  virtual void setNormals(NormalVector *normals_) { _normals = normals_; }
+  virtual void setPoints(PointVector *points_) { 
+    _points = points_; 
+    updateNormalDrawList();
+  }
+  virtual void setNormals(NormalVector *normals_) { 
+    _normals = normals_; 
+    updateNormalDrawList();
+  }
+  void setStep(int step_) {
+    _parameter->setStep(step_);
+    updateNormalDrawList();
+  }
+  void setNormalLength(float normalLength_) {
+    _parameter->setNormalLength(normalLength_);
+    updateNormalDrawList();
+  }
  
   virtual void draw();
   void updateNormalDrawList();

@@ -18,8 +18,19 @@ class DrawableCovariances : public Drawable {
   inline GLuint covarianceDrawList() { return _covarianceDrawList; }
 
   virtual bool setParameter(GLParameter *parameter_);
-  virtual void setCovariances(PointStatsVector *covariances_) { _covariances = covariances_; }
-  
+  virtual void setCovariances(PointStatsVector *covariances_) { 
+    _covariances = covariances_; 
+    updateCovarianceDrawList();
+  }
+  void setStep(int step_) {
+    _parameter->setStep(step_);
+    updateCovarianceDrawList();
+  }
+  void setEllipsoidScale(float ellipsoidScale_) {
+    _parameter->setEllipsoidScale(ellipsoidScale_);
+    updateCovarianceDrawList();
+  }
+
   virtual void draw();
   void updateCovarianceDrawList();
 
