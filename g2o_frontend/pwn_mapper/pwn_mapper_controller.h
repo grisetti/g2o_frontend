@@ -30,11 +30,12 @@ class PWNMapperController {
   PWNMapperController() { graph = 0; }
   ~PWNMapperController() {}
     
+  G2OFrame* firstFrame() { return _framesDeque.front(); }
   G2OFrame* lastFrame() { return _framesDeque.back(); }
   int numFrames() { return _framesDeque.size(); }
 
   void init(g2o::OptimizableGraph* graph_);
-  
+
   void clear();
 
   bool addVertex(g2o::VertexSE3* vertex);
@@ -49,8 +50,7 @@ class PWNMapperController {
   PointInformationMatrixFinder *pointInformationMatrixFinder;
   NormalInformationMatrixFinder *normalInformationMatrixFinder;
   DepthImageConverter *converter;
-  TraversabilityAnalyzer *traversabilityAnalyzer;
-  
+  TraversabilityAnalyzer *traversabilityAnalyzer;  
   CorrespondenceFinder *correspondenceFinder;
   Linearizer *linearizer;
   Aligner *aligner;

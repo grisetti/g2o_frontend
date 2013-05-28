@@ -9,7 +9,7 @@
 
 #include <unistd.h>
 
-#undef _PWN_USE_CUDA_
+//#undef _PWN_USE_CUDA_
 
 #ifdef _PWN_USE_CUDA_
 #include "g2o_frontend/pwn_cuda/cualigner.h"
@@ -197,8 +197,7 @@ namespace pwn{
   void ViewerState::clear(){
     pwnGMW->viewer_3d->clearDrawableList();
     for(size_t i = 0; i < drawableFrameVector.size(); i++){
-      if (drawableFrameVector[i]->frame())
-	delete drawableFrameVector[i]->frame();
+      if (0 && drawableFrameVector[i]->frame()) delete drawableFrameVector[i]->frame();
       delete(drawableFrameVector[i]);
     }
     drawableFrameVector.clear();
@@ -453,12 +452,15 @@ namespace pwn{
 
   void ViewerState::clearLastSelected(){
     if(drawableFrameVector.size() > 0) {
-      pwnGMW->viewer_3d->popBack();
       DrawableFrame* lastDrawableFrame = drawableFrameVector.back();
-      if (lastDrawableFrame->frame()){
-	       delete lastDrawableFrame->frame();
+      
+      pwnGMW->viewer_3d->popBack();
+      //if (lastDrawableFrame->frame()){
+      //	delete lastDrawableFrame->frame();
+      //}
+      if (lastDrawableFrame){
+	delete lastDrawableFrame;
       }
-      delete lastDrawableFrame;
       drawableFrameVector.pop_back();
     }
     if(drawableFrameVector.size() > 0) { 
@@ -471,8 +473,8 @@ namespace pwn{
     if(drawableFrameVector.size() > 40) {
       pwnGMW->viewer_3d->drawableList().erase(pwnGMW->viewer_3d->drawableList().begin());
       DrawableFrame* firstDrawableFrame = drawableFrameVector.front();
-      if (firstDrawableFrame->frame()){
-	       delete firstDrawableFrame->frame();
+      if (0 && firstDrawableFrame->frame()){
+	delete firstDrawableFrame->frame();
       }
       delete firstDrawableFrame;
       drawableFrameVector.erase(drawableFrameVector.begin());

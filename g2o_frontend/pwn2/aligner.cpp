@@ -117,6 +117,7 @@ void Aligner::align() {
       invT = dT * invT;
     }
     _T = invT.inverse();
+    _T=v2t(t2v(_T));
     _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
     //cerr << _T.matrix() << endl; 
   }

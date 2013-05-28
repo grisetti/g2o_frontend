@@ -103,7 +103,7 @@ bool extractAbsolutePrior(Eigen::Isometry3f &priorMean,
     }
     d=d->next();
   }
-	
+  
   if (imuData) {
     Eigen::Matrix3d R = imuData->getOrientation().matrix();
     Eigen::Matrix3d Omega = imuData->getOrientationCovariance().inverse();
@@ -112,35 +112,45 @@ bool extractAbsolutePrior(Eigen::Isometry3f &priorMean,
     for(int c = 0; c < 3; c++)
       for(int r = 0; r < 3; r++)
 	priorMean.linear()(r, c) = R(r, c);
-      
-    for(int c = 0; c < 3; c++)
-      for(int r = 0; r < 3; r++)
-	priorInfo(r+3, c+3) = Omega(r, c);
+    
+    for (int c = 0; c<3; c++)
+      for (int r = 0; r<3; r++)
+	priorInfo(r+3,c+3)=Omega(r,c)*100000;
     return true;
   }
   return false;
 }
 
-bool PWNMapperController::alignIncrementally() {
-  if(_framesDeque.size() < 2)
+bool PWNMapperController::alignIncrementally(){
+  if (_framesDeque.size()<2)
     return false;
-  
-  G2OFrame *current = _framesDeque.back();
-  G2OFrame *reference = current->previousFrame();
+
+  G2OFrame* current = _framesDeque.back();
+  G2OFrame* reference = current->previousFrame();
+  cerr << "aligning" << endl;
+  cerr << "current=" << current << endl;
+  cerr << "reference= " << reference << endl;
+
   Eigen::Isometry3f initialGuess;
 
   // cerr computing initial guess based on the frame positions, just for convenience
-  Eigen::Isometry3d delta = reference->vertex()->estimate().inverse() * current->vertex()->estimate();
-  for(int c = 0; c < 4; c++)
-    for(int r = 0; r < 3; r++)
-      initialGuess.matrix()(r, c) = delta.matrix()(r, c);
-  
+  Eigen::Isometry3d delta = reference->vertex()->estimate().inverse()*current->vertex()->estimate();
+  for(int c=0; c<4; c++)
+    for(int r=0; r<3; r++)
+      initialGuess.matrix()(r,c) = delta.matrix()(r,c);
+
+
   Eigen::Isometry3f odometryMean;
   Matrix6f odometryInfo;
   bool hasOdometry = extractRelativePrior(odometryMean, odometryInfo, reference, current);
-  if(hasOdometry)
+  if (hasOdometry)
     initialGuess=odometryMean;
-  
+  else { //force a prior
+    hasOdometry = true;
+    odometryMean = initialGuess;
+    odometryInfo.setIdentity();
+    odometryInfo.block<3,3>(0,0) *= 100;
+  }
   Eigen::Isometry3f imuMean;
   Matrix6f imuInfo;
   bool hasImu = extractAbsolutePrior(imuMean, imuInfo, current);
@@ -169,11 +179,14 @@ bool PWNMapperController::alignIncrementally() {
   cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
   cout << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
       
-  globalT = reference->globalTransform() * localTransformation;
-      
+  globalT = reference->globalTransform()*localTransformation;
+  // recondition the rotation to prevent roundoff to accumulate
+  
+  globalT = v2t(t2v(globalT));
+  
+  // Update cloud drawing position.
   current->globalTransform() = globalT;
   current->previousFrameTransform() = localTransformation;
-    
   return true;
 }
 

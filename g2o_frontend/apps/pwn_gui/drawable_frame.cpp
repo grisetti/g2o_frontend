@@ -51,8 +51,7 @@ namespace pwn {
 
   DrawableFrame::~DrawableFrame(){
     clearDrawableObjects();
-    if(_frame)
-      delete _frame;
+    //if(_frame) delete _frame;
     _frame = 0;
   }
 

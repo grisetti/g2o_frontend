@@ -43,9 +43,12 @@ struct AlignerContext {
   int _maxDepth;
   int _minDepth;
   float _transform[16];
+  float _sensorOffset[16];
   float _cameraMatrix[16];
   float _Hb[56];
   float _KT[16];
+  float _KOT[16];
+  float _KO[16];
   int _checksum;
   __host__ int inliers() const {return _inliers;}
   __host__ float error() const {return _error;}
@@ -55,6 +58,7 @@ struct AlignerContext {
 
   // initializes the computation by passing all the values that will not change during the iterations
   __host__ AlignerStatus initComputation(const float* cameraMatrix,
+					 const float* sensorOffset,
 					 float* referencePointsPtr, 
 					 float* referenceNormalsPtr, 
 					 float* referenceCurvaturesPtr, 
