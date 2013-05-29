@@ -311,4 +311,68 @@ bool PWNMapperController::addVertex(VertexSE3 *v) {
   return true;
 }
 
-} 
+bool PWNMapperController::addVertex(G2OFrame &frame) {
+  OptimizableGraph::Data *d = frame.vertex()->userData();
+  RGBDData *rgbdData = 0;
+  while(d && !rgbdData) {
+    rgbdData = dynamic_cast<RGBDData*>(d);
+    d = d->next();
+  }
+    
+  if(!rgbdData)
+    return false;
+  
+  int paramIndex = rgbdData->paramIndex();
+  g2o::Parameter *_cameraParam = graph->parameter(paramIndex);
+  ParameterCamera *cameraParam = dynamic_cast<ParameterCamera*>(_cameraParam);
+  if(!cameraParam) {
+    cerr << "Could not find a valid camera" << endl;
+    return false;
+  }
+    
+  Eigen::Matrix3f cameraMatrix;
+  Eigen::Isometry3f sensorOffset;
+  
+  cameraMatrix << 
+    525.0f, 0.0f, 319.5f,
+    0.0f, 525.0f, 239.5f,
+    0.0f, 0.0f, 1.0f;
+  
+  sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+  Quaternionf quat = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+  sensorOffset.linear() = quat.toRotationMatrix();
+  sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+
+  std::string fname = rgbdData->baseFilename() + "_depth.pgm";
+  DepthImage depthImage;
+  if(!depthImage.load(fname.c_str(), true)) {
+    cerr << "No depth image loaded." << endl;
+    return false;
+  }
+    
+  float scale = 1./reduction;
+  cameraMatrix *= scale;
+  cameraMatrix(2,2) = 1.0;
+      
+  DepthImage scaledDepthImage;
+  DepthImage::scale(scaledDepthImage, depthImage, reduction);
+
+  imageRows = scaledDepthImage.rows();
+  imageCols = scaledDepthImage.cols();
+  
+  frame.cameraMatrix() = cameraMatrix;
+  frame.sensorOffset() = sensorOffset;
+    
+  globalT.setIdentity();
+  frame.globalTransform().setIdentity();
+  frame.previousFrameTransform().setIdentity();
+  frame.setPreviousFrame(0);
+
+  projector->setCameraMatrix(cameraMatrix);
+  converter->compute(frame, scaledDepthImage, sensorOffset);
+  
+  return true;
+}
+
+}
+ 

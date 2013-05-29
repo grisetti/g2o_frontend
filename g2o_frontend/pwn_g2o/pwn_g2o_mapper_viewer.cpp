@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
   
   vector<int> vertexIds(graph->vertices().size());
   int k = 0;
-  for(OptimizableGraph::VertexIDMap::iterator it = graph->vertices().begin(); it != graph->vertices().end(); ++it) {
+  for(OptimizableGraph::VertexIDMap::iterator it = graph->vertices().begin(); it != graph->vertices().end() && k < 200; ++it) {
     vertexIds[k++] = (it->first);
   }
   
@@ -124,6 +124,9 @@ int main(int argc, char** argv) {
   }
 
   std::vector<Isometry3f> trajectory;
+  std::vector<G2OFrame*> frames;
+  frames.resize(listWidget->count());
+  std::fill(frames.begin(), frames.end(), (G2OFrame*)0);
   PWNMapperController *controller = new PWNMapperController();
   controller->init(graph);
   controller->setAlOuterIterations(0);
@@ -137,6 +140,7 @@ int main(int argc, char** argv) {
   DrawableTrajectory *drawableTrajectory = new DrawableTrajectory(Isometry3f::Identity(), parameterTrajectory, &trajectory);
   viewer->addDrawable(drawableTrajectory);
   Isometry3f globalInitialGuess = Isometry3f::Identity();
+  GLParameterFrame *parameterFrame = new GLParameterFrame(vz_step); 
   while(viewer->isVisible()) {
     if(i < listWidget->count()) {
       QListWidgetItem *listItem = listWidget->item(i);
@@ -154,8 +158,42 @@ int main(int argc, char** argv) {
       }
       i++;
     }
-    else {
-      usleep(10000);
+    for(int k = 0; k < listWidget->count(); k++){
+      QListWidgetItem* item = listWidget->item(k);
+      if(item) {
+	if(item->isSelected()) {
+	  string idString = item->text().toUtf8().constData();
+	  int index = atoi(idString.c_str());
+	  VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
+	  if(v && !frames[k]) {
+	    G2OFrame *currentFrame = new G2OFrame(v);
+	    controller->addVertex(*currentFrame);
+	    frames[k] = currentFrame;
+	    DrawableFrame *drawableFrame = new DrawableFrame(trajectory[k], parameterFrame, frames[k]); 
+	    viewer->addDrawable(drawableFrame);
+	    cerr << "Added Size: " << viewer->drawableList().size() << endl;
+	  }	
+	}
+	else {
+	  if(frames[k]) {
+	    for(size_t j = 0; j < viewer->drawableList().size(); j++) {
+	      DrawableFrame *drawableFrame = dynamic_cast<DrawableFrame*>(viewer->drawableList()[j]);
+	      if(drawableFrame) {
+		G2OFrame *currentFrame = dynamic_cast<G2OFrame*>(drawableFrame->frame());
+		if(currentFrame) {
+		  if(currentFrame->vertex()->id() == frames[k]->vertex()->id()) {
+		    viewer->pop(j);	       
+		    delete drawableFrame;
+		    delete frames[k]; 
+		    frames[k] = 0;
+		    cerr << "Deleted Size: " << viewer->drawableList().size() << endl;		      
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
     }
     viewer->updateGL();
     application.processEvents();

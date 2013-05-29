@@ -37,6 +37,7 @@ class PWNMapperController {
   Eigen::Isometry3f alInitialGuess() { return aligner->initialGuess(); }
 
   void setAlOuterIterations(int al_outerIterations_) { al_outerIterations = al_outerIterations_; }
+  void setMaxDequeSize(int maxDequeSize_) { _maxDequeSize = maxDequeSize_; }
 
   void init(g2o::OptimizableGraph* graph_);
 
@@ -47,6 +48,8 @@ class PWNMapperController {
   bool alignIncrementally();
   
   bool computeTraversability();
+
+  bool addVertex(G2OFrame &frame);
 
  protected:
   PinholePointProjector *projector;

@@ -5,6 +5,10 @@
 #include <vector>
 #include "drawable.h"
 
+#include <iostream>
+
+using namespace std;
+
 namespace pwn {
 
 class PWNQGLViewer : public QGLViewer {
@@ -18,6 +22,7 @@ class PWNQGLViewer : public QGLViewer {
   virtual void addDrawable(Drawable *d);
   inline void popFront() { _drawableList.erase(_drawableList.begin()); }
   inline void popBack() { _drawableList.pop_back(); }
+  inline void pop(int index) { _drawableList.erase(_drawableList.begin() + index); }
   inline void clearDrawableList() { _drawableList.clear(); }
   
   inline GLuint ellipsoidDrawList() { return _ellipsoidDrawList; }

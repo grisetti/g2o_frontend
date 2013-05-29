@@ -11,7 +11,8 @@ class Frame {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   Frame() {}
-  
+  virtual ~Frame() {}
+
   inline const PointVector& points() const { return _points; }
   inline const NormalVector& normals() const { return _normals; }
   inline const PointStatsVector& stats() const { return _stats; }
