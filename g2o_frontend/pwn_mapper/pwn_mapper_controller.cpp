@@ -8,6 +8,7 @@
 #include "g2o/types/slam3d/types_slam3d.h"
 
 #include <unistd.h>
+#include <iostream> 
 
 using namespace std;
 using namespace g2o;
@@ -169,13 +170,15 @@ bool PWNMapperController::alignIncrementally(){
   aligner->align();
       
   Eigen::Isometry3f localTransformation = aligner->T();
-  if(aligner->inliers() < 1000 || aligner->error() / aligner->inliers() > 10) {
+  if(aligner->outerIterations() != 0 && (aligner->inliers() < 1000 || aligner->error() / aligner->inliers() > 10)) {
     cerr << "ALIGNER FAILURE!!!!!!!!!!!!!!!" << endl;
     localTransformation = initialGuess;
   }
-  cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
-  cout << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
-      
+  if(aligner->outerIterations() != 0) {
+    cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
+    cout << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
+  }
+
   globalT = reference->globalTransform()*localTransformation;
   // recondition the rotation to prevent roundoff to accumulate
   
@@ -292,7 +295,6 @@ bool PWNMapperController::addVertex(VertexSE3 *v) {
       frame->globalTransform() = globalT;
     }
   }
-
   frame->setPreviousFrame(previousFrame);
 
   projector->setCameraMatrix(cameraMatrix);

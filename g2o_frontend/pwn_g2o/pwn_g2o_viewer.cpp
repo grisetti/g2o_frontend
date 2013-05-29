@@ -64,19 +64,19 @@ int main(int argc, char** argv) {
   QApplication application(argc,argv);
   QWidget* mainWindow = new QWidget();
   mainWindow->setWindowTitle("pwn_simpleViewer");
-  QHBoxLayout* hlayout = new QHBoxLayout();
-  mainWindow->setLayout(hlayout);
-  QVBoxLayout* vlayout = new QVBoxLayout();
-  hlayout->addItem(vlayout);
-  QVBoxLayout* vlayout2 = new QVBoxLayout();
-  hlayout->addItem(vlayout2);
-  hlayout->setStretch(1,1);
+  QHBoxLayout* baseLayout = new QHBoxLayout();
+  mainWindow->setLayout(baseLayout);
+  QVBoxLayout* listWidgetLayout = new QVBoxLayout();
+  baseLayout->addItem(listWidgetLayout);
+  QVBoxLayout* qglviewerLayout = new QVBoxLayout();
+  baseLayout->addItem(qglviewerLayout);
+  baseLayout->setStretch(1.0f, 1.0f);
 
   QListWidget* listWidget = new QListWidget(mainWindow);
   listWidget->setSelectionMode(QAbstractItemView::MultiSelection );
-  vlayout->addWidget(listWidget);
+  listWidgetLayout->addWidget(listWidget);
   PWNQGLViewer* viewer = new PWNQGLViewer(mainWindow);
-  vlayout2->addWidget(viewer);
+  qglviewerLayout->addWidget(viewer);
 
   /************************************************************************
    *                          Loading Graph                               *
@@ -134,8 +134,7 @@ int main(int argc, char** argv) {
     string idString = listItem->text().toUtf8().constData();
     int index = atoi(idString.c_str());
     VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
-    if(v) {
-      
+    if(v) {     
       if(!controller->addVertex(v))
     	continue;
       controller->alignIncrementally();

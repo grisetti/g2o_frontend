@@ -22,6 +22,8 @@
 #include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
 #include "g2o_frontend/pwn_viewer/drawable_frame.h"
 #include "g2o_frontend/pwn_viewer/gl_parameter_frame.h"
+#include "g2o_frontend/pwn_viewer/drawable_trajectory.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_trajectory.h"
 
 #include <unistd.h>
 
@@ -64,19 +66,19 @@ int main(int argc, char** argv) {
   QApplication application(argc,argv);
   QWidget* mainWindow = new QWidget();
   mainWindow->setWindowTitle("pwn_simpleViewer");
-  QHBoxLayout* hlayout = new QHBoxLayout();
-  mainWindow->setLayout(hlayout);
-  QVBoxLayout* vlayout = new QVBoxLayout();
-  hlayout->addItem(vlayout);
-  QVBoxLayout* vlayout2 = new QVBoxLayout();
-  hlayout->addItem(vlayout2);
-  hlayout->setStretch(1,1);
+  QHBoxLayout* baseLayout = new QHBoxLayout();
+  mainWindow->setLayout(baseLayout);
+  QVBoxLayout* listWidgetLayout = new QVBoxLayout();
+  baseLayout->addItem(listWidgetLayout);
+  QVBoxLayout* qglviewerLayout = new QVBoxLayout();
+  baseLayout->addItem(qglviewerLayout);
+  baseLayout->setStretch(1.0f, 1.0f);
 
   QListWidget* listWidget = new QListWidget(mainWindow);
   listWidget->setSelectionMode(QAbstractItemView::MultiSelection );
-  vlayout->addWidget(listWidget);
+  listWidgetLayout->addWidget(listWidget);
   PWNQGLViewer* viewer = new PWNQGLViewer(mainWindow);
-  vlayout2->addWidget(viewer);
+  qglviewerLayout->addWidget(viewer);
 
   /************************************************************************
    *                          Loading Graph                               *
@@ -112,6 +114,7 @@ int main(int argc, char** argv) {
 	d = d->next();
 	continue;
       }
+      
       char buff[1024];
       sprintf(buff, "%d", v->id());
       QString listItem(buff);
@@ -119,41 +122,44 @@ int main(int argc, char** argv) {
       d = d->next();
     }
   }
-  
-  std::vector<DrawableFrame*> drawableFrameVector;
-  GLParameterFrame *parameterFrame = new GLParameterFrame(vz_step);
+
+  std::vector<Isometry3f> trajectory;
   PWNMapperController *controller = new PWNMapperController();
   controller->init(graph);
+  controller->setAlOuterIterations(0);
   viewer->init();
+  viewer->setAxisIsDrawn(true);
   mainWindow->show();
   viewer->show();
   listWidget->show();
-  size_t i = 0;
-  while(i < vertexIds.size()) {
-    QListWidgetItem *listItem = listWidget->item(i);
-    string idString = listItem->text().toUtf8().constData();
-    int index = atoi(idString.c_str());
-    VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
-    if(v) {
-      
-      if(!controller->addVertex(v))
-    	continue;
-      controller->alignIncrementally();
-      Eigen::Isometry3f globalTransform = controller->lastFrame()->globalTransform();
-      globalTransform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-      DrawableFrame *drawableFrame = new DrawableFrame(globalTransform, parameterFrame, controller->lastFrame());      
-      viewer->addDrawable(drawableFrame);
-      while(viewer->drawableList().size() > controller->maxDequeSize()) {
-       	DrawableFrame *front = dynamic_cast<DrawableFrame*>(viewer->drawableList()[0]);
-       	viewer->popFront();
-       	delete front;
+  int i = 0;
+  GLParameterTrajectory *parameterTrajectory = new GLParameterTrajectory(0.03f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f));
+  DrawableTrajectory *drawableTrajectory = new DrawableTrajectory(Isometry3f::Identity(), parameterTrajectory, &trajectory);
+  viewer->addDrawable(drawableTrajectory);
+  Isometry3f globalInitialGuess = Isometry3f::Identity();
+  while(viewer->isVisible()) {
+    if(i < listWidget->count()) {
+      QListWidgetItem *listItem = listWidget->item(i);
+      string idString = listItem->text().toUtf8().constData();
+      int index = atoi(idString.c_str());
+      VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
+      if(v) {      
+      	if(!controller->addVertex(v))
+      	  continue;
+      	controller->alignIncrementally();
+      	Eigen::Isometry3f initialGuess = controller->alInitialGuess();
+      	globalInitialGuess = globalInitialGuess * initialGuess;
+	initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+      	trajectory.push_back(globalInitialGuess);
       }
+      i++;
     }
-    
-    i++;
+    else {
+      usleep(10000);
+    }
     viewer->updateGL();
     application.processEvents();
   }
-  
+
   return 0;
 };

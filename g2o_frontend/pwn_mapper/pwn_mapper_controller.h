@@ -34,6 +34,9 @@ class PWNMapperController {
   G2OFrame* lastFrame() { return _framesDeque.back(); }
   int numFrames() { return _framesDeque.size(); }
   size_t maxDequeSize() { return _maxDequeSize; }
+  Eigen::Isometry3f alInitialGuess() { return aligner->initialGuess(); }
+
+  void setAlOuterIterations(int al_outerIterations_) { al_outerIterations = al_outerIterations_; }
 
   void init(g2o::OptimizableGraph* graph_);
 

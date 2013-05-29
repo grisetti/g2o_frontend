@@ -17,6 +17,8 @@ ADD_LIBRARY(pwn_viewer_library
   pwn_qglviewer.cpp pwn_qglviewer.h
   drawable.cpp drawable.h
   gl_parameter.cpp gl_parameter.h
+  drawable_trajectory.cpp drawable_trajectory.h
+  gl_parameter_trajectory.cpp gl_parameter_trajectory.h 
   drawable_frame.cpp drawable_frame.h
   gl_parameter_frame.cpp gl_parameter_frame.h 
   drawable_points.cpp drawable_points.h

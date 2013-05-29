@@ -1,6 +1,4 @@
 #include "drawable_points.h"
-#include "gl_parameter_points.h"
-#include <iostream>
 
 namespace pwn {
 
