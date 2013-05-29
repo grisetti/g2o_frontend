@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
   
   vector<int> vertexIds(graph->vertices().size());
   int k = 0;
-  for(OptimizableGraph::VertexIDMap::iterator it = graph->vertices().begin(); it != graph->vertices().end() && k < 200; ++it) {
+  for(OptimizableGraph::VertexIDMap::iterator it = graph->vertices().begin(); it != graph->vertices().end(); ++it) {
     vertexIds[k++] = (it->first);
   }
   
@@ -142,6 +142,7 @@ int main(int argc, char** argv) {
   Isometry3f globalInitialGuess = Isometry3f::Identity();
   GLParameterFrame *parameterFrame = new GLParameterFrame(vz_step); 
   while(viewer->isVisible()) {
+    bool changed = false;
     if(i < listWidget->count()) {
       QListWidgetItem *listItem = listWidget->item(i);
       string idString = listItem->text().toUtf8().constData();
@@ -155,6 +156,7 @@ int main(int argc, char** argv) {
       	globalInitialGuess = globalInitialGuess * initialGuess;
 	initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
       	trajectory.push_back(globalInitialGuess);
+	changed = true;
       }
       i++;
     }
@@ -171,7 +173,7 @@ int main(int argc, char** argv) {
 	    frames[k] = currentFrame;
 	    DrawableFrame *drawableFrame = new DrawableFrame(trajectory[k], parameterFrame, frames[k]); 
 	    viewer->addDrawable(drawableFrame);
-	    cerr << "Added Size: " << viewer->drawableList().size() << endl;
+	    changed = true;
 	  }	
 	}
 	else {
@@ -182,11 +184,12 @@ int main(int argc, char** argv) {
 		G2OFrame *currentFrame = dynamic_cast<G2OFrame*>(drawableFrame->frame());
 		if(currentFrame) {
 		  if(currentFrame->vertex()->id() == frames[k]->vertex()->id()) {
-		    viewer->pop(j);	       
+		    viewer->pop(j);
 		    delete drawableFrame;
 		    delete frames[k]; 
 		    frames[k] = 0;
-		    cerr << "Deleted Size: " << viewer->drawableList().size() << endl;		      
+		    changed = true;
+		    break;
 		  }
 		}
 	      }
@@ -195,7 +198,8 @@ int main(int argc, char** argv) {
 	}
       }
     }
-    viewer->updateGL();
+    if(changed)
+      viewer->updateGL();
     application.processEvents();
   }
 

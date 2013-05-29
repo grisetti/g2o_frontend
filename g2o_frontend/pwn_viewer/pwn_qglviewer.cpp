@@ -2,6 +2,10 @@
 #include "pwn_qglviewer.h"
 #include "g2o/stuff/opengl_primitives.h"
 
+#include <iostream>
+
+using namespace std;
+
 namespace pwn {
 
 class StandardCamera : public qglviewer::Camera {
@@ -93,7 +97,8 @@ void PWNQGLViewer::draw() {
 
   // Draw the vector of drawable objects.
   for(size_t i = 0; i < _drawableList.size(); i++) {
-    _drawableList[i]->draw();
+    if(_drawableList[i])
+      _drawableList[i]->draw();
   }
 }
 
