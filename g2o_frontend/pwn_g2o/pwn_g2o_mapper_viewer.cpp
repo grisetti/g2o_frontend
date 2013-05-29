@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
   
   vector<int> vertexIds(graph->vertices().size());
   int k = 0;
-  for(OptimizableGraph::VertexIDMap::iterator it = graph->vertices().begin(); it != graph->vertices().end(); ++it) {
+  for(OptimizableGraph::VertexIDMap::iterator it = graph->vertices().begin(); it != graph->vertices().end() && k < 200; ++it) {
     vertexIds[k++] = (it->first);
   }
   

@@ -39,7 +39,7 @@ void DrawableFrame::clearDrawableObjects() {
   if(_drawableCorrespondences)
     delete _drawableCorrespondences;
   _drawablePoints = 0;
-  _drawableCorrespondences = 0;
+  _drawableNormals = 0;
   _drawableCovariances = 0;
   _drawableCorrespondences = 0;
 }
