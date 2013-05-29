@@ -119,6 +119,8 @@ int main(int argc, char** argv) {
       sprintf(buff, "%d", v->id());
       QString listItem(buff);
       listWidget->addItem(listItem);
+      QListWidgetItem *lastItem = listWidget->item(listWidget->count() - 1);
+      lastItem->setHidden(true);
       d = d->next();
     }
   }
@@ -156,6 +158,7 @@ int main(int argc, char** argv) {
       	globalInitialGuess = globalInitialGuess * initialGuess;
 	initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
       	trajectory.push_back(globalInitialGuess);
+	listItem->setHidden(false);
 	changed = true;
       }
       i++;
