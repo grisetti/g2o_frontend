@@ -34,31 +34,31 @@ TARGET_LINK_LIBRARIES(pwn_mapper_library
   ${CSPARSE_LIBRARY})
 
 
-ADD_EXECUTABLE(pwn_mapper_test
-  pwn_mapper_test.cpp 
-)
+#ADD_EXECUTABLE(pwn_mapper_test
+#  pwn_mapper_test.cpp 
+#)
 
-SET_TARGET_PROPERTIES(pwn_mapper_test PROPERTIES OUTPUT_NAME pwn_mapper_test)
+#SET_TARGET_PROPERTIES(pwn_mapper_test PROPERTIES OUTPUT_NAME pwn_mapper_test)
 
-TARGET_LINK_LIBRARIES(
-  pwn_mapper_test
-  pwn_mapper_library
-  pwn2_library
-  sensor_data_library
-  ${G2O_TYPES_DATA}
-  ${G2O_TYPES_SLAM2D}
-  ${G2O_TYPES_SLAM3D}
-  ${G2O_STUFF_LIBRARY}
-  ${G2O_CORE_LIBRARY}
-  ${G2O_SOLVER_CSPARSE}
-  ${G2O_STUFF_LIBRARY}
-  ${G2O_SOLVER_CSPARSE_EXTENSION}
-  ${CSPARSE_LIBRARY})
+#TARGET_LINK_LIBRARIES(
+#  pwn_mapper_test
+#  pwn_mapper_library
+#  pwn2_library
+#  sensor_data_library
+#  ${G2O_TYPES_DATA}
+#  ${G2O_TYPES_SLAM2D}
+#  ${G2O_TYPES_SLAM3D}
+#  ${G2O_STUFF_LIBRARY}
+#  ${G2O_CORE_LIBRARY}
+#  ${G2O_SOLVER_CSPARSE}
+#  ${G2O_STUFF_LIBRARY}
+#  ${G2O_SOLVER_CSPARSE_EXTENSION}
+#  ${CSPARSE_LIBRARY})
 
 
 
 IF(CUDA_FOUND)  
   set(BUILD_SHARED_LIBS OFF) 
   TARGET_LINK_LIBRARIES(pwn_mapper_library pwn_cuda_library ${CUDA_CUDART_LIBRARY}) 
-  TARGET_LINK_LIBRARIES(pwn_mapper_test pwn_cuda_library ${CUDA_CUDART_LIBRARY})
+#  TARGET_LINK_LIBRARIES(pwn_mapper_test pwn_cuda_library ${CUDA_CUDART_LIBRARY})
 ENDIF(CUDA_FOUND)

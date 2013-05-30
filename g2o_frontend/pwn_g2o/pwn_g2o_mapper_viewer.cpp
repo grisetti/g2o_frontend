@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
 		G2OFrame *currentFrame = dynamic_cast<G2OFrame*>(drawableFrame->frame());
 		if(currentFrame) {
 		  if(currentFrame->vertex()->id() == frames[k]->vertex()->id()) {
-		    viewer->pop(j);
+		    viewer->erase(j);
 		    delete drawableFrame;
 		    delete frames[k]; 
 		    frames[k] = 0;

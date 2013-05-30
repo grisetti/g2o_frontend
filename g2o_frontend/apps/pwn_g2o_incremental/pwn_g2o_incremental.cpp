@@ -250,10 +250,10 @@ int main(int argc, char**argv){
 	  } else {
 	    cerr << "reusing old offset" << endl;
 	  }
-	  Eigen::Isometry3d currentRobotPose = v3->estimate();
+	  //Eigen::Isometry3d currentRobotPose = v3->estimate();
 	  Eigen::Isometry3d currentCameraPose = v3->estimate()*pNew->offset();
 	  if (referenceFrame && oldData && vOld ) {
-	    Eigen::Isometry3d oldRobotPose = vOld->estimate();
+	    //Eigen::Isometry3d oldRobotPose = vOld->estimate();
 	    g2o::Parameter* _pOld = graph->parameter(oldData->paramIndex());
 	    ParameterCamera* pOld = dynamic_cast<ParameterCamera*>(_pOld);
 	    g2o::Parameter* pOffsetOld = graph->parameter(oldData->paramIndex()+10);
@@ -281,7 +281,7 @@ int main(int argc, char**argv){
 	    if(rratio < 100 && tratio < 100) {
 	      // write the edge frame
 	      Vector6f x = mean;
-	      Vector3f t = x.head<3>();
+	      //Vector3f t = x.head<3>();
 	      Vector3f mq = x.tail<3>();
 	      float w = mq.squaredNorm();
 	      if (w>1){
