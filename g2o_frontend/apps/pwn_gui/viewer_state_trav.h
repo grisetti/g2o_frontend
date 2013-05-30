@@ -4,8 +4,8 @@
 #include "g2o_frontend/basemath/bm_se3.h"
 #include "g2o_frontend/pwn2/frame.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/informationmatrixfinder.h"
-#include "g2o_frontend/pwn2/statsfinder.h"
+#include "g2o_frontend/pwn2/informationmatrixcalculator.h"
+#include "g2o_frontend/pwn2/statscalculator.h"
 #include "g2o_frontend/pwn2/depthimageconverter.h"
 #include "g2o_frontend/pwn2/aligner.h"
 #include "pwn_gui_main_window.h"
@@ -29,9 +29,9 @@ struct ViewerStateTrav {
   std::vector<RGBDData*> listAssociations;
 
   PinholePointProjector* projector;
-  StatsFinder* statsFinder;
-  PointInformationMatrixFinder* pointInformationMatrixFinder;
-  NormalInformationMatrixFinder* normalInformationMatrixFinder;
+  StatsCalculator* statsCalculator;
+  PointInformationMatrixCalculator* pointInformationMatrixCalculator;
+  NormalInformationMatrixCalculator* normalInformationMatrixCalculator;
   DepthImageConverter* converter;
   TraversabilityAnalyzer* traversabilityAnalyzer;
 

@@ -1,13 +1,13 @@
-#include "informationmatrixfinder.h"
+#include "informationmatrixcalculator.h"
 #include <omp.h>
 
 using namespace Eigen;
 
 namespace pwn {
 
-void PointInformationMatrixFinder::compute(InformationMatrixVector &informationMatrix,
-                  const PointStatsVector &stats,
-                  const NormalVector &imageNormals) {
+void PointInformationMatrixCalculator::compute(InformationMatrixVector &informationMatrix,
+					       const PointStatsVector &stats,
+					       const NormalVector &imageNormals) {
   informationMatrix.resize(stats.size());
 
 #pragma omp parallel for
@@ -30,7 +30,7 @@ void PointInformationMatrixFinder::compute(InformationMatrixVector &informationM
   }
 }
 
-void NormalInformationMatrixFinder::compute(InformationMatrixVector &informationMatrix,
+void NormalInformationMatrixCalculator::compute(InformationMatrixVector &informationMatrix,
                    const PointStatsVector &stats,
                    const NormalVector &imageNormals) {
   informationMatrix.resize(stats.size());

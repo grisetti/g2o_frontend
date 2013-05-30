@@ -31,12 +31,12 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   _maxDequeSize = 20;
 
   projector = new PinholePointProjector();
-  statsFinder = new StatsFinder();
+  statsCalculator = new StatsCalculator();
 
-  pointInformationMatrixFinder = new PointInformationMatrixFinder();
-  normalInformationMatrixFinder = new NormalInformationMatrixFinder ;
-  converter= new DepthImageConverter(projector, statsFinder, 
-				     pointInformationMatrixFinder, normalInformationMatrixFinder);
+  pointInformationMatrixCalculator = new PointInformationMatrixCalculator();
+  normalInformationMatrixCalculator = new NormalInformationMatrixCalculator();
+  converter= new DepthImageConverter(projector, statsCalculator, 
+				     pointInformationMatrixCalculator, normalInformationMatrixCalculator);
 
   traversabilityAnalyzer = new TraversabilityAnalyzer(30, 0.04, 0.2, 1);
 
@@ -49,13 +49,13 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   linearizer->setAligner(aligner);
   aligner->setCorrespondenceFinder(correspondenceFinder);
  
-  statsFinder->setWorldRadius(ng_worldRadius);
-  statsFinder->setMinPoints(ng_minImageRadius);
+  statsCalculator->setWorldRadius(ng_worldRadius);
+  statsCalculator->setMinPoints(ng_minImageRadius);
   aligner->setInnerIterations(al_innerIterations);
   aligner->setOuterIterations(al_outerIterations);
   converter->_curvatureThreshold = ng_curvatureThreshold;
-  pointInformationMatrixFinder->setCurvatureThreshold(if_curvatureThreshold);
-  normalInformationMatrixFinder->setCurvatureThreshold(if_curvatureThreshold);
+  pointInformationMatrixCalculator->setCurvatureThreshold(if_curvatureThreshold);
+  normalInformationMatrixCalculator->setCurvatureThreshold(if_curvatureThreshold);
 }
 
 void PWNMapperController::clear() {

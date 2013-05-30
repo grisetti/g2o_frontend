@@ -146,13 +146,13 @@ int
   string dirname;
   
   PinholePointProjector projector;
-  StatsFinder statsFinder;
-  PointInformationMatrixFinder pointInformationMatrixFinder;
-  NormalInformationMatrixFinder normalInformationMatrixFinder;
+  StatsCalculator statsCalculator;
+  PointInformationMatrixCalculator pointInformationMatrixCalculator;
+  NormalInformationMatrixCalculator normalInformationMatrixCalculator;
   DepthImageConverter converter(&projector, 
-                &statsFinder,
-                &pointInformationMatrixFinder,
-                &normalInformationMatrixFinder);
+				&statsCalculator,
+				&pointInformationMatrixCalculator,
+				&normalInformationMatrixCalculator);
   
   g2o::CommandArgs arg;
   arg.paramLeftOver("dirname", dirname, "", "", true);

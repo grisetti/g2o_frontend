@@ -1,4 +1,4 @@
-#include "statsfinder.h"
+#include "statscalculator.h"
 #include <Eigen/Eigenvalues>
 #include <omp.h>
 
@@ -6,14 +6,14 @@
 
 namespace pwn {
 
-StatsFinder::StatsFinder(){
+StatsCalculator::StatsCalculator(){
   _worldRadius = 0.1;
   _maxImageRadius = 30;
   _minImageRadius = 10;
   _minPoints = 50;
 }
 
-void StatsFinder::compute(PointStatsVector &stats,
+void StatsCalculator::compute(PointStatsVector &stats,
                            const PointIntegralImage &integralImage,
 					       const Eigen::MatrixXi &intervalImage,
 					       const Eigen::MatrixXi &indexImage) {
@@ -59,7 +59,7 @@ void StatsFinder::compute(PointStatsVector &stats,
   }
 }
 
-void StatsFinder::compute(NormalVector& normals,
+void StatsCalculator::compute(NormalVector& normals,
                            PointStatsVector& stats,
                            const PointVector& points,
                            const PointIntegralImage& integralImage,

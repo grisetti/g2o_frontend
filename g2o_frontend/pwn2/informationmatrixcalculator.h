@@ -8,11 +8,11 @@ namespace pwn {
 
 typedef Eigen::DiagonalMatrix<float, 4> Diagonal4f;
 
-class InformationMatrixFinder {
+class InformationMatrixCalculator {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   
-  InformationMatrixFinder() {
+  InformationMatrixCalculator() {
     _flatInformationMatrix.setZero();
     _nonFlatInformationMatrix.setZero();
     _flatInformationMatrix.diagonal() = Normal(Eigen::Vector3f(1.0f, 1.0f, 1.0f));
@@ -38,11 +38,11 @@ class InformationMatrixFinder {
   float _curvatureThreshold;
 };
 
-class PointInformationMatrixFinder : public InformationMatrixFinder {
+class PointInformationMatrixCalculator : public InformationMatrixCalculator {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-  PointInformationMatrixFinder() {
+  PointInformationMatrixCalculator() {
     _flatInformationMatrix.diagonal() = Normal(Eigen::Vector3f(1000.0f, 1.0f, 1.0f));
     _nonFlatInformationMatrix.diagonal() = Normal(Eigen::Vector3f(1.0f, 1.0f, 1.0f));
     _curvatureThreshold = 0.02f;
@@ -53,11 +53,11 @@ class PointInformationMatrixFinder : public InformationMatrixFinder {
                const NormalVector &imageNormals);
 };
 
-class NormalInformationMatrixFinder : public InformationMatrixFinder {
+class NormalInformationMatrixCalculator : public InformationMatrixCalculator {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-  NormalInformationMatrixFinder() {
+  NormalInformationMatrixCalculator() {
     _flatInformationMatrix.diagonal() = Normal(Eigen::Vector3f(100.0f, 100.0f, 100.0f));
     _nonFlatInformationMatrix.diagonal() = Normal(Eigen::Vector3f(1.0f, 1.0f, 1.0f));
     _curvatureThreshold = 0.02f;

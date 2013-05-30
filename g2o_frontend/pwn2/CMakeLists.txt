@@ -18,7 +18,7 @@ ADD_LIBRARY(pwn2_library
   g2o_frame.cpp g2o_frame.h
   homogeneousvector4f.h
   informationmatrix.h
-  informationmatrixfinder.h informationmatrixfinder.cpp
+  informationmatrixcalculator.h informationmatrixcalculator.cpp
   linearizer.cpp linearizer.h
   pinholepointprojector.cpp pinholepointprojector.h
   pointaccumulator.h
@@ -26,7 +26,7 @@ ADD_LIBRARY(pwn2_library
   pointprojector.cpp pointprojector.h
   pointstats.h
   se3_prior.cpp se3_prior.h
-  statsfinder.cpp statsfinder.h
+  statscalculator.cpp statscalculator.h
 )
 
 SET_TARGET_PROPERTIES(pwn2_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn2_library)

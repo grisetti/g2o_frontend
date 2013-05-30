@@ -1,5 +1,5 @@
-#include "g2o_frontend/pwn2/informationmatrixfinder.h"
-#include "g2o_frontend/pwn2/statsfinder.h"
+#include "g2o_frontend/pwn2/informationmatrixcalculator.h"
+#include "g2o_frontend/pwn2/statscalculator.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/aligner.h"
 #include "g2o_frontend/basemath/bm_se3.h"
@@ -110,9 +110,9 @@ struct DrawableFrame {
     // Set the camera matrix of the projector object.
     projector.setCameraMatrix(cameraMatrix);
 
-    DepthImageConverter depthImageConverter = DepthImageConverter(&projector, &statsFinder,
-								  &pointInformationMatrixFinder,
-								  &normalInformationMatrixFinder);
+    DepthImageConverter depthImageConverter = DepthImageConverter(&projector, &statsCalculator,
+								  &pointInformationMatrixCalculator,
+								  &normalInformationMatrixCalculator);
     sensorOffset = Isometry3f::Identity();
     sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
     Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
@@ -128,11 +128,11 @@ struct DrawableFrame {
   }
   
   // Creating the stas generator object. 
-  StatsFinder statsFinder;
+  StatsCalculator statsCalculator;
 
   // Creating the omegas generators objects.
-  PointInformationMatrixFinder pointInformationMatrixFinder;
-  NormalInformationMatrixFinder normalInformationMatrixFinder;
+  PointInformationMatrixCalculator pointInformationMatrixCalculator;
+  NormalInformationMatrixCalculator normalInformationMatrixCalculator;
   Frame frame;
   CorrespondenceVector correspondences;
   PinholePointProjector projector;

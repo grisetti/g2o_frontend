@@ -1,6 +1,6 @@
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/statsfinder.h"
-#include "g2o_frontend/pwn2/informationmatrixfinder.h"
+#include "g2o_frontend/pwn2/statscalculator.h"
+#include "g2o_frontend/pwn2/informationmatrixcalculator.h"
 #include "g2o_frontend/pwn2/aligner.h"
 
 #include <qapplication.h>
@@ -125,17 +125,17 @@ int main(int argc, char** argv) {
   projector.projectIntervals(currentIntervalImage, currentDepthImage, 0.1f);
     
   // Creating the stas generator object. 
-  StatsFinder statsGenerator;
+  StatsCalculator statsCalculator;
   
   // Stats and normals computation.
-  statsGenerator.compute(referenceFrame.normals(), referenceFrame.stats(),
-			 referenceFrame.points(),
-   			 referenceIntegralImage, referenceIntervalImage, referenceIndexImage,
-   			 ng_curvatureThreshold);
-  statsGenerator.compute(currentFrame.normals(), currentFrame.stats(),
-			 currentFrame.points(),
-  			 currentIntegralImage, currentIntervalImage, currentIndexImage,
-  			 ng_curvatureThreshold);
+  statsCalculator.compute(referenceFrame.normals(), referenceFrame.stats(),
+			  referenceFrame.points(),
+			  referenceIntegralImage, referenceIntervalImage, referenceIndexImage,
+			  ng_curvatureThreshold);
+  statsCalculator.compute(currentFrame.normals(), currentFrame.stats(),
+			  currentFrame.points(),
+			  currentIntegralImage, currentIntervalImage, currentIndexImage,
+			  ng_curvatureThreshold);
     
   cout << " done." << endl;
 
@@ -145,14 +145,14 @@ int main(int argc, char** argv) {
   cout << "Computing omegas...";
 
   // Creating the omegas generators objects.
-  PointInformationMatrixFinder pointInformationMatrixFinder;
-  NormalInformationMatrixFinder normalInformationMatrixFinder;
+  PointInformationMatrixCalculator pointInformationMatrixCalculator;
+  NormalInformationMatrixCalculator normalInformationMatrixCalculator;
   
   // Omegas computation.
-  pointInformationMatrixFinder.compute(referenceFrame.pointInformationMatrix(), referenceFrame.stats(), referenceFrame.normals());
-  normalInformationMatrixFinder.compute(referenceFrame.normalInformationMatrix(), referenceFrame.stats(), referenceFrame.normals());
-  pointInformationMatrixFinder.compute(currentFrame.pointInformationMatrix(), currentFrame.stats(), currentFrame.normals());
-  normalInformationMatrixFinder.compute(currentFrame.normalInformationMatrix(), currentFrame.stats(), currentFrame.normals());
+  pointInformationMatrixCalculator.compute(referenceFrame.pointInformationMatrix(), referenceFrame.stats(), referenceFrame.normals());
+  normalInformationMatrixCalculator.compute(referenceFrame.normalInformationMatrix(), referenceFrame.stats(), referenceFrame.normals());
+  pointInformationMatrixCalculator.compute(currentFrame.pointInformationMatrix(), currentFrame.stats(), currentFrame.normals());
+  normalInformationMatrixCalculator.compute(currentFrame.normalInformationMatrix(), currentFrame.stats(), currentFrame.normals());
 
   cout << " done." << endl;
 

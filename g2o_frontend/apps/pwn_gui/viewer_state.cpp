@@ -61,12 +61,12 @@ namespace pwn{
     sensorOffset.matrix().row(3) << 0,0,0,1;
 
     projector = new PinholePointProjector();
-    statsFinder = new StatsFinder();
+    statsCalculator = new StatsCalculator();
 
-    pointInformationMatrixFinder = new PointInformationMatrixFinder();
-    normalInformationMatrixFinder = new NormalInformationMatrixFinder ;
-    converter= new DepthImageConverter (projector, statsFinder, 
-					pointInformationMatrixFinder, normalInformationMatrixFinder);
+    pointInformationMatrixCalculator = new PointInformationMatrixCalculator();
+    normalInformationMatrixCalculator = new NormalInformationMatrixCalculator();
+    converter = new DepthImageConverter(projector, statsCalculator, 
+					pointInformationMatrixCalculator, normalInformationMatrixCalculator);
 
     projector->setTransform(Eigen::Isometry3f::Identity());
     projector->setCameraMatrix(cameraMatrix);
@@ -87,14 +87,14 @@ namespace pwn{
     aligner->setCorrespondenceFinder(correspondenceFinder);
 
     
-    statsFinder->setWorldRadius(ng_worldRadius);
+    statsCalculator->setWorldRadius(ng_worldRadius);
     //statsFinder->setCurvatureThreshold(ng_curvatureThreshold);
-    statsFinder->setMinPoints(ng_minImageRadius);
+    statsCalculator->setMinPoints(ng_minImageRadius);
     aligner->setInnerIterations(al_innerIterations);
     aligner->setOuterIterations(al_outerIterations);
     converter->_curvatureThreshold = ng_curvatureThreshold;
-    pointInformationMatrixFinder->setCurvatureThreshold(if_curvatureThreshold);
-    normalInformationMatrixFinder->setCurvatureThreshold(if_curvatureThreshold);
+    pointInformationMatrixCalculator->setCurvatureThreshold(if_curvatureThreshold);
+    normalInformationMatrixCalculator->setCurvatureThreshold(if_curvatureThreshold);
 
     refScn = pwnGMW->scene0();
     currScn = pwnGMW->scene1();

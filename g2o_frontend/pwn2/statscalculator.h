@@ -13,7 +13,7 @@ namespace pwn {
  *  of the vector elements to fill.
  */
 
-class StatsFinder {
+class StatsCalculator {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   
@@ -24,7 +24,7 @@ class StatsFinder {
    *  pixels respectively and the minimum number of points needed for points stats
    *  computation to 50.
    */
-  StatsFinder();
+  StatsCalculator();
   
   inline void setWorldRadius(const float worldRadius_) { _worldRadius = worldRadius_; }
   inline void setMaxImageRadius(const int maxImageRadius_) { _maxImageRadius = maxImageRadius_; }
@@ -48,14 +48,14 @@ class StatsFinder {
    *  to fill.
    */
   void compute(PointStatsVector &stats,
-           const PointIntegralImage &_integralImage,
+	       const PointIntegralImage &_integralImage,
 	       const Eigen::MatrixXi &_intervalImage,
 	       const Eigen::MatrixXi &_indexImage);
 
   void compute(NormalVector &normals,
-           PointStatsVector &stats,
-           const PointVector &points,
-           const PointIntegralImage &integralImage,
+	       PointStatsVector &stats,
+	       const PointVector &points,
+	       const PointIntegralImage &integralImage,
 	       const Eigen::MatrixXi &intervalImage,
 	       const Eigen::MatrixXi &indexImage,
 	       const float curvatureThreshold);
