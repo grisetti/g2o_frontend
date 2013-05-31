@@ -26,7 +26,7 @@ public:
   StatsCalculator* _statsCalculator;
   PointInformationMatrixCalculator* _pointInformationMatrixCalculator;
   NormalInformationMatrixCalculator* _normalInformationMatrixCalculator;
-  //TraversabilityAnalyzer* _traversabilityAnalyzer;
+  
   // this is the workspace of the object
   PointIntegralImage _integralImage;
   Eigen::MatrixXi _indexImage;

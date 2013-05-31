@@ -38,7 +38,7 @@ void DepthImageConverter::compute(Frame& frame,
   frame.pointInformationMatrix().resize(frame.points().size());
   frame.normalInformationMatrix().resize(frame.points().size());
   frame.stats().resize(frame.points().size());
-  std::fill(frame.stats().begin(), frame.stats().end(), PointStats());
+  std::fill(frame.stats().begin(), frame.stats().end(), Stats());
 
   // computing the integral image and the intervals
   _integralImage.compute(_indexImage,frame.points());

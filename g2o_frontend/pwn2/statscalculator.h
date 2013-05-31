@@ -1,7 +1,7 @@
-#ifndef _STATSFINDER_H_
-#define _STATSFINDER_H_
+#ifndef _STATSCALCULATOR_H_
+#define _STATSCALCULATOR_H_
 
-#include "pointstats.h"
+#include "stats.h"
 #include "pointintegralimage.h"
 
 namespace pwn {
@@ -47,13 +47,13 @@ class StatsCalculator {
    *  @param _indexImage is a matrix containing the indices of the vector's elements
    *  to fill.
    */
-  void compute(PointStatsVector &stats,
+  void compute(StatsVector &statsVector,
 	       const PointIntegralImage &_integralImage,
 	       const Eigen::MatrixXi &_intervalImage,
 	       const Eigen::MatrixXi &_indexImage);
 
   void compute(NormalVector &normals,
-	       PointStatsVector &stats,
+	       StatsVector &statsVector,
 	       const PointVector &points,
 	       const PointIntegralImage &integralImage,
 	       const Eigen::MatrixXi &intervalImage,

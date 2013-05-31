@@ -1,6 +1,6 @@
-#ifndef _POINTSTATS_H_
-#define _POINTSTATS_H_
-#include <iostream>
+#ifndef _STATS_H_
+#define _STATS_H_
+
 #include "homogeneousvector4f.h"
 
 namespace pwn {
@@ -12,14 +12,14 @@ namespace pwn {
  *  a 3D point. In particular it is able to store the eigenvalues and eigenvectors of the covariance
  *  matrix associated to a point along with its curvature.
  */
-struct PointStats : public Eigen::Matrix4f {
+struct Stats : public Eigen::Matrix4f {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
   /**
    *  Empty constructor.
    *  This constructor creates an HomogeneousPoint3fStats object filling the matrix with zeros.
    */
-  inline PointStats() {
+  inline Stats() {
     _n = 0;
     setIdentity();
     _eigenValues.setZero();
@@ -55,8 +55,7 @@ struct PointStats : public Eigen::Matrix4f {
 };
 
 
-class PointStatsVector: public TransformableVector<PointStats> {
-
+class StatsVector: public TransformableVector<Stats> {
  public: 
   template<typename OtherDerived>
     inline void transformInPlace(const OtherDerived& m) {
@@ -65,8 +64,6 @@ class PointStatsVector: public TransformableVector<PointStats> {
       at(i).block<4,4>(0,0) = R4 * at(i).block<4,4>(0,0);
     }
   }
-
-
 };
 
 }

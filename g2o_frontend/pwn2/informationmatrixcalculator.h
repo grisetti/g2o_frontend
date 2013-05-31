@@ -1,7 +1,7 @@
-#ifndef _INFORMATIONMATRIXFINDER_H_
-#define _INFORMATIONMATRIXFINDER_H_
+#ifndef _INFORMATIONMATRIXCALCULATOR_H_
+#define _INFORMATIONMATRIXCALCULATOR_H_
 
-#include "pointstats.h"
+#include "stats.h"
 #include "informationmatrix.h"
 
 namespace pwn {
@@ -29,7 +29,7 @@ class InformationMatrixCalculator {
   inline void setCurvatureThreshold(const float curvatureThreshold_) { _curvatureThreshold = curvatureThreshold_; }
 
   virtual void compute(InformationMatrixVector &informationMatrix,
-               const PointStatsVector &stats,
+               const StatsVector &stats,
                const NormalVector &imageNormals) = 0;
   
  protected:
@@ -49,8 +49,8 @@ class PointInformationMatrixCalculator : public InformationMatrixCalculator {
   }
 
   virtual void compute(InformationMatrixVector &informationMatrix,
-               const PointStatsVector &stats,
-               const NormalVector &imageNormals);
+		       const StatsVector &statsVector,
+		       const NormalVector &imageNormals);
 };
 
 class NormalInformationMatrixCalculator : public InformationMatrixCalculator {
@@ -64,8 +64,8 @@ class NormalInformationMatrixCalculator : public InformationMatrixCalculator {
   }
 
   virtual void compute(InformationMatrixVector &informationMatrix,
-               const PointStatsVector &stats,
-               const NormalVector &imageNormals);
+		       const StatsVector &statsVector,
+		       const NormalVector &imageNormals);
 };
 
 }

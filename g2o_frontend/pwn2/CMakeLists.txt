@@ -15,7 +15,7 @@ ADD_LIBRARY(pwn2_library
   depthimage.cpp depthimage.h
   depthimageconverter.cpp depthimageconverter.h
   frame.cpp frame.h
-  g2o_frame.cpp g2o_frame.h
+  g2o_frame.h
   homogeneousvector4f.h
   informationmatrix.h
   informationmatrixcalculator.h informationmatrixcalculator.cpp
@@ -24,8 +24,8 @@ ADD_LIBRARY(pwn2_library
   pointaccumulator.h
   pointintegralimage.cpp pointintegralimage.h
   pointprojector.cpp pointprojector.h
-  pointstats.h
   se3_prior.cpp se3_prior.h
+  stats.h
   statscalculator.cpp statscalculator.h
 )
 
