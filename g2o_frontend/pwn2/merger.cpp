@@ -1,23 +1,27 @@
 #include "merger.h"
 
+using namespace std;
+
 namespace pwn {
 
 Merger::Merger() {
   _distanceThreshold = 0.1f;
   _normalThreshold = cosf(20 * M_PI / 180.0f);
   _maxPointDepth = 10.0f;
-  _pointProjector = 0;
+  _depthImageConverter = 0;
   _indexImage.resize(0, 0);
   _depthImage.resize(0, 0);
   _collapsedIndices.resize(0);
 }
 
 void Merger::merge(Frame *frame, Eigen::Isometry3f &transform) {
-  assert(_pointProjector && _depthImageConverter _indexImage.rows() != 0 && _indexImage.cols());
-  _pointProjector->setTransform(transform);
-  _pointProjector->project(_indexImage, 
-			   _depthImage, 
-			   frame->points());
+  assert(_depthImageConverter _indexImage.rows() != 0 && _indexImage.cols());
+  PinholePointProjector *pointProjector = dynamic_cast<PinholePointProjector*>(_depthImageConverter->_projector);
+  assert(pointProjector);
+  pointProjector->setTransform(transform);
+  pointProjector->project(_indexImage, 
+			  _depthImage, 
+			  frame->points());
 
   // scan all the points, 
   // if they fall in a cell not with -1, 
@@ -32,19 +36,20 @@ void Merger::merge(Frame *frame, Eigen::Isometry3f &transform) {
   _collapsedIndices.resize(frame->points().size());
   std::fill(_collapsedIndices.begin(), _collapsedIndices.end(), -1);
     
-  int killed=0;
-  int currentIndex=0;
+  int killed = 0;
+  int currentIndex = 0;
   for(size_t i = 0; i < frame->points().size(); currentIndex++ ,i++) {
     const Point currentPoint = frame->points()[i];
     const Normal currentNormal = frame->normals()[i];
     
     int r = -1, c = -1;
     float depth = 0.0f;
-    _pointProjector->project(r, c, depth, currentPoint);
+    pointProjector->project(r, c, depth, currentPoint);
     if(depth < 0 || depth > _maxPointDepth || 
        r < 0 || r >= _depthImage.rows() || 
-       c < 0 || c >= _depthImage.cols())
+       c < 0 || c >= _depthImage.cols()) {
       continue;
+    }
     
     float &targetZ = _depthImage(r, c);
     int targetIndex = _indexImage(r, c);
@@ -60,10 +65,10 @@ void Merger::merge(Frame *frame, Eigen::Isometry3f &transform) {
       Gaussian3f &currentGaussian = frame->gaussians()[currentIndex];
       targetGaussian.addInformation(currentGaussian);
       _collapsedIndices[currentIndex]=targetIndex;
-      killed ++;
+      killed++;
     }
   }
-  std::cerr << "Killed: " << killed << std::endl;
+  std::cerr << "Killed: " << std::endl;
   
   // scan the vector of covariances.
   // if the index is -1
@@ -76,6 +81,7 @@ void Merger::merge(Frame *frame, Eigen::Isometry3f &transform) {
 
   int murdered = 0;
   int k = 0;
+  
   for(size_t i = 0; i < _collapsedIndices.size(); i++) {
     int collapsedIndex = _collapsedIndices[i];
     if(collapsedIndex == (int)i) {
@@ -83,7 +89,10 @@ void Merger::merge(Frame *frame, Eigen::Isometry3f &transform) {
     }
     if(collapsedIndex < 0 || collapsedIndex == (int)i) {
       frame->points()[k] = frame->points()[i];
+      frame->normals()[k] = frame->normals()[i];
       frame->stats()[k] = frame->stats()[i];
+      frame->pointInformationMatrix()[k] = frame->pointInformationMatrix()[i];
+      frame->normalInformationMatrix()[k] = frame->normalInformationMatrix()[i];
       frame->gaussians()[k] = frame->gaussians()[i];
       k++;
     } 
@@ -95,16 +104,11 @@ void Merger::merge(Frame *frame, Eigen::Isometry3f &transform) {
   int originalSize = frame->points().size();
   // kill the leftover points
   frame->points().resize(k);
-  //frame->normals().resize(k);
-  //frame->stats().resize(k);
-  //frame->pointInformationMatrix().resize(k);
-  //frame->normalInformationMatrix().resize(k);
-  //frame->gaussians().resize(k);
   cerr << "murdered: " << murdered  << endl;
   cerr << "resized: " << originalSize << "->" << k << endl;
     
   // recompute the normals
-  _pointProjector->project(_indexImage, _depthImage, frame->points());
+  pointProjector->project(_indexImage, _depthImage, frame->points());
   _depthImageConverter->compute(*frame, _depthImage, transform);
 }
 

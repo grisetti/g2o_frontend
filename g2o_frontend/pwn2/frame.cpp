@@ -116,6 +116,25 @@ void Frame::clear(){
   _normalInformationMatrix.clear();
 }
 
+void Frame::add(Frame frame, const Eigen::Isometry3f &T) {
+  frame.transformInPlace(T);
+  size_t k = _points.size();
+  _points.resize(k + frame.points().size());
+  _normals.resize(k + frame.normals().size());
+  _stats.resize(k + frame.stats().size());
+  _pointInformationMatrix.resize(k + frame.pointInformationMatrix().size());
+  _normalInformationMatrix.resize(k + frame.normalInformationMatrix().size());
+  _gaussians.resize(k + frame.gaussians().size());
+  for(int i = 0; k < _points.size(); k++, i++) {
+    _points[k] = frame.points()[i];
+    _normals[k] = frame.normals()[i];
+    _stats[k] = frame.stats()[i];
+    _pointInformationMatrix[k] = frame.pointInformationMatrix()[i];
+    _normalInformationMatrix[k] = frame.normalInformationMatrix()[i];
+    _gaussians[k] = frame.gaussians()[i];
+  }
+}
+
 void Frame::transformInPlace(const Eigen::Isometry3f& T){
   Eigen::Matrix4f m = T.matrix();
   m.row(3) << 0,0,0,1;

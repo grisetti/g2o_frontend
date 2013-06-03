@@ -2,6 +2,8 @@
 #include "g2o_frontend/pwn2/statscalculator.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/aligner.h"
+#include "g2o_frontend/pwn2/merger.h"
+
 #include "g2o_frontend/basemath/bm_se3.h"
 
 #include "g2o_frontend/pwn2/depthimageconverter.h"
@@ -16,6 +18,7 @@
 #include "g2o_frontend/pwn_viewer/gl_parameter_normals.h"
 #include "g2o_frontend/pwn_viewer/gl_parameter_covariances.h"
 #include "g2o_frontend/pwn_viewer/gl_parameter_correspondences.h"
+
 #include "pwn_gui_main_window.h"
 
 #include "g2o/stuff/command_args.h"
@@ -91,9 +94,36 @@ struct DrawableFrame {
     dNormals = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)pNormals, &frame.points(), &frame.normals());
     dCovariances = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)pCovariances, &frame.stats());
     dCorrespondences = new DrawableCorrespondences(Isometry3f::Identity(), (GLParameter*)pCorrespondences, 0,
-                           &frame.points(), &frame.points(), &correspondences);
+						   &frame.points(), &frame.points(), &correspondences);
   }
   
+  DrawableFrame(Frame *frame_, int s) {
+    filename = "";
+    step = s;
+    frame = *frame_;
+
+    float r = 0.0f + 0.75f*rand()/double(RAND_MAX);
+    float g = 0.0f + 0.75f*rand()/double(RAND_MAX);
+    float b = 0.0f + 0.75f*rand()/double(RAND_MAX);
+
+    pPoints = new GLParameterPoints(1.0f, Vector4f(r, g, b, 1.0f));
+    pPoints->setStep(step);
+    pNormals = new GLParameterNormals(1.0f, Vector4f(0.0f, 0.0f, 1.0f, 1.0f), 0.0f);
+    pNormals->setStep(step);
+    pCovariances = new GLParameterCovariances(1.0f, 
+					      Vector4f(0.0f, 1.0f, 0.0f, 1.0f), Vector4f(1.0f, 0.0f, 0.0f, 1.0f),
+					      0.02f, 0.0f);
+    pCovariances->setStep(step);
+    pCorrespondences = new GLParameterCorrespondences(1.0f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f), 0.0f);
+    pCorrespondences->setStep(step);
+
+    dPoints = new DrawablePoints(Isometry3f::Identity(), (GLParameter*)pPoints, &frame.points(), &frame.normals());
+    dNormals = new DrawableNormals(Isometry3f::Identity(), (GLParameter*)pNormals, &frame.points(), &frame.normals());
+    dCovariances = new DrawableCovariances(Isometry3f::Identity(), (GLParameter*)pCovariances, &frame.stats());
+    dCorrespondences = new DrawableCorrespondences(Isometry3f::Identity(), (GLParameter*)pCorrespondences, 0,
+						   &frame.points(), &frame.points(), &correspondences);
+  }
+    
   void computeStats() {
     Eigen::Matrix3f cameraMatrix;
     cameraMatrix << 
@@ -228,7 +258,8 @@ int main(int argc, char** argv) {
   currScn = pwnGMW.scene1();
 
   bool newCloudAdded = false, wasInitialGuess = false;
-  bool *initialGuessViewer = 0, *optimizeViewer = 0, *addCloud = 0, *clearLast = 0, *clearAll = 0;
+  bool *initialGuessViewer = 0, *optimizeViewer = 0, *addCloud = 0, *clearLast = 0, *clearAll = 0, *merge = 0;
+  
   int *stepViewer = 0, *stepByStepViewer = 0;
   float *pointsViewer = 0, *normalsViewer = 0, *covariancesViewer = 0, *correspondencesViewer = 0;
   QListWidgetItem* itemList = 0;
@@ -239,6 +270,10 @@ int main(int argc, char** argv) {
   Isometry3f globalT = Isometry3f::Identity();
   Isometry3f stepByStepInit = Isometry3f::Identity();
   std::vector<Isometry3f> localT; 
+
+  Merger merger;
+  DepthImageConverter depthImageConverter(0, 0, 0, 0);
+  Frame mergingFrame;
 
   while(!(*pwnGMW.closing())) {
     qApplication.processEvents();
@@ -252,6 +287,7 @@ int main(int argc, char** argv) {
     initialGuessViewer = pwnGMW.initialGuess();
     optimizeViewer = pwnGMW.optimize();
     stepByStepViewer = pwnGMW.stepByStep();
+    merge = pwnGMW.merge();
     addCloud = pwnGMW.addCloud();
     clearLast = pwnGMW.clearLast();    
     clearAll = pwnGMW.clearAll();
@@ -324,6 +360,8 @@ int main(int argc, char** argv) {
       }
       cout << "Local transformation: " << endl << localT[localT.size()-1].matrix() << endl;
 
+      mergingFrame.add(drawableFrameVector[drawableFrameVector.size()-1]->frame, globalT);
+
       // Update cloud drawing position.
       drawableFrameVector[drawableFrameVector.size()-1]->dPoints->setTransformation(globalT);
       drawableFrameVector[drawableFrameVector.size()-1]->dNormals->setTransformation(globalT);
@@ -362,11 +400,11 @@ int main(int argc, char** argv) {
       if(!wasInitialGuess) {
 	aligner.setOuterIterations(1);
 
-    aligner.correspondenceFinder()->setSize(drawableFrameVector[drawableFrameVector.size()-2]->depthImage.rows(), drawableFrameVector[drawableFrameVector.size()-2]->depthImage.cols());
+	aligner.correspondenceFinder()->setSize(drawableFrameVector[drawableFrameVector.size()-2]->depthImage.rows(), drawableFrameVector[drawableFrameVector.size()-2]->depthImage.cols());
 	
-    aligner.setProjector(&drawableFrameVector[drawableFrameVector.size()-2]->projector);
-    aligner.setReferenceFrame(&drawableFrameVector[drawableFrameVector.size()-2]->frame);
-    aligner.setCurrentFrame(&drawableFrameVector[drawableFrameVector.size()-1]->frame);
+	aligner.setProjector(&drawableFrameVector[drawableFrameVector.size()-2]->projector);
+	aligner.setReferenceFrame(&drawableFrameVector[drawableFrameVector.size()-2]->frame);
+	aligner.setCurrentFrame(&drawableFrameVector[drawableFrameVector.size()-1]->frame);
 	
 	if(newCloudAdded)
 	  aligner.setInitialGuess(initialGuess);
@@ -416,21 +454,60 @@ int main(int argc, char** argv) {
       *initialGuessViewer = 0;
       *optimizeViewer = 0;
     }
+    // Merge button pressed.
+    else if(*merge) {
+      if(mergingFrame.points().size() > 0) {
+	merger.merge(&mergingFrame, drawableFrameVector[drawableFrameVector.size()-1]->sensorOffset);
+	// Clear the viewer.
+	pwnGMW.viewer_3d->clearDrawableList();
+	for(size_t i = 0; i < drawableFrameVector.size(); i++)
+	  delete(drawableFrameVector[i]);
+	drawableFrameVector.clear();
+	localT.clear();
+	refScn->clear();
+	currScn->clear();
+	wasInitialGuess = false;
+	drawableFrame = new DrawableFrame(&mergingFrame, vz_step);
+	drawableFrameVector.push_back(drawableFrame);
+	drawableFrame = 0;
+	// Add drawable items.
+	drawableFrameVector[drawableFrameVector.size()-1]->dPoints->setTransformation(globalT);
+	drawableFrameVector[drawableFrameVector.size()-1]->dNormals->setTransformation(globalT);
+	drawableFrameVector[drawableFrameVector.size()-1]->dCovariances->setTransformation(globalT);
+	pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dPoints);
+	pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dNormals);
+	pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dCovariances);
+	pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dCorrespondences);
+	newCloudAdded = true;
+      }	
+      *merge = 0;
+    }
     // Add cloud was pressed.
     else if(*addCloud) {
       if(itemList) {
-    drawableFrame = new DrawableFrame(itemList->text().toStdString(), vz_step);
-    drawableFrame->computeStats();
-    drawableFrameVector.push_back(drawableFrame);
-    drawableFrame = 0;
+	drawableFrame = new DrawableFrame(itemList->text().toStdString(), vz_step);
+	drawableFrame->computeStats();
+	drawableFrameVector.push_back(drawableFrame);
+
+	if(drawableFrameVector.size() == 1) {
+	  depthImageConverter = DepthImageConverter(&drawableFrame->projector, 
+						    &drawableFrame->statsCalculator,
+						    &drawableFrame->pointInformationMatrixCalculator,
+						    &drawableFrame->normalInformationMatrixCalculator);
+	  merger.setDepthImageConverter(&depthImageConverter);
+	  merger.setImageSize(drawableFrame->depthImage.rows(), drawableFrame->depthImage.cols());
+	  mergingFrame.add(drawableFrameVector[0]->frame);
+	}
+
+	drawableFrame = 0;
 	// Add drawable items.
-    drawableFrameVector[drawableFrameVector.size()-1]->dPoints->setTransformation(globalT);;
-    drawableFrameVector[drawableFrameVector.size()-1]->dNormals->setTransformation(globalT);;
-    drawableFrameVector[drawableFrameVector.size()-1]->dCovariances->setTransformation(globalT);;
-    pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dPoints);
-    pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dNormals);
-    pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dCovariances);
-    pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dCorrespondences);
+	drawableFrameVector[drawableFrameVector.size()-1]->dPoints->setTransformation(globalT);
+	drawableFrameVector[drawableFrameVector.size()-1]->dNormals->setTransformation(globalT);
+	drawableFrameVector[drawableFrameVector.size()-1]->dCovariances->setTransformation(globalT);
+	pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dPoints);
+	pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dNormals);
+	pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dCovariances);
+	pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dCorrespondences);
       }
       newCloudAdded = true;
       *addCloud = 0;
@@ -439,7 +516,7 @@ int main(int argc, char** argv) {
     else if(*clearAll) {
       pwnGMW.viewer_3d->clearDrawableList();
       for(size_t i = 0; i < drawableFrameVector.size(); i++)
-    delete(drawableFrameVector[i]);
+	delete(drawableFrameVector[i]);
       drawableFrameVector.clear();
       globalT = Isometry3f::Identity();
       localT.clear();
@@ -455,8 +532,8 @@ int main(int argc, char** argv) {
         pwnGMW.viewer_3d->popBack();
         pwnGMW.viewer_3d->popBack();
         pwnGMW.viewer_3d->popBack();
-    delete(drawableFrameVector[drawableFrameVector.size()-1]);
-    drawableFrameVector.pop_back();
+	delete(drawableFrameVector[drawableFrameVector.size()-1]);
+	drawableFrameVector.pop_back();
       }
       if(localT.size() > 0) { 
 	globalT = globalT * localT[localT.size()-1].inverse();
@@ -472,6 +549,7 @@ int main(int argc, char** argv) {
     // To avoid memorized commands to be managed.
     *initialGuessViewer = 0;
     *optimizeViewer = 0;
+    *merge = 0;
     *addCloud = 0; 
     *clearAll = 0;
     *clearLast = 0;

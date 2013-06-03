@@ -16,8 +16,8 @@ public:
 		      NormalInformationMatrixCalculator* _normalInformationMatrixCalculator);
 
   void compute(Frame& frame,
-	       const Eigen::MatrixXf& depthImage, 
-	       const Eigen::Isometry3f& sensorOffset=Eigen::Isometry3f::Identity());
+	       const DepthImage &depthImage, 
+	       const Eigen::Isometry3f &sensorOffset=Eigen::Isometry3f::Identity());
 
   // todo: add accessor methods, separate public and private
   //protected:

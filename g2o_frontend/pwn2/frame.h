@@ -37,6 +37,7 @@ class Frame {
   bool save(ostream &os, Eigen::Isometry3f T, int step, bool binary);
   bool save(std::ostream &os, int step = 1, bool binary = false);
   void clear();
+  void add(Frame frame, const Eigen::Isometry3f &T = Eigen::Isometry3f::Identity());
   void transformInPlace(const Eigen::Isometry3f& T);
 
  protected:

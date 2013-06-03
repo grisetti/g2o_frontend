@@ -1,5 +1,6 @@
 #include <iostream>
 #include "depthimageconverter.h"
+#include "pinholepointprojector.h"
 #include "g2o/stuff/timeutil.h"
 
 using namespace std;
@@ -19,9 +20,9 @@ DepthImageConverter::DepthImageConverter(  PointProjector* projector_,
   
 }
 
-void DepthImageConverter::compute(Frame& frame,
-				  const Eigen::MatrixXf& depthImage, 
-				  const Eigen::Isometry3f& sensorOffset){
+void DepthImageConverter::compute(Frame &frame,
+				  const DepthImage &depthImage, 
+				  const Eigen::Isometry3f &sensorOffset) {
   frame.clear();
   // resizing the temporaries
   if (depthImage.rows()!=_indexImage.rows() ||
@@ -55,6 +56,10 @@ void DepthImageConverter::compute(Frame& frame,
 			    _curvatureThreshold);
   _pointInformationMatrixCalculator->compute(frame.pointInformationMatrix(), frame.stats(), frame.normals());
   _normalInformationMatrixCalculator->compute(frame.normalInformationMatrix(), frame.stats(), frame.normals());
+  PinholePointProjector *pointProjector = dynamic_cast<PinholePointProjector*>(_projector);
+  if(pointProjector)
+    frame.gaussians().fromDepthImage(depthImage, pointProjector->cameraMatrix());
+
   // frame is labeled, now we need to transform all the elements by considering the position
   // of the sensor
   frame.transformInPlace(sensorOffset);
