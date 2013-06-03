@@ -56,6 +56,12 @@ protected:
 //typedef AlignmentAlgorithm<g2o::SE2,g2o::VertexLine2D>  AlignmentAlgorithmSE2Line2D;
 //typedef AlignmentAlgorithm<Eigen::Isometry3d,Slam3dAddons::VertexLine3D>   AlignmentAlgorithmSE3Line3D;
 
+struct ciError{
+  int idx;
+  double err;
+};
+typedef std::vector<ciError> ciErrVector;
+typedef std::map<int, ciErrVector> viCorrMap;
 
 class BaseGeneralizedRansac{
 public:
@@ -76,6 +82,7 @@ public:
     inline const IndexVector getInliersIndeces() const {return _indices;}
     int maxIterations() const {return _maxIterations;}
     void setMaxIterations(double maxIterations_) { _maxIterations = maxIterations_;}
+    virtual void keepBestFriend(std::vector<int>& bestInliers_, const std::vector<double> _errors, std::vector<int>& inliers_);
 
 protected:
     bool _init();
@@ -150,7 +157,7 @@ public:
     }
 
     //mal
-    bool operator()(TransformType& treturn, std::vector<int>& inliers_, bool debug = false){
+    bool operator()(TransformType& treturn, std::vector<int>& inliers_, bool debug = false, int bestFriendFilter = 0){
         if ((int)_correspondences.size()<minimalSetSize())
             return false;
         if (!_init())
@@ -191,7 +198,8 @@ public:
                 //cerr << "e: " << e->chi2() << endl;
                 if (e->chi2()<_inlierErrorTheshold){
                     if (debug) {
-		      cerr << "**************** INLIER ****************" << endl;                        cerr << endl << "v1 " << v1->id() << " ";
+                    cerr << "**************** INLIER ****************" << endl;
+                        cerr << endl << "v1 " << v1->id() << " ";
                         v1->write(cerr);
                         cerr << endl;
                         v2->setEstimate(ebackup);
@@ -210,13 +218,43 @@ public:
                 }
                 v2->setEstimate(ebackup);
             }
+
+            //martina
+            //debug
+//            for (size_t i = 0; i<inliers.size(); i++){
+//                cerr << inliers[i] << " ";
+//            }
+//            cerr << endl;
+//            for (size_t i = 0; i<inliers.size(); i++){
+//                int idx = inliers[i];
+//                cerr << _errors[idx] << " ";
+//            }
+//            cerr << endl;
+            cerr << "inliers are: ";
+            for (size_t i = 0; i<inliers.size(); i++){
+              int idx = inliers[i];
+              Correspondence& c=_correspondences[idx];
+              double err = _errors[idx];
+              g2o::OptimizableGraph::Edge* e=c.edge();
+              g2o::OptimizableGraph::Vertex* v1=static_cast<g2o::OptimizableGraph::Vertex*>(e->vertex(0));
+              g2o::OptimizableGraph::Vertex* v2=static_cast<g2o::OptimizableGraph::Vertex*>(e->vertex(1));
+              cerr << "(" << idx << ","<< e << ","<< v1->id() << "," << v2->id() << "," << err << "), ";
+            }
+            cerr << endl;
+            if(bestFriendFilter) {
+                cerr << endl << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
+                std::vector<int> bestFriendInliers;
+                keepBestFriend(bestFriendInliers, currentErrors, inliers);
+            }
+            cerr << "BestFriendFilter? " << bestFriendFilter << endl;
+
             if(debug)
                 cerr << "transformFound:" << (int) transformFound << endl;
             if (debug)
                 cerr << "inliers:" << inliers.size() << endl;
             if ((int)inliers.size()<minimalSetSize()) {
                 if(debug)
-                cerr << "too few inliers: " << (int)inliers.size() <<  endl;
+                    cerr << "too few inliers: " << (int)inliers.size() <<  endl;
                 continue;
             }
             if(debug)
@@ -224,41 +262,26 @@ public:
 
             if (inliers.size()>bestInliers.size()){
                 if(debug)
-		  cerr << "enough inliers: " << (int)inliers.size() <<  endl;
+                    cerr << "enough inliers: " << (int)inliers.size() <<  endl;
                 double currentError = error/inliers.size();
                 if (currentError<bestError){
                     if(debug)
                         cerr << "good error: " << currentError <<  endl;
                     bestError= currentError;
+                    cerr << "saving inliers: " << inliers.size() << "in bestinliers (before)" << bestInliers.size() << endl;
+
                     bestInliers = inliers;
-		    _errors = currentErrors;
+                    cerr << "bestinliers (after)" << bestInliers.size() << endl;
+
+                    _errors = currentErrors;
                     bestTransform = t;
                     transformFound = true;
 
                     //mal
-                    inliers_=bestInliers;
-		    //debug martina
-		    //cerr << "AAAAA" << endl;
-		    for (size_t i = 0; i<inliers.size(); i++){
-		      cerr << inliers[i] << " ";
-		    }
-		    cerr << endl;
-		    //cerr << "BBBBB" << endl;
-		    for (size_t i = 0; i<inliers.size(); i++){
-		      int idx = inliers[i];
-		      cerr << _errors[idx] << " ";
-		    }
-		    cerr << endl;
-		    //cerr << "CCCCC" << endl;
-		    for (size_t i = 0; i<inliers.size(); i++){
-		      int idx = inliers[i];	
-		      Correspondence& c=_correspondences[idx];
-		      g2o::OptimizableGraph::Edge* e=c.edge();
-		      PointVertexType* v1=static_cast<PointVertexType*>(e->vertex(0));
-		      PointVertexType* v2=static_cast<PointVertexType*>(e->vertex(1));
-		      cerr << "inliers are: " << "(" << idx << ","<< e << ","<< v1->id() << "," << v2->id() << "), ";
-		    }
-		    cerr << endl;
+//                    cerr << "         OUTPUT inliers_ " << inliers_.size() << endl;
+//                    inliers_=bestInliers;
+//                    cerr << "saving bestinliers: " << bestInliers.size() << "in inliers_ " << inliers_.size() << endl;
+
                 }
                 if ((double)bestInliers.size()/(double)_correspondences.size() > _inlierStopFraction){
                     transformFound = true;
@@ -269,8 +292,21 @@ public:
                 }
             }
         }
+        //martina
+//        if(bestFriendFilter) {
+//            cerr << endl << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
+//            std::vector<int> bestFriendInliers;
+//            keepBestFriend(bestFriendInliers, _errors, bestInliers);
+//        }
+//        cerr << "BestFriendFilter? " << bestFriendFilter << endl;
+
+        //mal
+        cerr << "         OUTPUT inliers_ " << inliers_.size() << endl;
+        inliers_=bestInliers;
+        cerr << "saving bestinliers: " << bestInliers.size() << " in inliers_ " << inliers_.size() << endl;
+
         if (transformFound){
-	  _alignmentAlgorithm(bestTransform,_correspondences,bestInliers);
+            _alignmentAlgorithm(bestTransform,_correspondences,bestInliers);
         }
         treturn = bestTransform;
         if (!_cleanup())
