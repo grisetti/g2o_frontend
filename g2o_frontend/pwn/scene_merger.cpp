@@ -16,7 +16,7 @@ using namespace std;
     _normalThreshold = cos(20*M_PI/180.0f);
     _normalGenerator = 0;
     _indexImage.resize(480,640);
-    _zBuffer.resize(480,540);
+    _zBuffer.resize(480,640);
     _maxPointDepth = 10;
     // _cameraMatrix << 
     //   525.0f, 0.0f, 319.5f,

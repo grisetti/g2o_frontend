@@ -15,11 +15,13 @@ ADD_LIBRARY(pwn2_library
   depthimage.cpp depthimage.h
   depthimageconverter.cpp depthimageconverter.h
   frame.cpp frame.h
+  gaussian3.cpp gaussian3.h
   g2o_frame.h
   homogeneousvector4f.h
   informationmatrix.h
   informationmatrixcalculator.h informationmatrixcalculator.cpp
   linearizer.cpp linearizer.h
+  merger.cpp merger.h
   pinholepointprojector.cpp pinholepointprojector.h
   pointaccumulator.h
   pointintegralimage.cpp pointintegralimage.h

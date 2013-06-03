@@ -26,7 +26,7 @@ typedef Eigen::Matrix<unsigned short, Eigen::Dynamic, Eigen::Dynamic> MatrixXus;
  *  metrs.
  */
 
-class DepthImage: public Eigen::MatrixXf{
+class DepthImage: public Eigen::MatrixXf {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   
@@ -86,12 +86,12 @@ public:
 
 
   /**
-   *  This static methos scales an input image of a desired integet
+   *  This static methos scales an input image of a desired integer
    *  fator. To have an image that is 1/2 of the original, you should
    *  set the step at 2;
    *  @param dest: the destination image that will be scaled
    *  @param src: source image
-   *  @param sstep: the inverse of the scaling factor
+   *  @param step: the inverse of the scaling factor
    */
   static void scale(Eigen::MatrixXf& dest, const Eigen::MatrixXf& src, int step);
 };

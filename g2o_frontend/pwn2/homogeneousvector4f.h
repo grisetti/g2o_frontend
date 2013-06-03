@@ -23,7 +23,8 @@ namespace pwn {
  */
 
 template <int wCoordinate_>
-struct HomogeneousVector4f: public Eigen::Vector4f {
+class HomogeneousVector4f: public Eigen::Vector4f {
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
   /**

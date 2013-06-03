@@ -1,5 +1,5 @@
-#ifndef _GAUSSIAN3_H_
-#define _GAUSSIAN3_H_
+#ifndef _GAUSSIAN3_OLD_H_
+#define _GAUSSIAN3_OLD_H_
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>

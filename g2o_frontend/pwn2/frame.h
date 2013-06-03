@@ -3,6 +3,7 @@
 
 #include "stats.h"
 #include "informationmatrix.h"
+#include "gaussian3.h"
 
 namespace pwn {
 
@@ -19,6 +20,7 @@ class Frame {
   inline const InformationMatrixVector& pointInformationMatrix() const { return _pointInformationMatrix; }
   inline const InformationMatrixVector& normalInformationMatrix() const { return _normalInformationMatrix; }
   inline const std::vector<int>& traversabilityVector() const { return _traversabilityVector; }
+  inline const Gaussian3fVector& gaussians() const { return _gaussians; }
 
   inline PointVector& points() { return _points; }
   inline NormalVector& normals() { return _normals; }
@@ -26,7 +28,7 @@ class Frame {
   inline InformationMatrixVector& pointInformationMatrix() { return _pointInformationMatrix; }
   inline InformationMatrixVector& normalInformationMatrix() { return _normalInformationMatrix; }
   inline std::vector<int>& traversabilityVector() { return _traversabilityVector; }
-
+  inline Gaussian3fVector& gaussians() { return _gaussians; }
 
   bool load(const char *filename);
   bool load(std::istream &is);
@@ -41,9 +43,10 @@ class Frame {
   PointVector _points;
   NormalVector _normals;
   StatsVector _stats;
-  std::vector<int> _traversabilityVector;
   InformationMatrixVector _pointInformationMatrix;
   InformationMatrixVector _normalInformationMatrix;
+  std::vector<int> _traversabilityVector;
+  Gaussian3fVector _gaussians;
 };
 
 }

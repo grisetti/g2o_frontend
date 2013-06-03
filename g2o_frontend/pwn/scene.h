@@ -1,5 +1,5 @@
-#ifndef _SCENE_H_
-#define _SCENE_H_
+#ifndef _SCENE_OLD_H_
+#define _SCENE_OLD_H_
 #include "depthimage.h"
 #include "pointwithnormal.h"
 #include "gaussian3.h"

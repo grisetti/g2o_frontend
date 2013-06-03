@@ -122,6 +122,7 @@ void Frame::transformInPlace(const Eigen::Isometry3f& T){
   _points.transformInPlace(m);
   _normals.transformInPlace(m);
   _stats.transformInPlace(m);
+  _gaussians.transformInPlace(m);
   m.row(3) << 0,0,0,0;
   m.col(3) << 0,0,0,0;
   _pointInformationMatrix.transformInPlace(m);

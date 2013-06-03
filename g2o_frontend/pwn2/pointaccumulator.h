@@ -15,7 +15,8 @@ namespace pwn {
  *  operators. 
  */
 
-struct PointAccumulator {
+class PointAccumulator {
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   
   /**

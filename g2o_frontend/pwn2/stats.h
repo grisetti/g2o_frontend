@@ -50,7 +50,7 @@ struct Stats : public Eigen::Matrix4f {
  protected:  	
   int _n;
   Eigen::Vector3f _eigenValues;
-  mutable bool  _curvatureComputed;
+  mutable bool _curvatureComputed;
   mutable float _curvature;
 };
 

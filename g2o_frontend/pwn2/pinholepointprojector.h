@@ -116,7 +116,7 @@ public:
    *  @return a bool value which is true if the depth value of the input point falls in the range
    *  defined by the minimum and maximum distance variables values, false otherwise.
    */
-  virtual inline bool project(int &x, int &y, float &f, const Point &p) const;
+  virtual bool project(int &x, int &y, float &f, const Point &p) const;
   
   /**
    *  Virtual method that unprojects a given point defined through its depth value and its matrix coordinates to the 3D 
@@ -130,7 +130,7 @@ public:
    *  @return a bool value which is true if the depth value of the input point falls in the range
    *  defined by the minimum and maximum distance variables values, false otherwise. 
    */
-  virtual inline bool unProject(Point &p, const int x, const int y, const float d) const;
+  virtual bool unProject(Point &p, const int x, const int y, const float d) const;
  
   /**
    *  This method update all the matrices used for projection/unprojection operation.
