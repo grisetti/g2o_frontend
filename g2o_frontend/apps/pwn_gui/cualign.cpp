@@ -110,8 +110,9 @@ struct ParallelCudaAligner{
       Frame * s = pr->popScene();
       if (s) {
 	if (previous) {
-      pr->aligner->setReferenceFrame(previous);
-      pr->aligner->setCurrentFrame(s);
+	  cerr << "AAA" << endl;
+      	  pr->aligner->setReferenceFrame(previous);
+	  pr->aligner->setCurrentFrame(s);
 	  pr->aligner->align();
 	  os << "time: " << pr->aligner->totalTime() 
 	     << " inliers: " << pr->aligner->inliers()
@@ -145,13 +146,13 @@ int
   string dirname;
   
   PinholePointProjector projector;
-  StatsFinder statsFinder;
-  PointInformationMatrixFinder pointInformationMatrixFinder;
-  NormalInformationMatrixFinder normalInformationMatrixFinder;
+  StatsCalculator statsCalculator;
+  PointInformationMatrixCalculator pointInformationMatrixCalculator;
+  NormalInformationMatrixCalculator normalInformationMatrixCalculator;
   DepthImageConverter converter(&projector, 
-                &statsFinder,
-                &pointInformationMatrixFinder,
-                &normalInformationMatrixFinder);
+				&statsCalculator,
+				&pointInformationMatrixCalculator,
+				&normalInformationMatrixCalculator);
   
   g2o::CommandArgs arg;
   arg.paramLeftOver("dirname", dirname, "", "", true);
@@ -188,6 +189,7 @@ int
 #else
   Aligner aligner;
 #endif
+
 
   aligner.setProjector(&projector);
   projector.setCameraMatrix(scaledCameraMatrix);

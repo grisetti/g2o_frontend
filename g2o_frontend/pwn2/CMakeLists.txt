@@ -15,36 +15,18 @@ ADD_LIBRARY(pwn2_library
   depthimage.cpp depthimage.h
   depthimageconverter.cpp depthimageconverter.h
   frame.cpp frame.h
+  g2o_frame.h
   homogeneousvector4f.h
   informationmatrix.h
-  informationmatrixfinder.h informationmatrixfinder.cpp
+  informationmatrixcalculator.h informationmatrixcalculator.cpp
   linearizer.cpp linearizer.h
   pinholepointprojector.cpp pinholepointprojector.h
   pointaccumulator.h
   pointintegralimage.cpp pointintegralimage.h
   pointprojector.cpp pointprojector.h
-  pointstats.h
   se3_prior.cpp se3_prior.h
-  statsfinder.cpp statsfinder.h
+  stats.h
+  statscalculator.cpp statscalculator.h
 )
 
 SET_TARGET_PROPERTIES(pwn2_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn2_library)
-#TARGET_LINK_LIBRARIES(pwn2_library traverse_library)
-
-ADD_EXECUTABLE(pwn_g2o_parser pwn_g2o_parser.cpp)
-INCLUDE_DIRECTORIES(pwn_g2o_parser ${CSPARSE_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(
-  pwn_g2o_parser
-  pwn2_library
-  #traverse_library
-  sensor_data_library
-  ${G2O_TYPES_DATA}
-  ${G2O_TYPES_SLAM2D}
-  ${G2O_TYPES_SLAM3D}
-  ${G2O_STUFF_LIBRARY}
-  ${G2O_CORE_LIBRARY}
-  ${G2O_SOLVER_CSPARSE}
-  ${G2O_STUFF_LIBRARY}
-  ${G2O_SOLVER_CSPARSE_EXTENSION}
-  ${CSPARSE_LIBRARY}
-)

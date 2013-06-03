@@ -46,12 +46,15 @@ void CuAligner::align() {
   for (size_t i=0; i<_currentFrame->stats().size(); i++)
     currentCurvatures[i]=_currentFrame->stats().at(i).curvature();
 
-  
+  Eigen::Isometry3f inverseSensorOffset= _sensorOffset.inverse();
+  inverseSensorOffset.matrix().row(3)<< 0,0,0,1;
   PinholePointProjector *pprojector = (PinholePointProjector *) _projector;
   //cerr << "initializing context computation" << endl;
   //cerr << "camera: " << pprojector->cameraMatrix() << endl;
+  //cerr << "inverseSensorOffset: " << endl << inverseSensorOffset.matrix() << endl;
   status = initComputation(_context,
 			   &(pprojector->cameraMatrix().coeffRef(0,0)),
+			   &(inverseSensorOffset.matrix().coeffRef(0,0)),
 			   &(_referenceFrame->points().at(0).coeffRef(0)),
 			   &(_referenceFrame->normals().at(0).coeffRef(0)),
 			   referenceCurvatures,
@@ -94,10 +97,30 @@ void CuAligner::align() {
     b.block<3,1>(0,0) = bt.block<3,1>(0,0);
     b.block<3,1>(3,0) = br.block<3,1>(0,0);
 
+
+    for (size_t j=0; j<_priors.size(); j++){
+      const SE3Prior* prior = _priors[j];
+      Vector6f priorError = prior->error(invT);
+      Matrix6f priorJacobian = prior->jacobian(invT);
+      Matrix6f priorInformationRemapped = prior->errorInformation(invT);
+      
+      Matrix6f Hp = priorJacobian.transpose()*priorInformationRemapped*priorJacobian;
+      Vector6f bp = priorJacobian.transpose()*priorInformationRemapped*priorError;
+      //cerr << "prior" << endl;
+      //cerr << "Hp: " << endl;
+      //cerr << Hp << endl;
+      //cerr << "bp: " << endl;
+      //cerr << bp << endl;
+      
+      
+      H += Hp;
+      b += bp;
+    }
     //int acc = 0;
     //_numCorrespondences = _correspondenceGenerator.numCorrespondences();
     //cout << "# inliers found: " << _numCorrespondences << endl;
     H += Matrix6f::Identity() * 10.0f;
+
     
     Vector6f dx = H.ldlt().solve(-b);
     Eigen::Isometry3f dT = v2t(dx);
@@ -110,7 +133,6 @@ void CuAligner::align() {
   gettimeofday(&tvEnd,0);
 
   _T = invT.inverse();
-  _T = _sensorOffset * _T;
   _totalTime = (tvEnd.tv_sec*1000+tvEnd.tv_usec*0.001) - (tvStart.tv_sec*1000+tvStart.tv_usec*0.001) ;
 }
 

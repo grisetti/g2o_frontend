@@ -7,16 +7,13 @@ using namespace std;
 namespace pwn {
 
 DepthImageConverter::DepthImageConverter(  PointProjector* projector_,
-                       StatsFinder* statsFinder_,
-                       PointInformationMatrixFinder* pointInformationMatrixFinder_,
-                       NormalInformationMatrixFinder* normalInformationMatrixFinder_
-                       /*TraversabilityAnalyzer* traversabilityAnalyzer_*/){
+                       StatsCalculator* statsCalculator_,
+                       PointInformationMatrixCalculator* pointInformationMatrixCalculator_,
+                       NormalInformationMatrixCalculator* normalInformationMatrixCalculator_){
   _projector = projector_;
-  _statsFinder=statsFinder_;
-  _pointInformationMatrixFinder=pointInformationMatrixFinder_;
-  _normalInformationMatrixFinder = normalInformationMatrixFinder_;
-  //_traversabilityAnalyzer = traversabilityAnalyzer_;
-  // wannabe  class parameter
+  _statsCalculator = statsCalculator_;
+  _pointInformationMatrixCalculator = pointInformationMatrixCalculator_;
+  _normalInformationMatrixCalculator = normalInformationMatrixCalculator_;
   _normalWorldRadius = 0.1;
   _curvatureThreshold = 0.2;
   
@@ -26,7 +23,6 @@ void DepthImageConverter::compute(Frame& frame,
 				  const Eigen::MatrixXf& depthImage, 
 				  const Eigen::Isometry3f& sensorOffset){
   frame.clear();
-  //double tStart = g2o::get_time();
   // resizing the temporaries
   if (depthImage.rows()!=_indexImage.rows() ||
       depthImage.cols()!=_indexImage.cols()){
@@ -42,32 +38,24 @@ void DepthImageConverter::compute(Frame& frame,
   frame.pointInformationMatrix().resize(frame.points().size());
   frame.normalInformationMatrix().resize(frame.points().size());
   frame.stats().resize(frame.points().size());
-  std::fill(frame.stats().begin(), frame.stats().end(), PointStats());
+  std::fill(frame.stats().begin(), frame.stats().end(), Stats());
 
   // computing the integral image and the intervals
   _integralImage.compute(_indexImage,frame.points());
   _projector->projectIntervals(_intervalImage,depthImage, _normalWorldRadius);
     
-  _statsFinder->compute(frame.normals(),
-			frame.stats(),
-			frame.points(),
-			_integralImage,
-			_intervalImage,
-			_indexImage,
-			_curvatureThreshold);
-  _pointInformationMatrixFinder->compute(frame.pointInformationMatrix(), frame.stats(), frame.normals());
-  _normalInformationMatrixFinder->compute(frame.normalInformationMatrix(), frame.stats(), frame.normals());
+  _statsCalculator->compute(frame.normals(),
+			    frame.stats(),
+			    frame.points(),
+			    _integralImage,
+			    _intervalImage,
+			    _indexImage,
+			    _curvatureThreshold);
+  _pointInformationMatrixCalculator->compute(frame.pointInformationMatrix(), frame.stats(), frame.normals());
+  _normalInformationMatrixCalculator->compute(frame.normalInformationMatrix(), frame.stats(), frame.normals());
   // frame is labeled, now we need to transform all the elements by considering the position
   // of the sensor
   frame.transformInPlace(sensorOffset);
-  //double tEnd = g2o::get_time();
-  //double tEnd = g2o::get_time();
-  //cerr << "time: " << (tEnd-tStart)*1000.0f << endl; 
-
-//  if (_traversabilityAnalyzer)
-//  {
-//    _traversabilityAnalyzer->createTraversabilityVector(frame.points(), frame.normals(), frame.traversabilityVector());
-//  }
 }
 
 }

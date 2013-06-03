@@ -1,6 +1,6 @@
-#ifndef _POINTSTATS_H_
-#define _POINTSTATS_H_
-#include <iostream>
+#ifndef _STATS_H_
+#define _STATS_H_
+
 #include "homogeneousvector4f.h"
 
 namespace pwn {
@@ -12,14 +12,14 @@ namespace pwn {
  *  a 3D point. In particular it is able to store the eigenvalues and eigenvectors of the covariance
  *  matrix associated to a point along with its curvature.
  */
-struct PointStats : public Eigen::Matrix4f {
+struct Stats : public Eigen::Matrix4f {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
   /**
    *  Empty constructor.
    *  This constructor creates an HomogeneousPoint3fStats object filling the matrix with zeros.
    */
-  inline PointStats() {
+  inline Stats() {
     _n = 0;
     setIdentity();
     _eigenValues.setZero();
@@ -55,33 +55,15 @@ struct PointStats : public Eigen::Matrix4f {
 };
 
 
-class PointStatsVector: public TransformableVector<PointStats> {
-
+class StatsVector: public TransformableVector<Stats> {
  public: 
   template<typename OtherDerived>
     inline void transformInPlace(const OtherDerived& m) {
-    const Eigen::Matrix4f R4 =m;
-    const Eigen::Matrix3f R = R4.block<3,3>(0,0);
-    /* std::cerr << "R " << std::endl; */
-    /* std::cerr << R << std::endl; */
+    const Eigen::Matrix4f R4 = m;
     for (size_t i = 0; i < size(); ++i) {
-      /* if (i==0){ */
-      /* 	std::cerr << "before " << std::endl; */
-      /* 	std::cerr << at(i) << std::endl; */
-      /* 	std::cerr << at(i).eigenValues().transpose() << std::endl; */
-
-      /* } */
       at(i).block<4,4>(0,0) = R4 * at(i).block<4,4>(0,0);
-      /* if (i==0){ */
-      /* 	std::cerr << "after " << std::endl; */
-      /* 	std::cerr << at(i) << std::endl; */
-      /* 	std::cerr << at(i).eigenValues().transpose() << std::endl; */
-      /* } */
-	
     }
   }
-
-
 };
 
 }

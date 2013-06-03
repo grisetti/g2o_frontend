@@ -1,5 +1,5 @@
-#include "g2o_frontend/pwn2/informationmatrixfinder.h"
-#include "g2o_frontend/pwn2/statsfinder.h"
+#include "g2o_frontend/pwn2/informationmatrixcalculator.h"
+#include "g2o_frontend/pwn2/statscalculator.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/aligner.h"
 #include "g2o_frontend/basemath/bm_se3.h"
@@ -110,10 +110,10 @@ struct DrawableFrame {
     // Set the camera matrix of the projector object.
     projector.setCameraMatrix(cameraMatrix);
 
-    DepthImageConverter depthImageConverter = DepthImageConverter(&projector, &statsFinder,
-								  &pointInformationMatrixFinder,
-								  &normalInformationMatrixFinder);
-    //sensorOffset = Isometry3f::Identity();
+    DepthImageConverter depthImageConverter = DepthImageConverter(&projector, &statsCalculator,
+								  &pointInformationMatrixCalculator,
+								  &normalInformationMatrixCalculator);
+    sensorOffset = Isometry3f::Identity();
     sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
     Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
     sensorOffset.linear() = quat.toRotationMatrix();
@@ -128,11 +128,11 @@ struct DrawableFrame {
   }
   
   // Creating the stas generator object. 
-  StatsFinder statsFinder;
+  StatsCalculator statsCalculator;
 
   // Creating the omegas generators objects.
-  PointInformationMatrixFinder pointInformationMatrixFinder;
-  NormalInformationMatrixFinder normalInformationMatrixFinder;
+  PointInformationMatrixCalculator pointInformationMatrixCalculator;
+  NormalInformationMatrixCalculator normalInformationMatrixCalculator;
   Frame frame;
   CorrespondenceVector correspondences;
   PinholePointProjector projector;
@@ -197,7 +197,7 @@ int main(int argc, char** argv) {
   PWNGuiMainWindow pwnGMW;
   QGraphicsScene *refScn, *currScn;
   
-  pwnGMW.viewer_3d->setAxisIsDrawn(true);
+  //pwnGMW.viewer_3d->setAxisIsDrawn(true);
 
   std::vector<string> filenames;
   std::set<string> filenamesset = readDir(workingDirectory);
@@ -260,37 +260,37 @@ int main(int argc, char** argv) {
     // Check feature visualization options.   
     for(size_t i = 0; i < drawableFrameVector.size(); i++) {
       if(stepViewer[0]) {
-    drawableFrameVector[i]->pPoints->setStep(stepViewer[1]);
-    drawableFrameVector[i]->pNormals->setStep(stepViewer[1]);
-    drawableFrameVector[i]->pCovariances->setStep(stepViewer[1]);
-    drawableFrameVector[i]->pCorrespondences->setStep(stepViewer[1]);
+	drawableFrameVector[i]->dPoints->setStep(stepViewer[1]);
+	drawableFrameVector[i]->dNormals->setStep(stepViewer[1]);
+	drawableFrameVector[i]->dCovariances->setStep(stepViewer[1]);
+	drawableFrameVector[i]->dCorrespondences->setStep(stepViewer[1]);
       }
       else {
-    drawableFrameVector[i]->pPoints->setStep(1.0f);
-    drawableFrameVector[i]->pNormals->setStep(1.0f);
-    drawableFrameVector[i]->pCovariances->setStep(1.0f);
-    drawableFrameVector[i]->pCorrespondences->setStep(1.0f);
+	drawableFrameVector[i]->dPoints->setStep(1.0f);
+	drawableFrameVector[i]->dNormals->setStep(1.0f);
+	drawableFrameVector[i]->dCovariances->setStep(1.0f);
+	drawableFrameVector[i]->dCorrespondences->setStep(1.0f);
       }
       
       if(pointsViewer[0])
-    drawableFrameVector[i]->pPoints->setPointSize(pointsViewer[1]);
+	drawableFrameVector[i]->dPoints->setPointSize(pointsViewer[1]);
       else
-    drawableFrameVector[i]->pPoints->setPointSize(0.0f);
+	drawableFrameVector[i]->dPoints->setPointSize(0.0f);
       
       if(normalsViewer[0])
-    drawableFrameVector[i]->pNormals->setNormalLength(normalsViewer[1]);
+	drawableFrameVector[i]->dNormals->setNormalLength(normalsViewer[1]);
       else
-    drawableFrameVector[i]->pNormals->setNormalLength(0.0f);
+	drawableFrameVector[i]->dNormals->setNormalLength(0.0f);
       
       if(covariancesViewer[0])
-    drawableFrameVector[i]->pCovariances->setEllipsoidScale(covariancesViewer[1]);
+	drawableFrameVector[i]->dCovariances->setEllipsoidScale(covariancesViewer[1]);
       else
-    drawableFrameVector[i]->pCovariances->setEllipsoidScale(0.0f);
+	drawableFrameVector[i]->dCovariances->setEllipsoidScale(0.0f);
       
       if(correspondencesViewer[0])
-    drawableFrameVector[i]->pCorrespondences->setLineWidth(correspondencesViewer[1]);
+	drawableFrameVector[i]->dCorrespondences->setLineWidth(correspondencesViewer[1]);
       else
-    drawableFrameVector[i]->pCorrespondences->setLineWidth(0.0f);
+	drawableFrameVector[i]->dCorrespondences->setLineWidth(0.0f);
     }
     
     if(!wasInitialGuess && !newCloudAdded && drawableFrameVector.size() > 1 && *initialGuessViewer) {
@@ -307,7 +307,7 @@ int main(int argc, char** argv) {
     else if(newCloudAdded && drawableFrameVector.size() > 1 && *optimizeViewer && !(*stepByStepViewer)) {
       if(!wasInitialGuess) {
 	aligner.setOuterIterations(al_outerIterations);
-
+	
 	aligner.correspondenceFinder()->setSize(drawableFrameVector[drawableFrameVector.size()-2]->depthImage.rows(), drawableFrameVector[drawableFrameVector.size()-2]->depthImage.cols());
 	
 	aligner.setProjector(&drawableFrameVector[drawableFrameVector.size()-2]->projector);

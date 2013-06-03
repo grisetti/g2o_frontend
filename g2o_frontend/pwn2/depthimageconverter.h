@@ -3,19 +3,17 @@
 
 #include "frame.h"
 #include "pointprojector.h"
-#include "statsfinder.h"
-#include "informationmatrixfinder.h"
-//#include "g2o_frontend/traversability/traversability_analyzer.h"
+#include "statscalculator.h"
+#include "informationmatrixcalculator.h"
 
 namespace pwn {
 
 class DepthImageConverter {
 public:
-  DepthImageConverter(  PointProjector* _projector,
-            StatsFinder* _statsFinder,
-            PointInformationMatrixFinder* _pointInformationMatrixFinder,
-            NormalInformationMatrixFinder* _normalInformationMatrixFinder
-            /*TraversabilityAnalyzer* _traversabilityAnalyzer = 0*/);
+  DepthImageConverter(PointProjector* _projector,
+		      StatsCalculator* _statsCalculator,
+		      PointInformationMatrixCalculator* _pointInformationMatrixCalculator,
+		      NormalInformationMatrixCalculator* _normalInformationMatrixCalculator);
 
   void compute(Frame& frame,
 	       const Eigen::MatrixXf& depthImage, 
@@ -25,10 +23,10 @@ public:
   //protected:
 
   PointProjector* _projector;
-  StatsFinder* _statsFinder;
-  PointInformationMatrixFinder* _pointInformationMatrixFinder;
-  NormalInformationMatrixFinder* _normalInformationMatrixFinder;
-  //TraversabilityAnalyzer* _traversabilityAnalyzer;
+  StatsCalculator* _statsCalculator;
+  PointInformationMatrixCalculator* _pointInformationMatrixCalculator;
+  NormalInformationMatrixCalculator* _normalInformationMatrixCalculator;
+  
   // this is the workspace of the object
   PointIntegralImage _integralImage;
   Eigen::MatrixXi _indexImage;

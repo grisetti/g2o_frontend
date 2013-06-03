@@ -5,7 +5,6 @@ QT4_WRAP_CPP(UI_SOURCES pwn_gui_main_window.h)
 
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${QGLVIEWER_INCLUDE_DIR} ${QT_INCLUDES})
 
-
 ADD_EXECUTABLE(pwn_gui
   pwn_gui.cpp  
   pwn_gui_main_window.cpp	
@@ -20,57 +19,53 @@ TARGET_LINK_LIBRARIES(pwn_gui
   pwn_viewer_library pwn2_library
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
-  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY})
+  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
+)
 
+#ADD_EXECUTABLE(pwn_gui2
+#  pwn_gui2.cpp  
+#  pwn_gui_main_window.cpp	
+#  ${UI_HEADERS}
+#  ${UI_SOURCES}
+# )
 
-ADD_EXECUTABLE(pwn_gui2
-  pwn_gui2.cpp  
-  pwn_gui_main_window.cpp	
-  ${UI_HEADERS}
-  ${UI_SOURCES}
- )
+#SET_TARGET_PROPERTIES(pwn_gui2 PROPERTIES OUTPUT_NAME pwn_gui2)
+#INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
+#  ${QGLVIEWER_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR}/..)
+#TARGET_LINK_LIBRARIES(pwn_gui2 
+#  pwn_viewer_library pwn2_library
+#  ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
+#  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
+#  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY})
 
-SET_TARGET_PROPERTIES(pwn_gui2 PROPERTIES OUTPUT_NAME pwn_gui2)
-INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
-  ${QGLVIEWER_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR}/..)
-TARGET_LINK_LIBRARIES(pwn_gui2 
-  pwn_viewer_library pwn2_library
-  ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
-  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
-  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY})
+#ADD_EXECUTABLE(pwn_g2o_gui
+#  drawable_frame.cpp drawable_frame.h
+#  viewer_state.cpp viewer_state.h
+#  pwn_g2o_gui.cpp  
+#  pwn_gui_main_window.cpp	
+#  ${UI_HEADERS}
+#  ${UI_SOURCES}
+# )
 
-ADD_EXECUTABLE(pwn_g2o_gui
-  drawable_frame.cpp drawable_frame.h
-  viewer_state.cpp viewer_state.h
-  pwn_g2o_gui.cpp  
-  pwn_gui_main_window.cpp	
-  ${UI_HEADERS}
-  ${UI_SOURCES}
- )
+#SET_TARGET_PROPERTIES(pwn_g2o_gui PROPERTIES OUTPUT_NAME pwn_g2o_gui)
+#INCLUDE_DIRECTORIES(${CSPARSE_INCLUDE_DIR} ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
+#  ${QGLVIEWER_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR}/..)
 
-SET_TARGET_PROPERTIES(pwn_g2o_gui PROPERTIES OUTPUT_NAME pwn_g2o_gui)
-INCLUDE_DIRECTORIES(${CSPARSE_INCLUDE_DIR} ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
-  ${QGLVIEWER_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR}/..)
-
-TARGET_LINK_LIBRARIES(pwn_g2o_gui 
-  pwn_viewer_library pwn2_library
-  ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
-  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
-  sensor_data_library
-  ${G2O_TYPES_DATA}
-  ${G2O_TYPES_SLAM2D}
-  ${G2O_TYPES_SLAM3D}
-  ${G2O_STUFF_LIBRARY}
-  ${G2O_CORE_LIBRARY}
-  ${G2O_SOLVER_CSPARSE}
-  ${G2O_STUFF_LIBRARY}
-  ${G2O_SOLVER_CSPARSE_EXTENSION}
-  ${CSPARSE_LIBRARY})
-
-
-
-
-
+#TARGET_LINK_LIBRARIES(pwn_g2o_gui 
+#  pwn_viewer_library pwn2_library
+#  ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
+#  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
+#  sensor_data_library
+#  ${G2O_TYPES_DATA}
+#  ${G2O_TYPES_SLAM2D}
+#  ${G2O_TYPES_SLAM3D}
+#  ${G2O_STUFF_LIBRARY}
+#  ${G2O_CORE_LIBRARY}
+#  ${G2O_SOLVER_CSPARSE}
+#  ${G2O_STUFF_LIBRARY}
+#  ${G2O_SOLVER_CSPARSE_EXTENSION}
+#  ${CSPARSE_LIBRARY}
+#)
 
 ADD_EXECUTABLE(cualign cualign.cpp)
 SET_TARGET_PROPERTIES(cualign PROPERTIES OUTPUT_NAME cualign)
@@ -79,18 +74,18 @@ TARGET_LINK_LIBRARIES(cualign pwn2_library ${G2O_STUFF_LIBRARY})
 
 
 IF(CUDA_FOUND)  
-  ADD_EXECUTABLE(pwn_gt
-    pwn_gt.cpp  
-    pwn_gui_main_window.cpp 
-    ${UI_HEADERS}
-    ${UI_SOURCES}
-    )
+#  ADD_EXECUTABLE(pwn_gt
+#    pwn_gt.cpp  
+#    pwn_gui_main_window.cpp 
+#    ${UI_HEADERS}
+#    ${UI_SOURCES}
+#    )
 
-  TARGET_LINK_LIBRARIES(pwn_gt 
-    pwn_viewer_library pwn2_library  
-    ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
-    ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
-    ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY})
+#  TARGET_LINK_LIBRARIES(pwn_gt 
+#    pwn_viewer_library pwn2_library  
+#    ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
+#    ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
+#    ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY})
 
 #ADD_EXECUTABLE(pwn_gt
 #  pwn_gt.cpp  
@@ -105,54 +100,55 @@ IF(CUDA_FOUND)
 #  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
 #  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY})
 
-  TARGET_LINK_LIBRARIES(pwn_gt  pwn_cuda_library ${CUDA_CUDART_LIBRARY})
+#  TARGET_LINK_LIBRARIES(pwn_gt  pwn_cuda_library ${CUDA_CUDART_LIBRARY})
   TARGET_LINK_LIBRARIES(pwn_gui  pwn_cuda_library ${CUDA_CUDART_LIBRARY})
+#  TARGET_LINK_LIBRARIES(pwn_g2o_gui  pwn_cuda_library ${CUDA_CUDART_LIBRARY})
   TARGET_LINK_LIBRARIES(cualign  pwn_cuda_library ${CUDA_CUDART_LIBRARY})
 ENDIF(CUDA_FOUND)
 
-ADD_EXECUTABLE(pwn_sg
-  pwn_sg.cpp  
-  pwn_gui_main_window.cpp 
-  ${UI_HEADERS}
-  ${UI_SOURCES}
-  )
+#ADD_EXECUTABLE(pwn_sg
+#  pwn_sg.cpp  
+#  pwn_gui_main_window.cpp 
+#  ${UI_HEADERS}
+#  ${UI_SOURCES}
+#  )
 
-TARGET_LINK_LIBRARIES(pwn_sg 
-  pwn_viewer_library pwn2_library  
-  ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
-  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
-  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY})
-
-
+#TARGET_LINK_LIBRARIES(pwn_sg 
+#  pwn_viewer_library pwn2_library  
+#  ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
+#  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
+#  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY})
 
 
-IF(TRAVERSABILITY_FOUND)
-  ADD_EXECUTABLE(pwn_g2o_gui_traverse
-    drawable_frame.cpp drawable_frame.h
-    viewer_state_trav.cpp viewer_state_trav.h
-    pwn_g2o_gui_traverse.cpp  
-    pwn_gui_main_window.cpp	
-    ${UI_HEADERS}
-    ${UI_SOURCES}
-    )
 
-  SET_TARGET_PROPERTIES(pwn_g2o_gui_traverse PROPERTIES OUTPUT_NAME pwn_g2o_gui_traverse)
-  INCLUDE_DIRECTORIES(${CSPARSE_INCLUDE_DIR} ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
-    ${QGLVIEWER_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR}/..)
 
-  TARGET_LINK_LIBRARIES(pwn_g2o_gui_traverse 
-    pwn_viewer_library pwn2_library
-    ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
-    ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
-    traverse_library
-    sensor_data_library
-    ${G2O_TYPES_DATA}
-    ${G2O_TYPES_SLAM2D}
-    ${G2O_TYPES_SLAM3D}
-    ${G2O_STUFF_LIBRARY}
-    ${G2O_CORE_LIBRARY}
-    ${G2O_SOLVER_CSPARSE}
-    ${G2O_STUFF_LIBRARY}
-    ${G2O_SOLVER_CSPARSE_EXTENSION}
-    ${CSPARSE_LIBRARY})
-endif(TRAVERSABILITY_FOUND)
+#IF(TRAVERSABILITY_FOUND)
+#  ADD_EXECUTABLE(pwn_g2o_gui_traverse
+#    drawable_frame.cpp drawable_frame.h
+#    viewer_state_trav.cpp viewer_state_trav.h
+#    pwn_g2o_gui_traverse.cpp  
+#    pwn_gui_main_window.cpp	
+#    ${UI_HEADERS}
+#    ${UI_SOURCES}
+#   )
+
+#  SET_TARGET_PROPERTIES(pwn_g2o_gui_traverse PROPERTIES OUTPUT_NAME pwn_g2o_gui_traverse)
+#  INCLUDE_DIRECTORIES(${CSPARSE_INCLUDE_DIR} ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
+#    ${QGLVIEWER_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR}/..)
+
+#  TARGET_LINK_LIBRARIES(pwn_g2o_gui_traverse 
+#    pwn_viewer_library pwn2_library
+#    ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
+#    ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
+#    traverse_library
+#    sensor_data_library
+#    ${G2O_TYPES_DATA}
+#    ${G2O_TYPES_SLAM2D}
+#    ${G2O_TYPES_SLAM3D}
+#    ${G2O_STUFF_LIBRARY}
+#    ${G2O_CORE_LIBRARY}
+#    ${G2O_SOLVER_CSPARSE}
+#    ${G2O_STUFF_LIBRARY}
+#    ${G2O_SOLVER_CSPARSE_EXTENSION}
+#    ${CSPARSE_LIBRARY})
+#endif(TRAVERSABILITY_FOUND)

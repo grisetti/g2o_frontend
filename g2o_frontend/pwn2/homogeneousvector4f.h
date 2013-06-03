@@ -6,6 +6,7 @@
 #ifndef _HOMOGENEOUSVECTOR4F_H_
 #define _HOMOGENEOUSVECTOR4F_H_
 
+#include <iostream>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>

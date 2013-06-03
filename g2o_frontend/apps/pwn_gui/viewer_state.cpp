@@ -9,7 +9,7 @@
 
 #include <unistd.h>
 
-#undef _PWN_USE_CUDA_
+//#undef _PWN_USE_CUDA_
 
 #ifdef _PWN_USE_CUDA_
 #include "g2o_frontend/pwn_cuda/cualigner.h"
@@ -61,12 +61,12 @@ namespace pwn{
     sensorOffset.matrix().row(3) << 0,0,0,1;
 
     projector = new PinholePointProjector();
-    statsFinder = new StatsFinder();
+    statsCalculator = new StatsCalculator();
 
-    pointInformationMatrixFinder = new PointInformationMatrixFinder();
-    normalInformationMatrixFinder = new NormalInformationMatrixFinder ;
-    converter= new DepthImageConverter (projector, statsFinder, 
-					pointInformationMatrixFinder, normalInformationMatrixFinder);
+    pointInformationMatrixCalculator = new PointInformationMatrixCalculator();
+    normalInformationMatrixCalculator = new NormalInformationMatrixCalculator();
+    converter = new DepthImageConverter(projector, statsCalculator, 
+					pointInformationMatrixCalculator, normalInformationMatrixCalculator);
 
     projector->setTransform(Eigen::Isometry3f::Identity());
     projector->setCameraMatrix(cameraMatrix);
@@ -87,14 +87,14 @@ namespace pwn{
     aligner->setCorrespondenceFinder(correspondenceFinder);
 
     
-    statsFinder->setWorldRadius(ng_worldRadius);
+    statsCalculator->setWorldRadius(ng_worldRadius);
     //statsFinder->setCurvatureThreshold(ng_curvatureThreshold);
-    statsFinder->setMinPoints(ng_minImageRadius);
+    statsCalculator->setMinPoints(ng_minImageRadius);
     aligner->setInnerIterations(al_innerIterations);
     aligner->setOuterIterations(al_outerIterations);
     converter->_curvatureThreshold = ng_curvatureThreshold;
-    pointInformationMatrixFinder->setCurvatureThreshold(if_curvatureThreshold);
-    normalInformationMatrixFinder->setCurvatureThreshold(if_curvatureThreshold);
+    pointInformationMatrixCalculator->setCurvatureThreshold(if_curvatureThreshold);
+    normalInformationMatrixCalculator->setCurvatureThreshold(if_curvatureThreshold);
 
     refScn = pwnGMW->scene0();
     currScn = pwnGMW->scene1();
@@ -197,8 +197,7 @@ namespace pwn{
   void ViewerState::clear(){
     pwnGMW->viewer_3d->clearDrawableList();
     for(size_t i = 0; i < drawableFrameVector.size(); i++){
-      if (drawableFrameVector[i]->frame())
-	delete drawableFrameVector[i]->frame();
+      if (0 && drawableFrameVector[i]->frame()) delete drawableFrameVector[i]->frame();
       delete(drawableFrameVector[i]);
     }
     drawableFrameVector.clear();
@@ -453,12 +452,15 @@ namespace pwn{
 
   void ViewerState::clearLastSelected(){
     if(drawableFrameVector.size() > 0) {
-      pwnGMW->viewer_3d->popBack();
       DrawableFrame* lastDrawableFrame = drawableFrameVector.back();
-      if (lastDrawableFrame->frame()){
-	       delete lastDrawableFrame->frame();
+      
+      pwnGMW->viewer_3d->popBack();
+      //if (lastDrawableFrame->frame()){
+      //	delete lastDrawableFrame->frame();
+      //}
+      if (lastDrawableFrame){
+	delete lastDrawableFrame;
       }
-      delete lastDrawableFrame;
       drawableFrameVector.pop_back();
     }
     if(drawableFrameVector.size() > 0) { 
@@ -471,8 +473,8 @@ namespace pwn{
     if(drawableFrameVector.size() > 40) {
       pwnGMW->viewer_3d->drawableList().erase(pwnGMW->viewer_3d->drawableList().begin());
       DrawableFrame* firstDrawableFrame = drawableFrameVector.front();
-      if (firstDrawableFrame->frame()){
-	       delete firstDrawableFrame->frame();
+      if (0 && firstDrawableFrame->frame()){
+	delete firstDrawableFrame->frame();
       }
       delete firstDrawableFrame;
       drawableFrameVector.erase(drawableFrameVector.begin());

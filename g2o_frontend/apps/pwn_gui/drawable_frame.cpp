@@ -51,8 +51,7 @@ namespace pwn {
 
   DrawableFrame::~DrawableFrame(){
     clearDrawableObjects();
-    if(_frame)
-      delete _frame;
+    //if(_frame) delete _frame;
     _frame = 0;
   }
 
@@ -130,7 +129,7 @@ namespace pwn {
 
   // Drawing function of the class object.
   void DrawableFrame::draw() {
-    if(_parameters->isShown() && _frame){
+    if(_parameters->show() && _frame){
       glPushMatrix();
       glMultMatrixf(_transformation.data());
       if (_dPoints)

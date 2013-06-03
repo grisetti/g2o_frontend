@@ -1,5 +1,5 @@
-#include "g2o_frontend/pwn2/informationmatrixfinder.h"
-#include "g2o_frontend/pwn2/statsfinder.h"
+#include "g2o_frontend/pwn2/informationmatrixcalculator.h"
+#include "g2o_frontend/pwn2/statscalculator.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/aligner.h"
 #include "g2o_frontend/basemath/bm_se3.h"
@@ -206,7 +206,7 @@ struct DrawableFrame : public Drawable {
 
   // Drawing function of the class object.
   void draw() {
-    if(_parameters->isShown() && _frame){
+    if(_parameters->show() && _frame){
       glPushMatrix();
       glMultMatrixf(_transformation.data());
       if (_dPoints)
@@ -277,14 +277,14 @@ int main(int argc, char** argv) {
 
 
   PinholePointProjector projector;
-  StatsFinder statsFinder;
-  statsFinder.setWorldRadius(0.2);
-  PointInformationMatrixFinder pointInformationMatrixFinder;
-  NormalInformationMatrixFinder normalInformationMatrixFinder;
+  StatsCalculator statsCalculator;
+  statsCalculator.setWorldRadius(0.2);
+  PointInformationMatrixCalculator pointInformationMatrixCalculator;
+  NormalInformationMatrixCalculator normalInformationMatrixCalculator;
   DepthImageConverter converter(&projector, 
-                &statsFinder,
-                &pointInformationMatrixFinder,
-                &normalInformationMatrixFinder);
+				&statsCalculator,
+				&pointInformationMatrixCalculator,
+				&normalInformationMatrixCalculator);
 
   Matrix3f cameraMatrix;
   cameraMatrix <<     

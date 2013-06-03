@@ -5,7 +5,7 @@ namespace pwn {
 PointProjector::PointProjector() {
   _transform.setIdentity();
   _minDistance = 0.01;
-  _maxDistance = 10.0f;
+  _maxDistance = 4.0f;
 }
 
 PointProjector::~PointProjector() {}

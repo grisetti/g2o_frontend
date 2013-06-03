@@ -1,7 +1,7 @@
-#ifndef _STATSFINDER_H_
-#define _STATSFINDER_H_
+#ifndef _STATSCALCULATOR_H_
+#define _STATSCALCULATOR_H_
 
-#include "pointstats.h"
+#include "stats.h"
 #include "pointintegralimage.h"
 
 namespace pwn {
@@ -13,7 +13,7 @@ namespace pwn {
  *  of the vector elements to fill.
  */
 
-class StatsFinder {
+class StatsCalculator {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   
@@ -24,7 +24,7 @@ class StatsFinder {
    *  pixels respectively and the minimum number of points needed for points stats
    *  computation to 50.
    */
-  StatsFinder();
+  StatsCalculator();
   
   inline void setWorldRadius(const float worldRadius_) { _worldRadius = worldRadius_; }
   inline void setMaxImageRadius(const int maxImageRadius_) { _maxImageRadius = maxImageRadius_; }
@@ -47,15 +47,15 @@ class StatsFinder {
    *  @param _indexImage is a matrix containing the indices of the vector's elements
    *  to fill.
    */
-  void compute(PointStatsVector &stats,
-           const PointIntegralImage &_integralImage,
+  void compute(StatsVector &statsVector,
+	       const PointIntegralImage &_integralImage,
 	       const Eigen::MatrixXi &_intervalImage,
 	       const Eigen::MatrixXi &_indexImage);
 
   void compute(NormalVector &normals,
-           PointStatsVector &stats,
-           const PointVector &points,
-           const PointIntegralImage &integralImage,
+	       StatsVector &statsVector,
+	       const PointVector &points,
+	       const PointIntegralImage &integralImage,
 	       const Eigen::MatrixXi &intervalImage,
 	       const Eigen::MatrixXi &indexImage,
 	       const float curvatureThreshold);

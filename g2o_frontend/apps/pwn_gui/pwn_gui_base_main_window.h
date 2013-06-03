@@ -32,6 +32,8 @@
 #include <QtGui/QWidget>
 #include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
 
+using namespace pwn;
+
 QT_BEGIN_NAMESPACE
 
 class Ui_PWNGuiBaseMainWindow

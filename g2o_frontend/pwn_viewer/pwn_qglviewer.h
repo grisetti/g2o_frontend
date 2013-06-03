@@ -5,28 +5,39 @@
 #include <vector>
 #include "drawable.h"
 
+#include <iostream>
+
+using namespace std;
+
+namespace pwn {
+
 class PWNQGLViewer : public QGLViewer {
  public:
-  PWNQGLViewer(QWidget* parent=0, const QGLWidget* shareWidget=0, Qt::WFlags flags=0);
+  PWNQGLViewer(QWidget *parent = 0, const QGLWidget *shareWidget = 0, Qt::WFlags flags = 0);
+  virtual ~PWNQGLViewer() {}
+
   virtual void init();
   virtual void draw();
+
   virtual void addDrawable(Drawable *d);
+  inline void popFront() { _drawableList.erase(_drawableList.begin()); }
   inline void popBack() { _drawableList.pop_back(); }
+  inline void erase(int index) { _drawableList.erase(_drawableList.begin() + index); }
   inline void clearDrawableList() { _drawableList.clear(); }
-  inline std::vector<Drawable*>& drawableList() { return _drawableList; }   
-  inline const std::vector<Drawable*>& drawableList() const { return _drawableList; }   
+  
   inline GLuint ellipsoidDrawList() { return _ellipsoidDrawList; }
   inline GLuint pyramidDrawList() { return _ellipsoidDrawList; }
- 
+  inline std::vector<Drawable*>& drawableList() { return _drawableList; }   
+  
+  inline const std::vector<Drawable*>& drawableList() const { return _drawableList; }   
+
  protected:
-  // Number of draw lists.
   int _numDrawLists;
-  // Draw list to generate an ellipsoid.
   GLuint _ellipsoidDrawList;
-  // Draw list to generate a pyramid.
   GLuint _pyramidDrawList;
-  // Vector of Drawable objects to draw.
   std::vector<Drawable*> _drawableList;  
 };
+
+}
 
 #endif

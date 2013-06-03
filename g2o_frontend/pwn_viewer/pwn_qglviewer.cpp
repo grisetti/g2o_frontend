@@ -2,38 +2,43 @@
 #include "pwn_qglviewer.h"
 #include "g2o/stuff/opengl_primitives.h"
 
+#include <iostream>
+
+using namespace std;
+
+namespace pwn {
+
 class StandardCamera : public qglviewer::Camera {
-public:
-  StandardCamera() : _standard(true) {};
+ public:
+  StandardCamera() : _standard(true) {}
   
   float zNear() const {
-    if (_standard) 
+    if(_standard) 
       return 0.001f; 
     else 
       return Camera::zNear(); 
   }
 
   float zFar() const {  
-    if (_standard) 
+    if(_standard) 
       return 10000.0f; 
     else 
       return Camera::zFar();
   }
 
   bool standard() const { return _standard; }
+  
   void setStandard(bool s) { _standard = s; }
 
-private:
+ protected:
   bool _standard;
 };
 
-PWNQGLViewer::PWNQGLViewer(QWidget *parent, const QGLWidget *shareWidget, Qt::WFlags flags) :
-  QGLViewer(parent, shareWidget, flags){
+PWNQGLViewer::PWNQGLViewer(QWidget *parent, const QGLWidget *shareWidget, Qt::WFlags flags) : QGLViewer(parent, shareWidget, flags) {
   _ellipsoidDrawList = 0;
   _numDrawLists = 2;
 }
 
-// Initialization function for the viewer.
 void PWNQGLViewer::init() {
   // Init QGLViewer.
   QGLViewer::init();
@@ -56,11 +61,11 @@ void PWNQGLViewer::init() {
   setMouseBinding(Qt::MidButton, CAMERA, TRANSLATE);
 
   // Replace camera.
-  qglviewer::Camera* oldcam = camera();
-  qglviewer::Camera* cam = new StandardCamera();
+  qglviewer::Camera *oldcam = camera();
+  qglviewer::Camera *cam = new StandardCamera();
   setCamera(cam);
-  cam->setPosition(qglviewer::Vec(0.0f, 0.0f, -1.0f));
-  cam->setUpVector(qglviewer::Vec(0.0f, -1.0f, 0.0f));
+  cam->setPosition(qglviewer::Vec(-1.0f, 0.0f, 0.0f));
+  cam->setUpVector(qglviewer::Vec(0.0f, 0.0f, 1.0f));
   cam->lookAt(qglviewer::Vec(0.0f, 0.0f, 0.0f));
   delete oldcam;
 
@@ -91,8 +96,9 @@ void PWNQGLViewer::draw() {
   // glPopMatrix();
 
   // Draw the vector of drawable objects.
-  for (size_t i = 0; i < _drawableList.size(); i++) {
-    _drawableList[i]->draw();
+  for(size_t i = 0; i < _drawableList.size(); i++) {
+    if(_drawableList[i])
+      _drawableList[i]->draw();
   }
 }
 
@@ -102,4 +108,6 @@ void PWNQGLViewer::addDrawable(Drawable *d) {
   d->setViewer(this);
   // Add the input object to the vector.
   _drawableList.push_back(d);
+}
+
 }

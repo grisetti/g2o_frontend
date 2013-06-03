@@ -62,6 +62,7 @@ namespace pwn {
 
   AlignerStatus initComputation(AlignerContext* context,
 				const float* cameraMatrix, // this is a 3x3 matrix (9 elements)
+				const float* sensorOffset, // this is a 4x4 homogeneous matrix
 				float* referencePointsPtr, 
 				float* referenceNormalsPtr, 
 				float* referenceCurvaturesPtr, 

@@ -1,5 +1,5 @@
-#ifndef _DRAWABLE_FRAME_H_
-#define _DRAWABLE_FRAME_H_
+#ifndef _DRAWABLE_FRAME_OLD_H_
+#define _DRAWABLE_FRAME_OLD_H_
 
 #include "g2o/types/slam3d/types_slam3d.h"
 
