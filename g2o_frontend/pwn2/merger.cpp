@@ -14,7 +14,7 @@ Merger::Merger() {
   _collapsedIndices.resize(0);
 }
 
-void Merger::merge(Frame *frame, Eigen::Isometry3f &transform) {
+void Merger::merge(Frame *frame, Eigen::Isometry3f transform) {
   assert(_depthImageConverter _indexImage.rows() != 0 && _indexImage.cols());
   PinholePointProjector *pointProjector = dynamic_cast<PinholePointProjector*>(_depthImageConverter->_projector);
   assert(pointProjector);
@@ -68,7 +68,7 @@ void Merger::merge(Frame *frame, Eigen::Isometry3f &transform) {
       killed++;
     }
   }
-  std::cerr << "Killed: " << std::endl;
+  std::cerr << "Killed: " << killed << std::endl;
   
   // scan the vector of covariances.
   // if the index is -1

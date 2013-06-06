@@ -40,8 +40,6 @@ void DepthImageConverter::compute(Frame &frame,
   frame.normalInformationMatrix().resize(frame.points().size());
   frame.stats().resize(frame.points().size());
   std::fill(frame.stats().begin(), frame.stats().end(), Stats());
-  frame.gaussians().resize(frame.points().size());
-  std::fill(frame.gaussians().begin(), frame.gaussians().end(), Gaussian3f());
 
   // computing the integral image and the intervals
   _integralImage.compute(_indexImage,frame.points());
@@ -56,9 +54,8 @@ void DepthImageConverter::compute(Frame &frame,
 			    _curvatureThreshold);
   _pointInformationMatrixCalculator->compute(frame.pointInformationMatrix(), frame.stats(), frame.normals());
   _normalInformationMatrixCalculator->compute(frame.normalInformationMatrix(), frame.stats(), frame.normals());
-  PinholePointProjector *pointProjector = dynamic_cast<PinholePointProjector*>(_projector);
-  if(pointProjector)
-    frame.gaussians().fromDepthImage(depthImage, pointProjector->cameraMatrix());
+  
+  frame.gaussians().fromPointVector(frame.points(), *_projector, depthImage.rows(), depthImage.cols());
 
   // frame is labeled, now we need to transform all the elements by considering the position
   // of the sensor

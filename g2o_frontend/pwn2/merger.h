@@ -28,7 +28,7 @@ class Merger {
   inline DepthImageConverter* depthImageConverter() const { return _depthImageConverter; }
   inline Eigen::Vector2i imageSize() const { return Eigen::Vector2i(_indexImage.rows(), _indexImage.cols()); }  
 
-  void merge(Frame *frame, Eigen::Isometry3f &transform);
+  void merge(Frame *frame, Eigen::Isometry3f transform = Eigen::Isometry3f::Identity());
  
  protected:
   float _distanceThreshold;
