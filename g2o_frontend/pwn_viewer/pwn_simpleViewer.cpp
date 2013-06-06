@@ -68,42 +68,41 @@ int main (int argc, char** argv) {
   vlayout2->addWidget(viewer);
   Eigen::Isometry3f T;
   T.setIdentity();
-
-  for (int i=0; i<maxFiles; i++){
-    if (filenames[i]=="")
-      break;
-    float r = 0.0f + 0.75f*rand()/double(RAND_MAX);
-    float g = 0.0f + 0.75f*rand()/double(RAND_MAX);
-    float b = 0.0f + 0.75f*rand()/double(RAND_MAX);
-
-    Frame *scene = new Frame();
-    
-    if (! scene->load(filenames[i].c_str())){
-      cerr << "unable to load points from file [" << filenames[i] << "]" << endl;
-      return 0;
-    } else {
-      listWidget->addItem(QString(filenames[i].c_str()));
-    }
-    GLParameterPoints* pointsParams = new GLParameterPoints(pointSize, Eigen::Vector4f(r, g, b, alpha));
-    DrawablePoints* drawablePoints = new DrawablePoints(T, pointsParams, &scene->points(), &scene->normals());
-    pointsParams->setStep(pointStep);
-    
-    viewer->addDrawable(drawablePoints);
-    
-    GLParameterNormals* normalParams = new GLParameterNormals(pointSize, Eigen::Vector4f(0.0f,0.0f,1.0f,alpha), normalLenght);
-    DrawableNormals* drawableNormals = new DrawableNormals(T, normalParams, &scene->points(), &scene->normals());
-    normalParams->setStep(normalStep);
-    normalParams->setNormalLength(normalLenght);
-    viewer->addDrawable(drawableNormals);
-  }
+  T.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
   viewer->init();
   mainWindow->show();
   viewer->show();
   listWidget->show();
+  pwn::Frame *frame = new pwn::Frame();
   while (mainWindow->isVisible()) {
+    if(viewer->drawableList().size() == 0) {
+      for(int i = 0; i < maxFiles; i++) {
+	if(filenames[i] == "")
+	  break;
+
+	if(!frame->load(filenames[i].c_str())) {
+	  cerr << "unable to load points from file [" << filenames[i] << "]" << endl;
+	  return 0;
+	} else {
+	  listWidget->addItem(QString(filenames[i].c_str()));
+	}
+      
+	GLParameterPoints* pointsParams = new GLParameterPoints(pointSize, Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+	pointsParams->setStep(pointStep);
+	DrawablePoints* drawablePoints = new DrawablePoints(T, pointsParams, &frame->points(), &frame->normals());
+	viewer->addDrawable(drawablePoints);
+
+	GLParameterNormals* normalParams = new GLParameterNormals(pointSize, Eigen::Vector4f(0.0f,0.0f,1.0f,alpha), normalLenght);
+	DrawableNormals* drawableNormals = new DrawableNormals(T, normalParams, &frame->points(), &frame->normals());
+	normalParams->setStep(normalStep);
+	normalParams->setNormalLength(normalLenght);
+	viewer->addDrawable(drawableNormals);
+      }
+    }
+    
     bool selectionChanged= false;
-    for (int i=0; i<listWidget->count(); i++){
+    for (int i = 0; i<listWidget->count(); i++){
       QListWidgetItem* item = listWidget->item(i);
       int dpIndex = i*2;
       int dnIndex = dpIndex+1;
@@ -123,7 +122,7 @@ int main (int argc, char** argv) {
     }
     if (selectionChanged)
       viewer->updateGL();
-    
+
     application.processEvents();
   }
 }
