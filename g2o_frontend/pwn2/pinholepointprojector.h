@@ -40,7 +40,9 @@ public:
    *  Method that return the camera matrix.
    *  @return a reference to the camera matrix.
    */
-  inline const Eigen::Matrix3f& cameraMatrix() const { return _cameraMatrix;}
+  inline const Eigen::Matrix3f& cameraMatrix() const { return _cameraMatrix; }
+
+  inline const Eigen::Matrix3f& inverseCameraMatrix() const { return _iK; }
   
   /**
    *  Virtual method that set the camera matrix to the one given in input.
@@ -199,7 +201,7 @@ public:
   
   
 
-private:
+protected:
   Eigen::Matrix3f _iK;
   Eigen::Matrix3f _KR;
   Eigen::Vector3f _Kt;

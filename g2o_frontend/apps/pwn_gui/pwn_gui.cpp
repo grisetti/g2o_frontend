@@ -75,9 +75,13 @@ struct DrawableFrame {
     filename = f;
     step = s;
 
-    float r = 0.0f + 0.75f*rand()/double(RAND_MAX);
-    float g = 0.0f + 0.75f*rand()/double(RAND_MAX);
-    float b = 0.0f + 0.75f*rand()/double(RAND_MAX);
+    // float r = 0.0f + 0.75f*rand()/double(RAND_MAX);
+    // float g = 0.0f + 0.75f*rand()/double(RAND_MAX);
+    // float b = 0.0f + 0.75f*rand()/double(RAND_MAX);
+
+    float r = 1.0;
+    float g = 0.0f;
+    float b = 0.0f;
 
     pPoints = new GLParameterPoints(1.0f, Vector4f(r, g, b, 1.0f));
     pPoints->setStep(step);
@@ -458,27 +462,39 @@ int main(int argc, char** argv) {
     else if(*merge) {
       if(mergingFrame.points().size() > 0) {
 	merger.merge(&mergingFrame, drawableFrameVector[drawableFrameVector.size()-1]->sensorOffset);
-	// Clear the viewer.
+	// Clear drawable frames.
 	pwnGMW.viewer_3d->clearDrawableList();
 	for(size_t i = 0; i < drawableFrameVector.size(); i++)
 	  delete(drawableFrameVector[i]);
 	drawableFrameVector.clear();
+	globalT = Isometry3f::Identity();
 	localT.clear();
 	refScn->clear();
 	currScn->clear();
 	wasInitialGuess = false;
+	// if(drawableFrameVector.size() > 0) {
+	//   pwnGMW.viewer_3d->popBack();
+	//   pwnGMW.viewer_3d->popBack();
+	//   pwnGMW.viewer_3d->popBack();
+	//   pwnGMW.viewer_3d->popBack();
+	//   delete(drawableFrameVector[drawableFrameVector.size()-1]);
+	//   drawableFrameVector.pop_back();
+	// }
+	// refScn->clear();
+	// currScn->clear();
+	// wasInitialGuess = false;
+	// newCloudAdded = false;
+	// Add drawable items.	
 	drawableFrame = new DrawableFrame(&mergingFrame, vz_step);
 	drawableFrameVector.push_back(drawableFrame);
 	drawableFrame = 0;
-	// Add drawable items.
-	drawableFrameVector[drawableFrameVector.size()-1]->dPoints->setTransformation(globalT);
-	drawableFrameVector[drawableFrameVector.size()-1]->dNormals->setTransformation(globalT);
-	drawableFrameVector[drawableFrameVector.size()-1]->dCovariances->setTransformation(globalT);
+	drawableFrameVector[drawableFrameVector.size()-1]->dPoints->setTransformation(Isometry3f::Identity());
+	drawableFrameVector[drawableFrameVector.size()-1]->dNormals->setTransformation(Isometry3f::Identity());
+	drawableFrameVector[drawableFrameVector.size()-1]->dCovariances->setTransformation(Isometry3f::Identity());
 	pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dPoints);
 	pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dNormals);
 	pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dCovariances);
 	pwnGMW.viewer_3d->addDrawable((Drawable*)drawableFrameVector[drawableFrameVector.size()-1]->dCorrespondences);
-	newCloudAdded = true;
       }	
       *merge = 0;
     }

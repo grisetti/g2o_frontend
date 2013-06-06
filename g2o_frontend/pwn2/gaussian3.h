@@ -3,6 +3,7 @@
 
 #include "depthimage.h"
 #include "homogeneousvector4f.h"
+#include "pinholepointprojector.h"
 #include "../basemath/gaussian.h"
 
 namespace pwn {
@@ -28,12 +29,19 @@ public:
 
   void toPointAndNormalVector(PointVector &destPoints, NormalVector &destNormals, bool eraseNormals = false) const;
 
+  void fromPointVector(const PointVector &points,
+		       const PointProjector &pointProjector,
+		       const int rows, const int cols,
+		       /*float dmax = std::numeric_limits<float>::max(),*/
+		       float baseline = 0.075, float alpha=0.1);
+
   template<typename OtherDerived>
   inline void transformInPlace(const OtherDerived& m) {
-    const Eigen::Matrix4f R4 = m;
+    const Eigen::Matrix4f t = m;
+    const Eigen::Matrix3f rotation = t.block<3, 3>(0, 0);
+    const Eigen::Vector3f translation = t.block<3, 1>(0, 3);
     for (size_t i = 0; i < size(); ++i) {
-      Gaussian3f transformed(R4.block<3, 3>(0, 0) * at(i).mean() + R4.block<3, 1>(0, 3), R4.block<3, 3>(0, 0) * at(i).covarianceMatrix() * R4.block<3, 3>(0, 0).transpose(), false);
-      at(i) = transformed;
+      at(i) = Gaussian3f(rotation * at(i).mean() + translation, rotation * at(i).covarianceMatrix() * rotation.transpose(), false);
     }
   }
 };

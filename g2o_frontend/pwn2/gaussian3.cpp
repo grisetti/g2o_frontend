@@ -115,4 +115,43 @@ void Gaussian3fVector::toPointAndNormalVector(PointVector &destPoints, NormalVec
   }
 }
 
+void Gaussian3fVector::fromPointVector(const PointVector &points,
+				       const PointProjector &pointProjector,
+				       const int rows, const int cols,
+				       /*float dmax,*/ float baseline, float alpha) {
+  const PinholePointProjector *pinholePointProjector = dynamic_cast<const PinholePointProjector*>(&pointProjector);
+  if(!pinholePointProjector) {
+    clear();
+    return;
+  }
+
+  if(points.size() != size())
+    resize(points.size());
+
+  size_t k = 0;
+  float fB = baseline * pinholePointProjector->cameraMatrix()(0, 0);
+  Matrix3f J;
+  for(size_t i = 0; i < points.size(); i++) {
+    const Point &point = points[i];
+    int r = -1, c = -1;
+    float z = 0.0f;
+    pinholePointProjector->project(r, c, z, point);
+    if(/*z <= 0 || z >  dmax ||*/ 
+	r < 0 || r >= rows || 
+	c < 0 || c >= cols)
+      continue;
+    float zVariation = (alpha * z * z) / (fB + z * alpha);
+    J <<       
+      z, 0, (float)c,
+      0, z, (float)r,
+      0, 0, 1;
+    J = pinholePointProjector->inverseCameraMatrix() * J;
+    Diagonal3f imageCovariance(1.0f, 1.0f, zVariation);
+    Matrix3f cov = J * imageCovariance * J.transpose();
+    at(i) = Gaussian3f(point.head<3>(), cov);
+    k++;
+  }
+  resize(k);
+}
+
 }
