@@ -15,7 +15,9 @@
 #include "g2o_frontend/sensor_data/rgbd_data.h"
 #include "g2o_frontend/sensor_data/imu_data.h"
 
+#ifdef _PWN_USE_TRAVERSABILITY_
 #include "g2o_frontend/traversability/traversability_analyzer.h"
+#endif //_PWN_USE_TRAVERSABILITY_
 
 #include "g2o/core/sparse_optimizer.h"
 
@@ -57,7 +59,9 @@ class PWNMapperController {
   PointInformationMatrixCalculator *pointInformationMatrixCalculator;
   NormalInformationMatrixCalculator *normalInformationMatrixCalculator;
   DepthImageConverter *converter;
+#ifdef _PWN_USE_TRAVERSABILITY_
   TraversabilityAnalyzer *traversabilityAnalyzer;  
+#endif //_PWN_USE_TRAVERSABILITY_
   CorrespondenceFinder *correspondenceFinder;
   Linearizer *linearizer;
   Aligner *aligner;

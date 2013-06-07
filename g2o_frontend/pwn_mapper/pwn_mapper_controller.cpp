@@ -38,7 +38,9 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   converter= new DepthImageConverter(projector, statsCalculator, 
 				     pointInformationMatrixCalculator, normalInformationMatrixCalculator);
 
+#ifdef _PWN_USE_TRAVERSABILITY_
   traversabilityAnalyzer = new TraversabilityAnalyzer(30, 0.04, 0.2, 1);
+#endif //_PWN_USE_TRAVERSABILITY_
 
   correspondenceFinder = new CorrespondenceFinder();
   linearizer = new Linearizer() ;
@@ -198,7 +200,9 @@ bool PWNMapperController::computeTraversability() {
   Eigen::Isometry3f globalTransform = current->globalTransform();
   globalTransform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   globalFrame.transformInPlace(globalTransform);
+#ifdef _PWN_USE_TRAVERSABILITY_
   traversabilityAnalyzer->createTraversabilityVector(globalFrame.points(), globalFrame.normals(), globalFrame.traversabilityVector()); 
+#endif //_PWN_USE_TRAVERSABILITY_
   return true;
 }
 

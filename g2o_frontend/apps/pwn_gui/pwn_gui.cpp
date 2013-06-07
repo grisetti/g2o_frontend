@@ -26,8 +26,6 @@
 
 #include <unistd.h>
 
-#undef _PWN_USE_CUDA_
-
 #ifdef _PWN_USE_CUDA_
 #include "g2o_frontend/pwn_cuda/cualigner.h"
 #endif// PWN_CUDA
@@ -43,6 +41,28 @@ using namespace Eigen;
 using namespace g2o;
 using namespace std;
 using namespace pwn;
+
+#include "g2o_frontend/pwn2/gaussian3.h"
+void convertCovariances(StatsVector &statsVector, Gaussian3fVector &gaussians) {
+  statsVector.resize(gaussians.size());
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigenSolver;
+  for(size_t i = 0; i < statsVector.size(); i++) {
+    const Eigen::Matrix3f &covariance = gaussians[i].covarianceMatrix();
+    const Point mean(gaussians[i].mean());
+
+    eigenSolver.computeDirect(covariance, Eigen::ComputeEigenvectors);
+
+    Stats &stats = statsVector[i];
+    stats.setZero();
+    stats.setEigenVectors(eigenSolver.eigenvectors());
+    stats.setMean(mean);
+    Eigen::Vector3f eigenValues = eigenSolver.eigenvalues();
+    if(eigenValues(0) < 0.0f)
+      eigenValues(0) = 0.0f;
+    stats.setEigenValues(eigenValues);
+    stats.setN(1);
+  }
+}
 
 set<string> readDir(std::string dir) {
   DIR *dp;
