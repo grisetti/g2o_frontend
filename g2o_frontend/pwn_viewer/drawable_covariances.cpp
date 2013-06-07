@@ -75,24 +75,25 @@ void DrawableCovariances::updateCovarianceDrawList() {
       if(cov.n() == 0 )
 	continue;
       I.translation() = Eigen::Vector3f(cov.mean()[0], cov.mean()[1], cov.mean()[2]);
-      float sx = sqrt(lambda[0])*ellipsoidScale;
-      float sy = sqrt(lambda[1])*ellipsoidScale;
-      float sz = sqrt(lambda[2])*ellipsoidScale;
+      float sx = sqrt(lambda[0]) * ellipsoidScale;
+      float sy = sqrt(lambda[1]) * ellipsoidScale;
+      float sz = sqrt(lambda[2]) * ellipsoidScale;
       float curvature = cov.curvature();
       glPushMatrix();
       glMultMatrixf(I.data());
-      if(curvature > curvatureThreshold) {
-	glColor4f(colorHighCurvature[0] - curvature, colorHighCurvature[1], colorHighCurvature[2], colorHighCurvature[3]);
-	sx = ellipsoidScale;
-	sy = ellipsoidScale;
-	sz = ellipsoidScale;
-      }
-      else {
-	glColor4f(colorLowCurvature[0], colorLowCurvature[1] - curvature, colorLowCurvature[2], colorLowCurvature[3]);
-	sx = 1e-03;
-	sy = ellipsoidScale;
-	sz = ellipsoidScale;
-      }
+      // if(curvature > curvatureThreshold) {
+      // 	glColor4f(colorHighCurvature[0] - curvature, colorHighCurvature[1], colorHighCurvature[2], colorHighCurvature[3]);
+      // 	sx = ellipsoidScale;
+      // 	sy = ellipsoidScale;
+      // 	sz = ellipsoidScale;
+      // }
+      // else {
+      // 	glColor4f(colorLowCurvature[0], colorLowCurvature[1] - curvature, colorLowCurvature[2], colorLowCurvature[3]);
+      // 	sx = 1e-03;
+      // 	sy = ellipsoidScale;
+      // 	sz = ellipsoidScale;
+      // }
+
       glScalef(sx, sy, sz);
       glCallList(_sphereDrawList);
       glPopMatrix();	    

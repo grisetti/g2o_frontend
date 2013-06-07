@@ -100,7 +100,7 @@ struct DrawableFrame {
     // float b = 0.0f + 0.75f*rand()/double(RAND_MAX);
 
     float r = 1.0;
-    float g = 0.0f;
+    float g = 0.3f;
     float b = 0.0f;
 
     pPoints = new GLParameterPoints(1.0f, Vector4f(r, g, b, 1.0f));
@@ -126,9 +126,13 @@ struct DrawableFrame {
     step = s;
     frame = *frame_;
 
-    float r = 0.0f + 0.75f*rand()/double(RAND_MAX);
-    float g = 0.0f + 0.75f*rand()/double(RAND_MAX);
-    float b = 0.0f + 0.75f*rand()/double(RAND_MAX);
+    // float r = 0.0f + 0.75f*rand()/double(RAND_MAX);
+    // float g = 0.0f + 0.75f*rand()/double(RAND_MAX);
+    // float b = 0.0f + 0.75f*rand()/double(RAND_MAX);
+
+    float r = 1.0;
+    float g = 0.3f;
+    float b = 0.0f;
 
     pPoints = new GLParameterPoints(1.0f, Vector4f(r, g, b, 1.0f));
     pPoints->setStep(step);
@@ -508,6 +512,9 @@ int main(int argc, char** argv) {
 	drawableFrame = new DrawableFrame(&mergingFrame, vz_step);
 	drawableFrameVector.push_back(drawableFrame);
 	drawableFrame = 0;
+	StatsVector *tmpStats = new StatsVector();
+	convertCovariances(*tmpStats, mergingFrame.gaussians());
+	drawableFrameVector[drawableFrameVector.size()-1]->dCovariances->setCovariances(tmpStats);
 	drawableFrameVector[drawableFrameVector.size()-1]->dPoints->setTransformation(Isometry3f::Identity());
 	drawableFrameVector[drawableFrameVector.size()-1]->dNormals->setTransformation(Isometry3f::Identity());
 	drawableFrameVector[drawableFrameVector.size()-1]->dCovariances->setTransformation(Isometry3f::Identity());
@@ -537,6 +544,9 @@ int main(int argc, char** argv) {
 
 	drawableFrame = 0;
 	// Add drawable items.
+	StatsVector *tmpStats = new StatsVector();
+	convertCovariances(*tmpStats, mergingFrame.gaussians());
+	drawableFrameVector[drawableFrameVector.size()-1]->dCovariances->setCovariances(tmpStats);
 	drawableFrameVector[drawableFrameVector.size()-1]->dPoints->setTransformation(globalT);
 	drawableFrameVector[drawableFrameVector.size()-1]->dNormals->setTransformation(globalT);
 	drawableFrameVector[drawableFrameVector.size()-1]->dCovariances->setTransformation(globalT);

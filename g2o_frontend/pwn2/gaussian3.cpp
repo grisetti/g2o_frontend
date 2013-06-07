@@ -61,8 +61,8 @@ void Gaussian3fVector::fromDepthImage(const DepthImage &depthImage,
       float z = mean.z();
       float zVariation = (alpha * z * z) / (fB + z * alpha);
       J <<       
-	z, 0, (float)c,
-	0, z, (float)r,
+	z, 0, (float)r,
+	0, z, (float)c,
 	0, 0, 1;
       J = inverseCameraMatrix * J;
       Diagonal3f imageCovariance(1.0f, 1.0f, zVariation);
@@ -142,8 +142,8 @@ void Gaussian3fVector::fromPointVector(const PointVector &points,
       continue;
     float zVariation = (alpha * z * z) / (fB + z * alpha);
     J <<       
-      z, 0, (float)c,
-      0, z, (float)r,
+      z, 0, (float)r,
+      0, z, (float)c,
       0, 0, 1;
     J = pinholePointProjector->inverseCameraMatrix() * J;
     Diagonal3f imageCovariance(1.0f, 1.0f, zVariation);
