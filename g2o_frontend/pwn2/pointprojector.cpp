@@ -73,6 +73,33 @@ void PointProjector::unProject(PointVector &points,
   points.resize(count);
 }
 
+void PointProjector::unProject(PointVector &points,
+			       Gaussian3fVector &gaussians,
+			       Eigen::MatrixXi &indexImage,
+			       const Eigen::MatrixXf &depthImage) const {
+  points.resize(depthImage.rows()*depthImage.cols());
+  gaussians.resize(points.size());
+  int count = 0;
+  indexImage.resize(depthImage.rows(), depthImage.cols());
+  Point* point = &points[0];
+  int cpix=0;
+  for (int c=0; c<depthImage.cols(); c++){
+    const float* f = &depthImage(0,c);
+    int* i =&indexImage(0,c);
+    for (int r=0; r<depthImage.rows(); r++, f++, i++){
+      if (!unProject(*point, r,c,*f)){
+	*i=-1;
+	continue;
+      }
+      point++;
+      cpix++;
+      *i = count;
+      count++;
+    }
+  }
+  points.resize(count);
+}
+
 inline bool PointProjector::project(int &, int &, float &, const Point &) const { return false; }
 
 inline int PointProjector::projectInterval(const int, const int, const float, const float) const { return 0; }

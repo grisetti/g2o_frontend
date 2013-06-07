@@ -81,18 +81,18 @@ void DrawableCovariances::updateCovarianceDrawList() {
       float curvature = cov.curvature();
       glPushMatrix();
       glMultMatrixf(I.data());
-      // if(curvature > curvatureThreshold) {
-      // 	glColor4f(colorHighCurvature[0] - curvature, colorHighCurvature[1], colorHighCurvature[2], colorHighCurvature[3]);
-      // 	sx = ellipsoidScale;
-      // 	sy = ellipsoidScale;
-      // 	sz = ellipsoidScale;
-      // }
-      // else {
-      // 	glColor4f(colorLowCurvature[0], colorLowCurvature[1] - curvature, colorLowCurvature[2], colorLowCurvature[3]);
-      // 	sx = 1e-03;
-      // 	sy = ellipsoidScale;
-      // 	sz = ellipsoidScale;
-      // }
+      if(curvature > curvatureThreshold) {
+      	glColor4f(colorHighCurvature[0] - curvature, colorHighCurvature[1], colorHighCurvature[2], colorHighCurvature[3]);
+      	sx = ellipsoidScale;
+      	sy = ellipsoidScale;
+      	sz = ellipsoidScale;
+      }
+      else {
+      	glColor4f(colorLowCurvature[0], colorLowCurvature[1] - curvature, colorLowCurvature[2], colorLowCurvature[3]);
+      	sx = 1e-03;
+      	sy = ellipsoidScale;
+      	sz = ellipsoidScale;
+      }
 
       glScalef(sx, sy, sz);
       glCallList(_sphereDrawList);

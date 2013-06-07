@@ -41,9 +41,14 @@ public:
    *  @return a reference to the camera matrix.
    */
   inline const Eigen::Matrix3f& cameraMatrix() const { return _cameraMatrix; }
-
-  inline const Eigen::Matrix3f& inverseCameraMatrix() const { return _iK; }
   
+  inline const Eigen::Matrix3f& inverseCameraMatrix() const { return _iK; }
+  inline float baseline() const { return _baseline; }
+  inline float alpha() const { return _alpha; }
+  
+  inline void setBaseline(float baseline_) { _baseline = baseline_; }
+  inline void setAlpha(float alpha_) { _alpha = alpha_; }
+
   /**
    *  Virtual method that set the camera matrix to the one given in input.
    *  @param transform_ is the 3x3 matrix used to update the camera matrix variable. 
@@ -90,6 +95,11 @@ public:
    */
   virtual void unProject(PointVector &points, 
 			 Eigen::MatrixXi &indexImage, 
+                         const Eigen::MatrixXf &depthImage) const;
+
+  virtual void unProject(PointVector &points,
+  			 Gaussian3fVector &gaussians,
+  			 Eigen::MatrixXi &indexImage,
                          const Eigen::MatrixXf &depthImage) const;
 
   /**
@@ -199,9 +209,10 @@ public:
    */
   Eigen::Matrix4f _iKRt;
   
-  
-
 protected:
+  float _baseline;
+  float _alpha;
+
   Eigen::Matrix3f _iK;
   Eigen::Matrix3f _KR;
   Eigen::Vector3f _Kt;

@@ -33,7 +33,7 @@ void DepthImageConverter::compute(Frame &frame,
   }
   // unprojecting
   _projector->setTransform(Eigen::Isometry3f::Identity());
-  _projector->unProject(frame.points(), _indexImage, depthImage);
+  _projector->unProject(frame.points(), frame.gaussians(), _indexImage, depthImage);
 
   frame.normals().resize(frame.points().size());
   frame.pointInformationMatrix().resize(frame.points().size());
@@ -55,7 +55,7 @@ void DepthImageConverter::compute(Frame &frame,
   _pointInformationMatrixCalculator->compute(frame.pointInformationMatrix(), frame.stats(), frame.normals());
   _normalInformationMatrixCalculator->compute(frame.normalInformationMatrix(), frame.stats(), frame.normals());
   
-  frame.gaussians().fromPointVector(frame.points(), *_projector, depthImage.rows(), depthImage.cols());
+  //frame.gaussians().fromPointVector(frame.points(), *_projector, depthImage.rows(), depthImage.cols());
   
   // frame is labeled, now we need to transform all the elements by considering the position
   // of the sensor

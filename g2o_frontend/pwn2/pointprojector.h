@@ -3,6 +3,7 @@
 
 #include "homogeneousvector4f.h"
 #include "depthimage.h"
+#include "gaussian3.h"
 
 namespace pwn {
 
@@ -106,6 +107,11 @@ public:
    */
   virtual void unProject(PointVector &points,
 			 Eigen::MatrixXi &indexImage, 
+                         const Eigen::MatrixXf &depthImage) const;
+
+  virtual void unProject(PointVector &points,
+  			 Gaussian3fVector &gaussians,
+  			 Eigen::MatrixXi &indexImage,
                          const Eigen::MatrixXf &depthImage) const;
 
   /**

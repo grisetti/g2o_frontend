@@ -3,11 +3,11 @@
 
 #include "depthimage.h"
 #include "homogeneousvector4f.h"
-#include "pinholepointprojector.h"
 #include "../basemath/gaussian.h"
 
 namespace pwn {
 
+typedef Eigen::DiagonalMatrix<float, 3> Diagonal3f;
 typedef struct Gaussian<float, 3> Gaussian3f;
 
 class Gaussian3fVector : public TransformableVector<Gaussian3f> {
@@ -28,12 +28,6 @@ public:
 		    float dmax = std::numeric_limits<float>::max()) const;
 
   void toPointAndNormalVector(PointVector &destPoints, NormalVector &destNormals, bool eraseNormals = false) const;
-
-  void fromPointVector(const PointVector &points,
-		       const PointProjector &pointProjector,
-		       const int rows, const int cols,
-		       /*float dmax = std::numeric_limits<float>::max(),*/
-		       float baseline = 0.075, float alpha=0.1);
 
   template<typename OtherDerived>
   inline void transformInPlace(const OtherDerived& m) {

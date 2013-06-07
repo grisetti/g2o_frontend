@@ -1,5 +1,7 @@
 #include "pinholepointprojector.h"
 
+using namespace std;
+
 namespace pwn {
 
 PinholePointProjector::PinholePointProjector() : PointProjector() {
@@ -7,6 +9,8 @@ PinholePointProjector::PinholePointProjector() : PointProjector() {
     1.0, 0.0, 0.5, 
     0.0, 1.0, 0.5,
     0.0, 0.0, 1;
+  _baseline = 0.075f;
+  _alpha = 0.1f;
   _updateMatrices();
 }
 
@@ -108,6 +112,48 @@ void PinholePointProjector::unProject(PointVector& points,
     }
   }
   points.resize(count);
+}
+
+void PinholePointProjector::unProject(PointVector &points, 
+				      Gaussian3fVector &gaussians,
+				      Eigen::MatrixXi &indexImage,
+				      const Eigen::MatrixXf &depthImage) const {
+  points.resize(depthImage.rows()*depthImage.cols());
+  gaussians.resize(depthImage.rows()*depthImage.cols());
+  indexImage.resize(depthImage.rows(), depthImage.cols());
+  int count = 0;
+  Point *point = &points[0];
+  Gaussian3f *gaussian = &gaussians[0];
+  int cpix = 0;
+  float fB = _baseline * _cameraMatrix(0,0);
+  Eigen::Matrix3f J;
+  for (int c = 0; c < depthImage.cols(); c++) {
+    const float *f = &depthImage(0, c);
+    int *i = &indexImage(0, c);
+    for (int r=0; r<depthImage.rows(); r++, f++, i++){      
+      if(!_unProject(*point, r, c, *f)) {
+	*i = -1;
+	continue;
+      }
+      float z = *f;
+      float zVariation = (_alpha * z * z) / (fB + z * _alpha);
+       J <<       
+	z, 0, (float)r,
+	0, z, (float)c,
+	0, 0, 1;
+      J = _iK * J;
+      Diagonal3f imageCovariance(1.0f, 1.0f, zVariation);
+      Eigen::Matrix3f cov = J * imageCovariance * J.transpose();
+      *gaussian = Gaussian3f(point->head<3>(), cov);
+      gaussian++;
+      point++;
+      cpix++;
+      *i = count;
+      count++;
+    }
+  }
+  points.resize(count);
+  gaussians.resize(count);
 }
 
 }
