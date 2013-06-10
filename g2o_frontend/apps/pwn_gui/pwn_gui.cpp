@@ -485,7 +485,7 @@ int main(int argc, char** argv) {
     // Merge button pressed.
     else if(*merge) {
       if(mergingFrame.points().size() > 0) {
-	merger.merge(&mergingFrame, drawableFrameVector[drawableFrameVector.size()-1]->sensorOffset);
+	merger.merge(&mergingFrame, globalT * drawableFrameVector[drawableFrameVector.size()-1]->sensorOffset);
 	// Clear drawable frames.
 	pwnGMW.viewer_3d->clearDrawableList();
 	for(size_t i = 0; i < drawableFrameVector.size(); i++)

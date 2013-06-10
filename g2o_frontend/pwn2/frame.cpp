@@ -125,6 +125,7 @@ void Frame::add(Frame frame, const Eigen::Isometry3f &T) {
   _pointInformationMatrix.resize(k + frame.pointInformationMatrix().size());
   _normalInformationMatrix.resize(k + frame.normalInformationMatrix().size());
   _gaussians.resize(k + frame.gaussians().size());
+  //_traversabilityVector.resize(k + frame.traversabilityVector().size())
   for(int i = 0; k < _points.size(); k++, i++) {
     _points[k] = frame.points()[i];
     _normals[k] = frame.normals()[i];
@@ -132,6 +133,7 @@ void Frame::add(Frame frame, const Eigen::Isometry3f &T) {
     _pointInformationMatrix[k] = frame.pointInformationMatrix()[i];
     _normalInformationMatrix[k] = frame.normalInformationMatrix()[i];
     _gaussians[k] = frame.gaussians()[i];
+    //_traversabilityVector[k] = frame.traversabilityVector()[i];
   }
 }
 

@@ -10,6 +10,7 @@
 #include "g2o_frontend/pwn2/statscalculator.h"
 #include "g2o_frontend/pwn2/depthimageconverter.h"
 #include "g2o_frontend/pwn2/aligner.h"
+#include "g2o_frontend/pwn2/merger.h"
 
 #include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "g2o_frontend/sensor_data/rgbd_data.h"
@@ -38,6 +39,14 @@ class PWNMapperController {
   size_t maxDequeSize() { return _maxDequeSize; }
   Eigen::Isometry3f alInitialGuess() { return aligner->initialGuess(); }
 
+  inline int chunkStep() { return _chunkStep; }
+  inline float chunkAngle() { return _chunkAngle; }
+  inline float chunkDistance() { return _chunkDistance; }
+  
+  inline void setChunkStep(int chunkStep_) { _chunkStep = chunkStep_; }
+  inline void setChunkAngle(float chunkAngle_) { _chunkAngle = chunkAngle_; }
+  inline void setChunkDistance(float chunkDistance_) { _chunkDistance = chunkDistance_; }
+
   void setAlOuterIterations(int al_outerIterations_) { al_outerIterations = al_outerIterations_; }
   void setMaxDequeSize(int maxDequeSize_) { _maxDequeSize = maxDequeSize_; }
 
@@ -65,11 +74,14 @@ class PWNMapperController {
   CorrespondenceFinder *correspondenceFinder;
   Linearizer *linearizer;
   Aligner *aligner;
-  
+  Merger *merger;
+
   std::deque<G2OFrame*> _framesDeque;
-  
+  Frame mergedClouds;
+
   Isometry3f initialGuess;
   Isometry3f globalT;
+  Isometry3f initialPose;
   
   int imageRows, imageCols;
   int reduction;
@@ -82,6 +94,14 @@ class PWNMapperController {
   int al_outerIterations;
   size_t _maxDequeSize;
   
+  int _chunkStep;
+  float _chunkAngle;
+  float _chunkDistance;
+
+  int counter;
+
+  ostringstream os;
+
   g2o::OptimizableGraph *graph;
 };
  

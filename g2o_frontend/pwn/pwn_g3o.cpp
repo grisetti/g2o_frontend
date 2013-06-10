@@ -56,19 +56,19 @@ void writeParams(ostream& os, int paramIndex, const Eigen::Matrix3f& cameraMatri
 }
 
 void writeVertex(ostream& os, int currentIndex, const Vector6f& estimate, const std::string& filename){
-    // write the vertex frame
-      Vector3f t = estimate.head<3>();
-      Vector3f mq = estimate.tail<3>();
-      float w = mq.squaredNorm();
-      if (w>1){
-	mq.setZero();
-	w = 1.0f;
-      } else {
-	w = sqrt(1-w);
-      }
+  // write the vertex frame
+  Vector3f t = estimate.head<3>();
+  Vector3f mq = estimate.tail<3>();
+  float w = mq.squaredNorm();
+  if (w>1){
+    mq.setZero();
+    w = 1.0f;
+  } else {
+    w = sqrt(1-w);
+  }
       
-      os << "VERTEX_SE3:QUAT " << currentIndex << " " << t.transpose() << " " << mq.transpose() << " " << w << endl;
-      os << "DEPTH_IMAGE_DATA 0 " << filename << " 0 0 " << endl;
+  os << "VERTEX_SE3:QUAT " << currentIndex << " " << t.transpose() << " " << mq.transpose() << " " << w << endl;
+  os << "DEPTH_IMAGE_DATA 0 " << filename << " 0 0 " << endl;
 }
 
 void writeEdge(ostream& os, int previousIndex, int currentIndex, const Vector6f& mean, const Matrix6f& omega){
@@ -94,7 +94,7 @@ void writeEdge(ostream& os, int previousIndex, int currentIndex, const Vector6f&
 }
 
 int
- main(int argc, char** argv){
+main(int argc, char** argv){
   string dirname;
   string graphFilename;
   float numThreads;
@@ -299,7 +299,8 @@ int
 	writeEdge(os, previousIndex, i, mean, omega);
 	cumPoints += currentFrame->size();
 	cerr << "total points that would be added: " << cumPoints << endl;
-      } else {
+      } 
+      else {
 	char buf[1024];
 	sprintf(buf, "%s-%05d.g2o", baseFilename.c_str(), (int)i);	
 	ofstream gs(buf);
@@ -316,7 +317,6 @@ int
 	globalScene->clear();
 	initialFrame = trajectory;
       }
-
     }
     previousIndex = i;
     if (referenceFrame)

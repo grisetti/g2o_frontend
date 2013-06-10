@@ -22,7 +22,8 @@ class G2OFrame : public Frame {
     _previousFrame = 0;
     _globalTransform.setIdentity();
     _previousFrameTransform.setIdentity();
-  }  
+  }
+  
   virtual ~G2OFrame() {}
 
   void setPreviousFrame(G2OFrame *previousFrame_) { _previousFrame = previousFrame_; }

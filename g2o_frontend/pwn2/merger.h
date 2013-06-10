@@ -19,7 +19,6 @@ class Merger {
   inline void setImageSize(int r, int c) {
     _indexImage.resize(r, c);
     _depthImage.resize(r, c);
-    std::cerr << _indexImage.rows() << " --- " << _indexImage.cols() << std::endl;
   }
 
   inline float distanceThreshold() const { return _distanceThreshold; }

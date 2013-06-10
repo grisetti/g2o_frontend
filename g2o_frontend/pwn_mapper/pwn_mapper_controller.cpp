@@ -19,7 +19,7 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   graph = graph_;
   imageRows = 0;
   imageCols = 0;
-    
+
   ng_worldRadius = 0.1f;
   ng_minImageRadius = 10;
   ng_curvatureThreshold = 1.0f;
@@ -58,6 +58,17 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   converter->_curvatureThreshold = ng_curvatureThreshold;
   pointInformationMatrixCalculator->setCurvatureThreshold(if_curvatureThreshold);
   normalInformationMatrixCalculator->setCurvatureThreshold(if_curvatureThreshold);
+  
+  merger = new Merger();
+  merger->setDepthImageConverter(converter);
+
+  _chunkStep = 1000000;
+  _chunkAngle = M_PI/4;
+  _chunkDistance = 0.5f;
+
+  counter = 0;
+  initialPose = Isometry3f::Identity();
+  initialPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 }
 
 void PWNMapperController::clear() {
@@ -104,7 +115,7 @@ bool extractAbsolutePrior(Eigen::Isometry3f &priorMean,
     if (imuData_) {
       imuData = imuData_;
     }
-    d=d->next();
+    d = d->next();
   }
   
   if (imuData) {
@@ -116,29 +127,28 @@ bool extractAbsolutePrior(Eigen::Isometry3f &priorMean,
       for(int r = 0; r < 3; r++)
 	priorMean.linear()(r, c) = R(r, c);
     
-    for (int c = 0; c<3; c++)
-      for (int r = 0; r<3; r++)
-	priorInfo(r+3,c+3)=Omega(r,c)*100000;
+    for (int c = 0; c < 3; c++)
+      for (int r = 0; r < 3; r++)
+	priorInfo(r+3, c+3)=Omega(r, c) * 100000;
     return true;
   }
   return false;
 }
 
 bool PWNMapperController::alignIncrementally(){
-  if (_framesDeque.size()<2)
+  if (_framesDeque.size() < 2)
     return false;
 
-  G2OFrame* current = _framesDeque.back();
-  G2OFrame* reference = current->previousFrame();
+  G2OFrame *current = _framesDeque.back();
+  G2OFrame *reference = current->previousFrame();
   
   Eigen::Isometry3f initialGuess;
 
   // cerr computing initial guess based on the frame positions, just for convenience
   Eigen::Isometry3d delta = reference->vertex()->estimate().inverse()*current->vertex()->estimate();
-  for(int c=0; c<4; c++)
-    for(int r=0; r<3; r++)
-      initialGuess.matrix()(r,c) = delta.matrix()(r,c);
-
+  for(int c = 0; c < 4; c++)
+    for(int r = 0; r < 3; r++)
+      initialGuess.matrix()(r, c) = delta.matrix()(r, c);
 
   Eigen::Isometry3f odometryMean;
   Matrix6f odometryInfo;
@@ -172,7 +182,7 @@ bool PWNMapperController::alignIncrementally(){
   aligner->align();
       
   Eigen::Isometry3f localTransformation = aligner->T();
-  if(aligner->outerIterations() != 0 && (aligner->inliers() < 1000 || aligner->error() / aligner->inliers() > 10)) {
+  if(aligner->outerIterations() != 0 && (aligner->inliers() < 1000 || aligner->error() / aligner->inliers() > 10) ) {
     cerr << "ALIGNER FAILURE!!!!!!!!!!!!!!!" << endl;
     localTransformation = initialGuess;
   }
@@ -186,9 +196,27 @@ bool PWNMapperController::alignIncrementally(){
   
   globalT = v2t(t2v(globalT));
   
+  Eigen::Isometry3f motionFromFirstFrame = initialPose.inverse()*globalT;
+  Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
+  if(fabs(rotationFromFirstFrame.angle()) < _chunkAngle && motionFromFirstFrame.translation().norm() < _chunkDistance)
+    cerr << "Total points that will be added: " << current->points().size() << endl; 
+  else {
+    char buff[1024];
+    sprintf(buff, "out-%05d.pwn", counter++);	
+    mergedClouds.save(buff, 1, true);
+    os.str("");
+    os.clear();
+    mergedClouds.clear();
+    initialPose = globalT;
+  }
+
   // Update cloud drawing position.
   current->globalTransform() = globalT;
   current->previousFrameTransform() = localTransformation;
+
+  mergedClouds.add(*current, current->globalTransform());
+  merger->merge(&mergedClouds, current->globalTransform() * current->sensorOffset());
+  
   return true;
 }
 
@@ -275,6 +303,7 @@ bool PWNMapperController::addVertex(VertexSE3 *v) {
   imageRows = scaledDepthImage.rows();
   imageCols = scaledDepthImage.cols();
   correspondenceFinder->setSize(imageRows, imageCols);
+  merger->setImageSize(imageRows, imageCols);
 
   // create the frame and set the parameters
   G2OFrame *frame = new G2OFrame(v);
@@ -283,7 +312,7 @@ bool PWNMapperController::addVertex(VertexSE3 *v) {
     
   G2OFrame *previousFrame = 0;
   if(!_framesDeque.empty()) 
-    previousFrame=_framesDeque.back();
+    previousFrame = _framesDeque.back();
     
   // of it is the first vertex, we put the imu as prior if avalable
   if(!previousFrame) {
@@ -356,7 +385,7 @@ bool PWNMapperController::addVertex(G2OFrame &frame) {
     
   float scale = 1./reduction;
   cameraMatrix *= scale;
-  cameraMatrix(2,2) = 1.0;
+  cameraMatrix(2, 2) = 1.0;
       
   DepthImage scaledDepthImage;
   DepthImage::scale(scaledDepthImage, depthImage, reduction);
