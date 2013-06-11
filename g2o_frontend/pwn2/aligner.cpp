@@ -54,7 +54,7 @@ void Aligner::align() {
               _currentFrame->points());
   _T = _initialGuess;
   
-  //_correspondenceFinder->currentDepthImage().save("current.pgm", false);
+  //_correspondenceFinder->currentDepthImage().save("current.pgm", true);
 
   for(int i = 0; i < _outerIterations; i++) {
     /************************************************************************
@@ -62,14 +62,15 @@ void Aligner::align() {
      ************************************************************************/
 
     // compute the indices of the current scene from the point of view of the sensor
-    _T.matrix().row(3) << 0,0,0,1;
-    _projector->setTransform(_T*_sensorOffset);
+    _T.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    _projector->setTransform(_T * _sensorOffset);
     _projector->project(_correspondenceFinder->referenceIndexImage(),
             _correspondenceFinder->referenceDepthImage(),
             _referenceFrame->points());
     
-    //sprintf(buf, "reference-%02d.pgm", i);
-    //_correspondenceFinder->referenceDepthImage().save(buf, false);
+    // char buf[1024];
+    // sprintf(buf, "reference-%02d.pgm", i);
+    // _correspondenceFinder->referenceDepthImage().save(buf, true);
 
     // Correspondences computation.    
     _correspondenceFinder->compute(*_referenceFrame, *_currentFrame, _T.inverse());
@@ -81,7 +82,7 @@ void Aligner::align() {
     //cerr << "_priors.size(): " << _priors.size() << endl;
     Eigen::Isometry3f invT = _T.inverse();
     for (int k = 0; k < _innerIterations; k++) {      
-      invT.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
+      invT.matrix().block<1, 4>(3, 0) << 0.0f, 0.0f, 0.0f, 1.0f;
       Matrix6f H;
       Vector6f b;
 
@@ -117,7 +118,7 @@ void Aligner::align() {
       invT = dT * invT;
     }
     _T = invT.inverse();
-    _T=v2t(t2v(_T));
+    _T = v2t(t2v(_T));
     _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
     //cerr << _T.matrix() << endl; 
   }

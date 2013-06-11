@@ -39,6 +39,8 @@ class PWNMapperController {
   size_t maxDequeSize() { return _maxDequeSize; }
   Eigen::Isometry3f alInitialGuess() { return aligner->initialGuess(); }
 
+  inline Eigen::Isometry3f globalTransform() { return globalT; }
+
   inline int chunkStep() { return _chunkStep; }
   inline float chunkAngle() { return _chunkAngle; }
   inline float chunkDistance() { return _chunkDistance; }

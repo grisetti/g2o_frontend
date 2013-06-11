@@ -38,21 +38,27 @@ int main(int argc, char** argv) {
   string g2o_filename;
 
   // Variables for the input parameters. 
-  float ng_scale = 1.0f;
-  float ng_curvatureThreshold = 1.0f;
-  int al_innerIterations = 1;
-  int al_outerIterations = 10;
-  int vz_step = 5;
+  float ng_scale;
+  float ng_curvatureThreshold;
+  int al_innerIterations;
+  int al_outerIterations;
+  int vz_step;
+  int chunkStep;
+  float chunkAngle;
+  float chunkDistance;
 
   // Input parameters handling.
   g2o::CommandArgs arg;
   
   // Optional input parameters.
-  arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image. [float]");
-  arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded. [float]");
-  arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations. [int]");
-  arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations. [int]");
-  arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements. [int]");
+  arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image");
+  arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded");
+  arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations");
+  arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");
+  arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements");
+  arg.param("chunkStep", chunkStep, 1000000, "Reset the process every chunkStep images");
+  arg.param("chunkAngle", chunkAngle, M_PI/4, "Reset the process each time the camera has rotated of chunkAngle radians from the first frame");
+  arg.param("chunkDistance", chunkDistance, 0.5, "reset the process each time the camera has moved of chunkDistance meters from the first frame");
 
   // Last parameter has to be the working directory.
   arg.paramLeftOver("g2o_input_filename", g2o_filename, "", "g2o input inputfilename", true);
@@ -131,7 +137,9 @@ int main(int argc, char** argv) {
   std::fill(frames.begin(), frames.end(), (G2OFrame*)0);
   PWNMapperController *controller = new PWNMapperController();
   controller->init(graph);
-  controller->setAlOuterIterations(0);
+  controller->setChunkStep(chunkStep);
+  controller->setChunkAngle(chunkAngle);
+  controller->setChunkDistance(chunkDistance);
   viewer->init();
   viewer->setAxisIsDrawn(true);
   mainWindow->show();
@@ -141,7 +149,8 @@ int main(int argc, char** argv) {
   GLParameterTrajectory *parameterTrajectory = new GLParameterTrajectory(0.03f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f));
   DrawableTrajectory *drawableTrajectory = new DrawableTrajectory(Isometry3f::Identity(), parameterTrajectory, &trajectory);
   viewer->addDrawable(drawableTrajectory);
-  Isometry3f globalInitialGuess = Isometry3f::Identity();
+  //Isometry3f globalInitialGuess = Isometry3f::Identity();
+  Isometry3f globalT = Isometry3f::Identity();
   GLParameterFrame *parameterFrame = new GLParameterFrame(vz_step); 
   while(viewer->isVisible()) {
     bool changed = false;
@@ -154,10 +163,12 @@ int main(int argc, char** argv) {
       	if(!controller->addVertex(v))
       	  continue;
       	controller->alignIncrementally();
-      	Eigen::Isometry3f initialGuess = controller->alInitialGuess();
-      	globalInitialGuess = globalInitialGuess * initialGuess;
-	initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-      	trajectory.push_back(globalInitialGuess);
+      	//Eigen::Isometry3f initialGuess = controller->alInitialGuess();
+      	//globalInitialGuess = globalInitialGuess * initialGuess;
+	G2OFrame *frame = controller->lastFrame();
+	Eigen::Isometry3f localT = frame->previousFrameTransform();
+	globalT = globalT * localT;
+	trajectory.push_back(globalT);
 	listItem->setHidden(false);
 	changed = true;
       }
@@ -173,7 +184,6 @@ int main(int argc, char** argv) {
 	  if(v && !frames[k]) {
 	    G2OFrame *currentFrame = new G2OFrame(v);
 	    controller->addVertex(*currentFrame);
-	    frames[k] = currentFrame;
 	    DrawableFrame *drawableFrame = new DrawableFrame(trajectory[k], parameterFrame, frames[k]); 
 	    viewer->addDrawable(drawableFrame);
 	    changed = true;

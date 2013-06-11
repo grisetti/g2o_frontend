@@ -142,6 +142,13 @@ bool PWNMapperController::alignIncrementally(){
   G2OFrame *current = _framesDeque.back();
   G2OFrame *reference = current->previousFrame();
   
+  if(mergedClouds.points().size() == 0) 
+    mergedClouds.add(*reference, reference->globalTransform());
+  //mergedClouds.add(*current, current->globalTransform());
+  //mergedClouds.add(*reference, reference->globalTransform());
+  //merger->merge(&mergedClouds, reference->globalTransform() * current->sensorOffset());
+
+
   Eigen::Isometry3f initialGuess;
 
   // cerr computing initial guess based on the frame positions, just for convenience
@@ -171,7 +178,17 @@ bool PWNMapperController::alignIncrementally(){
       
   aligner->clearPriors();
   aligner->setOuterIterations(al_outerIterations);
-  aligner->setReferenceFrame(reference);
+  //aligner->setReferenceFrame(reference);
+  
+  DepthImage di;
+  MatrixXi ii;
+  ii.resize(imageRows, imageCols);
+  projector->setTransform(reference->globalTransform() * reference->sensorOffset());
+  projector->project(ii, di, mergedClouds.points());
+  Frame subScene;
+  converter->compute(subScene, di, reference->sensorOffset());
+  aligner->setReferenceFrame(&subScene);
+  
   aligner->setCurrentFrame(current);
   aligner->setInitialGuess(initialGuess);
   aligner->setSensorOffset(current->sensorOffset());
@@ -180,9 +197,9 @@ bool PWNMapperController::alignIncrementally(){
   if(hasImu)
     aligner->addAbsolutePrior(reference->globalTransform(), imuMean, imuInfo);
   aligner->align();
-      
+  
   Eigen::Isometry3f localTransformation = aligner->T();
-  if(aligner->outerIterations() != 0 && (aligner->inliers() < 1000 || aligner->error() / aligner->inliers() > 10) ) {
+  if(aligner->outerIterations() != 0 && (aligner->inliers() < 20000 || aligner->error() / aligner->inliers() > 10) ) {
     cerr << "ALIGNER FAILURE!!!!!!!!!!!!!!!" << endl;
     localTransformation = initialGuess;
   }
