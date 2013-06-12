@@ -180,12 +180,10 @@ bool PWNMapperController::alignIncrementally(){
   aligner->setOuterIterations(al_outerIterations);
   //aligner->setReferenceFrame(reference);
   
-  DepthImage di;
-  MatrixXi ii;
-  ii.resize(imageRows, imageCols);
+  if(ii.cols() != imageCols || ii.rows() != imageRows) 
+    ii.resize(imageRows, imageCols);
   projector->setTransform(reference->globalTransform() * reference->sensorOffset());
   projector->project(ii, di, mergedClouds.points());
-  Frame subScene;
   converter->compute(subScene, di, reference->sensorOffset());
   aligner->setReferenceFrame(&subScene);
   
@@ -199,7 +197,8 @@ bool PWNMapperController::alignIncrementally(){
   aligner->align();
   
   Eigen::Isometry3f localTransformation = aligner->T();
-  if(aligner->outerIterations() != 0 && (aligner->inliers() < 20000 || aligner->error() / aligner->inliers() > 10) ) {
+  cerr << "VALUES: " << aligner->inliers() << " --- " << aligner->error() / aligner->inliers() << endl;
+  if(aligner->outerIterations() != 0 && (aligner->inliers() < 1000 || aligner->error() / aligner->inliers() > 10) ) {
     cerr << "ALIGNER FAILURE!!!!!!!!!!!!!!!" << endl;
     localTransformation = initialGuess;
   }

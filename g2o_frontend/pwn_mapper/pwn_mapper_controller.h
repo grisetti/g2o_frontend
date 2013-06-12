@@ -104,6 +104,10 @@ class PWNMapperController {
 
   ostringstream os;
 
+  DepthImage di;
+  MatrixXi ii;
+  Frame subScene;
+
   g2o::OptimizableGraph *graph;
 };
  
