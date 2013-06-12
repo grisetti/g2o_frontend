@@ -22,7 +22,6 @@ SET_TARGET_PROPERTIES(pwn_mapper_library PROPERTIES OUTPUT_NAME pwn_mapper)
 TARGET_LINK_LIBRARIES(pwn_mapper_library
   pwn2_library
   sensor_data_library
-  traverse_library
   ${G2O_TYPES_DATA}
   ${G2O_TYPES_SLAM2D}
   ${G2O_TYPES_SLAM3D}
@@ -31,8 +30,15 @@ TARGET_LINK_LIBRARIES(pwn_mapper_library
   ${G2O_SOLVER_CSPARSE}
   ${G2O_STUFF_LIBRARY}
   ${G2O_SOLVER_CSPARSE_EXTENSION}
-  ${CSPARSE_LIBRARY})
+  ${CSPARSE_LIBRARY}
+)
 
+IF(TRAVERSABILITY_FOUND)
+TARGET_LINK_LIBRARIES(pwn_mapper_library
+  traverse_library
+)
+endif(TRAVERSABILITY_FOUND)
+  
 
 #ADD_EXECUTABLE(pwn_mapper_test
 #  pwn_mapper_test.cpp 
