@@ -410,6 +410,10 @@ int main(int , char** ){
     SE2 tresult;
     SE2 t0(_t0);
     CorrespondenceValidatorPtrVector validators;
+//    Line2DCorrespondenceValidator<VertexLine2D>* val1= new Line2DCorrespondenceValidator<VertexLine2D>(2);
+//    val1->setIntraFrameDistanceDifference(.5);
+//    val1->setIntraFrameMinimalDistance(5);
+//    validators.push_back(val1);
     bool result = testRansac<Line2DMapping, RansacLine2DLinear, EdgeLine2D>(tresult, 100, t0, 
 									    scales, offsets, noises, omegas, 
 									    validators,
