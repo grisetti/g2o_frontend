@@ -8,7 +8,8 @@
 #include "../structures/gridmap.h"
 
 
-
+namespace match_this
+{
 struct PointAccumulator
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -148,5 +149,5 @@ class ScanMatcher : public Matcher
     int _gridKScale;
     float _kernelRange;
 };
-
+}
 #endif // SCANMATCHER_H

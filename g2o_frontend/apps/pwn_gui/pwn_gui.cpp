@@ -255,7 +255,7 @@ int main(int argc, char** argv) {
   PWNGuiMainWindow pwnGMW;
   QGraphicsScene *refScn, *currScn;
   
-  //pwnGMW.viewer_3d->setAxisIsDrawn(true);
+  pwnGMW.viewer_3d->setAxisIsDrawn(true);
 
   std::vector<string> filenames;
   std::set<string> filenamesset = readDir(workingDirectory);

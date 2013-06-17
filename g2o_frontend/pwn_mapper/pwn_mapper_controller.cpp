@@ -198,7 +198,7 @@ bool PWNMapperController::alignIncrementally(){
   
   Eigen::Isometry3f localTransformation = aligner->T();
   cerr << "VALUES: " << aligner->inliers() << " --- " << aligner->error() / aligner->inliers() << endl;
-  if(aligner->outerIterations() != 0 && (aligner->inliers() < 1000 || aligner->error() / aligner->inliers() > 10) ) {
+  if(aligner->outerIterations() != 0 && (aligner->inliers() < 20000 || aligner->error() / aligner->inliers() > 10) ) {
     cerr << "ALIGNER FAILURE!!!!!!!!!!!!!!!" << endl;
     localTransformation = initialGuess;
   }
@@ -220,8 +220,8 @@ bool PWNMapperController::alignIncrementally(){
     char buff[1024];
     sprintf(buff, "out-%05d.pwn", counter++);	
     mergedClouds.save(buff, 1, true);
-    os.str("");
-    os.clear();
+    //os.str("");
+    //os.clear();
     mergedClouds.clear();
     initialPose = globalT;
   }
