@@ -22,6 +22,7 @@ ADD_LIBRARY(pwn2_library
   informationmatrixcalculator.h informationmatrixcalculator.cpp
   linearizer.cpp linearizer.h
   merger.cpp merger.h
+  multipointprojector.cpp multipointprojector.h 
   pinholepointprojector.cpp pinholepointprojector.h
   pointaccumulator.h
   pointintegralimage.cpp pointintegralimage.h

@@ -102,7 +102,7 @@ class PWNMapperController {
 
   int counter;
 
-  ostringstream os;
+  //ostringstream os;
 
   DepthImage di;
   MatrixXi ii;

@@ -85,7 +85,7 @@ bool Frame::save(const char *filename, int step, bool binary) {
   ofstream os(filename);
   if (!os)
     return false;
-  return save(os, step, binary);
+  return save(os, step, binary);  
 }
 
 bool Frame::save(ostream &os, int step, bool binary) {
