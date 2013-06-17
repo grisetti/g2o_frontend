@@ -61,6 +61,7 @@ void MapQGLViewer::init()
     cam->setUpVector(qglviewer::Vec(0., 1., 0.));
     cam->lookAt(qglviewer::Vec(0., 0., 0.));
     delete oldcam;
+
 }
 
 
@@ -123,15 +124,15 @@ void MapQGLViewer::drawGraph(const Vertices &v, const Edges &e)
                 glTranslatef((float)vse2->estimate().translation().x(), (float)vse2->estimate().translation().y(), _depth);
                 glRotatef((float)(RAG2DEG(vse2->estimate().rotation().angle())), 0.f, 0.f, 1.f);
                 glNormal3f(0.f,0.f,1.f);
-//                drawVertex();
-                LaserRobotData::Vector2fVector scan = laserRobotData->floatCartesian();
-                for(size_t i = 0; i < scan.size(); ++i)
-                {
-                    glBegin(GL_POINTS);
-                    glColor4f(_red, _green, _blue, _alpha);
-                    glVertex3f(scan[i].x(), scan[i].y(), 0.f);
-                    glEnd();
-                }
+                drawVertex();
+//                LaserRobotData::Vector2fVector scan = laserRobotData->floatCartesian();
+//                for(size_t i = 0; i < scan.size(); ++i)
+//                {
+//                    glBegin(GL_POINTS);
+//                    glColor4f(_red, _green, _blue, _alpha);
+//                    glVertex3f(scan[i].x(), scan[i].y(), 0.f);
+//                    glEnd();
+//                }
                 glPopMatrix();
             }
         }

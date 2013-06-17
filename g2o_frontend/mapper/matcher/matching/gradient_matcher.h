@@ -3,7 +3,8 @@
 
 #include "scan_matcher.h"
 
-
+namespace match_this
+{
 
 class GradientMatcherResult : public ScanMatcherResult
 {
@@ -43,5 +44,5 @@ protected:
     Eigen::Vector3f _moves[6];
     GradientMatcherResult* gmr;
 };
-
+}
 #endif // GRADIENTMATCHER_H

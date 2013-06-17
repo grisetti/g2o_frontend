@@ -5,7 +5,8 @@ using namespace std;
 using namespace Eigen;
 
 
-
+namespace match_this
+{
 float HierarchicalMatcherResult::matchingScore() const
 {
   return _matchingScore;
@@ -188,3 +189,4 @@ void HierarchicalMatcher::scanMatch(const Vector2fVector& points, const RegionVe
 //        _matchResults.push_back(hmr);
 //    }
 //}
+}

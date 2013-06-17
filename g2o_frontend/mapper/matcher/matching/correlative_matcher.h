@@ -3,8 +3,8 @@
 
 #include "scan_matcher.h"
 
-
-
+namespace match_this
+{
 struct Region
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -127,5 +127,5 @@ protected:
     RegionVector _regions;
     CorrelativeMatcherResult* innerCMR;
 };
-
+}
 #endif // CORRELATIVEMATCHER_H

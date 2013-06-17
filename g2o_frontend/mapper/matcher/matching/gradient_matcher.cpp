@@ -4,7 +4,8 @@
 using namespace std;
 using namespace Eigen;
 
-
+namespace match_this
+{
 
 float GradientMatcherResult::matchingScore() const
 {
@@ -127,4 +128,5 @@ void GradientMatcher::scanMatch(const Vector2fVector& scan, const Vector3f& init
     _matchResults.push_back(gmr);
 
     _scanGrid.setCenter(tempCenter);
+}
 }

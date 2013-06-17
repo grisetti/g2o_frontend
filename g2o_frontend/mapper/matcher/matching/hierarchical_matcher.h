@@ -4,6 +4,8 @@
 
 #include "correlative_matcher.h"
 
+namespace match_this
+{
 
 
 class HierarchicalMatcherResult : public CorrelativeMatcherResult
@@ -50,5 +52,5 @@ public:
                    Eigen::Vector3f lowerLeftF, Eigen::Vector3f upperRightF, float thetaRes,
                    float maxScore, float dx, float dy, float dth, int nLevels);
 };
-
+}
 #endif // HIERARCHICALMATCHER_H

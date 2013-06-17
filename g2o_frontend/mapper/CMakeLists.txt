@@ -1,3 +1,4 @@
 ADD_SUBDIRECTORY(map_viewer)
 ADD_SUBDIRECTORY(matcher)
 ADD_SUBDIRECTORY(graph_slam)
+ADD_SUBDIRECTORY(graph_viewer)

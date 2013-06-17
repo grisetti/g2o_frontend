@@ -11,7 +11,8 @@
 #include "g2o/stuff/timeutil.h"
 
 
-
+namespace match_this
+{
 class MatcherResult
 {    
 public:
@@ -174,5 +175,5 @@ protected:
     VertexContainer _referenceVerteces;
     ResultContainer _matchResults;
 };
-
+}
 #endif
