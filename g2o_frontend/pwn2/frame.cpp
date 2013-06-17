@@ -62,7 +62,7 @@ bool Frame::save(const char *filename, Eigen::Isometry3f T, int step, bool binar
 }
 
 bool Frame::save(ostream &os, Eigen::Isometry3f T, int step, bool binary) {
-  os << "POINTWITHNORMALVECTOR " << _points.size()/step << " " << binary << endl; 
+  os << "POINTWITHNORMALVECTOR " << _points.size() / step << " " << binary << endl; 
   for(size_t i = 0; i < _points.size(); i+=step) {
     const Point& point = T * _points[i];
     const Normal& normal = T * _normals[i];

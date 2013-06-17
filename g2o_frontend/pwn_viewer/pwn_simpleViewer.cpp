@@ -75,6 +75,8 @@ int main (int argc, char** argv) {
   viewer->show();
   listWidget->show();
   pwn::Frame *frame = new pwn::Frame();
+
+  viewer->setAxisIsDrawn(true);
   while (mainWindow->isVisible()) {
     if(viewer->drawableList().size() == 0) {
       for(int i = 0; i < maxFiles; i++) {
