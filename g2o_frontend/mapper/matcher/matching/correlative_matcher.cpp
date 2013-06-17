@@ -5,7 +5,8 @@ using namespace g2o;
 using namespace std;
 using namespace Eigen;
 
-
+namespace match_this
+{
 
 float CorrelativeMatcherResult::matchingScore() const
 {
@@ -262,4 +263,5 @@ void CorrelativeMatcher::scanMatch(vector<CorrelativeMatcherResult*>& mresvec, c
 
     Comparator comp;
     sort(mresvec.begin(), mresvec.end(), comp);
+}
 }

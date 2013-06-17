@@ -27,7 +27,7 @@
 using namespace Eigen;
 using namespace g2o;
 using namespace std;
-
+using namespace match_this;
 
 
 VertexSE2* v = new VertexSE2;
@@ -130,7 +130,7 @@ int main(int argc, char**argv)
                             Vector3f lower(-0.3+initGuess.x(), -0.3+initGuess.y(), -0.2+initGuess.z());
                             Vector3f upper(0.3+initGuess.x(), 0.3+initGuess.y(), 0.2+initGuess.z());
                             float thetaRes = 0.01;
-                            int max = 350;
+                            int max = 150;
 
                             cm.convolveScan(previousScan);
                             cm.scanMatch(currentScan, lower, upper, thetaRes, max);

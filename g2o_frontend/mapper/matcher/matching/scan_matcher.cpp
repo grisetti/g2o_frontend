@@ -6,11 +6,12 @@
 using namespace std;
 using namespace Eigen;
 
-
+namespace match_this
+{
 
 float ScanMatcherResult::matchingScore() const
 {
-  return _matchingScore;
+    return _matchingScore;
 }
 
 
@@ -20,18 +21,18 @@ ScanMatcherResult::~ScanMatcherResult() {}
 ScanMatcher::ScanMatcher(const float& resolution, const float& radius, const int& kernelSize,
                          const float& kernelMaxValue, const int kscale)
 {
-  _kernelRange = kernelMaxValue;
-  _gridKScale = kscale;
+    _kernelRange = kernelMaxValue;
+    _gridKScale = kscale;
 
-  int size = (int) 2*(radius/resolution);
-  this->_scanGrid = CharGrid(Vector2i(size, size), Vector2f(-radius, -radius), resolution, char(0));
-  this->_convolvedGrid = CharGrid(Vector2i(size, size), Vector2f(-radius, -radius), resolution, (char) _kernelRange);
-  this->initializeKernel(kernelSize, resolution, _kernelRange);
-  
-//   _rasterCells.reserve(size);
-//   _convolvedCells.reserve(size);
-//   _rasterIndices.reserve(size);
-//   _convolvedIndices.reserve(size);
+    int size = (int) 2*(radius/resolution);
+    this->_scanGrid = CharGrid(Vector2i(size, size), Vector2f(-radius, -radius), resolution, char(0));
+    this->_convolvedGrid = CharGrid(Vector2i(size, size), Vector2f(-radius, -radius), resolution, (char) _kernelRange);
+    this->initializeKernel(kernelSize, resolution, _kernelRange);
+
+    //   _rasterCells.reserve(size);
+    //   _convolvedCells.reserve(size);
+    //   _rasterIndices.reserve(size);
+    //   _convolvedIndices.reserve(size);
 }
 
 
@@ -89,7 +90,7 @@ void ScanMatcher::clear()
     }
     _convolvedCells.clear();
     _convolvedIndices.clear();
-  
+
     int sizeRC = _rasterCells.size();
     for(int j = 0; j < sizeRC; ++j)
     {
@@ -255,42 +256,43 @@ void ScanMatcher::integrateScan(const Vector2fVector& ns, const float& val, cons
 
 void ScanMatcher::saveConvolvedScanAsPPM(ostream& os, bool eq) const
 {
-  return _convolvedGrid.saveAsPPM(os, eq);
+    return _convolvedGrid.saveAsPPM(os, eq);
 }
 
 
 void ScanMatcher::saveScanAsPPM(ostream& os, bool eq) const
 {
-  return _scanGrid.saveAsPPM(os, eq);
+    return _scanGrid.saveAsPPM(os, eq);
 }
 
 
 void ScanMatcher::subsample(Vector2fVector& dest, const Vector2fVector& src)
 {
-  Vector2iAccumulatorMap accMap;
-  float gridInvResolution = _scanGrid.inverseResolution();
-  for(Vector2fVector::const_iterator it = src.begin(); it!=src.end(); ++it)
-  {
-    const Vector2f& p = *it;
-    Vector2i ip(gridInvResolution*p.x(), gridInvResolution*p.y());
-    Vector2iAccumulatorMap::iterator ait = accMap.find(ip);
-    if(ait == accMap.end())
+    Vector2iAccumulatorMap accMap;
+    float gridInvResolution = _scanGrid.inverseResolution();
+    for(Vector2fVector::const_iterator it = src.begin(); it!=src.end(); ++it)
     {
-      PointAccumulator pa;
-      pa.add(p);
-      accMap.insert(make_pair(ip, pa));
+        const Vector2f& p = *it;
+        Vector2i ip(gridInvResolution*p.x(), gridInvResolution*p.y());
+        Vector2iAccumulatorMap::iterator ait = accMap.find(ip);
+        if(ait == accMap.end())
+        {
+            PointAccumulator pa;
+            pa.add(p);
+            accMap.insert(make_pair(ip, pa));
+        }
+        else
+        {
+            PointAccumulator& pa = ait->second;
+            pa.add(p);
+        }
     }
-    else
+    dest.resize(accMap.size());
+    int i = 0;
+    for(Vector2iAccumulatorMap::iterator ait=accMap.begin(); ait!=accMap.end(); ++ait)
     {
-      PointAccumulator& pa = ait->second;
-      pa.add(p);
+        dest[i] = ait->second.mean();
+        i++;
     }
-  }
-  dest.resize(accMap.size());
-  int i = 0;
-  for(Vector2iAccumulatorMap::iterator ait=accMap.begin(); ait!=accMap.end(); ++ait)
-  {
-    dest[i] = ait->second.mean();
-    i++;
-  }
+}
 }

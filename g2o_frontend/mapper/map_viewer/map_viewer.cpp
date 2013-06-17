@@ -136,5 +136,9 @@ int main(int argc, char**argv)
     MapGUI* dialog = new MapGUI();
     dialog->show();
 
-    return app.exec();
+//    return app.exec();
+    while(1)
+    {
+        app.processEvents();
+    }
 }

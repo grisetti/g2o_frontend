@@ -5,8 +5,12 @@
 #include "../matching/correlative_matcher.h"
 #include "../utils/logReader.h"
 
+
 using namespace std;
 using namespace Eigen;
+using namespace match_this;
+
+
 
 int main()
 {

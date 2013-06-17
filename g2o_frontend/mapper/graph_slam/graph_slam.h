@@ -1,7 +1,6 @@
 #ifndef GRAPHSLAM_H
 #define GRAPHSLAM_H
 
-#include "g2o/core/optimizable_graph.h"
 #include "g2o/core/sparse_optimizer.h"
 #include "g2o/core/block_solver.h"
 #include "g2o/core/factory.h"
@@ -11,24 +10,43 @@
 
 #include "../matcher/matching/include.h"
 #include "graph_cost_functions.h"
+#include "sub_map.h"
+
 
 
 class GraphSLAM
 {
 public:
-    GraphSLAM(g2o::OptimizableGraph* graph_, Matcher m_);
+    GraphSLAM(std::string filename);
+    GraphSLAM(g2o::SparseOptimizer* graph_);
 
-    void findNearestVertices(g2o::OptimizableGraph::Vertex* v_, double threshold_);
-    void localMatching();
-    void loopClosureMatching();
-    void addLocalConstraint(int ref_id, int curr_id, Eigen::Isometry3d estimate);
-    void addLoopClosuresConstraints();
+    void initialize(float distance_);
+//    void findNearestVertices(g2o::OptimizableGraph::Vertex* v_, double threshold_);
+
+    void localMapMatching();
+//    void localMatching();
+//    void loopClosureMatching();
+
+//    void addLocalConstraint(int ref_id, int curr_id, Eigen::Isometry3d estimate);
+//    void addLoopClosuresConstraints();
+
+
+    inline g2o::SparseOptimizer* graph() {return _graph; }
+    inline const g2o::SparseOptimizer* graph() const {return _graph; }
+    inline SubMap* localMap() {return _innerMap; }
+    inline const SubMap* localMap() const {return _innerMap; }
+
+    inline SubMap* innerMap() { return _innerMap; }
+    inline SubMap* outerMap() { return _outerMap; }
+
+    bool saveGraph(const char* filename);
 
 protected:
-    Matcher _matcher;
-    g2o::OptimizableGraph* _graph;
+    g2o::SparseOptimizer* _graph;
 
-    g2o::HyperGraph::VertexSet _localMap;
+    SubMap* _innerMap;
+    SubMap* _outerMap;
+
+//    Matcher _matcher;
 };
-
 #endif // GRAPHSLAM_H

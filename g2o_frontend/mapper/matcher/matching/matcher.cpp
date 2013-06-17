@@ -3,7 +3,8 @@
 
 using namespace g2o;
 
-
+namespace match_this
+{
 
 float MatcherResult::matchingScore() const
 {
@@ -35,3 +36,4 @@ void Matcher::clearMatchResults()
 
 
 void Matcher::match(HyperGraph::Vertex* ref, HyperGraph::Vertex* curr) {}
+}
