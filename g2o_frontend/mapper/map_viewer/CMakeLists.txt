@@ -37,36 +37,3 @@ TARGET_LINK_LIBRARIES(map_viewer
 )
 
 
-ADD_EXECUTABLE(manipulated_frame try_manipulated_frame.cpp manipulated_frame.cpp)
-SET_TARGET_PROPERTIES(manipulated_frame PROPERTIES OUTPUT_NAME manipulated_frame)
-TARGET_LINK_LIBRARIES(manipulated_frame
-                        map_viewer_library
-                        sensor_data_library
-  ${G2O_STUFF_LIBRARY} 	${G2O_SOLVER_CSPARSE} ${G2O_SOLVER_CSPARSE_EXTENSION}
-  ${G2O_CORE_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${CSPARSE_LIBRARY}
-        #${GLUT_LIBRARY}
-  #pthread
-)
-
-ADD_EXECUTABLE(selection try_select.cpp select.cpp)
-SET_TARGET_PROPERTIES(selection PROPERTIES OUTPUT_NAME selection)
-TARGET_LINK_LIBRARIES(selection
-                        map_viewer_library
-                        sensor_data_library
-  ${G2O_STUFF_LIBRARY} 	${G2O_SOLVER_CSPARSE} ${G2O_SOLVER_CSPARSE_EXTENSION}
-  ${G2O_CORE_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${CSPARSE_LIBRARY}
-        #${GLUT_LIBRARY}
-  #pthread
-)
-
-
-ADD_EXECUTABLE(multiSelection try_multiSelect.cpp manipulatedFrameSetConstraint.cpp drawable_object.cpp multiSelect.cpp)
-SET_TARGET_PROPERTIES(multiSelection PROPERTIES OUTPUT_NAME multiSelection)
-TARGET_LINK_LIBRARIES(multiSelection
-                        map_viewer_library
-                        sensor_data_library
-  ${G2O_STUFF_LIBRARY} 	${G2O_SOLVER_CSPARSE} ${G2O_SOLVER_CSPARSE_EXTENSION}
-  ${G2O_CORE_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${CSPARSE_LIBRARY}
-        #${GLUT_LIBRARY}
-  #pthread
-)

@@ -1,7 +1,5 @@
 #include "pinholepointprojector.h"
 
-using namespace std;
-
 namespace pwn {
 
 PinholePointProjector::PinholePointProjector() : PointProjector() {
@@ -52,7 +50,6 @@ inline int PinholePointProjector::projectInterval(const int x, const int y, cons
 void PinholePointProjector::project(Eigen::MatrixXi &indexImage,
 				    Eigen::MatrixXf &depthImage, 
 				    const PointVector &points) const {
-  std::cerr << "Called" << std::endl;
   depthImage.resize(indexImage.rows(), indexImage.cols());
   depthImage.fill(std::numeric_limits<float>::max());
   indexImage.fill(-1);

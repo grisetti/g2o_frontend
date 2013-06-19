@@ -184,6 +184,7 @@ int main(int argc, char** argv) {
 	  if(v && !frames[k]) {
 	    G2OFrame *currentFrame = new G2OFrame(v);
 	    controller->addVertex(*currentFrame);
+	    frames[k] = currentFrame;
 	    DrawableFrame *drawableFrame = new DrawableFrame(trajectory[k], parameterFrame, frames[k]); 
 	    viewer->addDrawable(drawableFrame);
 	    changed = true;

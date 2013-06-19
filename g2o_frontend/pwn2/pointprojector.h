@@ -80,7 +80,7 @@ public:
    */
   virtual void project(Eigen::MatrixXi &indexImage, 
 		       Eigen::MatrixXf &depthImage, 
-               const PointVector &points) const;
+		       const PointVector &points) const;
 
   /**
    *  Virtual method that projects on an image the sides of the square regions that will be used to compute

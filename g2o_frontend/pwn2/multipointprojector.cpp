@@ -1,9 +1,5 @@
 #include "multipointprojector.h"
 
-#include "../basemath/bm_se3.h"
-#include <cstdio>
-using namespace std;
-
 namespace pwn {
 
 void MultiPointProjector::project(Eigen::MatrixXi &indexImage, 
@@ -24,21 +20,17 @@ void MultiPointProjector::project(Eigen::MatrixXi &indexImage,
   depthImage.fill(std::numeric_limits<float>::max());
   indexImage.fill(-1);
   
-  Eigen::MatrixXi currentIndexImage;
-  Eigen::MatrixXf currentDepthImage;
   int columnOffset = 0;
   for(size_t i = 0; i < _pointProjectors.size(); i++) {
     const int width = _pointProjectors[i].width;
     const int height = _pointProjectors[i].height;
-    if(currentIndexImage.rows() != width || currentIndexImage.cols() != height)
-      currentIndexImage.resize(width, height);
     
     PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
     if(currentPointProjector != 0) {
       currentPointProjector->setTransform(_pointProjectors[i].sensorOffset);
-      currentPointProjector->project(currentIndexImage, currentDepthImage, points);      
-      indexImage.block(0, columnOffset, width, height) = currentIndexImage;
-      depthImage.block(0, columnOffset, width, height) = currentDepthImage;
+      currentPointProjector->project(_pointProjectors[i].indexImage, _pointProjectors[i].depthImage, points);      
+      indexImage.block(0, columnOffset, width, height) = _pointProjectors[i].indexImage;
+      depthImage.block(0, columnOffset, width, height) = _pointProjectors[i].depthImage;
     }
     columnOffset += height;
   }
@@ -49,27 +41,25 @@ void MultiPointProjector::unProject(PointVector &points,
 				    const Eigen::MatrixXf &depthImage) const {
   indexImage.resize(depthImage.rows(), depthImage.cols());
   indexImage.fill(-1);
-  points.resize(0);
+  points.clear();
   PointVector currentPoints;
-  Eigen::MatrixXi currentIndexImage;
-  int rowOffset = 0;
+  int columnOffset = 0;
   for(size_t i = 0; i < _pointProjectors.size(); i++) {
     const int width = _pointProjectors[i].width;
     const int height = _pointProjectors[i].height;
 
-    if(currentIndexImage.rows() != width || currentIndexImage.cols() != height)
-      currentIndexImage.resize(width, height);
-
     PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
     if(currentPointProjector != 0) {
       currentPointProjector->setTransform(_pointProjectors[i].sensorOffset);
+      _pointProjectors[i].depthImage = depthImage.block(0, columnOffset, width, height);
       currentPointProjector->unProject(currentPoints,
-				       currentIndexImage, 
-				       depthImage.block(width, height, rowOffset + width, 0));
-      indexImage.block(width, height, rowOffset + width, 0) = currentIndexImage;
-      points.insert(points.end(), points.begin(), currentPoints.end());
+				       _pointProjectors[i].indexImage, 
+				       _pointProjectors[i].depthImage);
+      indexImage.block(0, columnOffset, width, height) = _pointProjectors[i].indexImage;
+      points.insert(points.end(), currentPoints.begin(), currentPoints.end());
     }
-    rowOffset += width;
+
+    columnOffset += height;
   }
 }
 
@@ -79,31 +69,29 @@ void MultiPointProjector::unProject(PointVector &points,
 				    const Eigen::MatrixXf &depthImage) const {
   indexImage.resize(depthImage.rows(), depthImage.cols());
   indexImage.fill(-1);
-  points.resize(0);
-  gaussians.resize(0);
+  points.clear();
+  gaussians.clear();
   PointVector currentPoints;
   Gaussian3fVector currentGaussians;
-  Eigen::MatrixXi currentIndexImage;
-  int rowOffset = 0;
+  int columnOffset = 0;
   for(size_t i = 0; i < _pointProjectors.size(); i++) {
     const int width = _pointProjectors[i].width;
     const int height = _pointProjectors[i].height;
 
-    if(currentIndexImage.rows() != width || currentIndexImage.cols() != height)
-      currentIndexImage.resize(width, height);
-
     PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
     if(currentPointProjector != 0) {
       currentPointProjector->setTransform(_pointProjectors[i].sensorOffset);
+      _pointProjectors[i].depthImage = depthImage.block(0, columnOffset, width, height);
       currentPointProjector->unProject(currentPoints,
 				       currentGaussians,
-				       currentIndexImage, 
-				       depthImage.block(width, height, rowOffset + width, 0));
-      indexImage.block(width, height, rowOffset + width, 0) = currentIndexImage;
-      points.insert(points.end(), points.begin(), currentPoints.end());
-      gaussians.insert(gaussians.end(), gaussians.begin(), currentGaussians.end());
+				       _pointProjectors[i].indexImage, 
+				       _pointProjectors[i].depthImage);
+      indexImage.block(0, columnOffset, width, height) = _pointProjectors[i].indexImage;
+      points.insert(points.end(), currentPoints.begin(), currentPoints.end());
+      gaussians.insert(gaussians.end(), currentGaussians.begin(), currentGaussians.end());
     }
-    rowOffset += width;
+
+    columnOffset += height;
   }
 }
 
@@ -112,22 +100,24 @@ void MultiPointProjector::projectIntervals(Eigen::MatrixXi& intervalImage,
 					   const float worldRadius) const {
   intervalImage.resize(depthImage.rows(), depthImage.cols());
   Eigen::MatrixXi currentIntervalImage;
-  int rowOffset = 0;
+  int columnOffset = 0;
   for(size_t i = 0; i < _pointProjectors.size(); i++) {
     const int width = _pointProjectors[i].width;
     const int height = _pointProjectors[i].height;
 
     if(currentIntervalImage.rows() != width || currentIntervalImage.cols() != height)
       currentIntervalImage.resize(width, height);
+
     PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
     if(currentPointProjector != 0) {
       currentPointProjector->setTransform(_pointProjectors[i].sensorOffset);
+      _pointProjectors[i].depthImage = depthImage.block(0, columnOffset, width, height);
       currentPointProjector->projectIntervals(currentIntervalImage,
-					      depthImage.block(width, height, rowOffset + width, 0),
+					      _pointProjectors[i].depthImage,
 					      worldRadius);
-      intervalImage.block(width, height, rowOffset + width, 0) = currentIntervalImage;
+      intervalImage.block(0, columnOffset, width, height) = currentIntervalImage;
     }
-    rowOffset += width;
+    columnOffset += height;
   }
 }
 
