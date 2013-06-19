@@ -63,43 +63,45 @@ bool findCorrespondences(LineCorrs& _currCorrs,  LinesForMatching& _pairLinesSet
     cerr << "number of lines in the first set: " << s1.size() << endl;
     cerr << "number of lines in the second set: " << s2.size() << endl;
     for(size_t j = 0; j < s1.size(); j++)
-{	
-	lineCorrespondence lc;
-	lc.error = 1e9;
-	lc.lid1 = -1;
-	lc.lid2 = -1;
+{
+    lineCorrespondence lc;
+    lc.error = 1e9;
+    lc.lid1 = -1;
+    lc.lid2 = -1;
 
-	Line2D l1 = s1[j].line;
-	Vector3d l1_coeff(cos(l1(0)), sin(l1(0)), l1(1));
-	
-	for(size_t k = 0; k < s2.size(); k++)
-	{
-	    Line2D l2 = s2[k].line;
-	    Vector3d l2_coeff(cos(l2(0)), sin(l2(0)), l2(1));
-	    
+    Line2D l1 = s1[j].line;
+    Vector3d l1_coeff(cos(l1(0)), sin(l1(0)), l1(1));
+
+    for(size_t k = 0; k < s2.size(); k++)
+    {
+        Line2D l2 = s2[k].line;
+        Vector3d l2_coeff(cos(l2(0)), sin(l2(0)), l2(1));
+
 // 	    double err_n  = abs(l1_coeff[0]-l2_coeff[0] + l1_coeff[1]-l2_coeff[1]);
 // 	    double err_rho = abs(l1_coeff[2]-l2_coeff[2]);
 // 	    double err_sum = err_n + err_rho;
-	    
-	    //computing the chi2
-	    int weight = 10;
-	    double err_chi2 = computeError(l1_coeff, l2_coeff, weight);
+
+        //computing the chi2
+        int weight = 10;
+        double err_chi2 = computeError(l1_coeff, l2_coeff, weight);
 /*
-	    cerr << "- err_sum between frame 0 line "<< j << " and frame 1 line " << k << ":\t" <<  err_sum <<endl;
-	    cerr << "- err_chi2 between frame 0 line "<< j << " and frame 1 line " << k << ":\t" << err_chi2 <<endl<<endl;*/
-	    
-	    if(err_chi2 < lc.error)
-	    {
-		lc.error = err_chi2;
-		lc.lid1 = j;
-		lc.lid2 = k;
-	    }
-	}
-	_currCorrs.push_back(lc);
+        cerr << "- err_sum between frame 0 line "<< j << " and frame 1 line " << k << ":\t" <<  err_sum <<endl;
+        cerr << "- err_chi2 between frame 0 line "<< j << " and frame 1 line " << k << ":\t" << err_chi2 <<endl<<endl;*/
+
+        if(err_chi2 < lc.error)
+        {
+        lc.error = err_chi2;
+        lc.lid1 = j;
+        lc.lid2 = k;
+        }
+    }
+    _currCorrs.push_back(lc);
     }
     cerr << "Number of correspondances found: " << _currCorrs.size() << endl;
     return true;
 }
+
+
 void mergePointVertex(OptimizableGraph* graph, VertexPointXY* pNew, VertexPointXY* pOld){
 	if (!pNew || !pOld || pNew == pOld)
 	    return;

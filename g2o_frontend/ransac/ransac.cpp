@@ -74,11 +74,14 @@ namespace g2o_frontend {
 
 void BaseGeneralizedRansac::keepBestFriend(std::vector<int>& bestFriendInliers_, const std::vector<double> _errors, std::vector<int>& inliers)
 {
-    viCorrMap ViCorrMap;
+    std::vector<int> bestFriendTmp;
+    viCorrMap ViCorrMap1;
+    viCorrMap ViCorrMap2;
     viCorrMap::iterator it;
     std::pair<viCorrMap::iterator, bool> ret_insert;
 
-    cout << endl << ">>> start creating the map(v1.id(),vector<ciErr>) - original size of inliers: " << inliers.size() << endl;
+    cout << "*** first index best friend ***" << endl;
+    cout << endl << ">>> start creating the first map(v1.id(),vector<ciErr>) - original size of inliers: " << inliers.size() << endl;
     for (size_t i = 0; i<inliers.size(); i++){
 
         int idx = inliers[i];
@@ -86,38 +89,35 @@ void BaseGeneralizedRansac::keepBestFriend(std::vector<int>& bestFriendInliers_,
         double err = _errors[idx];
         g2o::OptimizableGraph::Edge* e = c.edge();
         g2o::OptimizableGraph::Vertex* v1=static_cast<g2o::OptimizableGraph::Vertex*>(e->vertex(0));
-        g2o::OptimizableGraph::Vertex* v2=static_cast<g2o::OptimizableGraph::Vertex*>(e->vertex(1));
+//        g2o::OptimizableGraph::Vertex* v2=static_cast<g2o::OptimizableGraph::Vertex*>(e->vertex(1));
 //         cerr << "Current inlier is: " << "(" << idx << ","<< e << ","<< v1->id() << "," << v2->id() << "," << err << "), ";
 
         ciError CiErr;
         CiErr.idx = idx;
         CiErr.err = err;
 
-        it = ViCorrMap.find(v1->id());
-        if(it == ViCorrMap.end()){ //the vertex doesn't exists
-
+        it = ViCorrMap1.find(v1->id());
+        if(it == ViCorrMap1.end()){ //the vertex doesn't exists
             ciErrVector CiErrVector;
             CiErrVector.push_back(CiErr);
-            ret_insert = ViCorrMap.insert(std::pair<int,ciErrVector>(v1->id(),CiErrVector));
-//             cerr << "size of ViCorrMap: " << ViCorrMap.size() << ", inserito?? " << ret_insert.second  << endl;
-
-        } else { //the vertex already exists'
-
+            ret_insert = ViCorrMap1.insert(std::pair<int,ciErrVector>(v1->id(),CiErrVector));
+//             cerr << "size of ViCorrMap1: " << ViCorrMap1.size() << ", inserito?? " << ret_insert.second  << endl;
+        } else { //the vertex already exists
             it->second.push_back(CiErr);
 //             cerr << "size of ciErrVector: " << it->second.size() << endl;
         }
     }
     cerr << endl;
 
-    cerr << " >>> start finding the best friends." << endl;
-    for(viCorrMap::iterator it = ViCorrMap.begin(); it != ViCorrMap.end(); it++) {
+    cerr << " >>> start finding the first vertex best friend." << endl;
+    for(viCorrMap::iterator it = ViCorrMap1.begin(); it != ViCorrMap1.end(); it++) {
 
         int idv1 = it->first;
         ciErrVector errVector = it->second;
 
         if(errVector.size() == 1){
             ciError ci = errVector[0];
-            bestFriendInliers_.push_back(ci.idx);
+            bestFriendTmp.push_back(ci.idx);
             cerr << "For vertex id: " << idv1 << "-->inlier correspondance with min error: " << ci.err << " and inlier index: " << ci.idx << endl;
         } else {
             double err_min = 1e9;
@@ -131,9 +131,67 @@ void BaseGeneralizedRansac::keepBestFriend(std::vector<int>& bestFriendInliers_,
                 }
             }
             cerr << "For vertex id: " << idv1 << "-->inlier correspondance with min error: " << err_min << " and inlier index: " << index_inliers << endl;
+            bestFriendTmp.push_back(index_inliers);
+        }
+    }
+
+    /// cross controll for the second index best friend
+
+
+    cout << "*** second index best friend ***" << endl;
+    cout << endl << ">>> start creating the second map(v2.id(),vector<ciErr>) - original size of inliers: " << bestFriendTmp.size() << endl;
+    for (size_t i = 0; i<bestFriendTmp.size(); i++){
+
+        int idx = bestFriendTmp[i];
+        Correspondence& c =_correspondences[idx];
+        double err = _errors[idx];
+        g2o::OptimizableGraph::Edge* e = c.edge();
+//        g2o::OptimizableGraph::Vertex* v1=static_cast<g2o::OptimizableGraph::Vertex*>(e->vertex(0));
+        g2o::OptimizableGraph::Vertex* v2=static_cast<g2o::OptimizableGraph::Vertex*>(e->vertex(1));
+//         cerr << "Current inlier is: " << "(" << idx << ","<< e << ","<< v1->id() << "," << v2->id() << "," << err << "), ";
+
+        ciError CiErr;
+        CiErr.idx = idx;
+        CiErr.err = err;
+
+        it = ViCorrMap2.find(v2->id());
+        if(it == ViCorrMap2.end()){ //the vertex doesn't exists
+            ciErrVector CiErrVector;
+            CiErrVector.push_back(CiErr);
+            ret_insert = ViCorrMap2.insert(std::pair<int,ciErrVector>(v2->id(),CiErrVector));
+//             cerr << "size of ViCorrMap2: " << ViCorrMap2.size() << ", inserito?? " << ret_insert.second  << endl;
+        } else { //the vertex already exists
+            it->second.push_back(CiErr);
+//             cerr << "size of ciErrVector: " << it->second.size() << endl;
+        }
+    }
+    cerr << endl;
+    cerr << " >>> start finding the second vertex best friend." << endl;
+    for(viCorrMap::iterator it = ViCorrMap2.begin(); it != ViCorrMap2.end(); it++) {
+
+        int idv2 = it->first;
+        ciErrVector errVector = it->second;
+
+        if(errVector.size() == 1){
+            ciError ci = errVector[0];
+            bestFriendInliers_.push_back(ci.idx);
+            cerr << "For vertex id: " << idv2 << "-->inlier correspondance with min error: " << ci.err << " and inlier index: " << ci.idx << endl;
+        } else {
+            double err_min = 1e9;
+            int index_inliers = -1;
+            for(int i = 0; i < (int)errVector.size(); i++) {
+
+                ciError ci = errVector[i];
+                if(ci.err < err_min) {
+                    err_min = ci.err;
+                    index_inliers = ci.idx;
+                }
+            }
+            cerr << "For vertex id: " << idv2 << "-->inlier correspondance with min error: " << err_min << " and inlier index: " << index_inliers << endl;
             bestFriendInliers_.push_back(index_inliers);
         }
     }
+
     inliers = bestFriendInliers_;
     //debug
 //    cerr << "best friend inliers size: " << bestFriendInliers_.size() << ", must be equal to " << inliers.size() << endl;
