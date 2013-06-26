@@ -236,17 +236,29 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
     
 //if not using the correspondences filter..
 #ifdef FILTER_OFF
+
+    ofstream os1line("l1.dat");
+    ofstream os2line("l2.dat");
+
     //computing the total number of correspondances for ransac
     int numLinee1 = 0, numLinee2 = 0;
     for (OptimizableGraph::EdgeSet::iterator itv1 = es1.begin(); itv1 != es1.end(); itv1++) {
-	EdgeSE2Line2D* el1 = dynamic_cast<EdgeSE2Line2D*>(*itv1);
-	if (el1)
-	    numLinee1++;
+        EdgeSE2Line2D* el1 = dynamic_cast<EdgeSE2Line2D*>(*itv1);
+        if (el1) {
+            VertexLine2D* vl1 = dynamic_cast<VertexLine2D*>(el1->vertices()[1]);
+            const Line2D theLine1 = vl1->estimate();
+            os1line << theLine1.transpose() << endl;
+            numLinee1++;
+        }
     }
     for (OptimizableGraph::EdgeSet::iterator itv2 = es2.begin(); itv2 != es2.end(); itv2++) {
-	EdgeSE2Line2D* el2 = dynamic_cast<EdgeSE2Line2D*>(*itv2);
-	if (el2)
-	    numLinee2++;
+        EdgeSE2Line2D* el2 = dynamic_cast<EdgeSE2Line2D*>(*itv2);
+        if (el2){
+            VertexLine2D* vl2 = dynamic_cast<VertexLine2D*>(el2->vertices()[1]);
+            const Line2D theLine2 = vl2->estimate();
+            os2line << theLine2.transpose() << endl;
+            numLinee2++;
+        }
     }
     int totCorr = numLinee1*numLinee2;
     cout << "numLinee1: " << numLinee1 << ", numLinee2: " << numLinee2 << ", totCorr: " << totCorr << endl;
@@ -264,45 +276,46 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
     for (OptimizableGraph::EdgeSet::iterator itv = es1.begin(); itv != es1.end() && k < numLinee1 && i < totCorr; itv++) 
     {
       
-	EdgeSE2Line2D* el = dynamic_cast<EdgeSE2Line2D*>(*itv);
-	if (!el)
-	    continue;
-    VertexLine2D* vl1 = dynamic_cast<VertexLine2D*>(el->vertices()[1]);
+        EdgeSE2Line2D* el = dynamic_cast<EdgeSE2Line2D*>(*itv);
+        if (!el)
+            continue;
+        VertexLine2D* vl1 = dynamic_cast<VertexLine2D*>(el->vertices()[1]);
 
-//	const Line2D theLine = vl1->estimate();
-//	cout << "vl1 estimate1:\n" << theLine << endl;
-	
-	
-	for (OptimizableGraph::EdgeSet::iterator itv2 = es2.begin(); itv2 != es2.end() && j < totCorr; itv2++)
-	{
-	    EdgeSE2Line2D* el2 = dynamic_cast<EdgeSE2Line2D*>(*itv2);
-	    if (!el2)
-		continue;
-        VertexLine2D* vl2 = dynamic_cast<VertexLine2D*>(el2->vertices()[1]);
-//	    const Line2D theLine2 = vl2_->estimate();
-//	    cout << "vl2 estimate2:\n" << theLine2 << endl;
-	
-	    EdgeCorrespondenceType* edge = new EdgeCorrespondenceType(); 
-	    edge->setMeasurementData(zeroVec);
+    //	const Line2D theLine1 = vl1->estimate();
+    //	cout << "vl1 estimate1:\n" << theLine1 << endl;
 
-//	    typename EdgeCorrespondenceType::InformationType info = EdgeCorrespondenceType::InformationType::Identity();
-	    Eigen::Matrix2d myOmega=omega;
-        myOmega(0,0)+=omegaScaleFactor*fabs(vl1->estimate()[1]*vl1->estimate()[1]);
-	    edge->setInformation(omega);
-        edge->vertices()[0]=vl1;
-        edge->vertices()[1]=vl2;
 
-	    //graph.addEdge(edge);
-	    Correspondence c(edge,100);
-	    correspondences.push_back(c);
-	    indices[i]=i;
-	    
-	    //updating global and second local indexes
-	    j++;
-	    i++;
-	}
-	//updating local index
-	k++;
+        for (OptimizableGraph::EdgeSet::iterator itv2 = es2.begin(); itv2 != es2.end() && j < totCorr; itv2++)
+        {
+            EdgeSE2Line2D* el2 = dynamic_cast<EdgeSE2Line2D*>(*itv2);
+            if (!el2)
+            continue;
+            VertexLine2D* vl2 = dynamic_cast<VertexLine2D*>(el2->vertices()[1]);
+
+    //	    const Line2D theLine2 = vl2->estimate();
+    //	    cout << "vl2 estimate2:\n" << theLine2 << endl;
+
+            EdgeCorrespondenceType* edge = new EdgeCorrespondenceType();
+            edge->setMeasurementData(zeroVec);
+
+    //	    typename EdgeCorrespondenceType::InformationType info = EdgeCorrespondenceType::InformationType::Identity();
+            Eigen::Matrix2d myOmega=omega;
+            myOmega(0,0)+=omegaScaleFactor*fabs(vl1->estimate()[1]*vl1->estimate()[1]);
+            edge->setInformation(omega);
+            edge->vertices()[0]=vl1;
+            edge->vertices()[1]=vl2;
+
+            //graph.addEdge(edge);
+            Correspondence c(edge,100);
+            correspondences.push_back(c);
+            indices[i]=i;
+
+            //updating global and second local indexes
+            j++;
+            i++;
+        }
+        //updating local index
+        k++;
     }
     cerr << "correspondances dim: " << correspondences.size() << " must be = " << i << endl;
 #endif
@@ -344,73 +357,73 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
     }
 
 #if 1
-    ofstream os1long("l1ilong.dat");
-    ofstream os2long("l2ilong.dat");
-    ofstream os2Rlong("l2rilong.dat");
-    ofstream osclong("crlong.dat");
-    for(size_t i = 0; i < inliers.size(); i++){
-      int idx = inliers[i];	
-      Correspondence& c=correspondences[idx];
-      g2o::OptimizableGraph::Edge* e=c.edge();
-      VertexLine2D* v1=static_cast<VertexLine2D*>(e->vertex(0));
-      VertexLine2D* v2=static_cast<VertexLine2D*>(e->vertex(1));
+//    ofstream os1long("l1ilong.dat");
+//    ofstream os2long("l2ilong.dat");
+//    ofstream os2Rlong("l2rilong.dat");
+//    ofstream osclong("crlong.dat");
+//    for(size_t i = 0; i < inliers.size(); i++){
+//      int idx = inliers[i];
+//      Correspondence& c=correspondences[idx];
+//      g2o::OptimizableGraph::Edge* e=c.edge();
+//      VertexLine2D* v1=static_cast<VertexLine2D*>(e->vertex(0));
+//      VertexLine2D* v2=static_cast<VertexLine2D*>(e->vertex(1));
 	    
-      //first frame
-      Vector2d line1 = Vector2d(v1->estimate());
-      // cerr << "Line frame1 id: " << v1->id() << ", estimate:\n" << line1 << endl;
+//      //first frame
+//      Vector2d line1 = Vector2d(v1->estimate());
+//      // cerr << "Line frame1 id: " << v1->id() << ", estimate:\n" << line1 << endl;
 
-//      VertexPointXY* vpl1_1 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p1Id));
-//      VertexPointXY* vpl1_2 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p2Id));
-      Vector2d nline1(cos(line1(0)), sin(line1(0)));
-      Vector2d pmiddle1 = nline1*line1(1);
-      Vector2d t1(-nline1.y(), nline1.x());
-      double l1_1,l1_2 = 10;
-//       l1_1 = t1.dot(vpl1_1->estimate() - pmiddle1);
-//       l1_2 = t1.dot(vpl1_2->estimate() - pmiddle1);
-      Vector2d p11 = pmiddle1 + t1*l1_1;
-      Vector2d p12 = pmiddle1 + t1*l1_2;
-      os1long << p11.transpose() << endl;
-      os1long << p12.transpose() << endl;
-      os1long << endl;
-      os1long << endl;
-      os1long.flush();
+////      VertexPointXY* vpl1_1 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p1Id));
+////      VertexPointXY* vpl1_2 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p2Id));
+//      Vector2d nline1(cos(line1(0)), sin(line1(0)));
+//      Vector2d pmiddle1 = nline1*line1(1);
+//      Vector2d t1(-nline1.y(), nline1.x());
+//      double l1_1,l1_2 = 10;
+////       l1_1 = t1.dot(vpl1_1->estimate() - pmiddle1);
+////       l1_2 = t1.dot(vpl1_2->estimate() - pmiddle1);
+//      Vector2d p11 = pmiddle1 + t1*l1_1;
+//      Vector2d p12 = pmiddle1 + t1*l1_2;
+//      os1long << p11.transpose() << endl;
+//      os1long << p12.transpose() << endl;
+//      os1long << endl;
+//      os1long << endl;
+//      os1long.flush();
 
-      //second frame
-      Vector2d line2 = Vector2d(v2->estimate());
-      // cerr << "Line frame1 id: " << v1->id() << ", estimate:\n" << line1 << endl;
-//      VertexPointXY* vpl2_1 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p1Id));
-//      VertexPointXY* vpl2_2 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p2Id));
-      Vector2d nline2(cos(line2(0)), sin(line2(0)));
-      Vector2d pmiddle2 = nline2*line2(1);
-      Vector2d t2(-nline2.y(), nline2.x());
-      double l2_1,l2_2 = 10;
-//       l2_1 = t2.dot(vpl2_1->estimate() - pmiddle2);
-//       l2_2 = t2.dot(vpl2_2->estimate() - pmiddle2);
-      Vector2d p21 = pmiddle2 + t2*l2_1;
-      Vector2d p22 = pmiddle2 + t2*l2_2;
-      os2long << p21.transpose() << endl;
-      os2long << p22.transpose() << endl;
-      os2long << endl;
-      os2long << endl;
-      os2long.flush();
+//      //second frame
+//      Vector2d line2 = Vector2d(v2->estimate());
+//      // cerr << "Line frame1 id: " << v1->id() << ", estimate:\n" << line1 << endl;
+////      VertexPointXY* vpl2_1 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p1Id));
+////      VertexPointXY* vpl2_2 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p2Id));
+//      Vector2d nline2(cos(line2(0)), sin(line2(0)));
+//      Vector2d pmiddle2 = nline2*line2(1);
+//      Vector2d t2(-nline2.y(), nline2.x());
+//      double l2_1,l2_2 = 10;
+////       l2_1 = t2.dot(vpl2_1->estimate() - pmiddle2);
+////       l2_2 = t2.dot(vpl2_2->estimate() - pmiddle2);
+//      Vector2d p21 = pmiddle2 + t2*l2_1;
+//      Vector2d p22 = pmiddle2 + t2*l2_2;
+//      os2long << p21.transpose() << endl;
+//      os2long << p22.transpose() << endl;
+//      os2long << endl;
+//      os2long << endl;
+//      os2long.flush();
 
-      //second frame remapped
-      p21 = result * p21;
-      p22 = result * p22;
+//      //second frame remapped
+//      p21 = result * p21;
+//      p22 = result * p22;
       
-      os2Rlong << p21.transpose() << endl;
-      os2Rlong << p22.transpose() << endl;
-      os2Rlong << endl;
+//      os2Rlong << p21.transpose() << endl;
+//      os2Rlong << p22.transpose() << endl;
+//      os2Rlong << endl;
 
-      //link for the correspondances
-      Eigen::Vector2d pm1 = (p11+p12)*0.5;
-      Eigen::Vector2d pm2 = (p21+p22)*0.5;
-      osclong << pm1.transpose() << endl;
-      osclong << pm2.transpose() << endl;
-      osclong << endl;
-    }
+//      //link for the correspondances
+//      Eigen::Vector2d pm1 = (p11+p12)*0.5;
+//      Eigen::Vector2d pm2 = (p21+p22)*0.5;
+//      osclong << pm1.transpose() << endl;
+//      osclong << pm2.transpose() << endl;
+//      osclong << endl;
+//    }
 
-    cout << "pippooooooooo 1" << endl;
+//    cout << "pippooooooooo 1" << endl;
 
     ofstream os1("l1i.dat");
     ofstream os2("l2i.dat");
