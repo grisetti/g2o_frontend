@@ -54,7 +54,8 @@ class MultiPointProjector: public PointProjector {
   
   virtual void projectIntervals(Eigen::MatrixXi& intervalImage, 
 				const Eigen::MatrixXf& depthImage, 
-				const float worldRadius) const;
+				const float worldRadius,
+				const bool blackBorders=false) const;
 
  protected:
   mutable std::vector<ChildProjectorInfo> _pointProjectors;

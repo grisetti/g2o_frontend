@@ -3,6 +3,8 @@
 #include "pinholepointprojector.h"
 #include "g2o/stuff/timeutil.h"
 
+#include <fstream>
+
 using namespace std;
 
 namespace pwn {
@@ -43,8 +45,8 @@ void DepthImageConverter::compute(Frame &frame,
 
   // computing the integral image and the intervals
   _integralImage.compute(_indexImage,frame.points());
-  _projector->projectIntervals(_intervalImage,depthImage, _normalWorldRadius);
-    
+  _projector->projectIntervals(_intervalImage,depthImage, _normalWorldRadius, true);
+
   _statsCalculator->compute(frame.normals(),
 			    frame.stats(),
 			    frame.points(),

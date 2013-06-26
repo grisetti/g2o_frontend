@@ -74,7 +74,8 @@ void PinholePointProjector::project(Eigen::MatrixXi &indexImage,
 
 void PinholePointProjector::projectIntervals(Eigen::MatrixXi& intervalImage, 
 					     const Eigen::MatrixXf& depthImage, 
-					     const float worldRadius) const {
+					     const float worldRadius,
+					     const bool blackBorders) const {
   intervalImage.resize(depthImage.rows(), depthImage.cols());
   int cpix = 0;
   for (int c=0; c<depthImage.cols(); c++){
@@ -82,6 +83,9 @@ void PinholePointProjector::projectIntervals(Eigen::MatrixXi& intervalImage,
     int *i = &intervalImage(0,c);
     for (int r=0; r<depthImage.rows(); r++, f++, i++){
       *i = _projectInterval(r, c, *f, worldRadius);
+      if(blackBorders &&
+	 ((r < *i) || (c < *i) || (depthImage.rows() - r < *i) || (depthImage.cols() - c < *i)))
+	*i = -1;
       cpix++;
     }
   }

@@ -74,8 +74,9 @@ void CylindricalPointProjector::project(Eigen::MatrixXi &indexImage,
 }
 
 void CylindricalPointProjector::projectIntervals(Eigen::MatrixXi& intervalImage, 
-					     const Eigen::MatrixXf& depthImage, 
-					     const float worldRadius) const {
+						 const Eigen::MatrixXf& depthImage, 
+						 const float worldRadius,
+						 const bool /*blackBorders*/) const {
   intervalImage.resize(depthImage.rows(), depthImage.cols());
   int cpix = 0;
   for (int c=0; c<depthImage.cols(); c++){
