@@ -12,9 +12,8 @@ printf("the ground truth transform is:\n");
 disp(gtX);
 
 np = 5;
-tscale = 100;
-printf("Generating a sample set of %d lines with normal, distributed in a radius of %f meters\n\n", np, tscale);
-
+#tscale = 100;
+#printf("Generating a sample set of %d lines with normal, distributed in a radius of %f meters\n\n", np, tscale);
 #Li = rand(3, np)- 0.5;
 #Lj = zeros(3,np);
 #Li(1:2, :) *= tscale;
@@ -41,18 +40,23 @@ Omega=eye(3);
 Omega(1:2,1:2)*=1000;
 Omega(3,3)*=1000;
 
-#  [Xs, es] = line2d_solve(Li, Lj, Omega, X, 10);
-[Xs, es] = line2d_linearSolve(Li, Lj, Omega, X);
+# choose line2d_solve if you want a non linear solving
+[Xs, es] = line2d_solve(Li, Lj, Omega, X, 10);
+# [Xs, es] = line2d_linearSolve(Li, Lj, Omega, X);
+disp("- final trasform ");
+Xs_final = zeros(3,3);
+Xs_final = Xs(:,:,10);
+disp(Xs_final);
 disp("Transform error vector:");
-disp(t2v_2d(gtX*Xs));
-disp("Transform error:");
-disp(gtX*Xs);
+disp(t2v_2d(gtX*Xs_final));
+# disp("Transform error:");
+# disp(gtX*Xs_final);
 
 
 #debug: controllo se la trasf trovata * Lj =  Li (è l'inversa)
 TLj = zeros(3, np);
 for i = [1:size(Lj)(2)]
   #Li(1:2, i) /= norm(Li(1:2, i));
- TLj(:,i) = line2d_remapCartesian(Xs, Lj(:,i));
+ TLj(:,i) = line2d_remapCartesian(Xs_final, Lj(:,i));
 endfor;
 TLj
