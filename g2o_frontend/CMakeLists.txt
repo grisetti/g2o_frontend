@@ -25,6 +25,7 @@ ADD_SUBDIRECTORY(pwn_mapper)
 ADD_SUBDIRECTORY(pwn_test)
 ADD_SUBDIRECTORY(pwn_g2o)
 
+
 if(PCL_FOUND)
   #ADD_SUBDIRECTORY(PlaneEx)
   #ADD_SUBDIRECTORY(PlaneEx_gui)
@@ -35,6 +36,10 @@ if(PCL_FOUND)
   #ADD_SUBDIRECTORY(planeDatasetGenerator)
 endif(PCL_FOUND)
 
+
+if (OPENNI2_FOUND)
+add_subdirectory(openni2_read)
+endif(OPENNI2_FOUND)
 
 IF(TRAVERSABILITY_FOUND)
   ADD_SUBDIRECTORY(traversability)

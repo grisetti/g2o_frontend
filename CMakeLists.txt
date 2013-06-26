@@ -183,6 +183,10 @@ ENDIF(PCL_FOUND)
 
 FIND_PACKAGE( OpenCV 2.4.2 REQUIRED )
 
+find_package(OpenNI2)
+
+find_package(ZLIB REQUIRED)
+
 # Set up the top-level include directories
 INCLUDE_DIRECTORIES(${g2o_frontend_SOURCE_DIR} ${G2O_FRONTEND_G2O_INCLUDE} ${G2O_FRONTEND_EIGEN3_INCLUDE})
 

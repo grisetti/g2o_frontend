@@ -24,6 +24,7 @@ ADD_LIBRARY(pwn2_library
   merger.cpp merger.h
   multipointprojector.cpp multipointprojector.h 
   pinholepointprojector.cpp pinholepointprojector.h
+  cylindricalpointprojector.cpp cylindricalpointprojector.h
   pointaccumulator.h
   pointintegralimage.cpp pointintegralimage.h
   pointprojector.cpp pointprojector.h

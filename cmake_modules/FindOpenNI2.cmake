@@ -1,0 +1,20 @@
+find_package(PkgConfig)
+pkg_check_modules(PC_OPENNI2 QUIET OpenNI2)
+
+set(OPENNI2_DEFINITIONS ${OPENNI2_CFLAGS_OTHER})
+
+find_path(OPENNI2_INCLUDE_DIR OpenNI2/OpenNI.h
+          HINTS ${PC_OPENNI2_INCLUDEDIR} ${PC_OPENNI2_INCLUDE_DIRS}
+          PATH_SUFFIXES OpenNI2 )
+
+find_library(OPENNI2_LIBRARY NAMES OpenNI2
+             HINTS ${PC_OPENNI2_LIBDIR} ${PC_OPENNI2_LIBRARY_DIRS} )
+
+set(OPENNI2_LIBRARIES ${OPENNI2_LIBRARY} )
+set(OPENNI2_INCLUDE_DIRS ${OPENNI2_INCLUDE_DIR} )
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(OpenNI2  DEFAULT_MSG
+                                  OPENNI2_LIBRARY OPENNI2_INCLUDE_DIR)
+
+mark_as_advanced(OPENNI2_INCLUDE_DIR OPENNI2_LIBRARY )
