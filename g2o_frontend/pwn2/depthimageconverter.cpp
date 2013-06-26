@@ -24,7 +24,8 @@ DepthImageConverter::DepthImageConverter(  PointProjector* projector_,
 
 void DepthImageConverter::compute(Frame &frame,
 				  const DepthImage &depthImage, 
-				  const Eigen::Isometry3f &sensorOffset) {
+				  const Eigen::Isometry3f &sensorOffset,
+				  const bool blackBorders) {
   frame.clear();
   // resizing the temporaries
   if (depthImage.rows()!=_indexImage.rows() ||
@@ -45,7 +46,7 @@ void DepthImageConverter::compute(Frame &frame,
 
   // computing the integral image and the intervals
   _integralImage.compute(_indexImage,frame.points());
-  _projector->projectIntervals(_intervalImage,depthImage, _normalWorldRadius, true);
+  _projector->projectIntervals(_intervalImage,depthImage, _normalWorldRadius, blackBorders);
 
   _statsCalculator->compute(frame.normals(),
 			    frame.stats(),

@@ -42,6 +42,9 @@ int main(int argc, char** argv) {
   float ng_curvatureThreshold;
   int al_innerIterations;
   int al_outerIterations;
+  int al_minNumInliers;
+  float al_minError;
+  int startingVertex;
   int vz_step;
   int chunkStep;
   float chunkAngle;
@@ -55,6 +58,9 @@ int main(int argc, char** argv) {
   arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded");
   arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations");
   arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");
+  arg.param("al_minNumInliers", al_minNumInliers, 10000, "Specify the minimum number of inliers to consider an alignment good");
+  arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
+  arg.param("startingVertex", startingVertex, 0, "Specify the vertex id from which to start the process");
   arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements");
   arg.param("chunkStep", chunkStep, 1000000, "Reset the process every chunkStep images");
   arg.param("chunkAngle", chunkAngle, M_PI/4, "Reset the process each time the camera has rotated of chunkAngle radians from the first frame");
@@ -140,21 +146,22 @@ int main(int argc, char** argv) {
   controller->setChunkStep(chunkStep);
   controller->setChunkAngle(chunkAngle);
   controller->setChunkDistance(chunkDistance);
+  controller->setAlMinNumInliers(al_minNumInliers);
+  controller->setAlMinError(al_minError);
   viewer->init();
   viewer->setAxisIsDrawn(true);
   mainWindow->show();
   viewer->show();
   listWidget->show();
-  int i = 0;
+  int i = startingVertex;
   GLParameterTrajectory *parameterTrajectory = new GLParameterTrajectory(0.03f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f));
   DrawableTrajectory *drawableTrajectory = new DrawableTrajectory(Isometry3f::Identity(), parameterTrajectory, &trajectory);
   viewer->addDrawable(drawableTrajectory);
-  //Isometry3f globalInitialGuess = Isometry3f::Identity();
   Isometry3f globalT = Isometry3f::Identity();
   GLParameterFrame *parameterFrame = new GLParameterFrame(vz_step); 
   while(viewer->isVisible()) {
     bool changed = false;
-    if(i < listWidget->count()) {
+    if(i < listWidget->count() && i >= 0) {
       QListWidgetItem *listItem = listWidget->item(i);
       string idString = listItem->text().toUtf8().constData();
       int index = atoi(idString.c_str());
@@ -163,8 +170,6 @@ int main(int argc, char** argv) {
       	if(!controller->addVertex(v))
       	  continue;
       	controller->alignIncrementally();
-      	//Eigen::Isometry3f initialGuess = controller->alInitialGuess();
-      	//globalInitialGuess = globalInitialGuess * initialGuess;
 	G2OFrame *frame = controller->lastFrame();
 	Eigen::Isometry3f localT = frame->previousFrameTransform();
 	globalT = globalT * localT;

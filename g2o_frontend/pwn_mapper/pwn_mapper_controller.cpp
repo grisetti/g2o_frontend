@@ -20,6 +20,9 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   imageRows = 0;
   imageCols = 0;
 
+  al_minNumInliers = 10000;
+  al_minError = 10.0f;
+
   ng_worldRadius = 0.1f;
   ng_minImageRadius = 10;
   ng_curvatureThreshold = 1.0f;
@@ -141,17 +144,14 @@ bool PWNMapperController::alignIncrementally(){
 
   G2OFrame *current = _framesDeque.back();
   G2OFrame *reference = current->previousFrame();
+
+  cerr << "********************** Aligning vertex " << current->vertex()->id() << " **********************" << endl;
   
   if(mergedClouds.points().size() == 0) 
     mergedClouds.add(*reference, reference->globalTransform());
-  //mergedClouds.add(*current, current->globalTransform());
-  //mergedClouds.add(*reference, reference->globalTransform());
-  //merger->merge(&mergedClouds, reference->globalTransform() * current->sensorOffset());
-
 
   Eigen::Isometry3f initialGuess;
-
-  // cerr computing initial guess based on the frame positions, just for convenience
+  // computing initial guess based on the frame positions, just for convenience
   Eigen::Isometry3d delta = reference->vertex()->estimate().inverse()*current->vertex()->estimate();
   for(int c = 0; c < 4; c++)
     for(int r = 0; r < 3; r++)
@@ -178,7 +178,6 @@ bool PWNMapperController::alignIncrementally(){
       
   aligner->clearPriors();
   aligner->setOuterIterations(al_outerIterations);
-  //aligner->setReferenceFrame(reference);
   
   if(ii.cols() != imageCols || ii.rows() != imageRows) 
     ii.resize(imageRows, imageCols);
@@ -197,31 +196,31 @@ bool PWNMapperController::alignIncrementally(){
   aligner->align();
   
   Eigen::Isometry3f localTransformation = aligner->T();
-  cerr << "VALUES: " << aligner->inliers() << " --- " << aligner->error() / aligner->inliers() << endl;
-  if(aligner->outerIterations() != 0 && (aligner->inliers() < 20000 || aligner->error() / aligner->inliers() > 10) ) {
+  if(aligner->outerIterations() != 0 && (aligner->inliers() < al_minNumInliers || aligner->error() / aligner->inliers() > al_minError) ) {
     cerr << "ALIGNER FAILURE!!!!!!!!!!!!!!!" << endl;
+    cerr << "inliers/minimum number of inliers: " << aligner->inliers() << " / " << al_minNumInliers << endl;
+    cerr << "error/minimum error: " << aligner->error() / aligner->inliers() << " / " << al_minError << endl;
     localTransformation = initialGuess;
   }
-  if(aligner->outerIterations() != 0) {
-    cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
-    cout << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
-  }
+  
 
   globalT = reference->globalTransform()*localTransformation;
   // recondition the rotation to prevent roundoff to accumulate
   
   globalT = v2t(t2v(globalT));
   
+  if(aligner->outerIterations() != 0) {
+    cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
+    cout << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
+    cout << "Global transformation: " << t2v(globalT).transpose() << endl;
+  }
+
   Eigen::Isometry3f motionFromFirstFrame = initialPose.inverse()*globalT;
   Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
-  if(fabs(rotationFromFirstFrame.angle()) < _chunkAngle && motionFromFirstFrame.translation().norm() < _chunkDistance)
-    cerr << "Total points that will be added: " << current->points().size() << endl; 
-  else {
+  if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle && motionFromFirstFrame.translation().norm() > _chunkDistance) {
     char buff[1024];
     sprintf(buff, "out-%05d.pwn", counter++);	
     mergedClouds.save(buff, 1, true);
-    //os.str("");
-    //os.clear();
     mergedClouds.clear();
     initialPose = globalT;
   }
@@ -230,7 +229,8 @@ bool PWNMapperController::alignIncrementally(){
   current->globalTransform() = globalT;
   current->previousFrameTransform() = localTransformation;
 
-  mergedClouds.add(*current, current->globalTransform());
+  //mergedClouds.add(*current, current->globalTransform());
+  mergedClouds.add(*current, motionFromFirstFrame);
   merger->merge(&mergedClouds, current->globalTransform() * current->sensorOffset());
   
   return true;

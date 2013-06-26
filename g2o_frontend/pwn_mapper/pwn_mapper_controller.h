@@ -49,6 +49,9 @@ class PWNMapperController {
   inline void setChunkAngle(float chunkAngle_) { _chunkAngle = chunkAngle_; }
   inline void setChunkDistance(float chunkDistance_) { _chunkDistance = chunkDistance_; }
 
+  inline void setAlMinNumInliers(int al_minNumInliers_) { al_minNumInliers = al_minNumInliers_; }
+  inline void setAlMinError(float al_minError_) { al_minError = al_minError_; }
+
   void setAlOuterIterations(int al_outerIterations_) { al_outerIterations = al_outerIterations_; }
   void setMaxDequeSize(int maxDequeSize_) { _maxDequeSize = maxDequeSize_; }
 
@@ -102,7 +105,8 @@ class PWNMapperController {
 
   int counter;
 
-  //ostringstream os;
+  int al_minNumInliers;
+  float al_minError;
 
   DepthImage di;
   MatrixXi ii;
