@@ -25,3 +25,5 @@ include_directories(${OPENNI2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} )
 
 rosbuild_add_executable(openni2_node src/openni2_node.cpp )
 target_link_libraries(openni2_node ${OPENNI2_LIBRARY} ${ZLIB_LIBRARY} )
+
+rosbuild_add_executable(openni2_client src/openni2_client.cpp )
