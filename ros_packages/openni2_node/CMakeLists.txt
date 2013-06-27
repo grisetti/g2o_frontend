@@ -13,17 +13,23 @@ rosbuild_init()
 
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/../../cmake_modules)
 
+
 FIND_PACKAGE(OpenNI2 REQUIRED)
 FIND_PACKAGE(ZLIB REQUIRED)
+
+#set the path for g2o_frontend
+set(G2O_FRONTEND $ENV{G2O_FRONTEND_ROOT})
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-include_directories(${OPENNI2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} )
+include_directories(${G2O_FRONTEND} ${OPENNI2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} )
 
 rosbuild_add_executable(openni2_node src/openni2_node.cpp )
 target_link_libraries(openni2_node ${OPENNI2_LIBRARY} ${ZLIB_LIBRARY} )
 
+link_directories(${G2O_FRONTEND}/lib)
 rosbuild_add_executable(openni2_client src/openni2_client.cpp )
+target_link_libraries(openni2_client ${ZLIB_LIBRARY} g2o_frontend_boss)

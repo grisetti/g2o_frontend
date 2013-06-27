@@ -33,6 +33,7 @@ class BaseBLOBReference;
 
 class BLOB {
 public:
+  BLOB();
   virtual bool read(std::istream& is)=0;
   virtual void write(std::ostream& os)=0;
   virtual ~BLOB();
