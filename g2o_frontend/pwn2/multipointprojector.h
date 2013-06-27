@@ -36,7 +36,7 @@ class MultiPointProjector: public PointProjector {
   void addPointProjector(PointProjector *pointProjector_, 
 			 Eigen::Isometry3f sensorOffset_,
 			 int width_, int height_) { 
-    _pointProjectors.push_back(ChildProjectorInfo(pointProjector_, sensorOffset_, width_, height_)); 
+    _pointProjectors.push_back(ChildProjectorInfo(pointProjector_,transform()* sensorOffset_, width_, height_));
   }
   
   virtual void project(Eigen::MatrixXi &indexImage, 
@@ -55,6 +55,9 @@ class MultiPointProjector: public PointProjector {
   virtual void projectIntervals(Eigen::MatrixXi& intervalImage, 
 				const Eigen::MatrixXf& depthImage, 
 				const float worldRadius) const;
+
+  virtual void setTransform(const Eigen::Isometry3f &transform_);
+
 
  protected:
   mutable std::vector<ChildProjectorInfo> _pointProjectors;

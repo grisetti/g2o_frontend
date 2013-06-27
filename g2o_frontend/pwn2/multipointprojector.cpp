@@ -27,7 +27,7 @@ void MultiPointProjector::project(Eigen::MatrixXi &indexImage,
     
     PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
     if(currentPointProjector != 0) {
-      currentPointProjector->setTransform(_pointProjectors[i].sensorOffset);
+      currentPointProjector->setTransform(transform()*_pointProjectors[i].sensorOffset);
       currentPointProjector->project(_pointProjectors[i].indexImage, _pointProjectors[i].depthImage, points);      
       indexImage.block(0, columnOffset, width, height) = _pointProjectors[i].indexImage;
       depthImage.block(0, columnOffset, width, height) = _pointProjectors[i].depthImage;
@@ -50,7 +50,7 @@ void MultiPointProjector::unProject(PointVector &points,
 
     PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
     if(currentPointProjector != 0) {
-      currentPointProjector->setTransform(_pointProjectors[i].sensorOffset);
+      currentPointProjector->setTransform(transform()*_pointProjectors[i].sensorOffset);
       _pointProjectors[i].depthImage = depthImage.block(0, columnOffset, width, height);
       currentPointProjector->unProject(currentPoints,
 				       _pointProjectors[i].indexImage, 
@@ -80,7 +80,7 @@ void MultiPointProjector::unProject(PointVector &points,
 
     PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
     if(currentPointProjector != 0) {
-      currentPointProjector->setTransform(_pointProjectors[i].sensorOffset);
+      currentPointProjector->setTransform(transform()*_pointProjectors[i].sensorOffset);
       _pointProjectors[i].depthImage = depthImage.block(0, columnOffset, width, height);
       currentPointProjector->unProject(currentPoints,
 				       currentGaussians,
@@ -110,7 +110,7 @@ void MultiPointProjector::projectIntervals(Eigen::MatrixXi& intervalImage,
 
     PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
     if(currentPointProjector != 0) {
-      currentPointProjector->setTransform(_pointProjectors[i].sensorOffset);
+      currentPointProjector->setTransform(transform()*_pointProjectors[i].sensorOffset);
       _pointProjectors[i].depthImage = depthImage.block(0, columnOffset, width, height);
       currentPointProjector->projectIntervals(currentIntervalImage,
 					      _pointProjectors[i].depthImage,
@@ -120,5 +120,16 @@ void MultiPointProjector::projectIntervals(Eigen::MatrixXi& intervalImage,
     columnOffset += height;
   }
 }
+
+
+  
+  void MultiPointProjector::setTransform(const Eigen::Isometry3f &transform_){
+    PointProjector::setTransform(transform_);
+    for(size_t i = 0; i < _pointProjectors.size(); i++) {
+      PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
+      if (currentPointProjector)
+	currentPointProjector->setTransform(transform_*_pointProjectors[i].sensorOffset);
+    }
+  }
 
 }

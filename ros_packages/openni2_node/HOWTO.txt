@@ -1,0 +1,78 @@
+This package is a CPU efficent ros node that handles a set of xtion/carmine sensors connected to one
+computer.
+
+It requires to install the openni2 driver, by following this procedure
+
+0) preparation of the xtion:
+   - in order to handle USB3 devices, patch the xtions with the latest carmine firmware V5.8.22
+     (http://www.primesense.com/updates/)
+     
+1) clone and compile the OpenNI2
+   - git clone https://github.com/OpenNI/OpenNI2.git
+   - cd OpenNI2
+   - make
+
+3) run some of the examples to see if everything works
+
+4) once this is done do a global installation in usr/local
+
+   # copy the includes
+   sudo mkdir /usr/local/include/OpenNI2
+   sudo cp -r Include /ust/local/include/OpenNI2
+   
+   # copy the libraries
+   sudo cp Bin/x64-Release/libOpenNI2.so /usr/local/lib
+
+   # copy the drivers and the configuration files
+   sudo mkdir /usr/local/share/OpenNI2
+   sudo cp -r Config /usr/local/share/OpenNI2
+   sudo cp -r Bin/x64-Release/OpenNI2/Drivers /usr/local/share/OpenNI2
+
+   # create a pkg-config file so that cmake filds the lib
+   sudo <your editor> /usr/local/lib/pkgconfig/OpenNI2.pc
+  
+   # copy this in the file you just opened
+
+   ========== cut here ========== 
+    prefix=/usr/local
+    exec_prefix=${prefix}
+    libdir=${prefix}/lib
+    includedir=${prefix}/include/OpenNI2
+
+    Name: OpenNI2
+    Description: Primesense Device Driver
+    Version: 2.2.0
+    Requires: 
+    Libs: -L${libdir} -lOpenNI2.so 
+    Cflags: -I${includedir}
+   ========== cut here ========== 
+
+   # rerun the global linker
+   sudo ldconfig -v
+
+
+   # add some environment variables required by openni to find the drivers and the includes
+   # to your .bashrc
+   
+   echo "export OPENNI2_DRIVERS_PATH=/usr/local/share/OpenNI2/Drivers" >> ~/.bashrc
+   echo "export OPENNI2_DRIVERS_PATH64=/usr/local/share/OpenNI2/Drivers" >> ~/.bashrc
+
+
+5) you have succesfully done a global installation of the driver
+   now FindOpenNI2.cmake should work
+
+6) compile the driver in the usual way
+
+   roscd openni2_node
+   rosmake
+
+   The node stops and starts the streams based on the requests of the incoming connections.
+   If there are no subscribers to a stream, the stream is deactivated on the device.
+   Activating/deactivating the stream might take about 1/2 secons.
+
+
+
+   
+  
+
+   

@@ -10,7 +10,6 @@ CylindricalPointProjector::CylindricalPointProjector() : PointProjector() {
   _baseline = 0.075f;
   _alpha = 0.1f;
   _updateMatrices();
-  setAngularResolution(360);
 }
 
 CylindricalPointProjector::~CylindricalPointProjector() {}
