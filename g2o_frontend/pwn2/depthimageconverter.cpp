@@ -24,11 +24,14 @@ DepthImageConverter::DepthImageConverter(  PointProjector* projector_,
 
 void DepthImageConverter::compute(Frame &frame,
 				  const DepthImage &depthImage, 
-				  const Eigen::Isometry3f &sensorOffset) {
+				  const Eigen::Isometry3f &sensorOffset,
+				  const bool blackBorders) {
   frame.clear();
   // resizing the temporaries
   if (depthImage.rows()!=_indexImage.rows() ||
       depthImage.cols()!=_indexImage.cols()){
+    cerr << "Depth size: " << depthImage.rows() << " --- " << depthImage.cols() << endl;
+    cerr << "Index Size: " << _indexImage.rows() << " --- " << _indexImage.cols() << endl;
     _indexImage.resize(depthImage.rows(), depthImage.cols());
     _integralImage.resize(depthImage.rows(), depthImage.cols());
     _intervalImage.resize(depthImage.rows(), depthImage.cols());
@@ -45,7 +48,7 @@ void DepthImageConverter::compute(Frame &frame,
 
   // computing the integral image and the intervals
   _integralImage.compute(_indexImage,frame.points());
-  _projector->projectIntervals(_intervalImage,depthImage, _normalWorldRadius, true);
+  _projector->projectIntervals(_intervalImage,depthImage, _normalWorldRadius, blackBorders);
 
   _statsCalculator->compute(frame.normals(),
 			    frame.stats(),
@@ -56,7 +59,7 @@ void DepthImageConverter::compute(Frame &frame,
 			    _curvatureThreshold);
   _pointInformationMatrixCalculator->compute(frame.pointInformationMatrix(), frame.stats(), frame.normals());
   _normalInformationMatrixCalculator->compute(frame.normalInformationMatrix(), frame.stats(), frame.normals());
-  
+
   //frame.gaussians().fromPointVector(frame.points(), *_projector, depthImage.rows(), depthImage.cols());
   
   // frame is labeled, now we need to transform all the elements by considering the position

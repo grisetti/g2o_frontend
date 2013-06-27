@@ -40,6 +40,9 @@ int main(int argc, char** argv) {
   float ng_curvatureThreshold;
   int al_innerIterations;
   int al_outerIterations;
+  int al_minNumInliers;
+  int startingVertex;
+  float al_minError;
   int vz_step;
   int chunkStep;
   float chunkAngle;
@@ -53,6 +56,9 @@ int main(int argc, char** argv) {
   arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded");
   arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations");
   arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");
+  arg.param("al_minNumInliers", al_minNumInliers, 10000, "Specify the minimum number of inliers to consider an alignment good");
+  arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
+  arg.param("startingVertex", startingVertex, 0, "Specify the vertex id from which to start the process");
   arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements");
   arg.param("chunkStep", chunkStep, 1000000, "Reset the process every chunkStep images");
   arg.param("chunkAngle", chunkAngle, M_PI/4, "Reset the process each time the camera has rotated of chunkAngle radians from the first frame");
@@ -133,32 +139,36 @@ int main(int argc, char** argv) {
   controller->setChunkStep(chunkStep);
   controller->setChunkAngle(chunkAngle);
   controller->setChunkDistance(chunkDistance);
+  controller->setAlMinNumInliers(al_minNumInliers);
+  controller->setAlMinError(al_minError);
   viewer->init();
+  viewer->setAxisIsDrawn(true);
   mainWindow->show();
   viewer->show();
   listWidget->show();
-  size_t i = 0;
-  while(i < vertexIds.size() && viewer->isVisible()) {
-    QListWidgetItem *listItem = listWidget->item(i);
-    string idString = listItem->text().toUtf8().constData();
-    int index = atoi(idString.c_str());
-    VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
-    if(v) {     
-      if(!controller->addVertex(v))
-    	continue;
-      controller->alignIncrementally();
-      Eigen::Isometry3f globalTransform = controller->lastFrame()->globalTransform();
-      globalTransform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-      DrawableFrame *drawableFrame = new DrawableFrame(globalTransform, parameterFrame, controller->lastFrame());      
-      viewer->addDrawable(drawableFrame);
-      while(viewer->drawableList().size() > controller->maxDequeSize()) {
-       	DrawableFrame *front = dynamic_cast<DrawableFrame*>(viewer->drawableList()[0]);
-       	viewer->popFront();
-       	delete front;
-      }
+  int i = startingVertex;
+  while(viewer->isVisible()) {
+    if(i < listWidget->count() && i >= 0) {
+      QListWidgetItem *listItem = listWidget->item(i);
+      string idString = listItem->text().toUtf8().constData();
+      int index = atoi(idString.c_str());
+      VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
+      if(v) {     
+	if(!controller->addVertex(v))
+	  continue;
+	controller->alignIncrementally();
+	Eigen::Isometry3f globalTransform = controller->lastFrame()->globalTransform();
+	globalTransform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+	DrawableFrame *drawableFrame = new DrawableFrame(globalTransform, parameterFrame, controller->lastFrame());      
+	viewer->addDrawable(drawableFrame);
+	while(viewer->drawableList().size() > controller->maxDequeSize()) {
+	  DrawableFrame *front = dynamic_cast<DrawableFrame*>(viewer->drawableList()[0]);
+	  viewer->popFront();
+	  delete front;
+	}
+      }      
+      i++;
     }
-    
-    i++;
     viewer->updateGL();
     application.processEvents();
   }

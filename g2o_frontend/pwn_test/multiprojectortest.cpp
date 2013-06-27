@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
   
   Isometry3f tmp = Isometry3f::Identity();
   tmp.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-  depthImageConverter.compute(totalFrame, rullino, tmp);
+  depthImageConverter.compute(totalFrame, rullino, tmp, true);
 
   totalFrame.save(outputFilename.c_str(), 1, true);
 

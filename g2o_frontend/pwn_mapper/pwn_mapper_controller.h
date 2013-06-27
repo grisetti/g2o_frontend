@@ -6,6 +6,7 @@
 #include "g2o_frontend/pwn2/frame.h"
 #include "g2o_frontend/pwn2/g2o_frame.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
+#include "g2o_frontend/pwn2/multipointprojector.h"
 #include "g2o_frontend/pwn2/informationmatrixcalculator.h"
 #include "g2o_frontend/pwn2/statscalculator.h"
 #include "g2o_frontend/pwn2/depthimageconverter.h"
@@ -49,6 +50,9 @@ class PWNMapperController {
   inline void setChunkAngle(float chunkAngle_) { _chunkAngle = chunkAngle_; }
   inline void setChunkDistance(float chunkDistance_) { _chunkDistance = chunkDistance_; }
 
+  inline void setAlMinNumInliers(int al_minNumInliers_) { al_minNumInliers = al_minNumInliers_; }
+  inline void setAlMinError(float al_minError_) { al_minError = al_minError_; }
+
   void setAlOuterIterations(int al_outerIterations_) { al_outerIterations = al_outerIterations_; }
   void setMaxDequeSize(int maxDequeSize_) { _maxDequeSize = maxDequeSize_; }
 
@@ -66,10 +70,13 @@ class PWNMapperController {
 
  protected:
   PinholePointProjector *projector;
+  MultiPointProjector *multiProjector;
+  int numProjectors;
   StatsCalculator *statsCalculator;
   PointInformationMatrixCalculator *pointInformationMatrixCalculator;
   NormalInformationMatrixCalculator *normalInformationMatrixCalculator;
   DepthImageConverter *converter;
+  DepthImageConverter *multiConverter;
 #ifdef _PWN_USE_TRAVERSABILITY_
   TraversabilityAnalyzer *traversabilityAnalyzer;  
 #endif //_PWN_USE_TRAVERSABILITY_
@@ -102,7 +109,8 @@ class PWNMapperController {
 
   int counter;
 
-  //ostringstream os;
+  int al_minNumInliers;
+  float al_minError;
 
   DepthImage di;
   MatrixXi ii;

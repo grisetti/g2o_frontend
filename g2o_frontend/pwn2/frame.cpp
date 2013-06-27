@@ -1,18 +1,20 @@
 #include "frame.h"
 #include <fstream>
 
+#include "g2o_frontend/basemath/bm_se3.h"
+
 using namespace std;
 
 namespace pwn {
 
-bool Frame::load(const char *filename) {
+bool Frame::load(Eigen::Isometry3f &T, const char *filename) {
   ifstream is(filename);
   if (!is)
     return false;
-  return load(is);
+  return load(T, is);
 }
 
-bool Frame::load(istream &is) {
+bool Frame::load(Eigen::Isometry3f &T, istream &is) {
   _points.clear();
   _normals.clear();
   char buf[1024];
@@ -28,6 +30,11 @@ bool Frame::load(istream &is) {
   _points.resize(numPoints);
   _normals.resize(numPoints);
   cerr << "reading " << numPoints << " points, binary :" << binary << endl;
+  is.getline(buf, 1024);
+  istringstream lst(buf);
+  Vector6f transform;
+  lst >> transform[0] >> transform[1] >> transform[2] >> transform[3] >> transform[4] >> transform[5];
+  T = v2t(transform);
   size_t k = 0;
   while (k < _points.size() && is.good()) {
     Point& point = _points[k];
@@ -54,42 +61,23 @@ bool Frame::load(istream &is) {
   return is.good();
 }
 
-bool Frame::save(const char *filename, Eigen::Isometry3f T, int step, bool binary) {
+bool Frame::save(const char *filename, int step, bool binary, Eigen::Isometry3f T) {
   ofstream os(filename);
   if (!os)
     return false;
-  return save(os, T, step, binary);
+  return save(os, step, binary, T);  
 }
 
-bool Frame::save(ostream &os, Eigen::Isometry3f T, int step, bool binary) {
-  os << "POINTWITHNORMALVECTOR " << _points.size() / step << " " << binary << endl; 
-  for(size_t i = 0; i < _points.size(); i+=step) {
-    const Point& point = T * _points[i];
-    const Normal& normal = T * _normals[i];
-    if (! binary) {
-      os << "POINTWITHNORMAL ";
-      for (int k=0; k<3; k++)
-	os << point[k] << " ";
-      for (int k=0; k<3; k++)
-	os << normal[k] << " ";
-      os << endl;
-    } else {
-      os.write((const char*) &point, sizeof(Point));
-      os.write((const char*) &normal, sizeof(Normal));
-    }
-  }
-  return os.good();
-}
-
-bool Frame::save(const char *filename, int step, bool binary) {
-  ofstream os(filename);
-  if (!os)
-    return false;
-  return save(os, step, binary);  
-}
-
-bool Frame::save(ostream &os, int step, bool binary) {
+  bool Frame::save(ostream &os, int step, bool binary, Eigen::Isometry3f T) {
   os << "POINTWITHNORMALVECTOR " << _points.size()/step << " " << binary << endl; 
+  Vector6f transform = t2v(T);
+  os << transform[0] << " " 
+     << transform[1] << " " 
+     << transform[2] << " " 
+     << transform[3] << " " 
+     << transform[4] << " " 
+     << transform[5] << " " 
+     << endl;
   for(size_t i = 0; i < _points.size(); i+=step) {
     const Point& point = _points[i];
     const Normal& normal = _normals[i];
@@ -152,15 +140,17 @@ void Frame::add(Frame frame, const Eigen::Isometry3f &T) {
 
 void Frame::transformInPlace(const Eigen::Isometry3f& T){
   Eigen::Matrix4f m = T.matrix();
-  m.row(3) << 0,0,0,1;
-  _points.transformInPlace(m);
-  _normals.transformInPlace(m);
-  _stats.transformInPlace(m);
-  _gaussians.transformInPlace(m);
-  m.row(3) << 0,0,0,0;
-  m.col(3) << 0,0,0,0;
-  _pointInformationMatrix.transformInPlace(m);
-  _normalInformationMatrix.transformInPlace(m);
+  m.row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+  if(m != Eigen::Matrix4f::Identity()) {
+    _points.transformInPlace(m);
+    _normals.transformInPlace(m);
+    _stats.transformInPlace(m);
+    _gaussians.transformInPlace(m);
+    m.row(3) << 0,0,0,0;
+    m.col(3) << 0,0,0,0;
+    _pointInformationMatrix.transformInPlace(m);
+    _normalInformationMatrix.transformInPlace(m);
+  }
 }
 
 }
