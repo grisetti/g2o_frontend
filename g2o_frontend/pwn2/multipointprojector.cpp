@@ -55,6 +55,15 @@ void MultiPointProjector::unProject(PointVector &points,
       currentPointProjector->unProject(currentPoints,
 				       _pointProjectors[i].indexImage, 
 				       _pointProjectors[i].depthImage);
+      
+
+      for(int r = 0; r < _pointProjectors[i].indexImage.rows(); r++) {
+	for(int c = 0; c < _pointProjectors[i].indexImage.cols(); c++) {
+	  if(_pointProjectors[i].indexImage(r, c) != -1)
+	    _pointProjectors[i].indexImage(r, c) += points.size();
+	}
+      }
+
       indexImage.block(0, columnOffset, width, height) = _pointProjectors[i].indexImage;
       points.insert(points.end(), currentPoints.begin(), currentPoints.end());
     }
@@ -86,6 +95,14 @@ void MultiPointProjector::unProject(PointVector &points,
 				       currentGaussians,
 				       _pointProjectors[i].indexImage, 
 				       _pointProjectors[i].depthImage);
+
+      for(int r = 0; r < _pointProjectors[i].indexImage.rows(); r++) {
+	for(int c = 0; c < _pointProjectors[i].indexImage.cols(); c++) {
+	  if(_pointProjectors[i].indexImage(r, c) != -1)
+	    _pointProjectors[i].indexImage(r, c) += points.size();
+	}
+      }
+
       indexImage.block(0, columnOffset, width, height) = _pointProjectors[i].indexImage;
       points.insert(points.end(), currentPoints.begin(), currentPoints.end());
       gaussians.insert(gaussians.end(), currentGaussians.begin(), currentGaussians.end());
@@ -97,7 +114,8 @@ void MultiPointProjector::unProject(PointVector &points,
 
 void MultiPointProjector::projectIntervals(Eigen::MatrixXi& intervalImage, 
 					   const Eigen::MatrixXf& depthImage, 
-					   const float worldRadius) const {
+					   const float worldRadius,
+					   const bool blackBorders) const {
   intervalImage.resize(depthImage.rows(), depthImage.cols());
   Eigen::MatrixXi currentIntervalImage;
   int columnOffset = 0;
@@ -114,7 +132,8 @@ void MultiPointProjector::projectIntervals(Eigen::MatrixXi& intervalImage,
       _pointProjectors[i].depthImage = depthImage.block(0, columnOffset, width, height);
       currentPointProjector->projectIntervals(currentIntervalImage,
 					      _pointProjectors[i].depthImage,
-					      worldRadius);
+					      worldRadius,
+					      blackBorders);
       intervalImage.block(0, columnOffset, width, height) = currentIntervalImage;
     }
     columnOffset += height;

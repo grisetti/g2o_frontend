@@ -97,12 +97,23 @@ bool Frame::save(ostream &os, int step, bool binary) {
       os << "POINTWITHNORMAL ";
       for (int k=0; k<3; k++)
 	os << point[k] << " ";
-      for (int k=0; k<3; k++)
-	os << normal[k] << " ";
+      for (int k=0; k<3; k++) {
+	if(_normals.size() == _points.size())
+	  os << normal[k] << " ";
+	else {
+	  float zero = 0.0f;
+	  os << zero << " ";
+	}
+      }
       os << endl;
     } else {
       os.write((const char*) &point, sizeof(Point));
-      os.write((const char*) &normal, sizeof(Normal));
+      if(_normals.size() == _points.size())
+	os.write((const char*) &normal, sizeof(Normal));
+      else {
+	const Normal zero = Normal(Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+	os.write((const char*) &zero, sizeof(Normal));
+      }
     }
   }
   return os.good();
@@ -114,6 +125,8 @@ void Frame::clear(){
   _stats.clear();
   _pointInformationMatrix.clear();
   _normalInformationMatrix.clear();
+  _gaussians.clear();
+  _traversabilityVector.clear();
 }
 
 void Frame::add(Frame frame, const Eigen::Isometry3f &T) {
