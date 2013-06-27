@@ -6,6 +6,7 @@
 #include "g2o_frontend/pwn2/frame.h"
 #include "g2o_frontend/pwn2/g2o_frame.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
+#include "g2o_frontend/pwn2/multipointprojector.h"
 #include "g2o_frontend/pwn2/informationmatrixcalculator.h"
 #include "g2o_frontend/pwn2/statscalculator.h"
 #include "g2o_frontend/pwn2/depthimageconverter.h"
@@ -69,6 +70,7 @@ class PWNMapperController {
 
  protected:
   PinholePointProjector *projector;
+  MultiPointProjector *multiProjector;
   StatsCalculator *statsCalculator;
   PointInformationMatrixCalculator *pointInformationMatrixCalculator;
   NormalInformationMatrixCalculator *normalInformationMatrixCalculator;

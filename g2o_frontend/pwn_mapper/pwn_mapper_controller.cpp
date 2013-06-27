@@ -34,12 +34,15 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   _maxDequeSize = 20;
 
   projector = new PinholePointProjector();
+  multiProjector = new MultiPointProjector();
+  multiProjector->addPointProjector(projector, Isometry3f::Identity(), 320, 240);
+
   statsCalculator = new StatsCalculator();
 
   pointInformationMatrixCalculator = new PointInformationMatrixCalculator();
   normalInformationMatrixCalculator = new NormalInformationMatrixCalculator();
-  converter= new DepthImageConverter(projector, statsCalculator, 
-				     pointInformationMatrixCalculator, normalInformationMatrixCalculator);
+  converter = new DepthImageConverter(multiProjector, statsCalculator, 
+				      pointInformationMatrixCalculator, normalInformationMatrixCalculator);
 
 #ifdef _PWN_USE_TRAVERSABILITY_
   traversabilityAnalyzer = new TraversabilityAnalyzer(30, 0.04, 0.2, 1);
@@ -49,7 +52,7 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   linearizer = new Linearizer() ;
   aligner = new Aligner();
     
-  aligner->setProjector(projector);
+  aligner->setProjector(multiProjector);
   aligner->setLinearizer(linearizer);
   linearizer->setAligner(aligner);
   aligner->setCorrespondenceFinder(correspondenceFinder);
@@ -148,7 +151,6 @@ bool PWNMapperController::alignIncrementally(){
   cerr << "********************** Aligning vertex " << current->vertex()->id() << " **********************" << endl;
   
   if(mergedClouds.points().size() == 0) 
-    //mergedClouds.add(*reference, reference->globalTransform());
     mergedClouds.add(*reference, Isometry3f::Identity());
 
   Eigen::Isometry3f initialGuess;
@@ -182,10 +184,12 @@ bool PWNMapperController::alignIncrementally(){
   
   if(ii.cols() != imageCols || ii.rows() != imageRows) 
     ii.resize(imageRows, imageCols);
-  //projector->setTransform(reference->globalTransform() * reference->sensorOffset());
-  projector->setTransform(initialPose.inverse()*reference->globalTransform() * reference->sensorOffset());
-  projector->project(ii, di, mergedClouds.points());
+  multiProjector->setTransform(initialPose.inverse()*reference->globalTransform() * reference->sensorOffset());
+  cerr << "Projector transform: " << t2v(initialPose.inverse()*reference->globalTransform() * reference->sensorOffset()).transpose() << endl;
+  multiProjector->project(ii, di, mergedClouds.points());
   converter->compute(subScene, di, reference->sensorOffset());
+  di.save("depthImage.pgm", true);
+  subScene.save("subScene.pwn", 1, true);
   aligner->setReferenceFrame(&subScene);
   
   aligner->setCurrentFrame(current);
@@ -194,7 +198,6 @@ bool PWNMapperController::alignIncrementally(){
   if(hasOdometry)
     aligner->addRelativePrior(odometryMean, odometryInfo);
   if(hasImu)
-    //aligner->addAbsolutePrior(reference->globalTransform(), imuMean, imuInfo);
     aligner->addAbsolutePrior(initialPose.inverse()*reference->globalTransform(), imuMean, imuInfo);
   aligner->align();
   
@@ -233,11 +236,13 @@ bool PWNMapperController::alignIncrementally(){
   // Update cloud drawing position.
   current->globalTransform() = globalT;
   current->previousFrameTransform() = localTransformation;
-
-  //mergedClouds.add(*current, current->globalTransform());
   mergedClouds.add(*current, motionFromFirstFrame);
+  mergedClouds.save("scene.pwn", 1, true);
+  cerr << "Scene size: " << mergedClouds.points().size() << endl; 
+  cerr << "before merging" << endl;
   merger->merge(&mergedClouds, current->globalTransform() * current->sensorOffset());
-  
+  cerr << "after merging" << endl;
+  cerr << "Scene size after merging: " << mergedClouds.points().size() << endl; 
   return true;
 }
 
@@ -323,6 +328,7 @@ bool PWNMapperController::addVertex(VertexSE3 *v) {
   // should be done here???
   imageRows = scaledDepthImage.rows();
   imageCols = scaledDepthImage.cols();
+  cerr << "Size: " << imageRows << " --- " << imageCols << endl;
   correspondenceFinder->setSize(imageRows, imageCols);
   merger->setImageSize(imageRows, imageCols);
 
@@ -353,6 +359,12 @@ bool PWNMapperController::addVertex(VertexSE3 *v) {
 
   projector->setCameraMatrix(cameraMatrix);
   converter->compute(*frame, scaledDepthImage, sensorOffset);
+  char buff[1024];
+  sprintf(buff, "depthImage%05d.pgm", frame->vertex()->id());
+  scaledDepthImage.save(buff, true);
+  sprintf(buff, "pwn_cloud%05d.pwn", frame->vertex()->id());
+  frame->save(buff, 1, true);
+  cerr << "Frame size: " << frame->points().size() << endl; 
   _framesDeque.push_back(frame);
 
   // Keep at max maxDequeSize elements in the queue

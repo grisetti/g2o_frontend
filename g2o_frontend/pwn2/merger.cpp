@@ -16,7 +16,8 @@ Merger::Merger() {
 
 void Merger::merge(Frame *frame, Eigen::Isometry3f transform) {
   assert(_depthImageConverter _indexImage.rows() != 0 && _indexImage.cols());
-  PinholePointProjector *pointProjector = dynamic_cast<PinholePointProjector*>(_depthImageConverter->_projector);
+  //PinholePointProjector *pointProjector = dynamic_cast<PinholePointProjector*>(_depthImageConverter->_projector);
+  PointProjector *pointProjector = _depthImageConverter->_projector;
   assert(pointProjector);
   pointProjector->setTransform(transform);
   pointProjector->project(_indexImage, 
