@@ -33,19 +33,44 @@ using namespace std;
 #include <cv_bridge/cv_bridge.h>
 #include <opencv/cvwimage.h>
 #include <opencv/highgui.h>
+#include <tf/transform_broadcaster.h>
 
 using namespace openni;
 
+// TODO: 
+// - add dynamic selection of the video modes for each device (dynamic reconfigure)
+
 struct SensorTopic {
-  SensorTopic(const std::string & deviceTopic, image_transport::ImageTransport& transport, 
+  SensorTopic(const std::string & deviceTopicName, ros::NodeHandle& nh,
+	      image_transport::ImageTransport& transport, 
 	      openni::Device* device, openni::SensorType sensorType){
-    this->deviceTopic = deviceTopic;
-    imageTopicName = deviceTopic + "/image";
-    cameraInfoTopicName = deviceTopic + "/cameraInfo";
+    
+    this->deviceTopicName = deviceTopicName;
+    this->deviceFrameId = deviceTopicName+"/base_frame";
+
+    sensorTransform.setOrigin(tf::Vector3(0,0,0));
+    sensorTransform.setRotation(tf::Quaternion(0.5,-0.5,0.5,-0.5)); // z axis in front, x to the left, y down
+    switch(sensorType){
+    case SENSOR_DEPTH: 
+      sensorTopicName = deviceTopicName +"/depth";
+      sensorFrameId = deviceTopicName +"/depth_frame";
+      sensorTransform.setOrigin(tf::Vector3(0,-0.03,0));
+      break;
+    case SENSOR_COLOR:  
+      sensorTopicName = deviceTopicName +"/color";
+      sensorFrameId  = deviceTopicName +"/color_frame";
+      sensorTransform.setOrigin(tf::Vector3(0,0.03,0));
+      break;
+    default:;
+    }
+
+    imageTopicName = sensorTopicName + "/image";
+    cameraInfoTopicName = sensorTopicName + "/cameraInfo";
     this->device = device;
     this->sensorType = sensorType;
+
     imagePublisher = transport.advertise(imageTopicName, 1);
-    cameraInfoPublisher = transport.advertise(cameraInfoTopicName, 1);
+    cameraInfoPublisher = nh.advertise<sensor_msgs::CameraInfo>(cameraInfoTopicName, 1);
     openni::Status rc =videoStream.create(*device,sensorType);
     cerr << "CREATING STREAM: " << imageTopicName; 
     if (rc != openni::STATUS_OK) {
@@ -56,6 +81,29 @@ struct SensorTopic {
       ok=true;
     }
     started = false;
+    seq = 0;
+
+    switch(sensorType){
+    case SENSOR_DEPTH: setVideoMode(4);  break;
+    case SENSOR_COLOR: setVideoMode(6);  break;
+    default:;
+    }
+    
+  }
+  
+  bool setVideoMode(int idx){
+    stop();
+    const Array<VideoMode>& videoModes = device->getSensorInfo(sensorType)->getSupportedVideoModes();
+    cerr << "SETTING VIDEO MODE STREAM: " << imageTopicName; 
+    Status rc = videoStream.setVideoMode(videoModes[idx]);
+    if (rc != openni::STATUS_OK) {
+      cerr << " FAIL, error: " << openni::OpenNI::getExtendedError() << endl;
+      return false;
+    } else {
+      cerr << " SUCCESS" << endl;
+    }
+    start();
+    return true;
   }
   
   bool start(){
@@ -93,17 +141,92 @@ struct SensorTopic {
       stop();
   }
   
-  std::string deviceTopic;
+  void sendFrameAndInfo(){
+    VideoStream& vs = videoStream;
+    VideoFrameRef ref;
+    vs.readFrame(&ref);
+    ros::Time currentTime = ros::Time::now();
+    // image publishing
+    int bpp=0;
+    sensor_msgs::Image image;
+    image.header.seq = seq;
+    image.header.stamp=currentTime;
+    image.header.frame_id=sensorFrameId;
+    if(ref.getSensorType() == SENSOR_DEPTH){
+      image.encoding = "mono16";
+      bpp = 2;
+    } else if(ref.getSensorType() == SENSOR_COLOR){
+      image.encoding = "rgb8";
+      bpp = 3;
+    }
+    image.width = ref.getWidth();
+    image.height = ref.getHeight();
+    image.step = ref.getStrideInBytes();
+    image.data.resize(ref.getDataSize());
+    if (ref.getWidth() * ref.getHeight() * bpp!=ref.getDataSize()) {
+      cerr << "fatal error, size mismatch" << ref.getWidth() * ref.getHeight() * bpp << "!=" << ref.getDataSize() << endl; 
+    } else {
+      memcpy(&image.data[0] ,ref.getData(), ref.getDataSize());
+      imagePublisher.publish(image);
+    }
+    
+    // camera info publishing
+    float hFov = videoStream.getHorizontalFieldOfView();
+    float vFov = videoStream.getVerticalFieldOfView();
+    int minPixelValue = videoStream.getMinPixelValue();
+    int maxPixelValue = videoStream.getMaxPixelValue();
+    const VideoMode& videoMode = ref.getVideoMode();
+    int horizontalRes = videoMode.getResolutionX();
+    int verticalRes = videoMode.getResolutionY();
+    float _cameraMatrix[] = {
+      .5*horizontalRes / tan(hFov/2), 0,                            horizontalRes/2,
+      0,                              .5*verticalRes / tan(vFov/2), verticalRes/2,
+      0, 0, 1
+    };
+
+    cameraInfo.header=image.header;
+    cameraInfo.height  = image.height;
+    cameraInfo.width = image.width;
+    cameraInfo.distortion_model = "plumb_bob";
+    cameraInfo.D.resize(5);
+    for (int i=0; i<5; i++)
+      cameraInfo.D[i] = 0;
+    for (int i=0; i<9; i++)
+      cameraInfo.K[i] = _cameraMatrix [i];
+    
+    cameraInfo.binning_x = 1;
+    cameraInfo.binning_y = 1;
+    seq ++;
+    
+  }
+
+  void sendCameraInfo(){
+    if (seq>0)
+      cameraInfoPublisher.publish(cameraInfo);
+  }
+
+  void sendTransform(tf::TransformBroadcaster br) {
+    br.sendTransform(tf::StampedTransform(sensorTransform, ros::Time::now(), deviceFrameId, sensorFrameId));
+  }
+
+  std::string deviceTopicName;
+  std::string sensorTopicName;
   std::string imageTopicName;
   std::string cameraInfoTopicName;
+  std::string sensorFrameId;
+  std::string deviceFrameId;
   openni::Device* device;
   openni::SensorType sensorType;
   openni::VideoStream videoStream;
+  sensor_msgs::CameraInfo cameraInfo;
   image_transport::Publisher imagePublisher;
-  image_transport::Publisher cameraInfoPublisher;
+  ros::Publisher cameraInfoPublisher;
   bool ok;
   bool started;
+  int seq;
+  tf::Transform sensorTransform;
 };
+
 
 int main(int argc, char** argv)
 {
@@ -121,6 +244,7 @@ int main(int argc, char** argv)
   openni::Array<openni::DeviceInfo> deviceList;
   openni::OpenNI::enumerateDevices(&deviceList);
 
+  tf::TransformBroadcaster br;
   std::vector<openni::Device*> devices;
   std::vector<SensorTopic*> sensorTopics;
   // for each device, query the sensors
@@ -138,12 +262,12 @@ int main(int argc, char** argv)
     cerr << " device: [" << deviceInfo.getUri() << "]"   << endl;
     char buf[1024];
     if (devices[i]->hasSensor(SENSOR_DEPTH)){
-      sprintf(buf, "/xtion_%02d/depth",i);
-      sensorTopics.push_back(new SensorTopic(buf, it, devices[i], SENSOR_DEPTH));
+      sprintf(buf, "/xtion_%02d",i);
+      sensorTopics.push_back(new SensorTopic(buf, nh, it, devices[i], SENSOR_DEPTH));
     }
     if (devices[i]->hasSensor(SENSOR_COLOR)){
-      sprintf(buf, "/xtion_%02d/color",i);
-      sensorTopics.push_back(new SensorTopic(buf, it, devices[i], SENSOR_COLOR));
+      sprintf(buf, "/xtion_%02d",i);
+      sensorTopics.push_back(new SensorTopic(buf, nh, it, devices[i], SENSOR_COLOR));
     }
   }
   bool startOk = true;
@@ -155,15 +279,13 @@ int main(int argc, char** argv)
     streams[i] = &(sensorTopics[i]->videoStream);
   }
 
-  // cv::WImageBuffer3_b image( cvLoadImage(argv[1], CV_LOAD_IMAGE_COLOR) );
-  // sensor_msgs::ImagePtr msg = sensor_msgs::CvBridge::cvToImgMsg(image.Ipl(), "bgr8");
-  
   int seq = 0;
   VideoFrameRef ref;
   while (startOk && nh.ok()) {
     int k=0;
     for (size_t i = 0; i<sensorTopics.size(); i++){
       sensorTopics[i]->handleRequests();
+      sensorTopics[i]->sendTransform(br);
       if(sensorTopics[i]->started){
 	reverseIndices[k] = i;
 	streams[k] = &sensorTopics[i]->videoStream;
@@ -179,33 +301,15 @@ int main(int argc, char** argv)
       }
       int topicIndex=reverseIndices[changedIndex];
       SensorTopic* sensorTopic=sensorTopics[topicIndex];
-      VideoStream& vs = sensorTopic->videoStream;
-      vs.readFrame(&ref);
-      int bpp=0;
-      sensor_msgs::Image image;
-      image.header.seq = seq++;
-      image.header.stamp=ros::Time::now();
-      if(ref.getSensorType() == SENSOR_DEPTH){
-	image.header.frame_id=sensorTopic->deviceTopic +"/depth_frame";
-      	image.encoding = "mono16";
-	bpp = 2;
-      } else if(ref.getSensorType() == SENSOR_COLOR){
-	image.header.frame_id=sensorTopic->deviceTopic +"/rgb_frame";
-	bpp = 3;
-	image.encoding = "bgr8";
+      sensorTopic->sendFrameAndInfo();
+      sensorTopic->sendCameraInfo();
+    } else {
+      // sleep 10 ms
+      for (size_t i = 0; i<sensorTopics.size(); i++){
+	sensorTopics[i]->sendCameraInfo();
       }
-      image.width = ref.getWidth();
-      image.height = ref.getHeight();
-      image.step = ref.getStrideInBytes();
-      image.data.resize(ref.getDataSize());
-      if (ref.getWidth() * ref.getHeight() * bpp!=ref.getDataSize()) {
-	cerr << "fatal error, size mismatch" << ref.getWidth() * ref.getHeight() * bpp << "!=" << ref.getDataSize() << endl; 
-      } else {
-	memcpy(&image.data[0] ,ref.getData(), ref.getDataSize());
-	sensorTopic->imagePublisher.publish(image);
-      }
-      
-    } 
+      ros::Duration(0.1).sleep();
+    }
     ros::spinOnce();
   }
   cerr << "SHUTTING DOWN" << endl;
