@@ -1,0 +1,17 @@
+<package>
+  <description brief="openni2_node">
+     openni2_node
+     Simple ros fuerte driver for the openni2 module
+  </description>
+  <author>Giorgio Grisetti</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/openni2_node</url>
+  <depend package="tf"/>
+  <depend package="sensor_msgs"/>
+  <depend package="image_transport"/>
+  <depend package="cv_bridge"/>
+
+</package>
+
+

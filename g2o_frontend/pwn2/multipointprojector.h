@@ -36,7 +36,7 @@ class MultiPointProjector: public PointProjector {
   void addPointProjector(PointProjector *pointProjector_, 
 			 Eigen::Isometry3f sensorOffset_,
 			 int width_, int height_) { 
-    _pointProjectors.push_back(ChildProjectorInfo(pointProjector_, sensorOffset_, width_, height_)); 
+    _pointProjectors.push_back(ChildProjectorInfo(pointProjector_,transform()* sensorOffset_, width_, height_));
   }
   
   void setPointProjector(PointProjector *pointProjector_, 
