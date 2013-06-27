@@ -148,7 +148,8 @@ bool PWNMapperController::alignIncrementally(){
   cerr << "********************** Aligning vertex " << current->vertex()->id() << " **********************" << endl;
   
   if(mergedClouds.points().size() == 0) 
-    mergedClouds.add(*reference, reference->globalTransform());
+    //mergedClouds.add(*reference, reference->globalTransform());
+    mergedClouds.add(*reference, Isometry3f::Identity());
 
   Eigen::Isometry3f initialGuess;
   // computing initial guess based on the frame positions, just for convenience
@@ -181,7 +182,8 @@ bool PWNMapperController::alignIncrementally(){
   
   if(ii.cols() != imageCols || ii.rows() != imageRows) 
     ii.resize(imageRows, imageCols);
-  projector->setTransform(reference->globalTransform() * reference->sensorOffset());
+  //projector->setTransform(reference->globalTransform() * reference->sensorOffset());
+  projector->setTransform(initialPose.inverse()*reference->globalTransform() * reference->sensorOffset());
   projector->project(ii, di, mergedClouds.points());
   converter->compute(subScene, di, reference->sensorOffset());
   aligner->setReferenceFrame(&subScene);
@@ -192,7 +194,8 @@ bool PWNMapperController::alignIncrementally(){
   if(hasOdometry)
     aligner->addRelativePrior(odometryMean, odometryInfo);
   if(hasImu)
-    aligner->addAbsolutePrior(reference->globalTransform(), imuMean, imuInfo);
+    //aligner->addAbsolutePrior(reference->globalTransform(), imuMean, imuInfo);
+    aligner->addAbsolutePrior(initialPose.inverse()*reference->globalTransform(), imuMean, imuInfo);
   aligner->align();
   
   Eigen::Isometry3f localTransformation = aligner->T();
@@ -220,9 +223,11 @@ bool PWNMapperController::alignIncrementally(){
   if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle && motionFromFirstFrame.translation().norm() > _chunkDistance) {
     char buff[1024];
     sprintf(buff, "out-%05d.pwn", counter++);	
-    mergedClouds.save(buff, 1, true);
+    mergedClouds.save(buff, 1, true, initialPose);
+    cerr << "SAVED MERGED CLOUD!!!!" << endl;
     mergedClouds.clear();
     initialPose = globalT;
+    motionFromFirstFrame = Isometry3f::Identity();
   }
 
   // Update cloud drawing position.
