@@ -71,10 +71,12 @@ class PWNMapperController {
  protected:
   PinholePointProjector *projector;
   MultiPointProjector *multiProjector;
+  int numProjectors;
   StatsCalculator *statsCalculator;
   PointInformationMatrixCalculator *pointInformationMatrixCalculator;
   NormalInformationMatrixCalculator *normalInformationMatrixCalculator;
   DepthImageConverter *converter;
+  DepthImageConverter *multiConverter;
 #ifdef _PWN_USE_TRAVERSABILITY_
   TraversabilityAnalyzer *traversabilityAnalyzer;  
 #endif //_PWN_USE_TRAVERSABILITY_

@@ -33,15 +33,23 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
 
   _maxDequeSize = 20;
 
+  numProjectors = 4;
   projector = new PinholePointProjector();
   multiProjector = new MultiPointProjector();
-  multiProjector->addPointProjector(projector, Isometry3f::Identity(), 320, 240);
+  for(int i = 0; i < numProjectors; i++) {
+    Isometry3f sensorOffset = Isometry3f::Identity();
+    sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;    
+    multiProjector->addPointProjector(projector, sensorOffset, 0, 0);
+  }
+
 
   statsCalculator = new StatsCalculator();
 
   pointInformationMatrixCalculator = new PointInformationMatrixCalculator();
   normalInformationMatrixCalculator = new NormalInformationMatrixCalculator();
-  converter = new DepthImageConverter(multiProjector, statsCalculator, 
+  converter = new DepthImageConverter(projector, statsCalculator, 
+				      pointInformationMatrixCalculator, normalInformationMatrixCalculator);
+  multiConverter = new DepthImageConverter(multiProjector, statsCalculator, 
 				      pointInformationMatrixCalculator, normalInformationMatrixCalculator);
 
 #ifdef _PWN_USE_TRAVERSABILITY_
@@ -62,11 +70,12 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   aligner->setInnerIterations(al_innerIterations);
   aligner->setOuterIterations(al_outerIterations);
   converter->_curvatureThreshold = ng_curvatureThreshold;
+  multiConverter->_curvatureThreshold = ng_curvatureThreshold;
   pointInformationMatrixCalculator->setCurvatureThreshold(if_curvatureThreshold);
   normalInformationMatrixCalculator->setCurvatureThreshold(if_curvatureThreshold);
   
   merger = new Merger();
-  merger->setDepthImageConverter(converter);
+  merger->setDepthImageConverter(multiConverter);
 
   _chunkStep = 1000000;
   _chunkAngle = M_PI/4;
@@ -169,7 +178,7 @@ bool PWNMapperController::alignIncrementally(){
     hasOdometry = true;
     odometryMean = initialGuess;
     odometryInfo.setIdentity();
-    odometryInfo.block<3,3>(0,0) *= 100;
+    odometryInfo.block<3,3>(0, 0) *= 100;
   }
   Eigen::Isometry3f imuMean;
   Matrix6f imuInfo;
@@ -184,17 +193,14 @@ bool PWNMapperController::alignIncrementally(){
   
   if(ii.cols() != imageCols || ii.rows() != imageRows) 
     ii.resize(imageRows, imageCols);
-  multiProjector->setTransform(initialPose.inverse()*reference->globalTransform() * reference->sensorOffset());
-  cerr << "Projector transform: " << t2v(initialPose.inverse()*reference->globalTransform() * reference->sensorOffset()).transpose() << endl;
+  multiProjector->setTransform(initialPose.inverse()*reference->globalTransform());
   multiProjector->project(ii, di, mergedClouds.points());
-  converter->compute(subScene, di, reference->sensorOffset());
-  di.save("depthImage.pgm", true);
-  subScene.save("subScene.pwn", 1, true);
+  multiConverter->compute(subScene, di, Isometry3f::Identity(), true);
   aligner->setReferenceFrame(&subScene);
-  
+
   aligner->setCurrentFrame(current);
   aligner->setInitialGuess(initialGuess);
-  aligner->setSensorOffset(current->sensorOffset());
+  aligner->setSensorOffset(Isometry3f::Identity());
   if(hasOdometry)
     aligner->addRelativePrior(odometryMean, odometryInfo);
   if(hasImu)
@@ -223,7 +229,7 @@ bool PWNMapperController::alignIncrementally(){
 
   Eigen::Isometry3f motionFromFirstFrame = initialPose.inverse()*globalT;
   Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
-  if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle && motionFromFirstFrame.translation().norm() > _chunkDistance) {
+  if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || motionFromFirstFrame.translation().norm() > _chunkDistance) {
     char buff[1024];
     sprintf(buff, "out-%05d.pwn", counter++);	
     mergedClouds.save(buff, 1, true, initialPose);
@@ -237,12 +243,7 @@ bool PWNMapperController::alignIncrementally(){
   current->globalTransform() = globalT;
   current->previousFrameTransform() = localTransformation;
   mergedClouds.add(*current, motionFromFirstFrame);
-  mergedClouds.save("scene.pwn", 1, true);
-  cerr << "Scene size: " << mergedClouds.points().size() << endl; 
-  cerr << "before merging" << endl;
-  merger->merge(&mergedClouds, current->globalTransform() * current->sensorOffset());
-  cerr << "after merging" << endl;
-  cerr << "Scene size after merging: " << mergedClouds.points().size() << endl; 
+  merger->merge(&mergedClouds, current->globalTransform());
   return true;
 }
 
@@ -302,10 +303,10 @@ bool PWNMapperController::addVertex(VertexSE3 *v) {
     0.0f, 525.0f, 239.5f,
     0.0f, 0.0f, 1.0f;
   
+  sensorOffset = Isometry3f::Identity();
   sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
   Quaternionf quat = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
   sensorOffset.linear() = quat.toRotationMatrix();
-
   sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
   std::string fname = rgbdData->baseFilename() + "_depth.pgm";
@@ -325,10 +326,23 @@ bool PWNMapperController::addVertex(VertexSE3 *v) {
   DepthImage scaledDepthImage;
   DepthImage::scale(scaledDepthImage, depthImage, reduction);
 
+  for(int i = 0; i < numProjectors; i++) {
+    Isometry3f sensorOffset = Isometry3f::Identity();
+    sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+    Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
+    if(i > 0)
+      sensorOffset.linear() =  AngleAxisf(i * M_PI / 2.0f, Vector3f::UnitZ()) * quat.toRotationMatrix();
+    else
+      sensorOffset.linear() =  quat.toRotationMatrix();
+    sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    
+    multiProjector->setPointProjector(projector, sensorOffset, scaledDepthImage.rows(), scaledDepthImage.cols(), i);
+  }
+
   // should be done here???
-  imageRows = scaledDepthImage.rows();
-  imageCols = scaledDepthImage.cols();
-  cerr << "Size: " << imageRows << " --- " << imageCols << endl;
+  multiProjector->size(imageRows, imageCols);
+  //  imageRows = scaledDepthImage.rows();
+  //  imageCols = scaledDepthImage.cols() * numProjectors;
   correspondenceFinder->setSize(imageRows, imageCols);
   merger->setImageSize(imageRows, imageCols);
 
@@ -358,13 +372,7 @@ bool PWNMapperController::addVertex(VertexSE3 *v) {
   frame->setPreviousFrame(previousFrame);
 
   projector->setCameraMatrix(cameraMatrix);
-  converter->compute(*frame, scaledDepthImage, sensorOffset);
-  char buff[1024];
-  sprintf(buff, "depthImage%05d.pgm", frame->vertex()->id());
-  scaledDepthImage.save(buff, true);
-  sprintf(buff, "pwn_cloud%05d.pwn", frame->vertex()->id());
-  frame->save(buff, 1, true);
-  cerr << "Frame size: " << frame->points().size() << endl; 
+  converter->compute(*frame, scaledDepthImage, sensorOffset, true);
   _framesDeque.push_back(frame);
 
   // Keep at max maxDequeSize elements in the queue
@@ -404,6 +412,7 @@ bool PWNMapperController::addVertex(G2OFrame &frame) {
     0.0f, 525.0f, 239.5f,
     0.0f, 0.0f, 1.0f;
   
+  sensorOffset = Isometry3f::Identity();
   sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
   Quaternionf quat = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
   sensorOffset.linear() = quat.toRotationMatrix();
@@ -423,9 +432,24 @@ bool PWNMapperController::addVertex(G2OFrame &frame) {
   DepthImage scaledDepthImage;
   DepthImage::scale(scaledDepthImage, depthImage, reduction);
 
-  imageRows = scaledDepthImage.rows();
-  imageCols = scaledDepthImage.cols();
-  
+  for(int i = 0; i < numProjectors; i++) {
+    Isometry3f sensorOffset = Isometry3f::Identity();
+    sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+    Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
+    if(i > 0)
+      sensorOffset.linear() =  AngleAxisf(i * M_PI / 2.0f, Vector3f::UnitZ()) * quat.toRotationMatrix();
+    else
+      sensorOffset.linear() =  quat.toRotationMatrix();
+    sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    
+    multiProjector->setPointProjector(projector, sensorOffset, scaledDepthImage.rows(), scaledDepthImage.cols(), i);
+  }
+
+  // should be done here???
+  multiProjector->size(imageRows, imageCols);
+  //  imageRows = scaledDepthImage.rows();
+  //  imageCols = scaledDepthImage.cols() * numProjectors;
+
   frame.cameraMatrix() = cameraMatrix;
   frame.sensorOffset() = sensorOffset;
     
@@ -435,7 +459,7 @@ bool PWNMapperController::addVertex(G2OFrame &frame) {
   frame.setPreviousFrame(0);
 
   projector->setCameraMatrix(cameraMatrix);
-  converter->compute(frame, scaledDepthImage, sensorOffset);
+  converter->compute(frame, scaledDepthImage, sensorOffset, true);
   
   return true;
 }

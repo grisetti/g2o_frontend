@@ -39,6 +39,18 @@ class MultiPointProjector: public PointProjector {
     _pointProjectors.push_back(ChildProjectorInfo(pointProjector_, sensorOffset_, width_, height_)); 
   }
   
+  void setPointProjector(PointProjector *pointProjector_, 
+			 Eigen::Isometry3f sensorOffset_,
+			 int width_, int height_,
+			 int position) { 
+    _pointProjectors[position].pointProjector = pointProjector_;
+    _pointProjectors[position].sensorOffset = sensorOffset_;
+    _pointProjectors[position].width = width_;
+    _pointProjectors[position].height = height_;
+  }
+
+  virtual void size(int &rows, int &cols);
+
   virtual void project(Eigen::MatrixXi &indexImage, 
 		       Eigen::MatrixXf &depthImage, 
 		       const PointVector &points) const;
@@ -56,6 +68,8 @@ class MultiPointProjector: public PointProjector {
 				const Eigen::MatrixXf& depthImage, 
 				const float worldRadius,
 				const bool blackBorders=false) const;
+
+  virtual void setTransform(const Eigen::Isometry3f &transform_);
 
  protected:
   mutable std::vector<ChildProjectorInfo> _pointProjectors;
