@@ -82,7 +82,8 @@ public:
    */
   void projectIntervals(Eigen::MatrixXi &intervalImage, 
 			const Eigen::MatrixXf &depthImage, 
-			const float worldRadius) const;
+			const float worldRadius,
+			const bool blackBorders=false) const;
   
   /**
    *  Virtual method that unprojects to the 3D euclidean space the points contained in the depthImage

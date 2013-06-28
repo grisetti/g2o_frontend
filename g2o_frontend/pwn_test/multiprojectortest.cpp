@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 #include "g2o/stuff/command_args.h"
 
@@ -13,12 +14,15 @@ using namespace g2o;
 using namespace pwn;
 
 int main(int argc, char **argv) {
+  int numImages = 0;
   string cloudFilename[4];
   string outputFilename = "totalFrame.pwn";
 
   // Input parameters handling.
   g2o::CommandArgs arg;
   
+  arg.param("numImages", numImages, 4, "The number of images to read, can be a value between 0 and 4");
+ 
   // Last parameter has to be the working directory.
   arg.paramLeftOver("cloud1", cloudFilename[0], "", "first input cloud", true);
   arg.paramLeftOver("cloud2", cloudFilename[1], "", "second input cloud", true);
@@ -50,9 +54,9 @@ int main(int argc, char **argv) {
 					  &normalInformationMatrixCalculator);
 
   // Testing project
-  for(int i = 0; i < 4; i++) {
+  for(int i = 0; i < numImages; i++) {
     depthImage[i].load(cloudFilename[i].c_str(), true);
-   
+
     sensorOffset[i] = Isometry3f::Identity();
     sensorOffset[i].translation() = Vector3f(0.15f, 0.0f, 0.05f);
     Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
@@ -65,7 +69,7 @@ int main(int argc, char **argv) {
     multiProjector.addPointProjector(&projector, sensorOffset[i], depthImage[i].rows(), depthImage[i].cols());
     
     depthImageConverter.compute(frame[i], depthImage[i], sensorOffset[i]);
-    
+
     totalFrame.add(frame[i]);
   }
 
@@ -74,13 +78,10 @@ int main(int argc, char **argv) {
 
   multiProjector.project(indexImageRullino, rullino, totalFrame.points());
 
-  rullino.save("rullino.pgm");
-
   // Testing unproject
   totalFrame.clear();
-  
   multiProjector.unProject(totalFrame.points(), totalFrame.gaussians(), indexImageRullino, rullino);
-
+  
   // Testing projectIntervals
   totalFrame.clear();
 
@@ -90,8 +91,8 @@ int main(int argc, char **argv) {
   
   Isometry3f tmp = Isometry3f::Identity();
   tmp.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-  depthImageConverter.compute(totalFrame, rullino, tmp);
-  
+  depthImageConverter.compute(totalFrame, rullino, tmp, true);
+
   totalFrame.save(outputFilename.c_str(), 1, true);
 
   return 0;

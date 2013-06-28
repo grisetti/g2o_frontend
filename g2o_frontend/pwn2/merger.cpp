@@ -16,7 +16,8 @@ Merger::Merger() {
 
 void Merger::merge(Frame *frame, Eigen::Isometry3f transform) {
   assert(_depthImageConverter _indexImage.rows() != 0 && _indexImage.cols());
-  PinholePointProjector *pointProjector = dynamic_cast<PinholePointProjector*>(_depthImageConverter->_projector);
+  //PinholePointProjector *pointProjector = dynamic_cast<PinholePointProjector*>(_depthImageConverter->_projector);
+  PointProjector *pointProjector = _depthImageConverter->_projector;
   assert(pointProjector);
   pointProjector->setTransform(transform);
   pointProjector->project(_indexImage, 
@@ -68,7 +69,7 @@ void Merger::merge(Frame *frame, Eigen::Isometry3f transform) {
       killed++;
     }
   }
-  std::cerr << "Killed: " << killed << std::endl;
+  //std::cerr << "Killed: " << killed << std::endl;
   
   // scan the vector of covariances.
   // if the index is -1
@@ -101,15 +102,15 @@ void Merger::merge(Frame *frame, Eigen::Isometry3f transform) {
     }
   }
     
-  int originalSize = frame->points().size();
+  //int originalSize = frame->points().size();
   // kill the leftover points
   frame->points().resize(k);
   frame->normals().resize(k);
   frame->stats().resize(k);
   frame->pointInformationMatrix().resize(k);
   frame->normalInformationMatrix().resize(k);
-  cerr << "murdered: " << murdered  << endl;
-  cerr << "resized: " << originalSize << "->" << k << endl;
+  //cerr << "murdered: " << murdered  << endl;
+  //cerr << "resized: " << originalSize << "->" << k << endl;
     
   // recompute the normals
   //pointProjector->project(_indexImage, _depthImage, frame->points());

@@ -3,6 +3,7 @@
 #include <omp.h>
 
 #include <iostream>
+#include <fstream>
 
 namespace pwn {
 
@@ -22,7 +23,7 @@ void StatsCalculator::compute(StatsVector &statsVector,
   assert(integralImage.rows() == indexImage.rows());
   assert(integralImage.cols() == indexImage.cols());
 
-#pragma omp parallel for
+  #pragma omp parallel for
   for(int c = 0; c < indexImage.cols(); ++c) {
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigenSolver;
     const int *index = &indexImage.coeffRef(0,c);
@@ -32,7 +33,7 @@ void StatsCalculator::compute(StatsVector &statsVector,
       // is the point valid, is its range valid?
       if(*index < 0 || *interval < 0)
 	continue;
-      
+
       assert(*index<(int)stats.size());
       int imageRadius = *interval;
       if(imageRadius < _minImageRadius)
@@ -121,7 +122,7 @@ void StatsCalculator::compute(NormalVector& normals,
       if(stats.curvature() < curvatureThreshold) {
 	if(normal.dot(point) > 0)
 	  normal = -normal;
-      } else 
+      } else
 	normal.setZero();
     }
   }

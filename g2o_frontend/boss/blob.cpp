@@ -26,6 +26,10 @@
 using namespace boss;
 using namespace std;
 
+BLOB::BLOB() {
+  _ref = 0;
+}
+
 BLOB::~BLOB() {
   if (_ref) {
     _ref->dataDestroyed();

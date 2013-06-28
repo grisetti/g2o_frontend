@@ -88,7 +88,8 @@ public:
    */
   void projectIntervals(Eigen::MatrixXi &intervalImage, 
 			const Eigen::MatrixXf &depthImage, 
-			const float worldRadius) const;
+			const float worldRadius,
+			const bool blackBorders=false) const;
   
   /**
    *  Virtual method that unprojects to the 3D euclidean space the points contained in the depthImage
@@ -169,15 +170,10 @@ public:
     d = sqrt(cp.x()*cp.x()+cp.z()*cp.z());
     if (d>_maxDistance || d<_minDistance)
       return false;
-    cp.z() = d;
-
-    // extract the homogeneous x
-    cp.x() = atan2(cp.x(),cp.z());
-
-    Eigen::Vector3f ip=_cameraMatrix*cp.head<3>();
-    ip*=1./d;
-    x=(int)round(ip.x());
-    y=(int)round(ip.y());
+    float theta = atan2(cp.x(),cp.z());
+    
+    x = theta*_cameraMatrix(0,0)+_cameraMatrix(0,2);
+    y = cp.y()*_cameraMatrix(1,1)/d + _cameraMatrix(1,2);
     return true;
   }
   
@@ -188,9 +184,11 @@ public:
   inline bool _unProject(Point& p, const int x_, const int y_, const float d) const {
     if (d<_minDistance || d>_maxDistance)
       return false;
-    Eigen::Vector3f cp=_iK*Eigen::Vector3f(x_*d,y_*d,d);
-    Eigen::Vector3f p2((float)sin(cp.x())*cp.z(), (float)cp.y(),(float)cos(cp.x())*cp.z());
-    p=transform()*p2;
+    float theta = _iK(0,0)*(x_-_cameraMatrix(0,2));
+    float x=sin(theta)*d;
+    float z=cos(theta)*d;
+    float y=_iK.row(1)*Eigen::Vector3f(0,y_*d, d);
+    p=_transform*Eigen::Vector3f(x,y,z);
     return true;
   }
   
@@ -201,6 +199,7 @@ public:
   inline int _projectInterval(const int, const int, const float d, const float worldRadius) const {
     if (d<_minDistance || d>_maxDistance)
       return -1;
+    int xc, yc;
     Eigen::Matrix<float, 3,2> range;
     Eigen::Vector3f p=_cameraMatrix*Eigen::Vector3f(worldRadius,worldRadius,0);
     p*=(1./d);

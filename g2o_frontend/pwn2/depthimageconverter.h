@@ -17,7 +17,8 @@ public:
 
   void compute(Frame& frame,
 	       const DepthImage &depthImage, 
-	       const Eigen::Isometry3f &sensorOffset=Eigen::Isometry3f::Identity());
+	       const Eigen::Isometry3f &sensorOffset=Eigen::Isometry3f::Identity(),
+	       const bool blackBorders=false);
 
   // todo: add accessor methods, separate public and private
   //protected:

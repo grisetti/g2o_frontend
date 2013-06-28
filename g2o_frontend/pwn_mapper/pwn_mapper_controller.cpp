@@ -20,6 +20,9 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   imageRows = 0;
   imageCols = 0;
 
+  al_minNumInliers = 10000;
+  al_minError = 10.0f;
+
   ng_worldRadius = 0.1f;
   ng_minImageRadius = 10;
   ng_curvatureThreshold = 1.0f;
@@ -30,13 +33,24 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
 
   _maxDequeSize = 20;
 
+  numProjectors = 4;
   projector = new PinholePointProjector();
+  multiProjector = new MultiPointProjector();
+  for(int i = 0; i < numProjectors; i++) {
+    Isometry3f sensorOffset = Isometry3f::Identity();
+    sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;    
+    multiProjector->addPointProjector(projector, sensorOffset, 0, 0);
+  }
+
+
   statsCalculator = new StatsCalculator();
 
   pointInformationMatrixCalculator = new PointInformationMatrixCalculator();
   normalInformationMatrixCalculator = new NormalInformationMatrixCalculator();
-  converter= new DepthImageConverter(projector, statsCalculator, 
-				     pointInformationMatrixCalculator, normalInformationMatrixCalculator);
+  converter = new DepthImageConverter(projector, statsCalculator, 
+				      pointInformationMatrixCalculator, normalInformationMatrixCalculator);
+  multiConverter = new DepthImageConverter(multiProjector, statsCalculator, 
+				      pointInformationMatrixCalculator, normalInformationMatrixCalculator);
 
 #ifdef _PWN_USE_TRAVERSABILITY_
   traversabilityAnalyzer = new TraversabilityAnalyzer(30, 0.04, 0.2, 1);
@@ -46,7 +60,7 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   linearizer = new Linearizer() ;
   aligner = new Aligner();
     
-  aligner->setProjector(projector);
+  aligner->setProjector(multiProjector);
   aligner->setLinearizer(linearizer);
   linearizer->setAligner(aligner);
   aligner->setCorrespondenceFinder(correspondenceFinder);
@@ -56,11 +70,12 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   aligner->setInnerIterations(al_innerIterations);
   aligner->setOuterIterations(al_outerIterations);
   converter->_curvatureThreshold = ng_curvatureThreshold;
+  multiConverter->_curvatureThreshold = ng_curvatureThreshold;
   pointInformationMatrixCalculator->setCurvatureThreshold(if_curvatureThreshold);
   normalInformationMatrixCalculator->setCurvatureThreshold(if_curvatureThreshold);
   
   merger = new Merger();
-  merger->setDepthImageConverter(converter);
+  merger->setDepthImageConverter(multiConverter);
 
   _chunkStep = 1000000;
   _chunkAngle = M_PI/4;
@@ -141,17 +156,14 @@ bool PWNMapperController::alignIncrementally(){
 
   G2OFrame *current = _framesDeque.back();
   G2OFrame *reference = current->previousFrame();
+
+  cerr << "********************** Aligning vertex " << current->vertex()->id() << " **********************" << endl;
   
   if(mergedClouds.points().size() == 0) 
-    mergedClouds.add(*reference, reference->globalTransform());
-  //mergedClouds.add(*current, current->globalTransform());
-  //mergedClouds.add(*reference, reference->globalTransform());
-  //merger->merge(&mergedClouds, reference->globalTransform() * current->sensorOffset());
-
+    mergedClouds.add(*reference, Isometry3f::Identity());
 
   Eigen::Isometry3f initialGuess;
-
-  // cerr computing initial guess based on the frame positions, just for convenience
+  // computing initial guess based on the frame positions, just for convenience
   Eigen::Isometry3d delta = reference->vertex()->estimate().inverse()*current->vertex()->estimate();
   for(int c = 0; c < 4; c++)
     for(int r = 0; r < 3; r++)
@@ -166,7 +178,7 @@ bool PWNMapperController::alignIncrementally(){
     hasOdometry = true;
     odometryMean = initialGuess;
     odometryInfo.setIdentity();
-    odometryInfo.block<3,3>(0,0) *= 100;
+    odometryInfo.block<3,3>(0, 0) *= 100;
   }
   Eigen::Isometry3f imuMean;
   Matrix6f imuInfo;
@@ -178,61 +190,60 @@ bool PWNMapperController::alignIncrementally(){
       
   aligner->clearPriors();
   aligner->setOuterIterations(al_outerIterations);
-  //aligner->setReferenceFrame(reference);
   
   if(ii.cols() != imageCols || ii.rows() != imageRows) 
     ii.resize(imageRows, imageCols);
-  projector->setTransform(reference->globalTransform() * reference->sensorOffset());
-  projector->project(ii, di, mergedClouds.points());
-  converter->compute(subScene, di, reference->sensorOffset());
+  multiProjector->setTransform(initialPose.inverse()*reference->globalTransform());
+  multiProjector->project(ii, di, mergedClouds.points());
+  multiConverter->compute(subScene, di, Isometry3f::Identity(), true);
   aligner->setReferenceFrame(&subScene);
-  
+
   aligner->setCurrentFrame(current);
   aligner->setInitialGuess(initialGuess);
-  aligner->setSensorOffset(current->sensorOffset());
+  aligner->setSensorOffset(Isometry3f::Identity());
   if(hasOdometry)
     aligner->addRelativePrior(odometryMean, odometryInfo);
   if(hasImu)
-    aligner->addAbsolutePrior(reference->globalTransform(), imuMean, imuInfo);
+    aligner->addAbsolutePrior(initialPose.inverse()*reference->globalTransform(), imuMean, imuInfo);
   aligner->align();
   
   Eigen::Isometry3f localTransformation = aligner->T();
-  cerr << "VALUES: " << aligner->inliers() << " --- " << aligner->error() / aligner->inliers() << endl;
-  if(aligner->outerIterations() != 0 && (aligner->inliers() < 20000 || aligner->error() / aligner->inliers() > 10) ) {
+  if(aligner->outerIterations() != 0 && (aligner->inliers() < al_minNumInliers || aligner->error() / aligner->inliers() > al_minError) ) {
     cerr << "ALIGNER FAILURE!!!!!!!!!!!!!!!" << endl;
+    cerr << "inliers/minimum number of inliers: " << aligner->inliers() << " / " << al_minNumInliers << endl;
+    cerr << "error/minimum error: " << aligner->error() / aligner->inliers() << " / " << al_minError << endl;
     localTransformation = initialGuess;
   }
-  if(aligner->outerIterations() != 0) {
-    cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
-    cout << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
-  }
+  
 
   globalT = reference->globalTransform()*localTransformation;
   // recondition the rotation to prevent roundoff to accumulate
   
   globalT = v2t(t2v(globalT));
   
+  if(aligner->outerIterations() != 0) {
+    cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
+    cout << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
+    cout << "Global transformation: " << t2v(globalT).transpose() << endl;
+  }
+
   Eigen::Isometry3f motionFromFirstFrame = initialPose.inverse()*globalT;
   Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
-  if(fabs(rotationFromFirstFrame.angle()) < _chunkAngle && motionFromFirstFrame.translation().norm() < _chunkDistance)
-    cerr << "Total points that will be added: " << current->points().size() << endl; 
-  else {
+  if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || motionFromFirstFrame.translation().norm() > _chunkDistance) {
     char buff[1024];
     sprintf(buff, "out-%05d.pwn", counter++);	
-    mergedClouds.save(buff, 1, true);
-    //os.str("");
-    //os.clear();
+    mergedClouds.save(buff, 1, true, initialPose);
+    cerr << "SAVED MERGED CLOUD!!!!" << endl;
     mergedClouds.clear();
     initialPose = globalT;
+    motionFromFirstFrame = Isometry3f::Identity();
   }
 
   // Update cloud drawing position.
   current->globalTransform() = globalT;
   current->previousFrameTransform() = localTransformation;
-
-  mergedClouds.add(*current, current->globalTransform());
-  merger->merge(&mergedClouds, current->globalTransform() * current->sensorOffset());
-  
+  mergedClouds.add(*current, motionFromFirstFrame);
+  merger->merge(&mergedClouds, current->globalTransform());
   return true;
 }
 
@@ -292,10 +303,10 @@ bool PWNMapperController::addVertex(VertexSE3 *v) {
     0.0f, 525.0f, 239.5f,
     0.0f, 0.0f, 1.0f;
   
+  sensorOffset = Isometry3f::Identity();
   sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
   Quaternionf quat = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
   sensorOffset.linear() = quat.toRotationMatrix();
-
   sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
   std::string fname = rgbdData->baseFilename() + "_depth.pgm";
@@ -315,9 +326,23 @@ bool PWNMapperController::addVertex(VertexSE3 *v) {
   DepthImage scaledDepthImage;
   DepthImage::scale(scaledDepthImage, depthImage, reduction);
 
+  for(int i = 0; i < numProjectors; i++) {
+    Isometry3f sensorOffset = Isometry3f::Identity();
+    sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+    Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
+    if(i > 0)
+      sensorOffset.linear() =  AngleAxisf(i * M_PI / 2.0f, Vector3f::UnitZ()) * quat.toRotationMatrix();
+    else
+      sensorOffset.linear() =  quat.toRotationMatrix();
+    sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    
+    multiProjector->setPointProjector(projector, sensorOffset, scaledDepthImage.rows(), scaledDepthImage.cols(), i);
+  }
+
   // should be done here???
-  imageRows = scaledDepthImage.rows();
-  imageCols = scaledDepthImage.cols();
+  multiProjector->size(imageRows, imageCols);
+  //  imageRows = scaledDepthImage.rows();
+  //  imageCols = scaledDepthImage.cols() * numProjectors;
   correspondenceFinder->setSize(imageRows, imageCols);
   merger->setImageSize(imageRows, imageCols);
 
@@ -347,7 +372,7 @@ bool PWNMapperController::addVertex(VertexSE3 *v) {
   frame->setPreviousFrame(previousFrame);
 
   projector->setCameraMatrix(cameraMatrix);
-  converter->compute(*frame, scaledDepthImage, sensorOffset);
+  converter->compute(*frame, scaledDepthImage, sensorOffset, true);
   _framesDeque.push_back(frame);
 
   // Keep at max maxDequeSize elements in the queue
@@ -387,6 +412,7 @@ bool PWNMapperController::addVertex(G2OFrame &frame) {
     0.0f, 525.0f, 239.5f,
     0.0f, 0.0f, 1.0f;
   
+  sensorOffset = Isometry3f::Identity();
   sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
   Quaternionf quat = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
   sensorOffset.linear() = quat.toRotationMatrix();
@@ -406,9 +432,24 @@ bool PWNMapperController::addVertex(G2OFrame &frame) {
   DepthImage scaledDepthImage;
   DepthImage::scale(scaledDepthImage, depthImage, reduction);
 
-  imageRows = scaledDepthImage.rows();
-  imageCols = scaledDepthImage.cols();
-  
+  for(int i = 0; i < numProjectors; i++) {
+    Isometry3f sensorOffset = Isometry3f::Identity();
+    sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+    Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
+    if(i > 0)
+      sensorOffset.linear() =  AngleAxisf(i * M_PI / 2.0f, Vector3f::UnitZ()) * quat.toRotationMatrix();
+    else
+      sensorOffset.linear() =  quat.toRotationMatrix();
+    sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    
+    multiProjector->setPointProjector(projector, sensorOffset, scaledDepthImage.rows(), scaledDepthImage.cols(), i);
+  }
+
+  // should be done here???
+  multiProjector->size(imageRows, imageCols);
+  //  imageRows = scaledDepthImage.rows();
+  //  imageCols = scaledDepthImage.cols() * numProjectors;
+
   frame.cameraMatrix() = cameraMatrix;
   frame.sensorOffset() = sensorOffset;
     
@@ -418,7 +459,7 @@ bool PWNMapperController::addVertex(G2OFrame &frame) {
   frame.setPreviousFrame(0);
 
   projector->setCameraMatrix(cameraMatrix);
-  converter->compute(frame, scaledDepthImage, sensorOffset);
+  converter->compute(frame, scaledDepthImage, sensorOffset, true);
   
   return true;
 }

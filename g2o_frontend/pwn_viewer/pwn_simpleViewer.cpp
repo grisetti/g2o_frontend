@@ -32,6 +32,7 @@ int main (int argc, char** argv) {
   float normalLenght;
   float normalStep;
   float alpha;
+
   const int maxFiles = 1000;
   std::vector<string> filenames(maxFiles);
 
@@ -47,8 +48,6 @@ int main (int argc, char** argv) {
     arg.paramLeftOver("", filenames[i], "", "", true);
   }
   arg.parseArgs(argc, argv);
-
-
   
   QApplication application(argc,argv);
   QWidget* mainWindow = new QWidget();
@@ -83,13 +82,16 @@ int main (int argc, char** argv) {
 	if(filenames[i] == "")
 	  break;
 
-	if(!frame->load(filenames[i].c_str())) {
+	Isometry3f transform;
+	if(!frame->load(transform, filenames[i].c_str())) {
 	  cerr << "unable to load points from file [" << filenames[i] << "]" << endl;
 	  return 0;
 	} else {
 	  listWidget->addItem(QString(filenames[i].c_str()));
 	}
-      
+	transform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+	frame->transformInPlace(transform);
+
 	GLParameterPoints* pointsParams = new GLParameterPoints(pointSize, Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
 	pointsParams->setStep(pointStep);
 	DrawablePoints* drawablePoints = new DrawablePoints(T, pointsParams, &frame->points(), &frame->normals());
