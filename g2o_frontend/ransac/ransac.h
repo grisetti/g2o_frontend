@@ -7,6 +7,7 @@
 #include "g2o/core/optimizable_graph.h"
 
 #include <iostream>
+#include <fstream>
 
 namespace g2o_frontend {
 
@@ -248,6 +249,25 @@ public:
             }
             cerr << "BestFriendFilter? " << bestFriendFilter << endl;
 
+            //saving the correspondances into files
+//            ofstream os1line("l1_octave.dat");
+//            ofstream os2line("l2_octave.dat");
+//            for (size_t i = 0; i<inliers.size(); i++){
+//                int idx = inliers[i];
+//                Correspondence& c=_correspondences[idx];
+//                g2o::OptimizableGraph::Edge* e=c.edge();
+
+//                PointVertexType* v1=static_cast<PointVertexType*>(e->vertex(0));
+//                const PointEstimateType theLine1 = v1->estimate();
+//                Eigen::Vector3d line1 = Eigen::Vector3d(cos(theLine1(0)), sin(theLine1(0)), theLine1(1));
+//                os1line << line1.transpose() << endl;
+
+//                PointVertexType* v2=static_cast<PointVertexType*>(e->vertex(1));
+//                const PointEstimateType theLine2 = v2->estimate();
+//                Eigen::Vector3d line2 = Eigen::Vector3d(cos(theLine2(0)), sin(theLine2(0)), theLine2(1));
+//                os2line << line2.transpose() << endl;
+//            }
+
             if(debug)
                 cerr << "transformFound:" << (int) transformFound << endl;
             if (debug)
@@ -278,10 +298,7 @@ public:
                     transformFound = true;
 
                     //mal
-//                    cerr << "         OUTPUT inliers_ " << inliers_.size() << endl;
-//                    inliers_=bestInliers;
-//                    cerr << "saving bestinliers: " << bestInliers.size() << "in inliers_ " << inliers_.size() << endl;
-
+                    //inliers_=bestInliers;
                 }
                 if ((double)bestInliers.size()/(double)_correspondences.size() > _inlierStopFraction){
                     transformFound = true;
@@ -300,8 +317,26 @@ public:
 //        }
 //        cerr << "BestFriendFilter? " << bestFriendFilter << endl;
 
+        //saving the correspondances into files
+//        ofstream os1corr("l1ransac_octave.dat");
+//        ofstream os2corr("l2ransac_octave.dat");
+//        for (size_t i = 0; i<bestInliers.size(); i++){
+//            int idx = bestInliers[i];
+//            Correspondence& c=_correspondences[idx];
+//            g2o::OptimizableGraph::Edge* e=c.edge();
+
+//            PointVertexType* v1=static_cast<PointVertexType*>(e->vertex(0));
+//            const PointEstimateType theLine1 = v1->estimate();
+//            Eigen::Vector3d line1 = Eigen::Vector3d(cos(theLine1(0)), sin(theLine1(0)), theLine1(1));
+//            os1corr << line1.transpose() << endl;
+
+//            PointVertexType* v2=static_cast<PointVertexType*>(e->vertex(1));
+//            const PointEstimateType theLine2 = v2->estimate();
+//            Eigen::Vector3d line2 = Eigen::Vector3d(cos(theLine2(0)), sin(theLine2(0)), theLine2(1));
+//            os2corr << line2.transpose() << endl;
+//        }
+
         //mal
-        cerr << "         OUTPUT inliers_ " << inliers_.size() << endl;
         inliers_=bestInliers;
         cerr << "saving bestinliers: " << bestInliers.size() << " in inliers_ " << inliers_.size() << endl;
 

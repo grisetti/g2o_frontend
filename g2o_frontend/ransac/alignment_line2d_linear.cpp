@@ -42,7 +42,7 @@ namespace g2o_frontend{
       const AlignmentAlgorithmLine2DLinear::PointEstimateType& l2= v2->estimate();
       Vector3d li(cos(l1[0]), sin(l1[0]), l1[1]);
       Vector3d lj(cos(l2[0]), sin(l2[0]), l2[1]);
-//       cerr << "indices size: " << indices.size() << endl;
+      cerr << "          ALIGNEMENT indices size: " << indices.size() << endl;
 //       cerr << "Li:\n" << li << endl;
 //       cerr << "Lj:\n" << lj << endl;
       

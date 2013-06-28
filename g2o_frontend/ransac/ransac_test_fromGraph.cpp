@@ -144,15 +144,16 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
     RansacLine2DLinear::TransformType t0;
     for (OptimizableGraph::EdgeSet::iterator itv = es1.begin(); itv != es1.end(); itv++)
     {
-	EdgeSE2* es = dynamic_cast<EdgeSE2*>(*itv);
-	if (!es)
-	    continue;
-	if(v1->id() == es->vertices()[0]->id()){
-	    cerr << "salvo odometria" << endl;
-	    t0 = es->measurement();
-	}
+        EdgeSE2* es = dynamic_cast<EdgeSE2*>(*itv);
+        if (!es)
+            continue;
+        if(v1->id() == es->vertices()[0]->id()){
+            cerr << "salvo odometria" << endl;
+            t0 = es->measurement();
+        }
     }
     cerr << "ground truth " << t0.toIsometry().matrix() << endl;
+    cerr << "ground truth vector " << t2v_2d(t0.toIsometry()) << endl;
     transform = t0;
 
 #ifdef FILTER_ON
@@ -236,27 +237,38 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
     
 //if not using the correspondences filter..
 #ifdef FILTER_OFF
-
-    ofstream os1line("l1.dat");
-    ofstream os2line("l2.dat");
+    //to save all the lines for octave debug
+    ofstream os1all("l1_all.dat");
+    ofstream os2all("l2_all.dat");
 
     //computing the total number of correspondances for ransac
     int numLinee1 = 0, numLinee2 = 0;
     for (OptimizableGraph::EdgeSet::iterator itv1 = es1.begin(); itv1 != es1.end(); itv1++) {
         EdgeSE2Line2D* el1 = dynamic_cast<EdgeSE2Line2D*>(*itv1);
-        if (el1) {
-            VertexLine2D* vl1 = dynamic_cast<VertexLine2D*>(el1->vertices()[1]);
-            const Line2D theLine1 = vl1->estimate();
-            os1line << theLine1.transpose() << endl;
+        if (el1){
+            const VertexLine2D* v1 = dynamic_cast<VertexLine2D*>(el1->vertices()[1]);
+            Eigen::Vector2d p11=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p1Id))->estimate();
+            Eigen::Vector2d p12=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p2Id))->estimate();
+//            const Line2D theLine1 = v1->estimate();
+//            Eigen::Vector3d line1 = Eigen::Vector3d(cos(theLine1(0)), sin(theLine1(0)), theLine1(1));
+            os1all << p11.transpose() << endl;
+            os1all << p12.transpose() << endl;
+            os1all << endl;
+
             numLinee1++;
         }
     }
     for (OptimizableGraph::EdgeSet::iterator itv2 = es2.begin(); itv2 != es2.end(); itv2++) {
         EdgeSE2Line2D* el2 = dynamic_cast<EdgeSE2Line2D*>(*itv2);
-        if (el2){
-            VertexLine2D* vl2 = dynamic_cast<VertexLine2D*>(el2->vertices()[1]);
-            const Line2D theLine2 = vl2->estimate();
-            os2line << theLine2.transpose() << endl;
+        if (el2) {
+            const VertexLine2D* v2 = dynamic_cast<VertexLine2D*>(el2->vertices()[1]);
+            Eigen::Vector2d p21=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p1Id))->estimate();
+            Eigen::Vector2d p22=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p2Id))->estimate();
+//            const Line2D theLine2 = v2->estimate();
+//            Eigen::Vector3d line2 = Eigen::Vector3d(cos(theLine2(0)), sin(theLine2(0)), theLine2(1));
+            os2all << p21.transpose() << endl;
+            os2all << p22.transpose() << endl;
+            os2all << endl;
             numLinee2++;
         }
     }
@@ -339,17 +351,39 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
 //	    cout << "error of " << h << "-th correspondance: " << erri << endl ;
 	    
 	}
+    //debug: plotting the inliers found before the last alignment call
+    ofstream os1corr("l1_octave.dat");
+    ofstream os2corr("l2_octave.dat");
+    ofstream os1corrplot("l1_octave_plot.dat");
+    ofstream os2corrplot("l2_octave_plot.dat");
     cout << " >>>>> At the end inliers: (size is " << inliers.size() << ")" << endl;
-	for (size_t i = 0; i<inliers.size(); i++){
-	  int idx = inliers[i];
+    for (size_t i = 0; i<inliers.size(); i++){
+      int idx = inliers[i];
       double er = err[idx];
-	  Correspondence& c=correspondences[idx];
-	  g2o::OptimizableGraph::Edge* e=c.edge();
-	  VertexLine2D* v1=static_cast<VertexLine2D*>(e->vertex(0));
-	  VertexLine2D* v2=static_cast<VertexLine2D*>(e->vertex(1));
+      Correspondence& c=correspondences[idx];
+      g2o::OptimizableGraph::Edge* e=c.edge();
+      VertexLine2D* v1=static_cast<VertexLine2D*>(e->vertex(0));
+      Eigen::Vector2d p11=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p1Id))->estimate();
+      Eigen::Vector2d p12=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p2Id))->estimate();
+      const Line2D theLine1 = v1->estimate();
+      Eigen::Vector3d line1 = Eigen::Vector3d(cos(theLine1(0)), sin(theLine1(0)), theLine1(1));
+      os1corr << line1.transpose() << endl;
+      os1corrplot << p11.transpose() << endl;
+      os1corrplot << p12.transpose() << endl;
+      os1corrplot << endl;
+
+      VertexLine2D* v2=static_cast<VertexLine2D*>(e->vertex(1));
+      Eigen::Vector2d p21=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p1Id))->estimate();
+      Eigen::Vector2d p22=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p2Id))->estimate();
+      const Line2D theLine2 = v2->estimate();
+      Eigen::Vector3d line2 = Eigen::Vector3d(cos(theLine2(0)), sin(theLine2(0)), theLine2(1));
+      os2corr << line2.transpose() << endl;
+      os2corrplot << p21.transpose() << endl;
+      os2corrplot << p22.transpose() << endl;
+      os2corrplot << endl;
+
       cerr << "(" << idx << "," << e << ","<< v1->id() << "," << v2->id() << ", " << er <<  "), ";
-	  
-	}
+    }
 	cerr << endl;
 
 	// AlignmentAlgorithmSE2Line2D& aligner=ransac.alignmentAlgorithm();
@@ -441,7 +475,7 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
       Eigen::Vector2d p22=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p2Id))->estimate();
 
       //segmenta qui
-      cout << "pippooooooooo" << endl;
+//      cout << "pippooooooooo" << endl;
 
       os1 << p11.transpose() << endl;
       os1 << p12.transpose() << endl;
@@ -466,7 +500,7 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
       osc << endl;
       
     }
-    cout << "pippooooooooo 2" << endl;
+//    cout << "pippooooooooo 2" << endl;
 
     //plotting all the correspondances
     ofstream osl1("l1.dat");
