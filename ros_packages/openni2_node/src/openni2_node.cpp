@@ -44,12 +44,10 @@ struct SensorTopic {
     }
 
     imageTopicName = sensorTopicName + "/image";
-    cameraInfoTopicName = sensorTopicName + "/cameraInfo";
     this->device = device;
     this->sensorType = sensorType;
 
-    imagePublisher = transport.advertise(imageTopicName, 1);
-    cameraInfoPublisher = nh.advertise<sensor_msgs::CameraInfo>(cameraInfoTopicName, 1);
+    publisher = transport.advertiseCamera(imageTopicName, 1);
     openni::Status rc =videoStream.create(*device,sensorType);
     cerr << "CREATING STREAM: " << imageTopicName; 
     if (rc != openni::STATUS_OK) {
@@ -63,8 +61,8 @@ struct SensorTopic {
     seq = 0;
 
     switch(sensorType){
-    case SENSOR_DEPTH: setVideoMode(4);  break;
-    case SENSOR_COLOR: setVideoMode(6);  break;
+    case SENSOR_DEPTH: setVideoMode(4);  break; //HACK
+    case SENSOR_COLOR: setVideoMode(6);  break; //HACK
     default:;
     }
     
@@ -114,41 +112,31 @@ struct SensorTopic {
   }
 
   void handleRequests() {
-    if (imagePublisher.getNumSubscribers()>0 && ! started)
+    if (publisher.getNumSubscribers()>0 && ! started)
       start();
-    if (imagePublisher.getNumSubscribers()==0 && started)
+    if (publisher.getNumSubscribers()==0 && started)
       stop();
   }
   
-  void sendFrameAndInfo(){
+  void publishFrame(){
     VideoStream& vs = videoStream;
-    VideoFrameRef ref;
     vs.readFrame(&ref);
     ros::Time currentTime = ros::Time::now();
     // image publishing
-    int bpp=0;
-    sensor_msgs::Image image;
+    
     image.header.seq = seq;
     image.header.stamp=currentTime;
     image.header.frame_id=sensorFrameId;
     if(ref.getSensorType() == SENSOR_DEPTH){
       image.encoding = "mono16";
-      bpp = 2;
     } else if(ref.getSensorType() == SENSOR_COLOR){
       image.encoding = "rgb8";
-      bpp = 3;
     }
     image.width = ref.getWidth();
     image.height = ref.getHeight();
     image.step = ref.getStrideInBytes();
     image.data.resize(ref.getDataSize());
-    if (ref.getWidth() * ref.getHeight() * bpp!=ref.getDataSize()) {
-      cerr << "fatal error, size mismatch" << ref.getWidth() * ref.getHeight() * bpp << "!=" << ref.getDataSize() << endl; 
-    } else {
-      memcpy(&image.data[0] ,ref.getData(), ref.getDataSize());
-      imagePublisher.publish(image);
-    }
-    
+    memcpy(&image.data[0] ,ref.getData(), ref.getDataSize());
     // camera info publishing
     float hFov = videoStream.getHorizontalFieldOfView();
     float vFov = videoStream.getVerticalFieldOfView();
@@ -175,13 +163,9 @@ struct SensorTopic {
     
     cameraInfo.binning_x = 1;
     cameraInfo.binning_y = 1;
+    ref.release();
+    publisher.publish(image,cameraInfo,currentTime);
     seq ++;
-    
-  }
-
-  void sendCameraInfo(){
-    if (seq>0)
-      cameraInfoPublisher.publish(cameraInfo);
   }
 
   void sendTransform(tf::TransformBroadcaster br) {
@@ -197,9 +181,10 @@ struct SensorTopic {
   openni::Device* device;
   openni::SensorType sensorType;
   openni::VideoStream videoStream;
+  image_transport::CameraPublisher publisher;
+  sensor_msgs::Image image;
   sensor_msgs::CameraInfo cameraInfo;
-  image_transport::Publisher imagePublisher;
-  ros::Publisher cameraInfoPublisher;
+  VideoFrameRef ref;
   bool ok;
   bool started;
   int seq;
@@ -272,21 +257,19 @@ int main(int argc, char** argv)
       }
     }
     if (k) {
-      int changedIndex;
-      openni::Status rc = openni::OpenNI::waitForAnyStream(streams, k, &changedIndex);
+      int changedIndex=-1;
+      openni::Status rc = openni::OpenNI::waitForAnyStream(streams, k, &changedIndex, openni::TIMEOUT_FOREVER);
       if (rc != openni::STATUS_OK) {
 	cerr << "WAIT FAILED, error: " << openni::OpenNI::getExtendedError() << endl;
 	return 1;
       }
       int topicIndex=reverseIndices[changedIndex];
       SensorTopic* sensorTopic=sensorTopics[topicIndex];
-      sensorTopic->sendFrameAndInfo();
-      sensorTopic->sendCameraInfo();
+      cerr << changedIndex;
+      sensorTopic->publishFrame();
+      //ros::Duration(0.1).sleep();
     } else {
       // sleep 10 ms
-      for (size_t i = 0; i<sensorTopics.size(); i++){
-	sensorTopics[i]->sendCameraInfo();
-      }
       ros::Duration(0.1).sleep();
     }
     ros::spinOnce();
