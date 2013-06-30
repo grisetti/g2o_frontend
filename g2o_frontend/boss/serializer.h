@@ -58,7 +58,7 @@ public:
   bool write(double timestamp, const std::string& source, Serializable& instance);
   bool write(const std::string& source, Serializable& instance);
   
-  virtual std::string createBinaryFilePath(Identifiable& instance);
+  virtual std::string createBinaryFilePath(BaseBLOBReference& instance);
   virtual std::ostream* getBinaryOutputStream(const std::string& fname);
   virtual std::istream* getBinaryInputStream(const std::string& fname);
 

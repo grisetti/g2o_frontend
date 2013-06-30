@@ -24,6 +24,7 @@
 #include <iostream>
 
 #include "id_context.h"
+#include "blob.h"
 
 namespace boss {
 
@@ -31,7 +32,7 @@ class Serializer;
 
 class SerializationContext: public IdContext {
 public:
-  virtual std::string createBinaryFilePath(Identifiable& instance);
+  virtual std::string createBinaryFilePath(BaseBLOBReference& instance);
   virtual std::ostream* getBinaryOutputStream(const std::string& fname)=0;
   virtual std::istream* getBinaryInputStream(const std::string& fname)=0;
 };

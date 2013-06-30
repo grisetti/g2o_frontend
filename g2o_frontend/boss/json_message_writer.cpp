@@ -32,7 +32,6 @@ static string escapeJSONString(const string& str) {
     switch (c) {
     case '\\':
     case '"':
-    case '/':
       escaped.push_back('\\');
       escaped.push_back(c);
       break;

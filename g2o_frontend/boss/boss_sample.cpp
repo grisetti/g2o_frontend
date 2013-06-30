@@ -28,6 +28,10 @@ public:
     os.write(_buf,256);
   }
 
+  virtual const std::string& extension() {
+    static string EXTENSION("bin");
+    return EXTENSION;
+  }
 protected:
   char _buf[256];
 };
@@ -37,9 +41,21 @@ BOSS_REGISTER_BLOB(MyBLOB)
 int main(int /*argc*/, char** /*argv*/) {
   Serializer ser;
 
-  ser.setFilePath("serializer_test.<yyyy>-<mm>-<dd>.log");
-  ser.setBinaryPath("blob-<id>.dat");
+  //Set main log file path, tags <yyyy><mm><dd> will be replaced with current year, month and day
+  //Other possible tags are:
+  //- <yy> two-digit year
+  //- <hh> hour
+  //- <mi> minute
+  //- <ss> second
+  ser.setFilePath("data/serializer_test.<yyyy>-<mm>-<dd>.log");
+  //Set BLOB file pattern, additional possible tags:
+  //- <id> unique instance ID in this serialization context
+  //- <ext> file extension as returned in BLOB::extension()
+  //- <classname> the class name used in BLOB registration
+  //Unless an absolute path is specified the BLOB path is always relative to the main file directory
+  ser.setBinaryPath("binary/blob-<id>.<ext>");
 
+  //References should be never discarded in order to guarantee proper ID generation
   vector<BLOBReference<MyBLOB>*> refList;
 
   for (int i=0;i<10;i++) {
@@ -47,6 +63,7 @@ int main(int /*argc*/, char** /*argv*/) {
     BLOBReference<MyBLOB>* mbref=new BLOBReference<MyBLOB>(mb);
     ser.write("dummy",*mbref);
     refList.push_back(mbref);
+    //The BLOB can be discarded after serialization, data can be retrieved using BLOBReference::get() method
     delete mb;
   }
 

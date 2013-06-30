@@ -23,6 +23,6 @@
 using namespace boss;
 using namespace std;
 
-string SerializationContext::createBinaryFilePath(Identifiable& instance __attribute__((unused))) {
+string SerializationContext::createBinaryFilePath(BaseBLOBReference& /*instance*/) {
   return "";
 }

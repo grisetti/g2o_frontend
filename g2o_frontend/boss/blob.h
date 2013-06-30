@@ -37,6 +37,7 @@ public:
   virtual bool read(std::istream& is)=0;
   virtual void write(std::ostream& os)=0;
   virtual ~BLOB();
+  virtual const std::string& extension();
 protected:
   BaseBLOBReference* _ref;
 };
@@ -50,6 +51,7 @@ public:
   virtual void deserialize(ObjectData& data, IdContext& context);
   virtual BLOB* get()=0;
   void dataDestroyed();
+  const std::string& extension();
 
   void setFileName(const std::string& fname) {
     _fileName=fname;
