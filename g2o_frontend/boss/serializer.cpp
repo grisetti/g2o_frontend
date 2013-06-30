@@ -59,8 +59,9 @@ static void replaceEnvTags(string& str, map<string,string>& envMap) {
     }
     if (*it=='>'&&beginTag<it) {
       string replacement=envMap[str.substr(beginTag+1-str.begin(),it-beginTag-1)];
+      size_t newpos=beginTag-str.begin()+replacement.length()-1;
       str.replace(beginTag,it+1,replacement);
-      it=beginTag+replacement.length()-1;
+      it=str.begin()+newpos;
     }
   }
 }
