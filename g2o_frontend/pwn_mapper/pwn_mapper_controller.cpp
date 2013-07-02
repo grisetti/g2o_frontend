@@ -161,6 +161,7 @@ bool PWNMapperController::alignIncrementally(){
   G2OFrame *reference = current->previousFrame();
 
   mergedClouds->add(*reference, initialPose.inverse() * reference->globalTransform());
+  subTrajectory.push_back(initialPose.inverse() * reference->globalTransform());
   merger->merge(mergedClouds, initialPose.inverse() * reference->globalTransform());
 
   cerr << "********************** Aligning vertex " << current->vertex()->id() << " **********************" << endl;
@@ -235,6 +236,15 @@ bool PWNMapperController::alignIncrementally(){
   current->globalTransform() = globalT;
   current->previousFrameTransform() = localTransformation;
 
+  Eigen::Isometry3d newEstimate;
+  for(int r = 0; r < 3; r++) {
+    for(int c = 0; c < 3; c++) {
+      newEstimate(r, c) = reference->globalTransform()(r, c);
+    }
+  }
+  newEstimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
+  reference->vertex()->setEstimate(newEstimate);
+
   if(aligner->outerIterations() != 0) {
     cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
     cout << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
@@ -245,13 +255,17 @@ bool PWNMapperController::alignIncrementally(){
   Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
   if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || 
      motionFromFirstFrame.translation().norm() > _chunkDistance ||
-     failure) {
+     !failure) {
     char buff[1024];
     sprintf(buff, "out-%05d.pwn", counter++);	
     
+    int subTrajectoryDim = subTrajectory.size();
+    int middleTrajectory = subTrajectoryDim / 2;
+    mergedClouds->transformInPlace(subTrajectory[middleTrajectory].inverse());
+
     PWNData *pwnData = new PWNData(mergedClouds);
     pwnData->setFilename(buff);
-    pwnData->setOriginPose(initialPose);
+    pwnData->setOriginPose(initialPose * subTrajectory[middleTrajectory]);
     pwnData->writeOut();
     cerr << "Saved pwn cloud" << endl;
     pwnData->release();
@@ -262,6 +276,7 @@ bool PWNMapperController::alignIncrementally(){
     mergedClouds = new Frame();
     initialPose = globalT;
     originVertex = current->vertex();
+    subTrajectory.clear();
   }
 
   return true;

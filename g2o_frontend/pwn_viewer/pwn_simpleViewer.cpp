@@ -18,6 +18,7 @@
 #include "gl_parameter_normals.h"
 
 #include "g2o/stuff/command_args.h"
+#include "g2o_frontend/basemath/bm_se3.h"
 
 #include "../pwn2/frame.h"
 

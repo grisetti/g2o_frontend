@@ -3,6 +3,7 @@
 #include <iomanip>
 
 #include "g2o/core/factory.h"
+#include "g2o_frontend/basemath/bm_se3.h"
 
 #ifdef WINDOWS
 #include <windows.h>
@@ -40,10 +41,10 @@ PWNData::~PWNData() {
 bool PWNData::read(std::istream &is) {
   // Read filename
   is >> _filename;
-  
+
   // Update frame
   _frame = 0;
-  //update();
+  update();
 
   return true;
 }
@@ -70,6 +71,7 @@ void PWNData::update() {
   if(!_frame) {
     _frame = new Frame();
     _frame->load(_originPose, _filename.c_str());
+    _originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     _frameModified = false;
   }
 }
@@ -131,8 +133,8 @@ HyperGraphElementAction* PWNDataDrawAction::operator()(HyperGraph::HyperGraphEle
   for(size_t i = 0; i < that->frame()->points().size(); i += step)  {
     Point point = that->frame()->points()[i];
     Normal normal = that->frame()->normals()[i];
-    point = originPose * point;
-    normal = originPose * normal;
+    //point = originPose * point;
+    //normal = originPose * normal;
     glNormal3f(-normal.x(), -normal.y(), -normal.z());
     glVertex3f(point.x(), point.y(), point.z());
   }

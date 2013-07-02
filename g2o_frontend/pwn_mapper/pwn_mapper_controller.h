@@ -117,6 +117,7 @@ class PWNMapperController {
   MatrixXi ii;
   Frame subScene;
 
+  std::vector<Eigen::Isometry3f> subTrajectory;
   g2o::OptimizableGraph *graph;
   g2o::VertexSE3 *originVertex;
 };
