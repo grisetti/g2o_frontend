@@ -219,7 +219,12 @@ bool PWNMapperController::alignIncrementally(){
   globalT = reference->globalTransform()*localTransformation;
   // recondition the rotation to prevent roundoff to accumulate
   
-  globalT = v2t(t2v(globalT));
+  Eigen::Matrix3f R = globalT.linear();
+  Eigen::Matrix3f E=R.transpose()*R;
+  E.diagonal().array() -= 1;
+  globalT.linear() -= 0.5 * R * E;
+
+  // globalT = v2t(t2v(globalT));
   
   if(aligner->outerIterations() != 0) {
     cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;

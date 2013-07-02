@@ -20,16 +20,7 @@ class CorrespondenceFinder {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   
-  CorrespondenceFinder() {
-  _inlierDistanceThreshold = 3.0f;  
-  _squaredThreshold = _inlierDistanceThreshold * _inlierDistanceThreshold;
-  _inlierNormalAngularThreshold = cos(M_PI/6);
-  _flatCurvatureThreshold = 0.02f;
-  _inlierCurvatureRatioThreshold = 1.3f;
-  _numCorrespondences = 0;
-  _rows = 0;
-  _cols = 0;
-}
+  CorrespondenceFinder();
 
   inline const CorrespondenceVector& correspondences() const { return _correspondences; }
   inline CorrespondenceVector& correspondences() { return _correspondences; }

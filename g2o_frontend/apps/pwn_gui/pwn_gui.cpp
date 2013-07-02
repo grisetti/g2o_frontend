@@ -26,6 +26,8 @@
 
 #include <unistd.h>
 
+#undef _PWN_USE_CUDA_
+
 #ifdef _PWN_USE_CUDA_
 #include "g2o_frontend/pwn_cuda/cualigner.h"
 #endif// PWN_CUDA
