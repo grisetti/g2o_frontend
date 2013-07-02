@@ -77,6 +77,8 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   merger = new Merger();
   merger->setDepthImageConverter(multiConverter);
 
+  mergedClouds.clear();
+
   _chunkStep = 1000000;
   _chunkAngle = M_PI/4;
   _chunkDistance = 0.5f;
@@ -195,6 +197,9 @@ bool PWNMapperController::alignIncrementally(){
     ii.resize(imageRows, imageCols);
   multiProjector->setTransform(initialPose.inverse()*reference->globalTransform());
   multiProjector->project(ii, di, mergedClouds.points());
+  if(reference->vertex()->id() == 5) {
+    
+  }
   multiConverter->compute(subScene, di, Isometry3f::Identity(), true);
   aligner->setReferenceFrame(&subScene);
 
