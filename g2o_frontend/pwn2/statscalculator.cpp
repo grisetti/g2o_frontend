@@ -124,6 +124,32 @@ void StatsCalculator::compute(NormalVector& normals,
 	  normal = -normal;
       } else
 	normal.setZero();
+      
+      if (0){
+	int ira=-1;
+	int ica=-1;
+	int irb=-1;
+	int icb=-1;
+	int d=5;
+	if (r>=d && r < indexImage.rows()-d && c >= d && c < indexImage.cols()-d){
+	  ira = indexImage(r+d,c);
+	  irb = indexImage(r-d,c);
+	  ica = indexImage(r,c+d);
+          icb = indexImage(r,c-d);
+	}
+	normal.setZero();
+	if (ira >0 && irb >0 && ica >0 && icb>0) {
+	  const Point _dx=points[ira]-points[irb];
+	  const Point _dy=points[ica]-points[icb];
+	  Eigen::Vector3f dx=_dx.head<3>();
+	  Eigen::Vector3f dy=_dy.head<3>();
+	  Eigen::Vector3f n=dy.cross(dx);
+	  n.normalize();
+	  normal = n;
+	}
+      }
+	
+      
     }
   }
 }

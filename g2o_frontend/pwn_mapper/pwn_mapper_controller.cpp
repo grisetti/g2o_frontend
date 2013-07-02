@@ -7,6 +7,7 @@
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 
+
 #include <unistd.h>
 #include <iostream> 
 
@@ -76,6 +77,8 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   
   merger = new Merger();
   merger->setDepthImageConverter(multiConverter);
+
+  mergedClouds = new Frame();
 
   _chunkStep = 1000000;
   _chunkAngle = M_PI/4;
@@ -157,11 +160,11 @@ bool PWNMapperController::alignIncrementally(){
   G2OFrame *current = _framesDeque.back();
   G2OFrame *reference = current->previousFrame();
 
+  mergedClouds->add(*reference, initialPose.inverse() * reference->globalTransform());
+  merger->merge(mergedClouds, initialPose.inverse() * reference->globalTransform());
+
   cerr << "********************** Aligning vertex " << current->vertex()->id() << " **********************" << endl;
   
-  if(mergedClouds.points().size() == 0) 
-    mergedClouds.add(*reference, Isometry3f::Identity());
-
   Eigen::Isometry3f initialGuess;
   // computing initial guess based on the frame positions, just for convenience
   Eigen::Isometry3d delta = reference->vertex()->estimate().inverse()*current->vertex()->estimate();
@@ -194,7 +197,10 @@ bool PWNMapperController::alignIncrementally(){
   if(ii.cols() != imageCols || ii.rows() != imageRows) 
     ii.resize(imageRows, imageCols);
   multiProjector->setTransform(initialPose.inverse()*reference->globalTransform());
-  multiProjector->project(ii, di, mergedClouds.points());
+  multiProjector->project(ii, di, mergedClouds->points());
+  if(reference->vertex()->id() == 5) {
+    
+  }
   multiConverter->compute(subScene, di, Isometry3f::Identity(), true);
   aligner->setReferenceFrame(&subScene);
 
@@ -208,19 +214,27 @@ bool PWNMapperController::alignIncrementally(){
   aligner->align();
   
   Eigen::Isometry3f localTransformation = aligner->T();
+  bool failure = false;
   if(aligner->outerIterations() != 0 && (aligner->inliers() < al_minNumInliers || aligner->error() / aligner->inliers() > al_minError) ) {
     cerr << "ALIGNER FAILURE!!!!!!!!!!!!!!!" << endl;
     cerr << "inliers/minimum number of inliers: " << aligner->inliers() << " / " << al_minNumInliers << endl;
     cerr << "error/minimum error: " << aligner->error() / aligner->inliers() << " / " << al_minError << endl;
     localTransformation = initialGuess;
+    failure = true;
   }
   
 
   globalT = reference->globalTransform()*localTransformation;
   // recondition the rotation to prevent roundoff to accumulate
   
-  globalT = v2t(t2v(globalT));
-  
+  Eigen::Matrix3f R = globalT.linear();
+  Eigen::Matrix3f E = R.transpose()*R;
+  E.diagonal().array() -= 1;
+  globalT.linear() -= 0.5 * R * E;
+
+  current->globalTransform() = globalT;
+  current->previousFrameTransform() = localTransformation;
+
   if(aligner->outerIterations() != 0) {
     cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
     cout << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
@@ -229,21 +243,27 @@ bool PWNMapperController::alignIncrementally(){
 
   Eigen::Isometry3f motionFromFirstFrame = initialPose.inverse()*globalT;
   Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
-  if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || motionFromFirstFrame.translation().norm() > _chunkDistance) {
+  if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || 
+     motionFromFirstFrame.translation().norm() > _chunkDistance ||
+     failure) {
     char buff[1024];
     sprintf(buff, "out-%05d.pwn", counter++);	
-    mergedClouds.save(buff, 1, true, initialPose);
-    cerr << "SAVED MERGED CLOUD!!!!" << endl;
-    mergedClouds.clear();
+    
+    PWNData *pwnData = new PWNData(mergedClouds);
+    pwnData->setFilename(buff);
+    pwnData->setOriginPose(initialPose);
+    pwnData->writeOut();
+    cerr << "Saved pwn cloud" << endl;
+    pwnData->release();
+    if(originVertex) {
+      originVertex->addUserData(pwnData);
+      pwnData->setDataContainer(originVertex);
+    }
+    mergedClouds = new Frame();
     initialPose = globalT;
-    motionFromFirstFrame = Isometry3f::Identity();
+    originVertex = current->vertex();
   }
 
-  // Update cloud drawing position.
-  current->globalTransform() = globalT;
-  current->previousFrameTransform() = localTransformation;
-  mergedClouds.add(*current, motionFromFirstFrame);
-  merger->merge(&mergedClouds, current->globalTransform());
   return true;
 }
 

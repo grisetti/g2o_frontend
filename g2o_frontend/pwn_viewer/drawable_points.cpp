@@ -74,6 +74,7 @@ void DrawablePoints::updatePointDrawList() {
         else
           glColor4f(1.0f, 1.0f, 0.0f, 1.0f);
       }
+      glColor3f(n[0]+.5,n[1]+.5, n[2]+.5);
       glNormal3f(n[0], n[1], n[2]);
       glVertex3f(p[0], p[1], p[2]);
     }

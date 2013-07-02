@@ -26,14 +26,23 @@
 using namespace boss;
 using namespace std;
 
-BLOB::BLOB() {
-  _ref = 0;
-}
-
 BLOB::~BLOB() {
   if (_ref) {
     _ref->dataDestroyed();
   }
+}
+
+static string DEFAULT_EXTENSION("dat");
+
+const string& BLOB::extension() {
+  return DEFAULT_EXTENSION;
+}
+
+const string& BaseBLOBReference::extension() {
+  if (_instance) {
+    return _instance->extension();
+  }
+  return DEFAULT_EXTENSION;
 }
 
 void BaseBLOBReference::dataDestroyed() {

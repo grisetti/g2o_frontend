@@ -6,6 +6,17 @@ using namespace std;
 
 namespace pwn {
 
+  CorrespondenceFinder::CorrespondenceFinder() {
+  _inlierDistanceThreshold = 0.5f;  
+  _squaredThreshold = _inlierDistanceThreshold * _inlierDistanceThreshold;
+  _inlierNormalAngularThreshold = cos(M_PI/6);
+  _flatCurvatureThreshold = 0.02f;
+  _inlierCurvatureRatioThreshold = 1.3f;
+  _numCorrespondences = 0;
+  _rows = 0;
+  _cols = 0;
+}
+
 void CorrespondenceFinder::compute(const Frame &referenceScene, const Frame &currentScene, Eigen::Isometry3f T) {
   T.matrix().block<1,4>(3, 0) << 0, 0, 0, 1;
   _numCorrespondences = 0;

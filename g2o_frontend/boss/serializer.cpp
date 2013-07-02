@@ -18,6 +18,7 @@
 
 #include <ctime>
 #include <sstream>
+#include <boost/filesystem.hpp>
 
 #include "serializer.h"
 #include "json_message_writer.h"
@@ -25,9 +26,10 @@
 
 using namespace std;
 using namespace boss;
+using namespace boost::filesystem;
 
 static const string DEFAULT_DATA_FILE="data.log";
-static const string DEFAULT_BLOB_FILE="binary/<classname>.<id>";
+static const string DEFAULT_BLOB_FILE="binary/<classname>.<id>.<ext>";
 static const string CURRENT_DIR=".";
 
 static string toString(int i, size_t width, char padding) {
@@ -59,8 +61,9 @@ static void replaceEnvTags(string& str, map<string,string>& envMap) {
     }
     if (*it=='>'&&beginTag<it) {
       string replacement=envMap[str.substr(beginTag+1-str.begin(),it-beginTag-1)];
+      size_t newpos=beginTag-str.begin()+replacement.length()-1;
       str.replace(beginTag,it+1,replacement);
-      it=beginTag+replacement.length()-1;
+      it=str.begin()+newpos;
     }
   }
 }
@@ -139,11 +142,13 @@ void Serializer::setBinaryPath(const string& fpath) {
   _blobFileName=fpath;
 }
 
-string Serializer::createBinaryFilePath(Identifiable& instance) {
+string Serializer::createBinaryFilePath(BaseBLOBReference& instance) {
   _envMap["classname"]=instance.className();
   _envMap["id"]=toString(instance.getId(),5,'0');
+  _envMap["ext"]=instance.extension();
   string str=_blobFileName;
   replaceEnvTags(str,_envMap);
+  cerr << "Binary file path: " << str << endl;
   return str;
 }
 
@@ -170,6 +175,7 @@ bool Serializer::write(double timestamp, const string& source, Serializable& ins
   if (!_datastream) {
     string str=_dataFileName;
     replaceEnvTags(str,_envMap);
+    create_directories(path(str).parent_path());
     _datastream=new ofstream(str.c_str());
   }
   if (*_datastream) {
@@ -194,6 +200,7 @@ ostream* Serializer::getBinaryOutputStream(const string& fname) {
   }
   string str=fname;
   adjustBinaryPath(str,_envMap);
+  create_directories(path(str).parent_path());
   return new ofstream(str.c_str());
 }
 
