@@ -16,6 +16,7 @@
 #include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "g2o_frontend/sensor_data/rgbd_data.h"
 #include "g2o_frontend/sensor_data/imu_data.h"
+#include "g2o_frontend/sensor_data/pwn_data.h"
 
 #ifdef _PWN_USE_TRAVERSABILITY_
 #include "g2o_frontend/traversability/traversability_analyzer.h"
@@ -86,7 +87,7 @@ class PWNMapperController {
   Merger *merger;
 
   std::deque<G2OFrame*> _framesDeque;
-  Frame mergedClouds;
+  Frame *mergedClouds;
 
   Isometry3f initialGuess;
   Isometry3f globalT;
@@ -117,6 +118,7 @@ class PWNMapperController {
   Frame subScene;
 
   g2o::OptimizableGraph *graph;
+  g2o::VertexSE3 *originVertex;
 };
  
 }

@@ -222,5 +222,7 @@ int main(int argc, char** argv) {
     application.processEvents();
   }
 
+  graph->save("graphwithpwn.g2o");
+
   return 0;
 };
