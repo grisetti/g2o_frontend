@@ -93,11 +93,20 @@ namespace pwn {
 
     inline OptimizableGraph* graph() { return _graph; }
 
+    // Prior extraction methods
+    bool extractRelativePrior(Eigen::Isometry3f &priorMean, 
+			      Matrix6f &priorInfo, 
+			      G2OFrame *referenceFrame, 
+			      G2OFrame *currentFrame);
+    bool extractAbsolutePrior(Eigen::Isometry3f &priorMean, 
+			      Matrix6f &priorInfo, 
+			      G2OFrame *currentFrame);
+
     // Graph manipulation methods
     bool extractPWNData(G2OFrame *frame) const;
     bool alignVertexWithPWNData(Isometry3f &transform, 
 				G2OFrame *referenceFrame, 
-				G2OFrame *currentFrame) const;
+				G2OFrame *currentFrame);
 
   protected:
     // Projectors

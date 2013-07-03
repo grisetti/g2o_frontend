@@ -49,6 +49,62 @@ namespace pwn {
     _aligner->setOuterIterations(10);
   }
 
+  bool PWNLoopCloserController::extractRelativePrior(Eigen::Isometry3f &priorMean, 
+			    Matrix6f &priorInfo, 
+			    G2OFrame *referenceFrame, 
+			    G2OFrame *currentFrame) {
+    VertexSE3 *referenceVertex = referenceFrame->vertex();
+    VertexSE3 *currentVertex = currentFrame->vertex();
+    bool priorFound = false;
+    priorInfo.setZero();
+    for(HyperGraph::EdgeSet::const_iterator it = referenceVertex->edges().begin(); it != referenceVertex->edges().end(); it++) {
+      const EdgeSE3 *e = dynamic_cast<const EdgeSE3*>(*it);
+      if(e->vertex(0) == referenceVertex && e->vertex(1) == currentVertex) {
+	priorFound=true;
+	for(int c = 0; c < 6; c++)
+	  for(int r = 0; r < 6; r++)
+	    priorInfo(r, c) = e->information()(r, c);
+	
+	for(int c = 0; c < 4; c++)
+	  for(int r = 0; r < 3; r++)
+	    priorMean.matrix()(r, c) = e->measurement().matrix()(r, c);
+	priorMean.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+      }
+    }
+    return priorFound;
+  }
+
+  bool PWNLoopCloserController::extractAbsolutePrior(Eigen::Isometry3f &priorMean, 
+			    Matrix6f &priorInfo, 
+			    G2OFrame *currentFrame) {
+    VertexSE3 *currentVertex = currentFrame->vertex();
+    ImuData *imuData = 0;
+    OptimizableGraph::Data *d = currentVertex->userData();
+    while(d) {
+      ImuData *imuData_ = dynamic_cast<ImuData*>(d);
+      if(imuData_) {
+	imuData = imuData_;
+      }
+      d = d->next();
+    }
+    
+    if(imuData) {
+      Eigen::Matrix3d R = imuData->getOrientation().matrix();
+      Eigen::Matrix3d Omega = imuData->getOrientationCovariance().inverse();
+      priorMean.setIdentity();
+      priorInfo.setZero();
+      for(int c = 0; c < 3; c++)
+	for(int r = 0; r < 3; r++)
+	  priorMean.linear()(r, c) = R(r, c);
+      
+      for (int c = 0; c < 3; c++)
+	for (int r = 0; r < 3; r++)
+	  priorInfo(r + 3, c + 3) = Omega(r, c) * 100000.0f;
+      return true;
+    }
+    return false;
+  }
+
   bool PWNLoopCloserController::extractPWNData(G2OFrame *frame) const {
     // Get the list of data from the input vertex and check if one of them it's a PWNData
     OptimizableGraph::Data *d = frame->vertex()->userData();
@@ -87,7 +143,73 @@ namespace pwn {
 
   bool PWNLoopCloserController::alignVertexWithPWNData(Isometry3f &transform, 
 						       G2OFrame *referenceFrame, 
-						       G2OFrame *currentFrame) const {
+						       G2OFrame *currentFrame) {
+
+    cerr << "Aligning vertex " << currentFrame->vertex()->id() << " and " << referenceFrame->vertex()->id() << endl;
+  
+    // Extract initial guess
+    Eigen::Isometry3f initialGuess;
+    Eigen::Isometry3d delta = referenceFrame->vertex()->estimate().inverse() * currentFrame->vertex()->estimate();
+    for(int c = 0; c < 4; c++)
+      for(int r = 0; r < 3; r++)
+	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
+
+    Eigen::Isometry3f odometryMean;
+    Matrix6f odometryInfo;
+    bool hasOdometry = this->extractRelativePrior(odometryMean, odometryInfo, referenceFrame, currentFrame);
+    if(hasOdometry) {
+      initialGuess = odometryMean;
+    }
+    //force a prior
+    else { 
+      hasOdometry = true;
+      odometryMean = initialGuess;
+      odometryInfo.setIdentity();
+      odometryInfo.block<3, 3>(0, 0) *= 100.0f;
+    }
+    
+    Eigen::Isometry3f imuMean;
+    Matrix6f imuInfo;
+    bool hasImu = this->extractAbsolutePrior(imuMean, imuInfo, currentFrame);    
+    initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    
+    // Setting aligner
+    _aligner->clearPriors();
+    _aligner->setReferenceFrame(referenceFrame);
+    _aligner->setCurrentFrame(currentFrame);
+    _aligner->setInitialGuess(initialGuess);
+    _aligner->setSensorOffset(Isometry3f::Identity());
+    if(hasOdometry)
+      _aligner->addRelativePrior(odometryMean, odometryInfo);
+    if(hasImu)
+      _aligner->addAbsolutePrior(referenceFrame->globalTransform(), imuMean, imuInfo);
+    
+    // Align
+    _aligner->align();  
+    transform = _aligner->T();
+    if(_aligner->outerIterations() != 0 && 
+       (_aligner->inliers() < _minNumInliers || 
+	_aligner->error() / _aligner->inliers() > _minError)) {
+      cerr << "ALIGNER FAILURE!!!!!!!!!!!!!!!" << endl;
+      cerr << "inliers/minimum number of inliers: " << _aligner->inliers() << " / " << _minNumInliers << endl;
+      cerr << "error/minimum error: " << _aligner->error() / _aligner->inliers() << " / " << _minError << endl;
+      transform.matrix().setZero();
+      return false;
+    }
+  
+    // Recondition the rotation to prevent roundoff to accumulate
+    Eigen::Matrix3f R = transform.linear();
+    Eigen::Matrix3f E = R.transpose() * R;
+    E.diagonal().array() -= 1;
+    transform.linear() -= 0.5 * R * E;
+
+    if(_aligner->outerIterations() != 0) {
+      cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
+      cout << "Transform: " << t2v(_aligner->T()).transpose() << endl;
+    }
+
+    // Add edge
+
     return true;
   }
 
