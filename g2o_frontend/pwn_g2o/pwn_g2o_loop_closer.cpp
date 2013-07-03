@@ -121,18 +121,18 @@ int main(int argc, char** argv) {
       continue;
     OptimizableGraph::Data *d = v->userData();
     while(d) {
-      RGBDData *rgbdData = dynamic_cast<RGBDData*>(d);
-      if(!rgbdData) {
+      PWNData *pwnData = dynamic_cast<PWNData*>(d);
+      if(!pwnData) {
 	d = d->next();
 	continue;
       }
-      
+
       char buff[1024];
       sprintf(buff, "%d", v->id());
       QString listItem(buff);
       listWidget->addItem(listItem);
-      QListWidgetItem *lastItem = listWidget->item(listWidget->count() - 1);
-      lastItem->setHidden(true);
+      //QListWidgetItem *lastItem = listWidget->item(listWidget->count() - 1);
+      //lastItem->setHidden(true);
       d = d->next();
     }
   }
@@ -153,32 +153,13 @@ int main(int argc, char** argv) {
   mainWindow->show();
   viewer->show();
   listWidget->show();
-  int i = startingVertex;
   GLParameterTrajectory *parameterTrajectory = new GLParameterTrajectory(0.03f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f));
   DrawableTrajectory *drawableTrajectory = new DrawableTrajectory(Isometry3f::Identity(), parameterTrajectory, &trajectory);
   viewer->addDrawable(drawableTrajectory);
-  Isometry3f globalT = Isometry3f::Identity();
   GLParameterFrame *parameterFrame = new GLParameterFrame(vz_step); 
   while(viewer->isVisible()) {
     bool changed = false;
-    if(i < listWidget->count() && i >= 0) {
-      QListWidgetItem *listItem = listWidget->item(i);
-      string idString = listItem->text().toUtf8().constData();
-      int index = atoi(idString.c_str());
-      VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
-      if(v) {      
-      	if(!controller->addVertex(v))
-      	  continue;
-      	controller->alignIncrementally();
-	G2OFrame *frame = controller->lastFrame();
-	Eigen::Isometry3f localT = frame->previousFrameTransform();
-	globalT = globalT * localT;
-	trajectory.push_back(globalT);
-	listItem->setHidden(false);
-	changed = true;
-      }
-      i++;
-    }
+    
     for(int k = startingVertex; k < listWidget->count(); k++){
       QListWidgetItem* item = listWidget->item(k);
       if(item) {
@@ -188,9 +169,9 @@ int main(int argc, char** argv) {
 	  VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
 	  if(v && !frames[k]) {
 	    G2OFrame *currentFrame = new G2OFrame(v);
-	    controller->addVertex(*currentFrame);
+	    controller->addVertexWithPWN(*currentFrame);
 	    frames[k] = currentFrame;
-	    DrawableFrame *drawableFrame = new DrawableFrame(trajectory[k], parameterFrame, frames[k]); 
+	    DrawableFrame *drawableFrame = new DrawableFrame(currentFrame->globalTransform(), parameterFrame, frames[k]); 
 	    viewer->addDrawable(drawableFrame);
 	    changed = true;
 	  }	

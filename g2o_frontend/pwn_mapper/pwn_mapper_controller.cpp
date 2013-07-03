@@ -161,7 +161,7 @@ bool PWNMapperController::alignIncrementally(){
   G2OFrame *reference = current->previousFrame();
 
   mergedClouds->add(*reference, initialPose.inverse() * reference->globalTransform());
-  subTrajectory.push_back(initialPose.inverse() * reference->globalTransform());
+  pwnVerteces.push_back(reference->vertex());
   merger->merge(mergedClouds, initialPose.inverse() * reference->globalTransform());
 
   cerr << "********************** Aligning vertex " << current->vertex()->id() << " **********************" << endl;
@@ -238,7 +238,7 @@ bool PWNMapperController::alignIncrementally(){
 
   Eigen::Isometry3d newEstimate;
   for(int r = 0; r < 3; r++) {
-    for(int c = 0; c < 3; c++) {
+    for(int c = 0; c < 4; c++) {
       newEstimate(r, c) = reference->globalTransform()(r, c);
     }
   }
@@ -254,29 +254,32 @@ bool PWNMapperController::alignIncrementally(){
   Eigen::Isometry3f motionFromFirstFrame = initialPose.inverse()*globalT;
   Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
   if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || 
-     motionFromFirstFrame.translation().norm() > _chunkDistance ||
-     !failure) {
+     motionFromFirstFrame.translation().norm() > _chunkDistance /*||
+     failure*/) {
     char buff[1024];
     sprintf(buff, "out-%05d.pwn", counter++);	
     
-    int subTrajectoryDim = subTrajectory.size();
-    int middleTrajectory = subTrajectoryDim / 2;
-    mergedClouds->transformInPlace(subTrajectory[middleTrajectory].inverse());
+    Eigen::Isometry3f middleEstimate;
+    g2o::VertexSE3 *middleVertex = pwnVerteces[pwnVerteces.size() / 2];
+    for(int r = 0; r < 3; r++) {
+      for(int c = 0; c < 4; c++) {
+	middleEstimate(r, c) = middleVertex->estimate()(r, c);
+      }
+    }
+    middleEstimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
+    mergedClouds->transformInPlace((initialPose.inverse() * middleEstimate).inverse());
 
     PWNData *pwnData = new PWNData(mergedClouds);
     pwnData->setFilename(buff);
-    pwnData->setOriginPose(initialPose * subTrajectory[middleTrajectory]);
+    pwnData->setOriginPose(middleEstimate);
     pwnData->writeOut();
     cerr << "Saved pwn cloud" << endl;
     pwnData->release();
-    if(originVertex) {
-      originVertex->addUserData(pwnData);
-      pwnData->setDataContainer(originVertex);
-    }
+    middleVertex->addUserData(pwnData);
+    pwnData->setDataContainer(middleVertex);
     mergedClouds = new Frame();
     initialPose = globalT;
-    originVertex = current->vertex();
-    subTrajectory.clear();
+    pwnVerteces.clear();
   }
 
   return true;
@@ -495,6 +498,69 @@ bool PWNMapperController::addVertex(G2OFrame &frame) {
 
   projector->setCameraMatrix(cameraMatrix);
   converter->compute(frame, scaledDepthImage, sensorOffset, true);
+  
+  return true;
+}
+
+bool PWNMapperController::addVertexWithPWN(G2OFrame &frame) {
+  OptimizableGraph::Data *d = frame.vertex()->userData();
+  PWNData *pwnData = 0;
+  while(d && !pwnData) {
+    pwnData = dynamic_cast<PWNData*>(d);
+    d = d->next();
+  }
+    
+  if(!pwnData)
+    return false;
+  
+  Eigen::Matrix3f cameraMatrix;
+  Eigen::Isometry3f sensorOffset;
+  
+  cameraMatrix << 
+    525.0f, 0.0f, 319.5f,
+    0.0f, 525.0f, 239.5f,
+    0.0f, 0.0f, 1.0f;
+  
+  sensorOffset = Isometry3f::Identity();
+  sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+  Quaternionf quat = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+  sensorOffset.linear() = quat.toRotationMatrix();
+  sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+
+  std::string fname = pwnData->filename();
+  Eigen::Isometry3f originPose = Eigen::Isometry3f::Identity();
+  originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+  frame.load(originPose, fname.c_str());
+
+  float scale = 1./reduction;
+  cameraMatrix *= scale;
+  cameraMatrix(2, 2) = 1.0;
+      
+  for(int i = 0; i < numProjectors; i++) {
+    Isometry3f sensorOffset = Isometry3f::Identity();
+    sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+    Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
+    if(i > 0)
+      sensorOffset.linear() =  AngleAxisf(i * M_PI / 2.0f, Vector3f::UnitZ()) * quat.toRotationMatrix();
+    else
+      sensorOffset.linear() =  quat.toRotationMatrix();
+    sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    
+    multiProjector->setPointProjector(projector, sensorOffset, 640 / reduction, 320 / reduction, i);
+  }
+
+  multiProjector->size(imageRows, imageCols);
+
+  frame.cameraMatrix() = cameraMatrix;
+  frame.sensorOffset() = sensorOffset;
+    
+  globalT.setIdentity();
+  frame.globalTransform() = originPose;
+  frame.globalTransform().matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+  frame.previousFrameTransform().setIdentity();
+  frame.setPreviousFrame(0);
+
+  projector->setCameraMatrix(cameraMatrix);
   
   return true;
 }

@@ -68,6 +68,7 @@ class PWNMapperController {
   bool computeTraversability();
 
   bool addVertex(G2OFrame &frame);
+  bool addVertexWithPWN(G2OFrame &frame);
 
  protected:
   PinholePointProjector *projector;
@@ -117,9 +118,8 @@ class PWNMapperController {
   MatrixXi ii;
   Frame subScene;
 
-  std::vector<Eigen::Isometry3f> subTrajectory;
+  std::vector<g2o::VertexSE3*> pwnVerteces;
   g2o::OptimizableGraph *graph;
-  g2o::VertexSE3 *originVertex;
 };
  
 }

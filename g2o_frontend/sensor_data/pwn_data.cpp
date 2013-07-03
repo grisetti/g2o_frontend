@@ -113,9 +113,6 @@ HyperGraphElementAction* PWNDataDrawAction::operator()(HyperGraph::HyperGraphEle
   if(!that->frame())
     return this;
 
-  Eigen::Isometry3f originPose = that->originPose();
-  originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-  
   glPushMatrix();
   
   int step = 1;
@@ -133,8 +130,6 @@ HyperGraphElementAction* PWNDataDrawAction::operator()(HyperGraph::HyperGraphEle
   for(size_t i = 0; i < that->frame()->points().size(); i += step)  {
     Point point = that->frame()->points()[i];
     Normal normal = that->frame()->normals()[i];
-    //point = originPose * point;
-    //normal = originPose * normal;
     glNormal3f(-normal.x(), -normal.y(), -normal.z());
     glVertex3f(point.x(), point.y(), point.z());
   }
