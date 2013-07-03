@@ -9,6 +9,8 @@
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 
+#include "frame.h"
+
 namespace pwn {
 
 class G2OFrame : public Frame {

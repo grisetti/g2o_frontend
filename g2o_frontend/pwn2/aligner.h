@@ -41,8 +41,6 @@ class Aligner {
   inline int inliers() const {return _inliers; }
   inline double totalTime() const {return _totalTime; }
   
-
-  
   void addRelativePrior(const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix);
   void addAbsolutePrior(const Eigen::Isometry3f& referenceTransform, const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix);
   void clearPriors();

@@ -267,7 +267,7 @@ bool PWNMapperController::alignIncrementally(){
       }
     }
     middleEstimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
-    mergedClouds->transformInPlace((initialPose.inverse() * middleEstimate).inverse());
+    mergedClouds->transformInPlace(middleEstimate.inverse() * initialPose);
 
     PWNData *pwnData = new PWNData(mergedClouds);
     pwnData->setFilename(buff);
