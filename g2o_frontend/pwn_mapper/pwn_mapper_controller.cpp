@@ -211,7 +211,7 @@ bool PWNMapperController::alignIncrementally(){
   if(hasOdometry)
     aligner->addRelativePrior(odometryMean, odometryInfo);
   if(hasImu)
-    aligner->addAbsolutePrior(initialPose.inverse()*reference->globalTransform(), imuMean, imuInfo);
+    aligner->addAbsolutePrior(/*initialPose.inverse()**/reference->globalTransform(), imuMean, imuInfo);
   aligner->align();
   
   Eigen::Isometry3f localTransformation = aligner->T();

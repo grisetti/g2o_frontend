@@ -22,8 +22,14 @@ namespace pwn {
     _numProjectors = 4;
     _imageRows = 0;
     _imageCols = 0;
+    _scaledImageRows = 0;
+    _scaledImageCols = 0;
     _reduction = 2;
     _cameraMatrix << 
+      525.0f, 0.0f, 319.5f,
+      0.0f, 525.0f, 239.5f,
+      0.0f, 0.0f, 1.0f;
+    _scaledCameraMatrix << 
       525.0f, 0.0f, 319.5f,
       0.0f, 525.0f, 239.5f,
       0.0f, 0.0f, 1.0f;
@@ -47,31 +53,6 @@ namespace pwn {
     _aligner->setCorrespondenceFinder(_correspondenceFinder);
     _aligner->setInnerIterations(1);
     _aligner->setOuterIterations(10);
-  }
-
-  bool PWNLoopCloserController::extractRelativePrior(Eigen::Isometry3f &priorMean, 
-			    Matrix6f &priorInfo, 
-			    G2OFrame *referenceFrame, 
-			    G2OFrame *currentFrame) {
-    VertexSE3 *referenceVertex = referenceFrame->vertex();
-    VertexSE3 *currentVertex = currentFrame->vertex();
-    bool priorFound = false;
-    priorInfo.setZero();
-    for(HyperGraph::EdgeSet::const_iterator it = referenceVertex->edges().begin(); it != referenceVertex->edges().end(); it++) {
-      const EdgeSE3 *e = dynamic_cast<const EdgeSE3*>(*it);
-      if(e->vertex(0) == referenceVertex && e->vertex(1) == currentVertex) {
-	priorFound=true;
-	for(int c = 0; c < 6; c++)
-	  for(int r = 0; r < 6; r++)
-	    priorInfo(r, c) = e->information()(r, c);
-	
-	for(int c = 0; c < 4; c++)
-	  for(int r = 0; r < 3; r++)
-	    priorMean.matrix()(r, c) = e->measurement().matrix()(r, c);
-	priorMean.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-      }
-    }
-    return priorFound;
   }
 
   bool PWNLoopCloserController::extractAbsolutePrior(Eigen::Isometry3f &priorMean, 
@@ -145,28 +126,14 @@ namespace pwn {
 						       G2OFrame *referenceFrame, 
 						       G2OFrame *currentFrame) {
 
-    cerr << "Aligning vertex " << currentFrame->vertex()->id() << " and " << referenceFrame->vertex()->id() << endl;
+    cerr << "Aligning vertex " << referenceFrame->vertex()->id() << " and " << currentFrame->vertex()->id() << endl;
   
     // Extract initial guess
     Eigen::Isometry3f initialGuess;
     Eigen::Isometry3d delta = referenceFrame->vertex()->estimate().inverse() * currentFrame->vertex()->estimate();
     for(int c = 0; c < 4; c++)
       for(int r = 0; r < 3; r++)
-	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
-
-    Eigen::Isometry3f odometryMean;
-    Matrix6f odometryInfo;
-    bool hasOdometry = this->extractRelativePrior(odometryMean, odometryInfo, referenceFrame, currentFrame);
-    if(hasOdometry) {
-      initialGuess = odometryMean;
-    }
-    //force a prior
-    else { 
-      hasOdometry = true;
-      odometryMean = initialGuess;
-      odometryInfo.setIdentity();
-      odometryInfo.block<3, 3>(0, 0) *= 100.0f;
-    }
+	initialGuess.matrix()(r, c) = delta.matrix()(r, c);    
     
     Eigen::Isometry3f imuMean;
     Matrix6f imuInfo;
@@ -179,8 +146,6 @@ namespace pwn {
     _aligner->setCurrentFrame(currentFrame);
     _aligner->setInitialGuess(initialGuess);
     _aligner->setSensorOffset(Isometry3f::Identity());
-    if(hasOdometry)
-      _aligner->addRelativePrior(odometryMean, odometryInfo);
     if(hasImu)
       _aligner->addAbsolutePrior(referenceFrame->globalTransform(), imuMean, imuInfo);
     
@@ -219,13 +184,13 @@ namespace pwn {
 
     // Compute the reduced camera matrix and image size
     float scale = 1.0f / _reduction;
-    _cameraMatrix *= scale;
-    _cameraMatrix(2, 2) = 1.0f;
-    _imageRows = _imageRows / _reduction;
-    _imageCols = _imageCols / _reduction;
+    _scaledCameraMatrix = _cameraMatrix * scale;
+    _scaledCameraMatrix(2, 2) = 1.0f;
+    _scaledImageRows = _imageRows / _reduction;
+    _scaledImageCols = _imageCols / _reduction;
     
     // Set the camera matrix to the pinhole point projector
-    _pinholePointProjector->setCameraMatrix(_cameraMatrix);
+    _pinholePointProjector->setCameraMatrix(_scaledCameraMatrix);
     
     // Create the projectors for the multi projector
     float angleStep = 2.0f * M_PI / _numProjectors;
@@ -237,8 +202,11 @@ namespace pwn {
       currentSensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     
       _multiPointProjector->addPointProjector(_pinholePointProjector, currentSensorOffset, 
-					      _imageRows, _imageCols);
-    }
+					      _scaledImageRows, _scaledImageCols);
+
+      int rows, cols;
+      _multiPointProjector->size(rows, cols);
+    } 
   }
 
 }

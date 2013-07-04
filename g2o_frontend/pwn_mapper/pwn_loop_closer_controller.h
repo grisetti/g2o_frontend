@@ -93,11 +93,7 @@ namespace pwn {
 
     inline OptimizableGraph* graph() { return _graph; }
 
-    // Prior extraction methods
-    bool extractRelativePrior(Eigen::Isometry3f &priorMean, 
-			      Matrix6f &priorInfo, 
-			      G2OFrame *referenceFrame, 
-			      G2OFrame *currentFrame);
+    // Prior extraction method
     bool extractAbsolutePrior(Eigen::Isometry3f &priorMean, 
 			      Matrix6f &priorInfo, 
 			      G2OFrame *currentFrame);
@@ -112,8 +108,8 @@ namespace pwn {
     // Projectors
     PinholePointProjector *_pinholePointProjector;
     MultiPointProjector *_multiPointProjector;
-    int _numProjectors, _imageRows, _imageCols, _reduction;
-    Matrix3f _cameraMatrix;
+    int _numProjectors, _imageRows, _imageCols, _scaledImageRows, _scaledImageCols, _reduction;
+    Matrix3f _cameraMatrix, _scaledCameraMatrix;
     Isometry3f _sensorOffset;
 
     // Correspondece finder and linearizer

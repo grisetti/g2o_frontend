@@ -124,6 +124,8 @@ int main(int argc, char** argv) {
       sprintf(buff, "%d", v->id());
       QString listItem(buff);
       listWidget->addItem(listItem);
+      QListWidgetItem *lastItem = listWidget->item(listWidget->count() - 1);
+      lastItem->setHidden(true);
       d = d->next();
     }
   }
@@ -178,6 +180,7 @@ int main(int argc, char** argv) {
    ************************************************************************/
   for(int i = vz_startingVertex; i < vz_endingVertex; i++) {
     QListWidgetItem *listItem = listWidget->item(i);
+    listItem->setHidden(false);
     string idString = listItem->text().toUtf8().constData();
     int index = atoi(idString.c_str());
     VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
@@ -192,6 +195,7 @@ int main(int argc, char** argv) {
       trajectory.push_back(estimate);
     }
   }
+  G2OFrame *referenceFrame = 0, *currentFrame = 0;
   
   /************************************************************************
    *                          MAIN DRAWING LOOP                           *
@@ -201,7 +205,48 @@ int main(int argc, char** argv) {
     
     // Align button was pressed
     if(alignButton->isDown()) {
-      cerr << "ALIGN" << endl;
+      // Clean old aligned frames
+      if(referenceFrame)
+	delete referenceFrame;
+      referenceFrame = 0;
+      if(currentFrame)
+	delete currentFrame;
+      currentFrame = 0;
+
+      // Search for the two frames selected
+      for(int k = vz_startingVertex; k < vz_endingVertex; k++) {
+	QListWidgetItem* item = listWidget->item(k);
+	if(item) {
+	  if(item->isSelected()) {
+	    string idString = item->text().toUtf8().constData();
+	    int index = atoi(idString.c_str());
+	    VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
+	    if(v) {
+	      if(!referenceFrame) {
+		referenceFrame = new G2OFrame(v);	
+		controller->extractPWNData(referenceFrame);
+	      }
+	      else if(!currentFrame) {
+		currentFrame = new G2OFrame(v);
+		controller->extractPWNData(currentFrame);
+	      }
+	      else {
+		break;
+	      }
+	    }	
+	  }
+	}
+      }
+      
+      usleep(1000000);
+
+      // Align
+      Isometry3f transform = Isometry3f::Identity();
+      transform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+      if(controller->alignVertexWithPWNData(transform, referenceFrame, currentFrame))
+      	cerr << "Adge added" << endl;
+      else
+      	cerr << "Adge was not added because of a bad alignment" << endl;
     }
 
     // Manage user ListWidget elements highlighting 
@@ -248,7 +293,7 @@ int main(int argc, char** argv) {
     application.processEvents();
   }
 
-  graph->save("graphwithpwn.g2o");
+  graph->save("graphwithpwnandedges.g2o");
 
   return 0;
 };
