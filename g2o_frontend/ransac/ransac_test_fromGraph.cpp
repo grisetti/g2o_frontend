@@ -604,7 +604,7 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
 
 int main(int argc, char** argv){
   { // Line2d
-    cerr << "*************** TEST Line2D  *************** " <<endl;
+    cerr << "*************** TEST LininputGraphe2D  *************** " <<endl;
 
     Eigen::Matrix2d omega;
     omega.setIdentity();
