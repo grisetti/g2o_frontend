@@ -7,6 +7,7 @@
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 
+
 #include <unistd.h>
 #include <iostream> 
 
@@ -76,6 +77,8 @@ void PWNMapperController::init(OptimizableGraph *graph_) {
   
   merger = new Merger();
   merger->setDepthImageConverter(multiConverter);
+
+  mergedClouds = new Frame();
 
   _chunkStep = 1000000;
   _chunkAngle = M_PI/4;
@@ -157,11 +160,12 @@ bool PWNMapperController::alignIncrementally(){
   G2OFrame *current = _framesDeque.back();
   G2OFrame *reference = current->previousFrame();
 
+  mergedClouds->add(*reference, initialPose.inverse() * reference->globalTransform());
+  pwnVerteces.push_back(reference->vertex());
+  merger->merge(mergedClouds, initialPose.inverse() * reference->globalTransform());
+
   cerr << "********************** Aligning vertex " << current->vertex()->id() << " **********************" << endl;
   
-  if(mergedClouds.points().size() == 0) 
-    mergedClouds.add(*reference, Isometry3f::Identity());
-
   Eigen::Isometry3f initialGuess;
   // computing initial guess based on the frame positions, just for convenience
   Eigen::Isometry3d delta = reference->vertex()->estimate().inverse()*current->vertex()->estimate();
@@ -194,7 +198,10 @@ bool PWNMapperController::alignIncrementally(){
   if(ii.cols() != imageCols || ii.rows() != imageRows) 
     ii.resize(imageRows, imageCols);
   multiProjector->setTransform(initialPose.inverse()*reference->globalTransform());
-  multiProjector->project(ii, di, mergedClouds.points());
+  multiProjector->project(ii, di, mergedClouds->points());
+  if(reference->vertex()->id() == 5) {
+    
+  }
   multiConverter->compute(subScene, di, Isometry3f::Identity(), true);
   aligner->setReferenceFrame(&subScene);
 
@@ -204,15 +211,17 @@ bool PWNMapperController::alignIncrementally(){
   if(hasOdometry)
     aligner->addRelativePrior(odometryMean, odometryInfo);
   if(hasImu)
-    aligner->addAbsolutePrior(initialPose.inverse()*reference->globalTransform(), imuMean, imuInfo);
+    aligner->addAbsolutePrior(/*initialPose.inverse()**/reference->globalTransform(), imuMean, imuInfo);
   aligner->align();
   
   Eigen::Isometry3f localTransformation = aligner->T();
+  bool failure = false;
   if(aligner->outerIterations() != 0 && (aligner->inliers() < al_minNumInliers || aligner->error() / aligner->inliers() > al_minError) ) {
     cerr << "ALIGNER FAILURE!!!!!!!!!!!!!!!" << endl;
     cerr << "inliers/minimum number of inliers: " << aligner->inliers() << " / " << al_minNumInliers << endl;
     cerr << "error/minimum error: " << aligner->error() / aligner->inliers() << " / " << al_minError << endl;
     localTransformation = initialGuess;
+    failure = true;
   }
   
 
@@ -220,12 +229,22 @@ bool PWNMapperController::alignIncrementally(){
   // recondition the rotation to prevent roundoff to accumulate
   
   Eigen::Matrix3f R = globalT.linear();
-  Eigen::Matrix3f E=R.transpose()*R;
+  Eigen::Matrix3f E = R.transpose()*R;
   E.diagonal().array() -= 1;
   globalT.linear() -= 0.5 * R * E;
 
-  // globalT = v2t(t2v(globalT));
-  
+  current->globalTransform() = globalT;
+  current->previousFrameTransform() = localTransformation;
+
+  Eigen::Isometry3d newEstimate;
+  for(int r = 0; r < 3; r++) {
+    for(int c = 0; c < 4; c++) {
+      newEstimate(r, c) = reference->globalTransform()(r, c);
+    }
+  }
+  newEstimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
+  reference->vertex()->setEstimate(newEstimate);
+
   if(aligner->outerIterations() != 0) {
     cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
     cout << "Local transformation: " << t2v(aligner->T()).transpose() << endl;
@@ -234,21 +253,35 @@ bool PWNMapperController::alignIncrementally(){
 
   Eigen::Isometry3f motionFromFirstFrame = initialPose.inverse()*globalT;
   Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
-  if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || motionFromFirstFrame.translation().norm() > _chunkDistance) {
+  if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || 
+     motionFromFirstFrame.translation().norm() > _chunkDistance /*||
+     failure*/) {
     char buff[1024];
     sprintf(buff, "out-%05d.pwn", counter++);	
-    mergedClouds.save(buff, 1, true, initialPose);
-    cerr << "SAVED MERGED CLOUD!!!!" << endl;
-    mergedClouds.clear();
+    
+    Eigen::Isometry3f middleEstimate;
+    g2o::VertexSE3 *middleVertex = pwnVerteces[pwnVerteces.size() / 2];
+    for(int r = 0; r < 3; r++) {
+      for(int c = 0; c < 4; c++) {
+	middleEstimate(r, c) = middleVertex->estimate()(r, c);
+      }
+    }
+    middleEstimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
+    mergedClouds->transformInPlace(middleEstimate.inverse() * initialPose);
+
+    PWNData *pwnData = new PWNData(mergedClouds);
+    pwnData->setFilename(buff);
+    pwnData->setOriginPose(middleEstimate);
+    pwnData->writeOut();
+    cerr << "Saved pwn cloud" << endl;
+    pwnData->release();
+    middleVertex->addUserData(pwnData);
+    pwnData->setDataContainer(middleVertex);
+    mergedClouds = new Frame();
     initialPose = globalT;
-    motionFromFirstFrame = Isometry3f::Identity();
+    pwnVerteces.clear();
   }
 
-  // Update cloud drawing position.
-  current->globalTransform() = globalT;
-  current->previousFrameTransform() = localTransformation;
-  mergedClouds.add(*current, motionFromFirstFrame);
-  merger->merge(&mergedClouds, current->globalTransform());
   return true;
 }
 
@@ -465,6 +498,69 @@ bool PWNMapperController::addVertex(G2OFrame &frame) {
 
   projector->setCameraMatrix(cameraMatrix);
   converter->compute(frame, scaledDepthImage, sensorOffset, true);
+  
+  return true;
+}
+
+bool PWNMapperController::addVertexWithPWN(G2OFrame &frame) {
+  OptimizableGraph::Data *d = frame.vertex()->userData();
+  PWNData *pwnData = 0;
+  while(d && !pwnData) {
+    pwnData = dynamic_cast<PWNData*>(d);
+    d = d->next();
+  }
+    
+  if(!pwnData)
+    return false;
+  
+  Eigen::Matrix3f cameraMatrix;
+  Eigen::Isometry3f sensorOffset;
+  
+  cameraMatrix << 
+    525.0f, 0.0f, 319.5f,
+    0.0f, 525.0f, 239.5f,
+    0.0f, 0.0f, 1.0f;
+  
+  sensorOffset = Isometry3f::Identity();
+  sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+  Quaternionf quat = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+  sensorOffset.linear() = quat.toRotationMatrix();
+  sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+
+  std::string fname = pwnData->filename();
+  Eigen::Isometry3f originPose = Eigen::Isometry3f::Identity();
+  originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+  frame.load(originPose, fname.c_str());
+
+  float scale = 1./reduction;
+  cameraMatrix *= scale;
+  cameraMatrix(2, 2) = 1.0;
+      
+  for(int i = 0; i < numProjectors; i++) {
+    Isometry3f sensorOffset = Isometry3f::Identity();
+    sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+    Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
+    if(i > 0)
+      sensorOffset.linear() =  AngleAxisf(i * M_PI / 2.0f, Vector3f::UnitZ()) * quat.toRotationMatrix();
+    else
+      sensorOffset.linear() =  quat.toRotationMatrix();
+    sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    
+    multiProjector->setPointProjector(projector, sensorOffset, 640 / reduction, 320 / reduction, i);
+  }
+
+  multiProjector->size(imageRows, imageCols);
+
+  frame.cameraMatrix() = cameraMatrix;
+  frame.sensorOffset() = sensorOffset;
+    
+  globalT.setIdentity();
+  frame.globalTransform() = originPose;
+  frame.globalTransform().matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+  frame.previousFrameTransform().setIdentity();
+  frame.setPreviousFrame(0);
+
+  projector->setCameraMatrix(cameraMatrix);
   
   return true;
 }

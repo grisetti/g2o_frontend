@@ -2,44 +2,26 @@ cmake_minimum_required(VERSION 2.8)
 include_directories(${CSPARSE_INCLUDE_DIR})
 
 ADD_LIBRARY(sensor_data_library 
-  mutexed.cpp
-  mutexed.h
-#  persistent_data.cpp
-#  persistent_data.h
-  sensor.cpp
-  sensor_data.cpp
-  sensor_data.h
-  sensor.h
-  sensor_handler.cpp
-  sensor_handler.h
-  data_queue.cpp
-  data_queue.h
-  priority_data_queue.cpp
-  priority_data_queue.h
-  priority_synchronous_data_queue.cpp
-  priority_synchronous_data_queue.h
-  sequential_data_queue.cpp
-  sequential_data_queue.h
-  sequential_synchronous_data_queue.cpp
-  sequential_synchronous_data_queue.h
+  mutexed.cpp mutexed.h
+  sensor.cpp sensor.h
+  sensor_data.cpp sensor_data.h
+  sensor_handler.cpp sensor_handler.h
+  data_queue.cpp data_queue.h
+  priority_data_queue.cpp priority_data_queue.h
+  priority_synchronous_data_queue.cpp priority_synchronous_data_queue.h
+  sequential_data_queue.cpp sequential_data_queue.h
+  sequential_synchronous_data_queue.cpp sequential_synchronous_data_queue.h
 
-  laser_robot_data.cpp
-  laser_robot_data.h
-  sensor_laser_robot.cpp
-  sensor_laser_robot.h
-
-  imu_data.cpp
-  imu_data.h
-  omnicam_data.cpp
-  omnicam_data.h
-  rgbd_data.cpp
-  rgbd_data.h
-  sensor_imu.cpp
-  sensor_imu.h
-  sensor_omnicam.cpp
-  sensor_omnicam.h
-  sensor_rgbd_camera.cpp
-  sensor_rgbd_camera.h
+#  persistent_data.cpp persistent_data.h
+  laser_robot_data.cpp laser_robot_data.h
+  sensor_laser_robot.cpp sensor_laser_robot.h
+  pwn_data.cpp pwn_data.h
+  imu_data.cpp imu_data.h
+  omnicam_data.cpp omnicam_data.h
+  rgbd_data.cpp rgbd_data.h
+  sensor_imu.cpp sensor_imu.h
+  sensor_omnicam.cpp sensor_omnicam.h
+  sensor_rgbd_camera.cpp sensor_rgbd_camera.h
 )
 
 SET_TARGET_PROPERTIES(sensor_data_library  PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_sensor_data)
@@ -54,6 +36,7 @@ IF(CMAKE_BUILD_TYPE MATCHES Release)
     ${OpenCV_LIBS}
     ${OPENGL_gl_LIBRARY}
     pthread
+    pwn2_library
   )
 ENDIF(CMAKE_BUILD_TYPE MATCHES Release)
 
@@ -67,6 +50,7 @@ IF(CMAKE_BUILD_TYPE MATCHES Debug)
     ${OpenCV_LIBS}
     ${OPENGL_gl_LIBRARY}
     pthread
+    pwn2_library
   )
 ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
 

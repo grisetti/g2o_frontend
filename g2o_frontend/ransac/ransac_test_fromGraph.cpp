@@ -344,121 +344,33 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
     correspondences = ransac.correspondences();
     if(resultRansac){
       
-	err = ransac.errors();
-    cout << "Erros: (size: " << err.size() << ")" << endl;
-	for (int h = 0; h < (int)err.size(); h++){
-//	    double erri = err[h];
-//	    cout << "error of " << h << "-th correspondance: " << erri << endl ;
-	    
-	}
-    //debug: plotting the inliers found before the last alignment call
-    ofstream os1corr("l1_octave.dat");
-    ofstream os2corr("l2_octave.dat");
-    ofstream os1corrplot("l1_octave_plot.dat");
-    ofstream os2corrplot("l2_octave_plot.dat");
-    cout << " >>>>> At the end inliers: (size is " << inliers.size() << ")" << endl;
-    for (size_t i = 0; i<inliers.size(); i++){
-      int idx = inliers[i];
-      double er = err[idx];
-      Correspondence& c=correspondences[idx];
-      g2o::OptimizableGraph::Edge* e=c.edge();
-      VertexLine2D* v1=static_cast<VertexLine2D*>(e->vertex(0));
-      Eigen::Vector2d p11=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p1Id))->estimate();
-      Eigen::Vector2d p12=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p2Id))->estimate();
-      const Line2D theLine1 = v1->estimate();
-      Eigen::Vector3d line1 = Eigen::Vector3d(cos(theLine1(0)), sin(theLine1(0)), theLine1(1));
-      os1corr << line1.transpose() << endl;
-      os1corrplot << p11.transpose() << endl;
-      os1corrplot << p12.transpose() << endl;
-      os1corrplot << endl;
+        err = ransac.errors();
+        cout << "Erros: (size: " << err.size() << ")" << endl;
+        for (int h = 0; h < (int)err.size(); h++){
+            //	    double erri = err[h];
+            //	    cout << "error of " << h << "-th correspondance: " << erri << endl ;
 
-      VertexLine2D* v2=static_cast<VertexLine2D*>(e->vertex(1));
-      Eigen::Vector2d p21=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p1Id))->estimate();
-      Eigen::Vector2d p22=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p2Id))->estimate();
-      const Line2D theLine2 = v2->estimate();
-      Eigen::Vector3d line2 = Eigen::Vector3d(cos(theLine2(0)), sin(theLine2(0)), theLine2(1));
-      os2corr << line2.transpose() << endl;
-      os2corrplot << p21.transpose() << endl;
-      os2corrplot << p22.transpose() << endl;
-      os2corrplot << endl;
+        }
 
-      cerr << "(" << idx << "," << e << ","<< v1->id() << "," << v2->id() << ", " << er <<  "), ";
-    }
-	cerr << endl;
+        cout << " >>>>> At the end inliers: (size is " << inliers.size() << ")" << endl;
+        for (size_t i = 0; i<inliers.size(); i++){
+            int idx = inliers[i];
+            double er = err[idx];
+            Correspondence& c=correspondences[idx];
+            g2o::OptimizableGraph::Edge* e=c.edge();
 
-	// AlignmentAlgorithmSE2Line2D& aligner=ransac.alignmentAlgorithm();
-	// bool transformFound = aligner(result,correspondences,inliers);
+            VertexLine2D* v1=static_cast<VertexLine2D*>(e->vertex(0));
+            VertexLine2D* v2=static_cast<VertexLine2D*>(e->vertex(1));
+
+            cerr << "(" << idx << "," << e << ","<< v1->id() << "," << v2->id() << ", " << er <<  "), ";
+        }
+        cerr << endl;
+
+        // AlignmentAlgorithmSE2Line2D& aligner=ransac.alignmentAlgorithm();
+        // bool transformFound = aligner(result,correspondences,inliers);
     }
 
 #if 1
-//    ofstream os1long("l1ilong.dat");
-//    ofstream os2long("l2ilong.dat");
-//    ofstream os2Rlong("l2rilong.dat");
-//    ofstream osclong("crlong.dat");
-//    for(size_t i = 0; i < inliers.size(); i++){
-//      int idx = inliers[i];
-//      Correspondence& c=correspondences[idx];
-//      g2o::OptimizableGraph::Edge* e=c.edge();
-//      VertexLine2D* v1=static_cast<VertexLine2D*>(e->vertex(0));
-//      VertexLine2D* v2=static_cast<VertexLine2D*>(e->vertex(1));
-	    
-//      //first frame
-//      Vector2d line1 = Vector2d(v1->estimate());
-//      // cerr << "Line frame1 id: " << v1->id() << ", estimate:\n" << line1 << endl;
-
-////      VertexPointXY* vpl1_1 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p1Id));
-////      VertexPointXY* vpl1_2 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p2Id));
-//      Vector2d nline1(cos(line1(0)), sin(line1(0)));
-//      Vector2d pmiddle1 = nline1*line1(1);
-//      Vector2d t1(-nline1.y(), nline1.x());
-//      double l1_1,l1_2 = 10;
-////       l1_1 = t1.dot(vpl1_1->estimate() - pmiddle1);
-////       l1_2 = t1.dot(vpl1_2->estimate() - pmiddle1);
-//      Vector2d p11 = pmiddle1 + t1*l1_1;
-//      Vector2d p12 = pmiddle1 + t1*l1_2;
-//      os1long << p11.transpose() << endl;
-//      os1long << p12.transpose() << endl;
-//      os1long << endl;
-//      os1long << endl;
-//      os1long.flush();
-
-//      //second frame
-//      Vector2d line2 = Vector2d(v2->estimate());
-//      // cerr << "Line frame1 id: " << v1->id() << ", estimate:\n" << line1 << endl;
-////      VertexPointXY* vpl2_1 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p1Id));
-////      VertexPointXY* vpl2_2 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p2Id));
-//      Vector2d nline2(cos(line2(0)), sin(line2(0)));
-//      Vector2d pmiddle2 = nline2*line2(1);
-//      Vector2d t2(-nline2.y(), nline2.x());
-//      double l2_1,l2_2 = 10;
-////       l2_1 = t2.dot(vpl2_1->estimate() - pmiddle2);
-////       l2_2 = t2.dot(vpl2_2->estimate() - pmiddle2);
-//      Vector2d p21 = pmiddle2 + t2*l2_1;
-//      Vector2d p22 = pmiddle2 + t2*l2_2;
-//      os2long << p21.transpose() << endl;
-//      os2long << p22.transpose() << endl;
-//      os2long << endl;
-//      os2long << endl;
-//      os2long.flush();
-
-//      //second frame remapped
-//      p21 = result * p21;
-//      p22 = result * p22;
-      
-//      os2Rlong << p21.transpose() << endl;
-//      os2Rlong << p22.transpose() << endl;
-//      os2Rlong << endl;
-
-//      //link for the correspondances
-//      Eigen::Vector2d pm1 = (p11+p12)*0.5;
-//      Eigen::Vector2d pm2 = (p21+p22)*0.5;
-//      osclong << pm1.transpose() << endl;
-//      osclong << pm2.transpose() << endl;
-//      osclong << endl;
-//    }
-
-//    cout << "pippooooooooo 1" << endl;
-
     ofstream os1("l1i.dat");
     ofstream os2("l2i.dat");
     ofstream os2R("l2ir.dat");
@@ -474,7 +386,7 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
       Eigen::Vector2d p21=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p1Id))->estimate();
       Eigen::Vector2d p22=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p2Id))->estimate();
 
-      //segmenta qui
+      //filter on segmenta qui
 //      cout << "pippooooooooo" << endl;
 
       os1 << p11.transpose() << endl;
@@ -500,7 +412,6 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
       osc << endl;
       
     }
-//    cout << "pippooooooooo 2" << endl;
 
     //plotting all the correspondances
     ofstream osl1("l1.dat");
@@ -532,8 +443,75 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
       osl2r << p22.transpose() << endl;
       osl2r << endl;
     }
-    
+
+    //longline
+    //    ofstream os1long("l1ilong.dat");
+    //    ofstream os2long("l2ilong.dat");
+    //    ofstream os2Rlong("l2rilong.dat");
+    //    ofstream osclong("crlong.dat");
+    //    for(size_t i = 0; i < inliers.size(); i++){
+    //      int idx = inliers[i];
+    //      Correspondence& c=correspondences[idx];
+    //      g2o::OptimizableGraph::Edge* e=c.edge();
+    //      VertexLine2D* v1=static_cast<VertexLine2D*>(e->vertex(0));
+    //      VertexLine2D* v2=static_cast<VertexLine2D*>(e->vertex(1));
+
+    //      //first frame
+    //      Vector2d line1 = Vector2d(v1->estimate());
+    //      // cerr << "Line frame1 id: " << v1->id() << ", estimate:\n" << line1 << endl;
+
+    ////      VertexPointXY* vpl1_1 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p1Id));
+    ////      VertexPointXY* vpl1_2 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p2Id));
+    //      Vector2d nline1(cos(line1(0)), sin(line1(0)));
+    //      Vector2d pmiddle1 = nline1*line1(1);
+    //      Vector2d t1(-nline1.y(), nline1.x());
+    //      double l1_1,l1_2 = 10;
+    ////       l1_1 = t1.dot(vpl1_1->estimate() - pmiddle1);
+    ////       l1_2 = t1.dot(vpl1_2->estimate() - pmiddle1);
+    //      Vector2d p11 = pmiddle1 + t1*l1_1;
+    //      Vector2d p12 = pmiddle1 + t1*l1_2;
+    //      os1long << p11.transpose() << endl;
+    //      os1long << p12.transpose() << endl;
+    //      os1long << endl;
+    //      os1long << endl;
+    //      os1long.flush();
+
+    //      //second frame
+    //      Vector2d line2 = Vector2d(v2->estimate());
+    //      // cerr << "Line frame1 id: " << v1->id() << ", estimate:\n" << line1 << endl;
+    ////      VertexPointXY* vpl2_1 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p1Id));
+    ////      VertexPointXY* vpl2_2 = dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p2Id));
+    //      Vector2d nline2(cos(line2(0)), sin(line2(0)));
+    //      Vector2d pmiddle2 = nline2*line2(1);
+    //      Vector2d t2(-nline2.y(), nline2.x());
+    //      double l2_1,l2_2 = 10;
+    ////       l2_1 = t2.dot(vpl2_1->estimate() - pmiddle2);
+    ////       l2_2 = t2.dot(vpl2_2->estimate() - pmiddle2);
+    //      Vector2d p21 = pmiddle2 + t2*l2_1;
+    //      Vector2d p22 = pmiddle2 + t2*l2_2;
+    //      os2long << p21.transpose() << endl;
+    //      os2long << p22.transpose() << endl;
+    //      os2long << endl;
+    //      os2long << endl;
+    //      os2long.flush();
+
+    //      //second frame remapped
+    //      p21 = result * p21;
+    //      p22 = result * p22;
+
+    //      os2Rlong << p21.transpose() << endl;
+    //      os2Rlong << p22.transpose() << endl;
+    //      os2Rlong << endl;
+
+    //      //link for the correspondances
+    //      Eigen::Vector2d pm1 = (p11+p12)*0.5;
+    //      Eigen::Vector2d pm2 = (p21+p22)*0.5;
+    //      osclong << pm1.transpose() << endl;
+    //      osclong << pm2.transpose() << endl;
+    //      osclong << endl;
+    //    }
 #endif
+
     return resultRansac;
 }
 
@@ -590,7 +568,7 @@ int main(int argc, char** argv){
 			cerr << "transform found vector: " <<endl;
 			cerr << t2v_2d(res) << endl;
 			// cerr << "transform found: " <<endl;
-			// cerr << res.matrix() << endl;
+            // cerr << res.matrix() << endl;
 			cerr << "transform error vector: " << endl;
 			cerr << t2v_2d(t0.toIsometry()*res) << endl;
 			// cerr << "transform error: " << endl;

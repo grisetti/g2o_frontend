@@ -1,8 +1,5 @@
-#include "g2o/stuff/command_args.h"
-#include "g2o/stuff/timeutil.h"
-
-#include <iostream>
 #include <fstream>
+#include <unistd.h>
 #include <set>
 #include <sys/stat.h>
 
@@ -10,25 +7,21 @@
 #include <QMainWindow>
 #include <QVBoxLayout>
 #include <QListWidget>
+#include <QPushButton>
 
-#include "g2o/core/block_solver.h"
-#include "g2o/core/factory.h"
-#include "g2o/core/optimization_algorithm_gauss_newton.h"
-#include "g2o/core/optimization_algorithm_levenberg.h"
-#include "g2o/solvers/csparse/linear_solver_csparse.h"
-#include "g2o/types/slam3d/types_slam3d.h"
+#include "g2o/stuff/command_args.h"
+#include "g2o/stuff/timeutil.h"
 
-#include "g2o_frontend/pwn_mapper/pwn_mapper_controller.h"
+#include "g2o_frontend/pwn_mapper/pwn_loop_closer_controller.h"
 #include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
 #include "g2o_frontend/pwn_viewer/drawable_frame.h"
 #include "g2o_frontend/pwn_viewer/gl_parameter_frame.h"
 #include "g2o_frontend/pwn_viewer/drawable_trajectory.h"
 #include "g2o_frontend/pwn_viewer/gl_parameter_trajectory.h"
 
-#include <unistd.h>
-
-using namespace pwn;
 using namespace std;
+using namespace Eigen;
+using namespace pwn;
 using namespace g2o;
 
 int main(int argc, char** argv) {
@@ -38,33 +31,31 @@ int main(int argc, char** argv) {
   string g2o_filename;
 
   // Variables for the input parameters. 
-  float ng_scale;
-  float ng_curvatureThreshold;
+  float al_scale;
+  int al_imageRows;
+  int al_imageCols;
   int al_innerIterations;
   int al_outerIterations;
   int al_minNumInliers;
   float al_minError;
-  int startingVertex;
+  int vz_startingVertex;
+  int vz_endingVertex;
   int vz_step;
-  int chunkStep;
-  float chunkAngle;
-  float chunkDistance;
 
   // Input parameters handling.
   g2o::CommandArgs arg;
   
   // Optional input parameters.
-  arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image");
-  arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded");
+  arg.param("al_scale", al_scale, 1.0f, "Specify the scaling factor to apply on the depth image");
+  arg.param("al_imageRows", al_imageRows, 480, "Specify the number of rows of the depth image associated to the pinhole point projector");
+  arg.param("al_imageCols", al_imageCols, 640, "Specify the number of columns of the depth image associated to the pinhole point projector");
   arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations");
   arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");
   arg.param("al_minNumInliers", al_minNumInliers, 10000, "Specify the minimum number of inliers to consider an alignment good");
   arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
-  arg.param("startingVertex", startingVertex, 0, "Specify the vertex id from which to start the process");
+  arg.param("vz_startingVertex", vz_startingVertex, 0, "Specify the vertex id from which to start the process");
+  arg.param("vz_endingVertex", vz_endingVertex, -1, "Specify the vertex id where to end the process");
   arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements");
-  arg.param("chunkStep", chunkStep, 1000000, "Reset the process every chunkStep images");
-  arg.param("chunkAngle", chunkAngle, M_PI/4, "Reset the process each time the camera has rotated of chunkAngle radians from the first frame");
-  arg.param("chunkDistance", chunkDistance, 0.5, "reset the process each time the camera has moved of chunkDistance meters from the first frame");
 
   // Last parameter has to be the working directory.
   arg.paramLeftOver("g2o_input_filename", g2o_filename, "", "g2o input inputfilename", true);
@@ -87,8 +78,10 @@ int main(int argc, char** argv) {
   baseLayout->setStretch(1.0f, 1.0f);
 
   QListWidget* listWidget = new QListWidget(mainWindow);
-  listWidget->setSelectionMode(QAbstractItemView::MultiSelection );
+  listWidget->setSelectionMode(QAbstractItemView::MultiSelection);
   listWidgetLayout->addWidget(listWidget);
+  QPushButton *alignButton = new QPushButton("&Align", mainWindow);
+  listWidgetLayout->addWidget(alignButton);
   PWNQGLViewer* viewer = new PWNQGLViewer(mainWindow);
   qglviewerLayout->addWidget(viewer);
 
@@ -121,12 +114,12 @@ int main(int argc, char** argv) {
       continue;
     OptimizableGraph::Data *d = v->userData();
     while(d) {
-      RGBDData *rgbdData = dynamic_cast<RGBDData*>(d);
-      if(!rgbdData) {
+      PWNData *pwnData = dynamic_cast<PWNData*>(d);
+      if(!pwnData) {
 	d = d->next();
 	continue;
       }
-      
+
       char buff[1024];
       sprintf(buff, "%d", v->id());
       QString listItem(buff);
@@ -137,49 +130,127 @@ int main(int argc, char** argv) {
     }
   }
 
+  /************************************************************************
+   *                          Setting Variables                           *
+   ************************************************************************/
+  if(vz_startingVertex < 0)
+    vz_startingVertex = 0;
+  if(vz_endingVertex < 0 || vz_endingVertex > listWidget->count())
+    vz_endingVertex = listWidget->count();
+  
   std::vector<Isometry3f> trajectory;
   std::vector<G2OFrame*> frames;
   frames.resize(listWidget->count());
   std::fill(frames.begin(), frames.end(), (G2OFrame*)0);
-  PWNMapperController *controller = new PWNMapperController();
-  controller->init(graph);
-  controller->setChunkStep(chunkStep);
-  controller->setChunkAngle(chunkAngle);
-  controller->setChunkDistance(chunkDistance);
-  controller->setAlMinNumInliers(al_minNumInliers);
-  controller->setAlMinError(al_minError);
+
+  Matrix3f cameraMatrix;
+  cameraMatrix <<
+    525.0f, 0.0f, 319.5f,
+      0.0f, 525.0f, 239.5f,
+      0.0f, 0.0f, 1.0f;
+  Isometry3f sensorOffset = Isometry3f::Identity();
+  sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+  Quaternionf quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+  sensorOffset.linear() = quaternion.toRotationMatrix();
+  sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+  PWNLoopCloserController *controller = new PWNLoopCloserController(graph);
+  controller->setMinNumInliers(al_minNumInliers);
+  controller->setMinError(al_minError);
+  controller->setCameraMatrix(cameraMatrix);
+  controller->setSensorOffset(sensorOffset);
+  controller->setReduction(al_scale);
+  controller->setImageRows(al_imageCols);
+  controller->setImageCols(al_imageRows);
+
   viewer->init();
   viewer->setAxisIsDrawn(true);
-  mainWindow->show();
   viewer->show();
+
+  mainWindow->show();
+  
   listWidget->show();
-  int i = startingVertex;
+
   GLParameterTrajectory *parameterTrajectory = new GLParameterTrajectory(0.03f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f));
   DrawableTrajectory *drawableTrajectory = new DrawableTrajectory(Isometry3f::Identity(), parameterTrajectory, &trajectory);
   viewer->addDrawable(drawableTrajectory);
-  Isometry3f globalT = Isometry3f::Identity();
   GLParameterFrame *parameterFrame = new GLParameterFrame(vz_step); 
+
+  /************************************************************************
+   *                          Drawing Trajectory                          *
+   ************************************************************************/
+  for(int i = vz_startingVertex; i < vz_endingVertex; i++) {
+    QListWidgetItem *listItem = listWidget->item(i);
+    listItem->setHidden(false);
+    string idString = listItem->text().toUtf8().constData();
+    int index = atoi(idString.c_str());
+    VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
+    if(v) {
+      Isometry3f estimate;
+      for(int r = 0; r < 3; r++) {
+	for(int c = 0; c < 4; c++) {
+	  estimate(r, c) = v->estimate()(r, c);
+	}
+      }
+      estimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
+      trajectory.push_back(estimate);
+    }
+  }
+  G2OFrame *referenceFrame = 0, *currentFrame = 0;
+  
+  /************************************************************************
+   *                          MAIN DRAWING LOOP                           *
+   ************************************************************************/
   while(viewer->isVisible()) {
     bool changed = false;
-    if(i < listWidget->count() && i >= 0) {
-      QListWidgetItem *listItem = listWidget->item(i);
-      string idString = listItem->text().toUtf8().constData();
-      int index = atoi(idString.c_str());
-      VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
-      if(v) {      
-      	if(!controller->addVertex(v))
-      	  continue;
-      	controller->alignIncrementally();
-	G2OFrame *frame = controller->lastFrame();
-	Eigen::Isometry3f localT = frame->previousFrameTransform();
-	globalT = globalT * localT;
-	trajectory.push_back(globalT);
-	listItem->setHidden(false);
-	changed = true;
+    
+    // Align button was pressed
+    if(alignButton->isDown()) {
+      // Clean old aligned frames
+      if(referenceFrame)
+	delete referenceFrame;
+      referenceFrame = 0;
+      if(currentFrame)
+	delete currentFrame;
+      currentFrame = 0;
+
+      // Search for the two frames selected
+      for(int k = vz_startingVertex; k < vz_endingVertex; k++) {
+	QListWidgetItem* item = listWidget->item(k);
+	if(item) {
+	  if(item->isSelected()) {
+	    string idString = item->text().toUtf8().constData();
+	    int index = atoi(idString.c_str());
+	    VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
+	    if(v) {
+	      if(!referenceFrame) {
+		referenceFrame = new G2OFrame(v);	
+		controller->extractPWNData(referenceFrame);
+	      }
+	      else if(!currentFrame) {
+		currentFrame = new G2OFrame(v);
+		controller->extractPWNData(currentFrame);
+	      }
+	      else {
+		break;
+	      }
+	    }	
+	  }
+	}
       }
-      i++;
+      
+      usleep(1000000);
+
+      // Align
+      Isometry3f transform = Isometry3f::Identity();
+      transform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+      if(controller->alignVertexWithPWNData(transform, referenceFrame, currentFrame))
+      	cerr << "Adge added" << endl;
+      else
+      	cerr << "Adge was not added because of a bad alignment" << endl;
     }
-    for(int k = startingVertex; k < listWidget->count(); k++){
+
+    // Manage user ListWidget elements highlighting 
+    for(int k = vz_startingVertex; k < vz_endingVertex; k++) {
       QListWidgetItem* item = listWidget->item(k);
       if(item) {
 	if(item->isSelected()) {
@@ -188,9 +259,9 @@ int main(int argc, char** argv) {
 	  VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
 	  if(v && !frames[k]) {
 	    G2OFrame *currentFrame = new G2OFrame(v);
-	    controller->addVertex(*currentFrame);
+	    controller->extractPWNData(currentFrame);
 	    frames[k] = currentFrame;
-	    DrawableFrame *drawableFrame = new DrawableFrame(trajectory[k], parameterFrame, frames[k]); 
+	    DrawableFrame *drawableFrame = new DrawableFrame(currentFrame->globalTransform(), parameterFrame, frames[k]); 
 	    viewer->addDrawable(drawableFrame);
 	    changed = true;
 	  }	
@@ -222,7 +293,7 @@ int main(int argc, char** argv) {
     application.processEvents();
   }
 
-  graph->save("graphwithpwn.g2o");
+  graph->save("graphwithpwnandedges.g2o");
 
   return 0;
 };

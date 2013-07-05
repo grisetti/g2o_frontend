@@ -62,7 +62,7 @@ class RGBDDataDrawAction : public g2o::DrawAction{
 public:
   RGBDDataDrawAction() : DrawAction(typeid(RGBDData).name()) {};
   virtual HyperGraphElementAction* operator()(g2o::HyperGraph::HyperGraphElement* element, 
-					      																g2o::HyperGraphElementAction::Parameters* params_ );
+					      g2o::HyperGraphElementAction::Parameters* params_ );
 protected:
   virtual bool refreshPropertyPtrs(g2o::HyperGraphElementAction::Parameters* params_);
   g2o::IntProperty* _beamsDownsampling;

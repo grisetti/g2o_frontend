@@ -26,8 +26,8 @@ ADD_SUBDIRECTORY(pwn_mapper)
 ADD_SUBDIRECTORY(pwn_test)
 ADD_SUBDIRECTORY(pwn_g2o)
 
-
 if(PCL_FOUND)
+  ADD_SUBDIRECTORY(pwn_utils)
   #ADD_SUBDIRECTORY(PlaneEx)
   #ADD_SUBDIRECTORY(PlaneEx_gui)
   #ADD_SUBDIRECTORY(planeAligner)

@@ -14,6 +14,7 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${CSPARSE_INCLUDE_DIR})
 
 ADD_LIBRARY(pwn_mapper_library
   pwn_mapper_controller.cpp pwn_mapper_controller.h
+  pwn_loop_closer_controller.cpp pwn_loop_closer_controller.h
 )
 
 SET_TARGET_PROPERTIES(pwn_mapper_library PROPERTIES OUTPUT_NAME pwn_mapper)

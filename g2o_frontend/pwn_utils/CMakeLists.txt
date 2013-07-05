@@ -1,0 +1,12 @@
+INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
+
+ADD_LIBRARY(pwn2_utils
+  pwn_file_format_converter.h
+)
+
+SET_TARGET_PROPERTIES(pwn2_utils PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn2_utils LINKER_LANGUAGE CXX)
+
+TARGET_LINK_LIBRARIES(pwn2_utils
+  pwn2_library
+  ${PCL_LIBRARIES}
+)

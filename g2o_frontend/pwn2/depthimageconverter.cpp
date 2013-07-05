@@ -30,8 +30,6 @@ void DepthImageConverter::compute(Frame &frame,
   // resizing the temporaries
   if (depthImage.rows()!=_indexImage.rows() ||
       depthImage.cols()!=_indexImage.cols()){
-    cerr << "Depth size: " << depthImage.rows() << " --- " << depthImage.cols() << endl;
-    cerr << "Index Size: " << _indexImage.rows() << " --- " << _indexImage.cols() << endl;
     _indexImage.resize(depthImage.rows(), depthImage.cols());
     _integralImage.resize(depthImage.rows(), depthImage.cols());
     _intervalImage.resize(depthImage.rows(), depthImage.cols());

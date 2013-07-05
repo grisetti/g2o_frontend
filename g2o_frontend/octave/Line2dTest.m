@@ -4,7 +4,8 @@
 
 
 #  generate a transform
-gtx = [2.46308e-07 3.77269e-06 -0.0912328]'; # 2 5 .3
+
+gtx = [-0.00129444 0.000101912 -0.139905]'; # 2 5 .3
 printf("ground truth vector is:\n");
 disp(gtx);
 gtX = v2t_2d(gtx);
@@ -23,16 +24,19 @@ disp(gtX);
 #Lj(:,i) = line2d_remapCartesian(gtX, Li(:,i));
 #endfor;
 
-Li = load('l1_octave.dat');
+Li = load('l1minset_octave.dat');
 Li = Li';
 disp("Li:");
 disp(Li);
 
-Lj = load('l2_octave.dat');
+Lj = load('l2minset_octave.dat');
 Lj = Lj';
 disp("Lj:");
 disp(Lj);
 
+Ljpoint = load('l2minset.dat');
+disp("Ljpoint");
+disp(Ljpoint);
 
 X=eye(3);
 
@@ -43,8 +47,8 @@ Omega(3,3)*=100;
 # choose line2d_solve if you want a non linear solving
 # [Xsnl, es] = line2d_solve(Li, Lj, Omega, X, 10);
 [Xs, es] = line2d_linearSolve(Li, Lj, Omega, X);
-#Xs_final = zeros(3,3);
-#Xs_final = Xsnl(:,:,10);
+# Xs_final = zeros(3,3);
+# Xs_final = Xsnl(:,:,10);
 #disp("- final transform ");
 # disp(Xs);
 disp("Transform error vector:");
@@ -60,3 +64,12 @@ for i = [1:size(Lj)(2)]
  TLj(:,i) = line2d_remapCartesian(Xs, Lj(:,i));
 endfor;
 TLj
+
+# just to visualize the line2 remmaped with a plot
+
+TLjpoint = zeros(size(Ljpoint, 1), 2);
+for i = [1:size(Ljpoint)(1)]
+ TLjpoint(i,:)= point2d_remapCartesian(Xs, Ljpoint(i,:)');
+endfor;
+save("l2_transformed.dat", "TLjpoint");
+TLjpoint

@@ -15,3 +15,7 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${CSPARSE_INCLUDE_DIR})
 ADD_EXECUTABLE(multiprojectortest multiprojectortest.cpp)
 SET_TARGET_PROPERTIES(multiprojectortest PROPERTIES OUTPUT_NAME multiprojectortest)
 TARGET_LINK_LIBRARIES(multiprojectortest pwn2_library ${G2O_STUFF_LIBRARY})
+
+ADD_EXECUTABLE(fileconvertertest fileconvertertest.cpp)
+SET_TARGET_PROPERTIES(fileconvertertest PROPERTIES OUTPUT_NAME fileconvertertest)
+TARGET_LINK_LIBRARIES(fileconvertertest pwn2_utils)

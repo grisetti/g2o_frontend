@@ -49,6 +49,8 @@ class MultiPointProjector: public PointProjector {
     _pointProjectors[position].height = height_;
   }
 
+  void clearProjectors() { _pointProjectors.clear(); }
+
   virtual void size(int &rows, int &cols);
 
   virtual void project(Eigen::MatrixXi &indexImage, 
