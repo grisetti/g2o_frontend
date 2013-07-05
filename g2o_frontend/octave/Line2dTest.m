@@ -5,7 +5,8 @@
 
 #  generate a transform
 
-gtx = [-0.00129444 0.000101912 -0.139905]'; # 2 5 .3
+gtx = [-0.00129444 0.000101912 -0.139905]'; #4 e 5 no
+# gtx = [2.46308e-07 3.77269e-06 -0.0912328]'; #3 e 4 si
 printf("ground truth vector is:\n");
 disp(gtx);
 gtX = v2t_2d(gtx);
@@ -24,17 +25,18 @@ disp(gtX);
 #Lj(:,i) = line2d_remapCartesian(gtX, Li(:,i));
 #endfor;
 
-Li = load('l1minset_octave.dat');
+# we need a coloum vector
+Li = load('l1i_octave.dat');
 Li = Li';
 disp("Li:");
 disp(Li);
 
-Lj = load('l2minset_octave.dat');
+Lj = load('l2i_octave.dat');
 Lj = Lj';
 disp("Lj:");
 disp(Lj);
 
-Ljpoint = load('l2minset.dat');
+Ljpoint = load('l2i.dat');
 disp("Ljpoint");
 disp(Ljpoint);
 
@@ -66,7 +68,6 @@ endfor;
 TLj
 
 # just to visualize the line2 remmaped with a plot
-
 TLjpoint = zeros(size(Ljpoint, 1), 2);
 for i = [1:size(Ljpoint)(1)]
  TLjpoint(i,:)= point2d_remapCartesian(Xs, Ljpoint(i,:)');

@@ -5,6 +5,7 @@
 #include "alignment_line3d_linear.h"
 #include "alignment_line2d_linear.h"
 #include "line2d_correspondence_validator.h"
+#include "id_correspondence_validator.h"
 #include "g2o_frontend/basemath/bm_se2.h"
 #include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "g2o_frontend/line_alignment/alignment_utils.h"
@@ -18,6 +19,8 @@
 #include "g2o/stuff/filesys_tools.h"
 #include "g2o/stuff/string_tools.h"
 #include "g2o/stuff/timeutil.h"
+#include <algorithm>
+
 using namespace Eigen;
 using namespace g2o;
 using namespace g2o_frontend;
@@ -102,6 +105,20 @@ struct Line2DMapping:public EuclideanMapping<Line2D, 2>{
   virtual VectorType toVector(const TypeDomain& t) const {return Vector2d(t);}
 };
 
+
+struct LineLengthComparator{
+    inline bool operator()(const VertexLine2D* v1, const VertexLine2D* v2 ){
+        const OptimizableGraph* inputGraph=v1->graph();
+        Eigen::Vector2d p11=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(v1->p1Id))->estimate();
+        Eigen::Vector2d p12=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(v1->p2Id))->estimate();
+        Eigen::Vector2d p21=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(v2->p1Id))->estimate();
+        Eigen::Vector2d p22=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(v2->p2Id))->estimate();
+        double l1=(p11-p12).squaredNorm();
+        double l2=(p21-p22).squaredNorm();
+        return l1>l2;
+    }
+};
+
 template <typename MappingType, typename RansacType, typename EdgeCorrespondenceType>
 bool testRansac_fromGraph(typename RansacType::TransformType& result,
 			  string filename,
@@ -166,7 +183,8 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
         VertexLine2D* vl1 = dynamic_cast< VertexLine2D*>(el->vertices()[1]);
         const Line2D theLine = vl1->estimate();
         cout << "vl1 id: " << vl1->id() << "vl1 estimate1:\n" << theLine << endl;
-        lineOfVertex lov;
+        lineOfVertex lov; const OptimizableGraph* inputGraph=v1->graph();
+
         lov.line = theLine;
         lov.vertex = v1;
         lov.vline = vl1;
@@ -210,7 +228,8 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
 
 //          typename EdgeCorrespondenceType::InformationType info = EdgeCorrespondenceType::InformationType::Identity();
             edgeline->setInformation(omega);
-
+            Eigen::Vector2d p11=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p1Id))->estimate();
+            Eigen::Vector2d p12=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p2Id))->estimate();
             VertexLine2D* vli = dynamic_cast<VertexLine2D*>(inputGraph.vertex(s1[currCorrs[ci].lid1].vline->id()));
             PointVertexType* v1 = new PointVertexType();
             v1->setEstimate(vli->estimate());
@@ -240,6 +259,8 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
     //to save all the lines for octave debug
     ofstream os1all("l1_all.dat");
     ofstream os2all("l2_all.dat");
+//    ofstream os1alloctave("l1_all_octave.dat");
+//    ofstream os2alloctave("l2_all_octave.dat");
 
     //computing the total number of correspondances for ransac
     int numLinee1 = 0, numLinee2 = 0;
@@ -249,10 +270,14 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
             const VertexLine2D* v1 = dynamic_cast<VertexLine2D*>(el1->vertices()[1]);
             Eigen::Vector2d p11=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p1Id))->estimate();
             Eigen::Vector2d p12=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v1->p2Id))->estimate();
-//            const Line2D theLine1 = v1->estimate();
-//            Eigen::Vector3d line1 = Eigen::Vector3d(cos(theLine1(0)), sin(theLine1(0)), theLine1(1));
             os1all << p11.transpose() << endl;
             os1all << p12.transpose() << endl;
+            os1all << endl;
+
+            const Line2D theLine1 = v1->estimate();
+            Eigen::Vector3d line1 = Eigen::Vector3d(cos(theLine1(0)), sin(theLine1(0)), theLine1(1));
+            os1all << line1.transpose() << endl;
+            os1all << endl;
             os1all << endl;
 
             numLinee1++;
@@ -264,11 +289,16 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
             const VertexLine2D* v2 = dynamic_cast<VertexLine2D*>(el2->vertices()[1]);
             Eigen::Vector2d p21=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p1Id))->estimate();
             Eigen::Vector2d p22=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p2Id))->estimate();
-//            const Line2D theLine2 = v2->estimate();
-//            Eigen::Vector3d line2 = Eigen::Vector3d(cos(theLine2(0)), sin(theLine2(0)), theLine2(1));
             os2all << p21.transpose() << endl;
             os2all << p22.transpose() << endl;
             os2all << endl;
+
+            const Line2D theLine2 = v2->estimate();
+            Eigen::Vector3d line2 = Eigen::Vector3d(cos(theLine2(0)), sin(theLine2(0)), theLine2(1));
+            os2all << line2.transpose() << endl;
+            os1all << endl;
+            os1all << endl;
+
             numLinee2++;
         }
     }
@@ -282,54 +312,102 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
     double zeroVec[100];
     std::fill(zeroVec, zeroVec+100, 0);
    
-    
-    int i = 0, k = 0;
-    int j = numLinee1;
-    for (OptimizableGraph::EdgeSet::iterator itv = es1.begin(); itv != es1.end() && k < numLinee1 && i < totCorr; itv++) 
+    std::vector<VertexLine2D*> lines1, lines2;
+    for (OptimizableGraph::EdgeSet::iterator itv = es1.begin(); itv != es1.end(); itv++)
     {
-      
         EdgeSE2Line2D* el = dynamic_cast<EdgeSE2Line2D*>(*itv);
         if (!el)
             continue;
         VertexLine2D* vl1 = dynamic_cast<VertexLine2D*>(el->vertices()[1]);
-
-    //	const Line2D theLine1 = vl1->estimate();
-    //	cout << "vl1 estimate1:\n" << theLine1 << endl;
-
-
-        for (OptimizableGraph::EdgeSet::iterator itv2 = es2.begin(); itv2 != es2.end() && j < totCorr; itv2++)
-        {
-            EdgeSE2Line2D* el2 = dynamic_cast<EdgeSE2Line2D*>(*itv2);
-            if (!el2)
-            continue;
-            VertexLine2D* vl2 = dynamic_cast<VertexLine2D*>(el2->vertices()[1]);
-
-    //	    const Line2D theLine2 = vl2->estimate();
-    //	    cout << "vl2 estimate2:\n" << theLine2 << endl;
-
-            EdgeCorrespondenceType* edge = new EdgeCorrespondenceType();
-            edge->setMeasurementData(zeroVec);
-
-    //	    typename EdgeCorrespondenceType::InformationType info = EdgeCorrespondenceType::InformationType::Identity();
-            Eigen::Matrix2d myOmega=omega;
-            myOmega(0,0)+=omegaScaleFactor*fabs(vl1->estimate()[1]*vl1->estimate()[1]);
-            edge->setInformation(omega);
-            edge->vertices()[0]=vl1;
-            edge->vertices()[1]=vl2;
-
-            //graph.addEdge(edge);
-            Correspondence c(edge,100);
-            correspondences.push_back(c);
-            indices[i]=i;
-
-            //updating global and second local indexes
-            j++;
-            i++;
-        }
-        //updating local index
-        k++;
+        lines1.push_back(vl1);
     }
-    cerr << "correspondances dim: " << correspondences.size() << " must be = " << i << endl;
+
+    for (OptimizableGraph::EdgeSet::iterator itv = es2.begin(); itv != es2.end(); itv++)
+    {
+        EdgeSE2Line2D* el = dynamic_cast<EdgeSE2Line2D*>(*itv);
+        if (!el)
+            continue;
+        VertexLine2D* vl2 = dynamic_cast<VertexLine2D*>(el->vertices()[1]);
+        lines2.push_back(vl2);
+    }
+
+       std::sort(lines1.begin(), lines1.end(),LineLengthComparator());
+       std::sort(lines2.begin(), lines2.end(),LineLengthComparator());
+
+
+       for (size_t i=0; i<lines1.size(); i++){
+           VertexLine2D* l1=lines1[i];
+           const OptimizableGraph* inputGraph=l1->graph();
+           Eigen::Vector2d p11=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(l1->p1Id))->estimate();
+           Eigen::Vector2d p12=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(l1->p2Id))->estimate();
+           double d1=(p11-p12).squaredNorm();
+
+           for (size_t j=0; j<lines2.size(); j++){
+               VertexLine2D* l2=lines2[j];
+               if (l1!=l2){
+                   Eigen::Vector2d p21=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(l2->p1Id))->estimate();
+                   Eigen::Vector2d p22=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(l2->p2Id))->estimate();
+                   double d2=(p21-p22).squaredNorm();
+
+                   double diff=1./(1+fabs(d1-d2));
+                   EdgeLine2D *e = new EdgeLine2D;
+                   e->vertices()[0]=l1;
+                   e->vertices()[1]=l2;
+                   e->setMeasurement(Eigen::Vector2d::Zero());
+                   Correspondence c(e,diff);
+                   correspondences.push_back(c);
+            }
+
+        }
+    }
+
+//    int i = 0, k = 0;
+//    int j = numLinee1;
+//    for (OptimizableGraph::EdgeSet::iterator itv = es1.begin(); itv != es1.end() && k < numLinee1 && i < totCorr; itv++)
+//    {
+      
+//        EdgeSE2Line2D* el = dynamic_cast<EdgeSE2Line2D*>(*itv);
+//        if (!el)
+//            continue;
+//        VertexLine2D* vl1 = dynamic_cast<VertexLine2D*>(el->vertices()[1]);
+
+//    //	const Line2D theLine1 = vl1->estimate();
+//    //	cout << "vl1 estimate1:\n" << theLine1 << endl;
+
+
+//        for (OptimizableGraph::EdgeSet::iterator itv2 = es2.begin(); itv2 != es2.end() && j < totCorr; itv2++)
+//        {
+//            EdgeSE2Line2D* el2 = dynamic_cast<EdgeSE2Line2D*>(*itv2);
+//            if (!el2)
+//            continue;
+//            VertexLine2D* vl2 = dynamic_cast<VertexLine2D*>(el2->vertices()[1]);
+
+//    //	    const Line2D theLine2 = vl2->estimate();
+//    //	    cout << "vl2 estimate2:\n" << theLine2 << endl;
+
+//            EdgeCorrespondenceType* edge = new EdgeCorrespondenceType();
+//            edge->setMeasurementData(zeroVec);
+
+//    //	    typename EdgeCorrespondenceType::InformationType info = EdgeCorrespondenceType::InformationType::Identity();
+//            Eigen::Matrix2d myOmega=omega;
+//            myOmega(0,0)+=omegaScaleFactor*fabs(vl1->estimate()[1]*vl1->estimate()[1]);
+//            edge->setInformation(omega);
+//            edge->vertices()[0]=vl1;
+//            edge->vertices()[1]=vl2;
+
+//            //graph.addEdge(edge);
+//            Correspondence c(edge,100);
+//            correspondences.push_back(c);
+//            indices[i]=i;
+
+//            //updating global and second local indexes
+//            j++;
+//            i++;
+//        }
+//        //updating local index
+//        k++;
+//    }
+    cerr << "correspondances dim: " << correspondences.size() << endl;
 #endif
     
     RansacType ransac;
@@ -358,7 +436,6 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
             double er = err[idx];
             Correspondence& c=correspondences[idx];
             g2o::OptimizableGraph::Edge* e=c.edge();
-
             VertexLine2D* v1=static_cast<VertexLine2D*>(e->vertex(0));
             VertexLine2D* v2=static_cast<VertexLine2D*>(e->vertex(1));
 
@@ -372,7 +449,9 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
 
 #if 1
     ofstream os1("l1i.dat");
+    ofstream os1octave("l1i_octave.dat");
     ofstream os2("l2i.dat");
+    ofstream os2octave("l2i_octave.dat");
     ofstream os2R("l2ir.dat");
     ofstream osc("cr.dat");
     for(size_t i = 0; i < inliers.size(); i++){
@@ -386,7 +465,15 @@ bool testRansac_fromGraph(typename RansacType::TransformType& result,
       Eigen::Vector2d p21=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p1Id))->estimate();
       Eigen::Vector2d p22=dynamic_cast<VertexPointXY*>(inputGraph.vertex(v2->p2Id))->estimate();
 
-      //filter on segmenta qui
+      const Line2D v1est = v1->estimate();
+      Eigen::Vector3d line1 = Eigen::Vector3d(cos(v1est(0)), sin(v1est(0)), v1est(1));
+      os1octave << line1.transpose() << endl;
+
+      const Line2D v2est = v2->estimate();
+      Eigen::Vector3d line2= Eigen::Vector3d(cos(v2est(0)), sin(v2est(0)), v2est(1));
+      os2octave << line2.transpose() << endl;
+
+//      filter on segmenta qui
 //      cout << "pippooooooooo" << endl;
 
       os1 << p11.transpose() << endl;
@@ -551,12 +638,15 @@ int main(int argc, char** argv){
     val1->setIntraFrameDistanceDifference(.1);
     val1->setIntraFrameMinimalDistance(.25);
     validators.push_back(val1);
-    cout << "pippooooooooo" << endl;
+    IdCorrespondenceValidator* val2 = new IdCorrespondenceValidator(2);
+    validators.push_back(val2);
+
+//    cout << "pippooooooooo" << endl;
 
     bool result = testRansac_fromGraph<Line2DMapping, RansacLine2DLinear, EdgeLine2D>(tresult, filename, t0, 
                                         omega, validators, 9, false, bestFriendFilter);
 
-    cout << "pippooooooooo" << endl;
+//    cout << "pippooooooooo" << endl;
     if (result){
      
 // 			cerr << "ground truth vector: " <<endl;
