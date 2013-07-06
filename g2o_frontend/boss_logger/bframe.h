@@ -2,8 +2,12 @@
 #define _BOSS_FRAME_H_
 #include "g2o_frontend/boss/identifiable.h"
 #include "g2o_frontend/boss/serializable.h"
+#include "g2o_frontend/boss/object_data.h"
+
+// include this *before* any eigen class. It adds the serialization things to the fixed size eigen matrices
+#include "eigen_boss_plugin.h" 
+
 #include <Eigen/Geometry>
-#include <Eigen/Core>
 #include <set>
 
 namespace boss {
@@ -19,7 +23,7 @@ public:
   virtual void deserialize(ObjectData& data, IdContext& context);
   virtual void deserializeComplete();
   inline const Eigen::Isometry3d& transform() {return _transform;}
-  inline void setTransform(Eigen::Isometry3d& transform_) {_transform = transform_;}
+  inline void setTransform(const Eigen::Isometry3d& transform_) {_transform = transform_;}
   
   inline const Frame* parentFrame() const { return _parentFrame;}
   inline Frame* parentFrame() { return _parentFrame;}

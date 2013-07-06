@@ -1,6 +1,6 @@
 #include "bframe.h"
 #include "g2o_frontend/boss/object_data.h"
-
+#include <stdexcept>
 namespace boss {
 
   Frame::Frame(Frame* parentFrame_ , int id, IdContext* context): Identifiable(id,context){
@@ -36,26 +36,21 @@ namespace boss {
 
   void Frame::serialize(ObjectData& data, IdContext& /*context*/){
     data.setPointer("parentFrame",_parentFrame);
-    ArrayData* array=new ArrayData();
-    array->reserve(12);
-    for (int r=0; r<3; r++)
-      for(int c=0; c<4; c++)
-	array->push_back(new NumberData(_transform.matrix()(r,c)));
-    data.setField("transform",array);
+
+    Eigen::Quaterniond q(_transform.rotation());
+    q.coeffs().toBOSS(data,"rotation");
+    _transform.translation().toBOSS(data,"translation");
   }
   
   void Frame::deserialize(ObjectData& data, IdContext& /*context*/){
     _parentFrame = 0;
     _tempParentFrame = 0;
     data.getPointer("parentFrame", _tempParentFrame);
-    ArrayData* array = static_cast<ArrayData*>(data.getField("transform"));
-    if(array->size()!=12){
-      std::cerr << "AAAAA"; // throw an error
-    }
-    int k=0;
-    for (int r=0; r<3; r++)
-      for(int c=0; c<4; c++, k++)
-	_transform.matrix()(r,c)=static_cast<NumberData*>( (*array)[k])->getDouble();
+
+    Eigen::Quaterniond q;
+    q.coeffs().fromBOSS(data,"rotation");
+    _transform.translation().fromBOSS(data,"translation");
+    _transform.linear()=q.toRotationMatrix();
   }
 
   void Frame::deserializeComplete(){
