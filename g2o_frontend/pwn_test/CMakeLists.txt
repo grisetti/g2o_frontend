@@ -19,3 +19,7 @@ TARGET_LINK_LIBRARIES(multiprojectortest pwn2_library ${G2O_STUFF_LIBRARY})
 ADD_EXECUTABLE(fileconvertertest fileconvertertest.cpp)
 SET_TARGET_PROPERTIES(fileconvertertest PROPERTIES OUTPUT_NAME fileconvertertest)
 TARGET_LINK_LIBRARIES(fileconvertertest pwn2_utils)
+
+ADD_EXECUTABLE(cyilindricalprojector_test cyilindricalprojector_test.cpp)
+SET_TARGET_PROPERTIES(cyilindricalprojector_test PROPERTIES OUTPUT_NAME cyilindricalprojector_test)
+TARGET_LINK_LIBRARIES(cyilindricalprojector_test pwn2_library ${G2O_STUFF_LIBRARY})
