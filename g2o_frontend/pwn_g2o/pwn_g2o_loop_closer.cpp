@@ -38,6 +38,7 @@ int main(int argc, char** argv) {
   int al_outerIterations;
   int al_minNumInliers;
   float al_minError;
+  float al_curvatureThreshold;
   int vz_startingVertex;
   int vz_endingVertex;
   int vz_step;
@@ -53,6 +54,7 @@ int main(int argc, char** argv) {
   arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");
   arg.param("al_minNumInliers", al_minNumInliers, 10000, "Specify the minimum number of inliers to consider an alignment good");
   arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
+  arg.param("al_curvatureThreshold", al_curvatureThreshold, 0.1f, "Specify the curvature treshshold for information matrix computation");
   arg.param("vz_startingVertex", vz_startingVertex, 0, "Specify the vertex id from which to start the process");
   arg.param("vz_endingVertex", vz_endingVertex, -1, "Specify the vertex id where to end the process");
   arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements");
@@ -161,6 +163,7 @@ int main(int argc, char** argv) {
   controller->setReduction(al_scale);
   controller->setImageRows(al_imageCols);
   controller->setImageCols(al_imageRows);
+  controller->setCurvatureThreshold(al_curvatureThreshold);
 
   viewer->init();
   viewer->setAxisIsDrawn(true);
@@ -238,8 +241,6 @@ int main(int argc, char** argv) {
 	}
       }
       
-      usleep(1000000);
-
       // Align
       Isometry3f transform = Isometry3f::Identity();
       transform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;

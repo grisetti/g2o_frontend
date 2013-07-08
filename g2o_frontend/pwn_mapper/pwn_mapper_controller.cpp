@@ -199,9 +199,6 @@ bool PWNMapperController::alignIncrementally(){
     ii.resize(imageRows, imageCols);
   multiProjector->setTransform(initialPose.inverse()*reference->globalTransform());
   multiProjector->project(ii, di, mergedClouds->points());
-  if(reference->vertex()->id() == 5) {
-    
-  }
   multiConverter->compute(subScene, di, Isometry3f::Identity(), true);
   aligner->setReferenceFrame(&subScene);
 
@@ -219,7 +216,10 @@ bool PWNMapperController::alignIncrementally(){
   if(aligner->outerIterations() != 0 && (aligner->inliers() < al_minNumInliers || aligner->error() / aligner->inliers() > al_minError) ) {
     cerr << "ALIGNER FAILURE!!!!!!!!!!!!!!!" << endl;
     cerr << "inliers/minimum number of inliers: " << aligner->inliers() << " / " << al_minNumInliers << endl;
-    cerr << "error/minimum error: " << aligner->error() / aligner->inliers() << " / " << al_minError << endl;
+    if(aligner->inliers() != 0)
+      cerr << "error: " << aligner->error() / aligner->inliers() << " / " << al_minError << endl;
+    else
+      cerr << "error: " << std::numeric_limits<float>::max() << " / " << al_minError << endl;
     localTransformation = initialGuess;
     failure = true;
   }

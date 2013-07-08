@@ -1,6 +1,8 @@
 #include "aligner.h"
 #include <omp.h>
 
+using namespace std;
+
 namespace pwn {
 
 Linearizer::Linearizer() {
@@ -24,7 +26,7 @@ void Linearizer::update() {
   int _inliers[numThreads];
   float _errors[numThreads];
   int iterationsPerThread = _aligner->correspondenceFinder()->numCorrespondences()/numThreads;
-  #pragma omp parallel
+#pragma omp parallel
   {
     int threadId = omp_get_thread_num();
     int imin = iterationsPerThread*threadId;
@@ -47,7 +49,6 @@ void Linearizer::update() {
     float &error = _errors[threadId];
     error = 0;
     inliers = 0;
-    
     for(int i = imin; i < imax; i++) {
       const Correspondence &correspondence = _aligner->correspondenceFinder()->correspondences()[i];
       const Point referencePoint = _T * _aligner->referenceFrame()->points()[correspondence.referenceIndex];

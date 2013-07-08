@@ -33,6 +33,7 @@ int main (int argc, char** argv) {
   float normalLenght;
   float normalStep;
   float alpha;
+  int applyTransform;
 
   const int maxFiles = 1000;
   std::vector<string> filenames(maxFiles);
@@ -41,6 +42,7 @@ int main (int argc, char** argv) {
   g2o::CommandArgs arg;
   arg.param("pointSize",pointSize,1.0f,"size of the points") ;
   arg.param("normalLenght",normalLenght,0,"lenght of the normals") ;
+  arg.param("transform",applyTransform,1,"apply transform") ;
   arg.param("alpha",alpha,1.0f,"alpha channel for points") ;
   arg.param("pointStep",pointStep,1,"step of the points") ;
   arg.param("normalStep",normalStep,1,"step of the normals") ;
@@ -91,7 +93,8 @@ int main (int argc, char** argv) {
 	  listWidget->addItem(QString(filenames[i].c_str()));
 	}
 	transform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-	frame->transformInPlace(transform);
+	if(applyTransform)
+	  frame->transformInPlace(transform);
 
 	GLParameterPoints* pointsParams = new GLParameterPoints(pointSize, Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
 	pointsParams->setStep(pointStep);

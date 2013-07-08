@@ -37,12 +37,19 @@ namespace pwn {
     _sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     _pinholePointProjector = new PinholePointProjector();
     _multiPointProjector = new MultiPointProjector();
-    updateProjectors();
 
     // Correspondence finder and linearizer init
     _correspondenceFinder = new CorrespondenceFinder();
+     updateProjectors();
     _linearizer = new Linearizer() ;
     
+    // Information matrix calculators init
+    _curvatureThreshold = 0.1f;
+    _pointInformationMatrixCalculator = new PointInformationMatrixCalculator();
+    _normalInformationMatrixCalculator = new NormalInformationMatrixCalculator();
+    _pointInformationMatrixCalculator->setCurvatureThreshold(_curvatureThreshold);
+    _normalInformationMatrixCalculator->setCurvatureThreshold(_curvatureThreshold);
+
     // Aligner init
     _minNumInliers = 10000;
     _minError = 10.0f;
@@ -119,6 +126,12 @@ namespace pwn {
       return false;
     }
 
+    // Computing information matrices
+    frame->pointInformationMatrix().resize(frame->points().size());
+    frame->normalInformationMatrix().resize(frame->points().size());
+    _pointInformationMatrixCalculator->compute(frame->pointInformationMatrix(), frame->stats(), frame->normals());
+    _normalInformationMatrixCalculator->compute(frame->normalInformationMatrix(), frame->stats(), frame->normals());
+    
     return true;
   }
 
@@ -133,8 +146,10 @@ namespace pwn {
     Eigen::Isometry3d delta = referenceFrame->vertex()->estimate().inverse() * currentFrame->vertex()->estimate();
     for(int c = 0; c < 4; c++)
       for(int r = 0; r < 3; r++)
-	initialGuess.matrix()(r, c) = delta.matrix()(r, c);    
-    
+	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
+    // Keep only rotation
+    initialGuess.matrix().col(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+
     Eigen::Isometry3f imuMean;
     Matrix6f imuInfo;
     bool hasImu = this->extractAbsolutePrior(imuMean, imuInfo, currentFrame);    
@@ -203,10 +218,8 @@ namespace pwn {
     
       _multiPointProjector->addPointProjector(_pinholePointProjector, currentSensorOffset, 
 					      _scaledImageRows, _scaledImageCols);
-
-      int rows, cols;
-      _multiPointProjector->size(rows, cols);
-    } 
+    }
+    
+    _correspondenceFinder->setSize(_scaledImageRows, _scaledImageCols);
   }
-
 }
