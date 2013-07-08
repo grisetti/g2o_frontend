@@ -11,6 +11,7 @@ ADD_LIBRARY(ransac ${G2O_FRONTEND_LIB_TYPE}
   alignment_plane_linear.cpp 
   alignment_plane_linear.h
   alignment_line2d_linear.cpp alignment_line2d_linear.h
+  id_correspondence_validator.cpp id_correspondence_validator.h
   distance_correspondence_validator.cpp distance_correspondence_validator.h
   line2d_correspondence_validator.cpp line2d_correspondence_validator.h
 )

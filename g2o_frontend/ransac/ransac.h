@@ -217,14 +217,17 @@ public:
 
                 os1minset << p11.transpose() << endl;
                 os1minset << p12.transpose() << endl;
+                os1minset << endl;
 
                 os2minset << p21.transpose() << endl;
                 os2minset << p22.transpose() << endl;
+                os2minset << endl;
 
                 p21 = t * p21;
                 p22 = t * p22;
                 os2minsetRem << p21.transpose() << endl;
                 os2minsetRem << p22.transpose() << endl;
+                os2minsetRem << endl;
 
                 //link for the correspondances
                 Eigen::Vector2d pm1 = (p11+p12)*0.5;
@@ -375,23 +378,23 @@ public:
 
 
         //saving the correspondances (inliers) into files for octave uses
-        ofstream os1corr("l1_octave.dat");
-        ofstream os2corr("l2_octave.dat");
-        for (size_t i = 0; i<bestInliers.size(); i++){
-            int idx = bestInliers[i];
-            Correspondence& c=_correspondences[idx];
-            g2o::OptimizableGraph::Edge* e=c.edge();
+//        ofstream os1corr("l1_octave.dat");
+//        ofstream os2corr("l2_octave.dat");
+//        for (size_t i = 0; i<bestInliers.size(); i++){
+//            int idx = bestInliers[i];
+//            Correspondence& c=_correspondences[idx];
+//            g2o::OptimizableGraph::Edge* e=c.edge();
 
-            PointVertexType* v1=static_cast<PointVertexType*>(e->vertex(0));
-            const PointEstimateType theLine1 = v1->estimate();
-            Eigen::Vector3d line1 = Eigen::Vector3d(cos(theLine1(0)), sin(theLine1(0)), theLine1(1));
-            os1corr << line1.transpose() << endl;
+//            PointVertexType* v1=static_cast<PointVertexType*>(e->vertex(0));
+//            const PointEstimateType theLine1 = v1->estimate();
+//            Eigen::Vector3d line1 = Eigen::Vector3d(cos(theLine1(0)), sin(theLine1(0)), theLine1(1));
+//            os1corr << line1.transpose() << endl;
 
-            PointVertexType* v2=static_cast<PointVertexType*>(e->vertex(1));
-            const PointEstimateType theLine2 = v2->estimate();
-            Eigen::Vector3d line2 = Eigen::Vector3d(cos(theLine2(0)), sin(theLine2(0)), theLine2(1));
-            os2corr << line2.transpose() << endl;
-        }
+//            PointVertexType* v2=static_cast<PointVertexType*>(e->vertex(1));
+//            const PointEstimateType theLine2 = v2->estimate();
+//            Eigen::Vector3d line2 = Eigen::Vector3d(cos(theLine2(0)), sin(theLine2(0)), theLine2(1));
+//            os2corr << line2.transpose() << endl;
+//        }
 
         //mal
         inliers_=bestInliers;
