@@ -144,12 +144,15 @@ Message* Deserializer::readMessage() {
           _waitingInstances[*instance_it].erase(*id_it);
           if (_waitingInstances[*instance_it].empty()) {
             _waitingInstances.erase(*instance_it);
-            //TODO Notify serialization complete to the instance
+            (*instance_it)->deserializeComplete();
           }
         }
         _danglingReferences.erase(*id_it);
       }
     }
+  }
+  if (danglingPointers.empty()) {
+    instance->deserializeComplete();
   }
   return new Message(msgData->getTimestamp(),msgData->getSource(),instance);
 }

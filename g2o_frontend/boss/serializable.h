@@ -41,7 +41,12 @@ public:
    * Restore object status here
    */
   virtual void deserialize(ObjectData& data, IdContext& context)=0;
-  
+
+  /*!
+   * Deserializazion callback method, invoked by deserializer when all dangling pointers have been resolved
+   */
+  virtual void deserializeComplete();
+
   virtual ~Serializable() {}
 
   ObjectData* getSerializedData(IdContext& context);

@@ -42,7 +42,7 @@ protected:
   BaseBLOBReference* _ref;
 };
 
-class BaseBLOBReference: virtual public Identifiable {
+class BaseBLOBReference: public Identifiable {
 public:
   BaseBLOBReference(BLOB* instance, int id, IdContext* context):
     Identifiable(id, context), _instance(instance) {}

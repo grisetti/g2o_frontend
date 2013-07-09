@@ -62,3 +62,6 @@ ObjectData* Serializable::getSerializedData(IdContext& context) {
   serialize(*o,context);
   return o;
 }
+
+void Serializable::deserializeComplete() {}
+
