@@ -13,6 +13,7 @@ endif(OPENMP_FOUND)
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${CSPARSE_INCLUDE_DIR})
 
 ADD_LIBRARY(pwn_mapper_library
+  g2o_frame.h
   pwn_mapper_controller.cpp pwn_mapper_controller.h
   pwn_loop_closer_controller.cpp pwn_loop_closer_controller.h
 )

@@ -52,12 +52,12 @@ void Aligner::align() {
   // the current points are seen from the frame of the sensor
   _projector->setTransform(_sensorOffset);
   _projector->project(_correspondenceFinder->currentIndexImage(),
-              _correspondenceFinder->currentDepthImage(),
-              _currentFrame->points());
+		      _correspondenceFinder->currentDepthImage(),
+		      _currentFrame->points());
   _T = _initialGuess;
   
-  //_correspondenceFinder->currentDepthImage().save("current.pgm", true);
-  //_currentFrame->save("current.pwn", 1, true);
+  _correspondenceFinder->currentDepthImage().save("current.pgm", true);
+  _currentFrame->save("current.pwn", 1, true);
 
   for(int i = 0; i < _outerIterations; i++) {
     /************************************************************************
@@ -68,13 +68,16 @@ void Aligner::align() {
     _T.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     _projector->setTransform(_T * _sensorOffset);
     _projector->project(_correspondenceFinder->referenceIndexImage(),
-            _correspondenceFinder->referenceDepthImage(),
-            _referenceFrame->points());
+			_correspondenceFinder->referenceDepthImage(),
+			_referenceFrame->points());
     
-    //char buf[1024];
-    //sprintf(buf, "reference-%02d.pgm", i);
-    //_correspondenceFinder->referenceDepthImage().save(buf, true);
+    char buf[1024];
+    sprintf(buf, "reference-%02d.pgm", i);
+    _correspondenceFinder->referenceDepthImage().save(buf, true);
     
+    sprintf(buf, "reference-%02d.pwn", i);
+    _referenceFrame->save(buf, 1, true, _T);
+
     // Correspondences computation.  
     _correspondenceFinder->compute(*_referenceFrame, *_currentFrame, _T.inverse());
     //cerr << "cf, numFound:" << _correspondenceFinder->numCorrespondences() << endl;

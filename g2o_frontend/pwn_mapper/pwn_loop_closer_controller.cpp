@@ -147,14 +147,13 @@ namespace pwn {
     for(int c = 0; c < 4; c++)
       for(int r = 0; r < 3; r++)
 	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
-    // Keep only rotation
-    initialGuess.matrix().col(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-
+    
     Eigen::Isometry3f imuMean;
     Matrix6f imuInfo;
     bool hasImu = this->extractAbsolutePrior(imuMean, imuInfo, currentFrame);    
-    initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-    
+    initialGuess = Isometry3f::Identity();
+    initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;    
+
     // Setting aligner
     _aligner->clearPriors();
     _aligner->setReferenceFrame(referenceFrame);
@@ -216,7 +215,9 @@ namespace pwn {
 	currentSensorOffset.linear() =  AngleAxisf(i * angleStep, Vector3f::UnitZ()) * _sensorOffset.linear();
       currentSensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     
-      _multiPointProjector->addPointProjector(_pinholePointProjector, currentSensorOffset, 
+      PinholePointProjector *currentPinholePointProjector = new PinholePointProjector();
+      currentPinholePointProjector->setCameraMatrix(_scaledCameraMatrix);
+      _multiPointProjector->addPointProjector(currentPinholePointProjector, currentSensorOffset, 
 					      _scaledImageRows, _scaledImageCols);
     }
     

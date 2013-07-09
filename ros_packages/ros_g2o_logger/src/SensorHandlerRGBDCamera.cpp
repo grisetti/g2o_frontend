@@ -6,9 +6,9 @@
 #include <g2o/types/slam3d/isometry3d_mappings.h>
 
 SensorHandlerRGBDCamera::SensorHandlerRGBDCamera(tf::TransformListener* tfListener_) : _intensity_sub(NULL),
-                                                     _depth_sub(NULL),
-                                                     _sync(NULL),
-                                                     _nh(NULL)
+										       _depth_sub(NULL),
+										       _sync(NULL),
+										       _nh(NULL)
 {
   _tfListener = tfListener_;
   _isCalibrated = false;
@@ -65,23 +65,32 @@ void SensorHandlerRGBDCamera::_calibrationCallback(const sensor_msgs::ImageConst
     ROS_ERROR("No sensor is set");
     return;
   }
-  
-//  cerr << "I" << endl;
 
-  string frame_id = raw_intensity_image->header.frame_id;
-  tf::StampedTransform transform;
   geometry_msgs::TransformStamped humanReadableAndNiceTransform;
-  try {
-    ros::Time timeStamp;
-    // Get transformation
-    _tfListener->lookupTransform("/base_link", frame_id, raw_intensity_image->header.stamp, transform);
-    _isCalibrated = true;
-    tf::transformStampedTFToMsg(transform, humanReadableAndNiceTransform);
-  }
-  catch (tf::TransformException & ex) {
-    ROS_ERROR("%s", ex.what());
-  } 
+  // string frame_id = raw_intensity_image->header.frame_id;
+  // tf::StampedTransform transform;
+  // try {
+  //   ros::Time timeStamp;
+  //   // Get transformation
+  //   _tfListener->lookupTransform("/base_link", frame_id, raw_intensity_image->header.stamp, transform);
+  //   _isCalibrated = true;
+  //   tf::transformStampedTFToMsg(transform, humanReadableAndNiceTransform);
+  // }
+  // catch (tf::TransformException & ex) {
+  //   ROS_ERROR("%s", ex.what());
+  // } 
   
+
+  // HAKK
+  _isCalibrated = true;
+  humanReadableAndNiceTransform.transform.translation.x = 0.0f;
+  humanReadableAndNiceTransform.transform.translation.y = 0.0f;
+  humanReadableAndNiceTransform.transform.translation.z = 0.0f;
+  humanReadableAndNiceTransform.transform.rotation.x = 0.0f;
+  humanReadableAndNiceTransform.transform.rotation.y = 0.0f;
+  humanReadableAndNiceTransform.transform.rotation.z = 0.0f;
+  humanReadableAndNiceTransform.transform.rotation.w = 1.0f;
+
   if (_isCalibrated){
     g2o::Vector7d vectorQT;
     vectorQT[0] = humanReadableAndNiceTransform.transform.translation.x;

@@ -1,11 +1,12 @@
 #ifndef _PWN_LOOP_CLOSER_CONTROLLER_H_
 #define _PWN_LOOP_CLOSER_CONTROLLER_H_
 
+#include "g2o_frame.h"
+
 #include "g2o/core/sparse_optimizer.h"
 
 #include "g2o_frontend/basemath/bm_se3.h"
 
-#include "g2o_frontend/pwn2/g2o_frame.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/multipointprojector.h"
 #include "g2o_frontend/pwn2/informationmatrixcalculator.h"
@@ -116,7 +117,7 @@ namespace pwn {
     bool alignVertexWithPWNData(Isometry3f &transform, 
 				G2OFrame *referenceFrame, 
 				G2OFrame *currentFrame);
-
+  
   protected:
     // Projectors
     PinholePointProjector *_pinholePointProjector;

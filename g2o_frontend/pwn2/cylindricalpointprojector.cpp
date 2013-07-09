@@ -1,8 +1,8 @@
 #include "cylindricalpointprojector.h"
-#include <iostream>
+
+using namespace std;
 
 namespace pwn {
-  using namespace std;
   
   CylindricalPointProjector::CylindricalPointProjector() : PointProjector() {
     _angularFov = M_PI/2; // 180 deg fov

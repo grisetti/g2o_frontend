@@ -38,6 +38,13 @@ set(G2O_FRONTEND $ENV{G2O_FRONTEND_ROOT})
 FIND_PACKAGE(Qt4)
 INCLUDE(${QT_USE_FILE})
 
+FIND_PACKAGE(SuiteSparse)
+IF(CSPARSE_FOUND)
+MESSAGE(STATUS "CSPARSE FOUND")  
+ELSE(CSPARSE_FOUND)
+MESSAGE(STATUS "CSPARSE NOT FOUND")
+ENDIF(CSPARSE_FOUND)
+
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
@@ -48,7 +55,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
-include_directories(${G2O_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} ${G2O_FRONTEND} ${QT_INCLUDES} 
+include_directories(${G2O_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} ${G2O_FRONTEND} ${QT_INCLUDES} ${CSPARSE_INCLUDE_DIR} 
 	#${QT_INCLUDES} ${QT_QTCORE_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR}/..
 	#${QGLVIEWER_INCLUDE_DIR} 
 	)
@@ -66,10 +73,25 @@ src/SensorHandlerImu.cpp
 rosbuild_link_boost(SensorHandlers thread)
 rosbuild_add_executable(logger src/Logger.cpp)
 rosbuild_link_boost(logger signals)
-target_link_libraries(logger ${G2O_STUFF_LIBRARY} ${G2O_CORE_LIBRARY} g2o_types_slam3d SensorHandlers 
-g2o_frontend_sensor_data g2o_frontend_pwn2_library g2o_frontend_pwn_viewer g2o_frontend_traverse_library pwn_mapper)
-# just to know how to link_libraries
-#target_link_libraries(kinect2g2o_thrd ${G2O_TYPES_DATA} g2o_frontend_types_data ${G2O_TYPES_SLAM3D})
+target_link_libraries(logger 
+  ${G2O_CORE_LIBRARY}
+  ${G2O_OPENGL_HELPER_LIBRARY}
+  ${G2O_TYPES_DATA}
+  ${G2O_TYPES_SLAM2D}
+  ${G2O_TYPES_SLAM3D}
+  ${G2O_STUFF_LIBRARY}
+  ${G2O_CORE_LIBRARY}
+  ${G2O_SOLVER_CSPARSE}
+  ${G2O_STUFF_LIBRARY}
+  ${G2O_SOLVER_CSPARSE_EXTENSION}
+  ${CSPARSE_LIBRARY}
+  SensorHandlers 
+  g2o_frontend_sensor_data 
+  g2o_frontend_pwn2_library 
+  g2o_frontend_pwn_viewer 
+  #g2o_frontend_traverse_library 
+  pwn_mapper
+)
 
 rosbuild_add_executable(bag2img src/bag_2_img.cpp)
 rosbuild_link_boost(bag2img signals)

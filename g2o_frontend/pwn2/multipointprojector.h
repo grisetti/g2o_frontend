@@ -49,7 +49,7 @@ class MultiPointProjector: public PointProjector {
     _pointProjectors[position].height = height_;
   }
 
-  void clearProjectors() { _pointProjectors.clear(); }
+  void clearProjectors();
 
   virtual void size(int &rows, int &cols);
 

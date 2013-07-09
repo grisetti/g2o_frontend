@@ -1,10 +1,11 @@
 #ifndef _PWN_MAPPER_CONTROLLER_H_
 #define _PWN_MAPPER_CONTROLLER_H_
 
+#include "g2o_frame.h"
+
 #include "g2o_frontend/basemath/bm_se3.h"
 
 #include "g2o_frontend/pwn2/frame.h"
-#include "g2o_frontend/pwn2/g2o_frame.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/multipointprojector.h"
 #include "g2o_frontend/pwn2/informationmatrixcalculator.h"

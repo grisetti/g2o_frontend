@@ -197,10 +197,11 @@ bool PWNMapperController::alignIncrementally(){
   
   if(ii.cols() != imageCols || ii.rows() != imageRows) 
     ii.resize(imageRows, imageCols);
-  multiProjector->setTransform(initialPose.inverse()*reference->globalTransform());
+  multiProjector->setTransform(reference->globalTransform().inverse() * initialPose);
   multiProjector->project(ii, di, mergedClouds->points());
   multiConverter->compute(subScene, di, Isometry3f::Identity(), true);
   aligner->setReferenceFrame(&subScene);
+  subScene.save("subscene.pwn", 1, true);
 
   aligner->setCurrentFrame(current);
   aligner->setInitialGuess(initialGuess);
@@ -227,7 +228,6 @@ bool PWNMapperController::alignIncrementally(){
 
   globalT = reference->globalTransform()*localTransformation;
   // recondition the rotation to prevent roundoff to accumulate
-  
   Eigen::Matrix3f R = globalT.linear();
   Eigen::Matrix3f E = R.transpose()*R;
   E.diagonal().array() -= 1;
