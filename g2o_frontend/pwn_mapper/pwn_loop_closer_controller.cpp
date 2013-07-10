@@ -16,6 +16,7 @@ using namespace g2o;
 namespace pwn {
   
   PWNLoopCloserController::PWNLoopCloserController(OptimizableGraph *graph_) {
+    // Graph init
     _graph = graph_;
     
     // Projectors init
@@ -41,7 +42,7 @@ namespace pwn {
     // Correspondence finder and linearizer init
     _correspondenceFinder = new CorrespondenceFinder();
      updateProjectors();
-    _linearizer = new Linearizer() ;
+    _linearizer = new Linearizer();
     
     // Information matrix calculators init
     _curvatureThreshold = 0.1f;

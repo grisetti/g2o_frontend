@@ -76,7 +76,7 @@ namespace pwn {
     inline CorrespondenceFinder* correspondenceFinder() { return _correspondenceFinder; }
     inline Linearizer* linearizer() { return _linearizer; }
 
-    // Information matrix calculators
+    // Information matrix calculators settings methods
     inline void setPointInformationMatrixCalculator(PointInformationMatrixCalculator* const pointInformationMatrixCalculator_) { _pointInformationMatrixCalculator = pointInformationMatrixCalculator_; }
     inline void setNormalInformationMatrixCalculator(NormalInformationMatrixCalculator* const normalInformationMatrixCalculator_) { _normalInformationMatrixCalculator = normalInformationMatrixCalculator_; }
     inline void setCurvatureThreshold(const float curvatureThreshold_) { 
@@ -89,7 +89,7 @@ namespace pwn {
     inline NormalInformationMatrixCalculator* normalInformationMatrixCalculator() { return _normalInformationMatrixCalculator; }
     inline float curvatureThreshold() const { return _curvatureThreshold; }
 
-    // Alignement settings methods
+    // Aligner settings methods
     inline void setAligner(Aligner* const aligner_) { _aligner = aligner_; }
     inline void setOuterIterations(const int outerIterations_) const { _aligner->setOuterIterations(outerIterations_); }
     inline void setInnerIterations(const int innerIterations_) const { _aligner->setInnerIterations(innerIterations_); }
