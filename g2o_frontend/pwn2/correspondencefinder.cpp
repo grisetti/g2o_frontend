@@ -1,7 +1,6 @@
 #include "correspondencefinder.h"
 #include <omp.h>
 
-#include <iostream>
 using namespace std;
 
 namespace pwn {
@@ -23,7 +22,6 @@ void CorrespondenceFinder::compute(const Frame &referenceScene, const Frame &cur
   if((int)_correspondences.size() != _referenceIndexImage.rows() * _referenceIndexImage.cols())
     _correspondences.resize(_referenceIndexImage.rows() * _referenceIndexImage.cols());
 
-  //cerr << "cf: " << _referenceIndexImage.rows() << " " << _referenceIndexImage.cols() << endl;
   float minCurvatureRatio = 1./_inlierCurvatureRatioThreshold;
   float maxCurvatureRatio = _inlierCurvatureRatioThreshold;
 
@@ -39,32 +37,33 @@ void CorrespondenceFinder::compute(const Frame &referenceScene, const Frame &cur
     localCorrespondenceIndex[i] = localOffset[i];
   }
 
-#pragma omp parallel 
+  #pragma omp parallel 
   {
     int threadId = omp_get_thread_num();
     int cMin = threadId * columnsPerThread;
     int cMax = cMin + columnsPerThread;
-    if (cMax > _referenceIndexImage.cols())
+    if(cMax > _referenceIndexImage.cols())
       cMax = _referenceIndexImage.cols();
-    int& correspondenceIndex = localCorrespondenceIndex[threadId];
+    int &correspondenceIndex = localCorrespondenceIndex[threadId];
     for (int c = cMin;  c < cMax; c++) {
       for (int r = 0; r < _referenceIndexImage.rows(); r++) {
 	const int referenceIndex = _referenceIndexImage(r, c);
 	const int currentIndex = _currentIndexImage(r, c);
 	if (referenceIndex < 0 || currentIndex < 0)
 	  continue;
-
-    const Normal &currentNormal = currentScene.normals()[currentIndex];
-    const Point &_referenceNormal = referenceScene.normals()[referenceIndex];
-    const Point &currentPoint = currentScene.points()[currentIndex];
-    const Point &_referencePoint = referenceScene.points()[referenceIndex];
 	
-	//if(currentNormal.squaredNorm() == 0.0f || _referenceNormal.squaredNorm() == 0.0f)
-	//continue;
+	const Normal &currentNormal = currentScene.normals()[currentIndex];
+	const Point &_referenceNormal = referenceScene.normals()[referenceIndex];
+	const Point &currentPoint = currentScene.points()[currentIndex];
+	const Point &_referencePoint = referenceScene.points()[referenceIndex];
+
+	if(currentNormal.squaredNorm() == 0.0f || _referenceNormal.squaredNorm() == 0.0f)
+	  continue;
 
 	// remappings
-    Point referencePoint = T * _referencePoint;
-    Normal referenceNormal = T * _referenceNormal;
+	Point referencePoint = T * _referencePoint;
+	Normal referenceNormal = T * _referenceNormal;
+	
 	// this condition captures the angluar offset, and is moved to the end of the loop
 	if (currentNormal.dot(referenceNormal) < _inlierNormalAngularThreshold) 
 	  continue;
@@ -73,7 +72,7 @@ void CorrespondenceFinder::compute(const Frame &referenceScene, const Frame &cur
 	// the condition below has moved to the increment, fill the pipeline, baby
 	if (pointsDistance.squaredNorm() > _squaredThreshold)
 	  continue;     	
-	
+
 	float referenceCurvature = referenceScene.stats()[referenceIndex].curvature();
 	float currentCurvature = currentScene.stats()[currentIndex].curvature();
 	if (referenceCurvature < _flatCurvatureThreshold)
@@ -82,17 +81,18 @@ void CorrespondenceFinder::compute(const Frame &referenceScene, const Frame &cur
 	if (currentCurvature < _flatCurvatureThreshold)
 	  currentCurvature = _flatCurvatureThreshold;
 
-	float curvatureRatio = (referenceCurvature + 1e-5)/(currentCurvature + 1e-5);
 	// the condition below has moved to the increment, fill the pipeline, baby
+	float curvatureRatio = (referenceCurvature + 1e-5)/(currentCurvature + 1e-5);
 	if (curvatureRatio < minCurvatureRatio || curvatureRatio > maxCurvatureRatio)
 	  continue;
-
+	
 	_correspondences[correspondenceIndex].referenceIndex = referenceIndex;
 	_correspondences[correspondenceIndex].currentIndex = currentIndex;
 	correspondenceIndex++;
       }
     }
   }
+
   // assemble the solution
   int k=0;
   for (int t=0; t<numThreads; t++){

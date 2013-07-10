@@ -12,7 +12,8 @@ namespace boss {
     FrameRelation(int id=-1, boss::IdContext* context = 0);
     virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
     virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
-  
+    virtual void deserializeComplete();
+
     inline const Eigen::Isometry3d& transform() {return _transform;}
     inline void setTransform(Eigen::Isometry3d& transform_) {_transform = transform_;}
   
@@ -32,6 +33,8 @@ namespace boss {
     Eigen::Isometry3d _transform;
     Eigen::Matrix<double, 6,6> _informationMatrix;
     Frame* _fromFrame, *_toFrame;
+  private:
+    Identifiable* _tempFromFrame, *_tempToFrame;
   };
 
 } // end namespace

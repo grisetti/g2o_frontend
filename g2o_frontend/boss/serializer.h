@@ -30,7 +30,7 @@ namespace boss {
 
 class MessageWriter;
 
-class Serializer: virtual public SerializationContext {
+class Serializer: public SerializationContext {
 public:
   Serializer();
   

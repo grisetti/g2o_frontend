@@ -26,7 +26,7 @@ namespace boss {
 
 class IdContext;
 
-class Identifiable: virtual public Serializable {
+class Identifiable: public Serializable {
 
 public:
   Identifiable(int id=-1, IdContext* context=0);

@@ -20,13 +20,13 @@
 #include <g2o_frontend/pwn2/depthimageconverter.h>
 #include <g2o_frontend/pwn2/pinholepointprojector.h>
 #include <g2o_frontend/pwn2/correspondencefinder.h>
-#include <g2o_frontend/pwn2/statsfinder.h>
+#include <g2o_frontend/pwn2/statscalculator.h>
 #include <g2o_frontend/pwn2/aligner.h>
 #include <g2o_frontend/pwn2/linearizer.h>
 #include "g2o_frontend/pwn_mapper/pwn_mapper_controller.h"
 #include "g2o_frontend/pwn_viewer/drawable_frame.h"
 
-#include <g2o_frontend/traversability/traversability_analyzer.h>
+//#include <g2o_frontend/traversability/traversability_analyzer.h>
 
 //HAKKE
 #include <g2o_frontend/sensor_data/rgbd_data.h>
@@ -109,25 +109,25 @@ Eigen::Vector2d isometry2distance(const Eigen::Isometry3d& t) {
 			 fabs(Eigen::AngleAxisd(t.rotation()).angle()));
 }
 
-bool readAndProcess(Frame *frame, int &imageRows, int &imageCols, std::string fname, int reduction, Eigen::Isometry3f sensorOffset, 
-		    DepthImageConverter &converter, TraversabilityAnalyzer &traversabilityAnalyzer) {
-  DepthImage depthImage;
-  if(!depthImage.load(fname.c_str(), true)){
-    cerr << " Skipping " << fname << endl;
-    return false;
-  }
+// bool readAndProcess(Frame *frame, int &imageRows, int &imageCols, std::string fname, int reduction, Eigen::Isometry3f sensorOffset, 
+// 		    DepthImageConverter &converter, TraversabilityAnalyzer &traversabilityAnalyzer) {
+//   DepthImage depthImage;
+//   if(!depthImage.load(fname.c_str(), true)){
+//     cerr << " Skipping " << fname << endl;
+//     return false;
+//   }
 
-  DepthImage scaledDepthImage;
-  DepthImage::scale(scaledDepthImage, depthImage, reduction);
-  imageRows = scaledDepthImage.rows();
-  imageCols = scaledDepthImage.cols();
+//   DepthImage scaledDepthImage;
+//   DepthImage::scale(scaledDepthImage, depthImage, reduction);
+//   imageRows = scaledDepthImage.rows();
+//   imageCols = scaledDepthImage.cols();
 	
-  converter.compute(*frame, scaledDepthImage, sensorOffset);
-  traversabilityAnalyzer.createTraversabilityVector(frame->points(),
-						    frame->normals(),
-						    frame->traversabilityVector());
-  return true;
-}
+//   converter.compute(*frame, scaledDepthImage, sensorOffset);
+//   traversabilityAnalyzer.createTraversabilityVector(frame->points(),
+// 						    frame->normals(),
+// 						    frame->traversabilityVector());
+//   return true;
+// }
 
 void computeSensorOffsetAndK(Eigen::Isometry3f &sensorOffset, Eigen::Matrix3f &cameraMatrix, ParameterCamera *cameraParam, int reduction) {
   sensorOffset = Isometry3f::Identity();
@@ -152,31 +152,31 @@ void computeSensorOffsetAndK(Eigen::Isometry3f &sensorOffset, Eigen::Matrix3f &c
   cameraMatrix(2,2) = 1;
 }
 
-void computeTraverse() {
-  DepthImage depthImage, scaledDepthImage;
-  pwn::PWNMapperController *controller = new pwn::PWNMapperController();
-  g2o::HyperGraph::Vertex *_v = 0;
-  controller->init(graph);
-  while(true) {
-    if(vertecesQueue.size() > 3) {
-      _v = vertecesQueue.front();
-      g2o::VertexSE3* v = dynamic_cast<g2o::VertexSE3*>(_v);
-      vertecesQueue.pop_front();
-      if(!v)
-	continue;
+// void computeTraverse() {
+//   DepthImage depthImage, scaledDepthImage;
+//   pwn::PWNMapperController *controller = new pwn::PWNMapperController();
+//   g2o::HyperGraph::Vertex *_v = 0;
+//   controller->init(graph);
+//   while(true) {
+//     if(vertecesQueue.size() > 3) {
+//       _v = vertecesQueue.front();
+//       g2o::VertexSE3* v = dynamic_cast<g2o::VertexSE3*>(_v);
+//       vertecesQueue.pop_front();
+//       if(!v)
+// 	continue;
       
-      if(!controller->addVertex(v))
-	continue;
+//       if(!controller->addVertex(v))
+// 	continue;
 
-      controller->alignIncrementally();
+//       controller->alignIncrementally();
 
-      controller->computeTraversability();
-    }
-    else {
-      usleep(20e3);
-    }
-  }
-}
+//       controller->computeTraversability();
+//     }
+//     else {
+//       usleep(20e3);
+//     }
+//   }
+// }
 
 bool extractRelativePrior(Eigen::Isometry3f& priorMean, Matrix6f& priorInfo, 
 			  VertexSE3* referenceVertex, VertexSE3* currentVertex) {
@@ -254,7 +254,6 @@ void writeQueue() {
   // We do not want to put 10 camera images of the same camera in the same vertex.
   std::set<Sensor*> addedSensors;
 
-
   Eigen::Vector2d distances(0.,0);
   while (true)
   {
@@ -268,7 +267,7 @@ void writeQueue() {
 	_queue.pop_front();
 	if (! nptr->ok())
 	  continue;
-
+	
 	tf::StampedTransform transform;
 	bool we_got_transf = false;
 	try
@@ -286,7 +285,6 @@ void writeQueue() {
 	if (! we_got_transf)
 	  continue;
 				
-
 	Eigen::Isometry3d currentRobotPose = fromStampedTransform(transform);
 	double currentDataTime = data->timeStamp();
 	distances += isometry2distance(lastRobotPose.inverse()*currentRobotPose);
@@ -400,7 +398,7 @@ int main(int argc, char** argv) {
 	
   // creare i sensors
   kinect = new SensorRGBDCamera();
-  kinect->setTopics("/kinect/rgb/image_color","/kinect/depth_registered/image_raw");
+  kinect->setTopics("/camera/rgb/image_raw", "/camera/depth/image_raw");
   kinect->parameter()->setId(0);
   // creare i sensor handler e passargli il puntatore alla coda &queue
   shKinect = new SensorHandlerRGBDCamera(tfListener);
@@ -438,9 +436,11 @@ int main(int argc, char** argv) {
   // thread to process queue
   boost::thread thrd;
   thrd = boost::thread(writeQueue);
+  
   // thread to process the vertex queue
-  boost::thread thrdTraverse;
-  thrdTraverse = boost::thread(computeTraverse);
+  //boost::thread thrdTraverse;
+  //thrdTraverse = boost::thread(computeTraverse);
+  
   ros::spin();
   return (0);
 }

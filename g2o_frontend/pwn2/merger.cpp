@@ -15,8 +15,7 @@ Merger::Merger() {
 }
 
 void Merger::merge(Frame *frame, Eigen::Isometry3f transform) {
-  assert(_depthImageConverter _indexImage.rows() != 0 && _indexImage.cols());
-  //PinholePointProjector *pointProjector = dynamic_cast<PinholePointProjector*>(_depthImageConverter->_projector);
+  assert(_depthImageConverter _indexImage.rows() != 0 && _indexImage.cols());  
   PointProjector *pointProjector = _depthImageConverter->_projector;
   assert(pointProjector);
   pointProjector->setTransform(transform);
@@ -34,6 +33,8 @@ void Merger::merge(Frame *frame, Eigen::Isometry3f transform) {
   //      skip
   // accumulate the point in the cell i
   // set the target accumulator to i;
+  int target = 0;
+  int distance = 0;
   _collapsedIndices.resize(frame->points().size());
   std::fill(_collapsedIndices.begin(), _collapsedIndices.end(), -1);
     
@@ -49,15 +50,19 @@ void Merger::merge(Frame *frame, Eigen::Isometry3f transform) {
     if(depth < 0 || depth > _maxPointDepth || 
        r < 0 || r >= _depthImage.rows() || 
        c < 0 || c >= _depthImage.cols()) {
+      distance++;
       continue;
     }
     
+    
     float &targetZ = _depthImage(r, c);
     int targetIndex = _indexImage(r, c);
-    const Normal &targetNormal = frame->normals()[targetIndex];
     if(targetIndex < 0) {
+      target++;
       continue;
     }
+    const Normal &targetNormal = frame->normals().at(targetIndex);
+
     if(targetIndex == currentIndex) {
       _collapsedIndices[currentIndex] = currentIndex;
     } 
@@ -69,8 +74,7 @@ void Merger::merge(Frame *frame, Eigen::Isometry3f transform) {
       killed++;
     }
   }
-  //std::cerr << "Killed: " << killed << std::endl;
-  
+  // std::cerr << "Killed: " << killed << std::endl;
   // scan the vector of covariances.
   // if the index is -1
   //    copy into k
@@ -102,15 +106,15 @@ void Merger::merge(Frame *frame, Eigen::Isometry3f transform) {
     }
   }
     
-  //int originalSize = frame->points().size();
+  int originalSize = frame->points().size();
   // kill the leftover points
   frame->points().resize(k);
   frame->normals().resize(k);
   frame->stats().resize(k);
   frame->pointInformationMatrix().resize(k);
   frame->normalInformationMatrix().resize(k);
-  //cerr << "murdered: " << murdered  << endl;
-  //cerr << "resized: " << originalSize << "->" << k << endl;
+  cerr << "Number of suppressed points: " << murdered  << endl;
+  cerr << "Resized cloud from: " << originalSize << " to " << k << " points" <<endl;
     
   // recompute the normals
   //pointProjector->project(_indexImage, _depthImage, frame->points());

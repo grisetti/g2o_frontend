@@ -1,11 +1,12 @@
 #ifndef _PWN_LOOP_CLOSER_CONTROLLER_H_
 #define _PWN_LOOP_CLOSER_CONTROLLER_H_
 
+#include "g2o_frame.h"
+
 #include "g2o/core/sparse_optimizer.h"
 
 #include "g2o_frontend/basemath/bm_se3.h"
 
-#include "g2o_frontend/pwn2/g2o_frame.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/multipointprojector.h"
 #include "g2o_frontend/pwn2/informationmatrixcalculator.h"
@@ -75,6 +76,19 @@ namespace pwn {
     inline CorrespondenceFinder* correspondenceFinder() { return _correspondenceFinder; }
     inline Linearizer* linearizer() { return _linearizer; }
 
+    // Information matrix calculators
+    inline void setPointInformationMatrixCalculator(PointInformationMatrixCalculator* const pointInformationMatrixCalculator_) { _pointInformationMatrixCalculator = pointInformationMatrixCalculator_; }
+    inline void setNormalInformationMatrixCalculator(NormalInformationMatrixCalculator* const normalInformationMatrixCalculator_) { _normalInformationMatrixCalculator = normalInformationMatrixCalculator_; }
+    inline void setCurvatureThreshold(const float curvatureThreshold_) { 
+      _curvatureThreshold = curvatureThreshold_; 
+      _pointInformationMatrixCalculator->setCurvatureThreshold(_curvatureThreshold);
+      _normalInformationMatrixCalculator->setCurvatureThreshold(_curvatureThreshold);
+    }
+
+    inline PointInformationMatrixCalculator* pointInformationMatrixCalculator() { return _pointInformationMatrixCalculator; }
+    inline NormalInformationMatrixCalculator* normalInformationMatrixCalculator() { return _normalInformationMatrixCalculator; }
+    inline float curvatureThreshold() const { return _curvatureThreshold; }
+
     // Alignement settings methods
     inline void setAligner(Aligner* const aligner_) { _aligner = aligner_; }
     inline void setOuterIterations(const int outerIterations_) const { _aligner->setOuterIterations(outerIterations_); }
@@ -103,7 +117,7 @@ namespace pwn {
     bool alignVertexWithPWNData(Isometry3f &transform, 
 				G2OFrame *referenceFrame, 
 				G2OFrame *currentFrame);
-
+  
   protected:
     // Projectors
     PinholePointProjector *_pinholePointProjector;
@@ -115,6 +129,11 @@ namespace pwn {
     // Correspondece finder and linearizer
     CorrespondenceFinder *_correspondenceFinder;
     Linearizer *_linearizer;
+
+    // Information matrix calculators
+    PointInformationMatrixCalculator *_pointInformationMatrixCalculator;
+    NormalInformationMatrixCalculator *_normalInformationMatrixCalculator;
+    float _curvatureThreshold;
     
     // Aligner
     Aligner *_aligner;

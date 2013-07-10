@@ -49,7 +49,7 @@ class MultiPointProjector: public PointProjector {
     _pointProjectors[position].height = height_;
   }
 
-  void clearProjectors() { _pointProjectors.clear(); }
+  void clearProjectors();
 
   virtual void size(int &rows, int &cols);
 
@@ -70,6 +70,12 @@ class MultiPointProjector: public PointProjector {
 				const Eigen::MatrixXf& depthImage, 
 				const float worldRadius,
 				const bool blackBorders=false) const;
+
+  //virtual inline int projectInterval(const int x, const int y, const float d, const float worldRadius) const;
+
+  virtual bool project(int &x, int &y, float &f, const Point &p) const;
+  
+  //virtual bool unProject(Point &p, const int x, const int y, const float d) const;
 
   virtual void setTransform(const Eigen::Isometry3f &transform_);
 

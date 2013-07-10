@@ -29,6 +29,7 @@ bool Frame::load(Eigen::Isometry3f &T, istream &is) {
   ls >> numPoints >> binary;
   _points.resize(numPoints);
   _normals.resize(numPoints);
+  _stats.resize(numPoints);
   cerr << "reading " << numPoints << " points, binary :" << binary << endl;
   is.getline(buf, 1024);
   istringstream lst(buf);
@@ -39,6 +40,7 @@ bool Frame::load(Eigen::Isometry3f &T, istream &is) {
   while (k < _points.size() && is.good()) {
     Point& point = _points[k];
     Normal& normal = _normals[k];
+    Stats& stats = _stats[k];
     if (!binary) {
       is.getline(buf, 1024);
       istringstream ls(buf);
@@ -52,9 +54,15 @@ bool Frame::load(Eigen::Isometry3f &T, istream &is) {
       for (int i=0; i<3 && ls; i++) {
 	ls >> normal[i];
       }
+      for (int r=0; r<4 && ls; r++) {
+	for (int c=0; c<4 && ls; c++) {
+	  ls >> stats(r, c);
+	}
+      }
     } else {
       is.read((char*) &point, sizeof(Point));
       is.read((char*) &normal, sizeof(Normal));
+      is.read((char*) &stats, sizeof(Stats));
     }
     k++;
   }
@@ -79,8 +87,9 @@ bool Frame::save(const char *filename, int step, bool binary, Eigen::Isometry3f 
      << transform[5] << " " 
      << endl;
   for(size_t i = 0; i < _points.size(); i+=step) {
-    const Point& point = _points[i];
-    const Normal& normal = _normals[i];
+    const Point &point = _points[i];
+    const Normal &normal = _normals[i];
+    const Stats &stats = _stats[i];
     if (! binary) {
       os << "POINTWITHNORMAL ";
       for (int k=0; k<3; k++)
@@ -93,6 +102,16 @@ bool Frame::save(const char *filename, int step, bool binary, Eigen::Isometry3f 
 	  os << zero << " ";
 	}
       }
+      for (int r=0; r<4; r++) {
+	for (int c=0; c<4; c++) {
+	  if(_stats.size() == _points.size())
+	    os << stats(r, c) << " ";
+	  else {
+	    float zero = 0.0f;
+	    os << zero << " ";
+	  }
+	}
+      }
       os << endl;
     } else {
       os.write((const char*) &point, sizeof(Point));
@@ -100,7 +119,14 @@ bool Frame::save(const char *filename, int step, bool binary, Eigen::Isometry3f 
 	os.write((const char*) &normal, sizeof(Normal));
       else {
 	const Normal zero = Normal(Eigen::Vector3f(0.0f, 0.0f, 0.0f));
-	os.write((const char*) &zero, sizeof(Normal));
+	os.write((const char*) &zero, sizeof(Normal));	
+      }
+      if(_stats.size() == _points.size())
+	os.write((const char*) &stats, sizeof(Stats));
+      else {
+	Stats zero;
+	zero.setZero();
+	os.write((const char*) &zero, sizeof(Stats));	
       }
     }
   }

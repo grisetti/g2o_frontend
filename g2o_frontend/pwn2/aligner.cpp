@@ -3,6 +3,8 @@
 #include <sys/time.h>
 #include <fstream>
 
+#include "g2o_frontend/basemath/bm_se3.h"
+
 using namespace std;
 
 namespace pwn {
@@ -50,8 +52,8 @@ void Aligner::align() {
   // the current points are seen from the frame of the sensor
   _projector->setTransform(_sensorOffset);
   _projector->project(_correspondenceFinder->currentIndexImage(),
-              _correspondenceFinder->currentDepthImage(),
-              _currentFrame->points());
+		      _correspondenceFinder->currentDepthImage(),
+		      _currentFrame->points());
   _T = _initialGuess;
   
   _correspondenceFinder->currentDepthImage().save("current.pgm", true);
@@ -66,16 +68,19 @@ void Aligner::align() {
     _T.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     _projector->setTransform(_T * _sensorOffset);
     _projector->project(_correspondenceFinder->referenceIndexImage(),
-            _correspondenceFinder->referenceDepthImage(),
-            _referenceFrame->points());
+			_correspondenceFinder->referenceDepthImage(),
+			_referenceFrame->points());
     
-     char buf[1024];
-     sprintf(buf, "reference-%02d.pgm", i);
-     _correspondenceFinder->referenceDepthImage().save(buf, true);
+    char buf[1024];
+    sprintf(buf, "reference-%02d.pgm", i);
+    _correspondenceFinder->referenceDepthImage().save(buf, true);
+    
+    sprintf(buf, "reference-%02d.pwn", i);
+    _referenceFrame->save(buf, 1, true, _T);
 
-    // Correspondences computation.    
+    // Correspondences computation.  
     _correspondenceFinder->compute(*_referenceFrame, *_currentFrame, _T.inverse());
-    cerr << "cf, numFound:" << _correspondenceFinder->numCorrespondences() << endl;
+    //cerr << "cf, numFound:" << _correspondenceFinder->numCorrespondences() << endl;
     
     /************************************************************************
      *                            Alignment                                 *
@@ -91,8 +96,6 @@ void Aligner::align() {
       H = _linearizer->H() + Matrix6f::Identity() * 10.0f;
       b = _linearizer->b();
       // add the priors
-      //H.setZero();
-      //b.setZero();
       for (size_t j=0; j<_priors.size(); j++){
 	const SE3Prior* prior = _priors[j];
 	Vector6f priorError = prior->error(invT);
@@ -101,12 +104,6 @@ void Aligner::align() {
 
 	Matrix6f Hp = priorJacobian.transpose()*priorInformationRemapped*priorJacobian;
 	Vector6f bp = priorJacobian.transpose()*priorInformationRemapped*priorError;
-	//cerr << "prior" << endl;
-	//cerr << "Hp: " << endl;
-	//cerr << Hp << endl;
-	//cerr << "bp: " << endl;
-	//cerr << bp << endl;
-
 
 	H += Hp;
 	b += bp;
@@ -117,10 +114,10 @@ void Aligner::align() {
       Eigen::Isometry3f dT = v2t(dx);
       invT = dT * invT;
     }
+
     _T = invT.inverse();
     _T = v2t(t2v(_T));
     _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
-    //cerr << _T.matrix() << endl; 
   }
 
   gettimeofday(&tvEnd, 0);

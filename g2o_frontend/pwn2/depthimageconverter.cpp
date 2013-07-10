@@ -9,10 +9,10 @@ using namespace std;
 
 namespace pwn {
 
-DepthImageConverter::DepthImageConverter(  PointProjector* projector_,
-                       StatsCalculator* statsCalculator_,
-                       PointInformationMatrixCalculator* pointInformationMatrixCalculator_,
-                       NormalInformationMatrixCalculator* normalInformationMatrixCalculator_){
+DepthImageConverter::DepthImageConverter(PointProjector *projector_,
+					 StatsCalculator *statsCalculator_,
+					 PointInformationMatrixCalculator *pointInformationMatrixCalculator_,
+					 NormalInformationMatrixCalculator *normalInformationMatrixCalculator_) {
   _projector = projector_;
   _statsCalculator = statsCalculator_;
   _pointInformationMatrixCalculator = pointInformationMatrixCalculator_;
