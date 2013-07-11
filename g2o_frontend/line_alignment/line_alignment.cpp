@@ -161,7 +161,10 @@ int main(int argc, char**argv){
   LinesSet lvector_next;
   LinesSet lvector_merged;
   LinesForMatching pairLinesSet;
-//  LinesForMatchingVector lineMatchingContainer;
+  //  LinesForMatchingVector lineMatchingContainer;
+
+  //lines vector to be sorted
+  std::vector<VertexLine2D*> lines1sort, lines2sort;
   bool merdging = false;
   int lastID = (int)vertexIds.size()-1;
     
@@ -257,68 +260,73 @@ int main(int argc, char**argv){
       cerr << "ho merdgiato? " << merdging << endl;
       for (OptimizableGraph::EdgeSet::iterator itv = es.begin(); itv != es.end(); itv++)
       {
-	  EdgeSE2Line2D* el = dynamic_cast<EdgeSE2Line2D*>(*itv);
-	  if (!el)
-	    continue;
+          EdgeSE2Line2D* el = dynamic_cast<EdgeSE2Line2D*>(*itv);
+          if (!el)
+              continue;
 
-	  VertexSE2* tmp = dynamic_cast<VertexSE2*>(el->vertices()[0]);
-	  VertexLine2D* vl = dynamic_cast<VertexLine2D*>(el->vertices()[1]);
+//          VertexSE2* tmp = dynamic_cast<VertexSE2*>(el->vertices()[0]);
+          VertexLine2D* vl = dynamic_cast<VertexLine2D*>(el->vertices()[1]);
+          lines1sort.push_back(vl);
+      }
+      std::sort(lines1sort.begin(), lines1sort.end(),LineLengthComparator());
 
-
-	  //saving the lines adding vertexline to the new graph
-      if (tmp->id() == vcurr_id)
+      for (size_t i=0; i<lines1sort.size(); i++)
       {
-	      if(v_next && !merdging){
-              cout << "  !!! No merdging occurs yet: taking the original first frame !!!  " << endl;
-              Line2D li = vl->estimate();
-              //cout << "- Line " << currvertexLine << ": id "  << vl->id() << ": theta " << li(0) << ", rho " << li(1) /*<< ", estimate: " << vl->estimate().transpose()*/ << endl;
-              SE2 odomTransform(odom0to1);
-              Line2D tli = odomTransform*li;
+          //saving the lines adding vertexline to the new graph
+//          if (tmp->id() == vcurr_id)
+//          {
+              if(v_next && !merdging){
+                  cout << "  !!! No merdging occurs yet: taking the original first frame !!!  " << endl;
+                  VertexLine2D* vl = lines1sort[i];
+                  Line2D li = vl->estimate();
+                  //cout << "- Line " << currvertexLine << ": id "  << vl->id() << ": theta " << li(0) << ", rho " << li(1) /*<< ", estimate: " << vl->estimate().transpose()*/ << endl;
+                  SE2 odomTransform(odom0to1);
+                  Line2D tli = odomTransform*li;
+                  lineOfVertex tliv;
+                  tliv.line = tli;
+                  tliv.vertex = v;
+                  tliv.vline = vl;
+                  // 		cout << ">>> Line transformed in the next frame id " << tliv.vline->id() << ": theta " << tliv.line(0) << ", rho " << tliv.line(1) << endl;
+                  lvector.push_back(tliv);
+              }
+              currvertexLine++;
+
+#if 0
+              Vector2d line1 = Vector2d(vl->estimate());
+              VertexPointXY* vpl1_1 = dynamic_cast<VertexPointXY*>(graph->vertex(vl->p1Id));
+              VertexPointXY* vpl2_1 = dynamic_cast<VertexPointXY*>(graph->vertex(vl->p2Id));
+              Vector2d nline1(cos(line1(0)), sin(line1(0)));
+              Vector2d pmiddle1 = nline1*line1(1);
+              Vector2d t2(-nline1.y(), nline1.x());
+              double l1_1,l2_1 = 10;
+              l1_1 = t2.dot(vpl1_1->estimate() - pmiddle1);
+              l2_1 = t2.dot(vpl2_1->estimate() - pmiddle1);
+              Vector2d p1line1 = pmiddle1 + t2*l1_1;
+              Vector2d p2line1 = pmiddle1 + t2*l2_1;
+              osline << p1line1.transpose() << endl;
+              osline << p2line1.transpose() << endl;
+              osline << endl;
+              osline << endl;
+              osline.flush();
+#endif
+//          }
+      }
+      if(v_next && merdging)
+      {
+          cout << "  !!! Merdging happened --> Using " << lvector_merged.size() << " line vertex already aligned" << endl;
+          SE2 odomTransform(odom0to1);
+          for(int i = 0; i < (int)lvector_merged.size(); i++){
+              lineOfVertex livtmp = lvector_merged[i];
+              Line2D tli = odomTransform*(livtmp.line);
               lineOfVertex tliv;
               tliv.line = tli;
-              tliv.vertex = v;
-              tliv.vline = vl;
-              // 		cout << ">>> Line transformed in the next frame id " << tliv.vline->id() << ": theta " << tliv.line(0) << ", rho " << tliv.line(1) << endl;
+              tliv.vertex = livtmp.vertex;
+              tliv.vline = livtmp.vline;
+              // 	      cout << ">>> Merged line transformed in the next frame id " << tliv.vline->id() << ": theta " << tliv.line(0) << ", rho " << tliv.line(1) << endl;
               lvector.push_back(tliv);
-	      }
-	      currvertexLine++;
-	      
-#if 0
-		Vector2d line1 = Vector2d(vl->estimate());
-		VertexPointXY* vpl1_1 = dynamic_cast<VertexPointXY*>(graph->vertex(vl->p1Id));
-		VertexPointXY* vpl2_1 = dynamic_cast<VertexPointXY*>(graph->vertex(vl->p2Id));
-		Vector2d nline1(cos(line1(0)), sin(line1(0)));
-		Vector2d pmiddle1 = nline1*line1(1);
-		Vector2d t2(-nline1.y(), nline1.x());
-		double l1_1,l2_1 = 10;
-		l1_1 = t2.dot(vpl1_1->estimate() - pmiddle1);
-		l2_1 = t2.dot(vpl2_1->estimate() - pmiddle1);
-		Vector2d p1line1 = pmiddle1 + t2*l1_1;
-		Vector2d p2line1 = pmiddle1 + t2*l2_1;
-		osline << p1line1.transpose() << endl;
-		osline << p2line1.transpose() << endl;
-		osline << endl;
-		osline << endl;
-		osline.flush();
-#endif
+          }
+          merdging = false;
       }
-	}
-	if(v_next && merdging) 
-	{
-	    cout << "  !!! Merdging happened --> Using " << lvector_merged.size() << " line vertex already aligned" << endl;
-	    SE2 odomTransform(odom0to1);
-	    for(int i = 0; i < (int)lvector_merged.size(); i++){
-	      lineOfVertex livtmp = lvector_merged[i];
-	      Line2D tli = odomTransform*(livtmp.line);
-	      lineOfVertex tliv;
-	      tliv.line = tli;
-	      tliv.vertex = livtmp.vertex;
-	      tliv.vline = livtmp.vline;
-// 	      cout << ">>> Merged line transformed in the next frame id " << tliv.vline->id() << ": theta " << tliv.line(0) << ", rho " << tliv.line(1) << endl;
-	      lvector.push_back(tliv);
-	    }
-	    merdging = false;
-	 }
 	
       //saving the lines of the next vertex, to create the correspondences for ransac
       if(v_next) {
@@ -334,11 +342,18 @@ int main(int argc, char**argv){
               if (!el_next)
                   continue;
 
-              VertexSE2* tmp0_next = dynamic_cast<VertexSE2*>(el_next->vertices()[0]);
+//              VertexSE2* tmp0_next = dynamic_cast<VertexSE2*>(el_next->vertices()[0]);
               VertexLine2D* vl_next = dynamic_cast<VertexLine2D*>(el_next->vertices()[1]);
+              lines2sort.push_back(vl_next);
+          }
+          std::sort(lines2sort.begin(), lines2sort.end(),LineLengthComparator());
 
-              if (tmp0_next->id() == next_id)
-              {
+
+          for (size_t j=0; j<lines2sort.size(); j++)
+          {
+//              if (tmp0_next->id() == next_id)
+//              {
+                  VertexLine2D* vl_next=lines2sort[j];
                   Line2D li_next = vl_next->estimate();
                   lineOfVertex liv_next;
                   liv_next.line = li_next;
@@ -367,9 +382,10 @@ int main(int argc, char**argv){
                   osline << endl;
                   osline.flush();
 #endif
-              }
+//              }
           }
           cout << "Saved lines of the next vertex, size is:" << lvector_next.size() << endl;
+
 
           pairLinesSet = make_pair(lvector, lvector_next);
           cout << endl << " ### iteration "  << i << ", SIZE of the pair of lines sets: " << pairLinesSet.first.size() << ", " << pairLinesSet.second.size() << endl << endl;
@@ -529,7 +545,7 @@ int main(int argc, char**argv){
 	  RansacLine2DLinear::TransformType transform = t0;
 	  std::vector<int> inliers;
 	  int iterations = 1000;
-	  float inliersThreshold = .15;
+      float inliersThreshold = .3;
 	  float inliersStopFraction = .5;
 	  vector<double> err;
 	  ScopeTime t("ransac aligned");
@@ -705,25 +721,27 @@ int main(int argc, char**argv){
 //              }
           }
 	      
-	      //saving the graph befOre merdging!
+          //saving the graph before merdging!
 	      graph->save(unmergedG2O);
 	      unmergedG2O.close();
 	      
 	      ///merging vertexes and lines (inliers set)
 	      cout << endl << "\033[22;34;1m*****MERGING STUFF******\033[0m " << endl << endl;
 
-	      for (int ci = 0; ci < (int)/*currCorrs*/inliers.size(); ci++)
+          for (int ci = 0; ci < (int)inliers.size(); ci++)
           {
-              double inliersIndex = inliers[ci];
-              VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[/*ci*/inliersIndex].lid1].vline->id()));
-              VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[/*ci*/inliersIndex].lid2].vline->id()));
-              // 		  cout << "Line to be merged: " << endl;
-              // 		  cout << "[Frame i] line " << vli->id() << " - [Frame j] line " << vlj->id() << endl;
 
               //TODO to be UNCOMMENT
-              // 		  merdging = mergeLineVertex(graph, vlj, vli);
-              // 		  cout << endl << " \033[22;32;1miteration " << ci  << " -- Lines merged? " << merdging << "\033[0m" << endl;
-              // 		  cout << endl;
+
+
+//              double inliersIndex = inliers[ci];
+//              VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[/*ci*/inliersIndex].lid1].vline->id()));
+//              VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[/*ci*/inliersIndex].lid2].vline->id()));
+//              cout << "Line to be merged: " << endl;
+//              cout << "[Frame i] line " << vli->id() << " - [Frame j] line " << vlj->id() << endl;
+//              merdging = mergeLineVertex(graph, vlj, vli);
+//              cout << endl << " \033[22;32;1miteration " << ci  << " -- Lines merged? " << merdging << "\033[0m" << endl;
+//              cout << endl;
 
               {//mine merging implementation
                   // 					VertexPointXY* vlip1 = dynamic_cast<VertexPointXY*>(graph->vertex(vli->p1Id));
