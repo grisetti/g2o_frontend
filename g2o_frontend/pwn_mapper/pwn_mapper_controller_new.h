@@ -166,6 +166,9 @@ namespace pwn {
     void clear();
     
     bool addVertex(g2o::VertexSE3* vertex);
+    bool addVertex(G2OFrame &frame);
+
+    bool alignIncrementally();
 
     bool computeTraversability();
 
@@ -186,7 +189,7 @@ namespace pwn {
 
     // Depth image converter
     DepthImageConverter *_converter;
-    DepthImage _depthImage, _scaledDepthImage;
+    DepthImage _depthImage, _scaledDepthImage, _indexImage, _scaledIndexImage;
 
     // Correspondece finder and linearizer
     CorrespondenceFinder *_correspondenceFinder;

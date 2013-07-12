@@ -54,7 +54,6 @@ namespace pwn {
 					 _pointInformationMatrixCalculator, _normalInformationMatrixCalculator);
     _converter->_curvatureThreshold = _curvatureThreshold;
     
-
     // Correspondence finder and linearizer init
     _correspondenceFinder = new CorrespondenceFinder();
     _linearizer = new Linearizer();
@@ -153,107 +152,308 @@ namespace pwn {
   }
 
   bool PWNMapperControllerNew::addVertex(VertexSE3 *v) {
-  OptimizableGraph::Data *d = v->userData();
-  RGBDData *rgbdData = 0;
-  while(d && !rgbdData) {
-    rgbdData = dynamic_cast<RGBDData*>(d);
-    d = d->next();
-  }
-    
-  if(!rgbdData)
-    return false;
-  
-  cerr << "Adding vertex: "<< v->id() << endl;
-  int paramIndex = rgbdData->paramIndex();
-  // retrieve from the graph the parameter given the index  
-  g2o::Parameter *_cameraParameter = _graph->parameter(paramIndex);
-  // attempt a cast to a parameter camera  
-  ParameterCamera *cameraParameter = dynamic_cast<ParameterCamera*>(_cameraParameter);
-  if(!_cameraParameter) {
-    cerr << "Could not find a valid camera" << endl;
-    return false;
-  }
-    
-  // We got the parameter
-  Eigen::Matrix3f cameraMatrix;
-  Eigen::Isometry3f sensorOffset;
-  cameraMatrix.setZero();
-  
-  // Get the sensor offset andcamera matrix
-  int cmax = 4;
-  int rmax = 3;
-  for(int c = 0; c < cmax; c++) {
-    for(int r = 0; r < rmax; r++) {
-      _sensorOffset.matrix()(r, c) = cameraParameter->offset()(r, c);
-      if(c < 3)
-	_cameraMatrix(r, c) = cameraParameter->Kcam()(r, c);
+    OptimizableGraph::Data *d = v->userData();
+    RGBDData *rgbdData = 0;
+    while(d && !rgbdData) {
+      rgbdData = dynamic_cast<RGBDData*>(d);
+      d = d->next();
     }
-  }
+    
+    if(!rgbdData)
+      return false;
   
-  // HAKK: setting sensor offset and camera matrix to fixed values
-  _cameraMatrix << 
-    525.0f, 0.0f, 319.5f,
-    0.0f, 525.0f, 239.5f,
-    0.0f, 0.0f, 1.0f;
+    cerr << "Adding vertex: "<< v->id() << endl;
+    int paramIndex = rgbdData->paramIndex();
+    // retrieve from the graph the parameter given the index  
+    g2o::Parameter *_cameraParameter = _graph->parameter(paramIndex);
+    // attempt a cast to a parameter camera  
+    ParameterCamera *cameraParameter = dynamic_cast<ParameterCamera*>(_cameraParameter);
+    if(!_cameraParameter) {
+      cerr << "Could not find a valid camera" << endl;
+      return false;
+    }
+    
+    // We got the parameter  
+    // Get the sensor offset and camera matrix
+    _cameraMatrix.setZero();
+    int cmax = 4;
+    int rmax = 3;
+    for(int c = 0; c < cmax; c++) {
+      for(int r = 0; r < rmax; r++) {
+	_sensorOffset.matrix()(r, c) = cameraParameter->offset()(r, c);
+	if(c < 3)
+	  _cameraMatrix(r, c) = cameraParameter->Kcam()(r, c);
+      }
+    }
   
-  _sensorOffset = Isometry3f::Identity();
-  _sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
-  Quaternionf quat = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
-  _sensorOffset.linear() = quat.toRotationMatrix();
-  _sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    // HAKK: setting sensor offset and camera matrix to fixed values
+    _cameraMatrix << 
+      525.0f, 0.0f, 319.5f,
+      0.0f, 525.0f, 239.5f,
+      0.0f, 0.0f, 1.0f;
+  
+    _sensorOffset = Isometry3f::Identity();
+    _sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+    Quaternionf quat = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+    _sensorOffset.linear() = quat.toRotationMatrix();
+    _sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
-  updateProjector();
+    updateProjector();
 
-  // Get the filename
-  std::string filename = rgbdData->baseFilename() + "_depth.pgm";
+    // Get the filename
+    std::string filename = rgbdData->baseFilename() + "_depth.pgm";
 
-  // Read the depth image
-  if (!_depthImage.load(filename.c_str(), true)){
-    cerr << "Impossible to load image " << filename << endl;
-    return false;
+    // Read the depth image
+    if (!_depthImage.load(filename.c_str(), true)){
+      cerr << "Impossible to load image " << filename << endl;
+      return false;
+    }
+    
+    // Scale the depth image
+    DepthImage::scale(_scaledDepthImage, _depthImage, _reduction);
+
+    // Create the frame and set the parameters
+    G2OFrame *frame = new G2OFrame(v);
+    frame->cameraMatrix() = _cameraMatrix;
+    frame->sensorOffset() = _sensorOffset;
+    
+    G2OFrame *previousFrame = 0;
+    if(!_framesDeque.empty()) 
+      previousFrame = _framesDeque.back();
+    
+    // If it is the first vertex, we put the imu as prior if avalable
+    if(!previousFrame) {
+      frame->globalTransform().setIdentity();
+      frame->previousFrameTransform().setIdentity();
+      Eigen::Isometry3f priorMean;
+      Matrix6f priorInfo;
+      bool hasImu = extractAbsolutePrior(priorMean, priorInfo, frame);
+      if(hasImu) {
+	cerr << "Found an IMU for the first vertex" << endl;
+	frame->globalTransform().linear() = priorMean.linear();
+      }
+    }
+
+    frame->setPreviousFrame(previousFrame);
+
+    // Compute the stats for the current cloud
+    _converter->compute(*frame, _scaledDepthImage, _sensorOffset, true);
+    _framesDeque.push_back(frame);
+
+    // Keep at most maxDequeSize elements in the queue
+    while(_framesDeque.size() > _maxDequeSize) {
+      G2OFrame *frame = _framesDeque.front();
+      _framesDeque.pop_front();
+      _framesDeque.front()->setPreviousFrame(0);
+      delete frame;
+    }
+
+    return true;
   }
-    
-  // Scale the depth image
-  DepthImage::scale(_scaledDepthImage, _depthImage, _reduction);
 
-  // Create the frame and set the parameters
-  G2OFrame *frame = new G2OFrame(v);
-  frame->cameraMatrix() = _cameraMatrix;
-  frame->sensorOffset() = _sensorOffset;
+  bool PWNMapperControllerNew::addVertex(G2OFrame &frame) {
+    OptimizableGraph::Data *d = frame.vertex()->userData();
+    RGBDData *rgbdData = 0;
+    while(d && !rgbdData) {
+      rgbdData = dynamic_cast<RGBDData*>(d);
+      d = d->next();
+    }
     
-  G2OFrame *previousFrame = 0;
-  if(!_framesDeque.empty()) 
-    previousFrame = _framesDeque.back();
+    if(!rgbdData)
+      return false;
+  
+    int paramIndex = rgbdData->paramIndex();
+    g2o::Parameter *_cameraParameter = _graph->parameter(paramIndex);
+    ParameterCamera *cameraParameter = dynamic_cast<ParameterCamera*>(_cameraParameter);
+    if(!cameraParameter) {
+      cerr << "Could not find a valid camera" << endl;
+      return false;
+    }
     
-  // If it is the first vertex, we put the imu as prior if avalable
-  if(!previousFrame) {
-    frame->globalTransform().setIdentity();
-    frame->previousFrameTransform().setIdentity();
-    Eigen::Isometry3f priorMean;
-    Matrix6f priorInfo;
-    bool hasImu = extractAbsolutePrior(priorMean, priorInfo, frame);
+    // We got the parameter  
+    // Get the sensor offset and camera matrix
+    _cameraMatrix.setZero();
+    int cmax = 4;
+    int rmax = 3;
+    for(int c = 0; c < cmax; c++) {
+      for(int r = 0; r < rmax; r++) {
+	_sensorOffset.matrix()(r, c) = cameraParameter->offset()(r, c);
+	if(c < 3)
+	  _cameraMatrix(r, c) = cameraParameter->Kcam()(r, c);
+      }
+    }
+  
+    // HAKK: setting sensor offset and camera matrix to fixed values
+    _cameraMatrix << 
+      525.0f, 0.0f, 319.5f,
+      0.0f, 525.0f, 239.5f,
+      0.0f, 0.0f, 1.0f;
+  
+    _sensorOffset = Isometry3f::Identity();
+    _sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+    Quaternionf quat = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+    _sensorOffset.linear() = quat.toRotationMatrix();
+    _sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+
+    updateProjector();
+
+    // Read the depth image and scale it
+    std::string filename = rgbdData->baseFilename() + "_depth.pgm";
+    if(!_depthImage.load(filename.c_str(), true)) {
+      cerr << "No depth image loaded." << endl;
+      return false;
+    }
+    
+    DepthImage::scale(_scaledDepthImage, _depthImage, _reduction);
+
+    frame.cameraMatrix() = _cameraMatrix;
+    frame.sensorOffset() = _sensorOffset;
+    
+    frame.globalTransform().setIdentity();
+    frame.previousFrameTransform().setIdentity();
+    frame.setPreviousFrame(0);
+
+    _converter->compute(frame, _scaledDepthImage, _sensorOffset, true);
+
+    return true;
+  }
+
+  bool PWNMapperControllerNew::alignIncrementally() {
+    if(_framesDeque.size() < 2)
+      return false;
+
+    // Take the frames to align
+    G2OFrame *current = _framesDeque.back();
+    G2OFrame *reference = current->previousFrame();
+
+    //mergedClouds->add(*reference, initialPose.inverse() * reference->globalTransform());
+    //pwnVerteces.push_back(reference->vertex());
+    //merger->merge(mergedClouds, initialPose.inverse() * reference->globalTransform());
+
+    cerr << "********************** Aligning vertex " << current->vertex()->id() << " **********************" << endl;
+  
+    Eigen::Isometry3f initialGuess;
+    // Computing initial guess based on the frame positions
+    Eigen::Isometry3d delta = reference->vertex()->estimate().inverse() * current->vertex()->estimate();
+    for(int c = 0; c < 4; c++)
+      for(int r = 0; r < 3; r++)
+	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
+
+    Eigen::Isometry3f odometryMean;
+    Matrix6f odometryInfo;
+    bool hasOdometry = extractRelativePrior(odometryMean, odometryInfo, reference, current);
+    if (hasOdometry) {
+      initialGuess = odometryMean;
+    }
+    // Force a prior
+    else { 
+      hasOdometry = true;
+      odometryMean = initialGuess;
+      odometryInfo.setIdentity();
+      odometryInfo.block<3, 3>(0, 0) *= 100;
+    }
+    Eigen::Isometry3f imuMean;
+    Matrix6f imuInfo;
+    bool hasImu = extractAbsolutePrior(imuMean, imuInfo, current);
+    initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+
+    // Compute the reference subscene
+    // if(_indexImage.cols() != _scaledImageCols || _indexImage.rows() != _scaledImageRows) 
+    //   _indexImage.resize(_scaledImageRows, _scaledImageCols);
+    // _projector->setTransform(reference->globalTransform().inverse() * initialPose);
+    // _projector->project(_indexImage, _depthImage, mergedClouds->points());
+    // _converter->compute(subScene, _depthImage, Isometry3f::Identity(), true);
+
+    // Align
+    _aligner->clearPriors();
+    _aligner->setReferenceFrame(reference);
+    // aligner->setReferenceFrame(&subScene);
+    _aligner->setCurrentFrame(current);
+    _aligner->setInitialGuess(initialGuess);
+    _aligner->setSensorOffset(_sensorOffset);
+    if(hasOdometry) {
+      _aligner->addRelativePrior(odometryMean, odometryInfo);
+    }
     if(hasImu) {
-      cerr << "Found an IMU for the first vertex" << endl;
-      frame->globalTransform().linear() = priorMean.linear();
+      _aligner->addAbsolutePrior(reference->globalTransform(), imuMean, imuInfo);
     }
+    _aligner->align();
+  
+    Eigen::Isometry3f localTransformation = _aligner->T();
+    bool failure = false;
+    if(_aligner->outerIterations() != 0 && (_aligner->inliers() < _minNumInliers || _aligner->error() / _aligner->inliers() > _minError) ) {
+      cerr << "ALIGNER FAILURE!!!!!!!!!!!!!!!" << endl;
+      cerr << "inliers/minimum number of inliers: " << _aligner->inliers() << " / " << _minNumInliers << endl;
+      if(_aligner->inliers() != 0)
+	cerr << "error: " << _aligner->error() / _aligner->inliers() << " / " << _minError << endl;
+      else
+	cerr << "error: " << std::numeric_limits<float>::max() << " / " << _minError << endl;
+      localTransformation = initialGuess;
+      failure = true;
+    }
+  
+    Isometry3f globalT = reference->globalTransform() * localTransformation;
+    globalT.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    
+    // Recondition the rotation to prevent roundoff to accumulate
+    Eigen::Matrix3f R = globalT.linear();
+    Eigen::Matrix3f E = R.transpose() * R;
+    E.diagonal().array() -= 1;
+    globalT.linear() -= 0.5 * R * E;
+
+    // Update global and local transforms for the current frame
+    current->globalTransform() = globalT;
+    current->previousFrameTransform() = localTransformation;
+
+    // Update the g2o graph vertex with the new transform
+    Eigen::Isometry3d newEstimate;
+    for(int r = 0; r < 3; r++) {
+      for(int c = 0; c < 4; c++) {
+	newEstimate(r, c) = reference->globalTransform()(r, c);
+      }
+    }
+    newEstimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
+    reference->vertex()->setEstimate(newEstimate);
+
+    if(_aligner->outerIterations() != 0) {
+      cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
+      cout << "Local transformation: " << t2v(_aligner->T()).transpose() << endl;
+      cout << "Global transformation: " << t2v(globalT).transpose() << endl;
+    }
+
+    // Eigen::Isometry3f motionFromFirstFrame = initialPose.inverse() * globalT;
+    // Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
+    // if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || 
+    //    motionFromFirstFrame.translation().norm() > _chunkDistance ||
+    //    failure) {
+    //   char buff[1024];
+    //   sprintf(buff, "out-%05d.pwn", counter++);	
+    
+    //   Eigen::Isometry3f middleEstimate;
+    //   g2o::VertexSE3 *middleVertex = pwnVerteces[pwnVerteces.size() / 2];
+    //   for(int r = 0; r < 3; r++) {
+    // 	for(int c = 0; c < 4; c++) {
+    // 	  middleEstimate(r, c) = middleVertex->estimate()(r, c);
+    // 	}
+    //   }
+    //   middleEstimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
+    //   mergedClouds->transformInPlace(middleEstimate.inverse() * initialPose);
+
+    //   PWNData *pwnData = new PWNData(mergedClouds);
+    //   pwnData->setFilename(buff);
+    //   pwnData->setOriginPose(middleEstimate);
+    //   pwnData->writeOut();
+    //   cerr << "Saved pwn cloud" << endl;
+    //   pwnData->release();
+    //   middleVertex->addUserData(pwnData);
+    //   pwnData->setDataContainer(middleVertex);
+    //   mergedClouds = new Frame();
+    //   initialPose = globalT;
+    //   pwnVerteces.clear();
+    // }
+
+    return true;
   }
-
-  frame->setPreviousFrame(previousFrame);
-
-  // Compute the stats for the current cloud
-  _converter->compute(*frame, _scaledDepthImage, _sensorOffset, true);
-  _framesDeque.push_back(frame);
-
-  // Keep at most maxDequeSize elements in the queue
-  while(_framesDeque.size() > _maxDequeSize) {
-    G2OFrame *frame = _framesDeque.front();
-    _framesDeque.pop_front();
-    _framesDeque.front()->setPreviousFrame(0);
-    delete frame;
-  }
-
-  return true;
-}
 
 #ifdef _PWN_USE_TRAVERSABILITY_
   bool PWNMapperControllerNew::computeTraversability() { 
