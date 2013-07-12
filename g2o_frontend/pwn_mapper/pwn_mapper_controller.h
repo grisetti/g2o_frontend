@@ -1,11 +1,14 @@
-#ifndef _PWN_MAPPER_CONTROLLER_H_
-#define _PWN_MAPPER_CONTROLLER_H_
+#ifndef _PWN_MAPPER_CONTROLLER_NEW_H_
+#define _PWN_MAPPER_CONTROLLER_NEW_H_
+
+#include <deque>
+
+#include "g2o/core/sparse_optimizer.h"
 
 #include "g2o_frame.h"
 
 #include "g2o_frontend/basemath/bm_se3.h"
 
-#include "g2o_frontend/pwn2/frame.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/multipointprojector.h"
 #include "g2o_frontend/pwn2/informationmatrixcalculator.h"
@@ -23,106 +26,209 @@
 #include "g2o_frontend/traversability/traversability_analyzer.h"
 #endif //_PWN_USE_TRAVERSABILITY_
 
-#include "g2o/core/sparse_optimizer.h"
-
-#include <deque>
-
 namespace pwn {
 
-class PWNMapperController {
- public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
- 
-  PWNMapperController() { graph = 0; }
-  ~PWNMapperController() {}
+  class PWNMapperController {
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     
-  G2OFrame* firstFrame() { return _framesDeque.front(); }
-  G2OFrame* lastFrame() { return _framesDeque.back(); }
-  int numFrames() { return _framesDeque.size(); }
-  size_t maxDequeSize() { return _maxDequeSize; }
-  Eigen::Isometry3f alInitialGuess() { return aligner->initialGuess(); }
+    PWNMapperController(g2o::OptimizableGraph *graph_);
+    ~PWNMapperController() {}
 
-  inline Eigen::Isometry3f globalTransform() { return globalT; }
+    // Projector settings methods
+    inline void setProjector(PinholePointProjector* const projector_) { 
+      _projector = projector_;
+      updateProjector();
+    }
+    inline void setImageRows(const int imageRows_) { 
+      _imageRows = imageRows_; 
+      updateProjector();
+    }
+    inline void setImageCols(const int imageCols_) { 
+      _imageCols = imageCols_; 
+      updateProjector();
+    }
+    inline void setReduction(const int reduction_) { 
+      _reduction = reduction_; 
+      updateProjector();
+    }
+    inline void setCameraMatrix(const Matrix3f cameraMatrix_) { 
+      _cameraMatrix = cameraMatrix_;
+      updateProjector();
+    }
+    inline void setSensorOffset(const Isometry3f sensorOffset_) {
+      _sensorOffset = sensorOffset_;
+      updateProjector();
+    }
 
-  inline int chunkStep() { return _chunkStep; }
-  inline float chunkAngle() { return _chunkAngle; }
-  inline float chunkDistance() { return _chunkDistance; }
-  
-  inline void setChunkStep(int chunkStep_) { _chunkStep = chunkStep_; }
-  inline void setChunkAngle(float chunkAngle_) { _chunkAngle = chunkAngle_; }
-  inline void setChunkDistance(float chunkDistance_) { _chunkDistance = chunkDistance_; }
+    inline PinholePointProjector* projector() { return _projector; }
+    inline int imageRows() const { return _imageRows; }
+    inline int imageCols() const { return _imageCols; }
+    inline int reduction() const { return _reduction; }
+    inline Matrix3f cameraMatrix() const { return _cameraMatrix; }
+    inline Isometry3f sensorOffset() const { return _sensorOffset; }
 
-  inline void setAlMinNumInliers(int al_minNumInliers_) { al_minNumInliers = al_minNumInliers_; }
-  inline void setAlMinError(float al_minError_) { al_minError = al_minError_; }
+    // Stats calculator settings methods
+    inline void setStatsCalculator(StatsCalculator* const statsCalculator_) { _statsCalculator = statsCalculator_; }
+    inline void setCurvatureThreshold(const float curvatureThreshold_) { 
+      _curvatureThreshold = curvatureThreshold_; 
+      _pointInformationMatrixCalculator->setCurvatureThreshold(_curvatureThreshold);
+      _normalInformationMatrixCalculator->setCurvatureThreshold(_curvatureThreshold);
+    }
 
-  void setAlOuterIterations(int al_outerIterations_) { al_outerIterations = al_outerIterations_; }
-  void setMaxDequeSize(int maxDequeSize_) { _maxDequeSize = maxDequeSize_; }
+    inline StatsCalculator* statsCalculator() { return _statsCalculator; }
+    inline float curvatureThreshold() const { return _curvatureThreshold; }
 
-  void init(g2o::OptimizableGraph* graph_);
+    // Information matrix calculators settings methods
+    inline void setPointInformationMatrixCalculator(PointInformationMatrixCalculator* const pointInformationMatrixCalculator_) { _pointInformationMatrixCalculator = pointInformationMatrixCalculator_; }
+    inline void setNormalInformationMatrixCalculator(NormalInformationMatrixCalculator* const normalInformationMatrixCalculator_) { _normalInformationMatrixCalculator = normalInformationMatrixCalculator_; }
 
-  void clear();
+    inline PointInformationMatrixCalculator* pointInformationMatrixCalculator() { return _pointInformationMatrixCalculator; }
+    inline NormalInformationMatrixCalculator* normalInformationMatrixCalculator() { return _normalInformationMatrixCalculator; }
 
-  bool addVertex(g2o::VertexSE3* vertex);
-  
-  bool alignIncrementally();
-  
-  bool computeTraversability();
+    // Depth image converter settings methods
+    inline void setConverter(DepthImageConverter* const converter_) { _converter = converter_; }
+    inline void setDepthImage(DepthImage* const depthImage_) { _depthImage = *depthImage_; }
 
-  bool addVertex(G2OFrame &frame);
-  bool addVertexWithPWN(G2OFrame &frame);
+    inline DepthImageConverter* converter() { return _converter; }
+    inline DepthImage* depthImage() { return &_depthImage; }
 
- protected:
-  PinholePointProjector *projector;
-  MultiPointProjector *multiProjector;
-  int numProjectors;
-  StatsCalculator *statsCalculator;
-  PointInformationMatrixCalculator *pointInformationMatrixCalculator;
-  NormalInformationMatrixCalculator *normalInformationMatrixCalculator;
-  DepthImageConverter *converter;
-  DepthImageConverter *multiConverter;
+    // Correspondence finder and linearizer settings methods
+    inline void setCorrespondenceFinder(CorrespondenceFinder* const correspondeceFinder_) { 
+      _correspondenceFinder = correspondeceFinder_; 
+      updateProjector();
+    }
+    inline void setLinearizer(Linearizer* const linearizer_) { _linearizer = linearizer_; }
+
+    inline CorrespondenceFinder* correspondenceFinder() { return _correspondenceFinder; }
+    inline Linearizer* linearizer() { return _linearizer; }
+
+    // Aligner and merger settings methods
+    inline void setAligner(Aligner* const aligner_) { _aligner = aligner_; }
+    inline void setMerger(Merger* const merger_) { 
+      _merger = merger_;
+      updateProjector();
+    }
+    inline void setOuterIterations(const int outerIterations_) const { _aligner->setOuterIterations(outerIterations_); }
+    inline void setInnerIterations(const int innerIterations_) const { _aligner->setInnerIterations(innerIterations_); }
+    inline void setMinNumInliers(const int minNumInliers_) { _minNumInliers = minNumInliers_; }
+    inline void setMinError(const float minError_) { _minError = minError_; }
+
+    inline Aligner* aligner() { return _aligner; }
+    inline Merger* merger() { return _merger; }
+    inline int outerIterations() const { return _aligner->outerIterations(); }
+    inline int innerIterations() const { return _aligner->innerIterations(); }
+    inline int minNumInliers() const { return _minNumInliers; }
+    inline float minError() const { return _minError; }
+
+    // Traversability analyzer settings methods
 #ifdef _PWN_USE_TRAVERSABILITY_
-  TraversabilityAnalyzer *traversabilityAnalyzer;  
+    inline void setTraversabilityAnalyzer(TraversabilityAnalyzer* const traversabilityAnalyzer_) { _traversabilityAnalyzer = traversabilityAnalyzer_; }
+
+    inline TraversabilityAnalyzer* traversabilityAnalyzer() { return _traversabilityAnalyzer; }
 #endif //_PWN_USE_TRAVERSABILITY_
-  CorrespondenceFinder *correspondenceFinder;
-  Linearizer *linearizer;
-  Aligner *aligner;
-  Merger *merger;
+    
+    // Frames queue parameters settings methods
+    inline void setFramesDeque(std::deque<G2OFrame*>* const framesDeque_) { _framesDeque = *framesDeque_; }
+    inline void setMaxDequeSize(const size_t maxDequeSize_) { _maxDequeSize = maxDequeSize_; }
 
-  std::deque<G2OFrame*> _framesDeque;
-  Frame *mergedClouds;
+    inline std::deque<G2OFrame*>* framesDeque() { return &_framesDeque; }
+    inline size_t maxDequeSize() { return _maxDequeSize; }
+    
+    int framesDequeSize() { return _framesDeque.size(); }
+    G2OFrame* framesDequeFirstFrame() { return _framesDeque.front(); }
+    G2OFrame* framesDequeLastFrame() { return _framesDeque.back(); }
+    
+    // Pwn cloud saving parameters settings methods
+    inline void setPwnSaving(const bool pwnSaving_) { _pwnSaving = pwnSaving_; }
+    inline void setChunkStep(const int chunkStep_) { _chunkStep = chunkStep_; }
+    inline void setChunkAngle(const float chunkAngle_) { _chunkAngle = chunkAngle_; }
+    inline void setChunkDistance(const float chunkDistance_) { _chunkDistance = chunkDistance_; }
 
-  Isometry3f initialGuess;
-  Isometry3f globalT;
-  Isometry3f initialPose;
-  
-  int imageRows, imageCols;
-  int reduction;
-  float ng_scale;
-  float ng_worldRadius;
-  float ng_curvatureThreshold;
-  int ng_minImageRadius;
-  float if_curvatureThreshold;
-  int al_innerIterations;
-  int al_outerIterations;
-  size_t _maxDequeSize;
-  
-  int _chunkStep;
-  float _chunkAngle;
-  float _chunkDistance;
+    inline bool pwnSaving() { return _pwnSaving; }
+    inline int chunkStep() { return _chunkStep; }
+    inline float chunkAngle() { return _chunkAngle; }
+    inline float chunkDistance() { return _chunkDistance; }
 
-  int counter;
+    // Graph settings methods
+    inline void setGraph(OptimizableGraph* const graph_) { _graph = graph_; }    
 
-  int al_minNumInliers;
-  float al_minError;
+    inline OptimizableGraph* graph() { return _graph; }
 
-  DepthImage di;
-  MatrixXi ii;
-  Frame subScene;
+    // Prior extraction methods
+    bool extractRelativePrior(Eigen::Isometry3f &priorMean, 
+			      Matrix6f &priorInfo, 
+			      G2OFrame *reference, 
+			      G2OFrame *current);
+    bool extractAbsolutePrior(Eigen::Isometry3f &priorMean, 
+			      Matrix6f &priorInfo, 
+			      G2OFrame *currentFrame);
 
-  std::vector<g2o::VertexSE3*> pwnVerteces;
-  g2o::OptimizableGraph *graph;
-};
- 
+    // Graph manipulation methods
+    void clear();
+    
+    bool addVertex(g2o::VertexSE3* vertex);
+    bool addVertex(G2OFrame &frame);
+
+    bool alignIncrementally();
+
+    bool computeTraversability();
+
+   protected:
+    // Projector
+    PinholePointProjector *_projector;
+    int _imageRows, _imageCols, _scaledImageRows, _scaledImageCols, _reduction;
+    Matrix3f _cameraMatrix, _scaledCameraMatrix;
+    Eigen::Isometry3f _sensorOffset;
+
+    // Stats calculator
+    StatsCalculator *_statsCalculator;
+    float _curvatureThreshold;
+
+    // Information matrix calculators
+    PointInformationMatrixCalculator *_pointInformationMatrixCalculator;
+    NormalInformationMatrixCalculator *_normalInformationMatrixCalculator;
+
+    // Depth image converter
+    DepthImageConverter *_converter;
+    DepthImage _depthImage, _scaledDepthImage;
+    Eigen::MatrixXi _indexImage, _scaledIndexImage;
+
+    // Correspondece finder and linearizer
+    CorrespondenceFinder *_correspondenceFinder;
+    Linearizer *_linearizer;
+
+    // Aligner and merger
+    Aligner *_aligner;
+    Merger *_merger;
+    int _minNumInliers;
+    float _minError;
+    Isometry3f _initialScenePose;
+    Frame *_scene;
+    Frame *_subScene;
+    std::vector<g2o::VertexSE3*> _sceneVerteces;
+    
+    // Traversability analyzer
+#ifdef _PWN_USE_TRAVERSABILITY_
+    TraversabilityAnalyzer *traversabilityAnalyzer;  
+#endif //_PWN_USE_TRAVERSABILITY_
+
+    // Frames queue parameters
+    std::deque<G2OFrame*> _framesDeque;
+    size_t _maxDequeSize;
+
+    // Pwn cloud saving parameters
+    bool _pwnSaving;
+    int _chunkStep;
+    float _chunkAngle;
+    float _chunkDistance;
+   
+    // Graph
+    g2o::OptimizableGraph *_graph; 
+
+  private:
+    void updateProjector();
+  };
 }
 
 #endif

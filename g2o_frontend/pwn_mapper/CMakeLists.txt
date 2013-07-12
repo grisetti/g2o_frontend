@@ -16,7 +16,6 @@ ADD_LIBRARY(pwn_mapper_library
   g2o_frame.h
   pwn_mapper_controller.cpp pwn_mapper_controller.h
   pwn_loop_closer_controller.cpp pwn_loop_closer_controller.h
-  pwn_mapper_controller_new.cpp pwn_mapper_controller_new.h
 )
 
 SET_TARGET_PROPERTIES(pwn_mapper_library PROPERTIES OUTPUT_NAME pwn_mapper)

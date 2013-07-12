@@ -18,7 +18,7 @@
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 
-#include "g2o_frontend/pwn_mapper/pwn_mapper_controller_new.h"
+#include "g2o_frontend/pwn_mapper/pwn_mapper_controller.h"
 #include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
 #include "g2o_frontend/pwn_viewer/drawable_frame.h"
 #include "g2o_frontend/pwn_viewer/gl_parameter_frame.h"
@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
 
   std::vector<DrawableFrame*> drawableFrameVector;
   GLParameterFrame *parameterFrame = new GLParameterFrame(vz_step);
-  PWNMapperControllerNew *controller = new PWNMapperControllerNew(graph);
+  PWNMapperController *controller = new PWNMapperController(graph);
   controller->setChunkStep(chunkStep);
   controller->setChunkAngle(chunkAngle);
   controller->setChunkDistance(chunkDistance);
