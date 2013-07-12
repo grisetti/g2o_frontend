@@ -140,13 +140,15 @@ namespace pwn {
     G2OFrame* framesDequeLastFrame() { return _framesDeque.back(); }
     
     // Pwn cloud saving parameters settings methods
+    inline void setPwnSaving(const bool pwnSaving_) { _pwnSaving = pwnSaving_; }
     inline void setChunkStep(const int chunkStep_) { _chunkStep = chunkStep_; }
     inline void setChunkAngle(const float chunkAngle_) { _chunkAngle = chunkAngle_; }
     inline void setChunkDistance(const float chunkDistance_) { _chunkDistance = chunkDistance_; }
 
-    inline size_t chunkStep() { return _chunkStep; }
-    inline size_t chunkAngle() { return _chunkAngle; }
-    inline size_t chunkDistance() { return _chunkDistance; }
+    inline bool pwnSaving() { return _pwnSaving; }
+    inline int chunkStep() { return _chunkStep; }
+    inline float chunkAngle() { return _chunkAngle; }
+    inline float chunkDistance() { return _chunkDistance; }
 
     // Graph settings methods
     inline void setGraph(OptimizableGraph* const graph_) { _graph = graph_; }    
@@ -189,7 +191,8 @@ namespace pwn {
 
     // Depth image converter
     DepthImageConverter *_converter;
-    DepthImage _depthImage, _scaledDepthImage, _indexImage, _scaledIndexImage;
+    DepthImage _depthImage, _scaledDepthImage;
+    Eigen::MatrixXi _indexImage, _scaledIndexImage;
 
     // Correspondece finder and linearizer
     CorrespondenceFinder *_correspondenceFinder;
@@ -200,7 +203,11 @@ namespace pwn {
     Merger *_merger;
     int _minNumInliers;
     float _minError;
-
+    Isometry3f _initialScenePose;
+    Frame *_scene;
+    Frame *_subScene;
+    std::vector<g2o::VertexSE3*> _sceneVerteces;
+    
     // Traversability analyzer
 #ifdef _PWN_USE_TRAVERSABILITY_
     TraversabilityAnalyzer *traversabilityAnalyzer;  
@@ -211,6 +218,7 @@ namespace pwn {
     size_t _maxDequeSize;
 
     // Pwn cloud saving parameters
+    bool _pwnSaving;
     int _chunkStep;
     float _chunkAngle;
     float _chunkDistance;

@@ -49,6 +49,7 @@ int main(int argc, char** argv) {
   int chunkStep;
   float chunkAngle;
   float chunkDistance;
+  int pwnSaving;
 
   // Input parameters handling.
   g2o::CommandArgs arg;
@@ -67,6 +68,7 @@ int main(int argc, char** argv) {
   arg.param("chunkStep", chunkStep, 1000000, "Reset the process every chunkStep images");
   arg.param("chunkAngle", chunkAngle, M_PI/4, "Reset the process each time the camera has rotated of chunkAngle radians from the first frame");
   arg.param("chunkDistance", chunkDistance, 0.5, "reset the process each time the camera has moved of chunkDistance meters from the first frame");
+  arg.param("pwnSaving", pwnSaving, 0, "choose if you want to save or not the pwn clouds during the process");
 
   // Last parameter has to be the working directory.
   arg.paramLeftOver("g2o_input_filename", g2o_filename, "", "g2o input inputfilename", true);
@@ -161,6 +163,7 @@ int main(int argc, char** argv) {
   controller->setImageRows(al_imageCols);
   controller->setImageCols(al_imageRows);
   controller->setCurvatureThreshold(al_curvatureThreshold);
+  controller->setPwnSaving(pwnSaving);
   viewer->init();
   viewer->setAxisIsDrawn(true);
   mainWindow->show();

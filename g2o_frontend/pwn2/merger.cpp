@@ -22,7 +22,7 @@ void Merger::merge(Frame *frame, Eigen::Isometry3f transform) {
   pointProjector->project(_indexImage, 
 			  _depthImage, 
 			  frame->points());
-
+  
   // scan all the points, 
   // if they fall in a cell not with -1, 
   //   skip

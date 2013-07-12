@@ -68,6 +68,10 @@ namespace pwn {
     _aligner->setCorrespondenceFinder(_correspondenceFinder);
     _aligner->setInnerIterations(1);
     _aligner->setOuterIterations(10);
+    _scene = new Frame();
+    _subScene = new Frame();
+    _initialScenePose = Isometry3f::Identity();
+    _initialScenePose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     _merger = new Merger();
     _merger->setDepthImageConverter(_converter);
 
@@ -83,6 +87,7 @@ namespace pwn {
 #endif //_PWN_USE_TRAVERSABILITY_
 
     // Pwn cloud saving parameters
+    _pwnSaving = false;
     _chunkStep = 30;
     _chunkAngle = M_PI_2;
     _chunkDistance = 1.0f;
@@ -326,9 +331,12 @@ namespace pwn {
     G2OFrame *current = _framesDeque.back();
     G2OFrame *reference = current->previousFrame();
 
-    //mergedClouds->add(*reference, initialPose.inverse() * reference->globalTransform());
-    //pwnVerteces.push_back(reference->vertex());
-    //merger->merge(mergedClouds, initialPose.inverse() * reference->globalTransform());
+    if(_pwnSaving) {
+      // Merge the scene with the new added cloud
+      _scene->add(*reference, _initialScenePose.inverse() * reference->globalTransform());
+      _sceneVerteces.push_back(reference->vertex());
+      _merger->merge(_scene, _initialScenePose.inverse() * reference->globalTransform() * _sensorOffset);
+    }
 
     cerr << "********************** Aligning vertex " << current->vertex()->id() << " **********************" << endl;
   
@@ -357,17 +365,21 @@ namespace pwn {
     bool hasImu = extractAbsolutePrior(imuMean, imuInfo, current);
     initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
-    // Compute the reference subscene
-    // if(_indexImage.cols() != _scaledImageCols || _indexImage.rows() != _scaledImageRows) 
-    //   _indexImage.resize(_scaledImageRows, _scaledImageCols);
-    // _projector->setTransform(reference->globalTransform().inverse() * initialPose);
-    // _projector->project(_indexImage, _depthImage, mergedClouds->points());
-    // _converter->compute(subScene, _depthImage, Isometry3f::Identity(), true);
-
+    if(_pwnSaving) {
+      // Compute the reference subscene
+      // if(_indexImage.cols() != _scaledImageCols || _indexImage.rows() != _scaledImageRows) 
+      // 	_indexImage.resize(_scaledImageRows, _scaledImageCols);
+      // _projector->setTransform(reference->globalTransform().inverse() * _initialScenePose * _sensorOffset);
+      // _projector->project(_indexImage, _depthImage, _scene->points());
+      // _converter->compute(*_subScene, _depthImage, _sensorOffset, true);
+      // _aligner->setReferenceFrame(_subScene);
+    }
+    else {
+      _aligner->setReferenceFrame(reference);
+    }
+    _aligner->setReferenceFrame(reference);
     // Align
     _aligner->clearPriors();
-    _aligner->setReferenceFrame(reference);
-    // aligner->setReferenceFrame(&subScene);
     _aligner->setCurrentFrame(current);
     _aligner->setInitialGuess(initialGuess);
     _aligner->setSensorOffset(_sensorOffset);
@@ -378,7 +390,7 @@ namespace pwn {
       _aligner->addAbsolutePrior(reference->globalTransform(), imuMean, imuInfo);
     }
     _aligner->align();
-  
+    
     Eigen::Isometry3f localTransformation = _aligner->T();
     bool failure = false;
     if(_aligner->outerIterations() != 0 && (_aligner->inliers() < _minNumInliers || _aligner->error() / _aligner->inliers() > _minError) ) {
@@ -421,36 +433,39 @@ namespace pwn {
       cout << "Global transformation: " << t2v(globalT).transpose() << endl;
     }
 
-    // Eigen::Isometry3f motionFromFirstFrame = initialPose.inverse() * globalT;
-    // Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
-    // if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || 
-    //    motionFromFirstFrame.translation().norm() > _chunkDistance ||
-    //    failure) {
-    //   char buff[1024];
-    //   sprintf(buff, "out-%05d.pwn", counter++);	
-    
-    //   Eigen::Isometry3f middleEstimate;
-    //   g2o::VertexSE3 *middleVertex = pwnVerteces[pwnVerteces.size() / 2];
-    //   for(int r = 0; r < 3; r++) {
-    // 	for(int c = 0; c < 4; c++) {
-    // 	  middleEstimate(r, c) = middleVertex->estimate()(r, c);
-    // 	}
-    //   }
-    //   middleEstimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
-    //   mergedClouds->transformInPlace(middleEstimate.inverse() * initialPose);
-
-    //   PWNData *pwnData = new PWNData(mergedClouds);
-    //   pwnData->setFilename(buff);
-    //   pwnData->setOriginPose(middleEstimate);
-    //   pwnData->writeOut();
-    //   cerr << "Saved pwn cloud" << endl;
-    //   pwnData->release();
-    //   middleVertex->addUserData(pwnData);
-    //   pwnData->setDataContainer(middleVertex);
-    //   mergedClouds = new Frame();
-    //   initialPose = globalT;
-    //   pwnVerteces.clear();
-    // }
+    if(_pwnSaving) {
+      Eigen::Isometry3f motionFromFirstFrame = _initialScenePose.inverse() * globalT;
+      Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
+      if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || 
+	 motionFromFirstFrame.translation().norm() > _chunkDistance /*||
+								      failure*/) {
+	char buff[1024];
+	sprintf(buff, "out-%05d.pwn", _sceneVerteces.front()->id());	
+	
+	Eigen::Isometry3f middleEstimate;
+	g2o::VertexSE3 *middleVertex = _sceneVerteces[_sceneVerteces.size() / 2];
+	for(int r = 0; r < 3; r++) {
+	  for(int c = 0; c < 4; c++) {
+	    middleEstimate(r, c) = middleVertex->estimate()(r, c);
+	  }
+	}
+	middleEstimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
+	_scene->transformInPlace(middleEstimate.inverse() * _initialScenePose);
+	
+	PWNData *pwnData = new PWNData(_scene);
+	pwnData->setFilename(buff);
+	pwnData->setOriginPose(middleEstimate);
+	pwnData->writeOut();
+	cerr << "Saved pwn cloud " << buff << endl;
+	// This will also delete the _scene frame
+	pwnData->release();
+	middleVertex->addUserData(pwnData);
+	pwnData->setDataContainer(middleVertex);
+	_scene = new Frame();
+	_initialScenePose = globalT;
+	_sceneVerteces.clear();
+      }
+    }
 
     return true;
   }
