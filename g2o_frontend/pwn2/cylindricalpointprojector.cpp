@@ -17,7 +17,7 @@ namespace pwn {
   void CylindricalPointProjector::_updateMatrices() {
     _iT =_transform.inverse();
     _iT.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
-    _inverseAngularResoltion = 1./_angularResolution;
+    _inverseAngularResolution = 1./_angularResolution;
     _angularCenter=_angularResolution*_angularFov;
     _inverseVerticalFocalLenght = 1./_verticalFocalLenght;
   }

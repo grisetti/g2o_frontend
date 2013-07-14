@@ -38,8 +38,8 @@ int main(int argc, char **argv) {
   PointInformationMatrixCalculator pointInformationMatrixCalculator;
   NormalInformationMatrixCalculator normalInformationMatrixCalculator;
   DepthImageConverter depthImageConverter(&projector, &statsCalculator,
-					  &pointInformationMatrixCalculator,
-					  &normalInformationMatrixCalculator);
+  					  &pointInformationMatrixCalculator,
+  					  &normalInformationMatrixCalculator);
   
   cerr << "loading" << cloudFilename.c_str() << endl;
   DepthImage inputImage;
@@ -49,14 +49,19 @@ int main(int argc, char **argv) {
   cerr << "computing stats... ";
   depthImageConverter.compute(frame, inputImage, Eigen::Isometry3f::Identity());
   cerr << " done" << endl;
-
+  
+  // Frame frame;
+  // Isometry3f tmp;
+  // frame.load(tmp, cloudFilename.c_str());
 
   CylindricalPointProjector cylindricalProjector;
-  cylindricalProjector.setAngularFov(M_PI/4);
-  cylindricalProjector.setAngularResolution(2*720/M_PI);
+  float angularFov = M_PI;
+  float angularResolution = 2 * 360 / M_PI;
+  cylindricalProjector.setAngularFov(angularFov);
+  cylindricalProjector.setAngularResolution(angularResolution);
   DepthImage outputDepthImage;
   Eigen::MatrixXi outputIndexImage;
-  outputIndexImage.resize(720,480);
+  outputIndexImage.resize(angularFov * 2.0f * angularResolution, 480);
   
   
   cylindricalProjector.project(outputIndexImage,outputDepthImage,frame.points());
@@ -71,47 +76,5 @@ int main(int argc, char **argv) {
   
   reconstructedFrame.save("test.pwn");
   
-  // // Testing project
-  // for(int i = 0; i < numImages; i++) {
-  //   depthImage[i].load(cloudFilename[i].c_str(), true);
-
-  //   sensorOffset[i] = Isometry3f::Identity();
-  //   sensorOffset[i].translation() = Vector3f(0.15f, 0.0f, 0.05f);
-  //   Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
-  //   if(i > 0)
-  //     sensorOffset[i].linear() =  AngleAxisf(i * M_PI / 2.0f, Vector3f::UnitZ()) * quat.toRotationMatrix();
-  //   else
-  //     sensorOffset[i].linear() =  quat.toRotationMatrix();
-  //   sensorOffset[i].matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-    
-  //   multiProjector.addPointProjector(&projector, sensorOffset[i], depthImage[i].rows(), depthImage[i].cols());
-    
-  //   depthImageConverter.compute(frame[i], depthImage[i], sensorOffset[i]);
-
-  //   totalFrame.add(frame[i]);
-  // }
-
-  // MatrixXi indexImageRullino;
-  // DepthImage rullino;
-
-  // multiProjector.project(indexImageRullino, rullino, totalFrame.points());
-
-  // // Testing unproject
-  // totalFrame.clear();
-  // multiProjector.unProject(totalFrame.points(), totalFrame.gaussians(), indexImageRullino, rullino);
-  
-  // // Testing projectIntervals
-  // totalFrame.clear();
-
-  // depthImageConverter = DepthImageConverter(&multiProjector, &statsCalculator,
-  // 					    &pointInformationMatrixCalculator,
-  // 					    &normalInformationMatrixCalculator);
-  
-  // Isometry3f tmp = Isometry3f::Identity();
-  // tmp.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-  // depthImageConverter.compute(totalFrame, rullino, tmp, true);
-
-  // totalFrame.save(outputFilename.c_str(), 1, true);
-
-  // return 0;
+  return 0;
 }

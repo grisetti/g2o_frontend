@@ -39,7 +39,7 @@ namespace pwn {
     inline float angularFov() const {return _angularFov;} 
     inline void setAngularFov(float angularFov_)  { _angularFov = angularFov_; _updateMatrices();} 
     inline float angularResolution() const {return _angularResolution;} 
-    inline void setAngularResolution(float angularResolution_)  { _angularResolution = angularResolution_; _updateMatrices();} 
+    inline void setAngularResolution(float angularResolution_)  { _angularResolution = angularResolution_; _updateMatrices();}
     inline float verticalFocalLenght() const {return _verticalFocalLenght;} 
     inline void setVerticalFocalLenght(float verticalFocalLenght_)  { _verticalFocalLenght = verticalFocalLenght_; _updateMatrices();} 
     inline float verticalCenter() const {return _verticalCenter;} 
@@ -168,7 +168,7 @@ namespace pwn {
     inline bool _unProject(Point& p, const int x_, const int y_, const float d) const {
       if (d<_minDistance || d>_maxDistance)
 	return false;
-      float theta = _inverseAngularResoltion*(x_-_angularCenter);
+      float theta = _inverseAngularResolution*(x_-_angularCenter);
       if (fabs(theta>_angularFov))
 	return false;
       float x=sin(theta)*d;
@@ -217,7 +217,7 @@ namespace pwn {
     float _inverseVerticalFocalLenght;  // focal lenght on the y
     float _verticalCenter;  // focal lenght on the y
     float _angularResolution; // radians per pixel;
-    float _inverseAngularResoltion; // pixels per radians;
+    float _inverseAngularResolution; // pixels per radians;
     Eigen::Isometry3f _iT;
   };
 

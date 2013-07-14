@@ -19,29 +19,21 @@ namespace pwn {
     // Graph init
     _graph = graph_;
     
-    // Projectors init
-    _numProjectors = 4;
-    _imageRows = 0;
-    _imageCols = 0;
-    _scaledImageRows = 0;
-    _scaledImageCols = 0;
-    _reduction = 2;
-    _cameraMatrix << 
-      525.0f, 0.0f, 319.5f,
-      0.0f, 525.0f, 239.5f,
-      0.0f, 0.0f, 1.0f;
-    _scaledCameraMatrix << 
-      525.0f, 0.0f, 319.5f,
-      0.0f, 525.0f, 239.5f,
-      0.0f, 0.0f, 1.0f;
+    // Projector init
     _sensorOffset = Isometry3f::Identity();
     _sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-    _pinholePointProjector = new PinholePointProjector();
-    _multiPointProjector = new MultiPointProjector();
-
+    _cylindricalPointProjector = new CylindricalPointProjector();
+    float angularFov = M_PI / 2;
+    float angularResolution = 320.0f / M_PI;
+    _cylindricalPointProjector->setAngularFov(angularFov);
+    _cylindricalPointProjector->setAngularResolution(angularResolution);
+    // For now they are fixed
+    _imageRows = angularFov * 2.0f * angularResolution;
+    _imageCols = 480;
+    
     // Correspondence finder and linearizer init
     _correspondenceFinder = new CorrespondenceFinder();
-     updateProjectors();
+    _correspondenceFinder->setSize(_imageRows, _imageCols);
     _linearizer = new Linearizer();
     
     // Information matrix calculators init
@@ -55,7 +47,7 @@ namespace pwn {
     _minNumInliers = 10000;
     _minError = 10.0f;
     _aligner = new Aligner();
-    _aligner->setProjector(_multiPointProjector);
+    _aligner->setProjector(_cylindricalPointProjector);
     _aligner->setLinearizer(_linearizer);
     _linearizer->setAligner(_aligner);
     _aligner->setCorrespondenceFinder(_correspondenceFinder);
@@ -64,8 +56,8 @@ namespace pwn {
   }
 
   bool PWNLoopCloserController::extractAbsolutePrior(Eigen::Isometry3f &priorMean, 
-			    Matrix6f &priorInfo, 
-			    G2OFrame *currentFrame) {
+						     Matrix6f &priorInfo, 
+						     G2OFrame *currentFrame) {
     VertexSE3 *currentVertex = currentFrame->vertex();
     ImuData *imuData = 0;
     OptimizableGraph::Data *d = currentVertex->userData();
@@ -115,7 +107,7 @@ namespace pwn {
     // Load cloud from the file
     if(frame->load(originPose, fname.c_str())) {      
       // Set frame parameters
-      frame->cameraMatrix() = _cameraMatrix;
+      frame->cameraMatrix().setZero();
       frame->sensorOffset() = _sensorOffset;    
       frame->globalTransform() = originPose;
       frame->globalTransform().matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
@@ -191,37 +183,5 @@ namespace pwn {
     // Add edge
 
     return true;
-  }
-
-  void PWNLoopCloserController::updateProjectors() {
-    // Clear the list of projectors
-    _multiPointProjector->clearProjectors();
-
-    // Compute the reduced camera matrix and image size
-    float scale = 1.0f / _reduction;
-    _scaledCameraMatrix = _cameraMatrix * scale;
-    _scaledCameraMatrix(2, 2) = 1.0f;
-    _scaledImageRows = _imageRows / _reduction;
-    _scaledImageCols = _imageCols / _reduction;
-    
-    // Set the camera matrix to the pinhole point projector
-    _pinholePointProjector->setCameraMatrix(_scaledCameraMatrix);
-    
-    // Create the projectors for the multi projector
-    float angleStep = 2.0f * M_PI / _numProjectors;
-
-    for(int i = 0; i < _numProjectors; i++) {
-      Isometry3f currentSensorOffset = _sensorOffset;
-      if(i > 0)
-	currentSensorOffset.linear() =  AngleAxisf(i * angleStep, Vector3f::UnitZ()) * _sensorOffset.linear();
-      currentSensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-    
-      PinholePointProjector *currentPinholePointProjector = new PinholePointProjector();
-      currentPinholePointProjector->setCameraMatrix(_scaledCameraMatrix);
-      _multiPointProjector->addPointProjector(currentPinholePointProjector, currentSensorOffset, 
-					      _scaledImageRows, _scaledImageCols);
-    }
-    
-    _correspondenceFinder->setSize(_scaledImageRows, _scaledImageCols);
   }
 }

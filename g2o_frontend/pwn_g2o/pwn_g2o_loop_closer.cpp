@@ -145,11 +145,6 @@ int main(int argc, char** argv) {
   frames.resize(listWidget->count());
   std::fill(frames.begin(), frames.end(), (G2OFrame*)0);
 
-  Matrix3f cameraMatrix;
-  cameraMatrix <<
-    525.0f, 0.0f, 319.5f,
-      0.0f, 525.0f, 239.5f,
-      0.0f, 0.0f, 1.0f;
   Isometry3f sensorOffset = Isometry3f::Identity();
   sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
   Quaternionf quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
@@ -158,11 +153,11 @@ int main(int argc, char** argv) {
   PWNLoopCloserController *controller = new PWNLoopCloserController(graph);
   controller->setMinNumInliers(al_minNumInliers);
   controller->setMinError(al_minError);
-  controller->setCameraMatrix(cameraMatrix);
+  //controller->setCameraMatrix(cameraMatrix);
   controller->setSensorOffset(sensorOffset);
-  controller->setReduction(al_scale);
-  controller->setImageRows(al_imageCols);
-  controller->setImageCols(al_imageRows);
+  //controller->setReduction(al_scale);
+  //controller->setImageRows(al_imageCols);
+  //controller->setImageCols(al_imageRows);
   controller->setCurvatureThreshold(al_curvatureThreshold);
 
   viewer->init();
