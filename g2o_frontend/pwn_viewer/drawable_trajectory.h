@@ -3,6 +3,7 @@
 
 #include "drawable.h"
 #include "gl_parameter_trajectory.h"
+#include <Eigen/StdVector>
 #include <vector>
 #include <iostream>
 
@@ -37,9 +38,12 @@ class DrawableTrajectory : public Drawable {
 
   virtual void draw();
   void updateTrajectoryDrawList();
-
+  
+  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> >* _trajectoryColors;
+  
  protected:
   GLParameterTrajectory *_parameter;
+  
   std::vector<Eigen::Isometry3f>* _trajectory;
   GLuint _pyramidDrawList;
   GLuint _trajectoryDrawList;

@@ -23,8 +23,8 @@ namespace pwn {
     _sensorOffset = Isometry3f::Identity();
     _sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     _cylindricalPointProjector = new CylindricalPointProjector();
-    float angularFov = M_PI / 2;
-    float angularResolution = 320.0f / M_PI;
+    float angularFov = M_PI;
+    float angularResolution = 360.0f / M_PI;
     _cylindricalPointProjector->setAngularFov(angularFov);
     _cylindricalPointProjector->setAngularResolution(angularResolution);
     // For now they are fixed
@@ -51,6 +51,7 @@ namespace pwn {
     _aligner->setLinearizer(_linearizer);
     _linearizer->setAligner(_aligner);
     _aligner->setCorrespondenceFinder(_correspondenceFinder);
+    _aligner->correspondenceFinder()->setInlierDistanceThreshold(3);
     _aligner->setInnerIterations(1);
     _aligner->setOuterIterations(10);
   }
@@ -152,13 +153,17 @@ namespace pwn {
     _aligner->setReferenceFrame(referenceFrame);
     _aligner->setCurrentFrame(currentFrame);
     _aligner->setInitialGuess(initialGuess);
-    _aligner->setSensorOffset(Isometry3f::Identity());
+    _aligner->setSensorOffset(_sensorOffset);
     if(hasImu)
       _aligner->addAbsolutePrior(referenceFrame->globalTransform(), imuMean, imuInfo);
     
     // Align
     _aligner->align();  
     transform = _aligner->T();
+    
+    referenceFrame->save("finalReference.pwn", 1, true);
+    currentFrame->save("finalCurrent.pwn", 1, true, _aligner->T());
+
     if(_aligner->outerIterations() != 0 && 
        (_aligner->inliers() < _minNumInliers || 
 	_aligner->error() / _aligner->inliers() > _minError)) {
@@ -181,6 +186,17 @@ namespace pwn {
     }
 
     // Add edge
+    g2o::EdgeSE3* edge = new g2o::EdgeSE3();
+
+    Eigen::Isometry3d iso;
+    for(int c = 0; c < 4; c++)
+      for(int r = 0; r < 3; r++)
+	iso.matrix()(r, c) = _aligner->T().matrix()(r, c);
+    edge->setVertex(0,referenceFrame->vertex());
+    edge->setVertex(1,currentFrame->vertex());
+    edge->setMeasurement(iso);
+    edge->setInformation(Eigen::Matrix<double, 6,6>::Identity()*100);
+    _graph->addEdge(edge);
 
     return true;
   }

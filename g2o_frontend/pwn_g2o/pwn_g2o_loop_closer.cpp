@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
   SlamLinearSolver *linearSolver = new SlamLinearSolver();
   linearSolver->setBlockOrdering(false);
   SlamBlockSolver *blockSolver = new SlamBlockSolver(linearSolver);
-  OptimizationAlgorithmGaussNewton *solverGauss = new OptimizationAlgorithmGaussNewton(blockSolver);
+  OptimizationAlgorithmLevenberg *solverGauss = new OptimizationAlgorithmLevenberg(blockSolver);
   SparseOptimizer *graph = new SparseOptimizer();
   graph->setAlgorithm(solverGauss);
     
@@ -141,6 +141,7 @@ int main(int argc, char** argv) {
     vz_endingVertex = listWidget->count();
   
   std::vector<Isometry3f> trajectory;
+  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> > trajectoryColors;
   std::vector<G2OFrame*> frames;
   frames.resize(listWidget->count());
   std::fill(frames.begin(), frames.end(), (G2OFrame*)0);
@@ -170,29 +171,11 @@ int main(int argc, char** argv) {
 
   GLParameterTrajectory *parameterTrajectory = new GLParameterTrajectory(0.03f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f));
   DrawableTrajectory *drawableTrajectory = new DrawableTrajectory(Isometry3f::Identity(), parameterTrajectory, &trajectory);
+  drawableTrajectory->_trajectoryColors=&trajectoryColors;
   viewer->addDrawable(drawableTrajectory);
   GLParameterFrame *parameterFrame = new GLParameterFrame(vz_step); 
 
-  /************************************************************************
-   *                          Drawing Trajectory                          *
-   ************************************************************************/
-  for(int i = vz_startingVertex; i < vz_endingVertex; i++) {
-    QListWidgetItem *listItem = listWidget->item(i);
-    listItem->setHidden(false);
-    string idString = listItem->text().toUtf8().constData();
-    int index = atoi(idString.c_str());
-    VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
-    if(v) {
-      Isometry3f estimate;
-      for(int r = 0; r < 3; r++) {
-	for(int c = 0; c < 4; c++) {
-	  estimate(r, c) = v->estimate()(r, c);
-	}
-      }
-      estimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
-      trajectory.push_back(estimate);
-    }
-  }
+
   G2OFrame *referenceFrame = 0, *currentFrame = 0;
   
   /************************************************************************
@@ -201,6 +184,31 @@ int main(int argc, char** argv) {
   while(viewer->isVisible()) {
     bool changed = false;
     
+
+    /************************************************************************
+     *                          Drawing Trajectory                          *
+     ************************************************************************/
+    trajectory.clear();
+    trajectoryColors.clear();
+    for(int i = vz_startingVertex; i < vz_endingVertex; i++) {
+      QListWidgetItem *listItem = listWidget->item(i);
+      listItem->setHidden(false);
+      string idString = listItem->text().toUtf8().constData();
+      int index = atoi(idString.c_str());
+      VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
+      if(v) {
+	Isometry3f estimate;
+	for(int r = 0; r < 3; r++) {
+	  for(int c = 0; c < 4; c++) {
+	    estimate(r, c) = v->estimate()(r, c);
+	  }
+	}
+	estimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
+	trajectory.push_back(estimate);
+	trajectoryColors.push_back(Eigen::Vector3f(0.3, 0.3, 0.3));
+      }
+    }
+
     // Align button was pressed
     if(alignButton->isDown()) {
       // Clean old aligned frames
@@ -239,10 +247,21 @@ int main(int argc, char** argv) {
       // Align
       Isometry3f transform = Isometry3f::Identity();
       transform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-      if(controller->alignVertexWithPWNData(transform, referenceFrame, currentFrame))
-      	cerr << "Adge added" << endl;
-      else
-      	cerr << "Adge was not added because of a bad alignment" << endl;
+      if(controller->alignVertexWithPWNData(transform, referenceFrame, currentFrame)) {
+      	cerr << "Edge added" << endl;
+	OptimizableGraph::Vertex* gauge=graph->findGauge();
+	if(gauge){
+	  cerr << "gauge found, vertex" << gauge->id() << endl;
+	  gauge->setFixed(true);
+	}
+	graph->initializeOptimization();
+	graph->setVerbose(true);
+	graph->optimize(1000000);
+	cerr << "optimization done" << endl;
+	changed = true;
+      } else {
+      	cerr << "Edge was not added because of a bad alignment" << endl;
+      }
     }
 
     // Manage user ListWidget elements highlighting 
@@ -250,6 +269,7 @@ int main(int argc, char** argv) {
       QListWidgetItem* item = listWidget->item(k);
       if(item) {
 	if(item->isSelected()) {
+	  trajectoryColors[k]=Eigen::Vector3f(1.0, 0.3, 0.3);
 	  string idString = item->text().toUtf8().constData();
 	  int index = atoi(idString.c_str());
 	  VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
@@ -257,7 +277,11 @@ int main(int argc, char** argv) {
 	    G2OFrame *currentFrame = new G2OFrame(v);
 	    controller->extractPWNData(currentFrame);
 	    frames[k] = currentFrame;
-	    DrawableFrame *drawableFrame = new DrawableFrame(currentFrame->globalTransform(), parameterFrame, frames[k]); 
+	    Eigen::Isometry3f isotta;
+	    for (int c = 0; c<4; c++)
+	      for (int r = 0; r<3; r++)
+		isotta.matrix()(r,c) = v->estimate().matrix()(r,c);
+	    DrawableFrame *drawableFrame = new DrawableFrame(isotta, parameterFrame, frames[k]); 
 	    viewer->addDrawable(drawableFrame);
 	    changed = true;
 	  }	

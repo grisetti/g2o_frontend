@@ -31,7 +31,12 @@ int main(int argc, char **argv) {
     0.0f, 525.0f, 239.5f,
     0.0f, 0.0f, 1.0f;
 
-  
+  Isometry3f sensorOffset = Isometry3f::Identity();
+  sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+  Quaternionf quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+  sensorOffset.linear() = quaternion.toRotationMatrix();
+  sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+
   PinholePointProjector projector;
   projector.setCameraMatrix(cameraMatrix);
   StatsCalculator statsCalculator;
@@ -47,22 +52,23 @@ int main(int argc, char **argv) {
   Frame frame;
 
   cerr << "computing stats... ";
-  depthImageConverter.compute(frame, inputImage, Eigen::Isometry3f::Identity());
+  depthImageConverter.compute(frame, inputImage, sensorOffset);
   cerr << " done" << endl;
   
-  // Frame frame;
-  // Isometry3f tmp;
-  // frame.load(tmp, cloudFilename.c_str());
+  frame.save("cyl.pwn", 1, true, Eigen::Isometry3f::Identity());
+  frame.clear();
+  Eigen::Isometry3f tmp;
+  frame.load(tmp, "cyl.pwn");
 
   CylindricalPointProjector cylindricalProjector;
   float angularFov = M_PI;
-  float angularResolution = 2 * 360 / M_PI;
+  float angularResolution = 360.0f / M_PI;
   cylindricalProjector.setAngularFov(angularFov);
   cylindricalProjector.setAngularResolution(angularResolution);
   DepthImage outputDepthImage;
   Eigen::MatrixXi outputIndexImage;
   outputIndexImage.resize(angularFov * 2.0f * angularResolution, 480);
-  
+  cylindricalProjector.setTransform(sensorOffset);
   
   cylindricalProjector.project(outputIndexImage,outputDepthImage,frame.points());
   outputDepthImage.save("cyl.pgm", true);
@@ -72,7 +78,7 @@ int main(int argc, char **argv) {
 						&pointInformationMatrixCalculator,
 						&normalInformationMatrixCalculator);
 
-  cylindricalImageConverter.compute(reconstructedFrame, outputDepthImage, Eigen::Isometry3f::Identity());
+  cylindricalImageConverter.compute(reconstructedFrame, outputDepthImage, sensorOffset);
   
   reconstructedFrame.save("test.pwn");
   
