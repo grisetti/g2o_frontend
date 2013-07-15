@@ -120,12 +120,13 @@ int main(int argc, char**argv){
 
     string filename;
     string outfilename;
-    int v1id = 0;
+    int vfirst_id = 0, vlast_id = 0;
     int maxIterations;
     float inliersThreshold;
     float inliersStopFraction;
     g2o::CommandArgs arg;
-    arg.param("id1", v1id, 0, "id of v1");
+    arg.param("idfirst", vfirst_id, 0, "id of vfirst");
+    arg.param("idlast", vlast_id, -1, "id of vlast");
     arg.param("i", maxIterations, 1000, "max iterations");
     arg.param("t", inliersThreshold, 0.3, "inlier threshold");
     arg.param("s", inliersStopFraction, 0.5, "stop fraction");
@@ -141,7 +142,7 @@ int main(int argc, char**argv){
     SlamLinearSolver* linearSolver = new SlamLinearSolver();
     linearSolver->setBlockOrdering(false);
     SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
-    OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
+    OptimizationAlgorithmGaussNewton* solverGauss = new OptimizationAlgorithmGaussNewton(blockSolver);
     SparseOptimizer * graph = new SparseOptimizer();
     graph->setAlgorithm(solverGauss);
     graph->load(filename.c_str());
@@ -171,13 +172,16 @@ int main(int argc, char**argv){
 //    LinesForMatching pairLinesSet;
 
     bool merdging = false;
-    int lastID = (int)vertexIds.size()-1;
+    int lastID;
+    if (vlast_id != -1)
+        lastID = vlast_id;
+    else lastID = (int)vertexIds.size()-1;
 
     //lines vector to be sorted
     std::vector<VertexLine2D*> lines1sort, lines2sort;
 
     //fixing the first vertex of the graph
-    graph->vertex(v1id/*0*/)->setFixed(1);
+    graph->vertex(vfirst_id/*0*/)->setFixed(1);
 
     /** Building the new graph with vertex payload aligned:
      * -for each vertex, reading its own payload and saving the payload of the following vertex,
@@ -187,7 +191,7 @@ int main(int argc, char**argv){
      **/
     cout << "\033[22;31;1m********************************START READING THE GRAPH********************************\033[0m" << endl;
     cerr << "num vertici " << vertexIds.size() << endl;
-    for (int i = v1id/*0*/; i<(int)vertexIds.size(); i++)
+    for (int i = vfirst_id/*0*/; i<=lastID/*(int)vertexIds.size()*/; i++)
     {
 //        cerr << "iteration: " << i << endl;
         OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[i]);
@@ -239,8 +243,6 @@ int main(int argc, char**argv){
             es_next = v_next->edges();
             cout << "The next vertex has " << es_next.size() << " edge." << endl;
             cout << endl << "***Extracting lines from CURRENT frame***" << endl;
-            //line extracted for the current vertex
-
             for (OptimizableGraph::EdgeSet::iterator itv = es.begin(); itv != es.end(); itv++)
             {
                 EdgeSE2Line2D* el = dynamic_cast<EdgeSE2Line2D*>(*itv);
@@ -252,10 +254,10 @@ int main(int argc, char**argv){
                 lines1sort.push_back(vl);
             }
             std::sort(lines1sort.begin(), lines1sort.end(),LineLengthComparator());
-
-            //saving the lines of the current vertex
             cerr << "ho merdgiato? " << merdging << endl;
             lvector.clear();
+            cout << "FANCULO " << lvector.size() << ", lines1sort "<< lines1sort.size() << endl;
+            //saving the lines of the current vertex, to create the correspondences for ransac
             if(!merdging)
             {
                 cout << "  !!! No merdging occurs yet: taking the original first frame !!!  " << endl;
@@ -300,12 +302,13 @@ int main(int argc, char**argv){
                 if (!el_next)
                     continue;
 
-  //              VertexSE2* tmp0_next = dynamic_cast<VertexSE2*>(el_next->vertices()[0]);
+//              VertexSE2* tmp0_next = dynamic_cast<VertexSE2*>(el_next->vertices()[0]);
                 VertexLine2D* vl_next = dynamic_cast<VertexLine2D*>(el_next->vertices()[1]);
                 lines2sort.push_back(vl_next);
             }
             std::sort(lines2sort.begin(), lines2sort.end(),LineLengthComparator());
             lvector_next.clear();
+            cout << "FANCULO next" << lvector_next.size() << ", lines2sort "<< lines2sort.size() << endl;
             //saving the lines of the next vertex, to create the correspondences for ransac
             for (size_t j=0; j<lines2sort.size(); j++)
             {
@@ -444,31 +447,13 @@ int main(int argc, char**argv){
                     cout << "Inliers: " << index << "-th correspondance between: " << currCorrs[index].lid1 << ", " << currCorrs[index].lid2 << " with error: " << err[index] << endl;
                 }
 
-                //updating the value of the second vertex pose and his own line measurements
-                SE2 newpose = v_next->estimate()*transform.inverse();
-                cerr << "vecchia posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
-                v_next->setEstimate(newpose);
-                cerr << "nuova posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
-
-                for (OptimizableGraph::EdgeSet::iterator itv_next = es_next.begin(); itv_next != es_next.end(); itv_next++)
-                {
-                    EdgeSE2Line2D* el_next = dynamic_cast<EdgeSE2Line2D*>(*itv_next);
-                    if (!el_next) continue;
-
-                    VertexLine2D* vl_next = dynamic_cast<VertexLine2D*>(el_next->vertices()[1]);
-                    if(!vl_next) continue;
-
-                    Line2D newli_next = transform*vl_next->estimate();
-                    vl_next->setEstimate(newli_next);
-                }
-
                 //debug: plotting lines frame i and lines frame j remapped with the transform found
-#if 0
-                ofstream os1c("Line1CurrCorr.dat");
+#if 1
+                ofstream os1("Line1CurrCorr.dat");
                 for (int ci = 0; ci < (int)currCorrs.size(); ci++)
                 {
-                    VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[ci].lid1].vline->id()));
-                    Vector2d line1 = Vector2d(vli->estimate());
+//                    VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[ci].lid1].vline->id()));
+//                    Vector2d line1 = Vector2d(vli->estimate());
                     VertexPointXY* vpl1_1 = dynamic_cast<VertexPointXY*>(graph->vertex(s1[currCorrs[ci].lid1].vline->p1Id));
                     VertexPointXY* vpl2_1 = dynamic_cast<VertexPointXY*>(graph->vertex(s1[currCorrs[ci].lid1].vline->p2Id));
 //                    Vector2d nline1(cos(line1(0)), sin(line1(0)));
@@ -479,20 +464,22 @@ int main(int argc, char**argv){
 //                    l2_1 = t1.dot(vpl2_1->estimate()-pmiddle1);
 //                    Vector2d p1line1 = pmiddle1 + t1*l1_1;
 //                    Vector2d p2line1 = pmiddle1 + t1*l2_1;
-                    os1c << vpl1_1.transpose() << endl;
-                    os1c << vpl2_1.transpose() << endl;
-                    os1c << endl;
-                    os1c << endl;
-                    os1c.flush();
+                    Vector2d p1line1 = vpl1_1->estimate();
+                    Vector2d p2line1 = vpl2_1->estimate();
+                    os1 << p1line1.transpose() << endl;
+                    os1 << p2line1.transpose() << endl;
+                    os1 << endl;
+                    os1 << endl;
+                    os1.flush();
                 }
 
-                ofstream os2c("Line2CurrCorr.dat");
+                ofstream os2("Line2CurrCorr.dat");
                 ofstream os2R("Line2CurrCorrRemapped.dat");
 
                 for (int ci = 0; ci < (int)currCorrs.size(); ci++)
                 {
-                    VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[ci].lid2].vline->id()));
-                    Vector2d line2 = Vector2d(vlj->estimate());
+//                    VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[ci].lid2].vline->id()));
+//                    Vector2d line2 = Vector2d(vlj->estimate());
                     VertexPointXY* vpl1_2 = dynamic_cast<VertexPointXY*>(graph->vertex(s2[currCorrs[ci].lid2].vline->p1Id));
                     VertexPointXY* vpl2_2 = dynamic_cast<VertexPointXY*>(graph->vertex(s2[currCorrs[ci].lid2].vline->p2Id));
 //                    Vector2d nline2(cos(line2(0)), sin(line2(0)));
@@ -503,31 +490,51 @@ int main(int argc, char**argv){
 //                    l2_1 = t1.dot(vpl2_2->estimate()-pmiddle2);
 //                    Vector2d p1line2 = pmiddle2 + t1*l1_1;
 //                    Vector2d p2line2 = pmiddle2 + t1*l2_1;
-                    os2c << vpl1_2.transpose() << endl;
-                    os2c << vpl2_2.transpose() << endl;
-                    os2c << endl;
-                    os2c << endl;
-                    os2c.flush();
-                }
+                    Vector2d p1line2 = vpl1_2->estimate();
+                    Vector2d p2line2 = vpl2_2->estimate();
+                    os2 << p1line2.transpose() << endl;
+                    os2 << p2line2.transpose() << endl;
+                    os2 << endl;
+                    os2 << endl;
+                    os2.flush();
 
-                //taking the set of line to be trasformed
-//                Vector2d line2Remapped = Vector2d(transform*vlj->estimate());
-                Vector2d vpl1_2R = transform*(vpl1_2->estimate());
-                Vector2d vpl2_2R = transform*(vpl2_2->estimate());
-//                Vector2d nline2R(cos(line2Remapped(0)), sin(line2Remapped(0)));
-//                Vector2d pmiddle2 = nline2R*line2Remapped(1);
-//                Vector2d t2R(-nline2R.y(), nline2R.x());
-//                double l1_2R,l2_2R = 10;
-//                l1_2R = t2R.dot(vpl1_2R - pmiddle2);
-//                l2_2R = t2R.dot(vpl2_2R - pmiddle2);
-//                Vector2d p1line2R = pmiddle2 + t2R*l1_2R;
-//                Vector2d p2line2R = pmiddle2 + t2R*l2_2R;
-                os2R << vpl1_2R.transpose() << endl;
-                os2R << vpl1_2R.transpose() << endl;
-                os2R << endl;
-                os2R << endl;
-                os2R.flush();
+                    //taking the set of line to be trasformed
+//                    Vector2d line2Remapped = Vector2d(transform*vlj->estimate());
+                    Vector2d p1line2R = transform*p1line2;
+                    Vector2d p2line2R = transform*p2line2;
+//                    Vector2d nline2R(cos(line2Remapped(0)), sin(line2Remapped(0)));
+//                    Vector2d pmiddle2 = nline2R*line2Remapped(1);
+//                    Vector2d t2R(-nline2R.y(), nline2R.x());
+//                    double l1_2R,l2_2R = 10;
+//                    l1_2R = t2R.dot(vpl1_2R - pmiddle2);
+//                    l2_2R = t2R.dot(vpl2_2R - pmiddle2);
+//                    Vector2d p1line2R = pmiddle2 + t2R*l1_2R;
+//                    Vector2d p2line2R = pmiddle2 + t2R*l2_2R;
+                    os2R << p1line2R.transpose() << endl;
+                    os2R << p2line2R.transpose() << endl;
+                    os2R << endl;
+                    os2R << endl;
+                    os2R.flush();
+                }
 #endif
+
+//                //updating the value of the second vertex pose and his own line measurements
+//                SE2 newpose = v_next->estimate()*transform.inverse();
+//                cerr << "vecchia posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
+//                v_next->setEstimate(newpose);
+//                cerr << "nuova posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
+
+//                for (OptimizableGraph::EdgeSet::iterator itv_next = es_next.begin(); itv_next != es_next.end(); itv_next++)
+//                {
+//                    EdgeSE2Line2D* el_next = dynamic_cast<EdgeSE2Line2D*>(*itv_next);
+//                    if (!el_next) continue;
+
+//                    VertexLine2D* vl_next = dynamic_cast<VertexLine2D*>(el_next->vertices()[1]);
+//                    if(!vl_next) continue;
+
+//                    Line2D newli_next = transform*vl_next->estimate();
+//                    vl_next->setEstimate(newli_next);
+//                }
 
                 //saving the graph before merdging!
                 graph->save(unmergedG2O);
@@ -590,6 +597,8 @@ int main(int argc, char**argv){
             cout << "out of result ransac" << endl;
         }
         cout << "out of result correspondances" << endl;
+        lines1sort.clear();
+        lines2sort.clear();
         lvector.clear();
         lvector_next.clear();
     }
