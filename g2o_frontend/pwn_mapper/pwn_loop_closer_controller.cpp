@@ -141,12 +141,16 @@ namespace pwn {
     for(int c = 0; c < 4; c++)
       for(int r = 0; r < 3; r++)
 	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
+    initialGuess.matrix().col(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     
     Eigen::Isometry3f imuMean;
     Matrix6f imuInfo;
-    bool hasImu = this->extractAbsolutePrior(imuMean, imuInfo, currentFrame);    
-    initialGuess = Isometry3f::Identity();
+    bool hasImu = this->extractAbsolutePrior(imuMean, imuInfo, currentFrame);
+    
     initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;    
+
+    // SETTING IDENTITY TO INITIAL GUESS
+    initialGuess = Isometry3f::Identity();
 
     // Setting aligner
     _aligner->clearPriors();
