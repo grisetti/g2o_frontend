@@ -192,23 +192,6 @@ namespace pwn {
       int y = (int)(cp.y()*_verticalFocalLenght/d);
       return std::max(x,y);
     }
-
-    /**
-     *  This variable contains the 3x3 camera matrix associated to the pinholePointProjector object.
-     */
-    Eigen::Matrix3f _cameraMatrix;  
-  
-    /**
-     *  This variable contains the 4x3 matrix used to project the points to the image plane.
-     *  It encodes also the transformation associated to the pinholePointProjector object.
-     */ 
-    Eigen::Matrix4f _KRt;
-  
-    /**
-     *  This variable contains the 4x3 matrix used to unproject to the 3D euclidean space.
-     *  It encodes also the transformation associated to the pinholePointProjector object.
-     */
-    Eigen::Matrix4f _iKRt;
   
   protected:
     float _angularFov; // field of view
