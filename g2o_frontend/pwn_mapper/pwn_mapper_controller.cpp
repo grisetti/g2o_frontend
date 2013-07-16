@@ -11,6 +11,8 @@
 
 #include "g2o/types/slam3d/types_slam3d.h"
 
+#include "g2o_frontend/pwn_utils/pwn_utils.h"
+
 using namespace std;
 using namespace g2o;
 using namespace Eigen;
@@ -99,13 +101,19 @@ namespace pwn {
 						    G2OFrame *current) {
     VertexSE3 *referenceVertex = reference->vertex();
     VertexSE3 *currentVertex = current->vertex();
+    assert(referenceVertex);
+    assert(currentVertex);
+    cerr << "looking for prior" << referenceVertex << " " << currentVertex << endl;
+    
     bool priorFound = false;
     priorInfo.setZero();
     for(HyperGraph::EdgeSet::const_iterator it = referenceVertex->edges().begin(); it != referenceVertex->edges().end(); it++) {
       const EdgeSE3 *e = dynamic_cast<const EdgeSE3*>(*it);
-      if(e->vertex(0) == referenceVertex && e->vertex(1) == currentVertex) {
+      if(e && e->vertex(0) == referenceVertex && e->vertex(1) == currentVertex) {
 	priorFound=true;
-	for(int c = 0; c < 6; c++)
+	cerr << "edge found" << e << endl;
+	e->write(cerr);
+    	for(int c = 0; c < 6; c++)
 	  for(int r = 0; r < 6; r++)
 	    priorInfo(r, c) = e->information()(r, c);
       
@@ -115,6 +123,7 @@ namespace pwn {
 	priorMean.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
       }
     }
+    cerr << "Me happy" << endl;
     return priorFound;
   }
 
@@ -199,10 +208,12 @@ namespace pwn {
   
     _sensorOffset = Isometry3f::Identity();
     _sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
-    Quaternionf quat = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
-    _sensorOffset.linear() = quat.toRotationMatrix();
+    Quaternionf quaternion;
+    //xyzToQuat(quaternion, -0.579275, 0.56288, -0.41087); // segway_02   
+    quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+    _sensorOffset.linear() = quaternion.toRotationMatrix();
     _sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-
+   
     updateProjector();
 
     // Get the filename
@@ -242,7 +253,7 @@ namespace pwn {
     frame->setPreviousFrame(previousFrame);
 
     // Compute the stats for the current cloud
-    _converter->compute(*frame, _scaledDepthImage, _sensorOffset, true);
+    _converter->compute(*frame, _scaledDepthImage, _sensorOffset, false);
     _framesDeque.push_back(frame);
 
     // Keep at most maxDequeSize elements in the queue
@@ -296,8 +307,10 @@ namespace pwn {
   
     _sensorOffset = Isometry3f::Identity();
     _sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
-    Quaternionf quat = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
-    _sensorOffset.linear() = quat.toRotationMatrix();
+    Quaternionf quaternion;
+    //xyzToQuat(quaternion, -0.579275, 0.56288, -0.41087); // segway_02   
+    quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+    _sensorOffset.linear() = quaternion.toRotationMatrix();
     _sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
     updateProjector();
@@ -438,8 +451,8 @@ namespace pwn {
       Eigen::Isometry3f motionFromFirstFrame = _initialScenePose.inverse() * globalT;
       Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
       if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || 
-	 motionFromFirstFrame.translation().norm() > _chunkDistance ||
-	 failure) {
+	 motionFromFirstFrame.translation().norm() > _chunkDistance /*||
+								      failure*/) {
 	char buff[1024];
 	sprintf(buff, "out-%05d.pwn", _sceneVerteces.front()->id());	
 	

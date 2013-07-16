@@ -20,9 +20,11 @@ DrawableTrajectory::DrawableTrajectory() : Drawable() {
 }
 
   DrawableTrajectory::DrawableTrajectory(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, 
-			     std::vector<Eigen::Isometry3f>* trajectory_) : Drawable(transformation_) {
+					 std::vector<Eigen::Isometry3f>* trajectory_, 
+					 std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> >* trajectoryColors_) : Drawable(transformation_) {
   setParameter(parameter_);
   _trajectory = trajectory_;
+  _trajectoryColors = trajectoryColors_;
   _pyramidDrawList = glGenLists(1);
   _trajectoryDrawList = glGenLists(1);
   glNewList(_pyramidDrawList, GL_COMPILE);

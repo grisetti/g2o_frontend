@@ -25,6 +25,8 @@
 #include "g2o_frontend/pwn_viewer/drawable_trajectory.h"
 #include "g2o_frontend/pwn_viewer/gl_parameter_trajectory.h"
 
+#include "g2o_frontend/pwn_utils/pwn_utils.h"
+
 #include <unistd.h>
 
 using namespace pwn;
@@ -150,11 +152,14 @@ int main(int argc, char** argv) {
     0.0f, 0.0f, 1.0f;
   Isometry3f sensorOffset = Isometry3f::Identity();
   sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
-  Quaternionf quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+  Quaternionf quaternion;
+  //xyzToQuat(quaternion, -0.579275, 0.56288, -0.41087); // segway_02
+  quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
   sensorOffset.linear() = quaternion.toRotationMatrix();
   sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
   std::vector<Isometry3f> trajectory;
+  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> > trajectoryColors;
   std::vector<G2OFrame*> frames;
   frames.resize(listWidget->count());
   std::fill(frames.begin(), frames.end(), (G2OFrame*)0);
@@ -178,7 +183,7 @@ int main(int argc, char** argv) {
   listWidget->show();
   int i = startingVertex;
   GLParameterTrajectory *parameterTrajectory = new GLParameterTrajectory(0.03f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f));
-  DrawableTrajectory *drawableTrajectory = new DrawableTrajectory(Isometry3f::Identity(), parameterTrajectory, &trajectory);
+  DrawableTrajectory *drawableTrajectory = new DrawableTrajectory(Isometry3f::Identity(), parameterTrajectory, &trajectory, &trajectoryColors);
   viewer->addDrawable(drawableTrajectory);
   Isometry3f globalT = Isometry3f::Identity();
   GLParameterFrame *parameterFrame = new GLParameterFrame(vz_step); 
@@ -197,6 +202,7 @@ int main(int argc, char** argv) {
 	Eigen::Isometry3f localT = frame->previousFrameTransform();
 	globalT = globalT * localT;
 	trajectory.push_back(globalT);
+	trajectoryColors.push_back(Eigen::Vector3f(0.3f, 0.3f, 0.3f));
 	listItem->setHidden(false);
 	changed = true;
       }
