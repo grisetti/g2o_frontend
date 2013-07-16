@@ -230,6 +230,35 @@ bool ransacExec(CorrespondenceValidatorPtrVector& validators,
     }
 }
 
+void deleteVertices(int first, int last, OptimizableGraph* graph) {
+
+    cout << first << ", " << last << endl;
+    for (int i = first; i <= last; i++)
+    {
+        OptimizableGraph::Vertex* _v = graph->vertex(i);
+        VertexSE2* v = dynamic_cast<VertexSE2*>(_v);
+        if(!v)
+            continue;
+        OptimizableGraph::EdgeSet es = v->edges();
+        for (OptimizableGraph::EdgeSet::iterator it = es.begin(); it != es.end(); it++)
+        {
+            EdgeSE2Line2D* el = dynamic_cast<EdgeSE2Line2D*>(*it);
+            if (!el)
+                continue;
+            cout << "pippo" << endl;
+
+//            VertexSE2* tmp = dynamic_cast<VertexSE2*>(el->vertices()[0]);
+            VertexLine2D* vl = dynamic_cast<VertexLine2D*>(el->vertices()[1]);
+            VertexPointXY* vpl1 = dynamic_cast<VertexPointXY*>(graph->vertex(vl->p1Id));
+            VertexPointXY* vpl2 = dynamic_cast<VertexPointXY*>(graph->vertex(vl->p2Id));
+            graph->removeVertex(vpl1);
+            graph->removeVertex(vpl2);
+            graph->removeVertex(vl);
+        }
+        graph->removeVertex(v);
+    }
+}
+
 void saveOdom0to1(VertexSE2* v_current, VertexSE2* v_next, Isometry2d& odom0to1, EdgeSE2* eSE2) {
 
     cout << "###### edges from the current robot poses ######" << endl;

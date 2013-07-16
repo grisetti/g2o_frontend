@@ -108,10 +108,10 @@ bool updateVertexPointID(SparseOptimizer* graph, SparseOptimizer* graphline, Ver
 }
 
 
-#if 0
-// ofstream os1("Line1.dat");
-// ofstream os2("Line2.dat");
-// ofstream os2R("Line2Remapped.dat");
+#if 1
+ ofstream os1("Line1CurrCorr.dat");
+ ofstream os2("Line2CurrCorr.dat");
+ ofstream os2R("Line2CurrCorrRemapped.dat");
 // ofstream osletto("LineAppenaLetto.dat");
 #endif
 
@@ -133,7 +133,7 @@ int main(int argc, char**argv){
     arg.param("o", outfilename, "outputGraph.g2o", "output file name");
     arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
     arg.parseArgs(argc, argv);
-    ofstream unmergedG2O("unmergedG2O.g2o");
+    ofstream unmergedG2O("aligned_unmergedG2O.g2o");
     ofstream mergedG2O(outfilename.c_str());
 
     // graph construction
@@ -169,12 +169,19 @@ int main(int argc, char**argv){
     LinesSet lvector;
     LinesSet lvector_next;
     LinesSet lvector_merged;
-//    LinesForMatching pairLinesSet;
+    LinesForMatching pairLinesSet;
 
     bool merdging = false;
     int lastID;
-    if (vlast_id != -1)
+    int veryLastID = vertexIds.size()-1;
+    if (vlast_id != -1) {
         lastID = vlast_id;
+
+        //deleting vertices not to be porocessed
+        int firstNotUsedID = lastID+1;
+        deleteVertices(firstNotUsedID, veryLastID, graph);
+        graph->save("inputGraph_cutted.g2o");
+    }
     else lastID = (int)vertexIds.size()-1;
 
     //lines vector to be sorted
@@ -238,7 +245,6 @@ int main(int argc, char**argv){
                 cout << "###Skipping this edge (forward evaluation of the odometry)###" << endl;
             }
         }
-        LinesForMatching pairLinesSet;
         if(v_next) {
             es_next = v_next->edges();
             cout << "The next vertex has " << es_next.size() << " edge." << endl;
@@ -449,7 +455,7 @@ int main(int argc, char**argv){
 
                 //debug: plotting lines frame i and lines frame j remapped with the transform found
 #if 1
-                ofstream os1("Line1CurrCorr.dat");
+//                ofstream os1("Line1CurrCorr.dat");
                 for (int ci = 0; ci < (int)currCorrs.size(); ci++)
                 {
 //                    VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[ci].lid1].vline->id()));
@@ -473,8 +479,8 @@ int main(int argc, char**argv){
                     os1.flush();
                 }
 
-                ofstream os2("Line2CurrCorr.dat");
-                ofstream os2R("Line2CurrCorrRemapped.dat");
+//                ofstream os2("Line2CurrCorr.dat");
+//                ofstream os2R("Line2CurrCorrRemapped.dat");
 
                 for (int ci = 0; ci < (int)currCorrs.size(); ci++)
                 {
@@ -518,12 +524,13 @@ int main(int argc, char**argv){
                 }
 #endif
 
-//                //updating the value of the second vertex pose and his own line measurements
-//                SE2 newpose = v_next->estimate()*transform.inverse();
-//                cerr << "vecchia posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
-//                v_next->setEstimate(newpose);
-//                cerr << "nuova posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
+                //updating the value of the second vertex pose
+                SE2 newpose = transform*v_next->estimate()/**transform*//*.inverse()*/;
+                cerr << "vecchia posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
+                v_next->setEstimate(newpose);
+                cerr << "nuova posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
 
+                //and his own line measurements
 //                for (OptimizableGraph::EdgeSet::iterator itv_next = es_next.begin(); itv_next != es_next.end(); itv_next++)
 //                {
 //                    EdgeSE2Line2D* el_next = dynamic_cast<EdgeSE2Line2D*>(*itv_next);
@@ -532,13 +539,18 @@ int main(int argc, char**argv){
 //                    VertexLine2D* vl_next = dynamic_cast<VertexLine2D*>(el_next->vertices()[1]);
 //                    if(!vl_next) continue;
 
+//                    VertexPointXY* vpl1 = dynamic_cast<VertexPointXY*>(graph->vertex(vl_next->p1Id));
+//                    VertexPointXY* vpl2 = dynamic_cast<VertexPointXY*>(graph->vertex(vl_next->p2Id));
+
+//                    vpl1->setEstimate(transform*vpl1->estimate());
+//                    vpl2->setEstimate(transform*vpl2->estimate());
+
 //                    Line2D newli_next = transform*vl_next->estimate();
 //                    vl_next->setEstimate(newli_next);
 //                }
 
                 //saving the graph before merdging!
                 graph->save(unmergedG2O);
-                unmergedG2O.close();
 
                 ///merging vertexes and lines (inliers set)
                 cout << endl << "\033[22;34;1m*****MERGING STUFF******\033[0m " << endl << endl;
@@ -608,9 +620,19 @@ int main(int argc, char**argv){
     lvector_merged.clear();
     cout << "vectors of lines at the end: current " << lvector.size() << ", next " << lvector_next.size() << ", merged " << lvector_merged.size() << endl;
 
+    unmergedG2O.close();
     cout << "...saving merged graph in " << outfilename.c_str() << endl;
     graph->save(mergedG2O);
     mergedG2O.close();
+//    //saving a subset of the graph
+//    HyperGraph::VertexSet vset;
+//    for (OptimizableGraph::VertexIDMap::iterator it=graph->vertices().begin(); it!= graph->vertices().end(); it ++){
+//      vset.insert(it->first);
+//    }
+//    cout << "funge?? " << vset.size() << endl;
+//    graph->saveSubset(unmergedG2O, vset);
+//    //deleting all the vertex not used in this run
+
     return (0);
 }
 
