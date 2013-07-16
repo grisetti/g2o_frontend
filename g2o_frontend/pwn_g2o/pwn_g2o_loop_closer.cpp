@@ -19,6 +19,8 @@
 #include "g2o_frontend/pwn_viewer/drawable_trajectory.h"
 #include "g2o_frontend/pwn_viewer/gl_parameter_trajectory.h"
 
+#include "g2o_frontend/pwn_utils/pwn_utils.h"
+
 using namespace std;
 using namespace Eigen;
 using namespace pwn;
@@ -98,15 +100,12 @@ int main(int argc, char** argv) {
   OptimizationAlgorithmLevenberg *solverGauss = new OptimizationAlgorithmLevenberg(blockSolver);
   SparseOptimizer *graph = new SparseOptimizer();
   graph->setAlgorithm(solverGauss);
-    
   graph->load(g2o_filename.c_str());
-  
   vector<int> vertexIds(graph->vertices().size());
   int k = 0;
   for(OptimizableGraph::VertexIDMap::iterator it = graph->vertices().begin(); it != graph->vertices().end(); ++it) {
     vertexIds[k++] = (it->first);
   }
-  
   sort(vertexIds.begin(), vertexIds.end());
   
   for(size_t i = 0; i < vertexIds.size(); ++i) {
@@ -121,7 +120,7 @@ int main(int argc, char** argv) {
 	d = d->next();
 	continue;
       }
-
+      
       char buff[1024];
       sprintf(buff, "%d", v->id());
       QString listItem(buff);
@@ -148,7 +147,9 @@ int main(int argc, char** argv) {
 
   Isometry3f sensorOffset = Isometry3f::Identity();
   sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
-  Quaternionf quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+  Quaternionf quaternion;
+  xyzToQuat(quaternion, -0.579275, 0.56288, -0.41087); // segway_02   
+  //quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
   sensorOffset.linear() = quaternion.toRotationMatrix();
   sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   PWNLoopCloserController *controller = new PWNLoopCloserController(graph);
@@ -170,21 +171,18 @@ int main(int argc, char** argv) {
   listWidget->show();
 
   GLParameterTrajectory *parameterTrajectory = new GLParameterTrajectory(0.03f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f));
-  DrawableTrajectory *drawableTrajectory = new DrawableTrajectory(Isometry3f::Identity(), parameterTrajectory, &trajectory);
-  drawableTrajectory->_trajectoryColors=&trajectoryColors;
+  DrawableTrajectory *drawableTrajectory = new DrawableTrajectory(Isometry3f::Identity(), parameterTrajectory, &trajectory, &trajectoryColors);
   viewer->addDrawable(drawableTrajectory);
   GLParameterFrame *parameterFrame = new GLParameterFrame(vz_step); 
 
 
   G2OFrame *referenceFrame = 0, *currentFrame = 0;
-  
   /************************************************************************
    *                          MAIN DRAWING LOOP                           *
    ************************************************************************/
   while(viewer->isVisible()) {
     bool changed = false;
     
-
     /************************************************************************
      *                          Drawing Trajectory                          *
      ************************************************************************/
@@ -203,9 +201,9 @@ int main(int argc, char** argv) {
 	    estimate(r, c) = v->estimate()(r, c);
 	  }
 	}
-	estimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
+	estimate.matrix().row(3) << 0.0l, 0.0l, 0.0l, 1.0l;
 	trajectory.push_back(estimate);
-	trajectoryColors.push_back(Eigen::Vector3f(0.3, 0.3, 0.3));
+	trajectoryColors.push_back(Eigen::Vector3f(0.3f, 0.3f, 0.3f));
       }
     }
 
@@ -269,7 +267,7 @@ int main(int argc, char** argv) {
       QListWidgetItem* item = listWidget->item(k);
       if(item) {
 	if(item->isSelected()) {
-	  trajectoryColors[k]=Eigen::Vector3f(1.0, 0.3, 0.3);
+	  trajectoryColors[k] = Eigen::Vector3f(1.0f, 0.3f, 0.3f);
 	  string idString = item->text().toUtf8().constData();
 	  int index = atoi(idString.c_str());
 	  VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));

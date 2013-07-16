@@ -11,6 +11,8 @@
 
 #include "g2o/types/slam3d/types_slam3d.h"
 
+#include "g2o_frontend/pwn_utils/pwn_utils.h"
+
 using namespace std;
 using namespace g2o;
 using namespace Eigen;
@@ -199,10 +201,12 @@ namespace pwn {
   
     _sensorOffset = Isometry3f::Identity();
     _sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
-    Quaternionf quat = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
-    _sensorOffset.linear() = quat.toRotationMatrix();
+    Quaternionf quaternion;
+    xyzToQuat(quaternion, -0.579275, 0.56288, -0.41087); // segway_02   
+    //quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+    _sensorOffset.linear() = quaternion.toRotationMatrix();
     _sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-
+   
     updateProjector();
 
     // Get the filename
@@ -296,8 +300,10 @@ namespace pwn {
   
     _sensorOffset = Isometry3f::Identity();
     _sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
-    Quaternionf quat = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
-    _sensorOffset.linear() = quat.toRotationMatrix();
+    Quaternionf quaternion;
+    xyzToQuat(quaternion, -0.579275, 0.56288, -0.41087); // segway_02   
+    //quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+    _sensorOffset.linear() = quaternion.toRotationMatrix();
     _sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
     updateProjector();
@@ -438,8 +444,8 @@ namespace pwn {
       Eigen::Isometry3f motionFromFirstFrame = _initialScenePose.inverse() * globalT;
       Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
       if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || 
-	 motionFromFirstFrame.translation().norm() > _chunkDistance ||
-	 failure) {
+	 motionFromFirstFrame.translation().norm() > _chunkDistance /*||
+								      failure*/) {
 	char buff[1024];
 	sprintf(buff, "out-%05d.pwn", _sceneVerteces.front()->id());	
 	

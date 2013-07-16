@@ -14,17 +14,23 @@ namespace pwn {
 class DrawableTrajectory : public Drawable {
  public:
   DrawableTrajectory();
-  DrawableTrajectory(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, std::vector<Eigen::Isometry3f> *trajectory_);
+  DrawableTrajectory(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, 
+		     std::vector<Eigen::Isometry3f> *trajectory_, std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> >* trajectoryColors_);
   virtual ~DrawableTrajectory() { glDeleteLists(_trajectoryDrawList, 1); }
 
   virtual GLParameter* parameter() { return _parameter; };
   std::vector<Eigen::Isometry3f>* trajectory() { return _trajectory; }
+  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> >* trajectoryColors() { return _trajectoryColors; }
   inline GLuint pyramidDrawList() { return _pyramidDrawList; }
   inline GLuint trajectoryDrawList() { return _trajectoryDrawList; }
   
   virtual bool setParameter(GLParameter *parameter_);
   void setTrajectory(std::vector<Eigen::Isometry3f> *trajectory_) {
     _trajectory = trajectory_;
+    updateTrajectoryDrawList();
+  }
+  void setTrajectoryColors(std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> >* trajectoryColors_) {
+    _trajectoryColors = trajectoryColors_;
     updateTrajectoryDrawList();
   }
   void setStep(int step_) {
@@ -39,11 +45,10 @@ class DrawableTrajectory : public Drawable {
   virtual void draw();
   void updateTrajectoryDrawList();
   
-  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> >* _trajectoryColors;
-  
  protected:
   GLParameterTrajectory *_parameter;
   
+  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> >* _trajectoryColors;
   std::vector<Eigen::Isometry3f>* _trajectory;
   GLuint _pyramidDrawList;
   GLuint _trajectoryDrawList;
