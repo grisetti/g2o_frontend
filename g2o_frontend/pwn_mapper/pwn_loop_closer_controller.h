@@ -7,8 +7,7 @@
 
 #include "g2o_frontend/basemath/bm_se3.h"
 
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/multipointprojector.h"
+#include "g2o_frontend/pwn2/cylindricalpointprojector.h"
 #include "g2o_frontend/pwn2/informationmatrixcalculator.h"
 #include "g2o_frontend/pwn2/aligner.h"
 
@@ -30,53 +29,33 @@ namespace pwn {
     ~PWNLoopCloserController() {}
     
     // Projectors settings methods
-    inline void setPinholePointProjector(PinholePointProjector* const pinholePointProjector_) { 
-      _pinholePointProjector = pinholePointProjector_;
-      updateProjectors();
-    }
-    inline void setMultiPointProjector(MultiPointProjector* const multiPointProjector_) { _multiPointProjector = multiPointProjector_; }
-    inline void setNumProjectors(const int numProjectors_) { 
-      _numProjectors = numProjectors_; 
-      updateProjectors();
-    }
+    inline void setCylindricalPointProjector(CylindricalPointProjector* const cylindricalPointProjector_) { _cylindricalPointProjector = cylindricalPointProjector_; }
     inline void setImageRows(const int imageRows_) { 
-      _imageRows = imageRows_; 
-      updateProjectors();
+      _imageRows = imageRows_;
+      _correspondenceFinder->setSize(_imageRows, _imageCols);
     }
     inline void setImageCols(const int imageCols_) { 
       _imageCols = imageCols_; 
-      updateProjectors();
+      _correspondenceFinder->setSize(_imageRows, _imageCols);
     }
-    inline void setReduction(const int reduction_) { 
-      _reduction = reduction_; 
-      updateProjectors();
-    }
-    inline void setCameraMatrix(const Matrix3f cameraMatrix_) { 
-      _cameraMatrix = cameraMatrix_;
-      updateProjectors();
-    }
-    inline void setSensorOffset(const Isometry3f sensorOffset_) {
-      _sensorOffset = sensorOffset_;
-      updateProjectors();
-    }
+    inline void setSensorOffset(const Isometry3f sensorOffset_) { _sensorOffset = sensorOffset_; }
     
-    inline PinholePointProjector* pinholePointProjector() { return _pinholePointProjector; }
-    inline MultiPointProjector* multiPointProjector() { return _multiPointProjector; }
-    inline int numProjectors() const { return _numProjectors; }
+    inline CylindricalPointProjector* cylindricalPointProjector() { return _cylindricalPointProjector; }
     inline int imageRows() const { return _imageRows; }
     inline int imageCols() const { return _imageCols; }
-    inline int reduction() const { return _reduction; }
-    inline Matrix3f cameraMatrix() const { return _cameraMatrix; }
     inline Isometry3f sensorOffset() const { return _sensorOffset; }
 
     // Correspondence finder and linearizer settings methods
-    inline void setCorrespondenceFinder(CorrespondenceFinder* const correspondeceFinder_) { _correspondenceFinder = correspondeceFinder_; }
+    inline void setCorrespondenceFinder(CorrespondenceFinder* const correspondeceFinder_) { 
+      _correspondenceFinder = correspondeceFinder_; 
+      _correspondenceFinder->setSize(_imageRows, _imageCols);
+    }
     inline void setLinearizer(Linearizer* const linearizer_) { _linearizer = linearizer_; }
 
     inline CorrespondenceFinder* correspondenceFinder() { return _correspondenceFinder; }
     inline Linearizer* linearizer() { return _linearizer; }
 
-    // Information matrix calculators
+    // Information matrix calculators settings methods
     inline void setPointInformationMatrixCalculator(PointInformationMatrixCalculator* const pointInformationMatrixCalculator_) { _pointInformationMatrixCalculator = pointInformationMatrixCalculator_; }
     inline void setNormalInformationMatrixCalculator(NormalInformationMatrixCalculator* const normalInformationMatrixCalculator_) { _normalInformationMatrixCalculator = normalInformationMatrixCalculator_; }
     inline void setCurvatureThreshold(const float curvatureThreshold_) { 
@@ -89,7 +68,7 @@ namespace pwn {
     inline NormalInformationMatrixCalculator* normalInformationMatrixCalculator() { return _normalInformationMatrixCalculator; }
     inline float curvatureThreshold() const { return _curvatureThreshold; }
 
-    // Alignement settings methods
+    // Aligner settings methods
     inline void setAligner(Aligner* const aligner_) { _aligner = aligner_; }
     inline void setOuterIterations(const int outerIterations_) const { _aligner->setOuterIterations(outerIterations_); }
     inline void setInnerIterations(const int innerIterations_) const { _aligner->setInnerIterations(innerIterations_); }
@@ -117,13 +96,11 @@ namespace pwn {
     bool alignVertexWithPWNData(Isometry3f &transform, 
 				G2OFrame *referenceFrame, 
 				G2OFrame *currentFrame);
-  
+
   protected:
     // Projectors
-    PinholePointProjector *_pinholePointProjector;
-    MultiPointProjector *_multiPointProjector;
-    int _numProjectors, _imageRows, _imageCols, _scaledImageRows, _scaledImageCols, _reduction;
-    Matrix3f _cameraMatrix, _scaledCameraMatrix;
+    CylindricalPointProjector *_cylindricalPointProjector;
+    int _imageRows, _imageCols;
     Isometry3f _sensorOffset;
 
     // Correspondece finder and linearizer
@@ -142,9 +119,6 @@ namespace pwn {
      
     // Graph
     OptimizableGraph *_graph;
-
-  private:
-    void updateProjectors();
   };
 }
 

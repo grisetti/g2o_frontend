@@ -38,33 +38,39 @@ int main(int argc, char** argv) {
   string g2o_filename;
 
   // Variables for the input parameters. 
-  float ng_scale;
-  float ng_curvatureThreshold;
+  float al_scale;
+  float al_curvatureThreshold;
   int al_innerIterations;
   int al_outerIterations;
   int al_minNumInliers;
+  int al_imageRows;
+  int al_imageCols;
   float al_minError;
   int startingVertex;
   int vz_step;
   int chunkStep;
   float chunkAngle;
   float chunkDistance;
+  int pwnSaving;
 
   // Input parameters handling.
   g2o::CommandArgs arg;
   
   // Optional input parameters.
-  arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image");
-  arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded");
+  arg.param("al_scale", al_scale, 1.0f, "Specify the scaling factor to apply on the depth image");
+  arg.param("al_curvatureThreshold", al_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded");
   arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations");
   arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");
   arg.param("al_minNumInliers", al_minNumInliers, 10000, "Specify the minimum number of inliers to consider an alignment good");
   arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
+  arg.param("al_imageRows", al_imageRows, 480, "Specify the number of rows of the depth image associated to the pinhole point projector");
+  arg.param("al_imageCols", al_imageCols, 640, "Specify the number of columns of the depth image associated to the pinhole point projector");
   arg.param("startingVertex", startingVertex, 0, "Specify the vertex id from which to start the process");
   arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements");
   arg.param("chunkStep", chunkStep, 1000000, "Reset the process every chunkStep images");
   arg.param("chunkAngle", chunkAngle, M_PI/4, "Reset the process each time the camera has rotated of chunkAngle radians from the first frame");
   arg.param("chunkDistance", chunkDistance, 0.5, "reset the process each time the camera has moved of chunkDistance meters from the first frame");
+  arg.param("pwnSaving", pwnSaving, 0, "choose if you want to save or not the pwn clouds during the process");
 
   // Last parameter has to be the working directory.
   arg.paramLeftOver("g2o_input_filename", g2o_filename, "", "g2o input inputfilename", true);
@@ -137,17 +143,34 @@ int main(int argc, char** argv) {
     }
   }
 
+  Matrix3f cameraMatrix;
+  cameraMatrix <<
+    525.0f, 0.0f, 319.5f,
+    0.0f, 525.0f, 239.5f,
+    0.0f, 0.0f, 1.0f;
+  Isometry3f sensorOffset = Isometry3f::Identity();
+  sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+  Quaternionf quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+  sensorOffset.linear() = quaternion.toRotationMatrix();
+  sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+
   std::vector<Isometry3f> trajectory;
   std::vector<G2OFrame*> frames;
   frames.resize(listWidget->count());
   std::fill(frames.begin(), frames.end(), (G2OFrame*)0);
-  PWNMapperController *controller = new PWNMapperController();
-  controller->init(graph);
+  PWNMapperController *controller = new PWNMapperController(graph);
   controller->setChunkStep(chunkStep);
   controller->setChunkAngle(chunkAngle);
   controller->setChunkDistance(chunkDistance);
-  controller->setAlMinNumInliers(al_minNumInliers);
-  controller->setAlMinError(al_minError);
+  controller->setMinNumInliers(al_minNumInliers);
+  controller->setMinError(al_minError);
+  controller->setCameraMatrix(cameraMatrix);
+  controller->setSensorOffset(sensorOffset);
+  controller->setReduction(al_scale);
+  controller->setImageRows(al_imageCols);
+  controller->setImageCols(al_imageRows);
+  controller->setCurvatureThreshold(al_curvatureThreshold);
+  controller->setPwnSaving(pwnSaving);
   viewer->init();
   viewer->setAxisIsDrawn(true);
   mainWindow->show();
@@ -170,7 +193,7 @@ int main(int argc, char** argv) {
       	if(!controller->addVertex(v))
       	  continue;
       	controller->alignIncrementally();
-	G2OFrame *frame = controller->lastFrame();
+	G2OFrame *frame = controller->framesDeque()->back();
 	Eigen::Isometry3f localT = frame->previousFrameTransform();
 	globalT = globalT * localT;
 	trajectory.push_back(globalT);

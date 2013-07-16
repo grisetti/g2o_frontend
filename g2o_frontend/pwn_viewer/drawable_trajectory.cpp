@@ -1,6 +1,7 @@
 #include "drawable_trajectory.h"
 #include "g2o/stuff/opengl_primitives.h"
 
+
 #include <iostream>
 using namespace std;
 
@@ -68,10 +69,20 @@ void DrawableTrajectory::updateTrajectoryDrawList() {
      trajectoryParameter->show() && 
      trajectoryParameter->pyramidScale() > 0.0f) {
     for(size_t i = 0; i < _trajectory->size(); i += trajectoryParameter->step()) {
+      if (i>0) {
+	Eigen::Vector3f p1=_trajectory->at(i).translation();
+	Eigen::Vector3f p2=_trajectory->at(i-1).translation();
+
+	glBegin(GL_LINES);
+	glVertex3f(p1.x(), p1.y(), p1.z());
+	glVertex3f(p2.x(), p2.y(), p2.z());
+	glEnd();
+      }
       glPushMatrix();
       glMultMatrixf(_trajectory->at(i).data());
       glRotatef(90.0f, 0.0f, 1.0f, 0.0f);        
       glScalef(trajectoryParameter->pyramidScale() ,trajectoryParameter->pyramidScale(), trajectoryParameter->pyramidScale() * 2.0f);
+      glColor3f(_trajectoryColors->at(i).x(),_trajectoryColors->at(i).y(), _trajectoryColors->at(i).z());
       glCallList(_pyramidDrawList);
       glPopMatrix();
     }

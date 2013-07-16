@@ -33,6 +33,9 @@ ADD_LIBRARY(pwn_viewer_library
   ${UI_SOURCES}
 )
 SET_TARGET_PROPERTIES(pwn_viewer_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn_viewer)
+
+LINK_DIRECTORIES(${G2O_ROOT/lib})
+
 TARGET_LINK_LIBRARIES(pwn_viewer_library
   pwn2_library
   #traverse_library
