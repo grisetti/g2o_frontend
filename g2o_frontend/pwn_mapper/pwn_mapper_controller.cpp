@@ -110,8 +110,7 @@ namespace pwn {
       const EdgeSE3 *e = dynamic_cast<const EdgeSE3*>(*it);
       if(e && e->vertex(0) == referenceVertex && e->vertex(1) == currentVertex) {
 	priorFound=true;
-	e->write(cerr);
-    	for(int c = 0; c < 6; c++)
+	for(int c = 0; c < 6; c++)
 	  for(int r = 0; r < 6; r++)
 	    priorInfo(r, c) = e->information()(r, c);
       

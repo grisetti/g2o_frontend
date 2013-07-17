@@ -109,12 +109,15 @@ int main(int argc, char** argv) {
   }
   sort(vertexIds.begin(), vertexIds.end());
   
+  std::vector<Isometry3f> allTrajectory;
+  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> > allTrajectoryColors;
   for(size_t i = 0; i < vertexIds.size(); ++i) {
     OptimizableGraph::Vertex *_v = graph->vertex(vertexIds[i]);
     g2o::VertexSE3 *v = dynamic_cast<g2o::VertexSE3*>(_v);
     if(!v)
       continue;
     OptimizableGraph::Data *d = v->userData();
+    bool foundPwnData = false;
     while(d) {
       PWNData *pwnData = dynamic_cast<PWNData*>(d);
       if(!pwnData) {
@@ -126,9 +129,20 @@ int main(int argc, char** argv) {
       sprintf(buff, "%d", v->id());
       QString listItem(buff);
       listWidget->addItem(listItem);
-      QListWidgetItem *lastItem = listWidget->item(listWidget->count() - 1);
-      lastItem->setHidden(true);
       d = d->next();
+
+      Isometry3f estimate;
+      isometry3d2f(estimate, v->estimate());
+      allTrajectory.push_back(estimate);
+      allTrajectoryColors.push_back(Eigen::Vector3f(1.0f, 0.0f, 0.0f));
+
+      foundPwnData = true;
+    }
+    if(!foundPwnData) {
+      Isometry3f estimate;
+      isometry3d2f(estimate, v->estimate());
+      allTrajectory.push_back(estimate);
+      allTrajectoryColors.push_back(Eigen::Vector3f(0.5f, 0.5f, 0.5f));
     }
   }
 
@@ -140,8 +154,6 @@ int main(int argc, char** argv) {
   if(vz_endingVertex < 0 || vz_endingVertex > listWidget->count())
     vz_endingVertex = listWidget->count();
   
-  std::vector<Isometry3f> trajectory;
-  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> > trajectoryColors;
   std::vector<G2OFrame*> frames;
   frames.resize(listWidget->count());
   std::fill(frames.begin(), frames.end(), (G2OFrame*)0);
@@ -171,9 +183,9 @@ int main(int argc, char** argv) {
   
   listWidget->show();
 
-  GLParameterTrajectory *parameterTrajectory = new GLParameterTrajectory(0.03f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f));
-  DrawableTrajectory *drawableTrajectory = new DrawableTrajectory(Isometry3f::Identity(), parameterTrajectory, &trajectory, &trajectoryColors);
-  viewer->addDrawable(drawableTrajectory);
+  GLParameterTrajectory *parameterAllTrajectory = new GLParameterTrajectory(0.03f, Vector4f(1.0f, 0.0f, 1.0f, 1.0f));
+  DrawableTrajectory *drawableAllTrajectory = new DrawableTrajectory(Isometry3f::Identity(), parameterAllTrajectory, &allTrajectory, &allTrajectoryColors);
+  viewer->addDrawable(drawableAllTrajectory);
   GLParameterFrame *parameterFrame = new GLParameterFrame(vz_step); 
 
 
@@ -184,30 +196,6 @@ int main(int argc, char** argv) {
   while(viewer->isVisible()) {
     bool changed = false;
     
-    /************************************************************************
-     *                          Drawing Trajectory                          *
-     ************************************************************************/
-    trajectory.clear();
-    trajectoryColors.clear();
-    for(int i = vz_startingVertex; i < vz_endingVertex; i++) {
-      QListWidgetItem *listItem = listWidget->item(i);
-      listItem->setHidden(false);
-      string idString = listItem->text().toUtf8().constData();
-      int index = atoi(idString.c_str());
-      VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
-      if(v) {
-	Isometry3f estimate;
-	for(int r = 0; r < 3; r++) {
-	  for(int c = 0; c < 4; c++) {
-	    estimate(r, c) = v->estimate()(r, c);
-	  }
-	}
-	estimate.matrix().row(3) << 0.0l, 0.0l, 0.0l, 1.0l;
-	trajectory.push_back(estimate);
-	trajectoryColors.push_back(Eigen::Vector3f(0.3f, 0.3f, 0.3f));
-      }
-    }
-
     // Align button was pressed
     if(alignButton->isDown()) {
       // Clean old aligned frames
@@ -255,8 +243,8 @@ int main(int argc, char** argv) {
 	}
 	graph->initializeOptimization();
 	graph->setVerbose(true);
-	graph->optimize(100);
-	cerr << "optimization done" << endl;
+	graph->optimize(10);
+	cerr << "Optimization done" << endl;
 	changed = true;
       } else {
       	cerr << "Edge was not added because of a bad alignment" << endl;
@@ -268,11 +256,13 @@ int main(int argc, char** argv) {
       QListWidgetItem* item = listWidget->item(k);
       if(item) {
 	if(item->isSelected()) {
-	  trajectoryColors[k] = Eigen::Vector3f(1.0f, 0.3f, 0.3f);
 	  string idString = item->text().toUtf8().constData();
 	  int index = atoi(idString.c_str());
 	  VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
 	  if(v && !frames[k]) {
+	    cerr << "Ciao" << v->id() << endl;
+	    allTrajectoryColors[v->id()] = Eigen::Vector3f(0.0f, 1.0f, 0.0f);
+	    drawableAllTrajectory->updateTrajectoryDrawList();
 	    G2OFrame *currentFrame = new G2OFrame(v);
 	    controller->extractPWNData(currentFrame);
 	    frames[k] = currentFrame;
@@ -302,6 +292,14 @@ int main(int argc, char** argv) {
 		  }
 		}
 	      }
+	    }
+	    string idString = item->text().toUtf8().constData();
+	    int index = atoi(idString.c_str());
+	    VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
+	    if(v) {
+	      allTrajectoryColors[v->id()] = Eigen::Vector3f(1.0f, 0.0f, 0.0f);
+	      drawableAllTrajectory->updateTrajectoryDrawList();
+	      changed = true;
 	    }
 	  }
 	}
