@@ -1,0 +1,40 @@
+pwn_g2o_mapper_viewer on segway_02 dataset:
+minError = 1
+minNumInliers = 20000
+al_scale 2
+
+matching cloud on segway_02
+
+4 - 311
+101 - 773
+230 - 898
+4 - 624
+101 - 401
+272 - 581
+940 - 272
+185 - 860
+137 - 445
+137 - 813
+464 - 826
+369 - 747
+48 - 718
+
+matching cloud on priscilla (2 meters)
+
+2490 - 2679
+
+matching cloud on priscilla (3 meters)
+
+2486 - 2663
+
+matching cloud on priscilla (5 meters) (initGuess identity)
+
+2490 - 2663
+1467 - 4615
+2164 - 4080
+2295 - 4171
+1197 - 1275
+453 - 5313
+1144 - 4710 
+714 - 4914
+94 - 5650
