@@ -153,8 +153,8 @@ int main(int argc, char** argv) {
   Isometry3f sensorOffset = Isometry3f::Identity();
   sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
   Quaternionf quaternion;
-  xyzToQuat(quaternion, -0.579275, 0.56288, -0.41087); // segway_02
-  //quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+  //xyzToQuat(quaternion, -0.579275, 0.56288, -0.41087); // segway_02
+  quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
   sensorOffset.linear() = quaternion.toRotationMatrix();
   sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 

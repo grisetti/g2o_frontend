@@ -44,7 +44,7 @@ bool PWNData::read(std::istream &is) {
 
   // Update frame
   _frame = 0;
-  update();
+  //update();
 
   return true;
 }
