@@ -231,31 +231,37 @@ bool ransacExec(CorrespondenceValidatorPtrVector& validators,
 }
 
 void deleteVertices(int first, int last, OptimizableGraph* graph) {
-
-    cout << first << ", " << last << endl;
     for (int i = first; i <= last; i++)
     {
+        cout << "i : " << i << endl;
         OptimizableGraph::Vertex* _v = graph->vertex(i);
+        if(!_v)
+            continue;
         VertexSE2* v = dynamic_cast<VertexSE2*>(_v);
         if(!v)
             continue;
+        cout << "id vertex to be deleted " << v->id() << endl;
         OptimizableGraph::EdgeSet es = v->edges();
         for (OptimizableGraph::EdgeSet::iterator it = es.begin(); it != es.end(); it++)
         {
             EdgeSE2Line2D* el = dynamic_cast<EdgeSE2Line2D*>(*it);
             if (!el)
                 continue;
-            cout << "pippo" << endl;
 
 //            VertexSE2* tmp = dynamic_cast<VertexSE2*>(el->vertices()[0]);
             VertexLine2D* vl = dynamic_cast<VertexLine2D*>(el->vertices()[1]);
+            if (!vl)
+                continue;
             VertexPointXY* vpl1 = dynamic_cast<VertexPointXY*>(graph->vertex(vl->p1Id));
+            if (vpl1)
+                graph->removeVertex(vpl1);
             VertexPointXY* vpl2 = dynamic_cast<VertexPointXY*>(graph->vertex(vl->p2Id));
-            graph->removeVertex(vpl1);
-            graph->removeVertex(vpl2);
+            if (vpl2)
+                graph->removeVertex(vpl2);
+
             graph->removeVertex(vl);
         }
-        graph->removeVertex(v);
+        cout << " Vertex-se2 deleted: "<< graph->removeVertex(v) << endl;
     }
 }
 

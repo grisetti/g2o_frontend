@@ -133,7 +133,7 @@ int main(int argc, char**argv){
     arg.param("o", outfilename, "outputGraph.g2o", "output file name");
     arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
     arg.parseArgs(argc, argv);
-    ofstream unmergedG2O("aligned_unmergedG2O.g2o");
+    ofstream alignedunmergedG2O("aligned_unmerged.g2o");
     ofstream mergedG2O(outfilename.c_str());
 
     // graph construction
@@ -146,7 +146,7 @@ int main(int argc, char**argv){
     SparseOptimizer * graph = new SparseOptimizer();
     graph->setAlgorithm(solverGauss);
     graph->load(filename.c_str());
-    graph->save("inputGraph_alignment.g2o");
+    graph->save("inputGraph4alignment.g2o");
 
     // sort the vertices based on the id
     std::vector<int> vertexIds(graph->vertices().size());
@@ -172,15 +172,17 @@ int main(int argc, char**argv){
     LinesForMatching pairLinesSet;
 
     bool merdging = false;
+
     int lastID;
     int veryLastID = vertexIds.size()-1;
     if (vlast_id != -1) {
-        lastID = vlast_id;
 
+        lastID = vlast_id;
         //deleting vertices not to be porocessed
         int firstNotUsedID = lastID+1;
         deleteVertices(firstNotUsedID, veryLastID, graph);
         graph->save("inputGraph_cutted.g2o");
+
     }
     else lastID = (int)vertexIds.size()-1;
 
@@ -197,7 +199,7 @@ int main(int argc, char**argv){
      * -merging vertex of the inliers found
      **/
     cout << "\033[22;31;1m********************************START READING THE GRAPH********************************\033[0m" << endl;
-    cerr << "num vertici " << vertexIds.size() << endl;
+    cerr << "num vertici totali: " << vertexIds.size() << ", num vertices to be processed: " << lastID+1 << endl;
     for (int i = vfirst_id/*0*/; i<=lastID/*(int)vertexIds.size()*/; i++)
     {
 //        cerr << "iteration: " << i << endl;
@@ -262,7 +264,6 @@ int main(int argc, char**argv){
             std::sort(lines1sort.begin(), lines1sort.end(),LineLengthComparator());
             cerr << "ho merdgiato? " << merdging << endl;
             lvector.clear();
-            cout << "FANCULO " << lvector.size() << ", lines1sort "<< lines1sort.size() << endl;
             //saving the lines of the current vertex, to create the correspondences for ransac
             if(!merdging)
             {
@@ -314,7 +315,6 @@ int main(int argc, char**argv){
             }
             std::sort(lines2sort.begin(), lines2sort.end(),LineLengthComparator());
             lvector_next.clear();
-            cout << "FANCULO next" << lvector_next.size() << ", lines2sort "<< lines2sort.size() << endl;
             //saving the lines of the next vertex, to create the correspondences for ransac
             for (size_t j=0; j<lines2sort.size(); j++)
             {
@@ -525,32 +525,33 @@ int main(int argc, char**argv){
 #endif
 
                 //updating the value of the second vertex pose
-                SE2 newpose = transform*v_next->estimate()/**transform*//*.inverse()*/;
+                SE2 newpose = transform/*.inverse()*/*v_next->estimate()/**transform*//*.inverse()*/;
                 cerr << "vecchia posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
                 v_next->setEstimate(newpose);
                 cerr << "nuova posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
 
                 //and his own line measurements
-//                for (OptimizableGraph::EdgeSet::iterator itv_next = es_next.begin(); itv_next != es_next.end(); itv_next++)
-//                {
-//                    EdgeSE2Line2D* el_next = dynamic_cast<EdgeSE2Line2D*>(*itv_next);
-//                    if (!el_next) continue;
+                for (OptimizableGraph::EdgeSet::iterator itv_next = es_next.begin(); itv_next != es_next.end(); itv_next++)
+                {
+                    EdgeSE2Line2D* el_next = dynamic_cast<EdgeSE2Line2D*>(*itv_next);
+                    if (!el_next) continue;
 
-//                    VertexLine2D* vl_next = dynamic_cast<VertexLine2D*>(el_next->vertices()[1]);
-//                    if(!vl_next) continue;
+                    VertexLine2D* vl_next = dynamic_cast<VertexLine2D*>(el_next->vertices()[1]);
+                    if(!vl_next) continue;
 
-//                    VertexPointXY* vpl1 = dynamic_cast<VertexPointXY*>(graph->vertex(vl_next->p1Id));
-//                    VertexPointXY* vpl2 = dynamic_cast<VertexPointXY*>(graph->vertex(vl_next->p2Id));
+                    VertexPointXY* vpl1 = dynamic_cast<VertexPointXY*>(graph->vertex(vl_next->p1Id));
+                    VertexPointXY* vpl2 = dynamic_cast<VertexPointXY*>(graph->vertex(vl_next->p2Id));
 
-//                    vpl1->setEstimate(transform*vpl1->estimate());
-//                    vpl2->setEstimate(transform*vpl2->estimate());
+                    vpl1->setEstimate(transform*vpl1->estimate());
+                    vpl2->setEstimate(transform*vpl2->estimate());
 
-//                    Line2D newli_next = transform*vl_next->estimate();
-//                    vl_next->setEstimate(newli_next);
-//                }
+                    Line2D newli_next = transform*vl_next->estimate();
+                    vl_next->setEstimate(newli_next);
+                }
 
                 //saving the graph before merdging!
-                graph->save(unmergedG2O);
+                graph->save(alignedunmergedG2O);
+                alignedunmergedG2O.close();
 
                 ///merging vertexes and lines (inliers set)
                 cout << endl << "\033[22;34;1m*****MERGING STUFF******\033[0m " << endl << endl;
@@ -620,7 +621,6 @@ int main(int argc, char**argv){
     lvector_merged.clear();
     cout << "vectors of lines at the end: current " << lvector.size() << ", next " << lvector_next.size() << ", merged " << lvector_merged.size() << endl;
 
-    unmergedG2O.close();
     cout << "...saving merged graph in " << outfilename.c_str() << endl;
     graph->save(mergedG2O);
     mergedG2O.close();
@@ -630,7 +630,7 @@ int main(int argc, char**argv){
 //      vset.insert(it->first);
 //    }
 //    cout << "funge?? " << vset.size() << endl;
-//    graph->saveSubset(unmergedG2O, vset);
+//    graph->saveSubset(alignedunmergedG2O, vset);
 //    //deleting all the vertex not used in this run
 
     return (0);
