@@ -103,15 +103,13 @@ namespace pwn {
     VertexSE3 *currentVertex = current->vertex();
     assert(referenceVertex);
     assert(currentVertex);
-    cerr << "looking for prior" << referenceVertex << " " << currentVertex << endl;
-    
+
     bool priorFound = false;
     priorInfo.setZero();
     for(HyperGraph::EdgeSet::const_iterator it = referenceVertex->edges().begin(); it != referenceVertex->edges().end(); it++) {
       const EdgeSE3 *e = dynamic_cast<const EdgeSE3*>(*it);
       if(e && e->vertex(0) == referenceVertex && e->vertex(1) == currentVertex) {
 	priorFound=true;
-	cerr << "edge found" << e << endl;
 	e->write(cerr);
     	for(int c = 0; c < 6; c++)
 	  for(int r = 0; r < 6; r++)
@@ -123,7 +121,7 @@ namespace pwn {
 	priorMean.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
       }
     }
-    cerr << "Me happy" << endl;
+
     return priorFound;
   }
 
