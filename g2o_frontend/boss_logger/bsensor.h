@@ -1,5 +1,6 @@
 #ifndef _BOSS_SENSOR_H_
 #define _BOSS_SENSOR_H_
+#include "bframe.h"
 #include "g2o_frontend/boss/identifiable.h"
 #include "g2o_frontend/boss/serializable.h"
 #include <string>
@@ -10,10 +11,17 @@ namespace boss {
    BaseSensor(int id=-1, IdContext* context = 0);
    virtual void serialize(ObjectData& data, IdContext& context);
    virtual void deserialize(ObjectData& data, IdContext& context);
+   virtual void deserializeComplete();
    inline const std::string& topic() const { return _topic; }
    inline void setTopic(const std::string topic_) {_topic = topic_; }
+   inline Frame* frame() { return _frame; }   
+   inline const Frame* frame() const { return _frame;}
+   inline void setFrame(Frame* frame_) { _frame = frame_;}
  protected:
+   Frame* _frame;
    std::string _topic;
+ private:
+   Identifiable* _tempFrame;
  };
 
   class BaseSensorData: public Identifiable{

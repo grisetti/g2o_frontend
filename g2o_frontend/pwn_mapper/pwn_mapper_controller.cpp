@@ -217,6 +217,7 @@ namespace pwn {
     // Get the filename
     std::string filename = rgbdData->baseFilename() + "_depth.pgm";
 
+    cerr << "loading  " << filename << endl;
     // Read the depth image
     if (!_depthImage.load(filename.c_str(), true)){
       cerr << "Impossible to load image " << filename << endl;
@@ -446,6 +447,36 @@ namespace pwn {
     }
 
     if(_pwnSaving) {
+
+      pwn::Point bcenter;
+      for (size_t i=0; i<_scene->points().size(); i++){
+	bcenter+=_scene->points().at(i);
+      }
+      bcenter*=1./_scene->points().size();
+      Eigen::Vector3d barycenter(bcenter.x(), bcenter.y(), bcenter.z());
+      
+      VertexSE3* bestVertex = 0;
+      VertexSE3* origin = 0;
+      double bestDistance = std::numeric_limits<double>::max();
+
+      for (size_t i=0; i<_sceneVerteces.size(); i++){
+	VertexSE3* currentVertex = _sceneVerteces.at(i);
+	if (! origin) {
+	  bestVertex=currentVertex;
+	  origin=currentVertex;
+	  continue;
+	}
+	Eigen::Isometry3d pLocal=origin->estimate().inverse()*currentVertex->estimate();
+	double currentDistance = (pLocal.translation()-barycenter).squaredNorm();
+	if (bestDistance>currentDistance){
+	  bestVertex=currentVertex;
+	  bestDistance = currentDistance;
+	}
+      }
+
+      assert(bestVertex && "me no haz best vertex" );
+      
+
       Eigen::Isometry3f motionFromFirstFrame = _initialScenePose.inverse() * globalT;
       Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
       if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || 
@@ -455,7 +486,8 @@ namespace pwn {
 	sprintf(buff, "out-%05d.pwn", _sceneVerteces.front()->id());	
 	
 	Eigen::Isometry3f middleEstimate;
-	g2o::VertexSE3 *middleVertex = _sceneVerteces[_sceneVerteces.size() / 2];
+	//g2o::VertexSE3 *middleVertex = _sceneVerteces[_sceneVerteces.size() / 2];
+	g2o::VertexSE3 *middleVertex = bestVertex;
 	for(int r = 0; r < 3; r++) {
 	  for(int c = 0; c < 4; c++) {
 	    middleEstimate(r, c) = middleVertex->estimate()(r, c);

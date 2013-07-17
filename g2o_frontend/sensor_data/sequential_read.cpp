@@ -56,6 +56,7 @@ ImuData* imu = new ImuData;
 
 int main(int argc, char**argv)
 {
+  double distance=0;
     hasToStop = false;
     string filename;
     string outputFilename;
@@ -87,10 +88,20 @@ int main(int argc, char**argv)
 
     Factory* factory = Factory::instance();
     bool firstVertex = true;
+    VertexSE3* previous = 0;
     for(size_t i = 0; i < vertexIds.size() && ! hasToStop; ++i)
     {
         OptimizableGraph::Vertex* v = graph->vertex(vertexIds[i]);
         cerr << "vertex: " << v->id() << " type:" << factory->tag(v) << endl;
+	{
+	  VertexSE3* vse3 = dynamic_cast<VertexSE3*>(v);
+	  if (previous) {
+	    Eigen::Isometry3d dt = previous->estimate().inverse()*vse3->estimate();
+	    distance += dt.translation().norm();
+	  }
+	  previous = vse3;
+	}
+	
         OptimizableGraph::Data* d = v->userData();
         k = 0;
         while(d)
@@ -173,4 +184,5 @@ int main(int argc, char**argv)
     {
 	cout << "Output filename not provided" << endl;
     }
+    cerr << "traveled distance:" << distance << endl;
 }

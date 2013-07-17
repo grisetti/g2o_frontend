@@ -97,7 +97,8 @@ int main(int argc, char** argv) {
   SlamLinearSolver *linearSolver = new SlamLinearSolver();
   linearSolver->setBlockOrdering(false);
   SlamBlockSolver *blockSolver = new SlamBlockSolver(linearSolver);
-  OptimizationAlgorithmLevenberg *solverGauss = new OptimizationAlgorithmLevenberg(blockSolver);
+  //OptimizationAlgorithmLevenberg *solverGauss = new OptimizationAlgorithmLevenberg(blockSolver);
+  OptimizationAlgorithmGaussNewton *solverGauss = new OptimizationAlgorithmGaussNewton(blockSolver);
   SparseOptimizer *graph = new SparseOptimizer();
   graph->setAlgorithm(solverGauss);
   graph->load(g2o_filename.c_str());
@@ -254,7 +255,7 @@ int main(int argc, char** argv) {
 	}
 	graph->initializeOptimization();
 	graph->setVerbose(true);
-	graph->optimize(1000000);
+	graph->optimize(100);
 	cerr << "optimization done" << endl;
 	changed = true;
       } else {

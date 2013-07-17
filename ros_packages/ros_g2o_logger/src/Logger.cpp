@@ -398,7 +398,7 @@ int main(int argc, char** argv) {
 	
   // creare i sensors
   kinect = new SensorRGBDCamera();
-  kinect->setTopics("/camera/rgb/image_raw", "/camera/depth/image_raw");
+  kinect->setTopics("/kinect/rgb/image_color", "/kinect/depth_registered/image_raw");
   kinect->parameter()->setId(0);
   // creare i sensor handler e passargli il puntatore alla coda &queue
   shKinect = new SensorHandlerRGBDCamera(tfListener);

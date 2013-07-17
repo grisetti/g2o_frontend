@@ -10,7 +10,7 @@ namespace boss {
   public:
     enum Format {mono8=0x0, mono16=0x1, rgb8=0x2};
     ImageBLOB();
-    virtual const std::string& extension() const;
+    virtual const std::string& extension();
     void setExtension(const std::string& extension_) {_extension = extension_;}
     void resize(int width, int height, Format format);
     Format format() const { return _format; }
