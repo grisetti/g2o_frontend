@@ -3,23 +3,33 @@
 #include "g2o_frontend/boss/object_data.h"
 #include <stdexcept>
 
-#define BUF_BLOCK 4096
+#define BUF_BLOCK (4096*4)
 
 namespace boss {
   
+
   ImageBLOB::ImageBLOB(){}
-  const std::string& ImageBLOB::extension() const { return _extension; }
+
+  const std::string& ImageBLOB::extension() { return _extension; }
+
   void ImageBLOB::resize(int width, int height, Format format_) {
     _format = format_;
     switch  (_format) {
-    case mono8:  _image = cv::Mat(width, height, CV_8UC1); break;
-    case mono16: _image = cv::Mat(width, height, CV_16UC1); break;
-    case rgb8:   _image = cv::Mat(width, height, CV_8UC3); break;
+    case mono8:  _image = cv::Mat(width, height, CV_8UC1); 
+      _extension = "PGM";
+       break;
+    case mono16: _image = cv::Mat(width, height, CV_16UC1);
+      _extension = "PGM";
+       break;
+    case rgb8:   _image = cv::Mat(width, height, CV_8UC3); 
+      _extension = "PBM";
+      break;
     }
   }
 
+
   bool ImageBLOB::read(std::istream& is) {
-    std::vector<uchar> buffer;;
+    std::vector<uchar> buffer;
     int count=0;
     while (is.good()){
       buffer.resize(buffer.size()+BUF_BLOCK);
@@ -33,7 +43,8 @@ namespace boss {
 
   void ImageBLOB::write(std::ostream& os) {
     std::vector<uchar> buffer;
-    bool result = cv::imencode(_extension.c_str(), _image, buffer);
+    std::string _extension_=std::string(".")+_extension;
+    bool result = cv::imencode(_extension_.c_str(), _image, buffer);
     os.write((char*)(&buffer[0]),buffer.size());
     if (! result)
       throw std::runtime_error("cv imwrite error");
@@ -65,5 +76,9 @@ namespace boss {
     //
     //_imageBlob.deserialize(data,context);
   }
+
+  BOSS_REGISTER_BLOB(ImageBLOB);
+  BOSS_REGISTER_CLASS(Image);
+  BOSS_REGISTER_CLASS(ImageSensor);
 
 }

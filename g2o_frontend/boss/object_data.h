@@ -171,7 +171,7 @@ public:
   void setString(const std::string& name, const std::string& value);
   void setString(const std::string& name, const char* value);
   void setBool(const std::string& name, bool value);
-  void setPointer(const std::string&name, Identifiable* ptr);
+  void setPointer(const std::string&name, Identifiable* ptr){}
   
   int getInt(const std::string& name) {
     return getField(name)->getInt();
@@ -197,7 +197,7 @@ public:
     return _fields;
   }
 
-  void getPointer(const std::string&name, Identifiable*& pvar);
+  void getPointer(const std::string&name, Identifiable*& pvar){}
   
   ValueData* getField(const std::string& name);
   

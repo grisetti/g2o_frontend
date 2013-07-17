@@ -7,9 +7,6 @@
 using namespace boss;
 using namespace std;
 
-BOSS_REGISTER_CLASS(Frame);
-BOSS_REGISTER_CLASS(FrameRelation);
-
 
 int main(int argc, char** argv) {
   
@@ -47,4 +44,5 @@ int main(int argc, char** argv) {
     cout << "I read " << messages.size() << " messages" << endl;
 
   }
+
 }

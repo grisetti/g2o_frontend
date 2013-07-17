@@ -22,13 +22,14 @@ public:
   virtual void serialize(ObjectData& data, IdContext& context);
   virtual void deserialize(ObjectData& data, IdContext& context);
   virtual void deserializeComplete();
-  inline const Eigen::Isometry3d& transform() {return _transform;}
+  inline const Eigen::Isometry3d& transform() const {return _transform;}
   inline void setTransform(const Eigen::Isometry3d& transform_) {_transform = transform_;}
   
   inline const Frame* parentFrame() const { return _parentFrame;}
   inline Frame* parentFrame() { return _parentFrame;}
   inline const std::set<Frame*>& childrenFrames() const {return _childrenFrames;}
-
+  
+  Eigen::Isometry3d transformTo(const Frame* base) const;
 protected:
   void setParentFrame(Frame* parentFrame_);
   Eigen::Isometry3d _transform;

@@ -37,5 +37,6 @@ namespace boss {
     _fromFrame = static_cast<Frame*>(_tempFromFrame);
     _toFrame = static_cast<Frame*>(_tempToFrame);
   }
+  BOSS_REGISTER_CLASS(FrameRelation);
 
 } // end namespace
