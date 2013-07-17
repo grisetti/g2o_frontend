@@ -147,10 +147,12 @@ namespace pwn {
     Matrix6f imuInfo;
     bool hasImu = this->extractAbsolutePrior(imuMean, imuInfo, currentFrame);
     
+    // SETTING IDENTITY TO INITIAL GUESS
+    //initialGuess = Isometry3f::Identity();
+
     initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;    
 
-    // SETTING IDENTITY TO INITIAL GUESS
-    initialGuess = Isometry3f::Identity();
+    
 
     // Setting aligner
     _aligner->clearPriors();
