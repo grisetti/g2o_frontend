@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
       QString listItem(buff);
       listWidget->addItem(listItem);
       QListWidgetItem *lastItem = listWidget->item(listWidget->count() - 1);
-      lastItem->setHidden(true);
+      lastItem->setHidden(false);
       d = d->next();
     }
   }
@@ -189,24 +189,55 @@ int main(int argc, char** argv) {
      ************************************************************************/
     trajectory.clear();
     trajectoryColors.clear();
-    for(int i = vz_startingVertex; i < vz_endingVertex; i++) {
-      QListWidgetItem *listItem = listWidget->item(i);
-      listItem->setHidden(false);
-      string idString = listItem->text().toUtf8().constData();
-      int index = atoi(idString.c_str());
-      VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
-      if(v) {
-	Isometry3f estimate;
-	for(int r = 0; r < 3; r++) {
-	  for(int c = 0; c < 4; c++) {
-	    estimate(r, c) = v->estimate()(r, c);
-	  }
-	}
-	estimate.matrix().row(3) << 0.0l, 0.0l, 0.0l, 1.0l;
-	trajectory.push_back(estimate);
-	trajectoryColors.push_back(Eigen::Vector3f(0.3f, 0.3f, 0.3f));
+
+    for(size_t i = 0; i < vertexIds.size(); ++i) {
+      OptimizableGraph::Vertex *_v = graph->vertex(vertexIds[i]);
+      g2o::VertexSE3 *v = dynamic_cast<g2o::VertexSE3*>(_v);
+      if(!v)
+    	continue;
+      OptimizableGraph::Data *d = v->userData();
+      bool foundPwnData = false;
+      while(d) {
+    	PWNData *pwnData = dynamic_cast<PWNData*>(d);
+    	if(!pwnData) {
+    	  d = d->next();
+    	  continue;
+    	}
+      
+    	foundPwnData = true;
+    	d = d->next();
+      }
+
+      Isometry3f estimate;
+      isometry3d2f(estimate, v->estimate());
+      if(foundPwnData) {
+    	trajectory.push_back(estimate);
+    	trajectoryColors.push_back(Eigen::Vector3f(1.0f, 0.0f, 0.0f));
+      }
+      else {
+    	trajectory.push_back(estimate);
+    	trajectoryColors.push_back(Eigen::Vector3f(0.5f, 0.5f, 0.5f));
       }
     }
+
+    // for(int i = vz_startingVertex; i < vz_endingVertex; i++) {
+    //   QListWidgetItem *listItem = listWidget->item(i);
+    //   listItem->setHidden(false);
+    //   string idString = listItem->text().toUtf8().constData();
+    //   int index = atoi(idString.c_str());
+    //   VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
+    //   if(v) {
+    // 	Isometry3f estimate;
+    // 	for(int r = 0; r < 3; r++) {
+    // 	  for(int c = 0; c < 4; c++) {
+    // 	    estimate(r, c) = v->estimate()(r, c);
+    // 	  }
+    // 	}
+    // 	estimate.matrix().row(3) << 0.0l, 0.0l, 0.0l, 1.0l;
+    // 	trajectory.push_back(estimate);
+    // 	trajectoryColors.push_back(Eigen::Vector3f(0.3f, 0.3f, 0.3f));
+    //   }
+    // }
 
     // Align button was pressed
     if(alignButton->isDown()) {
@@ -267,11 +298,13 @@ int main(int argc, char** argv) {
     for(int k = vz_startingVertex; k < vz_endingVertex; k++) {
       QListWidgetItem* item = listWidget->item(k);
       if(item) {
-	if(item->isSelected() {
-	  trajectoryColors[k] = Eigen::Vector3f(1.0f, 0.3f, 0.3f);
+	if(item->isSelected()) {
+	  //trajectoryColors[k] = Eigen::Vector3f(1.0f, 0.3f, 0.3f);
 	  string idString = item->text().toUtf8().constData();
 	  int index = atoi(idString.c_str());
 	  VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
+	  trajectoryColors[index] = Eigen::Vector3f(0.0f, 1.0f, 0.0f);
+	  drawableTrajectory->updateTrajectoryDrawList();
 	  if(v && !frames[k]) {
 	    G2OFrame *currentFrame = new G2OFrame(v);
 	    controller->extractPWNData(currentFrame);
@@ -281,7 +314,7 @@ int main(int argc, char** argv) {
 	      for (int r = 0; r<3; r++)
 		isotta.matrix()(r,c) = v->estimate().matrix()(r,c);
 	    DrawableFrame *drawableFrame = new DrawableFrame(isotta, parameterFrame, frames[k]);
-	    viewer->addDrawable(drawableFrame);
+	    viewer->addDrawable(drawableFrame);	    
 	    changed = true;
 	  }	
 	}
