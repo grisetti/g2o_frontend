@@ -102,10 +102,10 @@ bool findCorrespondences(LineCorrs& _currCorrs,  LinesForMatching& _pairLinesSet
             double d2=(p21-p22).norm();
 
             if(fabs(d1-d2) > lenghterr){
-                cout << "differenza lunghezza troppo grande: " << fabs(d1-d2) << endl;
+                cout << "lenght diff NOT OK: " << fabs(d1-d2) << endl;
                 continue;
             }
-            cout << "differenza lunghezza ok: " << fabs(d1-d2) << endl;
+            cout << "lenght diff ok: " << fabs(d1-d2) << endl;
             Line2D l2 = s2[k].line;
             Vector3d l2_coeff(cos(l2(0)), sin(l2(0)), l2(1));
 
@@ -125,6 +125,7 @@ bool findCorrespondences(LineCorrs& _currCorrs,  LinesForMatching& _pairLinesSet
                 lc.error = err_chi2;
                 lc.lid1 = j;
                 lc.lid2 = k;
+//                cout << "SIGH!!!!!!!!" << endl;
             }
         }
         _currCorrs.push_back(lc);

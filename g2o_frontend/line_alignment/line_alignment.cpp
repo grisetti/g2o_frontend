@@ -462,14 +462,7 @@ int main(int argc, char**argv){
 //                    Vector2d line1 = Vector2d(vli->estimate());
                     VertexPointXY* vpl1_1 = dynamic_cast<VertexPointXY*>(graph->vertex(s1[currCorrs[ci].lid1].vline->p1Id));
                     VertexPointXY* vpl2_1 = dynamic_cast<VertexPointXY*>(graph->vertex(s1[currCorrs[ci].lid1].vline->p2Id));
-//                    Vector2d nline1(cos(line1(0)), sin(line1(0)));
-//                    Vector2d pmiddle1 = nline1*line1(1);
-//                    Vector2d t1(-nline1.y(), nline1.x());
-//                    double l1_1,l2_1 = 10;
-//                    l1_1 = t1.dot(vpl1_1->estimate()-pmiddle1);
-//                    l2_1 = t1.dot(vpl2_1->estimate()-pmiddle1);
-//                    Vector2d p1line1 = pmiddle1 + t1*l1_1;
-//                    Vector2d p2line1 = pmiddle1 + t1*l2_1;
+
                     Vector2d p1line1 = vpl1_1->estimate();
                     Vector2d p2line1 = vpl2_1->estimate();
                     os1 << p1line1.transpose() << endl;
@@ -481,21 +474,13 @@ int main(int argc, char**argv){
 
 //                ofstream os2("Line2CurrCorr.dat");
 //                ofstream os2R("Line2CurrCorrRemapped.dat");
-
                 for (int ci = 0; ci < (int)currCorrs.size(); ci++)
                 {
 //                    VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[ci].lid2].vline->id()));
 //                    Vector2d line2 = Vector2d(vlj->estimate());
                     VertexPointXY* vpl1_2 = dynamic_cast<VertexPointXY*>(graph->vertex(s2[currCorrs[ci].lid2].vline->p1Id));
                     VertexPointXY* vpl2_2 = dynamic_cast<VertexPointXY*>(graph->vertex(s2[currCorrs[ci].lid2].vline->p2Id));
-//                    Vector2d nline2(cos(line2(0)), sin(line2(0)));
-//                    Vector2d pmiddle2 = nline2*line2(1);
-//                    Vector2d t1(-nline2.y(), nline2.x());
-//                    double l1_1,l2_1 = 10;
-//                    l1_1 = t1.dot(vpl1_2->estimate()-pmiddle2);
-//                    l2_1 = t1.dot(vpl2_2->estimate()-pmiddle2);
-//                    Vector2d p1line2 = pmiddle2 + t1*l1_1;
-//                    Vector2d p2line2 = pmiddle2 + t1*l2_1;
+
                     Vector2d p1line2 = vpl1_2->estimate();
                     Vector2d p2line2 = vpl2_2->estimate();
                     os2 << p1line2.transpose() << endl;
@@ -508,14 +493,7 @@ int main(int argc, char**argv){
 //                    Vector2d line2Remapped = Vector2d(transform*vlj->estimate());
                     Vector2d p1line2R = transform*p1line2;
                     Vector2d p2line2R = transform*p2line2;
-//                    Vector2d nline2R(cos(line2Remapped(0)), sin(line2Remapped(0)));
-//                    Vector2d pmiddle2 = nline2R*line2Remapped(1);
-//                    Vector2d t2R(-nline2R.y(), nline2R.x());
-//                    double l1_2R,l2_2R = 10;
-//                    l1_2R = t2R.dot(vpl1_2R - pmiddle2);
-//                    l2_2R = t2R.dot(vpl2_2R - pmiddle2);
-//                    Vector2d p1line2R = pmiddle2 + t2R*l1_2R;
-//                    Vector2d p2line2R = pmiddle2 + t2R*l2_2R;
+
                     os2R << p1line2R.transpose() << endl;
                     os2R << p2line2R.transpose() << endl;
                     os2R << endl;
@@ -525,7 +503,8 @@ int main(int argc, char**argv){
 #endif
 
                 //updating the value of the second vertex pose
-                SE2 newpose = transform/*.inverse()*/*v_next->estimate()/**transform*//*.inverse()*/;
+                //SE2 newpose = /*transform*//*.inverse()**/v->estimate()*transform.inverse();
+                SE2 newpose = transform*v_next->estimate();
                 cerr << "vecchia posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
                 v_next->setEstimate(newpose);
                 cerr << "nuova posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
@@ -549,9 +528,25 @@ int main(int argc, char**argv){
                     vl_next->setEstimate(newli_next);
                 }
 
+                EdgeSE2* et = new EdgeSE2();
+                et->setVertex(0, v);
+                et->setVertex(1, v_next);
+                Eigen::Matrix3d info = Eigen::Matrix3d::Identity();
+                info/*.block<2,2>(0,0)*/*=1000;
+                et->setInformation(info);
+                SE2 t(v->estimate().inverse() * v_next->estimate());
+                et->setMeasurement(t);
+                cerr << "adding trasform constraint " << et << " to the graph between viID: " << v->id() << " and vjID " << v_next->id() << endl;
+                bool resurtato = graph->addEdge(et);
+                if(resurtato) {
+                    cerr << "agiunto edge " << endl;
+                    et->write(cerr);
+                } else
+                    cerr << "no agiunto edge" << endl;
+
                 //saving the graph before merdging!
-                graph->save(alignedunmergedG2O);
-                alignedunmergedG2O.close();
+                graph->save("aligned_unmerged.g2o");
+//                alignedunmergedG2O.close();
 
                 ///merging vertexes and lines (inliers set)
                 cout << endl << "\033[22;34;1m*****MERGING STUFF******\033[0m " << endl << endl;
@@ -614,6 +609,9 @@ int main(int argc, char**argv){
         lines2sort.clear();
         lvector.clear();
         lvector_next.clear();
+        graph->initializeOptimization();
+        graph->optimize(10);
+//        alignedunmergedG2O.close();
     }
     cout << endl << "\033[22;31;1m********************************END READING THE GRAPH********************************\033[0m" << endl << endl;
     cout << endl;
@@ -624,15 +622,6 @@ int main(int argc, char**argv){
     cout << "...saving merged graph in " << outfilename.c_str() << endl;
     graph->save(mergedG2O);
     mergedG2O.close();
-//    //saving a subset of the graph
-//    HyperGraph::VertexSet vset;
-//    for (OptimizableGraph::VertexIDMap::iterator it=graph->vertices().begin(); it!= graph->vertices().end(); it ++){
-//      vset.insert(it->first);
-//    }
-//    cout << "funge?? " << vset.size() << endl;
-//    graph->saveSubset(alignedunmergedG2O, vset);
-//    //deleting all the vertex not used in this run
-
     return (0);
 }
 
