@@ -60,7 +60,10 @@ namespace pwn {
     _correspondenceFinder = new CorrespondenceFinder();
     _linearizer = new Linearizer();
 
-     // Aligner and merger init
+    // Voxel calculator init
+    _voxelCalculator = new VoxelCalculator();
+
+    // Aligner and merger init
     _minNumInliers = 10000;
     _minError = 10.0f;
     _aligner = new Aligner();
@@ -485,8 +488,9 @@ namespace pwn {
 	sprintf(buff, "out-%05d.pwn", _sceneVerteces.front()->id());	
 	
 	Eigen::Isometry3f middleEstimate;
-	//g2o::VertexSE3 *middleVertex = _sceneVerteces[_sceneVerteces.size() / 2];
-	g2o::VertexSE3 *middleVertex = bestVertex;
+	//	g2o::VertexSE3 *middleVertex = _sceneVerteces[_sceneVerteces.size() / 2];
+	g2o::VertexSE3 *middleVertex = _sceneVerteces[_sceneVerteces.size() - 1];
+	//g2o::VertexSE3 *middleVertex = bestVertex;
 	for(int r = 0; r < 3; r++) {
 	  for(int c = 0; c < 4; c++) {
 	    middleEstimate(r, c) = middleVertex->estimate()(r, c);
@@ -494,6 +498,8 @@ namespace pwn {
 	}
 	middleEstimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
 	_scene->transformInPlace(middleEstimate.inverse() * _initialScenePose);
+	
+	_voxelCalculator->compute(*_scene, 0.025f);
 	
 	PWNData *pwnData = new PWNData(_scene);
 	pwnData->setFilename(buff);

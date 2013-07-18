@@ -16,6 +16,7 @@
 #include "g2o_frontend/pwn2/depthimageconverter.h"
 #include "g2o_frontend/pwn2/aligner.h"
 #include "g2o_frontend/pwn2/merger.h"
+#include "g2o_frontend/pwn2/voxelcalculator.h"
 
 #include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "g2o_frontend/sensor_data/rgbd_data.h"
@@ -103,6 +104,11 @@ namespace pwn {
     inline CorrespondenceFinder* correspondenceFinder() { return _correspondenceFinder; }
     inline Linearizer* linearizer() { return _linearizer; }
 
+    // Voxel calculator settings methods
+    inline void setVoxelCalculator(VoxelCalculator* const voxelCalculator_) { _voxelCalculator = voxelCalculator_; }
+
+    inline VoxelCalculator* voxelCalculator() { return _voxelCalculator; }
+    
     // Aligner and merger settings methods
     inline void setAligner(Aligner* const aligner_) { _aligner = aligner_; }
     inline void setMerger(Merger* const merger_) { 
@@ -197,6 +203,9 @@ namespace pwn {
     // Correspondece finder and linearizer
     CorrespondenceFinder *_correspondenceFinder;
     Linearizer *_linearizer;
+
+    // Voxel calculator
+    VoxelCalculator *_voxelCalculator;
 
     // Aligner and merger
     Aligner *_aligner;
