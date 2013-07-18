@@ -84,7 +84,7 @@ void DrawableTrajectory::updateTrajectoryDrawList() {
       glMultMatrixf(_trajectory->at(i).data());
       glRotatef(90.0f, 0.0f, 1.0f, 0.0f);        
       glScalef(trajectoryParameter->pyramidScale() ,trajectoryParameter->pyramidScale(), trajectoryParameter->pyramidScale() * 2.0f);
-      glColor3f(_trajectoryColors->at(i).x(),_trajectoryColors->at(i).y(), _trajectoryColors->at(i).z());
+      glColor4f(_trajectoryColors->at(i).x(),_trajectoryColors->at(i).y(), _trajectoryColors->at(i).z(), 1.0f);
       glCallList(_pyramidDrawList);
       glPopMatrix();
     }
