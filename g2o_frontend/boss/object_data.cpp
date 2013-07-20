@@ -50,8 +50,16 @@ Identifiable* ValueData::getPointer() {
   throw logic_error("getPointer not allowed for type "+typeName());
 }
 
-void ValueData::bindPointer(Identifiable*& pvar __attribute__((unused))) {
+void ValueData::bindPointer(Identifiable*& /*pvar*/) {
   throw logic_error("bindPointer not allowed for type "+typeName());
+}
+
+ArrayData& ValueData::getArray() {
+  throw logic_error("getArray not allowed for type "+typeName());
+}
+
+ObjectData& ValueData::getObject() {
+  throw logic_error("getObject not allowed for type "+typeName());
 }
 
 ValueData::~ValueData() {}
@@ -134,6 +142,10 @@ ValueType ArrayData::type() {
   return ARRAY;
 }
 
+ArrayData& ArrayData::getArray() {
+  return *this;
+}
+
 ArrayData::~ArrayData() {
   for (vector<ValueData*>::iterator v_it=_value.begin();v_it!=_value.end();delete *(v_it++));
 }
@@ -203,6 +215,10 @@ ValueType ObjectData::type() {
   return OBJECT;
 }
 
+ObjectData& ObjectData::getObject() {
+  return *this;
+}
+
 ObjectData::~ObjectData() {
   for (map<string, ValueData*>::iterator v_it=_value.begin();v_it!=_value.end();delete (*(v_it++)).second);
 }
@@ -249,6 +265,10 @@ void ObjectData::setString(const string& name, const char* value) {
   setField(name, new StringData(value));
 }
 
+void ObjectData::setPointer(const string& name, Identifiable* ptr) {
+  setField(name, new PointerData(ptr));
+}
+
 //PointerData
 ValueType PointerData::type() {
   return POINTER;
@@ -258,6 +278,10 @@ Identifiable* PointerData::getPointer() {
   return _pointer;
 }
 
+void PointerData::bindPointer(Identifiable*& pvar) {
+  pvar = _pointer;
+}
+
 //PointerReference
 ValueType PointerReference::type() {
   return POINTER_REF;
@@ -265,6 +289,7 @@ ValueType PointerReference::type() {
 
 void PointerReference::bindPointer(Identifiable*& pvar) {
   _ref->addVariable(pvar);
+  pvar=0;
 }
 
 #define STREAM_OPS(field_type, setter, getter) \

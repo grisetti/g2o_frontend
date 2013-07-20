@@ -12,7 +12,9 @@ namespace boss {
     _toFrame = 0;
   }
 
-  void FrameRelation::serialize(ObjectData& data, IdContext& /*context*/){
+  void FrameRelation::serialize(ObjectData& data, IdContext& context){
+    Identifiable::serialize(data, context);
+
     data.setPointer("fromFrame", _fromFrame);
     data.setPointer("toFrame", _toFrame);
 
@@ -22,9 +24,11 @@ namespace boss {
     _informationMatrix.toBOSS(data,"informationMatrix");
   }
   
-  void FrameRelation::deserialize(ObjectData& data, IdContext& /*context*/){
-    data.getPointer("fromFrame", _tempFromFrame);
-    data.getPointer("toFrame", _tempToFrame);
+  void FrameRelation::deserialize(ObjectData& data, IdContext& context){
+    Identifiable::deserialize(data, context);
+
+    data.bindPointer("fromFrame", _tempFromFrame);
+    data.bindPointer("toFrame", _tempToFrame);
 
     Eigen::Quaterniond q;
     q.coeffs().fromBOSS(data,"rotation");

@@ -34,6 +34,9 @@ enum ValueType {
   BOOL, NUMBER, STRING, ARRAY, OBJECT, POINTER, POINTER_REF
 };
 
+class ArrayData;
+class ObjectData;
+
 class ValueData {
 public:
   virtual int getInt();
@@ -43,6 +46,9 @@ public:
   virtual const std::string& getString();
   virtual Identifiable* getPointer();
   virtual void bindPointer(Identifiable*& pvar);
+
+  virtual ArrayData& getArray();
+  virtual ObjectData& getObject();
 
   virtual ValueType type()=0;
   const std::string& typeName();
@@ -115,6 +121,7 @@ protected:
 class ArrayData: public ValueData {
 public:
   virtual ValueType type();
+  virtual ArrayData& getArray();
   virtual ~ArrayData();
   void add(bool value);
   void add(int value);
@@ -147,8 +154,8 @@ public:
   void reserve(size_t n) {
     _value.reserve(n);
   }
-  ValueData* operator[](size_t n) {
-    return _value.at(n);
+  ValueData& operator[](size_t n) {
+    return *_value.at(n);
   }
   size_t size() {
     return _value.size();
@@ -164,6 +171,8 @@ protected:
 class ObjectData: public ValueData {
 public:
   virtual ValueType type();
+  virtual ObjectData& getObject();
+
   void setField(const std::string& name, ValueData* value);
   void setInt(const std::string& name, int value);
   void setDouble(const std::string& name, double value);
@@ -171,7 +180,7 @@ public:
   void setString(const std::string& name, const std::string& value);
   void setString(const std::string& name, const char* value);
   void setBool(const std::string& name, bool value);
-  void setPointer(const std::string&name, Identifiable* ptr){}
+  void setPointer(const std::string&name, Identifiable* ptr);
   
   int getInt(const std::string& name) {
     return getField(name)->getInt();
@@ -197,7 +206,13 @@ public:
     return _fields;
   }
 
-  void getPointer(const std::string&name, Identifiable*& pvar){}
+  void bindPointer(const std::string&name, Identifiable*& pvar) {
+    getField(name)->bindPointer(pvar);
+  }
+
+  Identifiable* getPointer(const std::string&name) {
+    return getField(name)->getPointer();
+  }
   
   ValueData* getField(const std::string& name);
   
@@ -212,6 +227,7 @@ class PointerData: public ValueData {
 public:
   PointerData(Identifiable* pointer): _pointer(pointer) {}
   virtual Identifiable* getPointer();
+  virtual void bindPointer(Identifiable*& pvar);
   virtual ValueType type();
   
 protected:

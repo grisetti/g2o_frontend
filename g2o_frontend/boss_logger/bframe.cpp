@@ -54,7 +54,8 @@ namespace boss {
   }
 
 
-  void Frame::serialize(ObjectData& data, IdContext& /*context*/){
+  void Frame::serialize(ObjectData& data, IdContext& context){
+    Identifiable::serialize(data, context);
     data.setPointer("parentFrame",_parentFrame);
 
     Eigen::Quaterniond q(_transform.rotation());
@@ -62,10 +63,11 @@ namespace boss {
     _transform.translation().toBOSS(data,"translation");
   }
   
-  void Frame::deserialize(ObjectData& data, IdContext& /*context*/){
+  void Frame::deserialize(ObjectData& data, IdContext& context){
+    Identifiable::deserialize(data, context);
     _parentFrame = 0;
     _tempParentFrame = 0;
-    data.getPointer("parentFrame", _tempParentFrame);
+    data.bindPointer("parentFrame", _tempParentFrame);
 
     Eigen::Quaterniond q;
     q.coeffs().fromBOSS(data,"rotation");

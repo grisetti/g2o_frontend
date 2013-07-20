@@ -17,6 +17,7 @@
 */
 
 #include <stdexcept>
+#include <sstream>
 
 #include "identifiable.h"
 #include "id_context.h"
@@ -28,10 +29,14 @@ using namespace std;
 Identifiable::Identifiable(int id, IdContext* context): _id(id), _context(context) {
   if (_context) {
     if (_id<0) {
-      throw logic_error("invalid id value within context: "+_id);
+      ostringstream msg;
+      msg << "invalid id value within context: " << _id;
+      throw logic_error(msg.str());
     }
     if (!_context->add(this)) {
-      throw logic_error("duplicate id value within context: "+_id);
+      ostringstream msg;
+      msg << "duplicate id value within context: " << _id;
+      throw logic_error(msg.str());
     }   
   }
 }
@@ -48,7 +53,9 @@ bool Identifiable::setContext(IdContext* context) {
   }
   if (context) {
     if (_id<0) {
-      throw logic_error("invalid id value within context: "+_id);
+      ostringstream msg;
+      msg << "invalid id value within context: " << _id;
+      throw logic_error(msg.str());
     }
     if (!context->add(this)) {
       return false;
@@ -74,7 +81,9 @@ bool Identifiable::setId(int id, IdContext* context) {
   bool ok=true;
   if (_context) {
     if (_id<0) {
-      throw logic_error("invalid id value within context: "+_id);
+      ostringstream msg;
+      msg << "invalid id value within context: " << _id;
+      throw logic_error(msg.str());
     }
     if (_context==oldContext) {
       ok=_context->update(this,oldId);
