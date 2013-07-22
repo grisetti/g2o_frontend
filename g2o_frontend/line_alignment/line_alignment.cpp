@@ -609,7 +609,9 @@ int main(int argc, char**argv){
         lines2sort.clear();
         lvector.clear();
         lvector_next.clear();
+
         graph->initializeOptimization();
+//        graph->setVerbose(true);
         graph->optimize(10);
 //        alignedunmergedG2O.close();
     }
