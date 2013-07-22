@@ -38,6 +38,10 @@ static ValueData* processData(ValueData* vdata, SerializationContext& context, v
     ValueData* pfield=data->getField("#pointer");
     if (pfield) {
       int id=pfield->getInt();
+      //Negative IDs map to null pointer
+      if (id<0) {
+        return new PointerData(0);
+      }
       Identifiable* pointer=context.getById(id);
       if (pointer) {
         return new PointerData(pointer);

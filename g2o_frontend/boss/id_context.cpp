@@ -27,6 +27,7 @@ using namespace std;
 using boost::mutex;
 using boost::lock_guard;
 
+IdContext::IdContext(): _lastGeneratedID(0) {}
 
 bool IdContext::add(Identifiable* obj) {
   lock_guard<mutex> lock(_instances_lock);
@@ -76,10 +77,14 @@ Identifiable* IdContext::getById(int id) {
 
 int IdContext::generateId() {
   lock_guard<mutex> lock(_instances_lock);
-  if (_instances.empty()) {
-    return 1;
+  int minId=_lastGeneratedID+1;
+  if (!_instances.empty()) {
+    int curId=(*_instances.rbegin()).first+1;
+    if (curId>minId) {
+      minId=curId;
+    }
   }
-  return (*_instances.rbegin()).first+1;
+  return _lastGeneratedID=minId;
 }
 
 IdPlaceholder* IdContext::createPlaceHolder(int id) {

@@ -298,8 +298,8 @@ int main(int argc, char** argv) {
     for(int k = vz_startingVertex; k < vz_endingVertex; k++) {
       QListWidgetItem* item = listWidget->item(k);
       if(item) {
-	if(item->isSelected()) {
-	  //trajectoryColors[k] = Eigen::Vector3f(1.0f, 0.3f, 0.3f);
+    if(item->isSelected()) {
+	  trajectoryColors[k] = Eigen::Vector3f(1.0f, 0.3f, 0.3f);
 	  string idString = item->text().toUtf8().constData();
 	  int index = atoi(idString.c_str());
 	  VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));

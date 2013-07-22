@@ -31,6 +31,7 @@ class IdPlaceholder;
 
 class IdContext {
 public:
+  IdContext();
   Identifiable* getById(int id);
   bool add(Identifiable* obj);
   bool remove(Identifiable* obj);
@@ -44,6 +45,7 @@ protected:
   
   std::map<int, Identifiable*> _instances;
   boost::mutex _instances_lock;
+  int _lastGeneratedID;
 };
 
 

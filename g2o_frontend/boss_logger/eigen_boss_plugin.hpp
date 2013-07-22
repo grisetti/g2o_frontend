@@ -15,14 +15,14 @@ inline void toBOSS(boss::ObjectData& data, const std::string name) const {
 }
 
 inline void fromBOSS(boss::ObjectData& data, const std::string name){
-  boss::ObjectData* matrixData = static_cast<boss::ObjectData*>(data.getField(name));
+  boss::ObjectData& matrixData = data.getField(name)->getObject();
   if (SizeAtCompileTime == Eigen::Dynamic) {
-    int _r = matrixData->getInt("rows");
-    int _c = matrixData->getInt("cols");
+    int _r = matrixData.getInt("rows");
+    int _c = matrixData.getInt("cols");
     this->resize(_r, _c);
   }
-  boss::ArrayData* adata = static_cast<boss::ArrayData*>(matrixData->getField(name));
-  assert(adata->size()==rows()*cols());
+  boss::ArrayData& adata = matrixData.getField("values")->getArray();
+  assert(adata.size()==rows()*cols());
   int k=0;
   for (int r=0; r<rows(); r++)
     for (int c=0; c<cols(); c++, k++)
