@@ -149,10 +149,23 @@ namespace pwn {
     
     // SETTING IDENTITY TO INITIAL GUESS
     //initialGuess = Isometry3f::Identity();
-
     initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;    
 
-    
+    // Compute baricenter
+    pwn::Point referenceBCenter, currentBCenter;
+    for(size_t i = 0; i < referenceFrame->points().size(); i++) {
+      referenceBCenter += referenceFrame->points().at(i);
+    }
+    for(size_t i = 0; i < currentFrame->points().size(); i++) {
+      currentBCenter += currentFrame->points().at(i);
+    }
+    referenceBCenter *= 1.0f / referenceFrame->points().size();
+    currentBCenter *= 1.0f / currentFrame->points().size();
+
+    Isometry3f referenceSensorOffset = _sensorOffset;
+    //referenceSensorOffset.translation() = _sensorOffset.translation() + referenceBCenter.head<3>();
+    Isometry3f currentSensorOffset = _sensorOffset;
+    //currentSensorOffset.translation() = _sensorOffset.translation() + currentBCenter.head<3>();
 
     // Setting aligner
     _aligner->clearPriors();
@@ -160,6 +173,8 @@ namespace pwn {
     _aligner->setCurrentFrame(currentFrame);
     _aligner->setInitialGuess(initialGuess);
     _aligner->setSensorOffset(_sensorOffset);
+    _aligner->setReferenceSensorOffset(referenceSensorOffset);
+    _aligner->setCurrentSensorOffset(currentSensorOffset);
     if(hasImu)
       _aligner->addAbsolutePrior(referenceFrame->globalTransform(), imuMean, imuInfo);
     

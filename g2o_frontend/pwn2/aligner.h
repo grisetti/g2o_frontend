@@ -20,7 +20,12 @@ class Aligner {
   inline void setInnerIterations(const int innerIterations_) { _innerIterations = innerIterations_; }
   inline void setT(const Eigen::Isometry3f T_) { _T = T_; }
   inline void setInitialGuess(const Eigen::Isometry3f initialGuess_) { _initialGuess = initialGuess_; }
-  inline void setSensorOffset(const Eigen::Isometry3f sensorOffset_) { _sensorOffset = sensorOffset_; }
+  inline void setSensorOffset(const Eigen::Isometry3f sensorOffset_) { 
+    _referenceSensorOffset = sensorOffset_;
+    _currentSensorOffset = sensorOffset_;
+  }
+  inline void setReferenceSensorOffset(const Eigen::Isometry3f referenceSensorOffset_) { _referenceSensorOffset = referenceSensorOffset_; }
+  inline void setCurrentSensorOffset(const Eigen::Isometry3f currentSensorOffset_) { _currentSensorOffset = currentSensorOffset_; }
 
   inline const PointProjector* projector() const { return _projector; }
   inline Linearizer* linearizer() { return _linearizer; }
@@ -33,7 +38,9 @@ class Aligner {
   inline int innerIterations() const { return _innerIterations; }
   inline const Eigen::Isometry3f& T() const { return _T; }
   inline const Eigen::Isometry3f& initialGuess() const { return _initialGuess; }
-  inline const Eigen::Isometry3f& sensorOffset() const { return _sensorOffset; }
+  inline const Eigen::Isometry3f& sensorOffset() const { return _referenceSensorOffset; }
+  inline const Eigen::Isometry3f& referenceSensorOffset() const { return _referenceSensorOffset; }
+  inline const Eigen::Isometry3f& currentSensorOffset() const { return _currentSensorOffset; }
 
   virtual void align();
 
@@ -58,7 +65,9 @@ class Aligner {
 
   Eigen::Isometry3f _T;
   Eigen::Isometry3f _initialGuess;
-  Eigen::Isometry3f _sensorOffset;
+  //Eigen::Isometry3f _sensorOffset;
+  Eigen::Isometry3f _referenceSensorOffset;
+  Eigen::Isometry3f _currentSensorOffset;
 
   int _inliers;
   double _totalTime;

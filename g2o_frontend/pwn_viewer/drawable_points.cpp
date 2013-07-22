@@ -83,12 +83,12 @@ void DrawablePoints::updatePointDrawList() {
     }    
     glEnd();
     
-    baricenter = baricenter / _points->size();
-    glPointSize(15.0f);
-    glBegin(GL_POINTS);
-    glColor4f(1.0f, 0.25f, 0.0f, 1.0f);
-    glVertex3f(baricenter[0], baricenter[1], baricenter[2]);
-    glEnd();
+    // baricenter = baricenter / _points->size();
+    // glPointSize(15.0f);
+    // glBegin(GL_POINTS);
+    // glColor4f(1.0f, 0.25f, 0.0f, 1.0f);
+    // glVertex3f(baricenter[0], baricenter[1], baricenter[2]);
+    // glEnd();
   }
   glEndList();
 }

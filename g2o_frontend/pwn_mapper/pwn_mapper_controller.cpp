@@ -332,7 +332,7 @@ namespace pwn {
     frame.previousFrameTransform().setIdentity();
     frame.setPreviousFrame(0);
 
-    _converter->compute(frame, _scaledDepthImage, _sensorOffset, true);
+    _converter->compute(frame, _scaledDepthImage, _sensorOffset, false);
 
     return true;
   }
@@ -386,7 +386,7 @@ namespace pwn {
       _projector->setTransform(_initialScenePose.inverse() * reference->globalTransform() * _sensorOffset);
       _projector->project(_indexImage, _depthImage, _scene->points());
       
-      _converter->compute(*_subScene, _depthImage, _sensorOffset, true);
+      _converter->compute(*_subScene, _depthImage, _sensorOffset, false);
       _aligner->setReferenceFrame(_subScene);
     }
     else {
@@ -407,7 +407,6 @@ namespace pwn {
     _aligner->align();
     
     Eigen::Isometry3f localTransformation = _aligner->T();
-    bool failure = false;
     if(_aligner->outerIterations() != 0 && (_aligner->inliers() < _minNumInliers || _aligner->error() / _aligner->inliers() > _minError) ) {
       cerr << "ALIGNER FAILURE!!!!!!!!!!!!!!!" << endl;
       cerr << "inliers/minimum number of inliers: " << _aligner->inliers() << " / " << _minNumInliers << endl;
@@ -416,7 +415,6 @@ namespace pwn {
       else
 	cerr << "error: " << std::numeric_limits<float>::max() << " / " << _minError << endl;
       localTransformation = initialGuess;
-      failure = true;
     }
   
     Isometry3f globalT = reference->globalTransform() * localTransformation;
@@ -449,48 +447,45 @@ namespace pwn {
     }
 
     if(_pwnSaving) {
-
-      pwn::Point bcenter;
-      for (size_t i=0; i<_scene->points().size(); i++){
-	bcenter+=_scene->points().at(i);
-      }
-      bcenter*=1./_scene->points().size();
-      Eigen::Vector3d barycenter(bcenter.x(), bcenter.y(), bcenter.z());
-      
-      VertexSE3* bestVertex = 0;
-      VertexSE3* origin = 0;
-      double bestDistance = std::numeric_limits<double>::max();
-
-      for (size_t i=0; i<_sceneVerteces.size(); i++){
-	VertexSE3* currentVertex = _sceneVerteces.at(i);
-	if (! origin) {
-	  bestVertex=currentVertex;
-	  origin=currentVertex;
-	  continue;
-	}
-	Eigen::Isometry3d pLocal=origin->estimate().inverse()*currentVertex->estimate();
-	double currentDistance = (pLocal.translation()-barycenter).squaredNorm();
-	if (bestDistance>currentDistance){
-	  bestVertex=currentVertex;
-	  bestDistance = currentDistance;
-	}
-      }
-
-      assert(bestVertex && "me no haz best vertex" );
-      
-
       Eigen::Isometry3f motionFromFirstFrame = _initialScenePose.inverse() * globalT;
       Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
       if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || 
-	 motionFromFirstFrame.translation().norm() > _chunkDistance /*||
-								      failure*/) {
+	 motionFromFirstFrame.translation().norm() > _chunkDistance) {
+	pwn::Point bcenter;
+	for (size_t i=0; i<_scene->points().size(); i++){
+	  bcenter+=_scene->points().at(i);
+	}
+	bcenter*=1./_scene->points().size();
+	Eigen::Vector3d barycenter(bcenter.x(), bcenter.y(), bcenter.z());
+      
+	VertexSE3* bestVertex = 0;
+	VertexSE3* origin = 0;
+	double bestDistance = std::numeric_limits<double>::max();
+
+	for (size_t i=0; i<_sceneVerteces.size(); i++){
+	  VertexSE3* currentVertex = _sceneVerteces.at(i);
+	  if (! origin) {
+	    bestVertex=currentVertex;
+	    origin=currentVertex;
+	    continue;
+	  }
+	  Eigen::Isometry3d pLocal=origin->estimate().inverse()*currentVertex->estimate();
+	  double currentDistance = (pLocal.translation()-barycenter).squaredNorm();
+	  if (bestDistance>currentDistance){
+	    bestVertex=currentVertex;
+	    bestDistance = currentDistance;
+	  }
+	}
+
+	assert(bestVertex && "Didn't found a best vertex");
+      
 	char buff[1024];
-	sprintf(buff, "out-%05d.pwn", _sceneVerteces.front()->id());	
+	bestVertex = _sceneVerteces.back();
+	//sprintf(buff, "out-%05d.pwn", _sceneVerteces.front()->id());
+	sprintf(buff, "out-%05d.pwn", bestVertex->id());
 	
 	Eigen::Isometry3f middleEstimate;
-	//	g2o::VertexSE3 *middleVertex = _sceneVerteces[_sceneVerteces.size() / 2];
-	g2o::VertexSE3 *middleVertex = _sceneVerteces[_sceneVerteces.size() - 1];
-	//g2o::VertexSE3 *middleVertex = bestVertex;
+	g2o::VertexSE3 *middleVertex = bestVertex;
 	for(int r = 0; r < 3; r++) {
 	  for(int c = 0; c < 4; c++) {
 	    middleEstimate(r, c) = middleVertex->estimate()(r, c);
@@ -499,8 +494,9 @@ namespace pwn {
 	middleEstimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
 	_scene->transformInPlace(middleEstimate.inverse() * _initialScenePose);
 	
-	_voxelCalculator->compute(*_scene, 0.025f);
-	
+	// Voxelize data and recompute stats
+	_voxelCalculator->compute(*_scene, 0.01f);
+
 	PWNData *pwnData = new PWNData(_scene);
 	pwnData->setFilename(buff);
 	pwnData->setOriginPose(middleEstimate);

@@ -18,7 +18,9 @@ Aligner::Aligner() {
   _innerIterations = 0;
   _T = Eigen::Isometry3f::Identity();
   _initialGuess = Eigen::Isometry3f::Identity();
-  _sensorOffset = Eigen::Isometry3f::Identity();
+  //_sensorOffset = Eigen::Isometry3f::Identity();
+  _referenceSensorOffset = Eigen::Isometry3f::Identity();
+  _currentSensorOffset = Eigen::Isometry3f::Identity();
   _totalTime = 0;
   _error = 0;
   _inliers = 0;
@@ -50,14 +52,14 @@ void Aligner::align() {
     return;
   }
   // the current points are seen from the frame of the sensor
-  _projector->setTransform(_sensorOffset);
+  _projector->setTransform(_currentSensorOffset);
   _projector->project(_correspondenceFinder->currentIndexImage(),
 		      _correspondenceFinder->currentDepthImage(),
 		      _currentFrame->points());
   _T = _initialGuess;
   
-  // _correspondenceFinder->currentDepthImage().save("current.pgm", true);
-  // _currentFrame->save("current.pwn", 1, true);
+  //_correspondenceFinder->currentDepthImage().save("current.pgm", true);
+  //_currentFrame->save("current.pwn", 1, true);
 
   for(int i = 0; i < _outerIterations; i++) {
     /************************************************************************
@@ -66,7 +68,7 @@ void Aligner::align() {
 
     // compute the indices of the current scene from the point of view of the sensor
     _T.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-    _projector->setTransform(_T * _sensorOffset);
+    _projector->setTransform(_T * _referenceSensorOffset);
     _projector->project(_correspondenceFinder->referenceIndexImage(),
 			_correspondenceFinder->referenceDepthImage(),
 			_referenceFrame->points());

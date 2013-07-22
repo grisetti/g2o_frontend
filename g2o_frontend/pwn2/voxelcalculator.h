@@ -15,15 +15,21 @@ namespace pwn {
     struct VoxelAccumulator {
       Point accumulator;
       int numPoints;
+      // HAKKE
+      int index;
+      
 	
       VoxelAccumulator() {
 	accumulator[0] = accumulator[1] = accumulator[2] = 0.0f;
 	numPoints = 0;
+	// HAKKE
+	index = -1;
       }
 	
-      void add(const Point &v) {
-	numPoints++;
-	accumulator += v;
+      void add(const Point &/*v*/) {
+	// HAKKE
+	/* numPoints++; */
+	/* accumulator += v; */
       }
 	
       Point average() const {
