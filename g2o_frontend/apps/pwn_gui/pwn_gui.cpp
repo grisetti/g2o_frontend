@@ -45,6 +45,28 @@ using namespace std;
 using namespace pwn;
 
 #include "g2o_frontend/pwn2/gaussian3.h"
+
+// Variables for the input parameters.
+int ng_minImageRadius;
+int ng_maxImageRadius;
+int ng_minPoints;
+float ng_worldRadius;
+float ng_scale;
+float ng_curvatureThreshold;
+
+float cf_inlierNormalAngularThreshold;
+float cf_flatCurvatureThreshold;
+float cf_inlierCurvatureRatioThreshold;
+float cf_inlierDistanceThreshold;
+
+int al_innerIterations;
+int al_outerIterations;
+int al_minNumInliers; 
+float al_minError;
+float al_inlierMaxChi2;
+
+int vz_step;
+
 void convertCovariances(StatsVector &statsVector, Gaussian3fVector &gaussians) {
   statsVector.resize(gaussians.size());
   Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigenSolver;
@@ -161,25 +183,51 @@ struct DrawableFrame {
       0.0f, 525.0f, 239.5f,
       0.0f, 0.0f, 1.0f;
     
-    if(!depthImage.load(filename.c_str(), true)) {
-      cout << "Failure while loading the depth image: " << filename<< " skipping image!" << endl;
-      return;
-    }
-    cout << endl << "Loaded depth image " << filename << " of size: " << depthImage.rows() << "x" << depthImage.cols() << endl;
-    
     // Set the camera matrix of the projector object.
     projector.setCameraMatrix(cameraMatrix);
+    
+    statsCalculator.setWorldRadius(ng_minImageRadius);
+    statsCalculator.setMinImageRadius(ng_maxImageRadius);
+    statsCalculator.setMinImageRadius(ng_minPoints);
+    statsCalculator.setWorldRadius(ng_worldRadius);
 
+    pointInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThreshold);
+    normalInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThreshold);
     DepthImageConverter depthImageConverter = DepthImageConverter(&projector, &statsCalculator,
 								  &pointInformationMatrixCalculator,
 								  &normalInformationMatrixCalculator);
+    depthImageConverter._curvatureThreshold = ng_curvatureThreshold;
     sensorOffset = Isometry3f::Identity();
-    sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
+    sensorOffset.translation() = Vector3f(0.0f, 0.0f, 0.0f);
     Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
     sensorOffset.linear() = quat.toRotationMatrix();
     sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-    depthImageConverter.compute(frame, depthImage, sensorOffset);
 
+    // Check if it is a pwn or a pgm file
+    T = Isometry3f::Identity();
+    string extension = filename.substr(filename.rfind(".") + 1);
+    if(extension == "pwn") {
+      frame.load(T, filename.c_str());
+      // HAKKE
+      indexImage.resize(640, 480);
+      projector.setTransform(sensorOffset);
+      projector.project(indexImage, 
+			depthImage, 
+			frame.points());
+      frame.clear();
+    }
+    else {
+      if(!depthImage.load(filename.c_str(), true)) {
+	cout << "Failure while loading the depth image: " << filename<< " skipping image!" << endl;
+	return;
+      }
+      cout << endl << "Loaded depth image " << filename << " of size: " << depthImage.rows() << "x" << depthImage.cols() << endl;
+    
+    }
+    T.matrix().row(3) << 0.0f, 0.0f, 0.0f, 0.0f, 1.0f;
+    
+    depthImageConverter.compute(frame, depthImage, sensorOffset);
+    
     dPoints->setPoints(&frame.points());
     dPoints->setNormals(&frame.normals());
     dNormals->setPoints(&frame.points());
@@ -199,9 +247,10 @@ struct DrawableFrame {
   string filename;
   int step;
   DepthImage depthImage;
-  Eigen::MatrixXi indexImage;
+  MatrixXi indexImage;
 
   Isometry3f sensorOffset;
+  Isometry3f T;
 
   GLParameterPoints *pPoints;
   GLParameterNormals *pNormals;
@@ -220,14 +269,6 @@ int main(int argc, char** argv) {
    ************************************************************************/
   string workingDirectory = ".";
 
-  // Variables for the input parameters. Just type on the command line
-  // ./pwn_normal_extraction -h to have more details about them.
-  float ng_scale = 1.0f;
-  float ng_curvatureThreshold = 1.0f;
-  int al_innerIterations = 1;
-  int al_outerIterations = 10;
-  int vz_step = 5;
-
   // Define the camera matrix, place here the values for the particular 
   // depth camera used (Kinect, Xtion or any other type). This particular
   // matrix is the one related to the Kinect.
@@ -241,11 +282,25 @@ int main(int argc, char** argv) {
   g2o::CommandArgs arg;
   
   // Optional input parameters.
-  arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image. [float]");
-  arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded. [float]");
-  arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations. [int]");
-  arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations. [int]");
-  arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements. [int]");
+  // Optional input parameters.
+  arg.param("ng_minImageRadius", ng_minImageRadius, 10, "Specify the minimum number of pixels composing the square where to take points for a normal computation");
+  arg.param("ng_maxImageRadius", ng_maxImageRadius, 30, "Specify the maximum number of pixels composing the square where to take points for a normal computation");
+  arg.param("ng_minPoints", ng_minPoints, 50, "Specify the minimum number of points to be used to compute a normal");
+  arg.param("ng_worldRadius", ng_worldRadius, 0.1f, "Specify the max distance for a point to be used to compute a normal");
+  arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image");
+  arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded");
+  
+  arg.param("cf_inlierNormalAngularThreshold", cf_inlierNormalAngularThreshold, M_PI / 6.0f, "Maximum angle between the normals of two points to regard them as iniliers");
+  arg.param("cf_flatCurvatureThreshold", cf_flatCurvatureThreshold, 0.02f, "Maximum curvature value for a point to be used for data association");
+  arg.param("cf_inlierCurvatureRatioThreshold", cf_inlierCurvatureRatioThreshold, 1.3f, "Maximum curvature ratio value between two points to regard them as iniliers");
+  arg.param("cf_inlierDistanceThreshold", cf_inlierDistanceThreshold, 0.5f, "Maximum metric distance between two points to regard them as iniliers");
+
+  arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations");
+  arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");
+  arg.param("al_minNumInliers", al_minNumInliers, 10000, "Specify the minimum number of inliers to consider an alignment good");
+  arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
+  arg.param("al_inlierMaxChi2", al_inlierMaxChi2, 9e3, "Max chi2 error value for the alignment step");
+  arg.param("vz_step", vz_step, 1, "A graphic element is drawn each vz_step elements. [int]");
 
   // Last parameter has to be the working directory.
   arg.paramLeftOver("workingDirectory", workingDirectory, ".", "Path of the working directory. [string]", true);
@@ -266,12 +321,19 @@ int main(int argc, char** argv) {
     QString listItem(&(*it)[0]);
     if (listItem.endsWith(".pgm", Qt::CaseInsensitive))
       pwnGMW.listWidget->addItem(listItem);
+    if (listItem.endsWith(".pwn", Qt::CaseInsensitive))
+      pwnGMW.listWidget->addItem(listItem);
   }
 
   // Creating and setting aligner object.
   //Aligner aligner;
   CorrespondenceFinder correspondenceFinder;
+  correspondenceFinder.setInlierDistanceThreshold(cf_inlierDistanceThreshold);
+  correspondenceFinder.setFlatCurvatureThreshold(cf_flatCurvatureThreshold);  
+  correspondenceFinder.setInlierCurvatureRatioThreshold(cf_inlierCurvatureRatioThreshold);
+  correspondenceFinder.setInlierNormalAngularThreshold(cosf(cf_inlierNormalAngularThreshold));
   Linearizer linearizer;
+  linearizer.setInlierMaxChi2(al_inlierMaxChi2);
 
 #ifdef _PWN_USE_CUDA_
   CuAligner aligner;
@@ -282,6 +344,7 @@ int main(int argc, char** argv) {
   aligner.setLinearizer(&linearizer);
   aligner.setCorrespondenceFinder(&correspondenceFinder);
   aligner.setInnerIterations(al_innerIterations);
+  aligner.setOuterIterations(al_outerIterations);
   
   pwnGMW.show();
   refScn = pwnGMW.scene0();
@@ -303,6 +366,7 @@ int main(int argc, char** argv) {
 
   Merger merger;
   DepthImageConverter depthImageConverter(0, 0, 0, 0);
+  depthImageConverter._curvatureThreshold = ng_curvatureThreshold;
   Frame mergingFrame;
 
   while(!(*pwnGMW.closing())) {
@@ -380,11 +444,14 @@ int main(int argc, char** argv) {
 	aligner.setReferenceFrame(&drawableFrameVector[drawableFrameVector.size()-2]->frame);
 	aligner.setCurrentFrame(&drawableFrameVector[drawableFrameVector.size()-1]->frame);
 	
+	// HAKKE
+	initialGuess = (drawableFrameVector[drawableFrameVector.size()-2]->T).inverse() * drawableFrameVector[drawableFrameVector.size()-1]->T;
+	initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+	initialGuess.matrix().col(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+
 	aligner.setInitialGuess(initialGuess);
 	aligner.setSensorOffset(drawableFrameVector[drawableFrameVector.size()-1]->sensorOffset);
-	
 	aligner.align();
-	
 	localT.push_back(aligner.T());
 	globalT = globalT * localT[localT.size()-1];
       }
@@ -530,7 +597,6 @@ int main(int argc, char** argv) {
 	drawableFrame = new DrawableFrame(itemList->text().toStdString(), vz_step);
 	drawableFrame->computeStats();
 	drawableFrameVector.push_back(drawableFrame);
-
 	if(drawableFrameVector.size() == 1) {
 	  depthImageConverter = DepthImageConverter(&drawableFrame->projector, 
 						    &drawableFrame->statsCalculator,
@@ -540,7 +606,6 @@ int main(int argc, char** argv) {
 	  merger.setImageSize(drawableFrame->depthImage.rows(), drawableFrame->depthImage.cols());
 	  mergingFrame.add(drawableFrameVector[0]->frame);
 	}
-
 	drawableFrame = 0;
 	// Add drawable items.
 	drawableFrameVector[drawableFrameVector.size()-1]->dPoints->setTransformation(globalT);

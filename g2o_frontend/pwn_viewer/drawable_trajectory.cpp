@@ -21,7 +21,7 @@ DrawableTrajectory::DrawableTrajectory() : Drawable() {
 
   DrawableTrajectory::DrawableTrajectory(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, 
 					 std::vector<Eigen::Isometry3f>* trajectory_, 
-					 std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> >* trajectoryColors_) : Drawable(transformation_) {
+					 std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> >* trajectoryColors_) : Drawable(transformation_) {
   setParameter(parameter_);
   _trajectory = trajectory_;
   _trajectoryColors = trajectoryColors_;
@@ -84,7 +84,7 @@ void DrawableTrajectory::updateTrajectoryDrawList() {
       glMultMatrixf(_trajectory->at(i).data());
       glRotatef(90.0f, 0.0f, 1.0f, 0.0f);        
       glScalef(trajectoryParameter->pyramidScale() ,trajectoryParameter->pyramidScale(), trajectoryParameter->pyramidScale() * 2.0f);
-      glColor4f(_trajectoryColors->at(i).x(),_trajectoryColors->at(i).y(), _trajectoryColors->at(i).z(), 1.0f);
+      glColor4f(_trajectoryColors->at(i).x(),_trajectoryColors->at(i).y(), _trajectoryColors->at(i).z(), _trajectoryColors->at(i)[3]);
       glCallList(_pyramidDrawList);
       glPopMatrix();
     }

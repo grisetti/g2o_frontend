@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
   arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
   arg.param("al_curvatureThreshold", al_curvatureThreshold, 0.1f, "Specify the curvature treshshold for information matrix computation");
   arg.param("vz_startingVertex", vz_startingVertex, 0, "Specify the vertex id from which to start the process");
-  arg.param("vz_endingVertex", vz_endingVertex, -1, "Specify the vertex id where to end the process");
+  arg.param("vz_endingVertex", vz_endingVertex, -1, "Specify the vertex id where to end the process"); 
   arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements");
 
   // Last parameter has to be the working directory.
@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
    ************************************************************************/
   QApplication application(argc,argv);
   QWidget* mainWindow = new QWidget();
-  mainWindow->setWindowTitle("pwn_simpleViewer");
+  mainWindow->setWindowTitle("pwn_g2o_loop_closer");
   QHBoxLayout* baseLayout = new QHBoxLayout();
   mainWindow->setLayout(baseLayout);
   QVBoxLayout* listWidgetLayout = new QVBoxLayout();
@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
     vz_endingVertex = listWidget->count();
   
   std::vector<Isometry3f> trajectory;
-  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> > trajectoryColors;
+  std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> > trajectoryColors;
   std::vector<G2OFrame*> frames;
   frames.resize(listWidget->count());
   std::fill(frames.begin(), frames.end(), (G2OFrame*)0);
@@ -162,6 +162,8 @@ int main(int argc, char** argv) {
   //controller->setImageRows(al_imageCols);
   //controller->setImageCols(al_imageRows);
   controller->setCurvatureThreshold(al_curvatureThreshold);
+  controller->setInnerIterations(al_innerIterations);
+  controller->setOuterIterations(al_outerIterations);
 
   viewer->init();
   viewer->setAxisIsDrawn(true);
@@ -212,11 +214,11 @@ int main(int argc, char** argv) {
       isometry3d2f(estimate, v->estimate());
       if(foundPwnData) {
     	trajectory.push_back(estimate);
-    	trajectoryColors.push_back(Eigen::Vector3f(1.0f, 0.0f, 0.0f));
+    	trajectoryColors.push_back(Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
       }
       else {
     	trajectory.push_back(estimate);
-    	trajectoryColors.push_back(Eigen::Vector3f(0.5f, 0.5f, 0.5f));
+    	trajectoryColors.push_back(Eigen::Vector4f(0.5f, 0.5f, 0.5f, 0.3f));
       }
     }
 
@@ -298,12 +300,12 @@ int main(int argc, char** argv) {
     for(int k = vz_startingVertex; k < vz_endingVertex; k++) {
       QListWidgetItem* item = listWidget->item(k);
       if(item) {
-    if(item->isSelected()) {
-	  trajectoryColors[k] = Eigen::Vector3f(1.0f, 0.3f, 0.3f);
+	if(item->isSelected()) {
+	  //trajectoryColors[k] = Eigen::Vector3f(1.0f, 0.3f, 0.3f);
 	  string idString = item->text().toUtf8().constData();
 	  int index = atoi(idString.c_str());
 	  VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
-	  trajectoryColors[index] = Eigen::Vector3f(0.0f, 1.0f, 0.0f);
+	  trajectoryColors[index] = Eigen::Vector4f(0.0f, 1.0f, 0.0f, 1.0f);
 	  drawableTrajectory->updateTrajectoryDrawList();
 	  if(v && !frames[k]) {
 	    G2OFrame *currentFrame = new G2OFrame(v);

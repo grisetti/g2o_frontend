@@ -18,7 +18,6 @@ Aligner::Aligner() {
   _innerIterations = 0;
   _T = Eigen::Isometry3f::Identity();
   _initialGuess = Eigen::Isometry3f::Identity();
-  //_sensorOffset = Eigen::Isometry3f::Identity();
   _referenceSensorOffset = Eigen::Isometry3f::Identity();
   _currentSensorOffset = Eigen::Isometry3f::Identity();
   _totalTime = 0;
@@ -58,8 +57,8 @@ void Aligner::align() {
 		      _currentFrame->points());
   _T = _initialGuess;
   
-  //_correspondenceFinder->currentDepthImage().save("current.pgm", true);
-  //_currentFrame->save("current.pwn", 1, true);
+  // _correspondenceFinder->currentDepthImage().save("current.pgm", true);
+  // _currentFrame->save("current.pwn", 1, true);
 
   for(int i = 0; i < _outerIterations; i++) {
     /************************************************************************

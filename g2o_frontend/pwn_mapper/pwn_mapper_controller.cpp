@@ -217,7 +217,7 @@ namespace pwn {
     updateProjector();
 
     // Get the filename
-    std::string filename = rgbdData->baseFilename() + "_depth.pgm";
+    std::string filename = rgbdData->baseFilename();// + "_depth.pgm";
 
     cerr << "loading  " << filename << endl;
     // Read the depth image
@@ -317,7 +317,7 @@ namespace pwn {
     updateProjector();
 
     // Read the depth image and scale it
-    std::string filename = rgbdData->baseFilename() + "_depth.pgm";
+    std::string filename = rgbdData->baseFilename();// + "_depth.pgm";
     if(!_depthImage.load(filename.c_str(), true)) {
       cerr << "No depth image loaded." << endl;
       return false;
