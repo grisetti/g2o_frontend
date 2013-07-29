@@ -502,8 +502,7 @@ int main(int argc, char**argv){
                 }
 #endif
 
-                //updating the value of the second vertex pose
-                //SE2 newpose = /*transform*//*.inverse()**/v->estimate()*transform.inverse();
+                //CLASSIC SCAN MATCHING: updating the value of the second vertex pose
                 SE2 newpose = transform*v_next->estimate();
                 cerr << "vecchia posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
                 v_next->setEstimate(newpose);
@@ -549,26 +548,19 @@ int main(int argc, char**argv){
 //                alignedunmergedG2O.close();
 
                 ///merging vertexes and lines (inliers set)
-                cout << endl << "\033[22;34;1m*****MERGING STUFF******\033[0m " << endl << endl;
-                for (int ci = 0; ci < (int)inliers.size(); ci++)
-                {
-
-                    //TODO to be UNCOMMENT
-
-
-                    //              double inliersIndex = inliers[ci];
-                    //              VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[/*ci*/inliersIndex].lid1].vline->id()));
-                    //              VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[/*ci*/inliersIndex].lid2].vline->id()));
-                    //              cout << "Line to be merged: " << endl;
-                    //              cout << "[Frame i] line " << vli->id() << " - [Frame j] line " << vlj->id() << endl;
-                    //              merdging = mergeLineVertex(graph, vlj, vli);
-                    //              cout << endl << " \033[22;32;1miteration " << ci  << " -- Lines merged? " << merdging << "\033[0m" << endl;
-                    //              cout << endl;
-                }
-
-                //          graph->initializeOptimization();
-                //          graph->optimize(10);
-
+//                cout << endl << "\033[22;34;1m*****MERGING STUFF******\033[0m " << endl << endl;
+//                for (int ci = 0; ci < (int)inliers.size(); ci++)
+//                {
+//                    //TODO to be UNCOMMENT
+//                    double inliersIndex = inliers[ci];
+//                    VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[/*ci*/inliersIndex].lid1].vline->id()));
+//                    VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[/*ci*/inliersIndex].lid2].vline->id()));
+//                    cout << "Line to be merged: " << endl;
+//                    cout << "[Frame i] line " << vli->id() << " - [Frame j] line " << vlj->id() << endl;
+//                    merdging = mergeLineVertex(graph, vlj, vli);
+//                    cout << endl << " \033[22;32;1miteration " << ci  << " -- Lines merged? " << merdging << "\033[0m" << endl;
+//                    cout << endl;
+//                }
 
                 //saving the new line vertex already aligned
                 if(merdging && v_next->id() != lastID)

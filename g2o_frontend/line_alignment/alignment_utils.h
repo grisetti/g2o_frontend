@@ -184,19 +184,19 @@ void mergePointVertex(OptimizableGraph* graph, VertexPointXY* pNew, VertexPointX
 	{
 	    EdgeLine2DPointXY* elp1 = dynamic_cast<EdgeLine2DPointXY*>(*it_vp1);
 	    if(elp1){
-		VertexLine2D* line = dynamic_cast<VertexLine2D*>(elp1->vertex(0));
-		if (line) {
-		    if (line->p1Id==idOld){
-			cout << "book keeping point1" << endl;
-			line->p1Id = idNew;
-		    }
-		    cout << "AAAAAAAAA" << endl;
-		    // il secondo point vertex viene cancellato solo se è il primo di un vertice linea adiacente
-		    if (line->p2Id==idOld){
-			cout << "book keeping point2" << endl;
-			line->p2Id = idNew;
-		    }
-		}
+            VertexLine2D* line = dynamic_cast<VertexLine2D*>(elp1->vertex(0));
+            if (line) {
+                if (line->p1Id==idOld){
+                    cout << "book keeping point1" << endl;
+                    line->p1Id = idNew;
+                }
+                cout << "AAAAAAAAA" << endl;
+                // il secondo point vertex viene cancellato solo se è il primo di un vertice linea adiacente
+                if (line->p2Id==idOld){
+                    cout << "book keeping point2" << endl;
+                    line->p2Id = idNew;
+                }
+            }
 	    }
 	}
 	cout << "merdging punti: " << graph->mergeVertices(pNew, pOld, true) << endl;
