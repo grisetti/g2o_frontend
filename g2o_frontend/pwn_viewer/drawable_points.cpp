@@ -62,6 +62,7 @@ void DrawablePoints::updatePointDrawList() {
      pointsParameter && 
      pointsParameter->show() && 
      pointsParameter->pointSize() > 0.0f) {
+    Point baricenter = Point(Eigen::Vector3f(0.0f, 0.0f, 0.0f));
     glBegin(GL_POINTS);
     for(size_t i = 0; i < _points->size(); i += pointsParameter->step()) {
       const Point &p = _points->at(i);
@@ -74,11 +75,20 @@ void DrawablePoints::updatePointDrawList() {
         else
           glColor4f(1.0f, 1.0f, 0.0f, 1.0f);
       }
-      glColor3f(n[0]+.5,n[1]+.5, n[2]+.5);
+      glColor4f(n[0] + 0.5f, n[1] + 0.5f, n[2] + 0.5f, 1.0f);
       glNormal3f(n[0], n[1], n[2]);
       glVertex3f(p[0], p[1], p[2]);
-    }
+
+      baricenter = baricenter + p;
+    }    
     glEnd();
+    
+    // baricenter = baricenter / _points->size();
+    // glPointSize(15.0f);
+    // glBegin(GL_POINTS);
+    // glColor4f(1.0f, 0.25f, 0.0f, 1.0f);
+    // glVertex3f(baricenter[0], baricenter[1], baricenter[2]);
+    // glEnd();
   }
   glEndList();
 }

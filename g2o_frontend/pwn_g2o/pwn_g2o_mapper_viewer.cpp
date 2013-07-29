@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
    ************************************************************************/
   QApplication application(argc,argv);
   QWidget* mainWindow = new QWidget();
-  mainWindow->setWindowTitle("pwn_simpleViewer");
+  mainWindow->setWindowTitle("pwn_g2o_mapper_viewer");
   QHBoxLayout* baseLayout = new QHBoxLayout();
   mainWindow->setLayout(baseLayout);
   QVBoxLayout* listWidgetLayout = new QVBoxLayout();
@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
   sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
   std::vector<Isometry3f> trajectory;
-  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> > trajectoryColors;
+  std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> > trajectoryColors;
   std::vector<G2OFrame*> frames;
   frames.resize(listWidget->count());
   std::fill(frames.begin(), frames.end(), (G2OFrame*)0);
@@ -202,7 +202,7 @@ int main(int argc, char** argv) {
 	Eigen::Isometry3f localT = frame->previousFrameTransform();
 	globalT = globalT * localT;
 	trajectory.push_back(globalT);
-	trajectoryColors.push_back(Eigen::Vector3f(0.3f, 0.3f, 0.3f));
+	trajectoryColors.push_back(Eigen::Vector4f(0.3f, 0.3f, 0.3f, 0.3f));
 	listItem->setHidden(false);
 	changed = true;
       }

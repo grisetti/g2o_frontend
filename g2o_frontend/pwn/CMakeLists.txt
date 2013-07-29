@@ -11,8 +11,8 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 
 
 ADD_LIBRARY(pwn_library
-	../basemath/bm_se3.h
-	aligner.cpp aligner.h
+  ../basemath/bm_se3.h
+  aligner.cpp aligner.h
   depthimage.cpp depthimage.h
   pointprojector.cpp pointprojector.h
   pinholepointprojector.cpp pinholepointprojector.h
@@ -50,9 +50,9 @@ SET_TARGET_PROPERTIES(pwn_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}pwn_librar
 #SET_TARGET_PROPERTIES(pwn_align PROPERTIES OUTPUT_NAME pwn_align)
 #TARGET_LINK_LIBRARIES( pwn_align pwn_library  ${G2O_STUFF_LIBRARY} )
 
-ADD_EXECUTABLE(pwn_g2o pwn_g2o.cpp)
-SET_TARGET_PROPERTIES(pwn_g2o PROPERTIES OUTPUT_NAME pwn_g2o)
-TARGET_LINK_LIBRARIES( pwn_g2o pwn_library  ${G2O_STUFF_LIBRARY} )
+#ADD_EXECUTABLE(pwn_g2o pwn_g2o.cpp)
+#SET_TARGET_PROPERTIES(pwn_g2o PROPERTIES OUTPUT_NAME pwn_g2o)
+#TARGET_LINK_LIBRARIES( pwn_g2o pwn_library  ${G2O_STUFF_LIBRARY} )
 
 ADD_EXECUTABLE(pwn_g3o pwn_g3o.cpp)
 SET_TARGET_PROPERTIES(pwn_g3o PROPERTIES OUTPUT_NAME pwn_g3o)
