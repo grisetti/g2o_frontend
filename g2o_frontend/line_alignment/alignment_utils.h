@@ -300,7 +300,7 @@ void deleteVertices(int first, int last, OptimizableGraph* graph) {
 
             graph->removeVertex(vl);
         }
-//        cout << " Vertex-se2 deleted: "<< graph->removeVertex(v) << endl;
+        cout << " Vertex-se2 deleted: "<< graph->removeVertex(v) << endl;
     }
 }
 
