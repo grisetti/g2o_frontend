@@ -184,19 +184,19 @@ void mergePointVertex(OptimizableGraph* graph, VertexPointXY* pNew, VertexPointX
 	{
 	    EdgeLine2DPointXY* elp1 = dynamic_cast<EdgeLine2DPointXY*>(*it_vp1);
 	    if(elp1){
-		VertexLine2D* line = dynamic_cast<VertexLine2D*>(elp1->vertex(0));
-		if (line) {
-		    if (line->p1Id==idOld){
-			cout << "book keeping point1" << endl;
-			line->p1Id = idNew;
-		    }
-		    cout << "AAAAAAAAA" << endl;
-		    // il secondo point vertex viene cancellato solo se è il primo di un vertice linea adiacente
-		    if (line->p2Id==idOld){
-			cout << "book keeping point2" << endl;
-			line->p2Id = idNew;
-		    }
-		}
+            VertexLine2D* line = dynamic_cast<VertexLine2D*>(elp1->vertex(0));
+            if (line) {
+                if (line->p1Id==idOld){
+                    cout << "book keeping point1" << endl;
+                    line->p1Id = idNew;
+                }
+                cout << "AAAAAAAAA" << endl;
+                // il secondo point vertex viene cancellato solo se è il primo di un vertice linea adiacente
+                if (line->p2Id==idOld){
+                    cout << "book keeping point2" << endl;
+                    line->p2Id = idNew;
+                }
+            }
 	    }
 	}
 	cout << "merdging punti: " << graph->mergeVertices(pNew, pOld, true) << endl;
@@ -272,14 +272,14 @@ bool ransacExec(CorrespondenceValidatorPtrVector& validators,
 void deleteVertices(int first, int last, OptimizableGraph* graph) {
     for (int i = first; i <= last; i++)
     {
-        cout << "i : " << i << endl;
+//        cout << "i : " << i << endl;
         OptimizableGraph::Vertex* _v = graph->vertex(i);
         if(!_v)
             continue;
         VertexSE2* v = dynamic_cast<VertexSE2*>(_v);
         if(!v)
             continue;
-        cout << "id vertex to be deleted " << v->id() << endl;
+//        cout << "id vertex to be deleted " << v->id() << endl;
         OptimizableGraph::EdgeSet es = v->edges();
         for (OptimizableGraph::EdgeSet::iterator it = es.begin(); it != es.end(); it++)
         {
@@ -300,7 +300,7 @@ void deleteVertices(int first, int last, OptimizableGraph* graph) {
 
             graph->removeVertex(vl);
         }
-        cout << " Vertex-se2 deleted: "<< graph->removeVertex(v) << endl;
+//        cout << " Vertex-se2 deleted: "<< graph->removeVertex(v) << endl;
     }
 }
 
