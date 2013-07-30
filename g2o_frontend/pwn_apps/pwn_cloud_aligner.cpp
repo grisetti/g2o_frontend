@@ -40,6 +40,7 @@ using namespace g2o;
 using namespace pwn;
 
 set<string> readDirectory(string dir);
+void generateSettingsFile(string name);
 
 int main(int argc, char **argv) {
   /************************************************************************
@@ -47,25 +48,18 @@ int main(int argc, char **argv) {
    ************************************************************************/
   string working_directory;
 
-  int ng_minImageRadius;
-  int ng_maxImageRadius;
-  int ng_minPoints;
-  float ng_worldRadius;
-  float ng_scale;
-  float ng_curvatureThreshold;
+  int ng_minImageRadius, ng_maxImageRadius, ng_minPoints;
+  float ng_worldRadius, ng_scale, ng_curvatureThreshold;
   
-  float cf_inlierNormalAngularThreshold;
-  float cf_flatCurvatureThreshold;
-  float cf_inlierCurvatureRatioThreshold;
-  float cf_inlierDistanceThreshold;
+  float cf_inlierNormalAngularThreshold, cf_flatCurvatureThreshold, cf_inlierCurvatureRatioThreshold, cf_inlierDistanceThreshold;
   
-  int al_innerIterations;
-  int al_outerIterations;
-  int al_minNumInliers; 
-  float al_minError;
-  float al_inlierMaxChi2;
+  int al_innerIterations, al_outerIterations, al_minNumInliers; 
+  float al_minError, al_inlierMaxChi2;
   
   int vz_step;
+
+  int imageRows, imageCols;
+  float fx, fy, cx, cy;
 
   // Input parameters handling.
   g2o::CommandArgs arg;
@@ -91,6 +85,13 @@ int main(int argc, char **argv) {
   
   arg.param("vz_step", vz_step, 1, "A graphic element is drawn each vz_step elements");
 
+  arg.param("imageRows", imageRows, 480, "Number of rows of the depth images");
+  arg.param("imageCols", imageCols, 640, "Number of columns of the depth images");
+  arg.param("fx", fx, 525.0f, "fx value of the camera matrix");
+  arg.param("fy", fy, 525.0f, "fy value of the camera matrix");
+  arg.param("cx", cx, 319.5f, "cx value of the camera matrix");
+  arg.param("cy", cy, 239.5f, "cy value of the camera matrix");
+
   // Last parameter has to be the working directory.
   arg.paramLeftOver("working_directory", working_directory, ".", "Path of the working directory", true);
 
@@ -112,9 +113,183 @@ int main(int argc, char **argv) {
   mainLayout->setStretch(1, 1);
 
   PWNQGLViewer *viewer = new PWNQGLViewer(mainWindow);
-  viewerLayout->addWidget(viewer);
   viewer->init();
   viewer->setAxisIsDrawn(true);
+  viewerLayout->addWidget(viewer);
+  QHBoxLayout *projectorsLayout = new QHBoxLayout();
+  viewerLayout->addItem(projectorsLayout);
+  QCheckBox *pinholePointProjectorCheckBox = new QCheckBox("Pinhole point projector", mainWindow);
+  pinholePointProjectorCheckBox->setChecked(true);
+  QCheckBox *cylindricalPointProjectorCheckBox = new QCheckBox("Cylindrical point projector", mainWindow);
+  cylindricalPointProjectorCheckBox->setChecked(false);
+  cylindricalPointProjectorCheckBox->setEnabled(false);
+  QCheckBox *multiPointProjectorCheckBox = new QCheckBox("Multiple point projector", mainWindow);
+  multiPointProjectorCheckBox->setChecked(false);
+  multiPointProjectorCheckBox->setEnabled(false);
+  QPushButton *correspondencesButton = new QPushButton("Correspondences", mainWindow);
+  projectorsLayout->addWidget(pinholePointProjectorCheckBox);
+  projectorsLayout->addWidget(cylindricalPointProjectorCheckBox);
+  projectorsLayout->addWidget(multiPointProjectorCheckBox);
+  projectorsLayout->addWidget(correspondencesButton);
+  QGridLayout *parametersGridLayout = new QGridLayout();
+  viewerLayout->addItem(parametersGridLayout);
+  QLabel *ng_minImageRadiusLabel = new QLabel("ng_minImageRadius", mainWindow);
+  QLabel *ng_maxImageRadiusLabel = new QLabel("ng_maxImageRadius", mainWindow);
+  QLabel *ng_minPointsLabel = new QLabel("ng_minPoints", mainWindow);
+  QLabel *ng_worldRadiusLabel = new QLabel("ng_worldRadius", mainWindow);
+  QLabel *ng_scaleLabel = new QLabel("ng_scale", mainWindow);
+  QLabel *ng_curvatureThresholdLabel = new QLabel("ng_curvatureThreshold", mainWindow);
+  QLabel *cf_inlierNormalAngularThresholdLabel = new QLabel("cf_inlierNormalAngularThreshold", mainWindow);
+  QLabel *cf_flatCurvatureThresholdLabel = new QLabel("cf_flatCurvatureThreshold", mainWindow);
+  QLabel *cf_inlierCurvatureRatioThresholdLabel = new QLabel("cf_inlierCurvatureRatioThreshold", mainWindow);
+  QLabel *cf_inlierDistanceThresholdLabel = new QLabel("cf_inlierDistanceThreshold", mainWindow);
+  QLabel *al_innerIterationsLabel = new QLabel("al_innerIterations", mainWindow);
+  QLabel *al_outerIterationsLabel = new QLabel("al_outerIterations", mainWindow);
+  QLabel *al_minNumInliersLabel = new QLabel("al_minNumInliers", mainWindow);
+  QLabel *al_minErrorLabel = new QLabel("al_minError", mainWindow);
+  QLabel *al_inlierMaxChi2Label = new QLabel("al_inlierMaxChi2", mainWindow);
+  QLabel *imageRowsLabel = new QLabel("imageRows", mainWindow);
+  QLabel *imageColsLabel = new QLabel("imageCols", mainWindow);
+  QLabel *fxLabel = new QLabel("fx", mainWindow);
+  QLabel *fyLabel = new QLabel("fy", mainWindow);
+  QLabel *cxLabel = new QLabel("cx", mainWindow);
+  QLabel *cyLabel = new QLabel("cy", mainWindow);
+  QSpinBox *ng_minImageRadiusSpinBox = new QSpinBox(mainWindow);
+  ng_minImageRadiusSpinBox->setMinimum(0);
+  ng_minImageRadiusSpinBox->setSingleStep(1);
+  ng_minImageRadiusSpinBox->setValue(ng_minImageRadius);
+  QSpinBox *ng_maxImageRadiusSpinBox = new QSpinBox(mainWindow);
+  ng_maxImageRadiusSpinBox->setMinimum(0);
+  ng_maxImageRadiusSpinBox->setSingleStep(1);
+  ng_maxImageRadiusSpinBox->setValue(ng_maxImageRadius);
+  QSpinBox *ng_minPointsSpinBox = new QSpinBox(mainWindow);
+  ng_minPointsSpinBox->setMinimum(0);
+  ng_minPointsSpinBox->setMaximum(1000);
+  ng_minPointsSpinBox->setSingleStep(1);
+  ng_minPointsSpinBox->setValue(ng_minPoints);
+  QDoubleSpinBox *ng_worldRadiusSpinBox = new QDoubleSpinBox(mainWindow);
+  ng_worldRadiusSpinBox->setMinimum(0.0f);
+  ng_worldRadiusSpinBox->setSingleStep(0.01f);
+  ng_worldRadiusSpinBox->setValue(ng_worldRadius);
+  QDoubleSpinBox *ng_scaleSpinBox = new QDoubleSpinBox(mainWindow);
+  ng_scaleSpinBox->setMinimum(1.0f);
+  ng_scaleSpinBox->setSingleStep(1.0f);
+  ng_scaleSpinBox->setValue(ng_scale);
+  QDoubleSpinBox *ng_curvatureThresholdSpinBox = new QDoubleSpinBox(mainWindow);
+  ng_curvatureThresholdSpinBox->setMinimum(0.0f);
+  ng_curvatureThresholdSpinBox->setSingleStep(0.01f);
+  ng_curvatureThresholdSpinBox->setValue(ng_curvatureThreshold);
+  QDoubleSpinBox *cf_inlierNormalAngularThresholdSpinBox = new QDoubleSpinBox(mainWindow);
+  cf_inlierNormalAngularThresholdSpinBox->setMinimum(0.0f);
+  cf_inlierNormalAngularThresholdSpinBox->setSingleStep(0.01f);
+  cf_inlierNormalAngularThresholdSpinBox->setValue(cf_inlierNormalAngularThreshold);
+  QDoubleSpinBox *cf_flatCurvatureThresholdSpinBox = new QDoubleSpinBox(mainWindow);
+  cf_flatCurvatureThresholdSpinBox->setMinimum(0.0f);
+  cf_flatCurvatureThresholdSpinBox->setSingleStep(0.01f);
+  cf_flatCurvatureThresholdSpinBox->setValue(cf_flatCurvatureThreshold);
+  QDoubleSpinBox *cf_inlierCurvatureRatioThresholdSpinBox = new QDoubleSpinBox(mainWindow);
+  cf_inlierCurvatureRatioThresholdSpinBox->setMinimum(0.0f);
+  cf_inlierCurvatureRatioThresholdSpinBox->setSingleStep(0.01f);
+  cf_inlierCurvatureRatioThresholdSpinBox->setValue(cf_inlierCurvatureRatioThreshold);
+  QDoubleSpinBox *cf_inlierDistanceThresholdSpinBox = new QDoubleSpinBox(mainWindow);
+  cf_inlierDistanceThresholdSpinBox->setMinimum(0.0f);
+  cf_inlierDistanceThresholdSpinBox->setSingleStep(0.01f);
+  cf_inlierDistanceThresholdSpinBox->setValue(cf_inlierDistanceThreshold);
+  QSpinBox *al_innerIterationsSpinBox = new QSpinBox(mainWindow);
+  al_innerIterationsSpinBox->setMinimum(0);
+  al_innerIterationsSpinBox->setSingleStep(1);
+  al_innerIterationsSpinBox->setValue(al_innerIterations);
+  QSpinBox *al_outerIterationsSpinBox = new QSpinBox(mainWindow);
+  al_outerIterationsSpinBox->setMinimum(0);
+  al_outerIterationsSpinBox->setSingleStep(1);
+  al_outerIterationsSpinBox->setValue(al_outerIterations);
+  QSpinBox *al_minNumInliersSpinBox = new QSpinBox(mainWindow);
+  al_minNumInliersSpinBox->setMinimum(0);
+  al_minNumInliersSpinBox->setMaximum(1000);
+  al_minNumInliersSpinBox->setSingleStep(1);
+  al_minNumInliersSpinBox->setValue(al_minNumInliers);
+  QDoubleSpinBox *al_minErrorSpinBox = new QDoubleSpinBox(mainWindow);
+  al_minErrorSpinBox->setMinimum(0.0f);
+  al_minErrorSpinBox->setSingleStep(0.01f);
+  al_minErrorSpinBox->setValue(al_minError);
+  QDoubleSpinBox *al_inlierMaxChi2SpinBox = new QDoubleSpinBox(mainWindow);
+  al_inlierMaxChi2SpinBox->setMinimum(0.0f);
+  al_inlierMaxChi2SpinBox->setMaximum(100000.0f);
+  al_inlierMaxChi2SpinBox->setSingleStep(0.01f);
+  al_inlierMaxChi2SpinBox->setValue(al_inlierMaxChi2);
+  QSpinBox *imageRowsSpinBox = new QSpinBox(mainWindow);
+  imageRowsSpinBox->setMinimum(0);
+  imageRowsSpinBox->setMaximum(10000);
+  imageRowsSpinBox->setSingleStep(1);
+  imageRowsSpinBox->setValue(imageRows);
+  QSpinBox *imageColsSpinBox = new QSpinBox(mainWindow);
+  imageColsSpinBox->setMinimum(0);
+  imageColsSpinBox->setMaximum(10000);
+  imageColsSpinBox->setSingleStep(1);
+  imageColsSpinBox->setValue(imageCols);
+  QDoubleSpinBox *fxSpinBox = new QDoubleSpinBox(mainWindow);
+  fxSpinBox->setMinimum(0.0f);
+  fxSpinBox->setMaximum(1000.0f);
+  fxSpinBox->setSingleStep(0.01f);
+  fxSpinBox->setValue(fx);
+  QDoubleSpinBox *fySpinBox = new QDoubleSpinBox(mainWindow);
+  fySpinBox->setMinimum(0.0f);
+  fySpinBox->setMaximum(1000.0f);
+  fySpinBox->setSingleStep(0.01f);
+  fySpinBox->setValue(fy);
+  QDoubleSpinBox *cxSpinBox = new QDoubleSpinBox(mainWindow);
+  cxSpinBox->setMinimum(0.0f);
+  cxSpinBox->setMaximum(1000.0f);
+  cxSpinBox->setSingleStep(0.01f);
+  cxSpinBox->setValue(cx);
+  QDoubleSpinBox *cySpinBox = new QDoubleSpinBox(mainWindow);
+  cySpinBox->setMinimum(0.0f);
+  cySpinBox->setMaximum(1000.0f);
+  cySpinBox->setSingleStep(0.01f);
+  cySpinBox->setValue(cy);
+  parametersGridLayout->addWidget(ng_minImageRadiusLabel, 0, 0, Qt::AlignLeft);
+  parametersGridLayout->addWidget(ng_minImageRadiusSpinBox, 0, 1, Qt::AlignLeft);
+  parametersGridLayout->addWidget(ng_maxImageRadiusLabel, 1, 0, Qt::AlignLeft);
+  parametersGridLayout->addWidget(ng_maxImageRadiusSpinBox, 1, 1, Qt::AlignLeft);
+  parametersGridLayout->addWidget(ng_minPointsLabel, 2, 0, Qt::AlignLeft);
+  parametersGridLayout->addWidget(ng_minPointsSpinBox, 2, 1, Qt::AlignLeft);
+  parametersGridLayout->addWidget(ng_worldRadiusLabel, 3, 0, Qt::AlignLeft);
+  parametersGridLayout->addWidget(ng_worldRadiusSpinBox, 3, 1, Qt::AlignLeft);
+  parametersGridLayout->addWidget(ng_scaleLabel, 4, 0, Qt::AlignLeft);  
+  parametersGridLayout->addWidget(ng_scaleSpinBox, 4, 1, Qt::AlignLeft);
+  parametersGridLayout->addWidget(ng_curvatureThresholdLabel, 5, 0, Qt::AlignLeft);
+  parametersGridLayout->addWidget(ng_curvatureThresholdSpinBox, 5, 1, Qt::AlignLeft);
+  parametersGridLayout->addWidget(cf_inlierNormalAngularThresholdLabel, 0, 2, Qt::AlignLeft);
+  parametersGridLayout->addWidget(cf_inlierNormalAngularThresholdSpinBox, 0, 3, Qt::AlignLeft);
+  parametersGridLayout->addWidget(cf_flatCurvatureThresholdLabel, 1, 2, Qt::AlignLeft);
+  parametersGridLayout->addWidget(cf_flatCurvatureThresholdSpinBox, 1, 3, Qt::AlignLeft);
+  parametersGridLayout->addWidget(cf_inlierCurvatureRatioThresholdLabel, 2, 2, Qt::AlignLeft);
+  parametersGridLayout->addWidget(cf_inlierCurvatureRatioThresholdSpinBox, 2, 3, Qt::AlignLeft);
+  parametersGridLayout->addWidget(cf_inlierDistanceThresholdLabel, 3, 2, Qt::AlignLeft);
+  parametersGridLayout->addWidget(cf_inlierDistanceThresholdSpinBox, 3, 3, Qt::AlignLeft);
+  parametersGridLayout->addWidget(al_innerIterationsLabel, 0, 4, Qt::AlignLeft);
+  parametersGridLayout->addWidget(al_innerIterationsSpinBox, 0, 5, Qt::AlignLeft);
+  parametersGridLayout->addWidget(al_outerIterationsLabel, 1, 4, Qt::AlignLeft);
+  parametersGridLayout->addWidget(al_outerIterationsSpinBox, 1, 5, Qt::AlignLeft);
+  parametersGridLayout->addWidget(al_minNumInliersLabel, 2, 4, Qt::AlignLeft);
+  parametersGridLayout->addWidget(al_minNumInliersSpinBox, 2, 5, Qt::AlignLeft);
+  parametersGridLayout->addWidget(al_minErrorLabel, 3, 4, Qt::AlignLeft);
+  parametersGridLayout->addWidget(al_minErrorSpinBox, 3, 5, Qt::AlignLeft);
+  parametersGridLayout->addWidget(al_inlierMaxChi2Label, 4, 4, Qt::AlignLeft);
+  parametersGridLayout->addWidget(al_inlierMaxChi2SpinBox, 4, 5, Qt::AlignLeft);
+  parametersGridLayout->addWidget(imageRowsLabel, 0, 6, Qt::AlignLeft);
+  parametersGridLayout->addWidget(imageRowsSpinBox, 0, 7, Qt::AlignLeft);
+  parametersGridLayout->addWidget(imageColsLabel, 1, 6, Qt::AlignLeft);
+  parametersGridLayout->addWidget(imageColsSpinBox, 1, 7, Qt::AlignLeft);
+  parametersGridLayout->addWidget(fxLabel, 2, 6, Qt::AlignLeft);
+  parametersGridLayout->addWidget(fxSpinBox, 2, 7, Qt::AlignLeft);
+  parametersGridLayout->addWidget(fyLabel, 3, 6, Qt::AlignLeft);
+  parametersGridLayout->addWidget(fySpinBox, 3, 7, Qt::AlignLeft);
+  parametersGridLayout->addWidget(cxLabel, 4, 6, Qt::AlignLeft);
+  parametersGridLayout->addWidget(cxSpinBox, 4, 7, Qt::AlignLeft);
+  parametersGridLayout->addWidget(cyLabel, 5, 6, Qt::AlignLeft);
+  parametersGridLayout->addWidget(cySpinBox, 5, 7, Qt::AlignLeft);
+
 
   QLabel *stepLabel = new QLabel("Step", mainWindow);
   QLabel *pointsLabel = new QLabel("Points", mainWindow);
@@ -125,9 +300,11 @@ int main(int argc, char **argv) {
   QSpinBox *stepSpinBox = new QSpinBox(mainWindow);
   stepSpinBox->setMinimum(0);
   stepSpinBox->setSingleStep(1);
+  stepSpinBox->setValue(1);
   QDoubleSpinBox *pointsSpinBox = new QDoubleSpinBox(mainWindow);
   pointsSpinBox->setMinimum(0.0f);
   pointsSpinBox->setSingleStep(0.25f);
+  pointsSpinBox->setValue(1.0f);
   QDoubleSpinBox *normalsSpinBox = new QDoubleSpinBox(mainWindow);
   normalsSpinBox->setMinimum(0.0f);
   normalsSpinBox->setSingleStep(0.01f);
@@ -192,6 +369,11 @@ int main(int argc, char **argv) {
       listWidget->addItem(listItem);
   }
 
+  /************************************************************************
+   *                     Settings File Generation                         *
+   ************************************************************************/
+  generateSettingsFile("pwn_cloud_aligner_settings.txt");
+
   mainWindow->show();
   viewer->show();
   listWidget->show();
@@ -228,4 +410,8 @@ set<string> readDirectory(string dir) {
   closedir(dp);
   
   return filenames;
+}
+
+void generateSettingsFile(string name) {
+  
 }
