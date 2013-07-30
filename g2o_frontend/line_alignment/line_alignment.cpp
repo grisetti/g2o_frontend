@@ -133,7 +133,6 @@ int main(int argc, char**argv){
     arg.param("o", outfilename, "outputGraph.g2o", "output file name");
     arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
     arg.parseArgs(argc, argv);
-    ofstream alignedunmergedG2O("aligned_unmerged.g2o");
     ofstream mergedG2O(outfilename.c_str());
 
     // graph construction
@@ -176,9 +175,8 @@ int main(int argc, char**argv){
     int lastID;
     int veryLastID = vertexIds.size()-1;
     if (vlast_id != -1) {
-
         lastID = vlast_id;
-        //deleting vertices not to be porocessed
+        cout << "....deleting vertices not to be porocessed" << endl;
         int firstNotUsedID = lastID+1;
         deleteVertices(firstNotUsedID, veryLastID, graph);
         graph->save("inputGraph_cutted.g2o");
@@ -192,12 +190,13 @@ int main(int argc, char**argv){
     //fixing the first vertex of the graph
     graph->vertex(vfirst_id/*0*/)->setFixed(1);
 
-    /** Building the new graph with vertex payload aligned:
+/** Building the new graph with vertex payload aligned:
      * -for each vertex, reading its own payload and saving the payload of the following vertex,
      * -call findCorrespondances,
      * -call ransac to find the inliers,
      * -merging vertex of the inliers found
-     **/
+**/
+
     cout << "\033[22;31;1m********************************START READING THE GRAPH********************************\033[0m" << endl;
     cerr << "num vertici totali: " << vertexIds.size() << ", num vertices to be processed: " << lastID+1 << endl;
     for (int i = vfirst_id/*0*/; i<=lastID/*(int)vertexIds.size()*/; i++)
@@ -344,14 +343,15 @@ int main(int argc, char**argv){
             continue;
         }
 
-        /// calling find correspondances
+
+/// call find correspondances
         cout << endl << "\033[22;31;1m....Starting correspondences finder..\033[0m" << endl;
 
         LineCorrs currCorrs;
         bool resultCorrespondances = findCorrespondences(currCorrs, pairLinesSet);
         if(resultCorrespondances)
         {
-            /// call aligner
+/// call aligner
             cout << endl << "\033[22;31;1m**********************STARTING ALIGNMENT ALGORITHM: ITERATION " << i << "**********************\033[0m " << endl << endl;
 
             CorrespondenceVector correspondences;
@@ -403,7 +403,7 @@ int main(int argc, char**argv){
             }
             cerr << "size of correspondances vector: " << correspondences.size() << endl << endl;
 
-            /// call ransac
+/// call ransac
             CorrespondenceValidatorPtrVector validators;
             Line2DCorrespondenceValidator<VertexLine2D>* val1 = new Line2DCorrespondenceValidator<VertexLine2D>();
             val1->setIntraFrameDistanceDifference(.1);
@@ -502,13 +502,13 @@ int main(int argc, char**argv){
                 }
 #endif
 
-                //CLASSIC SCAN MATCHING: updating the value of the second vertex pose
+/// CLASSIC SCAN MATCHING: updating the value of the second vertex pose
                 SE2 newpose = transform*v_next->estimate();
                 cerr << "vecchia posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
                 v_next->setEstimate(newpose);
                 cerr << "nuova posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
 
-                //and his own line measurements
+                /// and his own line measurements
                 for (OptimizableGraph::EdgeSet::iterator itv_next = es_next.begin(); itv_next != es_next.end(); itv_next++)
                 {
                     EdgeSE2Line2D* el_next = dynamic_cast<EdgeSE2Line2D*>(*itv_next);
@@ -542,25 +542,25 @@ int main(int argc, char**argv){
                     et->write(cerr);
                 } else
                     cerr << "no agiunto edge" << endl;
+/// END CLASSIC SCAN MATCHING
 
                 //saving the graph before merdging!
                 graph->save("aligned_unmerged.g2o");
-//                alignedunmergedG2O.close();
 
-                ///merging vertexes and lines (inliers set)
-//                cout << endl << "\033[22;34;1m*****MERGING STUFF******\033[0m " << endl << endl;
-//                for (int ci = 0; ci < (int)inliers.size(); ci++)
-//                {
-//                    //TODO to be UNCOMMENT
-//                    double inliersIndex = inliers[ci];
-//                    VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[/*ci*/inliersIndex].lid1].vline->id()));
-//                    VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[/*ci*/inliersIndex].lid2].vline->id()));
-//                    cout << "Line to be merged: " << endl;
-//                    cout << "[Frame i] line " << vli->id() << " - [Frame j] line " << vlj->id() << endl;
-//                    merdging = mergeLineVertex(graph, vlj, vli);
-//                    cout << endl << " \033[22;32;1miteration " << ci  << " -- Lines merged? " << merdging << "\033[0m" << endl;
-//                    cout << endl;
-//                }
+/// merging vertexes and lines (inliers set)
+                cout << endl << "\033[22;34;1m*****MERGING STUFF******\033[0m " << endl << endl;
+                for (int ci = 0; ci < (int)inliers.size(); ci++)
+                {
+                    //TODO to be UNCOMMENT
+                    double inliersIndex = inliers[ci];
+                    VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[/*ci*/inliersIndex].lid1].vline->id()));
+                    VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[/*ci*/inliersIndex].lid2].vline->id()));
+                    cout << "Line to be merged: " << endl;
+                    cout << "[Frame i] line " << vli->id() << " - [Frame j] line " << vlj->id() << endl;
+                    merdging = mergeLineVertex(graph, vlj, vli);
+                    cout << endl << " \033[22;32;1miteration " << ci  << " -- Lines merged? " << merdging << "\033[0m" << endl;
+                    cout << endl;
+                }
 
                 //saving the new line vertex already aligned
                 if(merdging && v_next->id() != lastID)
@@ -605,7 +605,6 @@ int main(int argc, char**argv){
         graph->initializeOptimization();
 //        graph->setVerbose(true);
         graph->optimize(10);
-//        alignedunmergedG2O.close();
     }
     cout << endl << "\033[22;31;1m********************************END READING THE GRAPH********************************\033[0m" << endl << endl;
     cout << endl;

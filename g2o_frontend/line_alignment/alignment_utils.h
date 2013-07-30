@@ -272,14 +272,14 @@ bool ransacExec(CorrespondenceValidatorPtrVector& validators,
 void deleteVertices(int first, int last, OptimizableGraph* graph) {
     for (int i = first; i <= last; i++)
     {
-        cout << "i : " << i << endl;
+//        cout << "i : " << i << endl;
         OptimizableGraph::Vertex* _v = graph->vertex(i);
         if(!_v)
             continue;
         VertexSE2* v = dynamic_cast<VertexSE2*>(_v);
         if(!v)
             continue;
-        cout << "id vertex to be deleted " << v->id() << endl;
+//        cout << "id vertex to be deleted " << v->id() << endl;
         OptimizableGraph::EdgeSet es = v->edges();
         for (OptimizableGraph::EdgeSet::iterator it = es.begin(); it != es.end(); it++)
         {
@@ -300,7 +300,7 @@ void deleteVertices(int first, int last, OptimizableGraph* graph) {
 
             graph->removeVertex(vl);
         }
-        cout << " Vertex-se2 deleted: "<< graph->removeVertex(v) << endl;
+//        cout << " Vertex-se2 deleted: "<< graph->removeVertex(v) << endl;
     }
 }
 
