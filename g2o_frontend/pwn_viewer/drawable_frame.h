@@ -32,11 +32,20 @@ class DrawableFrame : public Drawable {
   const Eigen::Isometry3f& localTransformation() const { return _localTransform; }
   virtual GLParameter* parameter() { return _parameter; } 
   Frame* frame() const { return _frame; }
+  DrawableCorrespondences* drawableCorrespondences() { return _drawableCorrespondences; }
+  DrawablePoints* drawablePoints() { return _drawablePoints; }
+  DrawableNormals* drawableNormals() { return _drawableNormals; }
+  DrawableCovariances* drawableCovariances() { return _drawableCovariances; }
 
   void setLocalTransformation(const Eigen::Isometry3f &localTransform_) { _localTransform = localTransform_; }
   virtual bool setParameter(GLParameter *parameter_);
   void setFrame(Frame *frame_);
-
+  void setDrawableCorrespondences(DrawableCorrespondences* drawableCorrespondences_) {
+    if(_drawableCorrespondences)
+      delete _drawableCorrespondences;
+    _drawableCorrespondences = drawableCorrespondences_;
+  }
+  
   void clearDrawableObjects();
   void constructDrawableObjects();
 
