@@ -86,9 +86,9 @@ bool lengthError(VertexLine2D* vl1, VertexLine2D* vl2){
 
     //checking if the lines have similar lenght
     if(d1>d2)
-        result = (d1/d2) < 1.3;
+        result = (d1/d2) < 1.2;
     else
-        result = (d2/d1) < 1.3;
+        result = (d2/d1) < 1.2;
 
 //    result = fabs(d1-d2) > lenghterr;
 
@@ -103,7 +103,7 @@ bool lengthError(VertexLine2D* vl1, VertexLine2D* vl2){
 
 bool findCorrespondences(LineCorrs& _currCorrs,  LinesForMatching& _pairLinesSet){
 
-    double distanceThreshold = 0.5;
+    double distanceThreshold = 0.7;
     LinesSet s1 = _pairLinesSet.first;
     LinesSet s2 = _pairLinesSet.second;
     cerr << "number of lines in the first set: " << s1.size() << endl;
@@ -300,7 +300,8 @@ void deleteVertices(int first, int last, OptimizableGraph* graph) {
 
             graph->removeVertex(vl);
         }
-        cout << " Vertex-se2 deleted: "<< graph->removeVertex(v) << endl;
+        graph->removeVertex(v);
+//        cout << " Vertex-se2 deleted: "<< graph->removeVertex(v) << endl;
     }
 }
 

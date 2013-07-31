@@ -189,6 +189,8 @@ int main(int argc, char**argv){
 
     //fixing the first vertex of the graph
     graph->vertex(vfirst_id/*0*/)->setFixed(1);
+//    graph->initializeOptimization();
+
 
 /** Building the new graph with vertex payload aligned:
      * -for each vertex, reading its own payload and saving the payload of the following vertex,
@@ -610,6 +612,30 @@ int main(int argc, char**argv){
 
     lvector_merged.clear();
     cout << "vectors of lines at the end: current " << lvector.size() << ", next " << lvector_next.size() << ", merged " << lvector_merged.size() << endl;
+
+    //workaround: deleting VertexPointXY not conneted with any VertexLine2D, not deleted by the merging procedure
+    for (int i = 0; i < veryLastID; i++)
+    {
+        OptimizableGraph::Vertex* _x = graph->vertex(i);
+        if(!_x){
+            continue;
+        }
+        VertexPointXY* x = dynamic_cast<VertexPointXY*>(_x);
+        if(!x){
+            continue;
+        }
+        OptimizableGraph::EdgeSet x_edges = x->edges();
+        int count = 0;
+        for (OptimizableGraph::EdgeSet::iterator it = x_edges.begin(); it != x_edges.end(); it++)
+        {
+            EdgeLine2DPointXY* exl= dynamic_cast<EdgeLine2DPointXY*>(*it);
+            if(exl) count++;
+        }
+        if(count == 0)
+            cout << "removing id: " << x->id() << " - done? " << graph->removeVertex(x) << endl;
+        else
+            cerr << "VertexPointXY not to be deleted: " << x->id() << endl;
+    }
 
     cout << "...saving merged graph in " << outfilename.c_str() << endl;
     graph->save(mergedG2O);
