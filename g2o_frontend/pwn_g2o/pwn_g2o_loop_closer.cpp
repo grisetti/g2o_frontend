@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
   arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements");
 
   // Last parameter has to be the working directory.
-  arg.paramLeftOver("g2o_input_filename", g2o_filename, "", "g2o input inputfilename", true);
+  arg.paramLeftOver("g2o_input_filename", g2o_filename, "", "g2o inputfilename", true);
 
   // Set parser input.
   arg.parseArgs(argc, argv);
@@ -97,8 +97,8 @@ int main(int argc, char** argv) {
   SlamLinearSolver *linearSolver = new SlamLinearSolver();
   linearSolver->setBlockOrdering(false);
   SlamBlockSolver *blockSolver = new SlamBlockSolver(linearSolver);
-  //OptimizationAlgorithmLevenberg *solverGauss = new OptimizationAlgorithmLevenberg(blockSolver);
-  OptimizationAlgorithmGaussNewton *solverGauss = new OptimizationAlgorithmGaussNewton(blockSolver);
+  OptimizationAlgorithmLevenberg *solverGauss = new OptimizationAlgorithmLevenberg(blockSolver);
+  //OptimizationAlgorithmGaussNewton *solverGauss = new OptimizationAlgorithmGaussNewton(blockSolver);
   SparseOptimizer *graph = new SparseOptimizer();
   graph->setAlgorithm(solverGauss);
   graph->load(g2o_filename.c_str());
