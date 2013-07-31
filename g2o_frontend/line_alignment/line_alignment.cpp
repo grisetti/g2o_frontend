@@ -176,7 +176,7 @@ int main(int argc, char**argv){
     int veryLastID = vertexIds.size()-1;
     if (vlast_id != -1) {
         lastID = vlast_id;
-        cout << "....deleting vertices not to be porocessed" << endl;
+        cout << "....deleting vertices not to be processed" << endl;
         int firstNotUsedID = lastID+1;
         deleteVertices(firstNotUsedID, veryLastID, graph);
         graph->save("inputGraph_cutted.g2o");
@@ -201,14 +201,13 @@ int main(int argc, char**argv){
     cerr << "num vertici totali: " << vertexIds.size() << ", num vertices to be processed: " << lastID+1 << endl;
     for (int i = vfirst_id/*0*/; i<=lastID/*(int)vertexIds.size()*/; i++)
     {
-//        cerr << "iteration: " << i << endl;
         OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[i]);
         VertexSE2* v = dynamic_cast<VertexSE2*>(_v);
         if (!v)
             continue;
-        cout << "\033[22;34;1m***********************************\033[0m" << endl;
-        cout << "\033[22;34;1m***********NEW ITERATION***********\033[0m" << endl;
-        cout << "\033[22;34;1m***********************************\033[0m" << endl;
+        cout << "\033[22;34;1m*************************************\033[0m" << endl;
+        cout << "\033[22;34;1m***********NEW ITERATION " << i << " ***********\033[0m" << endl;
+        cout << "\033[22;34;1m*************************************\033[0m" << endl;
 
         int vcurr_id = v->id();
         int next_id = -1;
@@ -503,45 +502,45 @@ int main(int argc, char**argv){
 #endif
 
 /// CLASSIC SCAN MATCHING: updating the value of the second vertex pose
-                SE2 newpose = transform*v_next->estimate();
-                cerr << "vecchia posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
-                v_next->setEstimate(newpose);
-                cerr << "nuova posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
+//                SE2 newpose = transform*v_next->estimate();
+//                cerr << "vecchia posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
+//                v_next->setEstimate(newpose);
+//                cerr << "nuova posa: \n" << v_next->estimate().toIsometry().matrix() << endl;
 
-                /// and his own line measurements
-                for (OptimizableGraph::EdgeSet::iterator itv_next = es_next.begin(); itv_next != es_next.end(); itv_next++)
-                {
-                    EdgeSE2Line2D* el_next = dynamic_cast<EdgeSE2Line2D*>(*itv_next);
-                    if (!el_next) continue;
+//                /// and his own line measurements
+//                for (OptimizableGraph::EdgeSet::iterator itv_next = es_next.begin(); itv_next != es_next.end(); itv_next++)
+//                {
+//                    EdgeSE2Line2D* el_next = dynamic_cast<EdgeSE2Line2D*>(*itv_next);
+//                    if (!el_next) continue;
 
-                    VertexLine2D* vl_next = dynamic_cast<VertexLine2D*>(el_next->vertices()[1]);
-                    if(!vl_next) continue;
+//                    VertexLine2D* vl_next = dynamic_cast<VertexLine2D*>(el_next->vertices()[1]);
+//                    if(!vl_next) continue;
 
-                    VertexPointXY* vpl1 = dynamic_cast<VertexPointXY*>(graph->vertex(vl_next->p1Id));
-                    VertexPointXY* vpl2 = dynamic_cast<VertexPointXY*>(graph->vertex(vl_next->p2Id));
+//                    VertexPointXY* vpl1 = dynamic_cast<VertexPointXY*>(graph->vertex(vl_next->p1Id));
+//                    VertexPointXY* vpl2 = dynamic_cast<VertexPointXY*>(graph->vertex(vl_next->p2Id));
 
-                    vpl1->setEstimate(transform*vpl1->estimate());
-                    vpl2->setEstimate(transform*vpl2->estimate());
+//                    vpl1->setEstimate(transform*vpl1->estimate());
+//                    vpl2->setEstimate(transform*vpl2->estimate());
 
-                    Line2D newli_next = transform*vl_next->estimate();
-                    vl_next->setEstimate(newli_next);
-                }
+//                    Line2D newli_next = transform*vl_next->estimate();
+//                    vl_next->setEstimate(newli_next);
+//                }
 
-                EdgeSE2* et = new EdgeSE2();
-                et->setVertex(0, v);
-                et->setVertex(1, v_next);
-                Eigen::Matrix3d info = Eigen::Matrix3d::Identity();
-                info/*.block<2,2>(0,0)*/*=1000;
-                et->setInformation(info);
-                SE2 t(v->estimate().inverse() * v_next->estimate());
-                et->setMeasurement(t);
-                cerr << "adding trasform constraint " << et << " to the graph between viID: " << v->id() << " and vjID " << v_next->id() << endl;
-                bool resurtato = graph->addEdge(et);
-                if(resurtato) {
-                    cerr << "agiunto edge " << endl;
-                    et->write(cerr);
-                } else
-                    cerr << "no agiunto edge" << endl;
+//                EdgeSE2* et = new EdgeSE2();
+//                et->setVertex(0, v);
+//                et->setVertex(1, v_next);
+//                Eigen::Matrix3d info = Eigen::Matrix3d::Identity();
+//                info/*.block<2,2>(0,0)*/*=1000;
+//                et->setInformation(info);
+//                SE2 t(v->estimate().inverse() * v_next->estimate());
+//                et->setMeasurement(t);
+//                cerr << "adding trasform constraint " << et << " to the graph between viID: " << v->id() << " and vjID " << v_next->id() << endl;
+//                bool resurtato = graph->addEdge(et);
+//                if(resurtato) {
+//                    cerr << "agiunto edge " << endl;
+//                    et->write(cerr);
+//                } else
+//                    cerr << "no agiunto edge" << endl;
 /// END CLASSIC SCAN MATCHING
 
                 //saving the graph before merdging!
@@ -582,7 +581,7 @@ int main(int argc, char**argv){
                         if (tmp->id() == lastVertexAligned->id())
                         {
                             Line2D lim = vlm->estimate();
-                            cout << "- Line id "  << vlm->id() << ": theta " << lim(0) << ", rho " << lim(1) /*<< ", estimate: " << vl->estimate().transpose()*/ << endl;
+//                            cout << "- Line id "  << vlm->id() << ": theta " << lim(0) << ", rho " << lim(1) /*<< ", estimate: " << vl->estimate().transpose()*/ << endl;
                             lineOfVertex livm;
                             livm.line = lim;
                             livm.vertex = lastVertexAligned;
