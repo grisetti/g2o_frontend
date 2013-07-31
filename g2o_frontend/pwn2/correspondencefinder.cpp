@@ -53,7 +53,7 @@ void CorrespondenceFinder::compute(const Frame &referenceScene, const Frame &cur
 	  continue;
 	
 	const Normal &currentNormal = currentScene.normals()[currentIndex];
-	const Point &_referenceNormal = referenceScene.normals()[referenceIndex];
+	const Normal &_referenceNormal = referenceScene.normals()[referenceIndex];
 	const Point &currentPoint = currentScene.points()[currentIndex];
 	const Point &_referencePoint = referenceScene.points()[referenceIndex];
 
@@ -64,6 +64,11 @@ void CorrespondenceFinder::compute(const Frame &referenceScene, const Frame &cur
 	Point referencePoint = T * _referencePoint;
 	Normal referenceNormal = T * _referenceNormal;
 	
+	// if (referenceNormal.squaredNorm()>1) {
+	//   cerr << "q(o)" << endl;
+	//   cerr << _referenceNormal.transpose() << " " << referenceNormal.transpose() << endl;
+	// } 
+
 	// this condition captures the angluar offset, and is moved to the end of the loop
 	if (currentNormal.dot(referenceNormal) < _inlierNormalAngularThreshold) 
 	  continue;

@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
   /************************************************************************
    *                           Input Handling                             *
    ************************************************************************/
-  string working_directory;
+  string working_directory, g2o_filename;
 
   int ng_minImageRadius, ng_maxImageRadius, ng_minPoints;
   float ng_worldRadius, ng_scale, ng_curvatureThreshold;
@@ -114,10 +114,10 @@ int main(int argc, char **argv) {
   arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image");
   arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded");
   
-  arg.param("cf_inlierNormalAngularThreshold", cf_inlierNormalAngularThreshold, M_PI / 6.0f, "Maximum angle between the normals of two points to regard them as iniliers");
+  arg.param("cf_inlierNormalAngularThreshold", cf_inlierNormalAngularThreshold, 1.0f, "Maximum angle between the normals of two points to regard them as iniliers");
   arg.param("cf_flatCurvatureThreshold", cf_flatCurvatureThreshold, 0.02f, "Maximum curvature value for a point to be used for data association");
   arg.param("cf_inlierCurvatureRatioThreshold", cf_inlierCurvatureRatioThreshold, 1.3f, "Maximum curvature ratio value between two points to regard them as iniliers");
-  arg.param("cf_inlierDistanceThreshold", cf_inlierDistanceThreshold, 0.5f, "Maximum metric distance between two points to regard them as iniliers");
+  arg.param("cf_inlierDistanceThreshold", cf_inlierDistanceThreshold, 1.0f, "Maximum metric distance between two points to regard them as iniliers");
 
   arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations");
   arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");
@@ -127,16 +127,17 @@ int main(int argc, char **argv) {
   
   arg.param("vz_step", vz_step, 1, "A graphic element is drawn each vz_step elements");
 
-  arg.param("imageRows", imageRows, 480, "Number of rows of the depth images");
-  arg.param("imageCols", imageCols, 640, "Number of columns of the depth images");
+  arg.param("imageRows", imageRows, 120, "Number of rows of the depth images");
+  arg.param("imageCols", imageCols, 320, "Number of columns of the depth images");
   arg.param("angularFOV", angularFOV, M_PI, "Angular field of view for the cylindrical point projector");
   arg.param("fx", fx, 525.0f, "fx value of the camera matrix");
-  arg.param("fy", fy, 525.0f, "fy value of the camera matrix");
+  arg.param("fy", fy, 100.0f, "fy value of the camera matrix");
   arg.param("cx", cx, 319.5f, "cx value of the camera matrix");
   arg.param("cy", cy, 239.5f, "cy value of the camera matrix");
 
   // Last parameter has to be the working directory.
   arg.paramLeftOver("working_directory", working_directory, ".", "Path of the working directory", true);
+  //arg.paramLeftOver("g2o_input_filename", g2o_filename, "", "g2o input filename", false);
 
   // Set parser input.
   arg.parseArgs(argc, argv);
@@ -162,10 +163,11 @@ int main(int argc, char **argv) {
   QHBoxLayout *projectorsLayout = new QHBoxLayout();
   viewerLayout->addItem(projectorsLayout);
   pinholePointProjectorCheckBox = new QCheckBox("Pinhole point projector", mainWindow);
-  pinholePointProjectorCheckBox->setChecked(true);
+  pinholePointProjectorCheckBox->setChecked(false);
+  pinholePointProjectorCheckBox->setEnabled(false);
   cylindricalPointProjectorCheckBox = new QCheckBox("Cylindrical point projector", mainWindow);
-  cylindricalPointProjectorCheckBox->setChecked(false);
-  cylindricalPointProjectorCheckBox->setEnabled(false);
+  cylindricalPointProjectorCheckBox->setChecked(true);
+  cylindricalPointProjectorCheckBox->setEnabled(true);
   multiPointProjectorCheckBox = new QCheckBox("Multiple point projector", mainWindow);
   multiPointProjectorCheckBox->setChecked(false);
   multiPointProjectorCheckBox->setEnabled(false);
@@ -421,7 +423,12 @@ int main(int argc, char **argv) {
   mainWindow->show();
   viewer->show();
   listWidget->show();
+  QGraphicsScene *referenceScene = new QGraphicsScene();
+  QGraphicsScene *currentScene = new QGraphicsScene();
+  referenceDepthView->setScene(referenceScene);
+  currentDepthView->setScene(currentScene);
   Frame *referenceFrame = 0, *currentFrame = 0;
+  string referenceFilename, currentFilename;
   GLParameterFrame *referenceParameterFrame = new GLParameterFrame(vz_step);
   GLParameterFrame *currentParameterFrame = new GLParameterFrame(vz_step);
   Isometry3f initialGuess = Isometry3f::Identity();
@@ -429,9 +436,10 @@ int main(int argc, char **argv) {
   while(mainWindow->isVisible()) {
     // Control that at most one projector is selected
     checkProjectorSelection();
-    // Applu possible new settings
+    // Apply possible new alignment settings
     applySettings();
 
+    // Apply possible new visualization settings
     for(size_t i = 0; i < viewer->drawableList().size(); i++) {
       Drawable *lastDrawable = viewer->drawableList()[i];
       DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
@@ -497,11 +505,13 @@ int main(int argc, char **argv) {
 	      if(currentFrame) {
 		DrawableFrame *currentDrawableFrame = new DrawableFrame(Isometry3f::Identity(), currentParameterFrame, currentFrame);
 		viewer->addDrawable(currentDrawableFrame);
+		currentFilename = fname;
 	      }
 	      else {
 		DrawableFrame *referenceDrawableFrame = new DrawableFrame(Isometry3f::Identity(), referenceParameterFrame, referenceFrame);
 		
 		viewer->addDrawable(referenceDrawableFrame);
+		referenceFilename = fname;
 	      }	      
 	    }
 	    break;
@@ -531,12 +541,17 @@ int main(int argc, char **argv) {
       else {
 	cerr << "WARNING: no cloud was removed since the list is empty!" << endl;
       }
+
+      referenceScene->clear();
+      currentScene->clear();
+
       clearLastButton->setEnabled(true);
     }
 
     // Clear all button pressed
     if(clearAllButton->isDown()) {
       clearAllButton->setEnabled(false);
+      
       int listSize = viewer->drawableList().size();
       if(viewer->drawableList().size() > 0) {
 	for(int i = 0; i < listSize; i++) {
@@ -558,12 +573,15 @@ int main(int argc, char **argv) {
 	referenceFrame = 0;
       }
       
+      referenceScene->clear();
+      currentScene->clear();
+
       clearAllButton->setEnabled(true);
     }
 
-    if(correspondencesButton->isDown()) {
+    // Correspondences button pressed
+    if(correspondencesButton->isDown() && referenceFrame && currentFrame) {
       correspondencesButton->setEnabled(false);
-      // the current points are seen from the frame of the sensor
       projector->setTransform(sensorOffset);
       projector->project(correspondenceFinder.currentIndexImage(),
 			 correspondenceFinder.currentDepthImage(),
@@ -588,7 +606,154 @@ int main(int argc, char **argv) {
 	drawableCorrespondences->setCorrespondences(&correspondenceFinder.correspondences());
       }
       
+      // Show zBuffers.
+      referenceScene->clear();
+      currentScene->clear();
+      QImage referenceQImage;
+      QImage currentQImage;
+      DepthImageView div;
+      div.computeColorMap(300, 2000, 128);
+      div.convertToQImage(referenceQImage, correspondenceFinder.referenceDepthImage());
+      div.convertToQImage(currentQImage, correspondenceFinder.currentDepthImage());
+      referenceScene->addPixmap(QPixmap::fromImage(referenceQImage));
+      currentScene->addPixmap(QPixmap::fromImage(currentQImage));
+      referenceDepthView->fitInView(referenceScene->itemsBoundingRect(), Qt::KeepAspectRatio);
+      currentDepthView->fitInView(currentScene->itemsBoundingRect(), Qt::KeepAspectRatio);
+      referenceDepthView->show();
+      currentDepthView->show();
+
       correspondencesButton->setEnabled(true);
+    }
+
+    // Optimize button pressed without step-by-step mode selected
+    if(optimizeButton->isDown() && referenceFrame && currentFrame && !stepByStepCheckBox->isChecked()) {
+      optimizeButton->setEnabled(false);
+      
+      // Setting aligner
+      initialGuess = Isometry3f::Identity();
+      initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+      aligner.clearPriors();
+      aligner.setOuterIterations(al_outerIterationsSpinBox->value());
+      aligner.setInnerIterations(al_innerIterationsSpinBox->value());
+      aligner.setReferenceFrame(referenceFrame);
+      aligner.setCurrentFrame(currentFrame);
+      aligner.setInitialGuess(initialGuess);
+      aligner.setSensorOffset(sensorOffset);
+      
+      // Align
+      aligner.align();  
+      
+      Drawable *lastDrawable = viewer->drawableList().back();
+      DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
+      if(lastDrawableFrame) {
+	lastDrawableFrame->clearDrawableObjects();
+	lastDrawableFrame->constructDrawableObjects();	
+	lastDrawableFrame->drawablePoints()->setTransformation(aligner.T());
+	lastDrawableFrame->drawableNormals()->setTransformation(aligner.T());
+	lastDrawableFrame->drawableCovariances()->setTransformation(aligner.T());
+	lastDrawableFrame->drawableCorrespondences()->setReferencePointsTransformation(Isometry3f::Identity());
+	lastDrawableFrame->drawableCorrespondences()->setTransformation(aligner.T());
+	lastDrawableFrame->drawableCorrespondences()->setReferencePoints(&referenceFrame->points());
+	lastDrawableFrame->drawableCorrespondences()->setCurrentPoints(&currentFrame->points());
+	lastDrawableFrame->drawableCorrespondences()->setCorrespondences(&correspondenceFinder.correspondences());
+	lastDrawableFrame->drawableCorrespondences()->setNumCorrespondences(correspondenceFinder.numCorrespondences());
+      }
+
+      // Show zBuffers.
+      referenceScene->clear();
+      currentScene->clear();
+      QImage referenceQImage;
+      QImage currentQImage;
+      DepthImageView div;
+      div.computeColorMap(300, 2000, 128);
+      div.convertToQImage(referenceQImage, correspondenceFinder.referenceDepthImage());
+      div.convertToQImage(currentQImage, correspondenceFinder.currentDepthImage());
+      referenceScene->addPixmap(QPixmap::fromImage(referenceQImage));
+      currentScene->addPixmap(QPixmap::fromImage(currentQImage));
+      referenceDepthView->fitInView(referenceScene->itemsBoundingRect(), Qt::KeepAspectRatio);
+      currentDepthView->fitInView(currentScene->itemsBoundingRect(), Qt::KeepAspectRatio);
+      referenceDepthView->show();
+      currentDepthView->show();
+
+      initialGuess = aligner.T();
+
+      optimizeButton->setEnabled(true);
+    }
+
+    // Optimize button pressed with step-by-step mode selected
+    if(optimizeButton->isDown() && referenceFrame && currentFrame && stepByStepCheckBox->isChecked()) {
+      optimizeButton->setEnabled(false);
+      
+      // Setting aligner
+      aligner.clearPriors();
+      aligner.setOuterIterations(1);
+      aligner.setInnerIterations(al_innerIterationsSpinBox->value());
+      aligner.setReferenceFrame(referenceFrame);
+      aligner.setCurrentFrame(currentFrame);
+      aligner.setInitialGuess(initialGuess);
+      aligner.setSensorOffset(sensorOffset);
+      
+      // Align
+      aligner.align();  
+      
+      Drawable *lastDrawable = viewer->drawableList().back();
+      DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
+      if(lastDrawableFrame) {
+	lastDrawableFrame->clearDrawableObjects();
+	lastDrawableFrame->constructDrawableObjects();	
+	lastDrawableFrame->drawablePoints()->setTransformation(aligner.T());
+	lastDrawableFrame->drawableNormals()->setTransformation(aligner.T());
+	lastDrawableFrame->drawableCovariances()->setTransformation(aligner.T());
+	lastDrawableFrame->drawableCorrespondences()->setReferencePointsTransformation(Isometry3f::Identity());
+	lastDrawableFrame->drawableCorrespondences()->setTransformation(aligner.T());
+	lastDrawableFrame->drawableCorrespondences()->setReferencePoints(&referenceFrame->points());
+	lastDrawableFrame->drawableCorrespondences()->setCurrentPoints(&currentFrame->points());
+	lastDrawableFrame->drawableCorrespondences()->setCorrespondences(&correspondenceFinder.correspondences());
+	lastDrawableFrame->drawableCorrespondences()->setNumCorrespondences(correspondenceFinder.numCorrespondences());
+      }
+
+      // Show zBuffers.
+      referenceScene->clear();
+      currentScene->clear();
+      QImage referenceQImage;
+      QImage currentQImage;
+      DepthImageView div;
+      div.computeColorMap(300, 2000, 128);
+      div.convertToQImage(referenceQImage, correspondenceFinder.referenceDepthImage());
+      div.convertToQImage(currentQImage, correspondenceFinder.currentDepthImage());
+      referenceScene->addPixmap(QPixmap::fromImage(referenceQImage));
+      currentScene->addPixmap(QPixmap::fromImage(currentQImage));
+      referenceDepthView->fitInView(referenceScene->itemsBoundingRect(), Qt::KeepAspectRatio);
+      currentDepthView->fitInView(currentScene->itemsBoundingRect(), Qt::KeepAspectRatio);
+      referenceDepthView->show();
+      currentDepthView->show();
+
+      initialGuess = aligner.T();
+
+      optimizeButton->setEnabled(true);
+    }
+
+    // Initial guess button pressed
+    if(initialGuessButton->isDown() && referenceFrame && currentFrame) {
+      Drawable *lastDrawable = viewer->drawableList().back();
+      DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
+      if(lastDrawableFrame) {
+	lastDrawableFrame->clearDrawableObjects();
+	lastDrawableFrame->constructDrawableObjects();	
+	lastDrawableFrame->drawablePoints()->setTransformation(Isometry3f::Identity());
+	lastDrawableFrame->drawableNormals()->setTransformation(Isometry3f::Identity());
+	lastDrawableFrame->drawableCovariances()->setTransformation(Isometry3f::Identity());
+	lastDrawableFrame->drawableCorrespondences()->setReferencePointsTransformation(Isometry3f::Identity());
+	lastDrawableFrame->drawableCorrespondences()->setTransformation(Isometry3f::Identity());
+	lastDrawableFrame->drawableCorrespondences()->setReferencePoints(&referenceFrame->points());
+	lastDrawableFrame->drawableCorrespondences()->setCurrentPoints(&currentFrame->points());
+	lastDrawableFrame->drawableCorrespondences()->setCorrespondences(&correspondenceFinder.correspondences());
+	lastDrawableFrame->drawableCorrespondences()->setNumCorrespondences(correspondenceFinder.numCorrespondences());
+      }
+
+      initialGuess = Isometry3f::Identity();
+
+      initialGuessButton->setEnabled(true);
     }
 
     viewer->updateGL();
@@ -640,11 +805,19 @@ void applySettings() {
   float scale = 1.0f / ng_scaleSpinBox->value();
   cameraMatrix = cameraMatrix * scale;
   cameraMatrix(2, 2) = 1.0f;
-
+  if(pinholePointProjectorCheckBox->isChecked()) {
+    fxSpinBox->setValue(cameraMatrix(0, 0));
+    fySpinBox->setValue(cameraMatrix(1, 1));
+    cxSpinBox->setValue(cameraMatrix(0, 2));
+    cySpinBox->setValue(cameraMatrix(1, 2));
+  }
+  
   pinholePointProjector.setCameraMatrix(cameraMatrix);
-  float angularResolution = imageRowsSpinBox->value() / (2.0f * angularFOVSpinBox->value());
+  float angularResolution = imageColsSpinBox->value() / (2.0f * angularFOVSpinBox->value());
   cylindricalPointProjector.setAngularFov(angularFOVSpinBox->value());
   cylindricalPointProjector.setAngularResolution(angularResolution);
+  cylindricalPointProjector.setVerticalCenter(imageRowsSpinBox->value() / 2.0f);
+  cylindricalPointProjector.setVerticalFocalLenght(fySpinBox->value());
   
   statsCalculator.setWorldRadius(ng_minImageRadiusSpinBox->value());
   statsCalculator.setMinImageRadius(ng_maxImageRadiusSpinBox->value());
@@ -664,14 +837,14 @@ void applySettings() {
     converter = DepthImageConverter(&pinholePointProjector, &statsCalculator, 
 				    &pointInformationMatrixCalculator, &normalInformationMatrixCalculator);
 
-    converter._curvatureThreshold = ng_curvatureThresholdSpinBox->value();
+  converter._curvatureThreshold = ng_curvatureThresholdSpinBox->value();
 
   correspondenceFinder.setInlierDistanceThreshold(cf_inlierDistanceThresholdSpinBox->value());
   correspondenceFinder.setFlatCurvatureThreshold(cf_flatCurvatureThresholdSpinBox->value());  
   correspondenceFinder.setInlierCurvatureRatioThreshold(cf_inlierCurvatureRatioThresholdSpinBox->value());
   correspondenceFinder.setInlierNormalAngularThreshold(cosf(cf_inlierNormalAngularThresholdSpinBox->value()));
-  correspondenceFinder.setSize(imageRowsSpinBox->value(), imageColsSpinBox->value());
-
+  correspondenceFinder.setSize(imageColsSpinBox->value(), imageRowsSpinBox->value());
+  
   linearizer.setInlierMaxChi2(al_inlierMaxChi2SpinBox->value());
 
   if(multiPointProjectorCheckBox->isChecked() == true)
