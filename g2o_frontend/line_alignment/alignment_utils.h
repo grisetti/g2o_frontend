@@ -86,9 +86,9 @@ bool lengthError(VertexLine2D* vl1, VertexLine2D* vl2){
 
     //checking if the lines have similar lenght
     if(d1>d2)
-        result = (d1/d2) < 1.2;
+        result = (d1/d2) < 1.5;
     else
-        result = (d2/d1) < 1.2;
+        result = (d2/d1) < 1.5;
 
 //    result = fabs(d1-d2) > lenghterr;
 

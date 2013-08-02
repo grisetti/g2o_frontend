@@ -603,9 +603,9 @@ int main(int argc, char**argv){
         lvector.clear();
         lvector_next.clear();
 
-        graph->initializeOptimization();
+//        graph->initializeOptimization();
 //        graph->setVerbose(true);
-        graph->optimize(10);
+//        graph->optimize(10);
     }
     cout << endl << "\033[22;31;1m********************************END READING THE GRAPH********************************\033[0m" << endl << endl;
     cout << endl;
@@ -633,8 +633,8 @@ int main(int argc, char**argv){
         }
         if(count == 0)
             cout << "removing id: " << x->id() << " - done? " << graph->removeVertex(x) << endl;
-        else
-            cerr << "VertexPointXY not to be deleted: " << x->id() << endl;
+//        else
+//            cerr << "VertexPointXY not to be deleted: " << x->id() << " number of edges: " << count << endl;
     }
 
     cout << "...saving merged graph in " << outfilename.c_str() << endl;
