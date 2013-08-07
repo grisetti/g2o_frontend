@@ -151,10 +151,18 @@ int main(int argc, char** argv) {
   }
 
   Matrix3f cameraMatrix;
-  cameraMatrix <<
-    525.0f, 0.0f, 319.5f,
-    0.0f, 525.0f, 239.5f,
-    0.0f, 0.0f, 1.0f;
+  // kinect
+  // cameraMatrix <<
+  //   525.0f, 0.0f, 319.5f,
+  //   0.0f, 525.0f, 239.5f,
+  //   0.0f, 0.0f, 1.0f;
+
+  // xtion
+  cameraMatrix << 
+    285.171f, 0.0f, 160.0f,
+    0.0f, 285.171f, 120.0f,
+    0.0f, 0.0f, 1.0f;  
+
   Isometry3f sensorOffset = Isometry3f::Identity();
   sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
   Quaternionf quaternion;
