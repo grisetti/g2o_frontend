@@ -1,5 +1,5 @@
-#ifndef _POINTACCUMULATOR_H_
-#define _POINTACCUMULATOR_H_
+#ifndef _PWN_POINTACCUMULATOR_H_
+#define _PWN_POINTACCUMULATOR_H_
 
 #include "homogeneousvector4f.h"
 

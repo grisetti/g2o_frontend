@@ -1,5 +1,5 @@
-#ifndef _FRAME_H_
-#define _FRAME_H_
+#ifndef _PWN_FRAME_H_
+#define _PWN_FRAME_H_
 
 #include "stats.h"
 #include "informationmatrix.h"

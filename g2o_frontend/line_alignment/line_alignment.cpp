@@ -12,6 +12,8 @@
 #include "g2o/core/optimization_algorithm_gauss_newton.h"
 #include "g2o/core/optimization_algorithm_levenberg.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
+#include "g2o/core/robust_kernel.h"
+#include "g2o/core/robust_kernel_factory.h"
 
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "g2o/types/slam2d/types_slam2d.h"
@@ -37,6 +39,8 @@ using namespace Eigen;
 using namespace std;
 using namespace g2o;
 using namespace g2o_frontend;
+
+AbstractRobustKernelCreator* kernelCreator = 0;
 
 bool updateVertexPointID(SparseOptimizer* graph, SparseOptimizer* graphline, VertexLine2D* vli, VertexLine2D* vlj) {
   //checking if the first extreme point of a line is a common vertex
@@ -135,6 +139,12 @@ int main(int argc, char**argv){
     arg.parseArgs(argc, argv);
     ofstream mergedG2O(outfilename.c_str());
 
+    kernelCreator =     RobustKernelFactory::instance()->creator("Cauchy");
+    if (! kernelCreator) {
+      cerr << "mothaffukka" << endl;
+      return 0;
+    }
+
     // graph construction
     typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
     typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
@@ -188,7 +198,7 @@ int main(int argc, char**argv){
     std::vector<VertexLine2D*> lines1sort, lines2sort;
 
     //fixing the first vertex of the graph
-    graph->vertex(vfirst_id/*0*/)->setFixed(1);
+    
 //    graph->initializeOptimization();
 
 
@@ -366,6 +376,11 @@ int main(int argc, char**argv){
             {
                 cerr << "Correspondances position in lines sets: "  <<currCorrs[ci].lid1 << ", " << currCorrs[ci].lid2 << ", with error:  " << currCorrs[ci].error << endl;
                 EdgeLine2D* eline = new EdgeLine2D;
+		
+		eline->setRobustKernel(kernelCreator->construct());
+		eline->robustKernel()->setDelta(1.0);
+
+
                 VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[ci].lid1].vline->id()));
                 Eigen::Vector2d p11=dynamic_cast<const VertexPointXY*>(graph->vertex(vli->p1Id))->estimate();
                 Eigen::Vector2d p12=dynamic_cast<const VertexPointXY*>(graph->vertex(vli->p2Id))->estimate();
@@ -550,18 +565,31 @@ int main(int argc, char**argv){
 
 /// merging vertexes and lines (inliers set)
                 cout << endl << "\033[22;34;1m*****MERGING STUFF******\033[0m " << endl << endl;
+		std::set<VertexLine2D*> lineSet;
+		
+		OptimizableGraph::EdgeSet& es=v_next->edges();
+		for (OptimizableGraph::EdgeSet::iterator itv = es.begin(); itv != es.end(); itv++) {
+		  EdgeSE2Line2D* el = dynamic_cast<EdgeSE2Line2D*>(*itv);
+		  if (!el)
+		    continue;
+		  VertexLine2D* vl = dynamic_cast<VertexLine2D*>(el->vertex(1));
+		  lineSet.insert(vl);
+		}
+		cerr << "number of lines in vertex: " << lineSet.size() << endl;
                 for (int ci = 0; ci < (int)inliers.size(); ci++)
                 {
                     //TODO to be UNCOMMENT
                     double inliersIndex = inliers[ci];
                     VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[/*ci*/inliersIndex].lid1].vline->id()));
                     VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[/*ci*/inliersIndex].lid2].vline->id()));
+		    lineSet.erase(vlj);
                     cout << "Line to be merged: " << endl;
                     cout << "[Frame i] line " << vli->id() << " - [Frame j] line " << vlj->id() << endl;
                     merdging = mergeLineVertex(graph, vlj, vli);
                     cout << endl << " \033[22;32;1miteration " << ci  << " -- Lines merged? " << merdging << "\033[0m" << endl;
                     cout << endl;
                 }
+		cerr << "number of outliers: " << lineSet.size() << endl;
 
                 //saving the new line vertex already aligned
                 if(merdging && v_next->id() != lastID)
@@ -603,9 +631,19 @@ int main(int argc, char**argv){
         lvector.clear();
         lvector_next.clear();
 
-//        graph->initializeOptimization();
-//        graph->setVerbose(true);
-//        graph->optimize(10);
+
+	for (SparseOptimizer::EdgeSet::iterator it = graph->edges().begin(); it != graph->edges().end(); ++it) {
+	  SparseOptimizer::Edge* e = dynamic_cast<SparseOptimizer::Edge*>(*it);
+	  if (!e->robustKernel()) {
+	    e->setRobustKernel(kernelCreator->construct());
+	    e->robustKernel()->setDelta(1.0);
+	  }
+	}
+
+	graph->vertex(vfirst_id/*0*/)->setFixed(true);
+	graph->initializeOptimization();
+	graph->setVerbose(true);
+	graph->optimize(10);
     }
     cout << endl << "\033[22;31;1m********************************END READING THE GRAPH********************************\033[0m" << endl << endl;
     cout << endl;
@@ -638,6 +676,7 @@ int main(int argc, char**argv){
     }
 
     cout << "...saving merged graph in " << outfilename.c_str() << endl;
+    
     graph->save(mergedG2O);
     mergedG2O.close();
     return (0);

@@ -1,5 +1,5 @@
-#ifndef _CORRESPONDENCEFINDER_H_
-#define _CORRESPONDENCEFINDER_H_
+#ifndef _PWN_CORRESPONDENCEFINDER_H_
+#define _PWN_CORRESPONDENCEFINDER_H_
 
 #include "depthimage.h"
 #include "frame.h"

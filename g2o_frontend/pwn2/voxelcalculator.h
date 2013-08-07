@@ -1,5 +1,5 @@
-#ifndef _VOXEL_CALCULATOR_H_
-#define _VOXEL_CALCULATOR_H_
+#ifndef _PWN_VOXEL_CALCULATOR_H_
+#define _PWN_VOXEL_CALCULATOR_H_
 
 #include "frame.h"
 

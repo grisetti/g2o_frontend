@@ -26,6 +26,11 @@ TARGET_LINK_LIBRARIES(pwn_g2o
   ${CSPARSE_LIBRARY}
 )
 
+IF(CUDA_FOUND)  
+  TARGET_LINK_LIBRARIES(pwn_g2o  pwn_cuda_library ${CUDA_CUDART_LIBRARY})
+ENDIF(CUDA_FOUND)
+
+
 ADD_EXECUTABLE(pwn_g2o_viewer pwn_g2o_viewer.cpp)
 SET_TARGET_PROPERTIES(pwn_g2o_viewer PROPERTIES OUTPUT_NAME pwn_g2o_viewer)
 TARGET_LINK_LIBRARIES(pwn_g2o_viewer  

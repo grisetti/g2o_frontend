@@ -1,5 +1,5 @@
-#ifndef _INFORMATIONMATRIX_H_
-#define _INFORMATIONMATRIX_H_
+#ifndef _PWN_INFORMATIONMATRIX_H_
+#define _PWN_INFORMATIONMATRIX_H_
 
 #include "homogeneousvector4f.h"
 

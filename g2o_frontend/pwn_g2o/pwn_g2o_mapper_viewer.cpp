@@ -42,8 +42,11 @@ int main(int argc, char** argv) {
   // Variables for the input parameters. 
   float al_scale;
   float al_curvatureThreshold;
+  float al_distanceThreshold;
+  float al_normalThreshold;
   int al_innerIterations;
   int al_outerIterations;
+
   int al_minNumInliers;
   int al_imageRows;
   int al_imageCols;
@@ -63,6 +66,8 @@ int main(int argc, char** argv) {
   arg.param("al_curvatureThreshold", al_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded");
   arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations");
   arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");
+  arg.param("al_normalThreshold", al_normalThreshold, 1, "Specify the angle between the normals [rad]");
+  arg.param("al_distancethreshold", al_distanceThreshold, 1, "Specify the angle between the normals [m]");
   arg.param("al_minNumInliers", al_minNumInliers, 10000, "Specify the minimum number of inliers to consider an alignment good");
   arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
   arg.param("al_imageRows", al_imageRows, 480, "Specify the number of rows of the depth image associated to the pinhole point projector");
@@ -176,6 +181,8 @@ int main(int argc, char** argv) {
   controller->setImageCols(al_imageRows);
   controller->setCurvatureThreshold(al_curvatureThreshold);
   controller->setPwnSaving(pwnSaving);
+  controller->correspondenceFinder()->setInlierDistanceThreshold(al_distanceThreshold);
+  controller->correspondenceFinder()->setInlierNormalAngularThreshold(cos(al_normalThreshold));
   viewer->init();
   viewer->setAxisIsDrawn(true);
   mainWindow->show();

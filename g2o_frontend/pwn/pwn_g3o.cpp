@@ -307,7 +307,7 @@ main(int argc, char** argv){
 	gs << os.str();
 	gs.close();
 	sprintf(buf, "%s-%05d.pwn", baseFilename.c_str(), (int)i);	
-	globalScene->points().save(buf,1,true);
+	globalScene->points().save(buf,1,false);
 	os.str("");
 	os.clear();
 	if (referenceFrame)

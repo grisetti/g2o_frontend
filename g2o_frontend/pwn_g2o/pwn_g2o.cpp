@@ -13,6 +13,10 @@
 #include "g2o_frontend/pwn2/depthimageconverter.h"
 #include "g2o_frontend/pwn2/aligner.h"
 
+#ifdef _PWN_USE_CUDA_
+#include "g2o_frontend/pwn_cuda/cualigner.h"
+#endif// PWN_CUDA
+
 using namespace std;
 using namespace g2o;
 using namespace Eigen;
@@ -136,12 +140,17 @@ int main(int argc, char** argv) {
   correspondenceFinder.setInlierDistanceThreshold(cf_inlierDistanceThreshold);
   correspondenceFinder.setFlatCurvatureThreshold(cf_flatCurvatureThreshold);  
   correspondenceFinder.setInlierCurvatureRatioThreshold(cf_inlierCurvatureRatioThreshold);
-  correspondenceFinder.setInlierNormalAngularThreshold(cosf(cf_inlierNormalAngularThreshold));
+  correspondenceFinder.setInlierNormalAngularThreshold(cosf(cos(cf_inlierNormalAngularThreshold)));
   Linearizer linearizer;
   linearizer.setInlierMaxChi2(al_inlierMaxChi2);
 
-  // Aligner 
+
+#ifdef _PWN_USE_CUDA_
+  CuAligner aligner;
+#else
   Aligner aligner;
+#endif
+
   aligner.setProjector(&projector);
   aligner.setLinearizer(&linearizer);
   linearizer.setAligner(&aligner);

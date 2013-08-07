@@ -1,5 +1,5 @@
-#ifndef _MERGER_H
-#define _MERGER_H
+#ifndef _PWN_MERGER_H
+#define _PWN_MERGER_H
 
 #include "pinholepointprojector.h"
 #include "depthimageconverter.h"
