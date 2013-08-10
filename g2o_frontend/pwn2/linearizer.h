@@ -1,5 +1,5 @@
-#ifndef _LINEARIZER_H_
-#define _LINEARIZER_H_
+#ifndef _PWN_LINEARIZER_H_
+#define _PWN_LINEARIZER_H_
 #include "homogeneousvector4f.h"
 #include "informationmatrix.h"
 #include "g2o_frontend/basemath/bm_se3.h"

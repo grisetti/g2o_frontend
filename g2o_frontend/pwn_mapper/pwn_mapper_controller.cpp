@@ -27,14 +27,17 @@ namespace pwn {
     _scaledImageRows = _imageRows;
     _scaledImageCols = _imageCols;
     _reduction = 2;
-    _cameraMatrix << 
-      525.0f, 0.0f, 319.5f,
-      0.0f, 525.0f, 239.5f,
-      0.0f, 0.0f, 1.0f;
-    _scaledCameraMatrix << 
-      525.0f, 0.0f, 319.5f,
-      0.0f, 525.0f, 239.5f,
-      0.0f, 0.0f, 1.0f;
+    _cameraMatrix.setIdentity();
+    _scaledCameraMatrix.setIdentity();
+
+    // _cameraMatrix << 
+    //   525.0f, 0.0f, 319.5f,
+    //   0.0f, 525.0f, 239.5f,
+    //   0.0f, 0.0f, 1.0f;
+    // _scaledCameraMatrix << 
+    //   525.0f, 0.0f, 319.5f,
+    //   0.0f, 525.0f, 239.5f,
+    //   0.0f, 0.0f, 1.0f;
     _sensorOffset = Isometry3f::Identity();
     _sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     _projector = new PinholePointProjector();
@@ -201,10 +204,10 @@ namespace pwn {
     }
   
     // HAKK: setting sensor offset and camera matrix to fixed values
-    _cameraMatrix << 
-      525.0f, 0.0f, 319.5f,
-      0.0f, 525.0f, 239.5f,
-      0.0f, 0.0f, 1.0f;
+    // _cameraMatrix << 
+    //   525.0f, 0.0f, 319.5f,
+    //   0.0f, 525.0f, 239.5f,
+    //   0.0f, 0.0f, 1.0f;
   
     _sensorOffset = Isometry3f::Identity();
     _sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
@@ -300,11 +303,11 @@ namespace pwn {
       }
     }
   
-    // HAKK: setting sensor offset and camera matrix to fixed values
-    _cameraMatrix << 
-      525.0f, 0.0f, 319.5f,
-      0.0f, 525.0f, 239.5f,
-      0.0f, 0.0f, 1.0f;
+    // // HAKK: setting sensor offset and camera matrix to fixed values
+    // _cameraMatrix << 
+    //   525.0f, 0.0f, 319.5f,
+    //   0.0f, 525.0f, 239.5f,
+    //   0.0f, 0.0f, 1.0f;
   
     _sensorOffset = Isometry3f::Identity();
     _sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
@@ -547,5 +550,7 @@ namespace pwn {
 
     // Set image size to the merger
     _merger->setImageSize(_scaledImageRows, _scaledImageCols);
+
+    cerr << "updateProjector" << _projector->cameraMatrix() << endl;
   }
 }

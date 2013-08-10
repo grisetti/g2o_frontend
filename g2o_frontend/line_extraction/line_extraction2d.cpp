@@ -31,8 +31,8 @@ void Point2DClusterer::compute() {
 Line2DExtractor::Line2DExtractor()
 {
   _splitThreshold = 0.03*0.03;  
-  _minPointsInLine = 10;
-  _maxPointDistance = 3;
+  _minPointsInLine = 50;
+  _maxPointDistance = 0.05*0.05;
   _normalMergeThreshold = ::cos(M_PI/360);
   _rhoMergeThreshold = 0.05;
 }
@@ -92,7 +92,11 @@ bool Line2DExtractor::merge(int k) {
   
   it++;
   Line2D& line2 = it->second;;
-  if (line2.p0Index-line1.p1Index > _maxPointDistance)
+  
+  Eigen::Vector2f l2_p0=points()[line2.p0Index];
+  Eigen::Vector2f l1_p1=points()[line1.p1Index];
+
+  if ( (l2_p0 - l1_p1).squaredNorm() > _maxPointDistance)
     return false;
   
   float normalAngleCos = line2.d().dot(line1.d());

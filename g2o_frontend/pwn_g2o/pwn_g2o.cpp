@@ -13,6 +13,10 @@
 #include "g2o_frontend/pwn2/depthimageconverter.h"
 #include "g2o_frontend/pwn2/aligner.h"
 
+#ifdef _PWN_USE_CUDA_
+#include "g2o_frontend/pwn_cuda/cualigner.h"
+#endif// PWN_CUDA
+
 using namespace std;
 using namespace g2o;
 using namespace Eigen;
@@ -100,10 +104,21 @@ int main(int argc, char** argv) {
   sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   
   // Compute the reduced camera matrix and image size
+  // xtion 320 x 240
+  // cameraMatrix << 
+  //   285.171f, 0.0f, 160.0f,
+  //   0.0f, 285.171f, 120.0f,
+  //   0.0f, 0.0f, 1.0f;  
+  // xtion 640 x 480
   cameraMatrix << 
-    525.0f, 0.0f, 319.5f,
-    0.0f, 525.0f, 239.5f,
+    570.342, 0,       320,
+    0,       570.342, 240,
     0.0f, 0.0f, 1.0f;  
+  // kinect
+  // cameraMatrix << 
+  //   525.0f, 0.0f, 319.5f,
+  //   0.0f, 525.0f, 239.5f,
+  //   0.0f, 0.0f, 1.0f;  
   float scale = 1.0f / ng_scale;
   scaledCameraMatrix = cameraMatrix * scale;
   scaledCameraMatrix(2, 2) = 1.0f;
@@ -136,12 +151,17 @@ int main(int argc, char** argv) {
   correspondenceFinder.setInlierDistanceThreshold(cf_inlierDistanceThreshold);
   correspondenceFinder.setFlatCurvatureThreshold(cf_flatCurvatureThreshold);  
   correspondenceFinder.setInlierCurvatureRatioThreshold(cf_inlierCurvatureRatioThreshold);
-  correspondenceFinder.setInlierNormalAngularThreshold(cosf(cf_inlierNormalAngularThreshold));
+  correspondenceFinder.setInlierNormalAngularThreshold(cosf(cos(cf_inlierNormalAngularThreshold)));
   Linearizer linearizer;
   linearizer.setInlierMaxChi2(al_inlierMaxChi2);
 
-  // Aligner 
+
+#ifdef _PWN_USE_CUDA_
+  CuAligner aligner;
+#else
   Aligner aligner;
+#endif
+
   aligner.setProjector(&projector);
   aligner.setLinearizer(&linearizer);
   linearizer.setAligner(&aligner);

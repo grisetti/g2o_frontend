@@ -46,7 +46,7 @@ void CuAligner::align() {
   for (size_t i=0; i<_currentFrame->stats().size(); i++)
     currentCurvatures[i]=_currentFrame->stats().at(i).curvature();
 
-  Eigen::Isometry3f inverseSensorOffset= _sensorOffset.inverse();
+  Eigen::Isometry3f inverseSensorOffset= _referenceSensorOffset.inverse();
   inverseSensorOffset.matrix().row(3)<< 0,0,0,1;
   PinholePointProjector *pprojector = (PinholePointProjector *) _projector;
   //cerr << "initializing context computation" << endl;

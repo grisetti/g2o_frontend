@@ -1,5 +1,5 @@
-#ifndef _DEPTHIMAGECONVERTER_H_
-#define _DEPTHIMAGECONVERTER_H_
+#ifndef _PWN_DEPTHIMAGECONVERTER_H_
+#define _PWN_DEPTHIMAGECONVERTER_H_
 
 #include "frame.h"
 #include "pointprojector.h"

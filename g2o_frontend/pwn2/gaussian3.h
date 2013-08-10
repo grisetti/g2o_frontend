@@ -1,5 +1,5 @@
-#ifndef _GAUSSIAN3_H_
-#define _GAUSSIAN3_H_
+#ifndef _PWN_GAUSSIAN3_H_
+#define _PWN_GAUSSIAN3_H_
 
 #include "depthimage.h"
 #include "homogeneousvector4f.h"

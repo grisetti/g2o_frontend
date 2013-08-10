@@ -3,8 +3,8 @@
  *  This is the header file of the HomogeneousVector4f struct.
 */
 
-#ifndef _HOMOGENEOUSVECTOR4F_H_
-#define _HOMOGENEOUSVECTOR4F_H_
+#ifndef _PWN_HOMOGENEOUSVECTOR4F_H_
+#define _PWN_HOMOGENEOUSVECTOR4F_H_
 
 #include <iostream>
 #include <Eigen/Core>

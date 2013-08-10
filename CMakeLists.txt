@@ -164,7 +164,7 @@ if(OPENMP_FOUND)
  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif(OPENMP_FOUND)
 
-# Find CUDA
+#Find CUDA
 find_package(CUDA)
 if(CUDA_FOUND)
   #set(CUDA_NVCC_FLAGS "-gencode arch=compute_20,code=sm_20")

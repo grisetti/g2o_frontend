@@ -1,5 +1,5 @@
-#ifndef _ALINGER_H_
-#define _ALINGER_H_
+#ifndef _PWN_ALINGER_H_
+#define _PWN_ALINGER_H_
 
 #include "linearizer.h"
 #include "pointprojector.h"
