@@ -51,8 +51,8 @@ namespace pwn {
     _aligner->setLinearizer(_linearizer);
     _linearizer->setAligner(_aligner);
     _aligner->setCorrespondenceFinder(_correspondenceFinder);
-    _aligner->correspondenceFinder()->setInlierDistanceThreshold(3);
-    _aligner->correspondenceFinder()->setInlierNormalAngularThreshold(cosf(M_PI/2));
+    _aligner->correspondenceFinder()->setInlierDistanceThreshold(1.0f);
+    _aligner->correspondenceFinder()->setInlierNormalAngularThreshold(cosf(1.0f));
     _aligner->setInnerIterations(1);
     _aligner->setOuterIterations(10);
   }
