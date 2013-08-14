@@ -34,29 +34,44 @@ int main(int argc, char** argv) {
 
   // Variables for the input parameters.
   float al_scale;
-  int al_imageRows;
-  int al_imageCols;
   int al_innerIterations;
   int al_outerIterations;
   int al_minNumInliers;
+
+  int pj_imageRows;
+  int pj_imageCols;
+  float pj_fov;
+  float pj_fy;
   float al_minError;
   float al_curvatureThreshold;
   int vz_startingVertex;
   int vz_endingVertex;
   int vz_step;
+  float cf_inlierNormalAngularThreshold;
+  float cf_flatCurvatureThreshold;
+  float cf_inlierCurvatureRatioThreshold;
+  float cf_inlierDistanceThreshold;
 
   // Input parameters handling.
   g2o::CommandArgs arg;
   
   // Optional input parameters.
   arg.param("al_scale", al_scale, 1.0f, "Specify the scaling factor to apply on the depth image");
-  arg.param("al_imageRows", al_imageRows, 480, "Specify the number of rows of the depth image associated to the pinhole point projector");
-  arg.param("al_imageCols", al_imageCols, 640, "Specify the number of columns of the depth image associated to the pinhole point projector");
+  arg.param("pj_imageRows", pj_imageRows, 120, "Specify the number of rows of the depth image associated to the pinhole point projector");
+  arg.param("pj_imageCols", pj_imageCols, 320, "Specify the number of columns of the depth image associated to the pinhole point projector");
+  arg.param("pj_fov", pj_fov, M_PI, "Specify field of view of the cylindrical projector");
+  arg.param("pj_fy", pj_fy, 100, "Specify the focal lenght of the y for the projector");
+  
   arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations");
   arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");
   arg.param("al_minNumInliers", al_minNumInliers, 10000, "Specify the minimum number of inliers to consider an alignment good");
   arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
   arg.param("al_curvatureThreshold", al_curvatureThreshold, 0.1f, "Specify the curvature treshshold for information matrix computation");
+  arg.param("cf_inlierNormalAngularThreshold", cf_inlierNormalAngularThreshold, M_PI / 6.0f, "Maximum angle between the normals of two points to regard them as iniliers");
+  arg.param("cf_flatCurvatureThreshold", cf_flatCurvatureThreshold, 0.02f, "Maximum curvature value for a point to be used for data association");
+  arg.param("cf_inlierCurvatureRatioThreshold", cf_inlierCurvatureRatioThreshold, 1.3f, "Maximum curvature ratio value between two points to regard them as iniliers");
+  arg.param("cf_inlierDistanceThreshold", cf_inlierDistanceThreshold, 0.5f, "Maximum metric distance between two points to regard them as iniliers");
+
   arg.param("vz_startingVertex", vz_startingVertex, 0, "Specify the vertex id from which to start the process");
   arg.param("vz_endingVertex", vz_endingVertex, -1, "Specify the vertex id where to end the process"); 
   arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements");
@@ -161,9 +176,31 @@ int main(int argc, char** argv) {
   //controller->setReduction(al_scale);
   //controller->setImageRows(al_imageCols);
   //controller->setImageCols(al_imageRows);
+  controller->setImageRows(pj_imageCols);
+  controller->setImageCols(pj_imageRows);
+  CylindricalPointProjector* projector = controller->cylindricalPointProjector();
+  projector->setAngularFov(pj_fov);
+  projector->setAngularResolution(pj_imageCols *.5/pj_fov);
+  projector->setVerticalFocalLenght(pj_fy);
+  projector->setVerticalCenter(pj_imageRows/2);
+
+  cerr << "imageRows: " << controller->imageRows() << endl;
+  cerr << "imageCols: " << controller->imageCols() << endl;
+  cerr << "fov:       "  << projector->angularFov() << endl;
+  cerr << "resolution:       "  << projector->angularResolution() << endl;
+  cerr << "cy:       "  << projector->verticalCenter() << endl;
+  cerr << "fy:       "  << projector->verticalFocalLenght() << endl;
+
   controller->setCurvatureThreshold(al_curvatureThreshold);
   controller->setInnerIterations(al_innerIterations);
   controller->setOuterIterations(al_outerIterations);
+
+  CorrespondenceFinder* correspondenceFinder =   controller->correspondenceFinder();
+  correspondenceFinder->setInlierDistanceThreshold(cf_inlierDistanceThreshold);
+  correspondenceFinder->setFlatCurvatureThreshold(cf_flatCurvatureThreshold);  
+  correspondenceFinder->setInlierCurvatureRatioThreshold(cf_inlierCurvatureRatioThreshold);
+  correspondenceFinder->setInlierNormalAngularThreshold(cosf(cos(cf_inlierNormalAngularThreshold)));
+
 
   viewer->init();
   viewer->setAxisIsDrawn(true);

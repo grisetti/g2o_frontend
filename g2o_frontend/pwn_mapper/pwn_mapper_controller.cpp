@@ -61,14 +61,17 @@ namespace pwn {
     
     // Correspondence finder and linearizer init
     _correspondenceFinder = new CorrespondenceFinder();
+    _correspondenceFinder->setInlierDistanceThreshold(0.3);
+    _correspondenceFinder->setInlierNormalAngularThreshold(0.5);
+
     _linearizer = new Linearizer();
 
     // Voxel calculator init
     _voxelCalculator = new VoxelCalculator();
 
     // Aligner and merger init
-    _minNumInliers = 10000;
-    _minError = 10.0f;
+    _minNumInliers = 1000;
+    _minError = 5.0f;
     _aligner = new Aligner();
     _aligner->setProjector(_projector);
     _aligner->setLinearizer(_linearizer);
@@ -203,11 +206,6 @@ namespace pwn {
       }
     }
   
-    // HAKK: setting sensor offset and camera matrix to fixed values
-    // _cameraMatrix << 
-    //   525.0f, 0.0f, 319.5f,
-    //   0.0f, 525.0f, 239.5f,
-    //   0.0f, 0.0f, 1.0f;
   
     _sensorOffset = Isometry3f::Identity();
     _sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
@@ -221,7 +219,6 @@ namespace pwn {
 
     // Get the filename
     std::string filename = rgbdData->baseFilename();// + "_depth.pgm";
-
     cerr << "loading  " << filename << endl;
     // Read the depth image
     if (!_depthImage.load(filename.c_str(), true)){
@@ -320,7 +317,9 @@ namespace pwn {
     updateProjector();
 
     // Read the depth image and scale it
-    std::string filename = rgbdData->baseFilename();// + "_depth.pgm";
+    //std::string filename = rgbdData->baseFilename(); + "_depth.pgm";
+    std::string filename = rgbdData->baseFilename(); //+ "_depth.pgm";
+
     if(!_depthImage.load(filename.c_str(), true)) {
       cerr << "No depth image loaded." << endl;
       return false;
@@ -369,14 +368,17 @@ namespace pwn {
     bool hasOdometry = extractRelativePrior(odometryMean, odometryInfo, reference, current);
     if (hasOdometry) {
       initialGuess = odometryMean;
+      odometryInfo.block<3,3>(0,0) *= 1e3;
     }
     // Force a prior
     else { 
       hasOdometry = true;
       odometryMean = initialGuess;
       odometryInfo.setIdentity();
-      odometryInfo.block<3, 3>(0, 0) *= 100;
+      odometryInfo.block<3,3>(0,0) *= 1e3;
     }
+
+    //odometryInfo.block *= 1e9;
     Eigen::Isometry3f imuMean;
     Matrix6f imuInfo;
     bool hasImu = extractAbsolutePrior(imuMean, imuInfo, current);

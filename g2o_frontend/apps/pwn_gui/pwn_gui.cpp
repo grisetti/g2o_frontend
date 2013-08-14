@@ -64,6 +64,7 @@ int al_outerIterations;
 int al_minNumInliers; 
 float al_minError;
 float al_inlierMaxChi2;
+string sensorType;
 
 int vz_step;
 
@@ -115,9 +116,10 @@ set<string> readDir(std::string dir) {
 }
 
 struct DrawableFrame {
-  DrawableFrame(string f, int s) {
+  DrawableFrame(string f, int s, const Eigen::Matrix3f cameraMatrix_) {
     filename = f;
     step = s;
+    cameraMatrix = cameraMatrix_;
 
     // float r = 0.0f + 0.75f*rand()/double(RAND_MAX);
     // float g = 0.0f + 0.75f*rand()/double(RAND_MAX);
@@ -145,10 +147,11 @@ struct DrawableFrame {
 						   &frame.points(), &frame.points(), &correspondences);
   }
   
-  DrawableFrame(Frame *frame_, int s) {
+  DrawableFrame(Frame *frame_, int s, const Eigen::Matrix3f cameraMatrix_) {
     filename = "";
     step = s;
     frame = *frame_;
+    cameraMatrix = cameraMatrix_;
 
     // float r = 0.0f + 0.75f*rand()/double(RAND_MAX);
     // float g = 0.0f + 0.75f*rand()/double(RAND_MAX);
@@ -177,12 +180,6 @@ struct DrawableFrame {
   }
     
   void computeStats() {
-    Eigen::Matrix3f cameraMatrix;
-    cameraMatrix << 
-      525.0f, 0.0f, 319.5f,
-      0.0f, 525.0f, 239.5f,
-      0.0f, 0.0f, 1.0f;
-    
     // Set the camera matrix of the projector object.
     projector.setCameraMatrix(cameraMatrix);
     
@@ -261,6 +258,8 @@ struct DrawableFrame {
   DrawableNormals *dNormals;
   DrawableCovariances *dCovariances;
   DrawableCorrespondences *dCorrespondences;
+  Eigen::Matrix3f cameraMatrix;
+  
 };
 
 int main(int argc, char** argv) {
@@ -269,15 +268,6 @@ int main(int argc, char** argv) {
    ************************************************************************/
   string workingDirectory = ".";
 
-  // Define the camera matrix, place here the values for the particular 
-  // depth camera used (Kinect, Xtion or any other type). This particular
-  // matrix is the one related to the Kinect.
-  Matrix3f cameraMatrix;
-  cameraMatrix <<     
-    525.0f, 0.0f, 319.5f,
-    0.0f, 525.0f, 239.5f,
-    0.0f, 0.0f, 1.0f;
-  
   // Input parameters handling.
   g2o::CommandArgs arg;
   
@@ -301,12 +291,38 @@ int main(int argc, char** argv) {
   arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
   arg.param("al_inlierMaxChi2", al_inlierMaxChi2, 9e3, "Max chi2 error value for the alignment step");
   arg.param("vz_step", vz_step, 1, "A graphic element is drawn each vz_step elements. [int]");
+  arg.param("sensorType", sensorType, "kinect", "sensor type: xtion640/xtion480/kinect");
 
   // Last parameter has to be the working directory.
   arg.paramLeftOver("workingDirectory", workingDirectory, ".", "Path of the working directory. [string]", true);
 
   // Set parser input.
   arg.parseArgs(argc, argv);
+
+
+  Eigen::Matrix3f cameraMatrix;
+  cameraMatrix.setIdentity();
+
+  if (sensorType=="xtion640") {
+    cameraMatrix << 
+    570.342, 0,       320,
+    0,       570.342, 240,
+    0.0f, 0.0f, 1.0f;  
+  }  else if (sensorType=="xtion320") {
+    cameraMatrix << 
+      570.342, 0,       320,
+      0,       570.342, 240,
+      0.0f, 0.0f, 1.0f;  
+    cameraMatrix.block<2,3>(0,0)*=0.5;
+  } else if (sensorType=="kinect") {
+    cameraMatrix << 
+      525.0f, 0.0f, 319.5f,
+      0.0f, 525.0f, 239.5f,
+      0.0f, 0.0f, 1.0f;  
+  } else {
+    cerr << "unknown sensor type: [" << sensorType << "], aborting (you need to specify either xtion or kinect)" << endl;
+    return 0;
+  }
 
   QApplication qApplication(argc, argv);
   PWNGuiMainWindow pwnGMW;
@@ -578,7 +594,7 @@ int main(int argc, char** argv) {
 	// wasInitialGuess = false;
 	// newCloudAdded = false;
 	// Add drawable items.	
-	drawableFrame = new DrawableFrame(&mergingFrame, vz_step);
+	drawableFrame = new DrawableFrame(&mergingFrame, vz_step, cameraMatrix);
 	drawableFrameVector.push_back(drawableFrame);
 	drawableFrame = 0;
 	drawableFrameVector[drawableFrameVector.size()-1]->dPoints->setTransformation(Isometry3f::Identity());
@@ -594,7 +610,7 @@ int main(int argc, char** argv) {
     // Add cloud was pressed.
     else if(*addCloud) {
       if(itemList) {
-	drawableFrame = new DrawableFrame(itemList->text().toStdString(), vz_step);
+	drawableFrame = new DrawableFrame(itemList->text().toStdString(), vz_step, cameraMatrix);
 	drawableFrame->computeStats();
 	drawableFrameVector.push_back(drawableFrame);
 	if(drawableFrameVector.size() == 1) {

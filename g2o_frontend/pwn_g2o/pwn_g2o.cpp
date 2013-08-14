@@ -13,6 +13,8 @@
 #include "g2o_frontend/pwn2/depthimageconverter.h"
 #include "g2o_frontend/pwn2/aligner.h"
 
+#undef _PWN_USE_CUDA_
+
 #ifdef _PWN_USE_CUDA_
 #include "g2o_frontend/pwn_cuda/cualigner.h"
 #endif// PWN_CUDA
@@ -49,6 +51,7 @@ int main(int argc, char** argv) {
   int al_minNumInliers; 
   float al_minError;
   float al_inlierMaxChi2;
+  string sensorType;
 
   // Input parameters handling.
   CommandArgs arg;
@@ -71,6 +74,7 @@ int main(int argc, char** argv) {
   arg.param("al_minNumInliers", al_minNumInliers, 10000, "Specify the minimum number of inliers to consider an alignment good");
   arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
   arg.param("al_inlierMaxChi2", al_inlierMaxChi2, 9e3, "Max chi2 error value for the alignment step");
+  arg.param("sensorType", sensorType, "kinect", "sensor type: xtion640/xtion480/kinect");
 
   // Last parameter has to be the working directory.
   arg.paramLeftOver("directory", directory, "", "directory were the depth images are saved ", true);
@@ -103,22 +107,31 @@ int main(int argc, char** argv) {
   sensorOffset.linear() = quaternion.toRotationMatrix();
   sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   
-  // Compute the reduced camera matrix and image size
-  // xtion 320 x 240
-  // cameraMatrix << 
-  //   285.171f, 0.0f, 160.0f,
-  //   0.0f, 285.171f, 120.0f,
-  //   0.0f, 0.0f, 1.0f;  
-  // xtion 640 x 480
-  cameraMatrix << 
+  cameraMatrix.setIdentity();
+
+  if (sensorType=="xtion640") {
+    cameraMatrix << 
     570.342, 0,       320,
     0,       570.342, 240,
     0.0f, 0.0f, 1.0f;  
+  }  else if (sensorType=="xtion320") {
+    cameraMatrix << 
+      570.342, 0,       320,
+      0,       570.342, 240,
+      0.0f, 0.0f, 1.0f;  
+    cameraMatrix.block<2,3>(0,0)*=0.5;
+  } else if (sensorType=="kinect") {
+    cameraMatrix << 
+      525.0f, 0.0f, 319.5f,
+      0.0f, 525.0f, 239.5f,
+      0.0f, 0.0f, 1.0f;  
+  } else {
+    cerr << "unknown sensor type: [" << sensorType << "], aborting (you need to specify either xtion or kinect)" << endl;
+    return 0;
+  }
+
   // kinect
   // cameraMatrix << 
-  //   525.0f, 0.0f, 319.5f,
-  //   0.0f, 525.0f, 239.5f,
-  //   0.0f, 0.0f, 1.0f;  
   float scale = 1.0f / ng_scale;
   scaledCameraMatrix = cameraMatrix * scale;
   scaledCameraMatrix(2, 2) = 1.0f;
@@ -180,6 +193,7 @@ int main(int argc, char** argv) {
   trajectory.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   string baseFilename = g2o_filename.substr(0, g2o_filename.find_last_of('.'));
   ostringstream os(g2o_filename.c_str());
+  bool restarted = true;
   for(size_t i = 0; i < filenames.size(); i++) {
     cerr << ">>>>>>>>>>>>>>>>>>>>>>>> PROCESSING " << filenames[i] << " <<<<<<<<<<<<<<<<<<<<<<<<" <<  endl;
 
@@ -191,7 +205,8 @@ int main(int argc, char** argv) {
     numFrames++;
 
     // If it is the first frame add the parameter
-    if(!referenceFrame) {
+    if(restarted || ! referenceFrame) {
+      cerr << "@@@@@@@@@@@@@@@@@@@@2REFFREMA" << endl;
       os << "PARAMS_CAMERACALIB 0 " 
 	 << sensorOffset.translation().x() << " " 
 	 << sensorOffset.translation().y() << " " 
@@ -213,6 +228,7 @@ int main(int argc, char** argv) {
 
       trajectory = Isometry3f::Identity();
       trajectory.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+      restarted = false;
     }
 
     // Add the vertex
@@ -277,6 +293,7 @@ int main(int argc, char** argv) {
 	referenceFrame = 0;
 	graphNum++;
 	numFrames = 0;
+	restarted=true;
       }
       // If the aligner does not fail add an edge between the two verteces 
       else {
@@ -307,6 +324,7 @@ int main(int argc, char** argv) {
 	  }
 	} 
 	os << endl;
+	restarted = false;
       }
     }
 
@@ -321,7 +339,6 @@ int main(int argc, char** argv) {
   ofstream gs(buff);
   gs << os.str();
   gs.close();
-
   return 0;
 }
 
