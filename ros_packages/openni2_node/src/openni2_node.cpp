@@ -4,7 +4,7 @@
 #include <cmath>
 #include <zlib.h>
 
-#include <OpenNI2/OpenNI.h>
+#include <OpenNI.h>
 using namespace std;
 
 #include <ros/ros.h>

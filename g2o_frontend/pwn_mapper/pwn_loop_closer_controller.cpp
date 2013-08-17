@@ -139,11 +139,11 @@ namespace pwn {
     // Extract initial guess
     Eigen::Isometry3f initialGuess;
     initialGuess.setIdentity();
-    // Eigen::Isometry3d delta = referenceFrame->vertex()->estimate().inverse() * currentFrame->vertex()->estimate();
-    // for(int c = 0; c < 4; c++)
-    //   for(int r = 0; r < 3; r++)
-    // 	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
-    // //initialGuess.matrix().col(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    Eigen::Isometry3d delta = referenceFrame->vertex()->estimate().inverse() * currentFrame->vertex()->estimate();
+    for(int c = 0; c < 4; c++)
+      for(int r = 0; r < 3; r++)
+    	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
+    initialGuess.matrix().col(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     
     Eigen::Isometry3f imuMean;
     Matrix6f imuInfo;

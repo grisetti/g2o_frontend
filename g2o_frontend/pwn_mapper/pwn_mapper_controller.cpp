@@ -189,7 +189,7 @@ namespace pwn {
     // attempt a cast to a parameter camera  
     ParameterCamera *cameraParameter = dynamic_cast<ParameterCamera*>(_cameraParameter);
     if(!_cameraParameter) {
-      cerr << "Could not find a valid camera" << endl;
+      cerr << "Could not find a valid camera (id = ) " << paramIndex << endl;
       return false;
     }
     
@@ -217,7 +217,7 @@ namespace pwn {
    
     updateProjector();
 
-    std::string filename = rgbdData->baseFilename() + "_depth.pgm";
+    std::string filename = rgbdData->baseFilename() ;//+ "_depth.pgm";
     cerr << "loading  " << filename << endl;
     // Read the depth image
     if (!_depthImage.load(filename.c_str(), true)){
@@ -282,7 +282,7 @@ namespace pwn {
     g2o::Parameter *_cameraParameter = _graph->parameter(paramIndex);
     ParameterCamera *cameraParameter = dynamic_cast<ParameterCamera*>(_cameraParameter);
     if(!cameraParameter) {
-      cerr << "Could not find a valid camera" << endl;
+      cerr << "Could not find a valid camera (id = ) " << paramIndex << endl;
       return false;
     }
     

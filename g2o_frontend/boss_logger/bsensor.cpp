@@ -14,7 +14,7 @@ namespace boss {
 
   void BaseSensor::deserialize(ObjectData& data, IdContext& /*context*/){
     _topic = data.getString("topic");
-    data.getPointer("frame",_tempFrame);
+    _tempFrame=data.getPointer("frame");
   }
 
   void BaseSensor::deserializeComplete() {

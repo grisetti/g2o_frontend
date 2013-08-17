@@ -94,7 +94,7 @@ void Aligner::align() {
 
       _linearizer->setT(invT);
       _linearizer->update();
-      H = _linearizer->H() + Matrix6f::Identity() * 10.0f;
+      H = _linearizer->H() + Matrix6f::Identity() * 1000.0f;
       b = _linearizer->b();
       // add the priors
       for (size_t j=0; j<_priors.size(); j++){

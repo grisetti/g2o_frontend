@@ -13,7 +13,7 @@
 #include <pthread.h>
 #include <algorithm>
 
-#include <OpenNI2/OpenNI.h>
+#include <OpenNI.h>
 
 #include <unistd.h>
 #include <stdlib.h>

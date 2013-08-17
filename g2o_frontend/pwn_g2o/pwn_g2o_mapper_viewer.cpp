@@ -57,6 +57,7 @@ int main(int argc, char** argv) {
   float chunkAngle;
   float chunkDistance;
   int pwnSaving;
+  string sensorType;
 
   // Input parameters handling.
   g2o::CommandArgs arg;
@@ -78,6 +79,7 @@ int main(int argc, char** argv) {
   arg.param("chunkAngle", chunkAngle, M_PI/4, "Reset the process each time the camera has rotated of chunkAngle radians from the first frame");
   arg.param("chunkDistance", chunkDistance, 0.5, "reset the process each time the camera has moved of chunkDistance meters from the first frame");
   arg.param("pwnSaving", pwnSaving, 0, "choose if you want to save or not the pwn clouds during the process");
+  arg.param("sensorType", sensorType, "kinect", "sensor type: xtion640/xtion480/kinect");
 
   // Last parameter has to be the working directory.
   arg.paramLeftOver("g2o_input_filename", g2o_filename, "", "g2o input inputfilename", true);
@@ -150,18 +152,31 @@ int main(int argc, char** argv) {
     }
   }
 
+  
   Matrix3f cameraMatrix;
-  // kinect
-  // cameraMatrix <<
-  //   525.0f, 0.0f, 319.5f,
-  //   0.0f, 525.0f, 239.5f,
-  //   0.0f, 0.0f, 1.0f;
+  cameraMatrix.setIdentity();
 
-  // xtion
-  cameraMatrix << 
-    285.171f, 0.0f, 160.0f,
-    0.0f, 285.171f, 120.0f,
+  if (sensorType=="xtion640") {
+    cameraMatrix << 
+    570.342, 0,       320,
+    0,       570.342, 240,
     0.0f, 0.0f, 1.0f;  
+  }  else if (sensorType=="xtion320") {
+    cameraMatrix << 
+      570.342, 0,       320,
+      0,       570.342, 240,
+      0.0f, 0.0f, 1.0f;  
+    cameraMatrix.block<2,3>(0,0)*=0.5;
+  } else if (sensorType=="kinect") {
+    cameraMatrix << 
+      525.0f, 0.0f, 319.5f,
+      0.0f, 525.0f, 239.5f,
+      0.0f, 0.0f, 1.0f;  
+  } else {
+    cerr << "unknown sensor type: [" << sensorType << "], aborting (you need to specify either xtion or kinect)" << endl;
+    return 0;
+  }
+
 
   Isometry3f sensorOffset = Isometry3f::Identity();
   sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
