@@ -10,6 +10,7 @@ Linearizer::Linearizer() {
   _H.setZero();
   _b.setZero();
   _inlierMaxChi2 = 9e3;
+  _robustKernel = true;
 }
 
 void Linearizer::update() {
@@ -64,17 +65,23 @@ void Linearizer::update() {
       const Vector4f en = omegaN * normalError;
 
       float localError = pointError.dot(ep) + normalError.dot(en);
-      if(localError > _inlierMaxChi2) 	
-	continue;
+      float kscale = 1;
+      if(localError > _inlierMaxChi2) {
+	if (_robustKernel){
+	  kscale = sqrt(_inlierMaxChi2/localError);
+	} else {
+	  continue;
+	}
+      }
       inliers++;
-      error += localError;
+      error += kscale * localError;
       Matrix4f Sp = skew(referencePoint);
       Matrix4f Sn = skew(referenceNormal);
       Htt.noalias() += omegaP;
       Htr.noalias() += omegaP * Sp;
       Hrr.noalias() +=Sp.transpose() * omegaP * Sp + Sn.transpose() * omegaN * Sn;
-      bt.noalias() += ep;
-      br.noalias() += Sp.transpose() * ep + Sn.transpose() * en;
+      bt.noalias() += kscale * ep;
+      br.noalias() += kscale * (Sp.transpose() * ep + Sn.transpose() * en);
     }
   }
 

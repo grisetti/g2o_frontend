@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
   arg.param("pj_imageRows", pj_imageRows, 120, "Specify the number of rows of the depth image associated to the pinhole point projector");
   arg.param("pj_imageCols", pj_imageCols, 320, "Specify the number of columns of the depth image associated to the pinhole point projector");
   arg.param("pj_fov", pj_fov, M_PI, "Specify field of view of the cylindrical projector");
-  arg.param("pj_fy", pj_fy, 100, "Specify the focal lenght of the y for the projector");
+  arg.param("pj_fy", pj_fy, 50, "Specify the focal lenght of the y for the projector");
   
   arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations");
   arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");

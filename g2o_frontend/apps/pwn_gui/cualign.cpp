@@ -144,7 +144,7 @@ struct ParallelCudaAligner{
 int
  main(int argc, char** argv){
   string dirname;
-  
+  string sensorType;
   PinholePointProjector projector;
   StatsCalculator statsCalculator;
   PointInformationMatrixCalculator pointInformationMatrixCalculator;
@@ -156,6 +156,7 @@ int
   
   g2o::CommandArgs arg;
   arg.paramLeftOver("dirname", dirname, "", "", true);
+  arg.param("sensorType", sensorType, "kinect", "sensor type: xtion640/xtion480/kinect");
   arg.parseArgs(argc, argv);
   cerr << "dirname " << dirname << endl;
 
@@ -165,11 +166,30 @@ int
     filenames.push_back(*it);
   }
 
+
   Eigen::Matrix3f cameraMatrix;
-  cameraMatrix << 
-    525.0f, 0.0f, 319.5f,
-    0.0f, 525.0f, 239.5f,
-    0.0f, 0.0f, 1.0f;
+  cameraMatrix.setIdentity();
+
+  if (sensorType=="xtion640") {
+    cameraMatrix << 
+    570.342, 0,       320,
+    0,       570.342, 240,
+    0.0f, 0.0f, 1.0f;  
+  }  else if (sensorType=="xtion320") {
+    cameraMatrix << 
+      570.342, 0,       320,
+      0,       570.342, 240,
+      0.0f, 0.0f, 1.0f;  
+    cameraMatrix.block<2,3>(0,0)*=0.5;
+  } else if (sensorType=="kinect") {
+    cameraMatrix << 
+      525.0f, 0.0f, 319.5f,
+      0.0f, 525.0f, 239.5f,
+      0.0f, 0.0f, 1.0f;  
+  } else {
+    cerr << "unknown sensor type: [" << sensorType << "], aborting (you need to specify either xtion or kinect)" << endl;
+    return 0;
+  }
 
   Eigen::Matrix3f scaledCameraMatrix = cameraMatrix* 0.5;
     //Eigen::Matrix3f scaledCameraMatrix = cameraMatrix;

@@ -51,6 +51,7 @@ int main(int argc, char** argv) {
   int al_minNumInliers; 
   float al_minError;
   float al_inlierMaxChi2;
+  float pj_maxDistance;
   string sensorType;
 
   // Input parameters handling.
@@ -58,9 +59,10 @@ int main(int argc, char** argv) {
   
   // Optional input parameters.
   arg.param("ng_minImageRadius", ng_minImageRadius, 10, "Specify the minimum number of pixels composing the square where to take points for a normal computation");
+  arg.param("pj_maxDistance", pj_maxDistance, 1, "maximum distance of the points");
   arg.param("ng_maxImageRadius", ng_maxImageRadius, 30, "Specify the maximum number of pixels composing the square where to take points for a normal computation");
   arg.param("ng_minPoints", ng_minPoints, 50, "Specify the minimum number of points to be used to compute a normal");
-  arg.param("ng_worldRadius", ng_worldRadius, 0.1f, "Specify the max distance for a point to be used to compute a normal");
+  arg.param("ng_worldRadius", ng_worldRadius, 0.05f, "Specify the max distance for a point to be used to compute a normal");
   arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image");
   arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded");
   
@@ -73,7 +75,7 @@ int main(int argc, char** argv) {
   arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");
   arg.param("al_minNumInliers", al_minNumInliers, 10000, "Specify the minimum number of inliers to consider an alignment good");
   arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
-  arg.param("al_inlierMaxChi2", al_inlierMaxChi2, 9e3, "Max chi2 error value for the alignment step");
+  arg.param("al_inlierMaxChi2", al_inlierMaxChi2, 1e3, "Max chi2 error value for the alignment step");
   arg.param("sensorType", sensorType, "kinect", "sensor type: xtion640/xtion480/kinect");
 
   // Last parameter has to be the working directory.
@@ -138,7 +140,7 @@ int main(int argc, char** argv) {
   
   // Set the camera matrix to the pinhole point projector
   projector.setCameraMatrix(scaledCameraMatrix);
-    
+  projector.setMaxDistance(pj_maxDistance);
   // Stats calculator
   StatsCalculator statsCalculator;
   statsCalculator.setWorldRadius(ng_minImageRadius);

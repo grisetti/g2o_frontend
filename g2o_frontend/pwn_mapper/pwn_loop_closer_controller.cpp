@@ -44,7 +44,7 @@ namespace pwn {
     _normalInformationMatrixCalculator->setCurvatureThreshold(_curvatureThreshold);
 
     // Aligner init
-    _minNumInliers = 10000;
+    _minNumInliers = 1000;
     _minError = 10.0f;
     _aligner = new Aligner();
     _aligner->setProjector(_cylindricalPointProjector);
@@ -143,7 +143,7 @@ namespace pwn {
     for(int c = 0; c < 4; c++)
       for(int r = 0; r < 3; r++)
     	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
-    initialGuess.matrix().col(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    //initialGuess.matrix().col(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     
     Eigen::Isometry3f imuMean;
     Matrix6f imuInfo;

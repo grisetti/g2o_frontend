@@ -57,6 +57,7 @@ namespace pwn {
     // Depth image converter init
     _converter = new DepthImageConverter(_projector, _statsCalculator, 
 					 _pointInformationMatrixCalculator, _normalInformationMatrixCalculator);
+    _statsCalculator->setWorldRadius(0.1);
     _converter->_curvatureThreshold = _curvatureThreshold;
     
     // Correspondence finder and linearizer init
@@ -65,7 +66,7 @@ namespace pwn {
     _correspondenceFinder->setInlierNormalAngularThreshold(0.5);
 
     _linearizer = new Linearizer();
-
+    _linearizer->setInlierMaxChi2(100);
     // Voxel calculator init
     _voxelCalculator = new VoxelCalculator();
 
@@ -89,7 +90,7 @@ namespace pwn {
     updateProjector();
 
     // Frames queue parameters init
-    _maxDequeSize = 20;
+    _maxDequeSize = 40;
     _framesDeque.clear();
 
     // Traversability analyzer init
@@ -217,7 +218,7 @@ namespace pwn {
    
     updateProjector();
 
-    std::string filename = rgbdData->baseFilename() ;//+ "_depth.pgm";
+    std::string filename = rgbdData->baseFilename();// + "_depth.pgm";
     cerr << "loading  " << filename << endl;
     // Read the depth image
     if (!_depthImage.load(filename.c_str(), true)){
@@ -361,6 +362,7 @@ namespace pwn {
     for(int c = 0; c < 4; c++)
       for(int r = 0; r < 3; r++)
 	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
+    initialGuess.matrix().col(3) << 0,0,0,1;
 
     Eigen::Isometry3f odometryMean;
     Matrix6f odometryInfo;
@@ -434,7 +436,27 @@ namespace pwn {
     current->globalTransform() = globalT;
     current->previousFrameTransform() = localTransformation;
 
-    // Update the g2o graph vertex with the new transform
+    EdgeSE3* e = new EdgeSE3();
+    e->setVertex(0,reference->vertex());
+    e->setVertex(1,current->vertex());
+    Eigen::Isometry3d edgeMeasurement;
+    for(int r = 0; r < 3; r++) {
+      for(int c = 0; c < 4; c++) {
+	edgeMeasurement(r, c) = localTransformation(r, c);
+      }
+    }
+    e->setMeasurement(reference->vertex()->estimate().inverse()*current->vertex()->estimate());
+    Matrix6d info=Matrix6d::Identity()*1e3;
+    e->setInformation(info);
+    current->vertex()->graph()->addEdge(e);
+
+    if(_aligner->outerIterations() != 0) {
+      cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
+      cout << "Local transformation: " << t2v(_aligner->T()).transpose() << endl;
+      cout << "Global transformation: " << t2v(globalT).transpose() << endl;
+    }
+ 
+   // Update the g2o graph vertex with the new transform
     Eigen::Isometry3d newEstimate;
     for(int r = 0; r < 3; r++) {
       for(int c = 0; c < 4; c++) {
@@ -444,12 +466,7 @@ namespace pwn {
     newEstimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
     reference->vertex()->setEstimate(newEstimate);
 
-    if(_aligner->outerIterations() != 0) {
-      cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
-      cout << "Local transformation: " << t2v(_aligner->T()).transpose() << endl;
-      cout << "Global transformation: " << t2v(globalT).transpose() << endl;
-    }
-
+ 
     if(_pwnSaving) {
       Eigen::Isometry3f motionFromFirstFrame = _initialScenePose.inverse() * globalT;
       Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());

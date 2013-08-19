@@ -5,3 +5,6 @@ TARGET_LINK_LIBRARIES(oni2wrapper ${OPENNI2_LIBRARY} ${ZLIB_LIBRARY} )
 
 add_executable(OniQuery nisaverthread.cpp niquery.cpp)
 TARGET_LINK_LIBRARIES(OniQuery ${OPENNI2_LIBRARY} ${ZLIB_LIBRARY}  oni2wrapper)
+
+add_executable(oni2_ftrack oni2_ftrack.cpp)
+TARGET_LINK_LIBRARIES(oni2_ftrack ${OpenCV_LIBS} ${OPENNI2_LIBRARY} )

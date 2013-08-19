@@ -5,8 +5,8 @@ using namespace std;
 namespace pwn {
 
 Merger::Merger() {
-  _distanceThreshold = 0.1f;
-  _normalThreshold = cosf(20 * M_PI / 180.0f);
+  _distanceThreshold = 0.06f;
+  _normalThreshold = cosf(10 * M_PI / 180.0f);
   _maxPointDepth = 10.0f;
   _depthImageConverter = 0;
   _indexImage.resize(0, 0);
@@ -66,7 +66,7 @@ void Merger::merge(Frame *frame, Eigen::Isometry3f transform) {
     if(targetIndex == currentIndex) {
       _collapsedIndices[currentIndex] = currentIndex;
     } 
-    else if(fabs(depth - targetZ) < _distanceThreshold && currentNormal.dot(targetNormal) > _normalThreshold) {
+    else if(fabs(depth - targetZ) < depth*_distanceThreshold && currentNormal.dot(targetNormal) > _normalThreshold) {
       Gaussian3f &targetGaussian = frame->gaussians()[targetIndex];
       Gaussian3f &currentGaussian = frame->gaussians()[currentIndex];
       targetGaussian.addInformation(currentGaussian);

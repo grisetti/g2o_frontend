@@ -144,7 +144,7 @@ void PinholePointProjector::unProject(PointVector &points,
 	0, z, (float)c,
 	0, 0, 1;
       J = _iK * J;
-      Diagonal3f imageCovariance(1.0f, 1.0f, zVariation);
+      Diagonal3f imageCovariance(3.0f, 3.0f, zVariation);
       Eigen::Matrix3f cov = J * imageCovariance * J.transpose();
       *gaussian = Gaussian3f(point->head<3>(), cov);
       gaussian++;

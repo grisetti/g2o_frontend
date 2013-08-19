@@ -98,7 +98,21 @@ struct HomogeneousPoint3fStats : public Eigen::Matrix4f {
     _curvatureComputed = true;
     return _curvature;
   }
-  
+
+  inline float flatness() const {
+    float curvature_=curvature();
+    const float epsilon = 1e-9;
+    return epsilon/(curvature_+epsilon);
+  }
+
+  inline float edgeness() const {
+    float curvature_=curvature();
+    const float epsilon = 1e-9;
+    _curvature = (coeffRef(0, 3) + coeffRef(1, 3))/ (coeffRef(0, 3) + coeffRef(1, 3) + coeffRef(2, 3) + 1e-9);
+    return epsilon/(curvature_+epsilon);
+  }
+
+
   inline int n() { return _n; }
   inline void setN(const int n_) { _n = n_; }
   inline HomogeneousPoint3f mean() { return _mean; }
