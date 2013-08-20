@@ -141,6 +141,7 @@ int main(int argc, char** argv) {
   // Set the camera matrix to the pinhole point projector
   projector.setCameraMatrix(scaledCameraMatrix);
   projector.setMaxDistance(pj_maxDistance);
+
   // Stats calculator
   StatsCalculator statsCalculator;
   statsCalculator.setWorldRadius(ng_minImageRadius);

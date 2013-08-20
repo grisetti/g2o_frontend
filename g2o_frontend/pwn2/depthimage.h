@@ -8,6 +8,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include "g2o_frontend/boss/blob.h"
 
 namespace pwn {
 

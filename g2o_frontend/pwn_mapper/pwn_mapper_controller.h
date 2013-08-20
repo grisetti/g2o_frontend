@@ -175,7 +175,6 @@ namespace pwn {
     
     bool addVertex(g2o::VertexSE3* vertex);
     bool addVertex(G2OFrame &frame);
-
     bool alignIncrementally();
 
     bool computeTraversability();
@@ -234,7 +233,7 @@ namespace pwn {
    
     // Graph
     g2o::OptimizableGraph *_graph; 
-
+    G2OFrame* _previousPwnFrame;
   private:
     void updateProjector();
   };

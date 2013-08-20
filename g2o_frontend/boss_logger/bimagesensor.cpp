@@ -7,6 +7,7 @@
 
 namespace boss {
   
+  using namespace std;
 
   ImageBLOB::ImageBLOB(){}
 
@@ -16,13 +17,13 @@ namespace boss {
     _format = format_;
     switch  (_format) {
     case mono8:  _image = cv::Mat(width, height, CV_8UC1); 
-      _extension = "PGM";
+      _extension = "pgm";
        break;
     case mono16: _image = cv::Mat(width, height, CV_16UC1);
-      _extension = "PGM";
+      _extension = "pgm";
        break;
     case rgb8:   _image = cv::Mat(width, height, CV_8UC3); 
-      _extension = "PBM";
+      _extension = "pbm";
       break;
     }
   }
@@ -55,6 +56,11 @@ namespace boss {
   Image::Image(ImageSensor* sensor_, int id, IdContext* context):
     SensorData<ImageSensor>(id, context) {
     _sensor = sensor_;
+    _distortionModel=PlumbBob;
+    _cameraModel=Pinhole;
+    _cameraMatrix.setIdentity();
+    _distortionParameters.resize(1,5);
+    _distortionParameters.setZero();
   }
 
   Image::~Image(){
@@ -68,14 +74,52 @@ namespace boss {
     _imageBlob.serialize(*blobData,context);
     // alterative 2 embedding
     //_imageBlob.serialize(data,context);
+
+    std::string s;
+    switch(_distortionModel){
+    case PlumbBob: s="PlumbBob"; break;
+    default:s="Unknown";
+    }
+    data.setString("distortionModel", s);
+    switch(_cameraModel){
+    case Pinhole: s="Pinhole"; break;
+    case Cylindrical: s="Cylindrical"; break;
+    default:s="Unknown";
+    }
+    data.setString("cameraModel", s);
+    _cameraMatrix.toBOSS(data,"cameraMatrix");
+    _distortionParameters.toBOSS(data,"distortionParameters");
   }
   void Image::deserialize(ObjectData& data, IdContext& context){
+    cerr << "A";
     SensorData<ImageSensor>::deserialize(data,context);
+    // alternative 1, creating an own field
+    cerr << "B";
     ObjectData * blobData = static_cast<ObjectData *>(data.getField("imageBlob"));
     _imageBlob.deserialize(*blobData,context);
-    //
+    // alterative 2 embedding
     //_imageBlob.deserialize(data,context);
-  }
+     
+    cerr << "C";
+     std::string s = data.getString("distortionModel");
+     if (s=="PlumbBob")
+       _distortionModel=PlumbBob;
+     else
+       _distortionModel=UnknownDistortion;
+
+     s = data.getString("cameraModel");
+     if (s=="Pinhole")
+       _cameraModel=Pinhole;
+     else if (s=="Cylindrical")
+       _cameraModel=Cylindrical;
+     else 
+       _cameraModel=UnknownCamera;
+    cerr << "D";
+     _cameraMatrix.fromBOSS(data, "cameraMatrix");
+    cerr << "E";
+     _distortionParameters.fromBOSS(data,"distortionParameters"); 
+    cerr << "F";
+ }
 
   BOSS_REGISTER_BLOB(ImageBLOB);
   BOSS_REGISTER_CLASS(Image);

@@ -19,7 +19,10 @@ inline void fromBOSS(boss::ObjectData& data, const std::string name){
   if (SizeAtCompileTime == Eigen::Dynamic) {
     int _r = matrixData.getInt("rows");
     int _c = matrixData.getInt("cols");
-    this->resize(_r, _c);
+    if (_r!=0 && _c!=0) 
+      this->resize(_r, _c);
+    else 
+      *this=Matrix<Scalar, RowsAtCompileTime, ColsAtCompileTime>();
   }
   boss::ArrayData& adata = matrixData.getField("values")->getArray();
   assert(adata.size()==rows()*cols());

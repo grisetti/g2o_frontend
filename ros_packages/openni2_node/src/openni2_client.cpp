@@ -16,6 +16,7 @@
 using namespace std;
 using namespace boss;
 
+ImageSensor* imageSensor=0;
 Serializer serializer;
 tf::TransformListener* listener=0;
 /*
@@ -55,98 +56,28 @@ tf::TransformListener* listener=0;
     // Format _format;
   };
 
+
 void RosImageBLOB::fromRosImage(const sensor_msgs::Image::ConstPtr& msg) {
     cv_bridge::CvImagePtr ptr=cv_bridge::toCvCopy(msg, msg->encoding);
     _image = ptr->image.clone();
     switch (_image.type()){
     case CV_8UC1: 
       _format = mono8;
-      _extension = "PGM";
+      _extension = "pgm";
       break;
     case CV_16UC1: 
       _format = mono16;
-      _extension = "PGM";
+      _extension = "pgm";
       break;
     case CV_8UC3: 
       _format = rgb8;
-      _extension = "PBM";
+      _extension = "pbm";
       break;
     }
-    cerr << "image created:" << msg->header.frame_id << " " << _image.cols << "x" << _image.rows <<  " extension: " << _extension << endl;
+    //cerr << "image created:" << msg->header.frame_id << " " << _image.cols << "x" << _image.rows <<  " extension: " << _extension << endl;
   }
 
-//   ImageBLOB::ImageBLOB(){}
-
-//   const std::string& ImageBLOB::extension() { return _extension; }
-
-//   void ImageBLOB::resize(int width, int height, Format format_) {
-//     _format = format_;
-//     switch  (_format) {
-//     case mono8:  _image = cv::Mat(width, height, CV_8UC1); 
-//       _extension = "PGM";
-//        break;
-//     case mono16: _image = cv::Mat(width, height, CV_16UC1);
-//       _extension = "PGM";
-//        break;
-//     case rgb8:   _image = cv::Mat(width, height, CV_8UC3); 
-//       _extension = "PBM";
-//       break;
-//     }
-//   }
-
-// #define BUF_BLOCK (4096*4)
-
-//   bool ImageBLOB::read(std::istream& is) {
-//     std::vector<uchar> buffer;
-//     int count=0;
-//     while (is.good()){
-//       buffer.resize(buffer.size()+BUF_BLOCK);
-//       is.read((char*)&(buffer[count]),BUF_BLOCK);
-//       count+=is.gcount();
-//     }
-//     buffer.resize(count);
-//     _image = cv::imdecode(buffer, -1);
-//     return true;
-//   }
-
-//   void ImageBLOB::write(std::ostream& os) {
-//     std::vector<uchar> buffer;
-//     std::string _extension_=string(".")+_extension;
-//     bool result = cv::imencode(_extension_.c_str(), _image, buffer);
-//     os.write((char*)(&buffer[0]),buffer.size());
-//     if (! result)
-//       throw std::runtime_error("cv imwrite error");
-//   }
-
-// class ImageBLOB : public BLOB {
-// public:
-//   ImageBLOB() {
-//   }
-//   virtual ~ImageBLOB() {
-//   }
-
-//   virtual bool read(std::istream& is) {
-//     return true;
-//   }
-
-//   virtual void write(std::ostream& os) {
-//     std::vector<uchar> buffer;
-//     bool result = imencode(".PGM", image, buffer);
-//     os.write((char*)(&buffer[0]),buffer.size());
-//     assert ( result && "tua madre");
-//   }
-
-//   void fromRosImage(const sensor_msgs::Image::ConstPtr& msg) {
-//     cv_bridge::CvImagePtr ptr=cv_bridge::toCvCopy(msg, msg->encoding);
-//     image = ptr->image.clone();
-//     cerr << "image created:" << msg->header.frame_id << " " << image.cols << "x" << image.rows << endl;
-//   }
-// protected:
-//   cv::Mat image;
-//   std::string format;
-// };
-
-
+sensor_msgs::CameraInfo colorCameraInfo, depthCameraInfo;
 std::vector< BLOBReference<RosImageBLOB>* > references;
  
 /**
@@ -154,26 +85,46 @@ std::vector< BLOBReference<RosImageBLOB>* > references;
  */
 
 void colorCameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg){
-  //colorCameraInfo=*msg;
+  colorCameraInfo = *msg;
 }
 
 void colorImageCallback(const sensor_msgs::Image::ConstPtr& msg){
-  //ImageBLOB* imageBlob = new ImageBLOB();
-  //imageBlob->fromRosImage(msg);
-  //references.push_back(new BLOBReference<ImageBLOB>(imageBlob));
+  RosImageBLOB* imageBlob = new RosImageBLOB();
+  imageBlob->fromRosImage(msg);
+  Image img;
+  img.setSensor(imageSensor);
+  img.imageBlob().set(imageBlob);
+  size_t k=0;
+  for (int i=0; i<3; i++)
+    for (int j=0; j<3; j++)
+      img._cameraMatrix(i,j)=colorCameraInfo.K[k++];
+  img._distortionParameters.resize(1,colorCameraInfo.D.size());
+  for (k=0; k<colorCameraInfo.D.size(); k++)
+    img._distortionParameters(0,k)=colorCameraInfo.D[k];
+  std::string madre("xtion_00_color");
+  serializer.write(madre,img);
+  delete imageBlob;
 }
 
 void depthCameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg){
-  //depthCameraInfo = *msg;
+  depthCameraInfo = *msg;
 }
 
 void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg){
   RosImageBLOB* imageBlob = new RosImageBLOB();
   imageBlob->fromRosImage(msg);
-  BLOBReference<RosImageBLOB>* reference = new BLOBReference<RosImageBLOB>(imageBlob);
-  references.push_back(reference);
+  Image img;
+  img.setSensor(imageSensor);
+  img.imageBlob().set(imageBlob);
+  size_t k=0;
+  for (int i=0; i<3; i++)
+    for (int j=0; j<3; j++)
+      img._cameraMatrix(i,j)=depthCameraInfo.K[k++];
+  img._distortionParameters.resize(1,depthCameraInfo.D.size());
+  for (k=0; k<depthCameraInfo.D.size(); k++)
+    img._distortionParameters(0,k)=depthCameraInfo.D[k];
   std::string madre("xtion_00_depth");
-  serializer.write(madre,*reference);
+  serializer.write(madre,img);
   delete imageBlob;
 }
 
@@ -183,26 +134,24 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "openni2_client");
 
   std::string base_topic ="xtion_00"; 
-  
+  serializer.setFilePath("./fava.log");
+  serializer.setBinaryPath("fava<id>.<ext>");
+  imageSensor= new ImageSensor();
+  imageSensor->setTopic(base_topic);
+  serializer.write(base_topic, *imageSensor);
+ 
   ros::NodeHandle nh;
 
   cerr << "starting" << endl;
   listener = new tf::TransformListener;
-  
-  BOSS_REGISTER_BLOB(RosImageBLOB)
-
   cerr << "subscribing" << endl;
   
-  // ros::Subscriber subColorCameraInfo = nh.subscribe(base_topic+"/color/cameraInfo", 5, colorCameraInfoCallback);
+  // ros::Subscriber subColorCameraInfo = nh.subscribe(base_topic+"/color/camera_info", 5, colorCameraInfoCallback);
   // ros::Subscriber subColorCameraImage = nh.subscribe(base_topic+"/color/image", 5, colorImageCallback);
-
-  ros::Subscriber subDepthCameraInfo = nh.subscribe(base_topic+"/depth/cameraInfo", 5, depthCameraInfoCallback);
+  
+  ros::Subscriber subDepthCameraInfo = nh.subscribe(base_topic+"/depth/camera_info", 5, depthCameraInfoCallback);
   ros::Subscriber subDepthCameraImage = nh.subscribe(base_topic+"/depth/image", 5, depthImageCallback);
 
-
-  serializer.setFilePath("./fava.log");
-  serializer.setBinaryPath("fava<id>.<ext>");
-  
   cerr << "spinning" << endl;
   while (nh.ok()){
 

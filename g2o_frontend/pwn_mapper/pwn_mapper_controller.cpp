@@ -103,6 +103,7 @@ namespace pwn {
     _chunkStep = 30;
     _chunkAngle = M_PI_2;
     _chunkDistance = 1.0f;
+    _previousPwnFrame = 0;
   }
 
   bool PWNMapperController::extractRelativePrior(Eigen::Isometry3f &priorMean, 
@@ -340,6 +341,9 @@ namespace pwn {
   }
 
   bool PWNMapperController::alignIncrementally() {
+    cerr<<  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
+
+    
     if(_framesDeque.size() < 2)
       return false;
 
@@ -362,7 +366,7 @@ namespace pwn {
     for(int c = 0; c < 4; c++)
       for(int r = 0; r < 3; r++)
 	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
-    initialGuess.matrix().col(3) << 0,0,0,1;
+    initialGuess.matrix().row(3) << 0,0,0,1;
 
     Eigen::Isometry3f odometryMean;
     Matrix6f odometryInfo;
@@ -445,10 +449,11 @@ namespace pwn {
 	edgeMeasurement(r, c) = localTransformation(r, c);
       }
     }
-    e->setMeasurement(reference->vertex()->estimate().inverse()*current->vertex()->estimate());
+    e->setMeasurement(edgeMeasurement);
     Matrix6d info=Matrix6d::Identity()*1e3;
     e->setInformation(info);
-    current->vertex()->graph()->addEdge(e);
+    graph()->addEdge(e);
+    cerr << "ADDED EDGE!";
 
     if(_aligner->outerIterations() != 0) {
       cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
@@ -527,6 +532,21 @@ namespace pwn {
 	pwnData->release();
 	middleVertex->addUserData(pwnData);
 	pwnData->setDataContainer(middleVertex);
+	
+	if (_previousPwnFrame) {
+	  // add an edge between this vertex and the previous pwn vertex;
+	  VertexSE3* pv = _previousPwnFrame->vertex();
+	  VertexSE3* cv = middleVertex;
+	  EdgeSE3* e = new EdgeSE3();
+	  e->setVertex(0, pv);
+	  e->setVertex(1, pv);
+	  e->setMeasurement(pv->estimate().inverse()*cv->estimate());
+	  Matrix6d info;
+	  info.setIdentity();
+	  info*=1e3;
+	  e->setInformation(info);
+	  graph()->addEdge(e);
+	}
 	_scene = new Frame();
 	_initialScenePose = globalT;
 	_sceneVerteces.clear();

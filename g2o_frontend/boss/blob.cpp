@@ -49,6 +49,11 @@ void BaseBLOBReference::dataDestroyed() {
   _instance=0;
 }
 
+void BaseBLOBReference::set(BLOB* b){
+  _instance = b;
+}
+
+
 void BaseBLOBReference::serialize(ObjectData& data, IdContext& context) {
   Identifiable::serialize(data,context);
   if (_instance) {
