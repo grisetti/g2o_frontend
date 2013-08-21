@@ -111,6 +111,12 @@ namespace pwn {
       // Set frame parameters
       frame->cameraMatrix().setZero();
       frame->sensorOffset() = _sensorOffset;    
+      Eigen::Isometry3d T = frame->vertex()->estimate();
+    
+      for(int c = 0; c < 4; c++)
+	for(int r = 0; r < 3; r++)
+	  originPose.matrix()(r, c) = T.matrix()(r, c);
+    
       frame->globalTransform() = originPose;
       frame->globalTransform().matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
       frame->previousFrameTransform().setIdentity();
@@ -140,9 +146,10 @@ namespace pwn {
     Eigen::Isometry3f initialGuess;
     initialGuess.setIdentity();
     Eigen::Isometry3d delta = referenceFrame->vertex()->estimate().inverse() * currentFrame->vertex()->estimate();
+    
     for(int c = 0; c < 4; c++)
       for(int r = 0; r < 3; r++)
-    	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
+     	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
     //initialGuess.matrix().col(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     
     Eigen::Isometry3f imuMean;
@@ -150,8 +157,13 @@ namespace pwn {
     bool hasImu = this->extractAbsolutePrior(imuMean, imuInfo, currentFrame);
     
     // SETTING IDENTITY TO INITIAL GUESS
-    //initialGuess = Isometry3f::Identity();
     initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;    
+    
+    //initialGuess.matrix().setIdentity();
+
+    cerr << "transform: " << t2v(initialGuess).transpose() << endl;
+    referenceFrame->save("initialReference.pwn", 1, true);
+    currentFrame->save("initialCurrent.pwn", 1, true, initialGuess);
 
     // Compute baricenter
     pwn::Point referenceBCenter, currentBCenter;
@@ -218,7 +230,7 @@ namespace pwn {
     edge->setVertex(0,referenceFrame->vertex());
     edge->setVertex(1,currentFrame->vertex());
     edge->setMeasurement(iso);
-    edge->setInformation(Eigen::Matrix<double, 6,6>::Identity()*100);
+    edge->setInformation(Eigen::Matrix<double, 6,6>::Identity()*100000);
     _graph->addEdge(edge);
 
     return true;

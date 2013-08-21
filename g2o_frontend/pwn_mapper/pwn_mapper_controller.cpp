@@ -356,6 +356,9 @@ namespace pwn {
       _scene->add(*reference, _initialScenePose.inverse() * reference->globalTransform());
       _sceneVerteces.push_back(reference->vertex());
       _merger->merge(_scene, _initialScenePose.inverse() * reference->globalTransform() * _sensorOffset);
+      	// Voxelize data and recompute stats
+      _voxelCalculator->compute(*_scene, 0.01f);
+
     }
 
     cerr << "********************** Aligning vertex " << current->vertex()->id() << " **********************" << endl;

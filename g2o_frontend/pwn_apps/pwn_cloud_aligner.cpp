@@ -56,6 +56,8 @@ PinholePointProjector pinholePointProjector;
 CylindricalPointProjector cylindricalPointProjector;
 MultiPointProjector multiPointProjector;
 Isometry3f sensorOffset;
+Isometry3f referencePose;
+Isometry3f currentPose;
 
 // Stats calculator
 StatsCalculator statsCalculator;
@@ -497,21 +499,26 @@ int main(int argc, char **argv) {
 	      }
 	    }
 	    else {
-	      // Computing information matrices
+	      originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+	     // Computing information matrices
 	      frame->pointInformationMatrix().resize(frame->points().size());
 	      frame->normalInformationMatrix().resize(frame->points().size());
 	      pointInformationMatrixCalculator.compute(frame->pointInformationMatrix(), frame->stats(), frame->normals());
 	      normalInformationMatrixCalculator.compute(frame->normalInformationMatrix(), frame->stats(), frame->normals());
 	      if(currentFrame) {
-		DrawableFrame *currentDrawableFrame = new DrawableFrame(Isometry3f::Identity(), currentParameterFrame, currentFrame);
+		currentPose=originPose;
+		initialGuess = referencePose.inverse()*currentPose;
+		DrawableFrame *currentDrawableFrame = new DrawableFrame(initialGuess, currentParameterFrame, currentFrame);
+		//currentDrawableFrame->setTransformation(Isometry3f::Identity());
 		viewer->addDrawable(currentDrawableFrame);
 		currentFilename = fname;
 	      }
 	      else {
 		DrawableFrame *referenceDrawableFrame = new DrawableFrame(Isometry3f::Identity(), referenceParameterFrame, referenceFrame);
-		
+		//referenceDrawableFrame->setTransformation(Isometry3f::Identity());
 		viewer->addDrawable(referenceDrawableFrame);
 		referenceFilename = fname;
+		referencePose = originPose;
 	      }	      
 	    }
 	    break;
@@ -592,7 +599,7 @@ int main(int argc, char **argv) {
 			  correspondenceFinder.referenceDepthImage(),
 			  referenceFrame->points());
 
-      correspondenceFinder.compute(*referenceFrame, *currentFrame, initialGuess.inverse());
+      correspondenceFinder.compute(*referenceFrame, *currentFrame, aligner.T().inverse());
 
       Drawable *lastDrawable = viewer->drawableList().back();
       DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
@@ -600,6 +607,8 @@ int main(int argc, char **argv) {
 	lastDrawableFrame->clearDrawableObjects();
 	lastDrawableFrame->constructDrawableObjects();
 	DrawableCorrespondences *drawableCorrespondences = lastDrawableFrame->drawableCorrespondences();
+	drawableCorrespondences->setTransformation(Isometry3f::Identity());
+	drawableCorrespondences->setReferencePointsTransformation(initialGuess.inverse());
 	drawableCorrespondences->setReferencePoints(&referenceFrame->points());
 	drawableCorrespondences->setCurrentPoints(&currentFrame->points());
 	drawableCorrespondences->setNumCorrespondences(correspondenceFinder.numCorrespondences()); 
@@ -630,7 +639,8 @@ int main(int argc, char **argv) {
       optimizeButton->setEnabled(false);
       
       // Setting aligner
-      initialGuess = Isometry3f::Identity();
+      //initialGuess = Isometry3f::Identity();
+      initialGuess = referencePose.inverse()*currentPose;
       initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
       aligner.clearPriors();
       aligner.setOuterIterations(al_outerIterationsSpinBox->value());
@@ -646,13 +656,10 @@ int main(int argc, char **argv) {
       Drawable *lastDrawable = viewer->drawableList().back();
       DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
       if(lastDrawableFrame) {
+	lastDrawableFrame->setTransformation(aligner.T());
 	lastDrawableFrame->clearDrawableObjects();
 	lastDrawableFrame->constructDrawableObjects();	
-	lastDrawableFrame->drawablePoints()->setTransformation(aligner.T());
-	lastDrawableFrame->drawableNormals()->setTransformation(aligner.T());
-	lastDrawableFrame->drawableCovariances()->setTransformation(aligner.T());
-	lastDrawableFrame->drawableCorrespondences()->setReferencePointsTransformation(Isometry3f::Identity());
-	lastDrawableFrame->drawableCorrespondences()->setTransformation(aligner.T());
+	lastDrawableFrame->drawableCorrespondences()->setReferencePointsTransformation(aligner.T().inverse());
 	lastDrawableFrame->drawableCorrespondences()->setReferencePoints(&referenceFrame->points());
 	lastDrawableFrame->drawableCorrespondences()->setCurrentPoints(&currentFrame->points());
 	lastDrawableFrame->drawableCorrespondences()->setCorrespondences(&correspondenceFinder.correspondences());
@@ -699,13 +706,10 @@ int main(int argc, char **argv) {
       Drawable *lastDrawable = viewer->drawableList().back();
       DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
       if(lastDrawableFrame) {
+	lastDrawableFrame->setTransformation(aligner.T());
 	lastDrawableFrame->clearDrawableObjects();
 	lastDrawableFrame->constructDrawableObjects();	
-	lastDrawableFrame->drawablePoints()->setTransformation(aligner.T());
-	lastDrawableFrame->drawableNormals()->setTransformation(aligner.T());
-	lastDrawableFrame->drawableCovariances()->setTransformation(aligner.T());
-	lastDrawableFrame->drawableCorrespondences()->setReferencePointsTransformation(Isometry3f::Identity());
-	lastDrawableFrame->drawableCorrespondences()->setTransformation(aligner.T());
+	lastDrawableFrame->drawableCorrespondences()->setReferencePointsTransformation(aligner.T().inverse());
 	lastDrawableFrame->drawableCorrespondences()->setReferencePoints(&referenceFrame->points());
 	lastDrawableFrame->drawableCorrespondences()->setCurrentPoints(&currentFrame->points());
 	lastDrawableFrame->drawableCorrespondences()->setCorrespondences(&correspondenceFinder.correspondences());
@@ -727,7 +731,6 @@ int main(int argc, char **argv) {
       currentDepthView->fitInView(currentScene->itemsBoundingRect(), Qt::KeepAspectRatio);
       referenceDepthView->show();
       currentDepthView->show();
-
       initialGuess = aligner.T();
 
       optimizeButton->setEnabled(true);
@@ -735,24 +738,19 @@ int main(int argc, char **argv) {
 
     // Initial guess button pressed
     if(initialGuessButton->isDown() && referenceFrame && currentFrame) {
+      initialGuess = referencePose.inverse()*currentPose;
       Drawable *lastDrawable = viewer->drawableList().back();
       DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
       if(lastDrawableFrame) {
 	lastDrawableFrame->clearDrawableObjects();
 	lastDrawableFrame->constructDrawableObjects();	
-	lastDrawableFrame->drawablePoints()->setTransformation(Isometry3f::Identity());
-	lastDrawableFrame->drawableNormals()->setTransformation(Isometry3f::Identity());
-	lastDrawableFrame->drawableCovariances()->setTransformation(Isometry3f::Identity());
-	lastDrawableFrame->drawableCorrespondences()->setReferencePointsTransformation(Isometry3f::Identity());
-	lastDrawableFrame->drawableCorrespondences()->setTransformation(Isometry3f::Identity());
+	lastDrawableFrame->setTransformation(initialGuess);
+	lastDrawableFrame->drawableCorrespondences()->setReferencePointsTransformation(initialGuess.inverse());
 	lastDrawableFrame->drawableCorrespondences()->setReferencePoints(&referenceFrame->points());
 	lastDrawableFrame->drawableCorrespondences()->setCurrentPoints(&currentFrame->points());
 	lastDrawableFrame->drawableCorrespondences()->setCorrespondences(&correspondenceFinder.correspondences());
 	lastDrawableFrame->drawableCorrespondences()->setNumCorrespondences(correspondenceFinder.numCorrespondences());
       }
-
-      initialGuess = Isometry3f::Identity();
-
       initialGuessButton->setEnabled(true);
     }
 

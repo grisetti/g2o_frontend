@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
   
   // Optional input parameters.
   arg.param("ng_minImageRadius", ng_minImageRadius, 10, "Specify the minimum number of pixels composing the square where to take points for a normal computation");
-  arg.param("pj_maxDistance", pj_maxDistance, 1, "maximum distance of the points");
+  arg.param("pj_maxDistance", pj_maxDistance, 6, "maximum distance of the points");
   arg.param("ng_maxImageRadius", ng_maxImageRadius, 30, "Specify the maximum number of pixels composing the square where to take points for a normal computation");
   arg.param("ng_minPoints", ng_minPoints, 50, "Specify the minimum number of points to be used to compute a normal");
   arg.param("ng_worldRadius", ng_worldRadius, 0.05f, "Specify the max distance for a point to be used to compute a normal");
