@@ -6,7 +6,7 @@ namespace pwn {
 
 Merger::Merger() {
   _distanceThreshold = 0.1f;
-  _normalThreshold = cosf(20 * M_PI / 180.0f);
+  _normalThreshold = cosf(10 * M_PI / 180.0f);
   _maxPointDepth = 10.0f;
   _depthImageConverter = 0;
   _indexImage.resize(0, 0);

@@ -27,14 +27,17 @@ namespace pwn {
     _scaledImageRows = _imageRows;
     _scaledImageCols = _imageCols;
     _reduction = 2;
-    _cameraMatrix << 
-      525.0f, 0.0f, 319.5f,
-      0.0f, 525.0f, 239.5f,
-      0.0f, 0.0f, 1.0f;
-    _scaledCameraMatrix << 
-      525.0f, 0.0f, 319.5f,
-      0.0f, 525.0f, 239.5f,
-      0.0f, 0.0f, 1.0f;
+    _cameraMatrix.setIdentity();
+    _scaledCameraMatrix.setIdentity();
+
+    // _cameraMatrix << 
+    //   525.0f, 0.0f, 319.5f,
+    //   0.0f, 525.0f, 239.5f,
+    //   0.0f, 0.0f, 1.0f;
+    // _scaledCameraMatrix << 
+    //   525.0f, 0.0f, 319.5f,
+    //   0.0f, 525.0f, 239.5f,
+    //   0.0f, 0.0f, 1.0f;
     _sensorOffset = Isometry3f::Identity();
     _sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     _projector = new PinholePointProjector();
@@ -54,15 +57,22 @@ namespace pwn {
     // Depth image converter init
     _converter = new DepthImageConverter(_projector, _statsCalculator, 
 					 _pointInformationMatrixCalculator, _normalInformationMatrixCalculator);
+    _statsCalculator->setWorldRadius(0.1);
     _converter->_curvatureThreshold = _curvatureThreshold;
     
     // Correspondence finder and linearizer init
     _correspondenceFinder = new CorrespondenceFinder();
-    _linearizer = new Linearizer();
+    _correspondenceFinder->setInlierDistanceThreshold(0.3);
+    _correspondenceFinder->setInlierNormalAngularThreshold(0.5);
 
-     // Aligner and merger init
-    _minNumInliers = 10000;
-    _minError = 10.0f;
+    _linearizer = new Linearizer();
+    _linearizer->setInlierMaxChi2(100);
+    // Voxel calculator init
+    _voxelCalculator = new VoxelCalculator();
+
+    // Aligner and merger init
+    _minNumInliers = 1000;
+    _minError = 5.0f;
     _aligner = new Aligner();
     _aligner->setProjector(_projector);
     _aligner->setLinearizer(_linearizer);
@@ -80,7 +90,7 @@ namespace pwn {
     updateProjector();
 
     // Frames queue parameters init
-    _maxDequeSize = 20;
+    _maxDequeSize = 40;
     _framesDeque.clear();
 
     // Traversability analyzer init
@@ -93,6 +103,7 @@ namespace pwn {
     _chunkStep = 30;
     _chunkAngle = M_PI_2;
     _chunkDistance = 1.0f;
+    _previousPwnFrame = 0;
   }
 
   bool PWNMapperController::extractRelativePrior(Eigen::Isometry3f &priorMean, 
@@ -180,7 +191,7 @@ namespace pwn {
     // attempt a cast to a parameter camera  
     ParameterCamera *cameraParameter = dynamic_cast<ParameterCamera*>(_cameraParameter);
     if(!_cameraParameter) {
-      cerr << "Could not find a valid camera" << endl;
+      cerr << "Could not find a valid camera (id = ) " << paramIndex << endl;
       return false;
     }
     
@@ -197,11 +208,6 @@ namespace pwn {
       }
     }
   
-    // HAKK: setting sensor offset and camera matrix to fixed values
-    _cameraMatrix << 
-      525.0f, 0.0f, 319.5f,
-      0.0f, 525.0f, 239.5f,
-      0.0f, 0.0f, 1.0f;
   
     _sensorOffset = Isometry3f::Identity();
     _sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
@@ -213,9 +219,7 @@ namespace pwn {
    
     updateProjector();
 
-    // Get the filename
-    std::string filename = rgbdData->baseFilename() + "_depth.pgm";
-
+    std::string filename = rgbdData->baseFilename();// + "_depth.pgm";
     cerr << "loading  " << filename << endl;
     // Read the depth image
     if (!_depthImage.load(filename.c_str(), true)){
@@ -280,7 +284,7 @@ namespace pwn {
     g2o::Parameter *_cameraParameter = _graph->parameter(paramIndex);
     ParameterCamera *cameraParameter = dynamic_cast<ParameterCamera*>(_cameraParameter);
     if(!cameraParameter) {
-      cerr << "Could not find a valid camera" << endl;
+      cerr << "Could not find a valid camera (id = ) " << paramIndex << endl;
       return false;
     }
     
@@ -297,11 +301,11 @@ namespace pwn {
       }
     }
   
-    // HAKK: setting sensor offset and camera matrix to fixed values
-    _cameraMatrix << 
-      525.0f, 0.0f, 319.5f,
-      0.0f, 525.0f, 239.5f,
-      0.0f, 0.0f, 1.0f;
+    // // HAKK: setting sensor offset and camera matrix to fixed values
+    // _cameraMatrix << 
+    //   525.0f, 0.0f, 319.5f,
+    //   0.0f, 525.0f, 239.5f,
+    //   0.0f, 0.0f, 1.0f;
   
     _sensorOffset = Isometry3f::Identity();
     _sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
@@ -314,7 +318,9 @@ namespace pwn {
     updateProjector();
 
     // Read the depth image and scale it
-    std::string filename = rgbdData->baseFilename() + "_depth.pgm";
+    //std::string filename = rgbdData->baseFilename(); + "_depth.pgm";
+    std::string filename = rgbdData->baseFilename(); //+ "_depth.pgm";
+
     if(!_depthImage.load(filename.c_str(), true)) {
       cerr << "No depth image loaded." << endl;
       return false;
@@ -329,12 +335,15 @@ namespace pwn {
     frame.previousFrameTransform().setIdentity();
     frame.setPreviousFrame(0);
 
-    _converter->compute(frame, _scaledDepthImage, _sensorOffset, true);
+    _converter->compute(frame, _scaledDepthImage, _sensorOffset, false);
 
     return true;
   }
 
   bool PWNMapperController::alignIncrementally() {
+    cerr<<  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
+
+    
     if(_framesDeque.size() < 2)
       return false;
 
@@ -347,6 +356,9 @@ namespace pwn {
       _scene->add(*reference, _initialScenePose.inverse() * reference->globalTransform());
       _sceneVerteces.push_back(reference->vertex());
       _merger->merge(_scene, _initialScenePose.inverse() * reference->globalTransform() * _sensorOffset);
+      	// Voxelize data and recompute stats
+      _voxelCalculator->compute(*_scene, 0.01f);
+
     }
 
     cerr << "********************** Aligning vertex " << current->vertex()->id() << " **********************" << endl;
@@ -357,20 +369,24 @@ namespace pwn {
     for(int c = 0; c < 4; c++)
       for(int r = 0; r < 3; r++)
 	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
+    initialGuess.matrix().row(3) << 0,0,0,1;
 
     Eigen::Isometry3f odometryMean;
     Matrix6f odometryInfo;
     bool hasOdometry = extractRelativePrior(odometryMean, odometryInfo, reference, current);
     if (hasOdometry) {
       initialGuess = odometryMean;
+      odometryInfo.block<3,3>(0,0) *= 1e3;
     }
     // Force a prior
     else { 
       hasOdometry = true;
       odometryMean = initialGuess;
       odometryInfo.setIdentity();
-      odometryInfo.block<3, 3>(0, 0) *= 100;
+      odometryInfo.block<3,3>(0,0) *= 1e3;
     }
+
+    //odometryInfo.block *= 1e9;
     Eigen::Isometry3f imuMean;
     Matrix6f imuInfo;
     bool hasImu = extractAbsolutePrior(imuMean, imuInfo, current);
@@ -383,7 +399,7 @@ namespace pwn {
       _projector->setTransform(_initialScenePose.inverse() * reference->globalTransform() * _sensorOffset);
       _projector->project(_indexImage, _depthImage, _scene->points());
       
-      _converter->compute(*_subScene, _depthImage, _sensorOffset, true);
+      _converter->compute(*_subScene, _depthImage, _sensorOffset, false);
       _aligner->setReferenceFrame(_subScene);
     }
     else {
@@ -404,7 +420,6 @@ namespace pwn {
     _aligner->align();
     
     Eigen::Isometry3f localTransformation = _aligner->T();
-    bool failure = false;
     if(_aligner->outerIterations() != 0 && (_aligner->inliers() < _minNumInliers || _aligner->error() / _aligner->inliers() > _minError) ) {
       cerr << "ALIGNER FAILURE!!!!!!!!!!!!!!!" << endl;
       cerr << "inliers/minimum number of inliers: " << _aligner->inliers() << " / " << _minNumInliers << endl;
@@ -413,7 +428,6 @@ namespace pwn {
       else
 	cerr << "error: " << std::numeric_limits<float>::max() << " / " << _minError << endl;
       localTransformation = initialGuess;
-      failure = true;
     }
   
     Isometry3f globalT = reference->globalTransform() * localTransformation;
@@ -429,7 +443,28 @@ namespace pwn {
     current->globalTransform() = globalT;
     current->previousFrameTransform() = localTransformation;
 
-    // Update the g2o graph vertex with the new transform
+    EdgeSE3* e = new EdgeSE3();
+    e->setVertex(0,reference->vertex());
+    e->setVertex(1,current->vertex());
+    Eigen::Isometry3d edgeMeasurement;
+    for(int r = 0; r < 3; r++) {
+      for(int c = 0; c < 4; c++) {
+	edgeMeasurement(r, c) = localTransformation(r, c);
+      }
+    }
+    e->setMeasurement(edgeMeasurement);
+    Matrix6d info=Matrix6d::Identity()*1e3;
+    e->setInformation(info);
+    graph()->addEdge(e);
+    cerr << "ADDED EDGE!";
+
+    if(_aligner->outerIterations() != 0) {
+      cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
+      cout << "Local transformation: " << t2v(_aligner->T()).transpose() << endl;
+      cout << "Global transformation: " << t2v(globalT).transpose() << endl;
+    }
+ 
+   // Update the g2o graph vertex with the new transform
     Eigen::Isometry3d newEstimate;
     for(int r = 0; r < 3; r++) {
       for(int c = 0; c < 4; c++) {
@@ -439,53 +474,46 @@ namespace pwn {
     newEstimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
     reference->vertex()->setEstimate(newEstimate);
 
-    if(_aligner->outerIterations() != 0) {
-      cout << "Initial guess: " << t2v(initialGuess).transpose() << endl;
-      cout << "Local transformation: " << t2v(_aligner->T()).transpose() << endl;
-      cout << "Global transformation: " << t2v(globalT).transpose() << endl;
-    }
-
+ 
     if(_pwnSaving) {
-
-      pwn::Point bcenter;
-      for (size_t i=0; i<_scene->points().size(); i++){
-	bcenter+=_scene->points().at(i);
-      }
-      bcenter*=1./_scene->points().size();
-      Eigen::Vector3d barycenter(bcenter.x(), bcenter.y(), bcenter.z());
-      
-      VertexSE3* bestVertex = 0;
-      VertexSE3* origin = 0;
-      double bestDistance = std::numeric_limits<double>::max();
-
-      for (size_t i=0; i<_sceneVerteces.size(); i++){
-	VertexSE3* currentVertex = _sceneVerteces.at(i);
-	if (! origin) {
-	  bestVertex=currentVertex;
-	  origin=currentVertex;
-	  continue;
-	}
-	Eigen::Isometry3d pLocal=origin->estimate().inverse()*currentVertex->estimate();
-	double currentDistance = (pLocal.translation()-barycenter).squaredNorm();
-	if (bestDistance>currentDistance){
-	  bestVertex=currentVertex;
-	  bestDistance = currentDistance;
-	}
-      }
-
-      assert(bestVertex && "me no haz best vertex" );
-      
-
       Eigen::Isometry3f motionFromFirstFrame = _initialScenePose.inverse() * globalT;
       Eigen::AngleAxisf rotationFromFirstFrame(motionFromFirstFrame.linear());
       if(fabs(rotationFromFirstFrame.angle()) > _chunkAngle || 
-	 motionFromFirstFrame.translation().norm() > _chunkDistance /*||
-								      failure*/) {
+	 motionFromFirstFrame.translation().norm() > _chunkDistance) {
+	pwn::Point bcenter;
+	for (size_t i=0; i<_scene->points().size(); i++){
+	  bcenter+=_scene->points().at(i);
+	}
+	bcenter*=1./_scene->points().size();
+	Eigen::Vector3d barycenter(bcenter.x(), bcenter.y(), bcenter.z());
+      
+	VertexSE3* bestVertex = 0;
+	VertexSE3* origin = 0;
+	double bestDistance = std::numeric_limits<double>::max();
+
+	for (size_t i=0; i<_sceneVerteces.size(); i++){
+	  VertexSE3* currentVertex = _sceneVerteces.at(i);
+	  if (! origin) {
+	    bestVertex=currentVertex;
+	    origin=currentVertex;
+	    continue;
+	  }
+	  Eigen::Isometry3d pLocal=origin->estimate().inverse()*currentVertex->estimate();
+	  double currentDistance = (pLocal.translation()-barycenter).squaredNorm();
+	  if (bestDistance>currentDistance){
+	    bestVertex=currentVertex;
+	    bestDistance = currentDistance;
+	  }
+	}
+
+	assert(bestVertex && "Didn't found a best vertex");
+      
 	char buff[1024];
-	sprintf(buff, "out-%05d.pwn", _sceneVerteces.front()->id());	
+	bestVertex = _sceneVerteces.back();
+	//sprintf(buff, "out-%05d.pwn", _sceneVerteces.front()->id());
+	sprintf(buff, "out-%05d.pwn", bestVertex->id());
 	
 	Eigen::Isometry3f middleEstimate;
-	//g2o::VertexSE3 *middleVertex = _sceneVerteces[_sceneVerteces.size() / 2];
 	g2o::VertexSE3 *middleVertex = bestVertex;
 	for(int r = 0; r < 3; r++) {
 	  for(int c = 0; c < 4; c++) {
@@ -495,6 +523,9 @@ namespace pwn {
 	middleEstimate.matrix().row(3) << 0.0d, 0.0d, 0.0d, 1.0d;
 	_scene->transformInPlace(middleEstimate.inverse() * _initialScenePose);
 	
+	// Voxelize data and recompute stats
+	_voxelCalculator->compute(*_scene, 0.01f);
+
 	PWNData *pwnData = new PWNData(_scene);
 	pwnData->setFilename(buff);
 	pwnData->setOriginPose(middleEstimate);
@@ -504,6 +535,21 @@ namespace pwn {
 	pwnData->release();
 	middleVertex->addUserData(pwnData);
 	pwnData->setDataContainer(middleVertex);
+	
+	if (_previousPwnFrame) {
+	  // add an edge between this vertex and the previous pwn vertex;
+	  VertexSE3* pv = _previousPwnFrame->vertex();
+	  VertexSE3* cv = middleVertex;
+	  EdgeSE3* e = new EdgeSE3();
+	  e->setVertex(0, pv);
+	  e->setVertex(1, pv);
+	  e->setMeasurement(pv->estimate().inverse()*cv->estimate());
+	  Matrix6d info;
+	  info.setIdentity();
+	  info*=1e3;
+	  e->setInformation(info);
+	  graph()->addEdge(e);
+	}
 	_scene = new Frame();
 	_initialScenePose = globalT;
 	_sceneVerteces.clear();
@@ -545,5 +591,7 @@ namespace pwn {
 
     // Set image size to the merger
     _merger->setImageSize(_scaledImageRows, _scaledImageCols);
+
+    cerr << "updateProjector" << _projector->cameraMatrix() << endl;
   }
 }

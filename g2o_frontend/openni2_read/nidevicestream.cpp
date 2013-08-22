@@ -14,7 +14,7 @@
 #include <pthread.h>
 #include <algorithm>
 
-#include <OpenNI2/OpenNI.h>
+#include <OpenNI.h>
 using namespace std;
 //#include "../Common/OniSampleUtilities.h"
 #include <unistd.h>

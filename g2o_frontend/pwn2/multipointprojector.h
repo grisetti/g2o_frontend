@@ -1,5 +1,5 @@
-#ifndef _MULTIPOINTPROJECTOR_H_
-#define _MULTIPOINTPROJECTOR_H_
+#ifndef _PWN_MULTIPOINTPROJECTOR_H_
+#define _PWN_MULTIPOINTPROJECTOR_H_
 
 #include "pointprojector.h"
 

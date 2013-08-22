@@ -10,6 +10,7 @@ namespace pwn {
     _verticalCenter = 240;
     _verticalFocalLenght = 240; // 45 deg fov on the y
     _updateMatrices();
+    _maxDistance = 6.0;
   }
 
   CylindricalPointProjector::~CylindricalPointProjector() {}

@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
    ************************************************************************/
   QApplication application(argc,argv);
   QWidget* mainWindow = new QWidget();
-  mainWindow->setWindowTitle("pwn_simpleViewer");
+  mainWindow->setWindowTitle("pwn_g2o_viewer");
   QHBoxLayout* baseLayout = new QHBoxLayout();
   mainWindow->setLayout(baseLayout);
   QVBoxLayout* listWidgetLayout = new QVBoxLayout();

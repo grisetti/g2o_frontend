@@ -1,5 +1,5 @@
-#ifndef _STATSCALCULATOR_H_
-#define _STATSCALCULATOR_H_
+#ifndef _PWN_STATSCALCULATOR_H_
+#define _PWN_STATSCALCULATOR_H_
 
 #include "stats.h"
 #include "pointintegralimage.h"

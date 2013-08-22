@@ -1,4 +1,5 @@
 #include "drawable_frame.h"
+#include "g2o/stuff/opengl_primitives.h"
 
 #include <iostream>
 
@@ -69,6 +70,8 @@ void DrawableFrame::draw() {
   if(_parameter->show() && _frame) {
     glPushMatrix();
     glMultMatrixf(_transformation.data());
+    glColor4f(1,0,0,0.5);
+    g2o::opengl::drawPyramid(0.5, 0.5);
     if(_drawablePoints)
       _drawablePoints->draw();
     if(_drawableNormals)

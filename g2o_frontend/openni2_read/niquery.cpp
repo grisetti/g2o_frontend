@@ -33,7 +33,7 @@
 #include <pthread.h>
 #include <algorithm>
 
-#include <OpenNI2/OpenNI.h>
+#include <OpenNI.h>
 using namespace std;
 //#include "../Common/OniSampleUtilities.h"
 #include <unistd.h>
@@ -46,7 +46,7 @@ using namespace std;
 #include "nidevicestream.h"
 #include "nidevicewithstreams.h"
 #include "nisaverthread.h"
-
+#include <fstream>
 int wasKeyboardHit()
 {
         struct termios oldt, newt;
@@ -158,8 +158,11 @@ int main(int argc, char ** argv)
 
   
   DeviceWithStreams deviceStreams(&device);
-  deviceStreams.addStream(SENSOR_DEPTH, depthMode);
-  deviceStreams.addStream(SENSOR_COLOR, colorMode);
+  if (depthMode > 0)
+    deviceStreams.addStream(SENSOR_DEPTH, depthMode);
+  if (colorMode > 0)
+    deviceStreams.addStream(SENSOR_COLOR, colorMode);
+  
   deviceStreams.startAllStreams();
 
   int framecount = 0;
@@ -177,6 +180,12 @@ int main(int argc, char ** argv)
     saver->start();
   }
 
+  std::string g2oFilename = prefix;
+  g2oFilename=g2oFilename+".g2o";
+  ofstream g2oStream(g2oFilename.c_str());
+  g2oStream << "PARAMS_CAMERACALIB 0 0 0 0 0.5 -0.5 0.5 -0.5 570.342 570.342 320 240 " << endl;
+ 
+  int frameCount = 0;
   while (!wasKeyboardHit()){
     for (std::map<SensorType,DeviceStream*>::iterator it=deviceStreams._streams.begin();
 	 it!=deviceStreams._streams.end(); it++){
@@ -203,6 +212,13 @@ int main(int argc, char ** argv)
       ref.release();
 
       log << frame->getLogLine(prefix.c_str()) << endl;
+      g2oStream << "VERTEX_SE3:QUAT " << framecount << " 0 0 0 0 0 0 1" << endl;
+      g2oStream << "RGBD_DATA 0 " << frame->getSaveFilename(prefix.c_str()) << " 0.000000 hostname 0.000000 " << endl;
+      if (framecount){
+	g2oStream << "EDGE_SE3:QUAT " << framecount-1 << " " << framecount << " ";
+	g2oStream << "0 0 0 0 0 0 1 ";
+	g2oStream << "100 0 0 0 0 0 100 0 0 0 0 100 0 0 0 1000 0 0 1000 0 1000" << endl;
+      }
       int numThread = framecount%numSavers;
       saverThreads[numThread]->addInQueue(frame);
     }
@@ -216,6 +232,7 @@ int main(int argc, char ** argv)
   double t2 = tEnd.tv_sec*1000 + tEnd.tv_usec*0.001;
   cerr << "real fps: " << 1000*framecount/(t2-t1) << endl;
   log.close();
+  g2oStream.close();
   deviceStreams.eraseAllStreams();
   device.close();
   OpenNI::shutdown();

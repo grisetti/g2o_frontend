@@ -16,6 +16,7 @@
 #include "g2o_frontend/pwn2/depthimageconverter.h"
 #include "g2o_frontend/pwn2/aligner.h"
 #include "g2o_frontend/pwn2/merger.h"
+#include "g2o_frontend/pwn2/voxelcalculator.h"
 
 #include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "g2o_frontend/sensor_data/rgbd_data.h"
@@ -103,6 +104,11 @@ namespace pwn {
     inline CorrespondenceFinder* correspondenceFinder() { return _correspondenceFinder; }
     inline Linearizer* linearizer() { return _linearizer; }
 
+    // Voxel calculator settings methods
+    inline void setVoxelCalculator(VoxelCalculator* const voxelCalculator_) { _voxelCalculator = voxelCalculator_; }
+
+    inline VoxelCalculator* voxelCalculator() { return _voxelCalculator; }
+    
     // Aligner and merger settings methods
     inline void setAligner(Aligner* const aligner_) { _aligner = aligner_; }
     inline void setMerger(Merger* const merger_) { 
@@ -169,7 +175,6 @@ namespace pwn {
     
     bool addVertex(g2o::VertexSE3* vertex);
     bool addVertex(G2OFrame &frame);
-
     bool alignIncrementally();
 
     bool computeTraversability();
@@ -198,6 +203,9 @@ namespace pwn {
     CorrespondenceFinder *_correspondenceFinder;
     Linearizer *_linearizer;
 
+    // Voxel calculator
+    VoxelCalculator *_voxelCalculator;
+
     // Aligner and merger
     Aligner *_aligner;
     Merger *_merger;
@@ -225,7 +233,7 @@ namespace pwn {
    
     // Graph
     g2o::OptimizableGraph *_graph; 
-
+    G2OFrame* _previousPwnFrame;
   private:
     void updateProjector();
   };

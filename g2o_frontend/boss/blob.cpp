@@ -55,7 +55,6 @@ BaseBLOBReference::~BaseBLOBReference() {
   }
 }
 
-
 void BaseBLOBReference::serialize(ObjectData& data, IdContext& context) {
   Identifiable::serialize(data,context);
   if (_instance) {

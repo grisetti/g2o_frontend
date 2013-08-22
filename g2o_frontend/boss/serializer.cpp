@@ -148,7 +148,7 @@ string Serializer::createBinaryFilePath(BaseBLOBReference& instance) {
   _envMap["ext"]=instance.extension();
   string str=_blobFileName;
   replaceEnvTags(str,_envMap);
-  cerr << "Binary file path: " << str << endl;
+  //cerr << "Binary file path: " << str << endl;
   return str;
 }
 

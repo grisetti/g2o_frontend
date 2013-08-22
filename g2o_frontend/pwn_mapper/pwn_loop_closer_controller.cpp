@@ -44,14 +44,15 @@ namespace pwn {
     _normalInformationMatrixCalculator->setCurvatureThreshold(_curvatureThreshold);
 
     // Aligner init
-    _minNumInliers = 10000;
+    _minNumInliers = 1000;
     _minError = 10.0f;
     _aligner = new Aligner();
     _aligner->setProjector(_cylindricalPointProjector);
     _aligner->setLinearizer(_linearizer);
     _linearizer->setAligner(_aligner);
     _aligner->setCorrespondenceFinder(_correspondenceFinder);
-    _aligner->correspondenceFinder()->setInlierDistanceThreshold(3);
+    _aligner->correspondenceFinder()->setInlierDistanceThreshold(1.0f);
+    _aligner->correspondenceFinder()->setInlierNormalAngularThreshold(cosf(1.0f));
     _aligner->setInnerIterations(1);
     _aligner->setOuterIterations(10);
   }
@@ -110,6 +111,12 @@ namespace pwn {
       // Set frame parameters
       frame->cameraMatrix().setZero();
       frame->sensorOffset() = _sensorOffset;    
+      Eigen::Isometry3d T = frame->vertex()->estimate();
+    
+      for(int c = 0; c < 4; c++)
+	for(int r = 0; r < 3; r++)
+	  originPose.matrix()(r, c) = T.matrix()(r, c);
+    
       frame->globalTransform() = originPose;
       frame->globalTransform().matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
       frame->previousFrameTransform().setIdentity();
@@ -137,22 +144,42 @@ namespace pwn {
   
     // Extract initial guess
     Eigen::Isometry3f initialGuess;
+    initialGuess.setIdentity();
     Eigen::Isometry3d delta = referenceFrame->vertex()->estimate().inverse() * currentFrame->vertex()->estimate();
+    
     for(int c = 0; c < 4; c++)
       for(int r = 0; r < 3; r++)
-	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
-    initialGuess.matrix().col(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+     	initialGuess.matrix()(r, c) = delta.matrix()(r, c);
+    //initialGuess.matrix().col(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     
     Eigen::Isometry3f imuMean;
     Matrix6f imuInfo;
     bool hasImu = this->extractAbsolutePrior(imuMean, imuInfo, currentFrame);
     
     // SETTING IDENTITY TO INITIAL GUESS
-    //initialGuess = Isometry3f::Identity();
-
     initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;    
-
     
+    //initialGuess.matrix().setIdentity();
+
+    cerr << "transform: " << t2v(initialGuess).transpose() << endl;
+    referenceFrame->save("initialReference.pwn", 1, true);
+    currentFrame->save("initialCurrent.pwn", 1, true, initialGuess);
+
+    // Compute baricenter
+    pwn::Point referenceBCenter, currentBCenter;
+    for(size_t i = 0; i < referenceFrame->points().size(); i++) {
+      referenceBCenter += referenceFrame->points().at(i);
+    }
+    for(size_t i = 0; i < currentFrame->points().size(); i++) {
+      currentBCenter += currentFrame->points().at(i);
+    }
+    referenceBCenter *= 1.0f / referenceFrame->points().size();
+    currentBCenter *= 1.0f / currentFrame->points().size();
+
+    Isometry3f referenceSensorOffset = _sensorOffset;
+    //referenceSensorOffset.translation() = _sensorOffset.translation() + referenceBCenter.head<3>();
+    Isometry3f currentSensorOffset = _sensorOffset;
+    //currentSensorOffset.translation() = _sensorOffset.translation() + currentBCenter.head<3>();
 
     // Setting aligner
     _aligner->clearPriors();
@@ -160,6 +187,8 @@ namespace pwn {
     _aligner->setCurrentFrame(currentFrame);
     _aligner->setInitialGuess(initialGuess);
     _aligner->setSensorOffset(_sensorOffset);
+    _aligner->setReferenceSensorOffset(referenceSensorOffset);
+    _aligner->setCurrentSensorOffset(currentSensorOffset);
     if(hasImu)
       _aligner->addAbsolutePrior(referenceFrame->globalTransform(), imuMean, imuInfo);
     
@@ -201,7 +230,7 @@ namespace pwn {
     edge->setVertex(0,referenceFrame->vertex());
     edge->setVertex(1,currentFrame->vertex());
     edge->setMeasurement(iso);
-    edge->setInformation(Eigen::Matrix<double, 6,6>::Identity()*100);
+    edge->setInformation(Eigen::Matrix<double, 6,6>::Identity()*100000);
     _graph->addEdge(edge);
 
     return true;

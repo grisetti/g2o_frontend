@@ -1,5 +1,5 @@
-#ifndef _POINTINTEGRALIMAGE_H_
-#define _POINTINTEGRALIMAGE_H_
+#ifndef _PWN_POINTINTEGRALIMAGE_H_
+#define _PWN_POINTINTEGRALIMAGE_H_
 
 #include "pointaccumulator.h"
 

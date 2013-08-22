@@ -1,5 +1,5 @@
-#ifndef _STATS_H_
-#define _STATS_H_
+#ifndef _PWN_STATS_H_
+#define _PWN_STATS_H_
 
 #include "homogeneousvector4f.h"
 

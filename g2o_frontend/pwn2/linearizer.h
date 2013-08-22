@@ -1,5 +1,5 @@
-#ifndef _LINEARIZER_H_
-#define _LINEARIZER_H_
+#ifndef _PWN_LINEARIZER_H_
+#define _PWN_LINEARIZER_H_
 #include "homogeneousvector4f.h"
 #include "informationmatrix.h"
 #include "g2o_frontend/basemath/bm_se3.h"
@@ -24,9 +24,11 @@ class Linearizer {
   inline Vector6f b() const { return _b; }  
   inline float error() const { return _error;}
   inline int inliers() const { return _inliers;}
+  inline bool robustKernel() const {return _robustKernel;}
+  inline void setRobustKernel(bool robustKernel_) {_robustKernel=robustKernel_;}
   void update();
- 
- protected:
+
+  protected:
   Aligner *_aligner;
 
   Isometry3f _T;
@@ -36,6 +38,7 @@ class Linearizer {
   Vector6f _b;
   float _error;
   int _inliers;
+  bool _robustKernel;
 };
 
 }

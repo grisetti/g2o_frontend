@@ -18,7 +18,8 @@ Aligner::Aligner() {
   _innerIterations = 0;
   _T = Eigen::Isometry3f::Identity();
   _initialGuess = Eigen::Isometry3f::Identity();
-  _sensorOffset = Eigen::Isometry3f::Identity();
+  _referenceSensorOffset = Eigen::Isometry3f::Identity();
+  _currentSensorOffset = Eigen::Isometry3f::Identity();
   _totalTime = 0;
   _error = 0;
   _inliers = 0;
@@ -50,7 +51,7 @@ void Aligner::align() {
     return;
   }
   // the current points are seen from the frame of the sensor
-  _projector->setTransform(_sensorOffset);
+  _projector->setTransform(_currentSensorOffset);
   _projector->project(_correspondenceFinder->currentIndexImage(),
 		      _correspondenceFinder->currentDepthImage(),
 		      _currentFrame->points());
@@ -66,7 +67,7 @@ void Aligner::align() {
 
     // compute the indices of the current scene from the point of view of the sensor
     _T.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-    _projector->setTransform(_T * _sensorOffset);
+    _projector->setTransform(_T * _referenceSensorOffset);
     _projector->project(_correspondenceFinder->referenceIndexImage(),
 			_correspondenceFinder->referenceDepthImage(),
 			_referenceFrame->points());
@@ -93,7 +94,7 @@ void Aligner::align() {
 
       _linearizer->setT(invT);
       _linearizer->update();
-      H = _linearizer->H() + Matrix6f::Identity() * 10.0f;
+      H = _linearizer->H() + Matrix6f::Identity() * 1000.0f;
       b = _linearizer->b();
       // add the priors
       for (size_t j=0; j<_priors.size(); j++){

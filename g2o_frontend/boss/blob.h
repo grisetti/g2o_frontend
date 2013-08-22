@@ -46,11 +46,11 @@ class BaseBLOBReference: public Identifiable {
 public:
   BaseBLOBReference(BLOB* instance, int id, IdContext* context):
     Identifiable(id, context), _instance(instance) {}
-  
+
   virtual void serialize(ObjectData& data, IdContext& context);
   virtual void deserialize(ObjectData& data, IdContext& context);
   virtual BLOB* get()=0;
-  void set(BLOB* instance);
+  virtual void set(BLOB*);
   void dataDestroyed();
   const std::string& extension();
 

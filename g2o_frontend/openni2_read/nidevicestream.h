@@ -1,7 +1,7 @@
 #ifndef _NI_DEVICE_STREAM_H_
 #define _NI_DEVICE_STREAM_H_
 
-#include <OpenNI2/OpenNI.h>
+#include <OpenNI.h>
 
 struct DeviceStream{
   DeviceStream(openni::Device* device_);

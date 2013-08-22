@@ -1,5 +1,5 @@
-#ifndef _DEPTHIMAGECONVERTER_H_
-#define _DEPTHIMAGECONVERTER_H_
+#ifndef _PWN_DEPTHIMAGECONVERTER_H_
+#define _PWN_DEPTHIMAGECONVERTER_H_
 
 #include "frame.h"
 #include "pointprojector.h"
@@ -10,10 +10,10 @@ namespace pwn {
 
 class DepthImageConverter {
 public:
-  DepthImageConverter(PointProjector* _projector,
-		      StatsCalculator* _statsCalculator,
-		      PointInformationMatrixCalculator* _pointInformationMatrixCalculator,
-		      NormalInformationMatrixCalculator* _normalInformationMatrixCalculator);
+  DepthImageConverter(PointProjector* _projector = 0,
+		      StatsCalculator* _statsCalculator = 0,
+		      PointInformationMatrixCalculator* _pointInformationMatrixCalculator = 0,
+		      NormalInformationMatrixCalculator* _normalInformationMatrixCalculator = 0);
 
   void compute(Frame& frame,
 	       const DepthImage &depthImage, 

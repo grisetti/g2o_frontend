@@ -1,5 +1,5 @@
-#ifndef _PINHOLEPOINTPROJECTOR_H_
-#define _PINHOLEPOINTPROJECTOR_H_
+#ifndef _PWN_PINHOLEPOINTPROJECTOR_H_
+#define _PWN_PINHOLEPOINTPROJECTOR_H_
 
 #include "pointprojector.h"
 

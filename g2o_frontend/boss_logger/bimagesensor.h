@@ -16,9 +16,9 @@ namespace boss {
     Format format() const { return _format; }
     virtual bool read(std::istream& is);
     virtual void write(std::ostream& os);
-  protected:
     inline cv::Mat& cvImage() {return _image;}
     const cv::Mat& cvImage() const {return _image;}
+  protected:
     std::string _extension;
     cv::Mat _image;
     Format _format;
@@ -33,8 +33,8 @@ namespace boss {
 
   class Image : public SensorData<ImageSensor>  {
   public:
-    enum DistortionModel {PlumbBob=0x0};
-    enum CameraModel {Pinhole=0x0, Cylindrical=0x1};
+    enum DistortionModel {UnknownDistortion=0x0,PlumbBob=0x1};
+    enum CameraModel {UnknownCamera=0x0,Pinhole=0x1, Cylindrical=0x2};
     Image(ImageSensor* sensor=0, 
 	  int id=-1, 
 	  IdContext* context = 0);
@@ -43,11 +43,11 @@ namespace boss {
     virtual void deserialize(ObjectData& data, IdContext& context);
     inline ImageBLOBReference& imageBlob() { return _imageBlob; }
     inline const ImageBLOBReference& imageBlob() const { return _imageBlob; }
-  protected:
+    //protected:
     ImageBLOBReference _imageBlob;
     CameraModel _cameraModel;
     DistortionModel _distortionModel;
-    Eigen::MatrixXd _cameraMatrix;
+    Eigen::Matrix3f _cameraMatrix;
     Eigen::MatrixXd _distortionParameters;
   };
 

@@ -27,6 +27,14 @@ namespace boss {
   class BaseSensorData: public Identifiable{
   public:
     BaseSensorData(int id=-1, IdContext* context = 0);
+    virtual void serialize(ObjectData& data, IdContext& context) {
+      Identifiable::serialize(data,context);
+      data.setDouble("timestamp",_timestamp);
+    }
+    virtual void deserialize(ObjectData& data, IdContext& context) {
+      Identifiable::deserialize(data,context);
+      _timestamp=data.getDouble("timestamp");
+    }
     inline double timestamp() const {return _timestamp; }
     inline void setTimestamp(double timestamp_) { _timestamp=timestamp_;}
   protected:
@@ -39,8 +47,15 @@ namespace boss {
   public:
     typedef SensorType Sensor;
     SensorData(int id=-1, IdContext* context = 0): BaseSensorData(id,context) {_sensor = 0;}
-    virtual void serialize(ObjectData& data, IdContext& context) {} // serialize the pointer and the timestamp
-    virtual void deserialize(ObjectData& data, IdContext& context) {} // deserialize the pointer and the timestamp
+    virtual void serialize(ObjectData& data, IdContext& context) {
+      BaseSensorData::serialize(data,context);
+      data.setPointer("sensor", _sensor);
+    }
+    virtual void deserialize(ObjectData& data, IdContext& context) {
+      BaseSensorData::deserialize(data,context);
+      _sensor=static_cast<Sensor*>(data.getPointer("sensor"));
+    }
+
     inline const Sensor* sensor() const {return _sensor;}
     inline Sensor* sensor() {return _sensor;}
     inline void setSensor(Sensor* sensor_) {_sensor = sensor_;}

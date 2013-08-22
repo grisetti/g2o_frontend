@@ -1,5 +1,5 @@
-#ifndef _POINTPROJECTOR_H_
-#define _POINTPROJECTOR_H_
+#ifndef _PWN_POINTPROJECTOR_H_
+#define _PWN_POINTPROJECTOR_H_
 
 #include "homogeneousvector4f.h"
 #include "depthimage.h"

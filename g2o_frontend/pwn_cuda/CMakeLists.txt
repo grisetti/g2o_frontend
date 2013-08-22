@@ -2,7 +2,7 @@ set(BUILD_SHARED_LIBS OFF)
 
 CUDA_ADD_LIBRARY(pwn_cuda_library 
   cualigner.cpp cualigner.h
-  cudaaligner.cu cudaaligner.cuh  cudaaligner.h
+  cudaaligner_rk.cu cudaaligner.cuh  cudaaligner.h
   cudautils.cuh
   cudamatrix.cuh  
   cudasla.cuh

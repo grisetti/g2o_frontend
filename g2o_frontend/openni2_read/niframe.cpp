@@ -14,7 +14,7 @@
 #include <pthread.h>
 #include <algorithm>
 
-#include <OpenNI2/OpenNI.h>
+#include <OpenNI.h>
 using namespace std;
 //#include "../Common/OniSampleUtilities.h"
 #include <unistd.h>
@@ -33,7 +33,6 @@ gzFile open_dump(const char *filename)
     fprintf(stderr, "Error: Cannot open file [%s]\n", filename);
     exit(1);
   }
-  //printf("%s\n", filename);
   return fp;
 }
 
@@ -146,8 +145,8 @@ string Frame::getLogLine(const char* prefix) const {
 
 
 void Frame::save(const char* prefix) const{
-  const char* name=getSaveFilename(prefix).c_str();
-  gzFile fp=open_dump(name);
+  std::string name=getSaveFilename(prefix);
+  gzFile fp=open_dump(name.c_str());
   dump(fp, buf, width, height, type, bpp);
   gzclose(fp);
 }

@@ -42,8 +42,11 @@ int main(int argc, char** argv) {
   // Variables for the input parameters. 
   float al_scale;
   float al_curvatureThreshold;
+  float al_distanceThreshold;
+  float al_normalThreshold;
   int al_innerIterations;
   int al_outerIterations;
+
   int al_minNumInliers;
   int al_imageRows;
   int al_imageCols;
@@ -54,6 +57,7 @@ int main(int argc, char** argv) {
   float chunkAngle;
   float chunkDistance;
   int pwnSaving;
+  string sensorType;
 
   // Input parameters handling.
   g2o::CommandArgs arg;
@@ -63,6 +67,8 @@ int main(int argc, char** argv) {
   arg.param("al_curvatureThreshold", al_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded");
   arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations");
   arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");
+  arg.param("al_normalThreshold", al_normalThreshold, 1, "Specify the angle between the normals [rad]");
+  arg.param("al_distancethreshold", al_distanceThreshold, 1, "Specify the angle between the normals [m]");
   arg.param("al_minNumInliers", al_minNumInliers, 10000, "Specify the minimum number of inliers to consider an alignment good");
   arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
   arg.param("al_imageRows", al_imageRows, 480, "Specify the number of rows of the depth image associated to the pinhole point projector");
@@ -73,6 +79,7 @@ int main(int argc, char** argv) {
   arg.param("chunkAngle", chunkAngle, M_PI/4, "Reset the process each time the camera has rotated of chunkAngle radians from the first frame");
   arg.param("chunkDistance", chunkDistance, 0.5, "reset the process each time the camera has moved of chunkDistance meters from the first frame");
   arg.param("pwnSaving", pwnSaving, 0, "choose if you want to save or not the pwn clouds during the process");
+  arg.param("sensorType", sensorType, "kinect", "sensor type: xtion640/xtion480/kinect");
 
   // Last parameter has to be the working directory.
   arg.paramLeftOver("g2o_input_filename", g2o_filename, "", "g2o input inputfilename", true);
@@ -85,7 +92,7 @@ int main(int argc, char** argv) {
    ************************************************************************/
   QApplication application(argc,argv);
   QWidget* mainWindow = new QWidget();
-  mainWindow->setWindowTitle("pwn_simpleViewer");
+  mainWindow->setWindowTitle("pwn_g2o_mapper_viewer");
   QHBoxLayout* baseLayout = new QHBoxLayout();
   mainWindow->setLayout(baseLayout);
   QVBoxLayout* listWidgetLayout = new QVBoxLayout();
@@ -145,11 +152,32 @@ int main(int argc, char** argv) {
     }
   }
 
+  
   Matrix3f cameraMatrix;
-  cameraMatrix <<
-    525.0f, 0.0f, 319.5f,
-    0.0f, 525.0f, 239.5f,
-    0.0f, 0.0f, 1.0f;
+  cameraMatrix.setIdentity();
+
+  if (sensorType=="xtion640") {
+    cameraMatrix << 
+    570.342, 0,       320,
+    0,       570.342, 240,
+    0.0f, 0.0f, 1.0f;  
+  }  else if (sensorType=="xtion320") {
+    cameraMatrix << 
+      570.342, 0,       320,
+      0,       570.342, 240,
+      0.0f, 0.0f, 1.0f;  
+    cameraMatrix.block<2,3>(0,0)*=0.5;
+  } else if (sensorType=="kinect") {
+    cameraMatrix << 
+      525.0f, 0.0f, 319.5f,
+      0.0f, 525.0f, 239.5f,
+      0.0f, 0.0f, 1.0f;  
+  } else {
+    cerr << "unknown sensor type: [" << sensorType << "], aborting (you need to specify either xtion or kinect)" << endl;
+    return 0;
+  }
+
+
   Isometry3f sensorOffset = Isometry3f::Identity();
   sensorOffset.translation() = Vector3f(0.15f, 0.0f, 0.05f);
   Quaternionf quaternion;
@@ -159,7 +187,7 @@ int main(int argc, char** argv) {
   sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
   std::vector<Isometry3f> trajectory;
-  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> > trajectoryColors;
+  std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> > trajectoryColors;
   std::vector<G2OFrame*> frames;
   frames.resize(listWidget->count());
   std::fill(frames.begin(), frames.end(), (G2OFrame*)0);
@@ -176,6 +204,8 @@ int main(int argc, char** argv) {
   controller->setImageCols(al_imageRows);
   controller->setCurvatureThreshold(al_curvatureThreshold);
   controller->setPwnSaving(pwnSaving);
+  controller->correspondenceFinder()->setInlierDistanceThreshold(al_distanceThreshold);
+  controller->correspondenceFinder()->setInlierNormalAngularThreshold(cos(al_normalThreshold));
   viewer->init();
   viewer->setAxisIsDrawn(true);
   mainWindow->show();
@@ -202,7 +232,7 @@ int main(int argc, char** argv) {
 	Eigen::Isometry3f localT = frame->previousFrameTransform();
 	globalT = globalT * localT;
 	trajectory.push_back(globalT);
-	trajectoryColors.push_back(Eigen::Vector3f(0.3f, 0.3f, 0.3f));
+	trajectoryColors.push_back(Eigen::Vector4f(0.3f, 0.3f, 0.3f, 0.3f));
 	listItem->setHidden(false);
 	changed = true;
       }

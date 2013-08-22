@@ -3,11 +3,12 @@
  *  This is the header file of the DepthImage class.
 */
 
-#ifndef _DEPTH_IMAGE_H_
-#define _DEPTH_IMAGE_H_
+#ifndef _PWN_DEPTH_IMAGE_H_
+#define _PWN_DEPTH_IMAGE_H_
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include "g2o_frontend/boss/blob.h"
 
 namespace pwn {
 

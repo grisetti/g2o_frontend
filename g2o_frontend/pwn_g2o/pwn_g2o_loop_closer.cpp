@@ -34,35 +34,50 @@ int main(int argc, char** argv) {
 
   // Variables for the input parameters.
   float al_scale;
-  int al_imageRows;
-  int al_imageCols;
   int al_innerIterations;
   int al_outerIterations;
   int al_minNumInliers;
+
+  int pj_imageRows;
+  int pj_imageCols;
+  float pj_fov;
+  float pj_fy;
   float al_minError;
   float al_curvatureThreshold;
   int vz_startingVertex;
   int vz_endingVertex;
   int vz_step;
+  float cf_inlierNormalAngularThreshold;
+  float cf_flatCurvatureThreshold;
+  float cf_inlierCurvatureRatioThreshold;
+  float cf_inlierDistanceThreshold;
 
   // Input parameters handling.
   g2o::CommandArgs arg;
   
   // Optional input parameters.
   arg.param("al_scale", al_scale, 1.0f, "Specify the scaling factor to apply on the depth image");
-  arg.param("al_imageRows", al_imageRows, 480, "Specify the number of rows of the depth image associated to the pinhole point projector");
-  arg.param("al_imageCols", al_imageCols, 640, "Specify the number of columns of the depth image associated to the pinhole point projector");
+  arg.param("pj_imageRows", pj_imageRows, 120, "Specify the number of rows of the depth image associated to the pinhole point projector");
+  arg.param("pj_imageCols", pj_imageCols, 320, "Specify the number of columns of the depth image associated to the pinhole point projector");
+  arg.param("pj_fov", pj_fov, M_PI, "Specify field of view of the cylindrical projector");
+  arg.param("pj_fy", pj_fy, 100, "Specify the focal lenght of the y for the projector");
+  
   arg.param("al_innerIterations", al_innerIterations, 1, "Specify the inner iterations");
   arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");
   arg.param("al_minNumInliers", al_minNumInliers, 10000, "Specify the minimum number of inliers to consider an alignment good");
   arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
   arg.param("al_curvatureThreshold", al_curvatureThreshold, 0.1f, "Specify the curvature treshshold for information matrix computation");
+  arg.param("cf_inlierNormalAngularThreshold", cf_inlierNormalAngularThreshold, M_PI / 6.0f, "Maximum angle between the normals of two points to regard them as iniliers");
+  arg.param("cf_flatCurvatureThreshold", cf_flatCurvatureThreshold, 0.02f, "Maximum curvature value for a point to be used for data association");
+  arg.param("cf_inlierCurvatureRatioThreshold", cf_inlierCurvatureRatioThreshold, 1.3f, "Maximum curvature ratio value between two points to regard them as iniliers");
+  arg.param("cf_inlierDistanceThreshold", cf_inlierDistanceThreshold, 0.5f, "Maximum metric distance between two points to regard them as iniliers");
+
   arg.param("vz_startingVertex", vz_startingVertex, 0, "Specify the vertex id from which to start the process");
-  arg.param("vz_endingVertex", vz_endingVertex, -1, "Specify the vertex id where to end the process");
+  arg.param("vz_endingVertex", vz_endingVertex, -1, "Specify the vertex id where to end the process"); 
   arg.param("vz_step", vz_step, 5, "A graphic element is drawn each vz_step elements");
 
   // Last parameter has to be the working directory.
-  arg.paramLeftOver("g2o_input_filename", g2o_filename, "", "g2o input inputfilename", true);
+  arg.paramLeftOver("g2o_input_filename", g2o_filename, "", "g2o inputfilename", true);
 
   // Set parser input.
   arg.parseArgs(argc, argv);
@@ -72,7 +87,7 @@ int main(int argc, char** argv) {
    ************************************************************************/
   QApplication application(argc,argv);
   QWidget* mainWindow = new QWidget();
-  mainWindow->setWindowTitle("pwn_simpleViewer");
+  mainWindow->setWindowTitle("pwn_g2o_loop_closer");
   QHBoxLayout* baseLayout = new QHBoxLayout();
   mainWindow->setLayout(baseLayout);
   QVBoxLayout* listWidgetLayout = new QVBoxLayout();
@@ -97,8 +112,8 @@ int main(int argc, char** argv) {
   SlamLinearSolver *linearSolver = new SlamLinearSolver();
   linearSolver->setBlockOrdering(false);
   SlamBlockSolver *blockSolver = new SlamBlockSolver(linearSolver);
-  //OptimizationAlgorithmLevenberg *solverGauss = new OptimizationAlgorithmLevenberg(blockSolver);
-  OptimizationAlgorithmGaussNewton *solverGauss = new OptimizationAlgorithmGaussNewton(blockSolver);
+  OptimizationAlgorithmLevenberg *solverGauss = new OptimizationAlgorithmLevenberg(blockSolver);
+  //OptimizationAlgorithmGaussNewton *solverGauss = new OptimizationAlgorithmGaussNewton(blockSolver);
   SparseOptimizer *graph = new SparseOptimizer();
   graph->setAlgorithm(solverGauss);
   graph->load(g2o_filename.c_str());
@@ -127,7 +142,7 @@ int main(int argc, char** argv) {
       QString listItem(buff);
       listWidget->addItem(listItem);
       QListWidgetItem *lastItem = listWidget->item(listWidget->count() - 1);
-      lastItem->setHidden(true);
+      lastItem->setHidden(false);
       d = d->next();
     }
   }
@@ -141,7 +156,7 @@ int main(int argc, char** argv) {
     vz_endingVertex = listWidget->count();
   
   std::vector<Isometry3f> trajectory;
-  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f> > trajectoryColors;
+  std::vector<Eigen::Vector4f, Eigen::aligned_allocator<Eigen::Vector4f> > trajectoryColors;
   std::vector<G2OFrame*> frames;
   frames.resize(listWidget->count());
   std::fill(frames.begin(), frames.end(), (G2OFrame*)0);
@@ -161,7 +176,31 @@ int main(int argc, char** argv) {
   //controller->setReduction(al_scale);
   //controller->setImageRows(al_imageCols);
   //controller->setImageCols(al_imageRows);
+  controller->setImageRows(pj_imageCols);
+  controller->setImageCols(pj_imageRows);
+  CylindricalPointProjector* projector = controller->cylindricalPointProjector();
+  projector->setAngularFov(pj_fov);
+  projector->setAngularResolution(pj_imageCols *.5/pj_fov);
+  projector->setVerticalFocalLenght(pj_fy);
+  projector->setVerticalCenter(pj_imageRows/2);
+
+  cerr << "imageRows: " << controller->imageRows() << endl;
+  cerr << "imageCols: " << controller->imageCols() << endl;
+  cerr << "fov:       "  << projector->angularFov() << endl;
+  cerr << "resolution:       "  << projector->angularResolution() << endl;
+  cerr << "cy:       "  << projector->verticalCenter() << endl;
+  cerr << "fy:       "  << projector->verticalFocalLenght() << endl;
+
   controller->setCurvatureThreshold(al_curvatureThreshold);
+  controller->setInnerIterations(al_innerIterations);
+  controller->setOuterIterations(al_outerIterations);
+
+  CorrespondenceFinder* correspondenceFinder =   controller->correspondenceFinder();
+  correspondenceFinder->setInlierDistanceThreshold(cf_inlierDistanceThreshold);
+  correspondenceFinder->setFlatCurvatureThreshold(cf_flatCurvatureThreshold);  
+  correspondenceFinder->setInlierCurvatureRatioThreshold(cf_inlierCurvatureRatioThreshold);
+  correspondenceFinder->setInlierNormalAngularThreshold(cosf(cos(cf_inlierNormalAngularThreshold)));
+
 
   viewer->init();
   viewer->setAxisIsDrawn(true);
@@ -189,24 +228,55 @@ int main(int argc, char** argv) {
      ************************************************************************/
     trajectory.clear();
     trajectoryColors.clear();
-    for(int i = vz_startingVertex; i < vz_endingVertex; i++) {
-      QListWidgetItem *listItem = listWidget->item(i);
-      listItem->setHidden(false);
-      string idString = listItem->text().toUtf8().constData();
-      int index = atoi(idString.c_str());
-      VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
-      if(v) {
-	Isometry3f estimate;
-	for(int r = 0; r < 3; r++) {
-	  for(int c = 0; c < 4; c++) {
-	    estimate(r, c) = v->estimate()(r, c);
-	  }
-	}
-	estimate.matrix().row(3) << 0.0l, 0.0l, 0.0l, 1.0l;
-	trajectory.push_back(estimate);
-	trajectoryColors.push_back(Eigen::Vector3f(0.3f, 0.3f, 0.3f));
+
+    for(size_t i = 0; i < vertexIds.size(); ++i) {
+      OptimizableGraph::Vertex *_v = graph->vertex(vertexIds[i]);
+      g2o::VertexSE3 *v = dynamic_cast<g2o::VertexSE3*>(_v);
+      if(!v)
+    	continue;
+      OptimizableGraph::Data *d = v->userData();
+      bool foundPwnData = false;
+      while(d) {
+    	PWNData *pwnData = dynamic_cast<PWNData*>(d);
+    	if(!pwnData) {
+    	  d = d->next();
+    	  continue;
+    	}
+      
+    	foundPwnData = true;
+    	d = d->next();
+      }
+
+      Isometry3f estimate;
+      isometry3d2f(estimate, v->estimate());
+      if(foundPwnData) {
+    	trajectory.push_back(estimate);
+    	trajectoryColors.push_back(Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+      }
+      else {
+    	trajectory.push_back(estimate);
+    	trajectoryColors.push_back(Eigen::Vector4f(0.5f, 0.5f, 0.5f, 0.3f));
       }
     }
+
+    // for(int i = vz_startingVertex; i < vz_endingVertex; i++) {
+    //   QListWidgetItem *listItem = listWidget->item(i);
+    //   listItem->setHidden(false);
+    //   string idString = listItem->text().toUtf8().constData();
+    //   int index = atoi(idString.c_str());
+    //   VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
+    //   if(v) {
+    // 	Isometry3f estimate;
+    // 	for(int r = 0; r < 3; r++) {
+    // 	  for(int c = 0; c < 4; c++) {
+    // 	    estimate(r, c) = v->estimate()(r, c);
+    // 	  }
+    // 	}
+    // 	estimate.matrix().row(3) << 0.0l, 0.0l, 0.0l, 1.0l;
+    // 	trajectory.push_back(estimate);
+    // 	trajectoryColors.push_back(Eigen::Vector3f(0.3f, 0.3f, 0.3f));
+    //   }
+    // }
 
     // Align button was pressed
     if(alignButton->isDown()) {
@@ -267,11 +337,13 @@ int main(int argc, char** argv) {
     for(int k = vz_startingVertex; k < vz_endingVertex; k++) {
       QListWidgetItem* item = listWidget->item(k);
       if(item) {
-	if(item->isSelected() {
-	  trajectoryColors[k] = Eigen::Vector3f(1.0f, 0.3f, 0.3f);
+	if(item->isSelected()) {
+	  //trajectoryColors[k] = Eigen::Vector3f(1.0f, 0.3f, 0.3f);
 	  string idString = item->text().toUtf8().constData();
 	  int index = atoi(idString.c_str());
 	  VertexSE3 *v = dynamic_cast<VertexSE3*>(graph->vertex(index));
+	  trajectoryColors[index] = Eigen::Vector4f(0.0f, 1.0f, 0.0f, 1.0f);
+	  drawableTrajectory->updateTrajectoryDrawList();
 	  if(v && !frames[k]) {
 	    G2OFrame *currentFrame = new G2OFrame(v);
 	    controller->extractPWNData(currentFrame);
@@ -281,7 +353,7 @@ int main(int argc, char** argv) {
 	      for (int r = 0; r<3; r++)
 		isotta.matrix()(r,c) = v->estimate().matrix()(r,c);
 	    DrawableFrame *drawableFrame = new DrawableFrame(isotta, parameterFrame, frames[k]);
-	    viewer->addDrawable(drawableFrame);
+	    viewer->addDrawable(drawableFrame);	    
 	    changed = true;
 	  }	
 	}

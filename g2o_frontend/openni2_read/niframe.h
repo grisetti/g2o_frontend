@@ -1,7 +1,7 @@
 #ifndef _NIFRAME_H
 #define _NIFRAME_H_
 
-#include <OpenNI2/OpenNI.h>
+#include <OpenNI.h>
 #include <string>
 #include <cstring>
 #include <stdint.h>

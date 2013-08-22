@@ -64,14 +64,46 @@ typedef std::vector<LineCorrs> LineCorrsVector;
 
 
 double computeError(Vector3d& l1_coeff, Vector3d& l2_coeff, int weight) {
+    // 	    double err_n  = abs(l1_coeff[0]-l2_coeff[0] + l1_coeff[1]-l2_coeff[1]);
+    // 	    double err_rho = abs(l1_coeff[2]-l2_coeff[2]);
+    // 	    double err_sum = err_n + err_rho;
     Vector3d err_tot = l1_coeff-l2_coeff;
     err_tot.head<2>() *= weight;
     return err_tot.squaredNorm();
 }
 
+bool lengthError(VertexLine2D* vl1, VertexLine2D* vl2){
+    bool result = false;
+//    double lenghtThreshold = 0.5;
+    const OptimizableGraph* inputGraph=vl1->graph();
+    Eigen::Vector2d p11=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl1->p1Id))->estimate();
+    Eigen::Vector2d p12=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl1->p2Id))->estimate();
+    double d1=(p11-p12).norm();
+
+    Eigen::Vector2d p21=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl2->p1Id))->estimate();
+    Eigen::Vector2d p22=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl2->p2Id))->estimate();
+    double d2=(p21-p22).norm();
+
+    //checking if the lines have similar lenght
+    if(d1>d2)
+        result = (d1/d2) < 1.5;
+    else
+        result = (d2/d1) < 1.5;
+
+//    result = fabs(d1-d2) > lenghterr;
+
+    if(!result){
+        cout << "lenght diff NOT OK: " << fabs(d1-d2) << endl;
+    }
+    else cout << "lenght diff ok: " << fabs(d1-d2) << endl;
+
+    return result;
+
+}
+
 bool findCorrespondences(LineCorrs& _currCorrs,  LinesForMatching& _pairLinesSet){
 
-    double lenghterr = 0.5;
+    double distanceThreshold = 0.7;
     LinesSet s1 = _pairLinesSet.first;
     LinesSet s2 = _pairLinesSet.second;
     cerr << "number of lines in the first set: " << s1.size() << endl;
@@ -87,7 +119,6 @@ bool findCorrespondences(LineCorrs& _currCorrs,  LinesForMatching& _pairLinesSet
         const OptimizableGraph* inputGraph=vl1->graph();
         Eigen::Vector2d p11=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl1->p1Id))->estimate();
         Eigen::Vector2d p12=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl1->p2Id))->estimate();
-        double d1=(p11-p12).norm();
 
         Line2D l1 = s1[j].line;
         Vector3d l1_coeff(cos(l1(0)), sin(l1(0)), l1(1));
@@ -96,22 +127,28 @@ bool findCorrespondences(LineCorrs& _currCorrs,  LinesForMatching& _pairLinesSet
         {
 
             VertexLine2D* vl2 = s2[k].vline;
-            const OptimizableGraph* inputGraph=vl2->graph();
             Eigen::Vector2d p21=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl2->p1Id))->estimate();
             Eigen::Vector2d p22=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl2->p2Id))->estimate();
-            double d2=(p21-p22).norm();
 
-            if(fabs(d1-d2) > lenghterr){
-                cout << "lenght diff NOT OK: " << fabs(d1-d2) << endl;
+            //checking the lenght of the two lines
+            bool similarLenght = lengthError(vl1, vl2);
+            if (!similarLenght)
+                continue;
+
+            //checking the distance between the 2 lines
+            Eigen::Vector2d pm1 = (p11+p12)*0.5;
+            Eigen::Vector2d pm2 = (p21+p22)*0.5;
+            double dmiddle = (pm1-pm2).norm();
+            double dfirst = (p11-p21).norm();
+            double dsecond = (p21-p22).norm();
+            double daverage = (dmiddle + dfirst + dsecond)/3;
+            if(daverage > distanceThreshold) {
+                cout << "porca di quella troia!!!!!" << daverage << endl;
                 continue;
             }
-            cout << "lenght diff ok: " << fabs(d1-d2) << endl;
+
             Line2D l2 = s2[k].line;
             Vector3d l2_coeff(cos(l2(0)), sin(l2(0)), l2(1));
-
-            // 	    double err_n  = abs(l1_coeff[0]-l2_coeff[0] + l1_coeff[1]-l2_coeff[1]);
-            // 	    double err_rho = abs(l1_coeff[2]-l2_coeff[2]);
-            // 	    double err_sum = err_n + err_rho;
 
             //computing the chi2
             int weight = 10;
@@ -128,7 +165,8 @@ bool findCorrespondences(LineCorrs& _currCorrs,  LinesForMatching& _pairLinesSet
 //                cout << "SIGH!!!!!!!!" << endl;
             }
         }
-        _currCorrs.push_back(lc);
+        if(lc.error != 1e9)
+            _currCorrs.push_back(lc);
     }
     cerr << "Number of correspondances found: " << _currCorrs.size() << endl;
     return true;
@@ -146,19 +184,19 @@ void mergePointVertex(OptimizableGraph* graph, VertexPointXY* pNew, VertexPointX
 	{
 	    EdgeLine2DPointXY* elp1 = dynamic_cast<EdgeLine2DPointXY*>(*it_vp1);
 	    if(elp1){
-		VertexLine2D* line = dynamic_cast<VertexLine2D*>(elp1->vertex(0));
-		if (line) {
-		    if (line->p1Id==idOld){
-			cout << "book keeping point1" << endl;
-			line->p1Id = idNew;
-		    }
-		    cout << "AAAAAAAAA" << endl;
-		    // il secondo point vertex viene cancellato solo se è il primo di un vertice linea adiacente
-		    if (line->p2Id==idOld){
-			cout << "book keeping point2" << endl;
-			line->p2Id = idNew;
-		    }
-		}
+            VertexLine2D* line = dynamic_cast<VertexLine2D*>(elp1->vertex(0));
+            if (line) {
+                if (line->p1Id==idOld){
+                    cout << "book keeping point1" << endl;
+                    line->p1Id = idNew;
+                }
+                cout << "AAAAAAAAA" << endl;
+                // il secondo point vertex viene cancellato solo se è il primo di un vertice linea adiacente
+                if (line->p2Id==idOld){
+                    cout << "book keeping point2" << endl;
+                    line->p2Id = idNew;
+                }
+            }
 	    }
 	}
 	cout << "merdging punti: " << graph->mergeVertices(pNew, pOld, true) << endl;
@@ -234,14 +272,14 @@ bool ransacExec(CorrespondenceValidatorPtrVector& validators,
 void deleteVertices(int first, int last, OptimizableGraph* graph) {
     for (int i = first; i <= last; i++)
     {
-        cout << "i : " << i << endl;
+//        cout << "i : " << i << endl;
         OptimizableGraph::Vertex* _v = graph->vertex(i);
         if(!_v)
             continue;
         VertexSE2* v = dynamic_cast<VertexSE2*>(_v);
         if(!v)
             continue;
-        cout << "id vertex to be deleted " << v->id() << endl;
+//        cout << "id vertex to be deleted " << v->id() << endl;
         OptimizableGraph::EdgeSet es = v->edges();
         for (OptimizableGraph::EdgeSet::iterator it = es.begin(); it != es.end(); it++)
         {
@@ -262,7 +300,8 @@ void deleteVertices(int first, int last, OptimizableGraph* graph) {
 
             graph->removeVertex(vl);
         }
-        cout << " Vertex-se2 deleted: "<< graph->removeVertex(v) << endl;
+        graph->removeVertex(v);
+//        cout << " Vertex-se2 deleted: "<< graph->removeVertex(v) << endl;
     }
 }
 
