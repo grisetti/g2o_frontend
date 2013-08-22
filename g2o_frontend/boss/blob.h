@@ -62,6 +62,8 @@ public:
     return _fileName;
   }
   
+  virtual ~BaseBLOBReference();
+
 protected:
   bool load(BLOB& instance);
   

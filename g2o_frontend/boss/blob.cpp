@@ -49,10 +49,11 @@ void BaseBLOBReference::dataDestroyed() {
   _instance=0;
 }
 
-void BaseBLOBReference::set(BLOB* b){
-  _instance = b;
+BaseBLOBReference::~BaseBLOBReference() {
+  if (_instance) {
+    delete _instance;
+  }
 }
-
 
 void BaseBLOBReference::serialize(ObjectData& data, IdContext& context) {
   Identifiable::serialize(data,context);
@@ -63,7 +64,7 @@ void BaseBLOBReference::serialize(ObjectData& data, IdContext& context) {
       _fileName=fileContext->createBinaryFilePath(*this);
       auto_ptr<ostream> os(fileContext->getBinaryOutputStream(_fileName));
       if (os.get()) {
-	_instance->write(*os);
+        _instance->write(*os);
       }
     }
   }
@@ -86,4 +87,11 @@ bool BaseBLOBReference::load(BLOB& instance) {
     }
   }
   return false;
+}
+
+void BaseBLOBReference::set(BLOB* instance) {
+  if (_instance) {
+    delete _instance;
+  }
+  _instance=instance;
 }
