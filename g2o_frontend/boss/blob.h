@@ -50,6 +50,7 @@ public:
   virtual void serialize(ObjectData& data, IdContext& context);
   virtual void deserialize(ObjectData& data, IdContext& context);
   virtual BLOB* get()=0;
+  void set(BLOB* instance);
   void dataDestroyed();
   const std::string& extension();
 
@@ -61,6 +62,8 @@ public:
     return _fileName;
   }
   
+  virtual ~BaseBLOBReference();
+
 protected:
   bool load(BLOB& instance);
   
