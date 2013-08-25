@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
   bool gen;
   // Optional input parameters.
   arg.param("sensorType", sensorType, "kinect", "sensor type: xtion640/xtion480/kinect");
-  arg.param("gen", gen, "false", "read or write the config file");
+  arg.param("gen", gen, false, "read or write the config file");
 
   // Last parameter has to be the working directory.
   arg.paramLeftOver("config_file", configFile, "", "file where the configuration will be written", true);
