@@ -8,7 +8,7 @@ namespace pwn{
 template <class T, int RowsAtCompileTime>
 struct Matrix {
   inline __host__ void map(int /*r*/, int c, T* v=0){
-    assert(r == RowsAtCompileTime);
+    //assert(r == RowsAtCompileTime);
     _cols = c;
     if (v)
       _values = v;

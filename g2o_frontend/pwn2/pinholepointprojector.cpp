@@ -172,7 +172,6 @@ namespace pwn {
     _cameraMatrix.fromBOSS(data, "cameraMatrix");
     setBaseline(data.getFloat("baseline"));
     setAlpha(data.getFloat("alpha"));
-    std::cerr << "pinhole deserialized" << std::endl;
   }
 
   BOSS_REGISTER_CLASS(PinholePointProjector);

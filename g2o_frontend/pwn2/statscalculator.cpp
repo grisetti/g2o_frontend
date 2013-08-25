@@ -38,7 +38,7 @@ namespace pwn {
 	if(*index < 0 || *interval < 0)
 	  continue;
 
-	assert(*index<(int)stats.size());
+	assert(*index<(int)statsVector.size());
 	int imageRadius = *interval;
 	if(imageRadius < _minImageRadius)
 	  imageRadius = _minImageRadius;
@@ -96,7 +96,7 @@ namespace pwn {
 	if(*index<0 || *interval<0)
 	  continue;
       
-	assert(*index<(int)stats.size());
+	assert(*index<(int)statsVector.size());
 	int imageRadius = *interval;
 	if(imageRadius < _minImageRadius)
 	  imageRadius = _minImageRadius;

@@ -32,7 +32,11 @@ namespace pwn {
 
     inline const PointProjector* projector() const { return _projector; }
     inline Linearizer* linearizer() { return _linearizer; }
-    inline void setLinearizer(Linearizer* linearizer_) { _linearizer = linearizer_; _linearizer->setAligner(this); }
+    inline void setLinearizer(Linearizer* linearizer_) { _linearizer = linearizer_; 
+      if( _linearizer) 
+	_linearizer->setAligner(this); 
+    }
+
     inline CorrespondenceFinder* correspondenceFinder() { return _correspondenceFinder; }
     inline void setCorrespondenceFinder(CorrespondenceFinder* correspondenceFinder_) { _correspondenceFinder = correspondenceFinder_; }
     inline const Frame* referenceFrame() const { return _referenceFrame; }

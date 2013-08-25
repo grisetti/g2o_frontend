@@ -143,8 +143,8 @@ namespace pwn {
   }
 
   void Aligner::deserialize(boss::ObjectData& data, boss::IdContext& context){
-    cerr << "Aligner:: Deserialize" << endl;
     Identifiable::deserialize(data,context);
+    cerr << "Aligner:: Deserialize" << endl;
     setOuterIterations(data.getInt("outerIterations"));
     setInnerIterations(data.getInt("innerIterations"));
     _referenceSensorOffset.matrix().fromBOSS(data,"referenceSensorOffset");

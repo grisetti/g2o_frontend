@@ -16,7 +16,7 @@ namespace g2o_frontend {
     _vertices2.resize(_correspondences.size());
     for (size_t i = 0; i<_correspondences.size(); i++){
       OptimizableGraph::Edge* edge=_correspondences[i].edge();
-      assert(edge->vertices.size()==2 && "THE_NUMBER_OF_VERTICES_IN_THE_EDGE_FOR_RANSAC_SHOULD BE_2");
+      assert(edge->vertices().size()==2 && "THE_NUMBER_OF_VERTICES_IN_THE_EDGE_FOR_RANSAC_SHOULD BE_2");
       _vertices1[i]=static_cast<OptimizableGraph::Vertex*>(edge->vertex(0));
       assert(_vertices1[i] && "NULL_EDGE_FOR_RANSAC");
       _vertices2[i]=static_cast<OptimizableGraph::Vertex*>(edge->vertex(1));

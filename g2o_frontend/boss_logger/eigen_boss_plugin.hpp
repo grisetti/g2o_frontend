@@ -25,7 +25,7 @@ inline void fromBOSS(boss::ObjectData& data, const std::string name){
       *this=Matrix<Scalar, RowsAtCompileTime, ColsAtCompileTime>();
   }
   boss::ArrayData& adata = matrixData.getField("values")->getArray();
-  assert(adata.size()==rows()*cols());
+  assert((int)adata.size()==rows()*cols());
   int k=0;
   for (int r=0; r<rows(); r++)
     for (int c=0; c<cols(); c++, k++)

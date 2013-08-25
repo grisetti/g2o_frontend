@@ -124,7 +124,6 @@ namespace pwn {
     setRobustKernel(data.getBool("robustKernel"));
     setInlierMaxChi2(data.getFloat("inlierMaxChi2"));
     data.bindPointer("aligner", _tempAligner);
-    cerr << "linearizer deserialized" << endl;
   }
 
   void Linearizer::deserializeComplete(){
