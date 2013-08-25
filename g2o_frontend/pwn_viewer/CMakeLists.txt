@@ -41,12 +41,13 @@ TARGET_LINK_LIBRARIES(pwn_viewer_library
   #traverse_library
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
-  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${OpenCV_LIBS}
+  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${OpenCV_LIBS} 
+  boss
 )
 
 
 ADD_EXECUTABLE(pwn_simpleViewer pwn_simpleViewer.cpp )
-TARGET_LINK_LIBRARIES(pwn_simpleViewer  pwn_viewer_library pwn2_library #traverse_library
+TARGET_LINK_LIBRARIES(pwn_simpleViewer  pwn_viewer_library pwn2_library boss #traverse_library 
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
   ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY})

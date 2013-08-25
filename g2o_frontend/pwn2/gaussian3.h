@@ -1,5 +1,8 @@
 #ifndef _PWN_GAUSSIAN3_H_
 #define _PWN_GAUSSIAN3_H_
+#include "g2o_frontend/boss_logger/eigen_boss_plugin.h" 
+#include "g2o_frontend/boss/object_data.h"
+#include "g2o_frontend/boss/identifiable.h"
 
 #include "depthimage.h"
 #include "homogeneousvector4f.h"

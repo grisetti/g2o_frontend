@@ -177,7 +177,7 @@ struct NiWrapper{
 	memcpy(wrapper->depthFrame.data, imgBuf, h*w*sizeof(uint16_t));
 	if (!rgbReady)
 	  depthReady = true;
-	cerr << "d";
+	//cerr << "d";
       }
       if (idx == 1) {
 	wrapper->rgb.readFrame(&wrapper->rgbf);
@@ -197,7 +197,7 @@ struct NiWrapper{
 	wrapper->rgbFrameCopy = wrapper->rgbFrame.clone();
 	pthread_mutex_unlock(&wrapper->mutex);
 	sem_post(&wrapper->sem);
-	cerr << "c";
+	//cerr << "c";
       }
 
       if (wrapper->paramChanged) {
@@ -236,6 +236,7 @@ int main(int argc, char** argv)
   wrapper.start();
   namedWindow("depth", 1);       // Create a named window
   namedWindow("color", 1);       // Create a named window
+  namedWindow("topDepth", 1);       // Create a named window
 
   int idx = 0;
   Mat depth;
@@ -244,14 +245,37 @@ int main(int argc, char** argv)
   bool saveThisFrame = false;
   bool saveAllFrames = false;
 
+  Mat topDepth(600,640,CV_8UC1);
   ofstream g2oFile("out.g2o");
   g2oFile << "PARAMS_CAMERACALIB 0 0 0 0 -0.5 0.5 -0.5 0.5 570.342 570.342 320 240 " << endl;
+  float f = 570.342;
   while(true) {             // Crux of this project
     wrapper.waitForFrame();
+    memset(topDepth.data,0,topDepth.rows*topDepth.cols);
     wrapper.getFrame(depth,color);
     imshow("depth",depth);
     imshow("color",color);
-    cerr << "R";
+    for (int j=0; j<depth.rows; j++){
+      for (int i=0; i<depth.cols; i++){
+	uint16_t d=depth.at<uint16_t>(j,i);
+	if(d>0){
+	  float z=1e-3*d;
+	  float x=(i-320)*z/f;
+	  float y=(i-240)*z/f;
+	  x*=100;
+	  z*=100;
+	  int ix = x+320;
+	  int iy = 240-y;
+	  int iz = z;
+	  if(ix>-1 && 
+	     ix<topDepth.cols && 
+		iz>-1 && iz<topDepth.rows)
+	    topDepth.at<char>(iz,ix)=255;
+	}
+      }
+    }
+    imshow("topDepth",topDepth);
+    //cerr << "R";
     char key = waitKey(10);
     if (key == 27) {
       wrapper.stop();
@@ -260,7 +284,10 @@ int main(int argc, char** argv)
     switch (key){
     case 'r': wrapper.setDepthRegistration(!wrapper.depthRegistration); break;
     case 's': saveThisFrame = true; break;
-    case 'c': saveAllFrames = ! saveAllFrames;
+    case 'c': saveAllFrames = ! saveAllFrames; break;
+    case '+': f+=0.01; cerr << "f:" << f; break;
+    case '-': f-=0.01; cerr << "f:" << f; break;
+
     default:;
     }
     if (saveAllFrames)
@@ -269,6 +296,7 @@ int main(int argc, char** argv)
       g2oFile << "VERTEX_SE3:QUAT " << idx << " 0 0 0 0 0 0 1 "<< endl;
       g2oFile << "RGBD_DATA 0 " << makeFilename(prefix,idx) << " 0 hostname 0 " << endl; 
       cerr << "S";
+      
       saveFrame(prefix,idx,depth);
       //saveFrame(prefix,idx,color);
       saveThisFrame = false;

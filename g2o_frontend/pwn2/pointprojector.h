@@ -1,5 +1,8 @@
 #ifndef _PWN_POINTPROJECTOR_H_
 #define _PWN_POINTPROJECTOR_H_
+#include "g2o_frontend/boss_logger/eigen_boss_plugin.h" 
+#include "g2o_frontend/boss/object_data.h"
+#include "g2o_frontend/boss/identifiable.h"
 
 #include "homogeneousvector4f.h"
 #include "depthimage.h"
@@ -16,7 +19,7 @@ namespace pwn {
  *  projection/unprojection operations on set of points.   
  */
 
-class PointProjector {
+  class PointProjector : public boss::Identifiable {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -25,7 +28,7 @@ public:
    *  This constructor creates a PointProjector object setting the camera pose to the identity 
    *  while the maximum and minimum distance are imposed to be respectively 10.0 and 0.01 meters.
    */
-  PointProjector();
+  PointProjector(int id=-1, boss::IdContext* context = 0);
   
   /**
    *  Destructor.
@@ -161,6 +164,10 @@ public:
    *  defined by the minimum and maximum distance variables values, false otherwise. 
    */
   virtual bool unProject(Point& p, const int x, const int y, const float d) const;
+
+  /**serialization functions*/
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
 
 protected:
   /**

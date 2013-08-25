@@ -1,5 +1,8 @@
 #ifndef _PWN_PINHOLEPOINTPROJECTOR_H_
 #define _PWN_PINHOLEPOINTPROJECTOR_H_
+#include "g2o_frontend/boss_logger/eigen_boss_plugin.h" 
+#include "g2o_frontend/boss/object_data.h"
+#include "g2o_frontend/boss/identifiable.h"
 
 #include "pointprojector.h"
 
@@ -20,7 +23,7 @@ public:
    *  This constructor creates a PinholePointProjector object setting the camera pose to the identity 
    *  while the maximum and minimum distance are imposed to be respectively 10.0 and 0.01 meters.
    */
-  PinholePointProjector();
+  PinholePointProjector(int id=-1, boss::IdContext* context = 0);
   
   /**
    *  Destructor.
@@ -193,6 +196,10 @@ public:
     return p.coeff(1);
   }
 
+  /**serialization functions*/
+  virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+  virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
+  
   /**
    *  This variable contains the 3x3 camera matrix associated to the pinholePointProjector object.
    */

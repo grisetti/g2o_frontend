@@ -33,4 +33,9 @@ ADD_LIBRARY(pwn2_library
   statscalculator.cpp statscalculator.h
 )
 
+TARGET_LINK_LIBRARIES(pwn2_library boss)
+
 SET_TARGET_PROPERTIES(pwn2_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn2_library)
+
+ADD_EXECUTABLE(pwn_boss pwn_boss.cpp)
+TARGET_LINK_LIBRARIES(pwn_boss pwn2_library boss  ${G2O_STUFF_LIBRARY})

@@ -190,10 +190,10 @@ struct DrawableFrame {
 
     pointInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThreshold);
     normalInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThreshold);
-    DepthImageConverter depthImageConverter = DepthImageConverter(&projector, &statsCalculator,
-								  &pointInformationMatrixCalculator,
-								  &normalInformationMatrixCalculator);
-    depthImageConverter._curvatureThreshold = ng_curvatureThreshold;
+    DepthImageConverter depthImageConverter(&projector, &statsCalculator,
+					    &pointInformationMatrixCalculator,
+					    &normalInformationMatrixCalculator);
+    statsCalculator.setCurvatureThreshold(ng_curvatureThreshold);
     sensorOffset = Isometry3f::Identity();
     sensorOffset.translation() = Vector3f(0.0f, 0.0f, 0.0f);
     Quaternionf quat = Quaternionf(0.5, -0.5, 0.5, -0.5);
@@ -382,7 +382,7 @@ int main(int argc, char** argv) {
 
   Merger merger;
   DepthImageConverter depthImageConverter(0, 0, 0, 0);
-  depthImageConverter._curvatureThreshold = ng_curvatureThreshold;
+  depthImageConverter._statsCalculator->setCurvatureThreshold(ng_curvatureThreshold);
   Frame mergingFrame;
 
   while(!(*pwnGMW.closing())) {

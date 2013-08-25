@@ -4,7 +4,7 @@ using namespace std;
 
 namespace pwn {
   
-  CylindricalPointProjector::CylindricalPointProjector() : PointProjector() {
+  CylindricalPointProjector::CylindricalPointProjector(int id, boss::IdContext* context) : PointProjector(id,context) {
     _angularFov = M_PI/2; // 180 deg fov
     _angularResolution = 360.0/M_PI; ;//0.5 deg resolution
     _verticalCenter = 240;
@@ -134,4 +134,21 @@ namespace pwn {
     gaussians.resize(count);
   }
 
+  void CylindricalPointProjector::serialize(boss::ObjectData& data, boss::IdContext& context){
+    PointProjector::serialize(data,context);
+    data.setFloat("angularFov",angularFov());
+    data.setFloat("angularResolution",angularResolution());
+    data.setFloat("fy",verticalFocalLenght());
+    data.setFloat("cy", verticalCenter());
+  }
+
+  void CylindricalPointProjector::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    PointProjector::deserialize(data,context);
+    setAngularFov(data.getFloat("angularFov"));
+    setAngularResolution(data.getFloat("angularResolution"));
+    setVerticalFocalLenght(data.getFloat("fy"));
+    setVerticalCenter(data.getFloat("cy"));
+  }
+
+  BOSS_REGISTER_CLASS(CylindricalPointProjector);
 }

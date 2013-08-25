@@ -85,9 +85,7 @@ int main(int argc, char **argv) {
   // Testing projectIntervals
   totalFrame.clear();
 
-  depthImageConverter = DepthImageConverter(&multiProjector, &statsCalculator,
-					    &pointInformationMatrixCalculator,
-					    &normalInformationMatrixCalculator);
+  depthImageConverter._projector=&multiProjector;
   
   Isometry3f tmp = Isometry3f::Identity();
   tmp.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;

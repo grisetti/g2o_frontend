@@ -58,7 +58,7 @@ namespace pwn {
     _converter = new DepthImageConverter(_projector, _statsCalculator, 
 					 _pointInformationMatrixCalculator, _normalInformationMatrixCalculator);
     _statsCalculator->setWorldRadius(0.1);
-    _converter->_curvatureThreshold = _curvatureThreshold;
+    _statsCalculator->setCurvatureThreshold(_curvatureThreshold);
     
     // Correspondence finder and linearizer init
     _correspondenceFinder = new CorrespondenceFinder();
@@ -219,7 +219,7 @@ namespace pwn {
    
     updateProjector();
 
-    std::string filename = rgbdData->baseFilename();// + "_depth.pgm";
+    std::string filename = rgbdData->baseFilename() + "_depth.pgm";
     cerr << "loading  " << filename << endl;
     // Read the depth image
     if (!_depthImage.load(filename.c_str(), true)){

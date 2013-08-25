@@ -14,7 +14,6 @@ using namespace g2o;
 using namespace pwn;
 
 int main(int argc, char **argv) {
-  int numImages = 0;
   string cloudFilename;
   string outputFilename = "totalFrame.pwn";
 

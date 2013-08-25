@@ -4,10 +4,21 @@ using namespace std;
 using namespace Eigen;
 
 namespace pwn {
+  using namespace boss;
 
-  void VoxelCalculator::compute(Frame &frame, float resolution) {
+  VoxelCalculator::VoxelCalculator(int id, boss::IdContext* context): Identifiable(id, context) {_resolution = 0.01;}
+  VoxelCalculator::~VoxelCalculator() {}
+
+  void VoxelCalculator::compute(Frame &frame, float res) {
+    float oldRes=resolution();
+    setResolution(res);
+    compute(frame);
+    setResolution(oldRes);
+  }
+
+  void VoxelCalculator::compute(Frame &frame) {
     AccumulatorMap accumulatorMap;
-    float inverseResolution = 1.0f / resolution;
+    float inverseResolution = 1.0f / _resolution;
 
     std::cerr << "Size: " << frame.points().size() << std::endl;
     for(size_t i = 0; i < frame.points().size(); i++) {
@@ -65,5 +76,16 @@ namespace pwn {
 
     cerr << frame.points().size() << " points" << endl;
   }
+
+  void VoxelCalculator::serialize(boss::ObjectData& data, boss::IdContext& context) {
+    Identifiable::serialize(data,context);
+    data.setFloat("resolution", resolution());
+  }
+  void VoxelCalculator::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    Identifiable::deserialize(data,context);
+    setResolution(data.getFloat("resolution"));
+  }
+
+  BOSS_REGISTER_CLASS(VoxelCalculator);
 
 }

@@ -1,5 +1,8 @@
 #ifndef _PWN_POINTINTEGRALIMAGE_H_
 #define _PWN_POINTINTEGRALIMAGE_H_
+#include "g2o_frontend/boss_logger/eigen_boss_plugin.h" 
+#include "g2o_frontend/boss/object_data.h"
+#include "g2o_frontend/boss/identifiable.h"
 
 #include "pointaccumulator.h"
 

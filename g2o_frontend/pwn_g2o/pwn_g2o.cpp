@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
   // Depth image converter
   DepthImageConverter converter(&projector, &statsCalculator, 
 				&pointInformationMatrixCalculator, &normalInformationMatrixCalculator);
-  converter._curvatureThreshold = ng_curvatureThreshold;
+  statsCalculator.setCurvatureThreshold(ng_curvatureThreshold);
   DepthImage depthImage, scaledDepthImage;
   Eigen::MatrixXi indexImage, scaledIndexImage;
 

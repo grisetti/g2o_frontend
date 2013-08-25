@@ -1,5 +1,5 @@
 #ADD_SUBDIRECTORY(dm_mapping)
 #ADD_SUBDIRECTORY(dm_registration)
-ADD_SUBDIRECTORY(pwn_gui)
+#ADD_SUBDIRECTORY(pwn_gui)
 #ADD_SUBDIRECTORY(pwn_g2o_incremental)
 #ADD_SUBDIRECTORY(dm_test)

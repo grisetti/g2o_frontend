@@ -1,12 +1,15 @@
 #ifndef _PWN_MULTIPOINTPROJECTOR_H_
 #define _PWN_MULTIPOINTPROJECTOR_H_
-
+#include "g2o_frontend/boss_logger/eigen_boss_plugin.h" 
+#include "g2o_frontend/boss/object_data.h"
+#include "g2o_frontend/boss/identifiable.h"
+#include "g2o_frontend/boss/serializable.h"
 #include "pointprojector.h"
 
 namespace pwn {
 
 class MultiPointProjector: public PointProjector {
-  struct ChildProjectorInfo {
+  struct ChildProjectorInfo: public boss::Serializable{
     PointProjector *pointProjector;
     Eigen::Isometry3f sensorOffset;
     int width;
@@ -14,9 +17,9 @@ class MultiPointProjector: public PointProjector {
     Eigen::MatrixXf depthImage;
     Eigen::MatrixXi indexImage;
 
-    ChildProjectorInfo(PointProjector *pointProjector_,
-		       Eigen::Isometry3f sensorOffset_,
-		       int width_, int height_) {
+    ChildProjectorInfo(PointProjector *pointProjector_=0,
+		       Eigen::Isometry3f sensorOffset_=Eigen::Isometry3f::Identity(),
+		       int width_=0, int height_=0) {
       pointProjector = pointProjector_;
       sensorOffset = sensorOffset_;
       width = width_;
@@ -24,12 +27,17 @@ class MultiPointProjector: public PointProjector {
       if(indexImage.rows() != width || indexImage.cols() != height)
 	indexImage.resize(width, height);    
     }
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserializeComplete();
+  protected:
+    Identifiable* _tempProjector;
   };  
 
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  MultiPointProjector() : PointProjector() {}
+  MultiPointProjector(int id=-1, boss::IdContext* context = 0) : PointProjector(id,context) {}
 
   virtual ~MultiPointProjector() {}
 
@@ -78,6 +86,9 @@ class MultiPointProjector: public PointProjector {
   //virtual bool unProject(Point &p, const int x, const int y, const float d) const;
 
   virtual void setTransform(const Eigen::Isometry3f &transform_);
+
+  virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+  virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
 
  protected:
   mutable std::vector<ChildProjectorInfo> _pointProjectors;

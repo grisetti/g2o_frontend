@@ -1,5 +1,8 @@
 #ifndef _PWN_CYLINDRICALPOINTPROJECTOR_H_
 #define _PWN_CYLINDRICALPOINTPROJECTOR_H_
+#include "g2o_frontend/boss_logger/eigen_boss_plugin.h" 
+#include "g2o_frontend/boss/object_data.h"
+#include "g2o_frontend/boss/identifiable.h"
 
 #include "pointprojector.h"
 
@@ -20,7 +23,7 @@ namespace pwn {
      *  This constructor creates a CylindricalPointProjector object setting the camera pose to the identity 
      *  while the maximum and minimum distance are imposed to be respectively 10.0 and 0.01 meters.
      */
-    CylindricalPointProjector();
+    CylindricalPointProjector(int id=-1, boss::IdContext* context = 0);
   
     /**
      *  Destructor.
@@ -192,6 +195,9 @@ namespace pwn {
       int y = (int)(cp.y()*_verticalFocalLenght/d);
       return std::max(x,y);
     }
+
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
   
   protected:
     float _angularFov; // field of view

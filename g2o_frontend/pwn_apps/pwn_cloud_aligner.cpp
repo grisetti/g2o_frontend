@@ -826,16 +826,13 @@ void applySettings() {
   normalInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
 
   if(multiPointProjectorCheckBox->isChecked() == true)
-    converter = DepthImageConverter(&multiPointProjector, &statsCalculator, 
-				    &pointInformationMatrixCalculator, &normalInformationMatrixCalculator);
+    converter._projector=&multiPointProjector;
   else if(cylindricalPointProjectorCheckBox->isChecked() == true)
-    converter = DepthImageConverter(&cylindricalPointProjector, &statsCalculator, 
-				    &pointInformationMatrixCalculator, &normalInformationMatrixCalculator);  
+    converter._projector=&cylindricalPointProjector;
   else
-    converter = DepthImageConverter(&pinholePointProjector, &statsCalculator, 
-				    &pointInformationMatrixCalculator, &normalInformationMatrixCalculator);
+    converter._projector=&pinholePointProjector;
 
-  converter._curvatureThreshold = ng_curvatureThresholdSpinBox->value();
+  statsCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
 
   correspondenceFinder.setInlierDistanceThreshold(cf_inlierDistanceThresholdSpinBox->value());
   correspondenceFinder.setFlatCurvatureThreshold(cf_flatCurvatureThresholdSpinBox->value());  

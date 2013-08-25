@@ -1,5 +1,8 @@
 #ifndef _PWN_SE3_PRIOR_H_
 #define _PWN_SE3_PRIOR_H_
+#include "g2o_frontend/boss_logger/eigen_boss_plugin.h" 
+#include "g2o_frontend/boss/object_data.h"
+#include "g2o_frontend/boss/identifiable.h"
 
 #include "g2o_frontend/basemath/bm_se3.h"
 
