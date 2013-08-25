@@ -48,7 +48,7 @@ void generateConfig(const std::string prefix, const std::string& configFile, con
 }
 
 
-void readConfig(Aligner*& aligner, DepthImageConverter*& converter, const std::string& configFile){
+void readConfig(const std::string prefix, Aligner*& aligner, DepthImageConverter*& converter, const std::string& configFile){
   aligner = 0;
   converter = 0;
   Deserializer des;
@@ -81,7 +81,7 @@ void readConfig(Aligner*& aligner, DepthImageConverter*& converter, const std::s
   ser.setFilePath("new.conf");
   for (int i=0; i<messages.size(); i++){
     cerr << i << endl;
-    ser.write("boh",  *messages[i]->getInstance());
+    ser.write(prefix,  *messages[i]->getInstance());
   }
  
 }
@@ -142,7 +142,7 @@ int main(int argc, char** argv) {
     cerr << "reading the configuration from file [" << configFile << "]" << endl;
     Aligner* aligner;
     DepthImageConverter* converter;
-    readConfig(aligner, converter, configFile);
+    readConfig(argv[0], aligner, converter, configFile);
     cerr<< "Aligner: " << aligner << endl;
     cerr<< "Converter: " << converter << endl;
 

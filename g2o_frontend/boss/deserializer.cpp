@@ -27,6 +27,7 @@
 #include "identifiable.h"
 #include "message.h"
 #include "json_message_parser.h"
+#include "id_placeholder.h"
 
 using namespace std;
 using namespace boss;
@@ -110,6 +111,13 @@ Message* Deserializer::readMessage() {
   Serializable* instance=0;
   if (idValue) {
     instance=getById(idValue->getInt());
+    if (instance) {
+      IdPlaceholder* placeHolder=dynamic_cast<IdPlaceholder*>(instance);
+      if (placeHolder) {
+        //Found instance is a placeholder, replace it
+        instance=0;
+      }
+    }
   }
 
   if (instance) {
