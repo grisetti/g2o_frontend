@@ -69,6 +69,21 @@ void readConfig(Aligner*& aligner, DepthImageConverter*& converter, const std::s
       converter = conv;
     }
   }
+  if (aligner) {
+    cerr << "alpp: " << aligner->projector() << endl;
+    cerr << "allz: " << aligner->linearizer() << endl;
+    if (aligner->linearizer())
+      cerr << "lzal: " << aligner->linearizer()->aligner() << endl;
+    
+  }
+
+  Serializer ser;
+  ser.setFilePath("new.conf");
+  for (int i=0; i<messages.size(); i++){
+    cerr << i << endl;
+    ser.write("boh",  *messages[i]->getInstance());
+  }
+ 
 }
 
 int main(int argc, char** argv) {

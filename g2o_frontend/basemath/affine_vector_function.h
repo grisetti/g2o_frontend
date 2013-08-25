@@ -29,7 +29,7 @@ public:
   }
 
   inline void setMatrix(const MatrixType& A) {
-    assert (A.rows()==codomainDimension() && A.cols == domainDimension() && "Sizes of the matrix shuould match the affine function parameters");
+    assert (A.rows()==this->codomainDimension() && A.cols() == this->domainDimension() && "Sizes of the matrix shuould match the affine function parameters");
     _A = A;
   }
 
@@ -38,7 +38,7 @@ public:
   }
 
   inline void setVector(const CodomainType& b) {
-    assert(b.rows()==codomainDimension() && "Size of the vector shuould match the affine function parameters");
+    assert(b.rows()==this->codomainDimension() && "Size of the vector shuould match the affine function parameters");
     _b = b;
   }
 
