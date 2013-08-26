@@ -1,4 +1,5 @@
 #include "pointprojector.h"
+#include "g2o_frontend/basemath/bm_se3.h"
 
 namespace pwn {
 
@@ -111,15 +112,17 @@ namespace pwn {
 
   void PointProjector::serialize(boss::ObjectData& data, boss::IdContext& context) {
     Identifiable::serialize(data,context);
-    _transform.matrix().row(3) << 0,0,0,1;
-    _transform.matrix().toBOSS(data,"transform");
+    
+    t2v(_transform).toBOSS(data,"transform");
     data.setFloat("minDistance", minDistance());
     data.setFloat("maxDistance", maxDistance());
   }
   
   void PointProjector::deserialize(boss::ObjectData& data, boss::IdContext& context){
     Identifiable::deserialize(data,context);
-    _transform.matrix().fromBOSS(data,"transform"); 
+    Vector6f t;
+    t.fromBOSS(data,"transform"); 
+    setTransform(v2t(t));
     setMinDistance(data.getFloat("minDistance"));
     setMaxDistance(data.getFloat("maxDistance"));
  }

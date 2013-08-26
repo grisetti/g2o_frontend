@@ -135,8 +135,8 @@ namespace pwn {
     Identifiable::serialize(data,context);
     data.setInt("outerIterations", outerIterations());
     data.setInt("innerIterations", innerIterations());
-    _referenceSensorOffset.matrix().toBOSS(data,"referenceSensorOffset");
-    _currentSensorOffset.matrix().toBOSS(data,"currentSensorOffset");
+    t2v(_referenceSensorOffset).toBOSS(data,"referenceSensorOffset");
+    t2v(_currentSensorOffset).toBOSS(data,"currentSensorOffset");
     data.setPointer("projector", _projector);
     data.setPointer("linearizer", _linearizer);
     data.setPointer("correspondenceFinder", _correspondenceFinder);
@@ -147,8 +147,11 @@ namespace pwn {
     cerr << "Aligner:: Deserialize" << endl;
     setOuterIterations(data.getInt("outerIterations"));
     setInnerIterations(data.getInt("innerIterations"));
-    _referenceSensorOffset.matrix().fromBOSS(data,"referenceSensorOffset");
-    _currentSensorOffset.matrix().fromBOSS(data,"currentSensorOffset");
+    Vector6f v;
+    v.fromBOSS(data,"referenceSensorOffset");
+    _referenceSensorOffset=v2t(v);
+    v.fromBOSS(data,"currentSensorOffset");
+    _currentSensorOffset=v2t(v);
     data.bindPointer("projector", _tempProjector);
     data.bindPointer("linearizer", _tempLinearizer);
     data.bindPointer("correspondenceFinder", _tempCorrespondenceFinder);

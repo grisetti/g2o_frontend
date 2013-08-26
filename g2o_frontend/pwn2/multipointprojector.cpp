@@ -1,21 +1,23 @@
 #include "multipointprojector.h"
 #include "g2o_frontend/basemath/bm_se3.h"
+#include "g2o_frontend/boss/serializable.h"
 
 using namespace std;
 
 namespace pwn {
   using namespace boss;
 
-  void MultiPointProjector::ChildProjectorInfo::serialize(ObjectData& data, IdContext& context) {
+  void MultiPointProjector::ChildProjectorInfo::serialize(ObjectData& data, IdContext& /*context*/) {
     data.setPointer("projector",pointProjector);
-    sensorOffset.matrix().row(3) << 0,0,0,1;
-    sensorOffset.matrix().toBOSS(data,"sensorOffset");
+    t2v(sensorOffset).toBOSS(data,"sensorOffset");
     data.setInt("width",width);
     data.setInt("height",height);
   }
-  void MultiPointProjector::ChildProjectorInfo::deserialize(ObjectData& data, IdContext& context){
+  void MultiPointProjector::ChildProjectorInfo::deserialize(ObjectData& data, IdContext&/* context*/){
     data.bindPointer("projector",_tempProjector);
-    sensorOffset.matrix().fromBOSS(data,"sensorOffset");
+    Vector6f v;
+    v.fromBOSS(data,"sensorOffset");
+    sensorOffset=v2t(v);
     width=data.getInt("width");
     height=data.getInt("height");
     if(indexImage.rows() != width || indexImage.cols() != height)
