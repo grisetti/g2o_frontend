@@ -144,7 +144,7 @@ void Serializer::setBinaryPath(const string& fpath) {
 
 string Serializer::createBinaryFilePath(BaseBLOBReference& instance) {
   _envMap["classname"]=instance.className();
-  _envMap["id"]=toString(instance.getId(),5,'0');
+  _envMap["id"]=toString(instance.getId(),7,'0');
   _envMap["ext"]=instance.extension();
   string str=_blobFileName;
   replaceEnvTags(str,_envMap);

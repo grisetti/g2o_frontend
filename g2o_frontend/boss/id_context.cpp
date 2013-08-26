@@ -40,6 +40,7 @@ bool IdContext::addImpl(Identifiable* obj) {
     IdPlaceholder* placeHolder=dynamic_cast<IdPlaceholder*>(instance);
     if (placeHolder) {
       placeHolder->resolve(obj);
+      placeHolder->_context=0;
       delete placeHolder;
     } else {
       return false;

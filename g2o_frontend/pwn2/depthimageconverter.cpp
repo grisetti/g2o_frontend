@@ -79,7 +79,7 @@ namespace pwn {
     _projector=dynamic_cast<PointProjector*>(_tempProjector);
     _statsCalculator=dynamic_cast<StatsCalculator*>(_tempStatsCalculator);
     _pointInformationMatrixCalculator=dynamic_cast< PointInformationMatrixCalculator* >(_tempPointInfoCalculator);
-    _tempNormalInfoCalculator=dynamic_cast< NormalInformationMatrixCalculator*> (_tempNormalInfoCalculator);
+    _normalInformationMatrixCalculator=dynamic_cast< NormalInformationMatrixCalculator*> (_tempNormalInfoCalculator);
   }
 
   BOSS_REGISTER_CLASS(DepthImageConverter);
