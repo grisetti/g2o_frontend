@@ -5,6 +5,8 @@ ADD_LIBRARY(boss_logger ${G2O_FRONTEND_LIB_TYPE}
   bframerelation.cpp bframerelation.h
   bsensor.cpp bsensor.h
   bimagesensor.cpp bimagesensor.h
+  blasersensor.cpp blasersensor.h
+  bimusensor.cpp bimusensor.h
 )
 
 TARGET_LINK_LIBRARIES(boss_logger  boss ${OpenCV_LIBS})

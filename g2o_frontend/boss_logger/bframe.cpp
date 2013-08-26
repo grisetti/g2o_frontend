@@ -3,8 +3,12 @@
 #include <stdexcept>
 namespace boss {
 
-  Frame::Frame(Frame* parentFrame_ , int id, IdContext* context): Identifiable(id,context){
+  Frame::Frame(const std::string& name_, 
+	       const Eigen::Isometry3d& transform_, 
+	       Frame* parentFrame_ , int id, IdContext* context): Identifiable(id,context){
     _parentFrame = parentFrame_;
+    _name = name_;
+    _transform = transform_;
     if (_parentFrame)
       _parentFrame->_childrenFrames.insert(this);
     _transform.setIdentity();
@@ -57,7 +61,8 @@ namespace boss {
   void Frame::serialize(ObjectData& data, IdContext& context){
     Identifiable::serialize(data, context);
     data.setPointer("parentFrame",_parentFrame);
-
+    data.setString("name", _name);
+    
     Eigen::Quaterniond q(_transform.rotation());
     q.coeffs().toBOSS(data,"rotation");
     _transform.translation().toBOSS(data,"translation");
@@ -68,7 +73,8 @@ namespace boss {
     _parentFrame = 0;
     _tempParentFrame = 0;
     data.bindPointer("parentFrame", _tempParentFrame);
-
+    _name=data.getString("name");
+    
     Eigen::Quaterniond q;
     q.coeffs().fromBOSS(data,"rotation");
     _transform.translation().fromBOSS(data,"translation");

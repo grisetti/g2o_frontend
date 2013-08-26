@@ -44,6 +44,5 @@ private:
   Identifiable* _tempParentFrame;
 };
 
-
 }
 #endif
