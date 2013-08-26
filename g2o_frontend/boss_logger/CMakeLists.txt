@@ -9,7 +9,6 @@ ADD_LIBRARY(boss_logger ${G2O_FRONTEND_LIB_TYPE}
 
 TARGET_LINK_LIBRARIES(boss_logger  boss ${OpenCV_LIBS})
 
-
 ADD_EXECUTABLE(boss_frame_test boss_frame_test.cpp)
 TARGET_LINK_LIBRARIES(boss_frame_test boss_logger boss)
 
