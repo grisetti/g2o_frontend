@@ -70,8 +70,6 @@ void DrawableFrame::draw() {
   if(_parameter->show() && _frame) {
     glPushMatrix();
     glMultMatrixf(_transformation.data());
-    glColor4f(1,0,0,0.5);
-    g2o::opengl::drawPyramid(0.5, 0.5);
     if(_drawablePoints)
       _drawablePoints->draw();
     if(_drawableNormals)
@@ -80,6 +78,18 @@ void DrawableFrame::draw() {
       _drawableCovariances->draw();
     if(_drawableCorrespondences)
       _drawableCorrespondences->draw();
+
+    glPushMatrix();
+    Eigen::Isometry3f sensorOffset;
+    sensorOffset.translation() = Vector3f(0.0f, 0.0f, 0.0f);
+    Quaternionf quaternion = Quaternionf(-.5f, -0.5f, 0.5f, 0.5f);
+    sensorOffset.linear() = quaternion.toRotationMatrix();
+    sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    glMultMatrixf(sensorOffset.data());
+    glColor4f(1,0,0,0.5);
+    g2o::opengl::drawPyramid(0.2, 0.2);
+    glPopMatrix();
+
     glPopMatrix();
   }
 }

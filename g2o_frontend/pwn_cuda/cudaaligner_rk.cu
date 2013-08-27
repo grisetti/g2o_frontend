@@ -630,10 +630,14 @@ namespace pwn {
 
     float kScale =1;
     
-    if (localError > _inlierThreshold){
-      kScale = sqrt(_inlierThreshold/localError);
-    }
     
+    if (localError > _inlierThreshold){
+      if (_robustKernel){
+	kScale = sqrt(_inlierThreshold/localError);
+      } else
+	return 0;
+    } 
+
     //Matrix4f Sp = skew(referencePoint);
     float Sp[16];
     matBuildSkew(Sp,referencePoint);

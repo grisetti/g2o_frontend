@@ -26,24 +26,25 @@ struct SensorTopic {
     
     this->deviceTopicName = deviceTopicName;
     this->deviceFrameId = deviceTopicName+"/base_frame";
-
+    
     sensorTransform.setOrigin(tf::Vector3(0,0,0));
     sensorTransform.setRotation(tf::Quaternion(0.5,-0.5,0.5,-0.5)); // z axis in front, x to the left, y down
     switch(sensorType){
     case SENSOR_DEPTH: 
-      sensorTopicName = deviceTopicName +"/depth";
+      sensorTopicName = deviceTopicName +"/depth_registered";
       sensorFrameId = deviceTopicName +"/depth_frame";
       sensorTransform.setOrigin(tf::Vector3(0,-0.03,0));
+      imageTopicName = sensorTopicName + "/image_rect_raw";
       break;
     case SENSOR_COLOR:  
-      sensorTopicName = deviceTopicName +"/color";
-      sensorFrameId  = deviceTopicName +"/color_frame";
+      sensorTopicName = deviceTopicName +"/rgb";
+      sensorFrameId  = deviceTopicName +"/rgb_frame";
+      imageTopicName = sensorTopicName + "/image_rect";
       sensorTransform.setOrigin(tf::Vector3(0,0.03,0));
       break;
     default:;
     }
 
-    imageTopicName = sensorTopicName + "/image";
     this->device = device;
     this->sensorType = sensorType;
 
@@ -226,12 +227,20 @@ int main(int argc, char** argv)
     cerr << " device: [" << deviceInfo.getUri() << "]"   << endl;
     char buf[1024];
     if (devices[i]->hasSensor(SENSOR_DEPTH)){
-      sprintf(buf, "/xtion_%02d",i);
+      //sprintf(buf, "/xtion_%02d",i);
+      sprintf(buf, "/camera",i);
       sensorTopics.push_back(new SensorTopic(buf, nh, it, devices[i], SENSOR_DEPTH));
     }
     if (devices[i]->hasSensor(SENSOR_COLOR)){
       sprintf(buf, "/xtion_%02d",i);
+      sprintf(buf, "/camera",i);
       sensorTopics.push_back(new SensorTopic(buf, nh, it, devices[i], SENSOR_COLOR));
+    }
+    if (devices[i]->isImageRegistrationModeSupported(IMAGE_REGISTRATION_DEPTH_TO_COLOR)){
+      rc = devices[i]->setImageRegistrationMode(IMAGE_REGISTRATION_DEPTH_TO_COLOR);
+      if (rc != openni::STATUS_OK) {
+	printf("%s: unable to set image registration\n%s\n", argv[0], openni::OpenNI::getExtendedError());
+      }
     }
   }
   bool startOk = true;

@@ -219,7 +219,7 @@ namespace pwn {
    
     updateProjector();
 
-    std::string filename = rgbdData->baseFilename() + "_depth.pgm";
+    std::string filename = rgbdData->baseFilename();// + "_depth.pgm";
     cerr << "loading  " << filename << endl;
     // Read the depth image
     if (!_depthImage.load(filename.c_str(), true)){

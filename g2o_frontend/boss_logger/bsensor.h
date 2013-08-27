@@ -63,6 +63,5 @@ namespace boss {
     Sensor* _sensor;
   };
 
-
 } // end namespace
 #endif

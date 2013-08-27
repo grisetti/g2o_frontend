@@ -49,6 +49,7 @@ struct AlignerContext {
   float _KT[16];
   float _KOT[16];
   float _KO[16];
+  bool _robustKernel;
   int _checksum;
   __host__ int inliers() const {return _inliers;}
   __host__ float error() const {return _error;}

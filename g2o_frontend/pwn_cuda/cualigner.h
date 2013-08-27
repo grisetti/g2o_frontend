@@ -13,7 +13,7 @@ namespace pwn {
   protected:
     AlignerContext* _context;
   };
-
 };
+
 
 #endif

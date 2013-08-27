@@ -37,7 +37,6 @@ namespace boss {
     Eigen::Vector3d _linearAcceleration;
     Eigen::Matrix3d _linearAccelerationCovariance;
   };
-
   
 }
 
