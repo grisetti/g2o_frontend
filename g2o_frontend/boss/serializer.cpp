@@ -22,6 +22,7 @@
 
 #include "serializer.h"
 #include "json_message_writer.h"
+#include "json_object_writer.h"
 #include "object_data.h"
 
 using namespace std;
@@ -112,6 +113,7 @@ Serializer::Serializer(): _datastream(0) {
   setFilePath(DEFAULT_DATA_FILE);
   setBinaryPath(DEFAULT_BLOB_FILE);
   _writer=new JSONMessageWriter();
+  _objectWriter=new JSONObjectWriter();
 }
 
 void Serializer::setFilePath(const string& fpath) {
@@ -186,6 +188,27 @@ bool Serializer::write(double timestamp, const string& source, Serializable& ins
   return false;
 }
 
+bool Serializer::write(Serializable& instance) {
+  ObjectData* data=new ObjectData();
+  instance.serialize(*data,*this);
+
+  processDataForWrite(data,*this);
+
+  if (!_datastream) {
+    string str=_dataFileName;
+    replaceEnvTags(str,_envMap);
+    create_directories(path(str).parent_path());
+    _datastream=new ofstream(str.c_str());
+  }
+  if (*_datastream) {
+    _objectWriter->writeObject(*_datastream,instance.className(),*data);
+    //TODO Change writer to get status flag
+    return true;
+  }
+  return false;
+
+}
+
 static void adjustBinaryPath(string& fname, map<string,string>& envMap) {
   //Check if it's an absolute path
   if (fname[0]!='/') {
@@ -215,6 +238,7 @@ istream* Serializer::getBinaryInputStream(const string& fname) {
 
 Serializer::~Serializer() {
   delete _writer;
+  delete _objectWriter;
   if (_datastream) {
     delete _datastream;
   }

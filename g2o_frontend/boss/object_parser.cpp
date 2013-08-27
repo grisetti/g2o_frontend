@@ -1,5 +1,5 @@
 /*
-    JSON message writer implementation
+    Abstract object parser interface
     Copyright (C) 2013  Daniele Baldassari <daniele@dikappa.org>
 
     This program is free software: you can redistribute it and/or modify
@@ -16,19 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "object_parser.h"
 
-#ifndef BOSS_JSON_MESSAGE_WRITER_H
-#define BOSS_JSON_MESSAGE_WRITER_H
-
-#include "message_writer.h"
-
-namespace boss {
-
-class JSONMessageWriter: virtual public MessageWriter {
-public:
-  virtual void writeMessage(std::ostream& os, MessageData& message);
-};
-
-}
-
-#endif // BOSS_JSON_MESSAGE_WRITER_H
+using namespace boss;

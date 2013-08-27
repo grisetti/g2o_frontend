@@ -36,15 +36,15 @@ void generateConfig(const std::string prefix, const std::string& configFile, con
   
     Serializer ser;
     ser.setFilePath(configFile);
-    ser.write(prefix, *convProjector);
-    ser.write(prefix, *statsCalculator);
-    ser.write(prefix, *pointInformationMatrixCalculator);
-    ser.write(prefix, *normalInformationMatrixCalculator);
-    ser.write(prefix, *converter);
-    ser.write(prefix, *alProjector);
-    ser.write(prefix, *linearizer);
-    ser.write(prefix, *correspondenceFinder);
-    ser.write(prefix, *aligner);
+    ser.write(*convProjector);
+    ser.write(*statsCalculator);
+    ser.write(*pointInformationMatrixCalculator);
+    ser.write(*normalInformationMatrixCalculator);
+    ser.write(*converter);
+    ser.write(*alProjector);
+    ser.write(*linearizer);
+    ser.write(*correspondenceFinder);
+    ser.write(*aligner);
 }
 
 
@@ -53,11 +53,12 @@ void readConfig(const std::string prefix, Aligner*& aligner, DepthImageConverter
   converter = 0;
   Deserializer des;
   des.setFilePath(configFile);
-  Message* m;
-  std::vector<Message*> messages;
-  while ((m=des.readMessage())){
-    messages.push_back(m);
-    Serializable* s = m->getInstance();
+  Serializable* s;
+  std::vector<Serializable*> instances;
+  cerr << "Reading" << endl;
+  while ((s=des.readObject())){
+    cerr << "Got " << s->className() << endl;
+    instances.push_back(s);
     Aligner* al=dynamic_cast<Aligner*>(s);
     if (al) {
       cerr << "got aligner" << endl;
@@ -79,9 +80,9 @@ void readConfig(const std::string prefix, Aligner*& aligner, DepthImageConverter
 
   Serializer ser;
   ser.setFilePath("new.conf");
-  for (int i=0; i<messages.size(); i++){
+  for (int i=0; i<instances.size(); i++){
     cerr << i << endl;
-    ser.write(prefix,  *messages[i]->getInstance());
+    ser.write(*instances[i]);
   }
  
 }
