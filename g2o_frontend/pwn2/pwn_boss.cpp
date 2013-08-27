@@ -36,15 +36,15 @@ void generateConfig(const std::string prefix, const std::string& configFile, con
   
     Serializer ser;
     ser.setFilePath(configFile);
-    ser.write(*convProjector);
-    ser.write(*statsCalculator);
-    ser.write(*pointInformationMatrixCalculator);
-    ser.write(*normalInformationMatrixCalculator);
-    ser.write(*converter);
-    ser.write(*alProjector);
-    ser.write(*linearizer);
-    ser.write(*correspondenceFinder);
-    ser.write(*aligner);
+    ser.writeObject(*convProjector);
+    ser.writeObject(*statsCalculator);
+    ser.writeObject(*pointInformationMatrixCalculator);
+    ser.writeObject(*normalInformationMatrixCalculator);
+    ser.writeObject(*converter);
+    ser.writeObject(*alProjector);
+    ser.writeObject(*linearizer);
+    ser.writeObject(*correspondenceFinder);
+    ser.writeObject(*aligner);
 }
 
 
@@ -82,7 +82,7 @@ void readConfig(const std::string prefix, Aligner*& aligner, DepthImageConverter
   ser.setFilePath("new.conf");
   for (int i=0; i<instances.size(); i++){
     cerr << i << endl;
-    ser.write(*instances[i]);
+    ser.writeObject(*instances[i]);
   }
  
 }

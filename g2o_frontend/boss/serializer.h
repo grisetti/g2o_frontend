@@ -62,7 +62,7 @@ public:
   /* Write an object.
    * Return false if an error occurred during serialization.
    */
-  bool write(Serializable& instance);
+  bool writeObject(Serializable& instance);
 
   virtual std::string createBinaryFilePath(BaseBLOBReference& instance);
   virtual std::ostream* getBinaryOutputStream(const std::string& fname);

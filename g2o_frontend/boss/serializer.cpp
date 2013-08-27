@@ -188,7 +188,7 @@ bool Serializer::write(double timestamp, const string& source, Serializable& ins
   return false;
 }
 
-bool Serializer::write(Serializable& instance) {
+bool Serializer::writeObject(Serializable& instance) {
   ObjectData* data=new ObjectData();
   instance.serialize(*data,*this);
 
