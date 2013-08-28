@@ -148,11 +148,7 @@ void readConfig(const std::string prefix, Aligner*& aligner, DepthImageConverter
 
   Serializer ser;
   ser.setFilePath("new.conf");
-<<<<<<< HEAD
-  for (size_t i=0; i<messages.size(); i++){
-=======
   for (int i=0; i<instances.size(); i++){
->>>>>>> ed0feab5ef8ae50fc7bff57a4f475748c42f2ecd
     cerr << i << endl;
     ser.writeObject(*instances[i]);
   }
