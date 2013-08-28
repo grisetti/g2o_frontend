@@ -1,6 +1,6 @@
 /*
-    <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2013  <copyright holder> <email>
+    Core data structures for object serialization
+    Copyright (C) 2013  Daniele Baldassari <daniele@dikappa.org>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,11 +16,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdexcept>
+#include <sstream>
 
 #include "object_data.h"
 #include "id_placeholder.h"
-
-#include <stdexcept>
 
 using namespace std;
 using namespace boss;
@@ -50,8 +50,8 @@ Identifiable* ValueData::getPointer() {
   throw logic_error("getPointer not allowed for type "+typeName());
 }
 
-void ValueData::bindPointer(Identifiable*& /*pvar*/) {
-  throw logic_error("bindPointer not allowed for type "+typeName());
+PointerReference& ValueData::getReference() {
+  throw logic_error("getReference not allowed for type "+typeName());
 }
 
 ArrayData& ValueData::getArray() {
@@ -278,18 +278,22 @@ Identifiable* PointerData::getPointer() {
   return _pointer;
 }
 
-void PointerData::bindPointer(Identifiable*& pvar) {
-  pvar = _pointer;
-}
-
 //PointerReference
 ValueType PointerReference::type() {
   return POINTER_REF;
 }
 
-void PointerReference::bindPointer(Identifiable*& pvar) {
-  _ref->addVariable(pvar);
-  pvar=0;
+Identifiable* PointerReference::getPointer() {
+  if (!_ref) {
+    return 0;
+  }
+  IdPlaceholder* phRef=dynamic_cast<IdPlaceholder*>(_ref);
+  if (phRef) {
+    ostringstream msg;
+    msg << "pointer not resolved yet: " << phRef->getId();
+    throw std::logic_error(msg.str());
+  }
+  return _ref;
 }
 
 #define STREAM_OPS(field_type, setter, getter) \

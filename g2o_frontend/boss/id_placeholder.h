@@ -1,6 +1,6 @@
 /*
-    <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2013  <copyright holder> <email>
+    Placeholder class for Identifiable objects
+    Copyright (C) 2013  Daniele Baldassari <daniele@dikappa.org>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,18 +28,38 @@ namespace boss {
 
 class IdContext;
 
+class AbstractPlaceHolderAssigner {
+public:
+  virtual void assign(Identifiable* instance)=0;
+  virtual ~AbstractPlaceHolderAssigner() {}
+};
+
+template<typename T> class PlaceHolderAssigner: public AbstractPlaceHolderAssigner {
+public:
+  PlaceHolderAssigner(T*& var): _var(&var) {}
+  virtual void assign(Identifiable* instance) {
+    *_var=dynamic_cast<T*>(instance);
+  }
+  virtual ~PlaceHolderAssigner() {}
+
+protected:
+  T** _var;
+};
+
 class IdPlaceholder: virtual public Identifiable {
 public:
-  void addVariable(Identifiable*& pvar);
+  template<typename T> void addVariable(T*& var) {
+    _assigners.push_back(new PlaceHolderAssigner<T>(var));
+  }
   void resolve(Identifiable* instance);
-
-  virtual const std::string& className();
+  virtual ~IdPlaceholder();
 
   friend class IdContext;
+
 protected:
   IdPlaceholder(int id, IdContext* context): Identifiable(id, context) {}
   
-  std::vector<Identifiable**> _pvars;
+  std::vector<AbstractPlaceHolderAssigner*> _assigners;
 };
 
 }

@@ -108,15 +108,12 @@ JSONObjectParser::JSONObjectParser() {
 }
 
 ObjectData* JSONObjectParser::readObject(istream& is, string& type) {
-  cerr << "JSONObjectParser::readObject" << endl;
   string line;
   if (!getline(is,line)) {
     return 0;
   }
   fusion::vector<std::string, ObjectData*> v;
-  cerr << "JSONObjectParser::readObject v is " << fusion::at_c<0>(v) << "," << fusion::at_c<1>(v) << endl;
   qi::phrase_parse(line.begin(),line.end(),*_parser_impl, ascii::space, v);
-  cerr << "JSONObjectParser::readObject parse complete" << endl;
   type=fusion::at_c<0>(v);
   return fusion::at_c<1>(v);
 }

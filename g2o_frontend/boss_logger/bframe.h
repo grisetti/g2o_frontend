@@ -35,8 +35,6 @@ protected:
   Eigen::Isometry3d _transform;
   Frame* _parentFrame;
   std::set<Frame*> _childrenFrames;
-private:
-  Identifiable* _tempParentFrame;
 };
 
 }

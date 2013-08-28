@@ -123,12 +123,10 @@ namespace pwn {
     Identifiable::deserialize(data,context);
     setRobustKernel(data.getBool("robustKernel"));
     setInlierMaxChi2(data.getFloat("inlierMaxChi2"));
-    data.bindPointer("aligner", _tempAligner);
+    data.getReference("aligner").bind(_aligner);
   }
 
   void Linearizer::deserializeComplete(){
-    cerr << "linearizer deserialize complete" << endl;
-    setAligner(dynamic_cast<Aligner*>(_tempAligner));
   }
 
   BOSS_REGISTER_CLASS(Linearizer);

@@ -57,7 +57,6 @@ void readConfig(const std::string prefix, Aligner*& aligner, DepthImageConverter
   std::vector<Serializable*> instances;
   cerr << "Reading" << endl;
   while ((s=des.readObject())){
-    cerr << "Got " << s->className() << endl;
     instances.push_back(s);
     Aligner* al=dynamic_cast<Aligner*>(s);
     if (al) {
@@ -81,7 +80,6 @@ void readConfig(const std::string prefix, Aligner*& aligner, DepthImageConverter
   Serializer ser;
   ser.setFilePath("new.conf");
   for (int i=0; i<instances.size(); i++){
-    cerr << i << endl;
     ser.writeObject(*instances[i]);
   }
  

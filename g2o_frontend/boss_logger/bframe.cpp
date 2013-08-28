@@ -66,8 +66,7 @@ namespace boss {
   void Frame::deserialize(ObjectData& data, IdContext& context){
     Identifiable::deserialize(data, context);
     _parentFrame = 0;
-    _tempParentFrame = 0;
-    data.bindPointer("parentFrame", _tempParentFrame);
+    data.getReference("parentFrame").bind(_parentFrame);
 
     Eigen::Quaterniond q;
     q.coeffs().fromBOSS(data,"rotation");
@@ -76,7 +75,7 @@ namespace boss {
   }
 
   void Frame::deserializeComplete(){
-    setParentFrame(static_cast<Frame*>(_tempParentFrame));
+    setParentFrame(_parentFrame);
   }
 
   BOSS_REGISTER_CLASS(Frame);

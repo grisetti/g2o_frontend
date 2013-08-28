@@ -14,7 +14,7 @@ namespace pwn {
     data.setInt("height",height);
   }
   void MultiPointProjector::ChildProjectorInfo::deserialize(ObjectData& data, IdContext& context){
-    data.bindPointer("projector",_tempProjector);
+    data.getReference("projector").bind(pointProjector);
     sensorOffset.matrix().fromBOSS(data,"sensorOffset");
     width=data.getInt("width");
     height=data.getInt("height");
@@ -23,7 +23,6 @@ namespace pwn {
   }
 
   void MultiPointProjector::ChildProjectorInfo::deserializeComplete(){
-    pointProjector=dynamic_cast<PointProjector*>(_tempProjector);
   }
 
   void MultiPointProjector::size(int &rows, int &cols) {

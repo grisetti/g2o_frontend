@@ -42,11 +42,6 @@ namespace pwn {
     virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
     virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
     virtual void deserializeComplete();
-  protected:
-    boss::Identifiable* _tempProjector;
-    boss::Identifiable* _tempStatsCalculator;
-    boss::Identifiable* _tempPointInfoCalculator;
-    boss::Identifiable* _tempNormalInfoCalculator;
   };
 
 }
