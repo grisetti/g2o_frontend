@@ -60,49 +60,6 @@ void VoronoiDiagram::queueFiller()
 }
 
 
-void VoronoiDiagram::newDistmap()
-{
-//    const int rows = _input.rows();
-//    const int cols = _input.cols();
-
-//    const short int coords_x[4] = {-1, 1,  0, 0};
-//    const short int coords_y[4] = { 0, 0, -1, 1};
-
-//    while(!_posqueue->empty())
-//    {
-//        Vector2i current = _posqueue->top();
-//        _posqueue->pop();
-
-//        const int current_x = current.x();
-//        const int current_y = current.y();
-
-//        for(short int i = 0; i < 4; ++i)
-//        {
-//            const short int r = coords_x[i];
-//            const short int c = coords_y[i];
-
-//            int nc_x = current_x + r;
-//            int nc_y = current_y + c;
-
-//            //Check if into boundaries or not an obstacle
-//            if((nc_x >= 0) && (nc_y >= 0) && (nc_x < rows) && (nc_y < cols) && (_input(nc_x, nc_y) != 0))
-//            {
-//                VoronoiVertex* neighbor = &(*_distmap)(nc_x, nc_y);
-//                Vector2i nc(nc_x, nc_y);
-
-//                double neighbor_to_current_parent_dist = (nc - current->_parent).squaredNorm();
-//                if(neighbor_to_current_parent_dist < neighbor->_distance)
-//                {
-//                    neighbor->_distance = neighbor_to_current_parent_dist;
-//                    neighbor->_parent = current->_parent;
-//                    _distqueue->push(neighbor);
-//                }
-//            }
-//        }
-//    }
-}
-
-
 void VoronoiDiagram::distmap()
 {
     const int rows = _distmap->rows();
@@ -264,6 +221,7 @@ void VoronoiDiagram::spikeFinder()
 void VoronoiDiagram::distmap2voronoi()
 {
     _voro = new cv::Mat(_distmap->rows(), _distmap->cols(), CV_8UC1, cv::Scalar(0));
+    _ero = new cv::Mat(_distmap->rows(), _distmap->cols(), CV_8UC1, cv::Scalar(0));
 
     const int rows = _distmap->rows();
     const int cols = _distmap->cols();
@@ -327,7 +285,7 @@ void VoronoiDiagram::distmap2voronoi()
             }
         }
     }
-    cv::dilate(*_voro, *_voro, cv::Mat(), cv::Point(-1, -1), 3);
+    cv::dilate(*_voro, *_ero, cv::Mat(), cv::Point(-1, -1), 2);
 //    cv::erode(*_voro, *_voro, cv::Mat(), cv::Point(-1, -1));
 //    cv::blur(*_voro, *_voro, cv::Size(3, 3));
 //    cv::erode(*_voro, *_voro, cv::Mat(), cv::Point(-1, -1), 2);
@@ -354,7 +312,7 @@ void VoronoiDiagram::eroded2eigen()
     {
         for(int j = 0; j < _voro->cols; ++j)
         {
-            _drawableEroded(i, j) = _voro->at<uchar>(i, j);
+            _drawableEroded(i, j) = _ero->at<uchar>(i, j);
         }
     }
 }
@@ -456,57 +414,6 @@ void VoronoiDiagram::loadPGM()
             {
                 (*_distmap)(x, y)._distance = INF;
                 (*_distmap)(x, y)._parent = Vector2i(INF, INF);
-            }
-        }
-    }
-}
-
-
-void VoronoiDiagram::newLoad()
-{
-    string tag;
-    _file >> tag;
-    if(tag != "P5")
-    {
-        cerr << "Awaiting 'P5' in pgm header, found " << tag << endl;
-        exit(-1);
-    }
-
-    int size_x, size_y;
-    while(_file.peek() == ' ' || _file.peek() == '\n')
-    {
-        _file.ignore();
-    }
-    while(_file.peek() == '#')
-    {
-        _file.ignore(255, '\n');
-    }
-    _file >> size_x;
-    while(_file.peek() == '#')
-    {
-        _file.ignore(255, '\n');
-    }
-    _file >> size_y;
-    while(_file.peek() == '#')
-    {
-        _file.ignore(255, '\n');
-    }
-    _file >> tag;
-    if(tag != "255")
-    {
-        cerr << "Awaiting '255' in pgm header, found " << tag << endl;
-        exit(-1);
-    }
-
-    _input = MatrixXi::Zero(size_x, size_y);
-    for(int y = 0; y < size_y; ++y)
-    {
-        for(int x = 0; x < size_x; ++x)
-        {
-            float c = _file.get();
-            if(c != 0)
-            {
-                _input(x, y) = INF;
             }
         }
     }

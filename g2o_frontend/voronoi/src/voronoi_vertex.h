@@ -34,15 +34,15 @@ public:
 
     inline void setDistance(float distance_) { _distance = distance_; }
     inline float distance() { return _distance; }
-    inline const float distance() const { return _distance; }
+    inline float distance() const { return _distance; }
 
     inline void setVisited(bool visited_) { _visited = visited_;}
     inline bool visited() { return _visited; }
-    inline const bool visited() const { return _visited; }
+    inline bool visited() const { return _visited; }
 
     inline void setOrder(int order_) { _order = order_; }
     inline int order() { return _order; }
-    inline const int order() const { return _order; }
+    inline int order() const { return _order; }
 
     inline void setProxy(Eigen::MatrixXf* proxy_) { _proxy = proxy_; }
     inline Eigen::MatrixXf* proxy() { return _proxy; }
