@@ -82,13 +82,13 @@ typedef std::priority_queue<VoronoiVertex*, std::vector<VoronoiVertex*>, VertexC
 
 struct Comparator
 {
-    inline bool operator() (const Eigen::Vector2i* lhs, const Eigen::Vector2i* rhs) const
+    inline bool operator() (const Eigen::Vector2i& lhs, const Eigen::Vector2i& rhs) const
     {
-        if(lhs->x() < rhs->x())
+        if(lhs.x() < rhs.x())
         {
             return true;
         }
-        else if((lhs->x() == rhs->x()) && (lhs->y() < rhs->y()))
+        else if((lhs.x() == rhs.x()) && (lhs.y() < rhs.y()))
         {
             return true;
         }
@@ -99,7 +99,7 @@ struct Comparator
     }
 };
 
-typedef std::priority_queue<Eigen::Vector2i*, std::deque<Eigen::Vector2i*>, Comparator> PositionQueue;
+
 typedef std::deque<VoronoiVertex*> PointersDeque;
 typedef std::map<Eigen::Vector2i, VoronoiVertex, Comparator> VertexMap;
 typedef std::pair<Eigen::Vector2i, VoronoiVertex> VoronoiPair;

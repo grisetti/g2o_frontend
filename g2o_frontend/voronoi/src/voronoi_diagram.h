@@ -74,8 +74,6 @@ public:
 
     Eigen::MatrixXi _input;
     Eigen::MatrixXi _pmat;
-    PositionQueue* _posqueue;
-
 
     VoronoiVertex** _dmap;
 
