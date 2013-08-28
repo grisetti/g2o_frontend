@@ -14,6 +14,7 @@ namespace boss {
     void setExtension(const std::string& extension_) {_extension = extension_;}
     void resize(int width, int height, Format format);
     Format format() const { return _format; }
+    void adjustFormat();
     virtual bool read(std::istream& is);
     virtual void write(std::ostream& os);
     inline cv::Mat& cvImage() {return _image;}

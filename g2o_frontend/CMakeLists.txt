@@ -9,6 +9,7 @@ if(CUDA_FOUND)
   ADD_SUBDIRECTORY(pwn_cuda)
 endif(CUDA_FOUND)
 
+ADD_SUBDIRECTORY(voronoi)
 ADD_SUBDIRECTORY(pwn_viewer)
 ADD_SUBDIRECTORY(line_extraction)
 ADD_SUBDIRECTORY(mapper)

@@ -28,6 +28,20 @@ namespace boss {
     }
   }
 
+  void ImageBLOB::adjustFormat() {
+    switch (cvImage().type()){
+    case CV_8UC1: 
+      _format = mono8;
+      break;
+    case CV_16UC1: 
+      _format = mono16;
+      break;
+    case CV_8UC3:
+      _format = rgb8;
+      break;
+    }
+  }
+
 
   bool ImageBLOB::read(std::istream& is) {
     std::vector<uchar> buffer;
