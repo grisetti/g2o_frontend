@@ -58,6 +58,12 @@ public:
    * throws std::logic_error if no factory method was registered for this class namespace
    */
   static Serializable* createInstance(const std::string& className);
+
+  /*!
+   * Utility function to get the current timestamp, for time-sensitive data
+   */
+  static double getCurrentTime();
+
 };
 
 template <class T> class AutoRegisterer {

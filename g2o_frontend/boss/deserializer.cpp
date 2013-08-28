@@ -27,12 +27,13 @@
 #include "identifiable.h"
 #include "message.h"
 #include "json_message_parser.h"
+#include "json_object_parser.h"
 #include "id_placeholder.h"
 
 using namespace std;
 using namespace boss;
 
-static ValueData* processData(ValueData* vdata, SerializationContext& context, vector<int>& danglingRefs, vector<int>& declaredIDs) {
+static ValueData* processData(ValueData* vdata, IdContext& context, vector<int>& danglingRefs, vector<int>& declaredIDs) {
   switch (vdata->type()) {
   case OBJECT: {
     ObjectData* data=static_cast<ObjectData*>(vdata);
@@ -82,8 +83,94 @@ static ValueData* processData(ValueData* vdata, SerializationContext& context, v
   return 0;
 }
 
+static Serializable* createInstance(ObjectData* odata, const string& type, IdContext& context,
+    map<Serializable*,std::set<int> >& waitingInstances, map<int,std::set<Serializable*> >& danglingReferences) {
+  ValueData* idValue=odata->getField("#id");
+
+  //Identifiable objects are overwritten if another object
+  //with the same ID is read, so first check if the ID is already in the context
+  Serializable* instance=0;
+  if (idValue) {
+    instance=context.getById(idValue->getInt());
+    if (instance) {
+      IdPlaceholder* placeHolder=dynamic_cast<IdPlaceholder*>(instance);
+      if (placeHolder) {
+        //Found instance is a placeholder, replace it
+        instance=0;
+      }
+    }
+  }
+
+  if (instance) {
+    //Just to ensure that the found instance has right type
+    if (instance->className()!=type) {
+      stringstream msg;
+      msg << "Trying to overwrite " << instance->className() << " (ID " << idValue->getInt() << ") with " << type;
+      throw logic_error(msg.str());
+    }
+  } else {
+    try {
+      instance=Serializable::createInstance(type);
+    } catch (logic_error& e) {
+      //TODO Notify this occurrence
+      return 0;
+    }
+  }
+
+  vector<int> danglingPointers;
+  vector<int> declaredIDs;
+
+  processData(odata, context, danglingPointers,declaredIDs);
+  instance->deserialize(*odata,context);
+
+  for (vector<int>::iterator dp_it=danglingPointers.begin();dp_it!=danglingPointers.end();dp_it++) {
+    waitingInstances[instance].insert(*dp_it);
+    danglingReferences[*dp_it].insert(instance);
+  }
+  for (vector<int>::iterator id_it=declaredIDs.begin();id_it!=declaredIDs.end();id_it++) {
+    //Further check, just in case the ID was a fake field
+    if (context.getById(*id_it)) {
+      map<int,set<Serializable*> >::iterator entry=danglingReferences.find(*id_it);
+      if (entry!=danglingReferences.end()) {
+        set<Serializable*>& instSet=(*entry).second;
+        for (set<Serializable*>::iterator instance_it=instSet.begin();instance_it!=instSet.end();instance_it++) {
+          waitingInstances[*instance_it].erase(*id_it);
+          if (waitingInstances[*instance_it].empty()) {
+            waitingInstances.erase(*instance_it);
+            (*instance_it)->deserializeComplete();
+          }
+        }
+        danglingReferences.erase(*id_it);
+      }
+    }
+  }
+  if (danglingPointers.empty()) {
+    instance->deserializeComplete();
+  }
+  return instance;
+}
+
 Deserializer::Deserializer(): _datastream(0) {
   _parser=new JSONMessageParser();
+  _objectParser=new JSONObjectParser();
+}
+
+Serializable* Deserializer::readObject() {
+  if (!_datastream) {
+    _datastream=new ifstream(_dataFileName.c_str());
+  }
+  if (!(*_datastream)) {
+    return 0;
+  }
+
+  string type;
+  auto_ptr<ObjectData> odata(_objectParser->readObject(*_datastream, type));
+  cerr << "Got odata" << endl;
+  if (!odata.get()) {
+    return 0;
+  }
+  cerr << "odata valid" << endl;
+  return createInstance(odata.get(), type, *this, _waitingInstances, _danglingReferences);
 }
 
 Message* Deserializer::readMessage() {
@@ -211,6 +298,7 @@ void Deserializer::setFilePath(const string& fpath) {
 
 Deserializer::~Deserializer() {
   delete _parser;
+  delete _objectParser;
   if (_datastream) {
     delete _datastream;
   }

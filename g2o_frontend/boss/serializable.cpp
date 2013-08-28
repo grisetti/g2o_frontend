@@ -18,6 +18,7 @@
 
 #include <stdexcept>
 #include <typeinfo>
+#include <sys/time.h>
 
 #include "serializable.h"
 #include "object_data.h"
@@ -64,4 +65,10 @@ ObjectData* Serializable::getSerializedData(IdContext& context) {
 }
 
 void Serializable::deserializeComplete() {}
+
+double Serializable::getCurrentTime() {
+  timeval time;
+  gettimeofday(&time, 0);
+  return time.tv_sec+(time.tv_usec/1000000.0);
+}
 

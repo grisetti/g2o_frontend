@@ -5,8 +5,6 @@ ADD_LIBRARY(boss ${G2O_FRONTEND_LIB_TYPE}
   id_placeholder.cpp
   id_context.cpp
   message_data.cpp
-#  log_writer.cpp
-#  log_reader.cpp
   json_message_writer.cpp
   message_writer.cpp
   message_parser.cpp
@@ -17,6 +15,10 @@ ADD_LIBRARY(boss ${G2O_FRONTEND_LIB_TYPE}
   identifiable.cpp
   blob.cpp 
   json_message_parser.cpp  
+  object_parser.cpp
+  object_writer.cpp
+  json_object_parser.cpp
+  json_object_writer.cpp
 )
 
 SET_TARGET_PROPERTIES(boss PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_boss)

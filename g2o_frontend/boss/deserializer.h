@@ -34,6 +34,7 @@ class Serializable;
 class ValueData;
 class Message;
 class MessageParser;
+class ObjectParser;
 class MessageData;
 
 class Deserializer: virtual public SerializationContext {
@@ -59,7 +60,16 @@ public:
    * \return the read message
    */
   Message* readMessage();
-  
+
+  /*!
+   * \brief Read a single object and create the related Serializable instance.
+   * \details Read and parse a single object, returning a pointer to the instance, if any; a null pointer
+   * is returned in case of error. <br/>
+   * The caller takes ownership of returned pointer.
+   * \return the read object
+   */
+  Serializable* readObject();
+
   std::ostream* getBinaryOutputStream(const std::string& fname);
   std::istream* getBinaryInputStream(const std::string& fname);
 
@@ -68,6 +78,7 @@ protected:
   std::string _dataFileName;
 
   MessageParser* _parser;
+  ObjectParser* _objectParser;
   std::istream* _datastream;
   
   //Map with Identifiable objects that refers to unresolved pointers

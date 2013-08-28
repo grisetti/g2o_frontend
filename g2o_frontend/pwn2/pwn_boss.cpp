@@ -101,18 +101,18 @@ void generateConfig(Aligner*& aligner, DepthImageConverter*& converter, const st
   aligner->setCorrespondenceFinder(correspondenceFinder);
   aligner->setInnerIterations(1);
   aligner->setOuterIterations(10);
-    
+  
   Serializer ser;
   ser.setFilePath(configFile);
-  ser.write(prefix, *convProjector);
-  ser.write(prefix, *statsCalculator);
-  ser.write(prefix, *pointInformationMatrixCalculator);
-  ser.write(prefix, *normalInformationMatrixCalculator);
-  ser.write(prefix, *converter);
-  ser.write(prefix, *alProjector);
-  ser.write(prefix, *linearizer);
-  ser.write(prefix, *correspondenceFinder);
-  ser.write(prefix, *aligner);
+  ser.writeObject(*convProjector);
+  ser.writeObject(*statsCalculator);
+  ser.writeObject(*pointInformationMatrixCalculator);
+  ser.writeObject(*normalInformationMatrixCalculator);
+  ser.writeObject(*converter);
+  ser.writeObject(*alProjector);
+  ser.writeObject(*linearizer);
+  ser.writeObject(*correspondenceFinder);
+  ser.writeObject(*aligner);
 }
 
 
@@ -121,11 +121,12 @@ void readConfig(const std::string prefix, Aligner*& aligner, DepthImageConverter
   converter = 0;
   Deserializer des;
   des.setFilePath(configFile);
-  Message* m;
-  std::vector<Message*> messages;
-  while ((m=des.readMessage())){
-    messages.push_back(m);
-    Serializable* s = m->getInstance();
+  Serializable* s;
+  std::vector<Serializable*> instances;
+  cerr << "Reading" << endl;
+  while ((s=des.readObject())){
+    cerr << "Got " << s->className() << endl;
+    instances.push_back(s);
     Aligner* al=dynamic_cast<Aligner*>(s);
     if (al) {
       cerr << "got aligner" << endl;
@@ -147,9 +148,13 @@ void readConfig(const std::string prefix, Aligner*& aligner, DepthImageConverter
 
   Serializer ser;
   ser.setFilePath("new.conf");
+<<<<<<< HEAD
   for (size_t i=0; i<messages.size(); i++){
+=======
+  for (int i=0; i<instances.size(); i++){
+>>>>>>> ed0feab5ef8ae50fc7bff57a4f475748c42f2ecd
     cerr << i << endl;
-    ser.write(prefix,  *messages[i]->getInstance());
+    ser.writeObject(*instances[i]);
   }
  
 }
