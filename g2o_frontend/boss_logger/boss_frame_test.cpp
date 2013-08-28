@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
     cout << "I wrote again " << messages.size() << " messages" << endl;
 
     // find the origin;
-    Frame* origin;
+    Frame* origin=0;
     for (size_t i=0; i<messages.size(); i++) {
 	origin = dynamic_cast<Frame*>( messages[i]->getInstance() );
 	if (origin && origin->name()==""){
@@ -106,10 +106,10 @@ int main(int argc, char** argv) {
 	}
     }
     if (origin){
-    Frame* f = origin->childByName("base_frame/front_laser_frame/rgbd_frame");
-    if (f) {
-      cerr << "found frame " << f->fullName() << endl;
-    }
+      Frame* f = origin->childByName("base_frame/front_laser_frame/rgbd_frame");
+      if (f) {
+	cerr << "found frame " << f->fullName() << endl;
+      }
     }
       
 

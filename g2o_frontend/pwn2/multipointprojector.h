@@ -30,8 +30,6 @@ class MultiPointProjector: public PointProjector {
     virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
     virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
     virtual void deserializeComplete();
-  protected:
-    Identifiable* _tempProjector;
   };  
 
  public:

@@ -19,11 +19,10 @@ namespace boss {
     Identifiable::deserialize(data,context);
     _topic = data.getString("topic");
     _frame = 0;
-    data.bindPointer("frame",_tempFrame);
+    data.getReference("frame").bind(_frame);
   }
 
   void BaseSensor::deserializeComplete() {
-    _frame = static_cast<Frame*>(_tempFrame);
   }
   
 }

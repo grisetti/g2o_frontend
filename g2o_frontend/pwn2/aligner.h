@@ -84,10 +84,6 @@ namespace pwn {
     float _error;
 
     std::vector<SE3Prior*> _priors;
-  private:
-    boss::Identifiable *_tempProjector;
-    boss::Identifiable *_tempLinearizer;
-    boss::Identifiable * _tempCorrespondenceFinder;
   };
 
 }

@@ -1,6 +1,6 @@
 /*
-    <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2013  <copyright holder> <email>
+    Core data structures for object serialization
+    Copyright (C) 2013  Daniele Baldassari <daniele@dikappa.org>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,11 +24,11 @@
 #include <vector>
 #include <map>
 #include <limits>
+#include <stdexcept>
+
+#include "id_placeholder.h"
 
 namespace boss {
-
-class Identifiable;
-class IdPlaceholder;
 
 enum ValueType {
   BOOL, NUMBER, STRING, ARRAY, OBJECT, POINTER, POINTER_REF
@@ -36,6 +36,7 @@ enum ValueType {
 
 class ArrayData;
 class ObjectData;
+class PointerReference;
 
 class ValueData {
 public:
@@ -45,7 +46,7 @@ public:
   virtual bool getBool();
   virtual const std::string& getString();
   virtual Identifiable* getPointer();
-  virtual void bindPointer(Identifiable*& pvar);
+  virtual PointerReference& getReference();
 
   virtual ArrayData& getArray();
   virtual ObjectData& getObject();
@@ -206,8 +207,8 @@ public:
     return _fields;
   }
 
-  void bindPointer(const std::string&name, Identifiable*& pvar) {
-    getField(name)->bindPointer(pvar);
+  PointerReference& getReference(const std::string&name) {
+    return getField(name)->getReference();
   }
 
   Identifiable* getPointer(const std::string&name) {
@@ -227,21 +228,41 @@ class PointerData: public ValueData {
 public:
   PointerData(Identifiable* pointer): _pointer(pointer) {}
   virtual Identifiable* getPointer();
-  virtual void bindPointer(Identifiable*& pvar);
   virtual ValueType type();
-  
+
 protected:
   Identifiable* _pointer;
 };
 
 class PointerReference: public ValueData {
 public:
-  PointerReference(IdPlaceholder* ref): _ref(ref) {}
+  PointerReference(Identifiable* ref): _ref(ref) {}
 
-  virtual void bindPointer(Identifiable*& pvar);
+  PointerReference& getReference() {
+    return *this;
+  }
+
+  virtual Identifiable* getPointer();
+
+  template<typename T> void bind(T*& pvar) {
+    if (!_ref) {
+      pvar=0;
+      return;
+    }
+    IdPlaceholder* phRef=dynamic_cast<IdPlaceholder*>(_ref);
+    if (phRef) {
+      phRef->addVariable(pvar);
+    } else {
+      pvar=dynamic_cast<T*>(_ref);
+      if (!pvar) {
+        throw std::logic_error("bad cast: "+_ref->className());
+      }
+    }
+  }
   virtual ValueType type();
 protected:
-  IdPlaceholder* _ref;
+  Identifiable* _ref;
+
 };
 
 std::pair<const std::string&, const int&> field(const std::string& nm, const int& val);

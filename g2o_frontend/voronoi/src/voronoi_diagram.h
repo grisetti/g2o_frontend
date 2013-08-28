@@ -38,10 +38,8 @@ public:
 
     void pruner();
 
-    void newQueueFiller();
     void queueFiller();
 
-    void newDistmap();
     void distmap();
 
     void distmap2image();
@@ -72,14 +70,8 @@ public:
     Eigen::MatrixXf _drawableEroded;
     Eigen::MatrixXf _testVMap;
 
-    Eigen::MatrixXi _input;
-    Eigen::MatrixXi _pmat;
-    PositionQueue* _posqueue;
-
-
-    VoronoiVertex** _dmap;
-
     cv::Mat* _voro;
+    cv::Mat* _ero;
     DistanceMap* _distmap;
     DistanceQueue* _distqueue;
     LookUpTable* _lut;

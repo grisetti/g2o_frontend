@@ -20,8 +20,6 @@ namespace boss {
  protected:
    Frame* _frame;
    std::string _topic;
- private:
-   Identifiable* _tempFrame;
  };
 
   class BaseSensorData: public Identifiable{

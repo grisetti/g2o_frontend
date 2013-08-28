@@ -152,15 +152,14 @@ namespace pwn {
     _referenceSensorOffset=v2t(v);
     v.fromBOSS(data,"currentSensorOffset");
     _currentSensorOffset=v2t(v);
-    data.bindPointer("projector", _tempProjector);
-    data.bindPointer("linearizer", _tempLinearizer);
-    data.bindPointer("correspondenceFinder", _tempCorrespondenceFinder);
+    _referenceSensorOffset.matrix().fromBOSS(data,"referenceSensorOffset");
+    _currentSensorOffset.matrix().fromBOSS(data,"currentSensorOffset");
+    data.getReference("projector").bind(_projector);
+    data.getReference("linearizer").bind(_linearizer);
+    data.getReference("correspondenceFinder").bind(_correspondenceFinder);
   }
 
   void Aligner::deserializeComplete(){
-    setLinearizer(dynamic_cast<Linearizer*>(_tempLinearizer));
-    setCorrespondenceFinder(dynamic_cast<CorrespondenceFinder*>(_tempCorrespondenceFinder));
-    setProjector(dynamic_cast<PointProjector*>(_tempProjector));
   }
 
   BOSS_REGISTER_CLASS(Aligner);

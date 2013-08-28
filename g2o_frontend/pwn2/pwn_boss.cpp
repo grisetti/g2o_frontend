@@ -64,7 +64,7 @@ set<string> readDirectory(string dir) {
 }
 
 
-void generateConfig(Aligner*& aligner, DepthImageConverter*& converter, const std::string prefix, const std::string& configFile, const Matrix3f& cameraMatrix, int nscale, int mscale){
+void generateConfig(Aligner*& aligner, DepthImageConverter*& converter, const std::string/* prefix*/, const std::string& configFile, const Matrix3f& cameraMatrix, int nscale, int mscale){
   int rows=640;
   int cols=480;
   
@@ -116,7 +116,7 @@ void generateConfig(Aligner*& aligner, DepthImageConverter*& converter, const st
 }
 
 
-void readConfig(const std::string prefix, Aligner*& aligner, DepthImageConverter*& converter, const std::string& configFile){
+void readConfig(const std::string /* prefix*/, Aligner*& aligner, DepthImageConverter*& converter, const std::string& configFile){
   aligner = 0;
   converter = 0;
   Deserializer des;
@@ -125,7 +125,6 @@ void readConfig(const std::string prefix, Aligner*& aligner, DepthImageConverter
   std::vector<Serializable*> instances;
   cerr << "Reading" << endl;
   while ((s=des.readObject())){
-    cerr << "Got " << s->className() << endl;
     instances.push_back(s);
     Aligner* al=dynamic_cast<Aligner*>(s);
     if (al) {
@@ -148,8 +147,7 @@ void readConfig(const std::string prefix, Aligner*& aligner, DepthImageConverter
 
   Serializer ser;
   ser.setFilePath("new.conf");
-  for (int i=0; i<instances.size(); i++){
-    cerr << i << endl;
+  for (size_t i=0; i<instances.size(); i++){
     ser.writeObject(*instances[i]);
   }
  

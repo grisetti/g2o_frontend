@@ -69,17 +69,13 @@ namespace pwn {
   
   void DepthImageConverter::deserialize(boss::ObjectData& data, boss::IdContext& context) {
     Identifiable::deserialize(data,context);
-    data.bindPointer("pointProjector", _tempProjector);
-    data.bindPointer("statsCalculator", _tempStatsCalculator);
-    data.bindPointer("pointInfoCalculator", _tempPointInfoCalculator);
-    data.bindPointer("normalInfoCalculator", _tempNormalInfoCalculator);
+    data.getReference("pointProjector").bind(_projector);
+    data.getReference("statsCalculator").bind(_statsCalculator);
+    data.getReference("pointInfoCalculator").bind(_pointInformationMatrixCalculator);
+    data.getReference("normalInfoCalculator").bind(_normalInformationMatrixCalculator);
   }
   
   void DepthImageConverter::deserializeComplete(){
-    _projector=dynamic_cast<PointProjector*>(_tempProjector);
-    _statsCalculator=dynamic_cast<StatsCalculator*>(_tempStatsCalculator);
-    _pointInformationMatrixCalculator=dynamic_cast< PointInformationMatrixCalculator* >(_tempPointInfoCalculator);
-    _normalInformationMatrixCalculator=dynamic_cast< NormalInformationMatrixCalculator*> (_tempNormalInfoCalculator);
   }
 
   BOSS_REGISTER_CLASS(DepthImageConverter);

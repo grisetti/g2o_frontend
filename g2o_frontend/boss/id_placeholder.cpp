@@ -1,6 +1,6 @@
 /*
-    <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) 2013  <copyright holder> <email>
+    Placeholder class for Identifiable objects
+    Copyright (C) 2013  Daniele Baldassari <daniele@dikappa.org>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,17 +23,15 @@ using namespace boss;
 using namespace std;
 
 void IdPlaceholder::resolve(Identifiable* instance) {
-  for (vector<Identifiable**>::iterator it=_pvars.begin();it!=_pvars.end();it++) {
-    **it=instance;
+  for (vector<AbstractPlaceHolderAssigner*>::iterator it=_assigners.begin();it!=_assigners.end();it++) {
+    (*it)->assign(instance);
   }
 }
 
-void IdPlaceholder::addVariable(Identifiable*& pvar) {
-  _pvars.push_back(&pvar);
+IdPlaceholder::~IdPlaceholder() {
+  for (vector<AbstractPlaceHolderAssigner*>::iterator it=_assigners.begin();it!=_assigners.end();it++) {
+    delete *it;
+  }
 }
-  
-const string& IdPlaceholder::className() {
-  static string cname="#";
-  return cname;
-}
+
 

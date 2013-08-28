@@ -59,26 +59,30 @@ int main(int argc, char** argv)
     vd = new VoronoiDiagram(is, res, 256, (float) 0.125);
 
     double a = vd->get_time();
-//    vd->loadPGM();
-    vd->newLoad();
+    vd->loadPGM();
+//    vd->newLoad();
     double b = vd->get_time();
     cout << "IMAGE LOADED: " << b-a << endl;
-//    vd->queueFiller();
-    vd->newQueueFiller();
+    vd->queueFiller();
+//    vd->newQueueFiller();
     double c = vd->get_time();
     cout << "FILLING QUEUE: " << c-b << endl;
-//    vd->distmap();
-//    vd->distmap2image();
-//    vd->savePGM("distance_map.pgm", vd->_drawableDistmap);
-//    vd->distmap2voronoi();
-//    vd->cvmat2eigenmat();
-//    vd->savePGM("voronoi.pgm", vd->_drawableVoromap);
-//    vd->vmap2eigenmat();
-//    vd->savePGM("prova.pgm", vd->_testVMap);
-//    vd->eroded2eigen();
-//    vd->savePGM("eroded.pgm", vd->_drawableEroded);
+    vd->distmap();
+    vd->distmap2image();
+    vd->savePGM("distance_map.pgm", vd->_drawableDistmap);
 
-//    vd->fillLookUpTable(dt, dr, max);
+    double d = vd->get_time();
+    vd->distmap2voronoi();
+    double e = vd->get_time();
+    cout << "VORO time: " << e-d << endl;
+    vd->cvmat2eigenmat();
+    vd->savePGM("voronoi.pgm", vd->_drawableVoromap);
+    vd->vmap2eigenmat();
+    vd->savePGM("prova.pgm", vd->_testVMap);
+    vd->eroded2eigen();
+    vd->savePGM("eroded.pgm", vd->_drawableEroded);
+
+    vd->fillLookUpTable(dt, dr, max);
 //    cout << "PRE PROXY" << endl;
 //    vd->proxySetter();
 //    cout << "POST PROXY" << endl;

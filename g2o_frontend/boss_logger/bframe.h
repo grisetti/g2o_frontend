@@ -45,8 +45,6 @@ protected:
   std::set<Frame*> _childrenFrames;
   ChildrenNameMap _childrenNameMap;
   std::string _name;
-private:
-  Identifiable* _tempParentFrame;
 };
 
 

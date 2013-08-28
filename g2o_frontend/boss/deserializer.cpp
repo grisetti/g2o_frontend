@@ -40,16 +40,17 @@ static ValueData* processData(ValueData* vdata, IdContext& context, vector<int>&
     ValueData* pfield=data->getField("#pointer");
     if (pfield) {
       int id=pfield->getInt();
+
       //Negative IDs map to null pointer
-      if (id<0) {
-        return new PointerData(0);
+      Identifiable* pointer=0;
+      if (id>=0) {
+        pointer=context.getById(id);
+        if (!pointer) {
+          pointer=context.createPlaceHolder(id);
+          danglingRefs.push_back(id);
+        }
       }
-      Identifiable* pointer=context.getById(id);
-      if (pointer) {
-        return new PointerData(pointer);
-      }
-      danglingRefs.push_back(id);
-      return new PointerReference(context.createPlaceHolder(id));
+      return new PointerReference(pointer);
     }
     ValueData* idfield=data->getField("#id");
     if (idfield) {
@@ -165,11 +166,9 @@ Serializable* Deserializer::readObject() {
 
   string type;
   auto_ptr<ObjectData> odata(_objectParser->readObject(*_datastream, type));
-  cerr << "Got odata" << endl;
   if (!odata.get()) {
     return 0;
   }
-  cerr << "odata valid" << endl;
   return createInstance(odata.get(), type, *this, _waitingInstances, _danglingReferences);
 }
 

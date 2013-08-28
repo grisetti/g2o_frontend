@@ -27,8 +27,8 @@ namespace boss {
   void FrameRelation::deserialize(ObjectData& data, IdContext& context){
     Identifiable::deserialize(data, context);
 
-    data.bindPointer("fromFrame", _tempFromFrame);
-    data.bindPointer("toFrame", _tempToFrame);
+    data.getReference("fromFrame").bind(_fromFrame);
+    data.getReference("toFrame").bind(_toFrame);
 
     Eigen::Quaterniond q;
     q.coeffs().fromBOSS(data,"rotation");
@@ -38,8 +38,6 @@ namespace boss {
   }
 
   void FrameRelation::deserializeComplete(){
-    _fromFrame = static_cast<Frame*>(_tempFromFrame);
-    _toFrame = static_cast<Frame*>(_tempToFrame);
   }
   BOSS_REGISTER_CLASS(FrameRelation);
 

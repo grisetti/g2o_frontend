@@ -47,8 +47,6 @@ namespace pwn {
     float _error;
     int _inliers;
     bool _robustKernel;
-  private:
-    boss::Identifiable* _tempAligner;
   };
 
 }
