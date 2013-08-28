@@ -31,5 +31,8 @@ namespace boss {
     _linearAccelerationCovariance.toBOSS(data, "linearAccelerationCovariance");
   }
   
+
+  BOSS_REGISTER_CLASS(IMUSensor);
+  BOSS_REGISTER_CLASS(IMUData);
   
 }

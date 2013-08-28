@@ -17,6 +17,7 @@ namespace boss {
 class Frame: public Identifiable {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  typedef std::map<std::string, Frame*> ChildrenNameMap;
   Frame(const std::string& name_="", 
 	const Eigen::Isometry3d& transform_=Eigen::Isometry3d::Identity(), 
 	Frame* parentFrame_ = 0, int id=-1, IdContext* context = 0);
@@ -29,16 +30,20 @@ public:
   
   inline const std::string& name() const {return _name;}
   void setName(const std::string& name_) {_name = name_;}
+  std::string fullName() const;
+
   inline const Frame* parentFrame() const { return _parentFrame;}
   inline Frame* parentFrame() { return _parentFrame;}
+  void setParentFrame(Frame* parentFrame_);
   inline const std::set<Frame*>& childrenFrames() const {return _childrenFrames;}
-
+  Frame* childByName(const std::string& childrenName);
+  const Frame* childByName(const std::string& childrenName) const;
   Eigen::Isometry3d transformTo(const Frame* base) const;
 protected:
-  void setParentFrame(Frame* parentFrame_);
   Eigen::Isometry3d _transform;
   Frame* _parentFrame;
   std::set<Frame*> _childrenFrames;
+  ChildrenNameMap _childrenNameMap;
   std::string _name;
 private:
   Identifiable* _tempParentFrame;

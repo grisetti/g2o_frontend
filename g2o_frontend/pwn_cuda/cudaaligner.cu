@@ -90,7 +90,7 @@ namespace pwn {
     _maxCurvatureRatio = 1.3f;
     _minCurvatureRatio = 1./_maxCurvatureRatio;
     _maxDepth = 100000;
-
+    _robustKernel = true;
     _numReferencePoints = 0;
     _numCurrentPoints = 0;
     _maxReferencePoints = maxReferencePoints_;

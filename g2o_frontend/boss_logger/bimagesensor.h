@@ -1,5 +1,5 @@
 #ifndef _BOSS_IMAGE_SENSOR_H_
-#define _BOSS_IMAGE_SENSOR_H
+#define _BOSS_IMAGE_SENSOR_H_
 #include "bsensor.h"
 #include "g2o_frontend/boss/blob.h"
 #include <Eigen/Core>
@@ -29,29 +29,58 @@ namespace boss {
   class ImageSensor : public BaseSensor {
   public:
     ImageSensor(int id=-1, IdContext* context = 0);
+    virtual ~ImageSensor();
   };
 
-  class Image : public SensorData<ImageSensor>  {
+  class ImageData : public SensorData<ImageSensor>  {
   public:
-    enum DistortionModel {UnknownDistortion=0x0,PlumbBob=0x1};
-    enum CameraModel {UnknownCamera=0x0,Pinhole=0x1, Cylindrical=0x2};
-    Image(ImageSensor* sensor=0, 
+    ImageData(ImageSensor* sensor=0, 
 	  int id=-1, 
 	  IdContext* context = 0);
-    ~Image();
+    ~ImageData();
     virtual void serialize(ObjectData& data, IdContext& context);
     virtual void deserialize(ObjectData& data, IdContext& context);
     inline ImageBLOBReference& imageBlob() { return _imageBlob; }
     inline const ImageBLOBReference& imageBlob() const { return _imageBlob; }
-    //protected:
+  protected:
     ImageBLOBReference _imageBlob;
-    CameraModel _cameraModel;
-    DistortionModel _distortionModel;
-    Eigen::Matrix3f _cameraMatrix;
-    Eigen::MatrixXd _distortionParameters;
   };
 
-  
+  class PinholeImageSensor: public ImageSensor {
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    PinholeImageSensor(int id=-1, IdContext* context = 0);
+    virtual ~PinholeImageSensor();
+    virtual void serialize(ObjectData& data, IdContext& context);
+    virtual void deserialize(ObjectData& data, IdContext& context);
+
+    inline const std::string& distortionModel() const {return _distortionModel;}
+    inline void setDistortionModel(const std::string& distortionModel_) {_distortionModel=distortionModel_;}
+    inline const Eigen::VectorXd& distortionParameters() const {return _distortionParameters;}
+    inline void setDistortionParameters(const Eigen::VectorXd& distortionParameters_) {_distortionParameters = distortionParameters_;}
+    inline const Eigen::Matrix3d& cameraMatrix() const {return _cameraMatrix;}
+    inline void setCameraMatrix(const Eigen::Matrix3d& cameraMatrix_) {_cameraMatrix = cameraMatrix_;}
+  protected:
+    Eigen::Matrix3d _cameraMatrix;
+    std::string _distortionModel;
+    Eigen::VectorXd _distortionParameters;
+  };
+
+  class PinholeImageData: public ImageData {
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    PinholeImageData(PinholeImageSensor* sensor=0,  int id=-1, IdContext* context = 0);
+    ~PinholeImageData();
+    virtual const std::string& distortionModel() const;
+    virtual void setDistortionModel(const std::string& distortionModel_);
+    virtual const Eigen::VectorXd& distortionParameters() const;
+    virtual void setDistortionParameters(const Eigen::VectorXd& distortionParameters_);
+    virtual const Eigen::Matrix3d& cameraMatrix() const;
+    virtual void setCameraMatrix(const Eigen::Matrix3d& cameraMatrix_);
+    inline const PinholeImageSensor* pinholeSensor() const { return dynamic_cast<PinholeImageSensor*>(_sensor); }
+    inline PinholeImageSensor* pinholeSensor() { return dynamic_cast<PinholeImageSensor*>(_sensor); }
+  };
+
 }
 
 #endif

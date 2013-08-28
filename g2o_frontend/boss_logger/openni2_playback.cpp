@@ -13,11 +13,7 @@ using namespace std;
 using namespace boss;
 using namespace cv;
 
-ImageSensor* imageSensor=0;
-
-  BOSS_REGISTER_BLOB(ImageBLOB);
-  BOSS_REGISTER_CLASS(Image);
-  BOSS_REGISTER_CLASS(ImageSensor);
+PinholeImageSensor* imageSensor=0;
 
 int main(int argc, char **argv)
 {
@@ -35,7 +31,7 @@ int main(int argc, char **argv)
   for (size_t i=0; i<messages.size();  i++){
     cout << "I read " << messages.size() << " messages" << endl;
     Message* m=messages[i];
-    Image* img=dynamic_cast<Image*>(m->getInstance());
+    PinholeImageData* img=dynamic_cast<PinholeImageData*>(m->getInstance());
     if (img) {
       char c = waitKey();
       ImageBLOB* ib=img->imageBlob().get();
