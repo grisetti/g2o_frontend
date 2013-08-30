@@ -27,17 +27,10 @@ namespace boss {
 
   typedef BLOBReference<ImageBLOB> ImageBLOBReference;
 
-  class ImageSensor : public BaseSensor {
-  public:
-    ImageSensor(int id=-1, IdContext* context = 0);
-    virtual ~ImageSensor();
-  };
 
-  class ImageData : public SensorData<ImageSensor>  {
+  class ImageData : public BaseSensorData {
   public:
-    ImageData(ImageSensor* sensor=0, 
-	  int id=-1, 
-	  IdContext* context = 0);
+    ImageData(int id=-1, IdContext* context = 0);
     ~ImageData();
     virtual void serialize(ObjectData& data, IdContext& context);
     virtual void deserialize(ObjectData& data, IdContext& context);
@@ -47,7 +40,7 @@ namespace boss {
     ImageBLOBReference _imageBlob;
   };
 
-  class PinholeImageSensor: public ImageSensor {
+  class PinholeImageSensor: public BaseSensor {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     PinholeImageSensor(int id=-1, IdContext* context = 0);
@@ -78,10 +71,15 @@ namespace boss {
     virtual void setDistortionParameters(const Eigen::VectorXd& distortionParameters_);
     virtual const Eigen::Matrix3d& cameraMatrix() const;
     virtual void setCameraMatrix(const Eigen::Matrix3d& cameraMatrix_);
-    inline const PinholeImageSensor* pinholeSensor() const { return dynamic_cast<PinholeImageSensor*>(_sensor); }
-    inline PinholeImageSensor* pinholeSensor() { return dynamic_cast<PinholeImageSensor*>(_sensor); }
+    virtual void serialize(ObjectData& data, IdContext& context);
+    virtual void deserialize(ObjectData& data, IdContext& context);
+    virtual BaseSensor* baseSensor() {return sensor();}
+    virtual const BaseSensor* baseSensor() const {return sensor();}
+    inline const PinholeImageSensor* sensor() const { return dynamic_cast<PinholeImageSensor*>(_sensor); }
+    inline PinholeImageSensor* sensor() { return dynamic_cast<PinholeImageSensor*>(_sensor); }
+  protected:
+    PinholeImageSensor* _sensor;
   };
-
 }
 
 #endif

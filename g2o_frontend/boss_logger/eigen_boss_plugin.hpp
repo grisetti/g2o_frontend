@@ -20,7 +20,7 @@ inline void fromBOSS(boss::ObjectData& data, const std::string name){
     int _r = matrixData.getInt("rows");
     int _c = matrixData.getInt("cols");
     if (_r!=0 && _c!=0) 
-      this->resize(_r, _c);
+      this->derived().resize(_r, _c);
     else 
       *this=Matrix<Scalar, RowsAtCompileTime, ColsAtCompileTime>();
   }

@@ -34,6 +34,13 @@ include_directories(${G2O_FRONTEND} ${EIGEN3_INCLUDE_DIR})
 rosbuild_add_boost_directories()
 
 link_directories(${G2O_FRONTEND}/lib)
-rosbuild_add_executable(boss_configuration_writer src/boss_configuration_writer.cpp )
+rosbuild_add_executable(boss_configuration_writer 
+  src/ros_message_context.h src/ros_message_context.cpp
+  src/ros_message_handler.cpp src/ros_message_handler.h
+  src/ros_transform_message_handler.cpp src/ros_transform_message_handler.h
+  src/ros_pinholeimagedata_message_handler.cpp src/  src/ros_pinholeimagedata_message_handler.h
+  src/ros_laser_message_handler.cpp src/  src/ros_laser_message_handler.h
+  src/ros_imu_data_message_handler.cpp src/  src/ros_imu_data_message_handler.h
+  src/boss_configuration_writer.cpp )
 target_link_libraries(boss_configuration_writer boss_logger g2o_frontend_boss)
 rosbuild_link_boost(boss_configuration_writer  signals)

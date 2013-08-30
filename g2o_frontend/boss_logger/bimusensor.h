@@ -1,5 +1,5 @@
 #ifndef _BOSS_IMU_SENSOR_H_
-#define _BOSS_IMU_SENSOR_H
+#define _BOSS_IMU_SENSOR_H_
 #include "bsensor.h"
 #include <Eigen/Core>
 namespace boss {
@@ -26,7 +26,7 @@ namespace boss {
     inline void setOrientation(const Eigen::Quaterniond& orientation_) {_orientation = orientation_;}
     inline void setOrientationCovariance(const Eigen::Matrix3d& orientationCovariance_)  {_orientationCovariance=orientationCovariance_;}
     inline void setAngularVelocity(Eigen::Vector3d& angularVelocity_)  {_angularVelocity=angularVelocity_; }
-    inline void setngularVelocityCovariance(Eigen::Matrix3d&  angularVelocityCovariance_) {_angularVelocityCovariance=angularVelocityCovariance_;}
+    inline void setAngularVelocityCovariance(Eigen::Matrix3d&  angularVelocityCovariance_) {_angularVelocityCovariance=angularVelocityCovariance_;}
     inline void linearAcceleration(const Eigen::Vector3d& linearAcceleration_) {_linearAcceleration=linearAcceleration_;}
     inline void linearAccelerationCovariance(const Eigen::Matrix3d& linearAccelerationCovariance_) {_linearAccelerationCovariance = linearAccelerationCovariance_;}
   protected:

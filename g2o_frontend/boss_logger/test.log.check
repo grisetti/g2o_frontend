@@ -1,0 +1,11 @@
+1377621376.3275 "Frame" "boss_frame_test" { "#id" : 12, "parentFrame" : { "#pointer" : -1 }, "name" : "", "rotation" : { "values" : [ 0, 0, 0, 1 ] }, "translation" : { "values" : [ 0, 0, 0 ] } }
+1377621376.32777 "Frame" "boss_frame_test" { "#id" : 13, "parentFrame" : { "#pointer" : 12 }, "name" : "base_frame", "rotation" : { "values" : [ 0, 0, 0, 1 ] }, "translation" : { "values" : [ 0, 0, 0 ] } }
+1377621376.32783 "Frame" "boss_frame_test" { "#id" : 14, "parentFrame" : { "#pointer" : 13 }, "name" : "imu_frame", "rotation" : { "values" : [ 0, 0, 0, 1 ] }, "translation" : { "values" : [ 0, 0, 0 ] } }
+1377621376.32787 "Frame" "boss_frame_test" { "#id" : 15, "parentFrame" : { "#pointer" : 13 }, "name" : "front_laser_frame", "rotation" : { "values" : [ 0, 0, 0, 1 ] }, "translation" : { "values" : [ 0.2, 0, 0.2 ] } }
+1377621376.32792 "Frame" "boss_frame_test" { "#id" : 16, "parentFrame" : { "#pointer" : 13 }, "name" : "rear_laser_frame", "rotation" : { "values" : [ 0, 0, 0, 1 ] }, "translation" : { "values" : [ -0.2, 0, 0.2 ] } }
+1377621376.32797 "Frame" "boss_frame_test" { "#id" : 17, "parentFrame" : { "#pointer" : 15 }, "name" : "rgbd_frame", "rotation" : { "values" : [ 0, 0, 0, 1 ] }, "translation" : { "values" : [ 0, 0, 0.1 ] } }
+1377621376.32801 "ImageSensor" "boss_frame_test" { "#id" : 18, "topic" : "kinect/rgb", "frame" : { "#pointer" : 17 } }
+1377621376.32804 "ImageSensor" "boss_frame_test" { "#id" : 19, "topic" : "kinect/depth_registered", "frame" : { "#pointer" : 17 } }
+1377621376.32807 "LaserSensor" "boss_frame_test" { "#id" : 20, "topic" : "front_laser", "frame" : { "#pointer" : 15 } }
+1377621376.3281 "LaserSensor" "boss_frame_test" { "#id" : 21, "topic" : "rear_laser", "frame" : { "#pointer" : 16 } }
+1377621376.32812 "IMUSensor" "boss_frame_test" { "#id" : 22, "topic" : "imu", "frame" : { "#pointer" : 14 } }

@@ -1,0 +1,5 @@
+1377617916.51719 "Frame" "boss_frame_test" { "#id" : 1, "parentFrame" : { "#pointer" : -1 }, "name" : "", "rotation" : { "values" : [ 0, 0, 0, 1 ] }, "translation" : { "values" : [ 0, 0, 0 ] } }
+1377617916.51731 "Frame" "boss_frame_test" { "#id" : 2, "parentFrame" : { "#pointer" : 1 }, "name" : "base_frame", "rotation" : { "values" : [ 0, 0, 0, 1 ] }, "translation" : { "values" : [ 0, 0, 0 ] } }
+1377617916.51733 "Frame" "boss_frame_test" { "#id" : 3, "parentFrame" : { "#pointer" : 2 }, "name" : "imu_frame", "rotation" : { "values" : [ 0, 0, 0, 1 ] }, "translation" : { "values" : [ 0, 0, 0 ] } }
+1377617916.51735 "Frame" "boss_frame_test" { "#id" : 4, "parentFrame" : { "#pointer" : 2 }, "name" : "laser_frame", "rotation" : { "values" : [ 0, 0, 0, 1 ] }, "translation" : { "values" : [ 0.2, 0, 0.2 ] } }
+1377617916.51736 "Frame" "boss_frame_test" { "#id" : 5, "parentFrame" : { "#pointer" : 4 }, "name" : "rgb_frame", "rotation" : { "values" : [ 0, 0, 0, 1 ] }, "translation" : { "values" : [ 0, 0, 0.1 ] } }

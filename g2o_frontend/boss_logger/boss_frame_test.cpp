@@ -37,11 +37,11 @@ int main(int argc, char** argv) {
     baseToRGBDCamTrandform.translation() = Eigen::Vector3d(0.0, 0, 0.1);
     Frame* rgbdFrame = new Frame("rgbd_frame", baseToRGBDCamTrandform, frontLaserFrame);
 
-    ImageSensor* rgbImageSensor= new ImageSensor;
+    PinholeImageSensor* rgbImageSensor= new PinholeImageSensor;
     rgbImageSensor->setFrame(rgbdFrame);
     rgbImageSensor->setTopic("kinect/rgb");
 
-    ImageSensor* depthImageSensor= new ImageSensor;
+    PinholeImageSensor* depthImageSensor= new PinholeImageSensor;
     depthImageSensor->setFrame(rgbdFrame);
     depthImageSensor->setTopic("kinect/depth_registered");
 
@@ -73,10 +73,10 @@ int main(int argc, char** argv) {
     ser.write(argv[0], *imuSensor);
 
     // do a trivial lookup to see if all is in order
-    cerr << "rgb full name: " << rgbdFrame->fullName() << endl;
+    cerr << "rgb full name: " << rgbdFrame->path() << endl;
     Frame* f = originFrame->childByName("base_frame/front_laser_frame/rgbd_frame");
     if (f) {
-      cerr << "found frame " << f->fullName() << endl;
+      cerr << "found frame " << f->path() << endl;
     }
 
   }
@@ -108,11 +108,9 @@ int main(int argc, char** argv) {
     if (origin){
       Frame* f = origin->childByName("base_frame/front_laser_frame/rgbd_frame");
       if (f) {
-	cerr << "found frame " << f->fullName() << endl;
+	cerr << "found frame " << f->path() << endl;
       }
     }
-      
-
   }
 
 

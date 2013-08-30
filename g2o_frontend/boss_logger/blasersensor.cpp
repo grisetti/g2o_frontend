@@ -51,12 +51,12 @@ namespace boss {
     _ranges.resize(arr->size());
     for (size_t i =0; i<_ranges.size(); i++)
       _ranges[i]=(*arr)[i].getFloat();
-    delete arr;
+    //delete arr;
     arr = static_cast<ArrayData*>(data.getField("remissions"));
     _remissions.resize(arr->size());
     for (size_t i =0; i<_remissions.size(); i++)
       _remissions[i]=(*arr)[i].getFloat();
-    delete arr;
+    //delete arr;
 
     int nbeams = _remissions.size()>_ranges.size() ? _remissions.size():_ranges.size();
     if (_sensor->numBeams()==0){

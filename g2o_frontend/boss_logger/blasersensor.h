@@ -1,5 +1,5 @@
 #ifndef _BOSS_LASER_SENSOR_H_
-#define _BOSS_LASER_SENSOR_H
+#define _BOSS_LASER_SENSOR_H_
 #include "bsensor.h"
 #include <Eigen/Core>
 namespace boss {
