@@ -31,7 +31,11 @@ namespace boss {
 
 class BaseBLOBReference;
 
+template <class T> class BLOBReference;
+
 class BLOB {
+  template <class T>
+  friend class BLOBReference;
 public:
   BLOB(): _ref(0) {}
   virtual bool read(std::istream& is)=0;
@@ -86,6 +90,7 @@ T* BLOBReference<T>::get() {
     std::auto_ptr<T> blob(new T());
     if (load(*blob)) {
       _instance=blob.get();
+      blob->_ref = this;
       blob.release();
     }
   }

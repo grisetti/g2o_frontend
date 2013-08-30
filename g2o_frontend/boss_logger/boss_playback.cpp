@@ -53,7 +53,9 @@ public:
     PinholeImageData* image = dynamic_cast<PinholeImageData*>(sdata);
     if (!image)
       return false;
+    cerr << "prentento lo plop" <<endl;
     ImageBLOB* imblob = image->imageBlob().get();
+    cerr << "presp lo plop: " << imblob << endl;
     imshow(_windowName.c_str(), imblob->cvImage());
     delete imblob;
     return true;
@@ -148,8 +150,21 @@ int main(int argc, char** argv) {
     BaseSensorData* sensorData=dynamic_cast<BaseSensorData*>(o);
     if (sensorData){
       sensorDatas.push_back(sensorData);
+      // LaserData* laserData = dynamic_cast<LaserData*>(o);
+      // if (laserData) {
+      // 	delete laserData;
+      // 	o = 0;
+      // 	sensorData = 0;
+      // }      
+      // IMUData* imuData = dynamic_cast<IMUData*>(o);
+      // if (imuData){
+      // 	delete imuData; 
+      // 	o = 0;
+      // 	sensorData = 0;
+      // }
+      // if (sensorData)
+      // 	sensorDatas.push_back(sensorData);
     }
-
     objects.push_back(o);
   }
   cerr << "read: " << objects.size() << " objects"  << endl;
@@ -159,7 +174,7 @@ int main(int argc, char** argv) {
   TSCompare comp;
   std::sort(sensorDatas.begin(), sensorDatas.end(), comp);
   std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > trajectory;
-  // instantiate the visualizers;
+  //instantiate the visualizers;
   for(StringSensorMap::iterator it=sensors.begin(); it!=sensors.end(); it++){
     BaseSensor* sensor = it->second;
     PinholeImageSensor* pinholeSensor = dynamic_cast<PinholeImageSensor*>(sensor);
@@ -173,7 +188,8 @@ int main(int argc, char** argv) {
 
   int i = 0;
   while (1) {
-    char c = cv::waitKey(0);
+    char c;
+    c= cv::waitKey(0);
     if (c == 27)
       return 0;
     if (c == 'n' && i<sensorDatas.size()-1){
