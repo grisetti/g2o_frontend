@@ -1,4 +1,5 @@
-#include "set"
+#include <list>
+#include <set>
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 #include "bframe.h"
@@ -25,21 +26,116 @@ struct TSCompare{
   }
 };
 
+struct CommandArg{
+  CommandArg(const std::string s){
+    size_t i = 0;
+    std::string trimmed=s;
+    do{
+      i =trimmed.find_first_of(':');
+      values.push_back(trimmed.substr(0,i));
+      trimmed = trimmed.substr(i+1,std::string::npos);
+    } while (i != std::string::npos);
+
+    cerr << "arg" << endl;
+    for (i=0; i<values.size(); i++)
+      cerr <<" " << values[i] << endl; 
+  }
+
+  int asInt(int i) const {
+    return atoi(values[i].c_str());
+  }
+  float asFloat(int i) const {
+    return atof(values[i].c_str());
+  }
+
+  bool asBool(int i) const {
+    if (values[i] == "true")
+      return true;
+    if (values[i] == "false")
+      return false;
+    throw std::runtime_error("illegal bool value");
+  }
+
+  std::string asString(int i) const{
+    return values[i];
+  }
+
+  std::vector<std::string> values;
+};
+
+int parseArgs(std::list<CommandArg>& parsedArgs, int argc, char** argv){
+  int c = 1;
+  parsedArgs.clear();
+  while (c<argc){
+    if (*argv[c]=='-') {
+      CommandArg arg(CommandArg(argv[c]));
+      parsedArgs.push_back(arg);
+      c++;
+    } else {
+      return c;
+    }
+  }
+  return c;
+}
+
+void handleParsedArgs(Synchronizer* sync, std::list<CommandArg> args){
+  for(std::list<CommandArg>::iterator it = args.begin(); it!=args.end(); it++){
+    CommandArg& arg = *it;
+    if (arg.asString(0)!="-sync")
+      continue;
+  // if (arg.values.size()!=4)
+  //     throw runtime_error("options must be in the form -sync:topic1:topic2:time");
+    std::string topic1 = arg.asString(1);
+    std::string topic2 = arg.asString(2);
+    double time = arg.asFloat(3);
+    cerr << "sync: " << topic1 << " " << topic2 << " " << time << endl;
+    sync->addSyncTimeCondition(topic1,topic2,time);
+  }
+ 
+}
+
 int main(int argc, char** argv) {
-  if (argc<3){
-    cerr << "there is an error in the command line. Me wanna two args :)" << endl;
+  std::list<CommandArg> parsedArgs;
+  if (argc == 1) {
+    cerr << "usage: " << argv[0] << " [options] filein fileout" << endl;
+    cerr << "example: boss_synchronizer \\" << endl;
+    cerr << "-sync:/kinect/rgb/image_color:/kinect/depth_registered/image_raw:0.05 \\" << endl;
+    cerr << " -sync:/kinect/rgb/image_color:/imu/data:0.1 \\" << endl;
+    cerr << " -sync:/kinect/rgb/image_color:/front_scan:0.1 \\" << endl;
+    cerr << " test.log sync_test.log" << endl;
     return 0;
   }
-  Deserializer des;
-  des.setFilePath(argv[1]);
-  Serializable *o;
 
-
-  Serializer ser;
-  ser.setFilePath(argv[2]);
+  int c = parseArgs(parsedArgs, argc, argv);
+  if (c<argc-2) {
+    cerr << "usage: " << argv[0] << " [options] filein fileout" << endl;
+    cerr << "example: boss_synchronizer \\" << endl;
+    cerr << "-sync:/kinect/rgb/image_color:/kinect/depth_registered/image_raw:0.05 \\" << endl;
+    cerr << " -sync:/kinect/rgb/image_color:/imu/data:0.1 \\" << endl;
+    cerr << " -sync:/kinect/rgb/image_color:/front_scan:0.1 \\" << endl;
+    cerr << " test.log sync_test.log" << endl;
+    return 0;
+  }
+    
+  
 
   // create a synchronizer
   Synchronizer sync;
+
+  handleParsedArgs(&sync, parsedArgs);
+  std::string filein = argv[c];
+  std::string fileout = argv[c+1];
+
+
+
+  Deserializer des;
+  des.setFilePath(filein.c_str());
+
+  Serializer ser;
+  ser.setFilePath(fileout.c_str());
+  
+  cerr <<  "running logger with arguments: filein[" << filein << "] fileout: [" << fileout << "]" << endl;
+
   // create a reframer object, that once all messages have been put together sets them to a unique frame
   Synchronizer::Reframer reframer;
   sync.addOutputHandler(&reframer);
@@ -52,22 +148,8 @@ int main(int argc, char** argv) {
   Synchronizer::Deleter deleter;
   sync.addOutputHandler(&deleter);
 
-  /* old but powerful API
-  // tell the topics we want to synchronize (not necessary as they are added automatically)
-  SynchronizerTopicInstance* rgbSync = sync.addSyncTopic("/kinect/rgb/image_color");
-  SynchronizerTopicInstance* depthSync = sync.addSyncTopic("/kinect/depth_registered/image_raw");
-  SynchronizerTopicInstance* laserSync = sync.addSyncTopic("/front_scan");
-  SynchronizerTopicInstance* imuSync = sync.addSyncTopic("/imu/data");
-  
 
-  // add tiem conditions between the topics
-  */
-  sync.addSyncTimeCondition("/kinect/rgb/image_color","/kinect/depth_registered/image_raw",0.05);
-  sync.addSyncTimeCondition("/kinect/rgb/image_color", "/imu/data",0.1);
-  sync.addSyncTimeCondition("/kinect/rgb/image_color", "/front_scan", 0.1);
-  
-
-
+  Serializable *o;
   while( (o=des.readObject()) ){
     cerr << ".";
     BaseSensor* sensor= dynamic_cast<BaseSensor*>(o);
