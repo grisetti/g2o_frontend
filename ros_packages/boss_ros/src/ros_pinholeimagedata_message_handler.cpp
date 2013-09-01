@@ -69,7 +69,7 @@ void RosPinholeImageDataMessageHandler::callback(sensor_msgs::Image::ConstPtr im
     return;
   } 
   boss::Frame* newFrame = new boss::Frame("robotPose", robotTransform);
-  _context->messageQueue().push_back(newFrame);
+  // _context->messageQueue().push_back(newFrame);
   // we get the image from ROS
 
   cv_bridge::CvImagePtr ptr=cv_bridge::toCvCopy(img, img->encoding);
@@ -83,5 +83,5 @@ void RosPinholeImageDataMessageHandler::callback(sensor_msgs::Image::ConstPtr im
   imageData->setRobotFrame(newFrame);
   _context->messageQueue().push_back(imageData);
   //delete imageData;
-  cerr << ".";
+  //cerr << ".";
 }

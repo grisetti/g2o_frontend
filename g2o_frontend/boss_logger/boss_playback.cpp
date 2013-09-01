@@ -53,9 +53,7 @@ public:
     PinholeImageData* image = dynamic_cast<PinholeImageData*>(sdata);
     if (!image)
       return false;
-    cerr << "prentento lo plop" <<endl;
     ImageBLOB* imblob = image->imageBlob().get();
-    cerr << "presp lo plop: " << imblob << endl;
     imshow(_windowName.c_str(), imblob->cvImage());
     delete imblob;
     return true;
@@ -132,7 +130,7 @@ std::map<BaseSensor*, MySimpleVisualizer*> visualizers;
 
 int main(int argc, char** argv) {
   Deserializer des;
-  des.setFilePath("./test.log");
+  des.setFilePath(argv[1]);
   Serializable *o;
 
   while( (o=des.readObject()) ){
@@ -150,21 +148,7 @@ int main(int argc, char** argv) {
     BaseSensorData* sensorData=dynamic_cast<BaseSensorData*>(o);
     if (sensorData){
       sensorDatas.push_back(sensorData);
-      // LaserData* laserData = dynamic_cast<LaserData*>(o);
-      // if (laserData) {
-      // 	delete laserData;
-      // 	o = 0;
-      // 	sensorData = 0;
-      // }      
-      // IMUData* imuData = dynamic_cast<IMUData*>(o);
-      // if (imuData){
-      // 	delete imuData; 
-      // 	o = 0;
-      // 	sensorData = 0;
-      // }
-      // if (sensorData)
-      // 	sensorDatas.push_back(sensorData);
-    }
+     }
     objects.push_back(o);
   }
   cerr << "read: " << objects.size() << " objects"  << endl;

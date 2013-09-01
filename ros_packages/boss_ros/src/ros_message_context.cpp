@@ -3,6 +3,8 @@
 RosMessageContext::RosMessageContext(ros::NodeHandle* nh_) {
   _nh = nh_;
   _tfListener = new tf::TransformListener(*_nh, ros::Duration(30.0));
+  _odomFrameId = "/odom";
+  _baseFrameId = "/base_link";
 }
 
 RosMessageContext::~RosMessageContext(){
@@ -11,11 +13,11 @@ RosMessageContext::~RosMessageContext(){
 
 bool RosMessageContext::getOdomPose(Eigen::Isometry3d& _trans, double time){
   bool transformFound = true;
-  _tfListener->waitForTransform("/odom","/base_link",  
+  _tfListener->waitForTransform(_odomFrameId, _baseFrameId,
 				ros::Time(time), ros::Duration(1.0));
   try{
     tf::StampedTransform t;
-    _tfListener->lookupTransform("/odom", "/base_link", 
+    _tfListener->lookupTransform(_odomFrameId, _baseFrameId,
 				 ros::Time(time), t);
     Eigen::Isometry3d transform;
     transform.translation().x()=t.getOrigin().x();

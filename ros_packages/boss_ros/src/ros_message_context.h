@@ -17,13 +17,19 @@ public:
   boss::StringFrameMap&  frameMap() {return _frameMap;}
   boss::SerializableQueue& messageQueue() {return _messageQueue;}
   bool getOdomPose(Eigen::Isometry3d& t, double time);
-
+  inline void setOdomFrameId(const std::string odomFrameId_) {_odomFrameId = odomFrameId_;}
+  inline void setBaseFrameId(const std::string baseFrameId_) {_baseFrameId = baseFrameId_;}
+  inline const std::string& odomFrameId() const {return _odomFrameId;}
+  inline const std::string& baseFrameId() const {return _baseFrameId;} 
 protected:
   ros::NodeHandle* _nh;
   tf::TransformListener* _tfListener;
   boss::StringSensorMap _sensorMap;
   boss::StringFrameMap  _frameMap;
   boss::SerializableQueue  _messageQueue;
+  std::string _odomFrameId, _baseFrameId;
+
+  
 };
 
 #endif

@@ -36,7 +36,7 @@ namespace boss {
       Identifiable::deserialize(data,context);
       _timestamp=data.getDouble("timestamp");
       _topic=data.getString("topic");
-      _robotFrame = dynamic_cast<Frame*>(data.getPointer("robotFrame"));
+      data.getReference("robotFrame").bind(_robotFrame);
     }
     inline double timestamp() const {return _timestamp; }
     inline void setTimestamp(double timestamp_) { _timestamp=timestamp_;}

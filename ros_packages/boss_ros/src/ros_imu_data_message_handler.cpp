@@ -34,7 +34,7 @@ void RosIMUDataMessageHandler::callback(const sensor_msgs::ImuConstPtr& imu){
     return;
   } 
   boss::Frame* newFrame = new boss::Frame("robotPose", robotTransform);
-  _context->messageQueue().push_back(newFrame);
+  //_context->messageQueue().push_back(newFrame);
   // we get the image from ROS
 
   boss::IMUData* imuData = new boss::IMUData(_sensor);
@@ -83,5 +83,5 @@ void RosIMUDataMessageHandler::callback(const sensor_msgs::ImuConstPtr& imu){
 
   _context->messageQueue().push_back(imuData);
   //delete imageData;
-  cerr << "i";
+  //cerr << "i";
 }

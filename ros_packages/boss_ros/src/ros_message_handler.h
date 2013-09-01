@@ -16,4 +16,5 @@ protected:
   RosMessageContext* _context;
 };
 
+
 #endif

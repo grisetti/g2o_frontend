@@ -40,7 +40,7 @@ void RosLaserDataMessageHandler::callback(const sensor_msgs::LaserScanConstPtr& 
     return;
   } 
   boss::Frame* newFrame = new boss::Frame("robotPose", robotTransform);
-  _context->messageQueue().push_back(newFrame);
+  //_context->messageQueue().push_back(newFrame);
   // we get the image from ROS
 
   boss::LaserData* laserData = new boss::LaserData(_sensor);
@@ -55,5 +55,5 @@ void RosLaserDataMessageHandler::callback(const sensor_msgs::LaserScanConstPtr& 
   laserData->remissions().resize(scan->intensities.size());
   _context->messageQueue().push_back(laserData);
   //delete imageData;
-  cerr << "l";
+  //cerr << "l";
 }
