@@ -2,3 +2,5 @@
 
 
 RosMessageHandler::~RosMessageHandler(){}
+
+bool RosMessageHandler::configReady() const { return true; };

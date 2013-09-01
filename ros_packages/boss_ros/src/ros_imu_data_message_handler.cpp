@@ -10,6 +10,10 @@ RosIMUDataMessageHandler::RosIMUDataMessageHandler(RosMessageContext* context, s
 RosIMUDataMessageHandler::~RosIMUDataMessageHandler() {
 }
 
+bool RosIMUDataMessageHandler::configReady() const{
+  return _sensor;
+}
+
 void RosIMUDataMessageHandler::subscribe(){
   _sub= _context->nodeHandle()->subscribe(_topicName, 1, &RosIMUDataMessageHandler::callback, this);
   cerr << "subscribed topics: [" <<  _topicName << "]" << endl;

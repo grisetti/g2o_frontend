@@ -5,42 +5,35 @@
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/time_synchronizer.h>
+#include <boost/bind.hpp>
 
 using namespace std;
 
-RosPinholeImageDataMessageHandler::RosPinholeImageDataMessageHandler(RosMessageContext* context, std::string topicName_, std::string imageSubtopic, std::string infoSubtopic): RosMessageHandler(context){
+RosPinholeImageDataMessageHandler::RosPinholeImageDataMessageHandler(RosMessageContext* context, std::string topicName_): RosMessageHandler(context){
     _topicName = topicName_;
-    _imageTopicName = _topicName + "/" + imageSubtopic;
-    _cameraInfoTopicName = _topicName + "/" + infoSubtopic;
-    _imageSub = 0;
-    _infoSub = 0;
-    _sync = 0;
+    _imageTransport = new image_transport::ImageTransport(*context->nodeHandle());
+    _cameraSubscriber = 0;
     _sensor = 0;
   }
 
 RosPinholeImageDataMessageHandler::~RosPinholeImageDataMessageHandler() {
-  if (_sync){
-    delete _sync;
-  }
-  if (_infoSub) {
-    delete _infoSub;
-    }
-  if (_imageSub){
-    delete _imageSub;
-  }
+  delete _imageTransport;
+  if (_cameraSubscriber)
+    delete _cameraSubscriber;
 }
 
 void RosPinholeImageDataMessageHandler::subscribe(){
-  _imageSub = new message_filters::Subscriber<sensor_msgs::Image>(*_context->nodeHandle(), _imageTopicName, 5);
-  _infoSub = new message_filters::Subscriber<sensor_msgs::CameraInfo>(*_context->nodeHandle(), _cameraInfoTopicName, 5);
-  // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
-  _sync = new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(10), *_imageSub, *_infoSub);
-  _sync->registerCallback(boost::bind(&RosPinholeImageDataMessageHandler::callback, this, _1, _2));
-  cerr << "subscribed topics: [" <<  _imageTopicName << "] and [" << _cameraInfoTopicName << "]" << endl;
+  _cameraSubscriber = new image_transport::CameraSubscriber(_imageTransport->subscribeCamera(_topicName,1,boost::bind(&RosPinholeImageDataMessageHandler::callback,this, _1, _2)));
+						      ;
+  cerr << "subscribed image: [" <<  _topicName << "]" << endl;
 }
 
 
-void RosPinholeImageDataMessageHandler::callback(sensor_msgs::Image::ConstPtr img, sensor_msgs::CameraInfo::ConstPtr info){
+bool RosPinholeImageDataMessageHandler::configReady() const{
+  return _sensor;
+}
+  
+void RosPinholeImageDataMessageHandler::callback(const sensor_msgs::Image::ConstPtr& img, const sensor_msgs::CameraInfo::ConstPtr& info){
   if  (! _sensor) {
     std::map<std::string, boss::Frame*>::iterator it = _context->frameMap().find(info->header.frame_id);
     if (it == _context->frameMap().end()) {
@@ -48,7 +41,7 @@ void RosPinholeImageDataMessageHandler::callback(sensor_msgs::Image::ConstPtr im
       return;
     }
     _sensor = new boss::PinholeImageSensor;
-    _sensor->setTopic(_imageTopicName);
+    _sensor->setTopic(_topicName);
     _sensor->setFrame(it->second);
     Eigen::Matrix3d cmat;
     int i=0;

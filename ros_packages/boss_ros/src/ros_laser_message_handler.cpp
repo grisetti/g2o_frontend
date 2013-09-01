@@ -10,6 +10,10 @@ RosLaserDataMessageHandler::RosLaserDataMessageHandler(RosMessageContext* contex
 RosLaserDataMessageHandler::~RosLaserDataMessageHandler() {
 }
 
+bool RosLaserDataMessageHandler::configReady() const{
+  return _sensor;
+}
+
 void RosLaserDataMessageHandler::subscribe(){
   _sub= _context->nodeHandle()->subscribe(_topicName, 1, &RosLaserDataMessageHandler::callback, this);
   cerr << "subscribed topics: [" <<  _topicName << "]" << endl;

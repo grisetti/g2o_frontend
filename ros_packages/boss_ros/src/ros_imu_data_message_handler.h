@@ -9,6 +9,7 @@ public:
   RosIMUDataMessageHandler(RosMessageContext* context, std::string topicName_);
   virtual ~RosIMUDataMessageHandler();
   virtual void subscribe();
+  virtual bool configReady() const;
   void callback(const sensor_msgs::ImuConstPtr& imu);
   inline boss::IMUSensor* sensor() {return _sensor;}
 protected:

@@ -1,7 +1,12 @@
 #include "ros_message_context.h"
+#include "ros_transform_message_handler.h"
+#include "ros_pinholeimagedata_message_handler.h"
+#include "ros_laser_message_handler.h"
+#include "ros_imu_data_message_handler.h"
 
 RosMessageContext::RosMessageContext(ros::NodeHandle* nh_) {
   _nh = nh_;
+  _transformHandler = new RosTransformMessageHandler(this);
   _tfListener = new tf::TransformListener(*_nh, ros::Duration(30.0));
   _odomFrameId = "/odom";
   _baseFrameId = "/base_link";
@@ -37,4 +42,49 @@ bool RosMessageContext::getOdomPose(Eigen::Isometry3d& _trans, double time){
     transformFound = false;
   }
   return transformFound;
+}
+
+
+RosMessageHandler* RosMessageContext::handler(const std::string topic) {
+  std::map<std::string, RosMessageHandler*>::iterator it = _handlers.find(topic);
+  if (it==_handlers.end())
+    return 0;
+  return it->second;
+}
+
+bool RosMessageContext::addHandler(const std::string& type, const std::string& topic) {
+  if (type == "laser"){
+    cerr <<"added handler for topic" << topic << endl;
+    _handlers.insert(make_pair(topic, new RosLaserDataMessageHandler(this,topic)));
+    return true;
+  }
+  if (type == "image"){
+    cerr << "added handler for topic" << topic << endl;
+    _handlers.insert(make_pair(topic, new RosPinholeImageDataMessageHandler(this,topic)));
+    return true;
+  }
+  if (type == "imu"){
+    cerr << "added handler for topic" << topic << endl;
+    _handlers.insert(make_pair(topic, new RosIMUDataMessageHandler(this,topic)));
+    return true;
+  }
+  cerr << "unknown handler type [" << type << "]" <<  endl;
+  return false;
+}
+
+bool RosMessageContext::configReady() const{
+  bool allReady=true;
+  for (std::map<std::string, RosMessageHandler*>::const_iterator it = _handlers.begin(); it!=_handlers.end(); it++){
+    const RosMessageHandler* handler=it->second;
+    allReady &= handler->configReady();
+  }
+  return allReady;
+}
+
+void RosMessageContext::init(){
+  _transformHandler->subscribe();
+  for (std::map<std::string, RosMessageHandler*>::iterator it = _handlers.begin(); it!=_handlers.end(); it++){
+    RosMessageHandler* handler=it->second;
+    handler->subscribe();
+  }
 }

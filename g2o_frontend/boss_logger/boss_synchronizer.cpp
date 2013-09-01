@@ -52,17 +52,20 @@ int main(int argc, char** argv) {
   Synchronizer::Deleter deleter;
   sync.addOutputHandler(&deleter);
 
-  // // tell the topics we want to synchronize (not necessary as they are added automatically)
-  // sync.addSyncTopic("/kinect/rgb/image_color");
-  // sync.addSyncTopic("/kinect/depth_registered/image_raw");
-  // sync.addSyncTopic("/front_scan");
-  // sync.addSyncTopic("/imu/data");
+  /* old but powerful API
+  // tell the topics we want to synchronize (not necessary as they are added automatically)
+  SynchronizerTopicInstance* rgbSync = sync.addSyncTopic("/kinect/rgb/image_color");
+  SynchronizerTopicInstance* depthSync = sync.addSyncTopic("/kinect/depth_registered/image_raw");
+  SynchronizerTopicInstance* laserSync = sync.addSyncTopic("/front_scan");
+  SynchronizerTopicInstance* imuSync = sync.addSyncTopic("/imu/data");
+  
 
   // add tiem conditions between the topics
+  */
   sync.addSyncTimeCondition("/kinect/rgb/image_color","/kinect/depth_registered/image_raw",0.05);
   sync.addSyncTimeCondition("/kinect/rgb/image_color", "/imu/data",0.1);
   sync.addSyncTimeCondition("/kinect/rgb/image_color", "/front_scan", 0.1);
-
+  
 
 
   while( (o=des.readObject()) ){

@@ -16,64 +16,121 @@
 #include "g2o_frontend/boss_logger/bsynchronizer.h"
 using namespace std;
 
+struct CommandArg{
+  CommandArg(const std::string s){
+    size_t i =s.find_first_of(':');
+    if (i == std::string::npos)
+      throw std::runtime_error("malformed parameter type arg should be \"param:value\" ");
+    param = s.substr(0,i);
+    value = s.substr(i+1,s.length()-1);
+  }
+
+  int asInt() const {
+    return atoi(value.c_str());
+  }
+  float asFloat() const {
+    return atof(value.c_str());
+  }
+
+  bool asBool() const {
+    if (value == "true")
+      return true;
+    if (value == "false")
+      return false;
+    throw std::runtime_error("illegal bool value");
+  }
+
+  std::string asString() const{
+    return value;
+  }
+
+  std::string param;
+  std::string value;
+};
+
+int parseArgs(std::list<CommandArg>& parsedArgs, int argc, char** argv){
+  int c = 1;
+  parsedArgs.clear();
+  while (c<argc){
+    if (*argv[c]=='-') {
+      CommandArg arg(CommandArg(argv[c]));
+      parsedArgs.push_back(arg);
+      c++;
+    } else {
+      return c;
+    }
+  }
+  return c;
+}
+
+void processArgs(RosMessageContext* context, std::list<CommandArg>& list){
+  for (std::list<CommandArg>::iterator it = list.begin(); it!=list.end(); it++){
+    const CommandArg& arg = *it;
+    if (arg.param =="-image"){
+      context->addHandler("image", arg.asString());
+      continue;
+    }
+    if (arg.param =="-laser"){
+      context->addHandler("laser", arg.asString());
+      continue;
+    }
+    if (arg.param =="-imu"){
+      context->addHandler("imu", arg.asString());
+      continue;
+    }
+    if (arg.param =="-odomFrame"){
+      context->setOdomFrameId(arg.asString());
+      continue;
+    }
+    if (arg.param =="-baseFrame"){
+      context->setBaseFrameId(arg.asString());
+      continue;
+    }
+    throw std::runtime_error("unknown argument");
+  }
+}
 
 int main(int argc, char** argv){
-  bool useSynchronizer = false;
+  std::list<CommandArg> parsedArgs;
   if (argc <2){
-    cerr << "usage: " << argv[0] <<  " <output filename>" << endl;
+    cerr << "usage: " << argv[0] <<  " [arguments] <output filename>" << endl;
+    cerr << "example: rosrun boss_ros boss_logger -image:/kinect/depth_registered/image_raw -image:/kinect/rgb/image_color -imu:/imu/data -laser:/front_scan out.log" << endl;
+    return 0;
   }
-  if (argc>3)
-    useSynchronizer = true;
+  int c = parseArgs(parsedArgs, argc, argv);
+  
+  if (c!=argc-1){
+    cerr << "no filename provided, exiting" << endl;
+    return 0;
+  }
+  std::string filename = argv[c];
+  
   boss::Serializer ser;
-  ser.setFilePath(argv[1]);
+  ser.setFilePath(filename);
   
   ros::init(argc, argv, "boss_logger");
   ros::NodeHandle nh;
 
-  cerr << "Started the logger on file [" << argv[1] << "] synchronized mode: "<< useSynchronizer << endl; 
+  cerr << "Started the logger on file [" << filename << "]"  << endl; 
   // Add your handlers
   RosMessageContext context(&nh);
-  context->setOdomFrameId("/odom");
-  context->setBaseFrameId("/base_link");
 
-  RosTransformMessageHandler tfHandler(&context);
-  RosPinholeImageDataMessageHandler kDepthLogger(&context,"/kinect/depth_registered", "image_raw", "camera_info");
-  RosPinholeImageDataMessageHandler kRGBLogger(&context,"/kinect/rgb", "image_color", "camera_info");
-  RosLaserDataMessageHandler        frontLaserLogger(&context,"/front_scan");
-  RosIMUDataMessageHandler          imuHandler(&context,"/imu/data");
+  // tell the context what is the odom frame and the base link frame
+  context.setOdomFrameId("/odom");
+  context.setBaseFrameId("/base_link");
 
-  // subscribe the stuff
-  tfHandler.subscribe();
-  kDepthLogger.subscribe();
-  kRGBLogger.subscribe();
-  frontLaserLogger.subscribe();
-  imuHandler.subscribe();
+  processArgs(&context, parsedArgs);
+  
+  // cmd line:
+  // rosrun boss_ros boss_logger -image:/kinect/depth_registered/image_raw -image:/kinect/rgb/image_color -imu:/imu/data -laser:/front_scan
+  // // register the necessary handlers
+  // context.addHandler("laser","/front_scan");
+  // context.addHandler("imu","/imu/data");
+  // context.addHandler("image","/kinect/depth_registered/image_raw");
+  // context.addHandler("image","/kinect/rgb/image_color");
 
-  // create a synchronizer
-  boss::Synchronizer sync;
-  // create a reframer object, that once all messages have been put together sets them to a unique frame
-  boss::Synchronizer::Reframer reframer;
-  sync.addOutputHandler(&reframer);
-
-  // create a writer object that dumps on the disk each block of synchronized objects
-  boss::Synchronizer::Writer writer(&ser);
-  sync.addOutputHandler(&writer);
-
-  // create a deleter object that polishes the memory after writing
-  boss::Synchronizer::Deleter deleter;
-  sync.addOutputHandler(&deleter);
-
-
-  // // tell the topics we want to synchronize (done automatically by the addSynctimeCondition)
-  // sync.addSyncTopic("/kinect/rgb/image_color");
-  // sync.addSyncTopic("/kinect/depth_registered/image_raw");
-  // sync.addSyncTopic("/front_scan");
-  // sync.addSyncTopic("/imu/data");
-
-  // add time conditions between the topics
-  sync.addSyncTimeCondition("/kinect/rgb/image_color","/kinect/depth_registered/image_raw",0.05);
-  sync.addSyncTimeCondition("/kinect/rgb/image_color", "/imu/data",0.1);
-  sync.addSyncTimeCondition("/kinect/rgb/image_color", "/front_scan", 0.1);
+  // start the machine
+  context.init();
 
   bool confReady=false;
   while (ros::ok()){
@@ -81,7 +138,7 @@ int main(int argc, char** argv){
     // cerr << "tf: " << tfFrameMap.size() 
     // 	 << ", sensors: "<<sensorTopicMap.size()
     // 	 << ", messages: "<<dataQueue.size() << endl;
-    bool isReady = kDepthLogger.sensor() && kRGBLogger.sensor() && imuHandler.sensor();// && frontLaserLogger.sensor() ;
+    bool isReady = context.configReady();
     // we got all transforms and sensors, so we can dump the configuration
     if (! confReady && isReady){
       cerr << endl << "CONF IS NOW READY!!!, STARTING WRITING" << endl;
@@ -99,19 +156,15 @@ int main(int argc, char** argv){
 	  return 0;
 	}
 	context.messageQueue().pop_front();
-	if (useSynchronizer)
-	  sync.addSensorData(data);
-	else {
-	  boss::Frame* f = data->robotFrame();
-	  if (f){
-	    ser.writeObject(*f);
-	  }
-	  ser.writeObject(*data);
-	  if (f)
-	    delete f;
-	  delete data;
-	  cerr << '.';
+	boss::Frame* f = data->robotFrame();
+	if (f){
+	  ser.writeObject(*f);
 	}
+	ser.writeObject(*data);
+	if (f)
+	  delete f;
+	delete data;
+	  cerr << '.';
       }
     }
     // start emptying the queue of the writable objects

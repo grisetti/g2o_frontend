@@ -12,9 +12,6 @@
 #include <opencv2/highgui/highgui.hpp>
 
 
-
-
-
 using namespace boss;
 using namespace std;
 

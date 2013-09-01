@@ -12,6 +12,7 @@ public:
   RosMessageHandler(RosMessageContext* context_) {_context=context_;}
   virtual ~RosMessageHandler();
   virtual void subscribe()=0;
+  virtual bool configReady() const;
 protected:
   RosMessageContext* _context;
 };
