@@ -26,6 +26,31 @@ struct TSCompare{
   }
 };
 
+const char* banner[]={
+  "boss_synchronizer: takes a raw boss log and aggregates messages into single frames",
+  " based on time constraints.",
+  " If you want to make a frame out of two topics that have a time distance of 0.01 sec you should use",
+  " the -sync option.",
+  "   -sync:topic1:topic2:time",
+  " Adding multiple sync  options results in having frames containing multiple informations.",
+  " Messages that do not match the constraints are dropped."
+  "",
+  "usage: boss_synchronizer [options] filein fileout",
+  "example: boss_synchronizer \\",
+  " -sync:/kinect/rgb/image_color:/kinect/depth_registered/image_raw:0.05 \\",
+  " -sync:/kinect/rgb/image_color:/imu/data:0.1 \\",
+  " -sync:/kinect/rgb/image_color:/front_scan:0.1 \\",
+  " test.log test_sync.log", 0
+};
+
+void printBanner (){
+  int c=0;
+  while (banner[c]){
+    cerr << banner [c] << endl;
+    c++;
+  }
+}
+
 struct CommandArg{
   CommandArg(const std::string s){
     size_t i = 0;
@@ -97,23 +122,13 @@ void handleParsedArgs(Synchronizer* sync, std::list<CommandArg> args){
 int main(int argc, char** argv) {
   std::list<CommandArg> parsedArgs;
   if (argc == 1) {
-    cerr << "usage: " << argv[0] << " [options] filein fileout" << endl;
-    cerr << "example: boss_synchronizer \\" << endl;
-    cerr << "-sync:/kinect/rgb/image_color:/kinect/depth_registered/image_raw:0.05 \\" << endl;
-    cerr << " -sync:/kinect/rgb/image_color:/imu/data:0.1 \\" << endl;
-    cerr << " -sync:/kinect/rgb/image_color:/front_scan:0.1 \\" << endl;
-    cerr << " test.log sync_test.log" << endl;
+    printBanner();
     return 0;
   }
 
   int c = parseArgs(parsedArgs, argc, argv);
   if (c<argc-2) {
-    cerr << "usage: " << argv[0] << " [options] filein fileout" << endl;
-    cerr << "example: boss_synchronizer \\" << endl;
-    cerr << "-sync:/kinect/rgb/image_color:/kinect/depth_registered/image_raw:0.05 \\" << endl;
-    cerr << " -sync:/kinect/rgb/image_color:/imu/data:0.1 \\" << endl;
-    cerr << " -sync:/kinect/rgb/image_color:/front_scan:0.1 \\" << endl;
-    cerr << " test.log sync_test.log" << endl;
+    printBanner();
     return 0;
   }
     
