@@ -96,14 +96,15 @@ int main(int argc, char** argv) {
     ser.writeObject(*(it->second));
 
 
-  BaseSensorData* previousData = 0;
+  Frame* previousFrame = 0;
   for (size_t i = 0; i< sensorDatas.size(); i++){
     BaseSensorData* data = sensorDatas[i];
     ser.writeObject(*data->robotFrame());
     ser.writeObject(*data);
-    if (previousData){
-      Frame* from = previousData->robotFrame();
-      Frame* to = data->robotFrame();
+
+    Frame* from = previousFrame;
+    Frame* to = data->robotFrame();
+    if (from && from!=to) {
       FrameRelation* rel = new FrameRelation;
       rel->setFromFrame(from);
       rel->setToFrame(to);
@@ -111,6 +112,8 @@ int main(int argc, char** argv) {
       rel->setInformationMatrix(Eigen::Matrix<double, 6,6>::Identity());
       ser.writeObject(*rel);
     }
+    previousFrame = to;
+    cerr << 'R';
   }
 
 }

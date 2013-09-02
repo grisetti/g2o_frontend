@@ -90,21 +90,22 @@ public:
       }
       theta += res;
     }
-    for (size_t i=_trajectory->size()-1; i>0; i--){
+
+    for (size_t i=0; i<_trajectory->size(); i++){
       Eigen::Vector3d p=doStuff*_trajectory->at(i);
       float x =  p.x()*pixelsPerMeter+xcenter;
       float y = -p.y()*pixelsPerMeter+ycenter;
-	if (x>0 && x<laserImage.cols && y>0 && y < laserImage.rows) {
-	  laserImage.at<unsigned char>((int) y, (int) x) = 127;
-	}
+    	if (x>0 && x<laserImage.cols && y>0 && y < laserImage.rows) {
+    	  laserImage.at<unsigned char>((int) y, (int) x) = 127;
+    	}
     }
     for (size_t i=0; i<points.size(); i++){
       Eigen::Vector3d p=rotateThing*points.at(i);
       float x =  p.x()*pixelsPerMeter+xcenter;
       float y = -p.y()*pixelsPerMeter+ycenter;
-	if (x>0 && x<laserImage.cols && y>0 && y < laserImage.rows) {
-	  laserImage.at<unsigned char>((int) y, (int) x) = 255;
-	}
+    	if (x>0 && x<laserImage.cols && y>0 && y < laserImage.rows) {
+    	  laserImage.at<unsigned char>((int) y, (int) x) = 255;
+    	}
     }
 
       
@@ -190,6 +191,7 @@ int main(int argc, char** argv) {
       visualizers.insert(make_pair(laserSensor, new MySimpleLaserVisualizer(laserSensor->topic(), &trajectory)));
   }
 
+  cerr << "created visaualizers" << endl;
 
   size_t i = 0;
   while (1) {
