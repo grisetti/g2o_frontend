@@ -22,6 +22,9 @@ TARGET_LINK_LIBRARIES(boss_playback boss_logger boss)
 ADD_EXECUTABLE(boss_synchronizer boss_synchronizer.cpp )
 TARGET_LINK_LIBRARIES(boss_synchronizer boss_logger boss)
 
+ADD_EXECUTABLE(boss_path_generator boss_path_generator.cpp )
+TARGET_LINK_LIBRARIES(boss_path_generator boss_logger boss)
+
 ADD_EXECUTABLE(openni2_playback openni2_playback.cpp)
 TARGET_LINK_LIBRARIES(openni2_playback boss_logger boss ${OpenCV_LIBS})
 

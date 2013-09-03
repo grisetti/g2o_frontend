@@ -15,10 +15,10 @@ namespace boss {
     virtual void deserializeComplete();
 
     inline const Eigen::Isometry3d& transform() {return _transform;}
-    inline void setTransform(Eigen::Isometry3d& transform_) {_transform = transform_;}
+    inline void setTransform(const Eigen::Isometry3d& transform_) {_transform = transform_;}
   
     inline const Eigen::Matrix<double, 6,6>& informationMatrix() {return _informationMatrix;}
-    inline void informationMatrix(Eigen::Matrix<double, 6,6>& informationMatrix_) {_informationMatrix=informationMatrix_;}
+    inline void setInformationMatrix(const Eigen::Matrix<double, 6,6>& informationMatrix_) {_informationMatrix=informationMatrix_;}
 
     inline const Frame* fromFrame() const { return _fromFrame;}
     inline Frame* fromFrame() { return _fromFrame;}

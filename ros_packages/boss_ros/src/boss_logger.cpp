@@ -16,6 +16,32 @@
 #include "g2o_frontend/boss_logger/bsynchronizer.h"
 using namespace std;
 
+
+const char* banner[]={
+  "boss_logger: listens to ros topics and generates a boss log",
+  " Informations you need to tell the system:",
+  " - the type and topic you want to save. The following types are supported",
+  "   - Images, use the '-image:topic' option, e.g. '-image:/camera_array/camera_image';"
+  "   - Laser,  use the '-laser:topic' option  e.g.  '-laser:/front_laser';",
+  "   - IMU,    use the '-imu:topic' option    e.g.  '-imu:/top_imu';",
+  " - the odom frame id, by using the '-odomFrame:frame' option e.g.: '-odomFrame:/odom';",
+  "   if unspecified it defaults to '/odom'.",
+  " - the base frame id, by using the '-baseFrame:frame' option e.g.: '-baseFrame:/base_link';",
+  "   if unspecified it defaults to '/base_link'.", 
+  "",
+  "call it with: boss_logger [arguments] <output filename>",
+  "example: rosrun boss_ros boss_logger -image:/kinect/depth_registered/image_raw -image:/kinect/rgb/image_color -imu:/imu/data -laser:/front_scan test.log",
+  0,
+};
+
+void printBanner (){
+  int c=0;
+  while (banner[c]){
+    cerr << banner [c] << endl;
+    c++;
+  }
+}
+
 struct CommandArg{
   CommandArg(const std::string s){
     size_t i =s.find_first_of(':');
@@ -93,8 +119,7 @@ void processArgs(RosMessageContext* context, std::list<CommandArg>& list){
 int main(int argc, char** argv){
   std::list<CommandArg> parsedArgs;
   if (argc <2){
-    cerr << "usage: " << argv[0] <<  " [arguments] <output filename>" << endl;
-    cerr << "example: rosrun boss_ros boss_logger -image:/kinect/depth_registered/image_raw -image:/kinect/rgb/image_color -imu:/imu/data -laser:/front_scan out.log" << endl;
+    printBanner();
     return 0;
   }
   int c = parseArgs(parsedArgs, argc, argv);

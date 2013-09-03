@@ -38,7 +38,7 @@ public:
     cv::namedWindow(_windowName.c_str(),1);
   }
   virtual ~MySimpleVisualizer(){}
-  virtual bool show(BaseSensorData* sdata) {return false;}
+  virtual bool show(BaseSensorData* ) {return false;}
 protected:
   std::string _windowName;
 };
@@ -76,17 +76,12 @@ public:
     float pixelsPerMeter = 1./metersPerPixel;
     int xcenter = laserImage.rows/2;
     int ycenter = laserImage.rows/2;
-    // cerr << "minRange" << laser->minRange() << endl;
-    // cerr << "maxRange" << laser->maxRange() << endl;
-    // cerr << "theta" << theta << endl;
-    // cerr << "res" << res << endl;
-    // cerr << "size" << laser->ranges().size() << endl;
     Eigen::Isometry3d worldToLaser = laser->robotFrame()->transform().inverse();
     Eigen::Isometry3d rotateThing = laser->robotFrame()->transform();
     rotateThing.translation() << 0,0,0;
     Eigen::Isometry3d doStuff = rotateThing*worldToLaser;
     std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > points;
-    for (int i=0; i<laser->ranges().size(); i++){
+    for (size_t i=0; i<laser->ranges().size(); i++){
       float d = laser->ranges()[i];
       if (d>laser->minRange() && d<laser->maxRange()){
 	float x =  d*cos(theta);
@@ -95,21 +90,22 @@ public:
       }
       theta += res;
     }
-    for (int i=_trajectory->size()-1; i>0; i--){
+
+    for (size_t i=0; i<_trajectory->size(); i++){
       Eigen::Vector3d p=doStuff*_trajectory->at(i);
       float x =  p.x()*pixelsPerMeter+xcenter;
       float y = -p.y()*pixelsPerMeter+ycenter;
-	if (x>0 && x<laserImage.cols && y>0 && y < laserImage.rows) {
-	  laserImage.at<unsigned char>((int) y, (int) x) = 127;
-	}
+    	if (x>0 && x<laserImage.cols && y>0 && y < laserImage.rows) {
+    	  laserImage.at<unsigned char>((int) y, (int) x) = 127;
+    	}
     }
-    for (int i=0; i<points.size(); i++){
+    for (size_t i=0; i<points.size(); i++){
       Eigen::Vector3d p=rotateThing*points.at(i);
       float x =  p.x()*pixelsPerMeter+xcenter;
       float y = -p.y()*pixelsPerMeter+ycenter;
-	if (x>0 && x<laserImage.cols && y>0 && y < laserImage.rows) {
-	  laserImage.at<unsigned char>((int) y, (int) x) = 255;
-	}
+    	if (x>0 && x<laserImage.cols && y>0 && y < laserImage.rows) {
+    	  laserImage.at<unsigned char>((int) y, (int) x) = 255;
+    	}
     }
 
       
@@ -123,10 +119,39 @@ public:
 };
 
 
+
+
+const char* banner[]={
+  "boss_playback: visualizes a boss log",
+  "",
+  "usage: boss_playback filein",
+  "example: boss_playback test.log sync_test.log", 
+  "",
+  "commands:", 
+  "'n': moves to the next frame", 
+  "'p': moves to the previous frame", 
+    0
+};
+
+void printBanner (){
+  int c=0;
+  while (banner[c]){
+    cerr << banner [c] << endl;
+    c++;
+  }
+}
+
+
 std::map<BaseSensor*, MySimpleVisualizer*> visualizers;
 
 int main(int argc, char** argv) {
   Deserializer des;
+  
+  if (argc<2){
+    printBanner();
+    return 0;
+  }
+    
   des.setFilePath(argv[1]);
   Serializable *o;
 
@@ -166,8 +191,9 @@ int main(int argc, char** argv) {
       visualizers.insert(make_pair(laserSensor, new MySimpleLaserVisualizer(laserSensor->topic(), &trajectory)));
   }
 
+  cerr << "created visaualizers" << endl;
 
-  int i = 0;
+  size_t i = 0;
   while (1) {
     char c;
     c= cv::waitKey(0);
