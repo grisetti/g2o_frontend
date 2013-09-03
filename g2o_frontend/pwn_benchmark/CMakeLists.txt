@@ -1,0 +1,11 @@
+INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
+
+ADD_EXECUTABLE(pwn_benchmark pwn_benchmark.cpp)
+SET_TARGET_PROPERTIES(pwn_benchmark PROPERTIES OUTPUT_NAME pwn_benchmark)
+
+TARGET_LINK_LIBRARIES(pwn_benchmark
+  pwn2_library
+  pwn2_utils
+  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
+  ${PCL_LIBRARIES}
+)

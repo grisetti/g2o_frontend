@@ -97,4 +97,26 @@ bool pcdToPwn(const char *pwnFile, const char *pcdFile) {
   return true;
 }
 
+void pwnToPclPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr pclPointCloud, Frame *pwnPointCloud) {
+  // Fill the pcl cloud
+  pclPointCloud->width = pwnPointCloud->points().size();
+  pclPointCloud->height = 1;
+  pclPointCloud->sensor_origin_ = Vector4f(0.0f,
+					   0.0f,
+					   0.0f,
+					   1.0f);
+  pclPointCloud->sensor_orientation_ = Quaternionf(1.0f, 0.0f, 0.0f, 0.0f);  
+  pclPointCloud->is_dense = true;
+  pclPointCloud->points.resize(pwnPointCloud->points().size());
+  for(size_t i = 0; i < pclPointCloud->points.size (); ++i) {
+    const Point &p = pwnPointCloud->points()[i];
+    pcl::PointXYZ &point = pclPointCloud->points[i];
+
+    // Fill the current point
+    point.x = p.x();
+    point.y = p.y();
+    point.z = p.z();
+  }
+}
+
 #endif
