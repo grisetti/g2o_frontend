@@ -78,8 +78,6 @@ namespace boss {
   };
   
 
-
-
   typedef std::map<std::string, boss::Frame*> StringFrameMap;
   typedef std::map<std::string, boss::BaseSensor*> StringSensorMap;
   typedef std::deque<boss::Serializable*> SerializableQueue;

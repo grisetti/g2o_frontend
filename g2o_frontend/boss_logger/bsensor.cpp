@@ -27,5 +27,7 @@ namespace boss {
 
   void BaseSensor::deserializeComplete() {
   }
+
+
   
 }

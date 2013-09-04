@@ -8,6 +8,7 @@
 #include "blasersensor.h"
 #include "bimusensor.h"
 #include "bsynchronizer.h"
+#include "brobot_configuration.h"
 
 
 
@@ -62,39 +63,17 @@ int main(int argc, char** argv) {
   
   cerr <<  "running path generator  with arguments: filein[" << filein << "] fileout: [" << fileout << "]" << endl;
 
-
-  Serializable *o;
-  while( (o=des.readObject()) ){
-    cerr << ".";
-    BaseSensor* sensor= dynamic_cast<BaseSensor*>(o);
-    if (sensor) {
-      sensors.insert(make_pair(sensor->topic(), sensor));
-    }
-
-    Frame* frame=dynamic_cast<Frame*>(o);
-    if (frame && frame->name()!=""){
-      frames.insert(make_pair(frame->name(), frame));
-    }
-    
-    BaseSensorData* sensorData=dynamic_cast<BaseSensorData*>(o);
-    if (sensorData){
-      sensorDatas.push_back(sensorData);
-    }
-    objects.push_back(o);
-  }
-  cerr << "read: " << objects.size() << " objects"  << endl;
-  cerr << "# frames: " << frames.size() << endl;
-  cerr << "# sensors: " << sensors.size() << endl;
+  std::vector<BaseSensorData*> sensorDatas;
+  RobotConfiguration* conf = readLog(sensorDatas, des);
+  cerr << "# frames: " << conf->frameMap().size() << endl;
+  cerr << "# sensors: " << conf->sensorMap().size() << endl;
   cerr << "# sensorDatas: " << sensorDatas.size() << endl;
+
+  conf->serializeInternals(ser);
+  ser.writeObject(*conf);
+
   TSCompare comp;
   std::sort(sensorDatas.begin(), sensorDatas.end(), comp);
-
-  for(StringFrameMap::iterator it = frames.begin(); it!=frames.end(); it++)
-    ser.writeObject(*(it->second));
-
-  for(StringSensorMap::iterator it = sensors.begin(); it!=sensors.end(); it++)
-    ser.writeObject(*(it->second));
-
 
   Frame* previousFrame = 0;
   for (size_t i = 0; i< sensorDatas.size(); i++){
@@ -117,3 +96,4 @@ int main(int argc, char** argv) {
   }
 
 }
+
