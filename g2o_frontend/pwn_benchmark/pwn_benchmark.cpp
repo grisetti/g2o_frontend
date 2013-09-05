@@ -2,6 +2,11 @@
 #include <fstream>
 #include <sstream>
 
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/contrib/contrib.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 #include <pcl/registration/icp.h>
 
 #include "g2o/stuff/command_args.h"
@@ -16,8 +21,34 @@
 
 using namespace std;
 using namespace Eigen;
+using namespace cv;
 using namespace g2o;
 using namespace pwn;
+
+Eigen::Isometry3f fromMat(const cv::Mat m);
+
+string type2str(int type) {
+  string r;
+
+  uchar depth = type & CV_MAT_DEPTH_MASK;
+  uchar chans = 1 + (type >> CV_CN_SHIFT);
+
+  switch ( depth ) {
+    case CV_8U:  r = "8U"; break;
+    case CV_8S:  r = "8S"; break;
+    case CV_16U: r = "16U"; break;
+    case CV_16S: r = "16S"; break;
+    case CV_32S: r = "32S"; break;
+    case CV_32F: r = "32F"; break;
+    case CV_64F: r = "64F"; break;
+    default:     r = "User"; break;
+  }
+
+  r += "C";
+  r += (chans+'0');
+
+  return r;
+}
 
 int main(int argc, char **argv) {
   int usePwn, usePwnNoNormals, useIcp, useDvo;
@@ -132,24 +163,37 @@ int main(int argc, char **argv) {
   sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   
   cameraMatrix.setIdentity();
+  Mat cvCameraMatrix = Mat::eye(3, 3, CV_32FC1);
   if (sensorType == "xtion640") {
     cameraMatrix << 
       570.342f,   0.0f,   320.0f,
         0,      570.342f, 240.0f,
         0.0f,     0.0f,     1.0f;  
+    float vals[] = {570.342f, 0.0f, 320.0f,
+		    0.0f, 570.342f, 240.0f,
+		    0.0f, 0.0f, 1.0f};
+    cvCameraMatrix = Mat(3, 3, CV_32FC1, vals);
   }  
   else if (sensorType == "xtion320") {
     cameraMatrix << 
       570.342f,  0.0f,   320.0f,
         0.0f,  570.342f, 240.0f,
         0.0f,    0.0f,     1.0f;  
-    cameraMatrix.block<2,3>(0,0)*=0.5;
+    cameraMatrix.block<2,3>(0,0) *= 0.5;
+    float vals[] = {570.342f * 0.5f, 0.0f, 320.0f * 0.5f,
+		    0.0f, 570.342f * 0.5f, 240.0f * 0.5f,
+		    0.0f, 0.0f, 1.0f};
+    cvCameraMatrix = Mat(3, 3, CV_32FC1, vals);
   } 
   else if (sensorType == "kinect") {
     cameraMatrix << 
       525.0f,   0.0f, 319.5f,
         0.0f, 525.0f, 239.5f,
         0.0f,   0.0f,   1.0f;  
+    float vals[] = {525.0f, 0.0f, 319.5f,
+		    0.0f, 525.0f, 239.5f,
+		    0.0f, 0.0f, 1.0f};
+    cvCameraMatrix = Mat(3, 3, CV_32FC1, vals);
   } 
   else {
     cerr << "Unknown sensor type: [" << sensorType << "]... aborting (you need to specify either xtion or kinect)" << endl;
@@ -209,11 +253,12 @@ int main(int argc, char **argv) {
 
   // Read one pair of images each time and do the registration
   char line[4096];
-  string refDethImageFilename, refColorImageFilename, currDepthImageFilename, currColorImageFilename;
+  string refDepthImageFilename, refColorImageFilename, currDepthImageFilename, currColorImageFilename;
+  Mat referenceImage, currentImage, currentDepth, referenceDepth, referenceDepthFlt, currentDepthFlt, Rt;
   while (is.getline(line, 4096)) {
     // Get current pair
     istringstream iss(line);
-    iss >> refDethImageFilename >> refColorImageFilename >> currDepthImageFilename >> currColorImageFilename;
+    iss >> refDepthImageFilename >> refColorImageFilename >> currDepthImageFilename >> currColorImageFilename;
 
     if (useDvo && (refColorImageFilename == "-" || currColorImageFilename == "-")) {
       cerr << "Impossible to use DVO alignment on this pair beacuse one or both color images are not defined... skipping." << endl;
@@ -225,25 +270,44 @@ int main(int argc, char **argv) {
     cout << "######################################################################################" << endl;
 
     // Load depth and color images   
-    refDepthImage.load(refDethImageFilename.c_str());
+    refDepthImage.load(refDepthImageFilename.c_str());
     currDepthImage.load(currDepthImageFilename.c_str());
     imageRows = refDepthImage.rows();
     imageCols = refDepthImage.cols();
     scaledImageRows = imageRows / ng_scale;
     scaledImageCols = imageCols / ng_scale;
     correspondenceFinder.setSize(scaledImageRows, scaledImageCols);
-
+    referenceDepth = imread(refDepthImageFilename.c_str(), -1);
+    referenceDepth.convertTo(referenceDepthFlt, CV_32FC1, 1.0f/1000.0f);
+    referenceImage = imread(refColorImageFilename, -1);
+    currentDepth = imread(currDepthImageFilename.c_str(), -1);
+    currentDepth.convertTo(currentDepthFlt, CV_32FC1, 1.0f/1000.0f);
+    currentImage = imread(currColorImageFilename.c_str(), -1);
+    
     // Compute stats
-    Frame refFrame, currFrame, currFrameNoNormals;
+    Frame refFrame, currFrame, refFrameNoNormals, currFrameNoNormals;
     DepthImage::scale(refScaledDepthImage, refDepthImage, ng_scale);
     DepthImage::scale(currScaledDepthImage, currDepthImage, ng_scale);
     converter.compute(refFrame, refScaledDepthImage, sensorOffset, false);
     converter.compute(currFrame, currScaledDepthImage, sensorOffset, false);
+    refFrameNoNormals = refFrame;
+    // InformationMatrixVector &refNormalOmegas = refFrameNoNormals.normalInformationMatrix();
+    // StatsVector &refStats = refFrameNoNormals.stats();
+    // NormalVector &refNormals = refFrameNoNormals.normals();
+    // for (size_t i = 0; i < refNormals.size(); i++) {
+    //   //refNormals[i] = Vector4f(1.0f, 1.0f, 1.0f, 0.0f);
+    //   refStats[i](4, 4) = 0.0f;
+    //   //refNormalOmegas[i].setZero();
+    // }
     currFrameNoNormals = currFrame;
-    InformationMatrixVector &normalOmegas = currFrameNoNormals.normalInformationMatrix();
-    for (size_t i = 0; i < normalOmegas.size(); i++) {
-      normalOmegas[i].setZero();
-    }
+    // InformationMatrixVector &currNormalOmegas = currFrameNoNormals.normalInformationMatrix();
+    // StatsVector &currStats = currFrameNoNormals.stats();
+    // NormalVector &currNormals = currFrameNoNormals.normals();
+    // for (size_t i = 0; i < currNormals.size(); i++) {
+    //   //currNormals[i] = Vector4f(1.0f, 1.0f, 1.0f, 0.0f);
+    //   currStats[i](4, 4) = 0.0f;
+    //   //currNormalOmegas[i].setZero();
+    // }
 
     // Convert pwn clouds to pcl type
     pcl::PointCloud<pcl::PointXYZ>::Ptr refPclPointCloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -251,6 +315,10 @@ int main(int argc, char **argv) {
     pcl::PointCloud<pcl::PointXYZ> aligned;
     pwnToPclPointCloud(refPclPointCloud, &refFrame);
     pwnToPclPointCloud(currPclPointCloud, &currFrame);
+
+    // Save clouds
+    refFrame.save("reference.pwn", 1, true, Eigen::Isometry3f::Identity());
+    currFrame.save("current.pwn", 1, true, Eigen::Isometry3f::Identity());      
 
     // PWN
     if (usePwn) {
@@ -272,6 +340,7 @@ int main(int argc, char **argv) {
       cout << "---------------------------------------------------" << endl;
       osChi2 << aligner.error() << "\t";
       osTime << oend - ostart << "\t";
+      currFrame.save("alignedPWN.pwn", 1, true, aligner.T());
     }
 
     // PWN without normals
@@ -279,7 +348,7 @@ int main(int argc, char **argv) {
       cout << "PWN without normals...";    
       Isometry3f initialGuess = Isometry3f::Identity();
       initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-      aligner.setReferenceFrame(&refFrame);
+      aligner.setReferenceFrame(&refFrameNoNormals);
       aligner.setCurrentFrame(&currFrameNoNormals);
       aligner.setInitialGuess(initialGuess);
       aligner.setSensorOffset(sensorOffset);
@@ -294,12 +363,21 @@ int main(int argc, char **argv) {
       cout << "---------------------------------------------------" << endl;
       osChi2 << aligner.error() << "\t";
       osTime << oend - ostart << "\t";
+      currFrame.save("alignedPWNNN.pwn", 1, true, aligner.T());
     }
 
     // ICP
     if (useIcp) {
       cout << "ICP...";
       pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+      // Set the maximum correspondence distance
+      //icp.setMaxCorrespondenceDistance(0.05);
+      // Set the maximum number of iterations
+      //icp.setMaximumIterations(50);
+      // Set the transformation epsilon
+      //icp.setTransformationEpsilon(1e-8);
+      // Set the euclidean distance difference epsilon
+      //icp.setEuclideanFitnessEpsilon(1);
       icp.setInputSource(refPclPointCloud);
       icp.setInputTarget(currPclPointCloud);
       double ostart = get_time();
@@ -314,7 +392,7 @@ int main(int argc, char **argv) {
       initialGuess.linear() = finalTransformation.block<3, 3>(0, 0);
       aligner.setReferenceFrame(&refFrame);
       aligner.setCurrentFrame(&currFrame);
-      aligner.setInitialGuess(initialGuess);
+      aligner.setInitialGuess(initialGuess.inverse());
       aligner.setSensorOffset(sensorOffset);
       aligner.setInnerIterations(1);
       aligner.setOuterIterations(1);
@@ -323,13 +401,38 @@ int main(int argc, char **argv) {
       cout << "---------------------------------------------------" << endl;
       osChi2 << aligner.error() << "\t";
       osTime << oend - ostart << "\t";
+      pcl::io::savePCDFileASCII("reference.pcd", *refPclPointCloud);
+      pcl::io::savePCDFileASCII("current.pcd", *currPclPointCloud);
+      pcl::io::savePCDFileASCII("alignedICP.pcd", aligned);
+      currFrame.save("alignedICP.pwn", 1, true, initialGuess.inverse());
     }
 
     // DVO
     if (useDvo) {
       cout << "DVO...";
+      Rt = Mat::eye(4, 4, CV_32FC1);
+      double ostart = get_time();
+      cv::RGBDOdometry(Rt, Mat(),
+		       referenceImage, referenceDepthFlt, Mat(),
+		       currentImage, currentDepthFlt, Mat(),
+		       cvCameraMatrix);
+      double oend = get_time();
       cout << " done." << endl;
+      cout << "DVO time: " << oend - ostart << " seconds" << endl;
+      Eigen::Isometry3f initialGuess = fromMat(Rt);
+      initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+      aligner.setReferenceFrame(&refFrame);
+      aligner.setCurrentFrame(&currFrame);
+      aligner.setInitialGuess(initialGuess);
+      aligner.setSensorOffset(sensorOffset);
+      aligner.setInnerIterations(1);
+      aligner.setOuterIterations(1);
+      aligner.align();
+      cout << "DVO Chi2: " << aligner.error() << endl;
       cout << "---------------------------------------------------" << endl;
+      osChi2 << aligner.error() << "\t";
+      osTime << oend - ostart << "\t";
+      currFrame.save("alignedDVO.pwn", 1, true, initialGuess);
     }
     
     osChi2 << endl;
@@ -337,4 +440,17 @@ int main(int argc, char **argv) {
   }
 
   return 0;
+}
+
+Eigen::Isometry3f fromMat(const cv::Mat m) {
+  Eigen::Matrix3f R;
+  Eigen::Vector3f t;
+  Eigen::Isometry3f T;
+  T.setIdentity();
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      T.matrix()(i, j) = m.at<float>(i, j);
+    }
+  }
+  return T;
 }
