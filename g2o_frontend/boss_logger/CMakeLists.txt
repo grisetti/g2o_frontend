@@ -9,6 +9,7 @@ ADD_LIBRARY(boss_logger ${G2O_FRONTEND_LIB_TYPE}
   blasersensor.cpp blasersensor.h
   bimusensor.cpp bimusensor.h
   bsynchronizer.cpp bsynchronizer.h
+  brobot_configuration.cpp brobot_configuration.h
 )
 
 TARGET_LINK_LIBRARIES(boss_logger  boss ${OpenCV_LIBS})
@@ -25,6 +26,5 @@ TARGET_LINK_LIBRARIES(boss_synchronizer boss_logger boss)
 ADD_EXECUTABLE(boss_path_generator boss_path_generator.cpp )
 TARGET_LINK_LIBRARIES(boss_path_generator boss_logger boss)
 
-ADD_EXECUTABLE(openni2_playback openni2_playback.cpp)
-TARGET_LINK_LIBRARIES(openni2_playback boss_logger boss ${OpenCV_LIBS})
+
 

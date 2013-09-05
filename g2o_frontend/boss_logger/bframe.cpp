@@ -54,6 +54,22 @@ namespace boss {
     return t2.inverse()*t1;
   }
 
+  bool Frame::canTransformTo(const Frame* base) const {
+    // find the transform to the root;
+    const Frame* aux1 = this;
+    while(aux1->parent()){
+      aux1=static_cast<const Frame*>(aux1->parent());
+    }
+
+    const Frame* aux2 = base;
+    while(aux2->parent()){
+      aux2=static_cast<const Frame*>(aux2->parent());
+    }
+    if (aux1!=aux2)
+      return false;
+    return true;
+  }
+
 
   BOSS_REGISTER_CLASS(Frame);
 

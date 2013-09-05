@@ -3,12 +3,13 @@
 
 #include "ros/ros.h"
 #include "g2o_frontend/boss_logger/bsensor.h"
+#include "g2o_frontend/boss_logger/brobot_configuration.h"
 #include "tf/transform_listener.h"
 using namespace std;
 
 class RosMessageHandler;
 class RosTransformMessageHandler;
-class RosMessageContext {
+class RosMessageContext : public boss::RobotConfiguration {
 public:
   RosMessageContext(ros::NodeHandle* nh_);
 
@@ -25,19 +26,15 @@ public:
 
   bool getOdomPose(Eigen::Isometry3d& t, double time);
   inline void setOdomFrameId(const std::string odomFrameId_) {_odomFrameId = odomFrameId_;}
-  inline void setBaseFrameId(const std::string baseFrameId_) {_baseFrameId = baseFrameId_;}
   inline const std::string& odomFrameId() const {return _odomFrameId;}
-  inline const std::string& baseFrameId() const {return _baseFrameId;} 
   
   
 protected:
   ros::NodeHandle* _nh;
   tf::TransformListener* _tfListener;
   RosTransformMessageHandler* _transformHandler;
-  boss::StringSensorMap _sensorMap;
-  boss::StringFrameMap  _frameMap;
   boss::SerializableQueue  _messageQueue;
-  std::string _odomFrameId, _baseFrameId;
+  std::string _odomFrameId;
   std::map<std::string, RosMessageHandler*> _handlers;
   
 };

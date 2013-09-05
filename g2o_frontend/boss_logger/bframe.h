@@ -38,6 +38,7 @@ namespace boss {
     virtual ~Frame();
 
     Eigen::Isometry3d transformTo(const Frame* base) const;
+    bool canTransformTo(const Frame* base) const;
     // casting sugar
     inline const Frame* parent() const { return (Frame*)_parent;}
     inline Frame* parent() { return (Frame*)_parent;}
