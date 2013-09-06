@@ -18,53 +18,53 @@ int main(int argc, char** argv) {
     ser.setFilePath("test.log");
   
     // create an origin that will act as a frame container
-    Frame * originFrame = new Frame();
+    ReferenceFrame * originReferenceFrame = new ReferenceFrame();
     // create a robot configuration
-    Frame* baseFrame = new Frame("base_frame", Eigen::Isometry3d::Identity(), originFrame);
+    ReferenceFrame* baseReferenceFrame = new ReferenceFrame("base_frame", Eigen::Isometry3d::Identity(), originReferenceFrame);
 
-    Frame* imuFrame  = new Frame("imu_frame", Eigen::Isometry3d::Identity(), baseFrame);
+    ReferenceFrame* imuReferenceFrame  = new ReferenceFrame("imu_frame", Eigen::Isometry3d::Identity(), baseReferenceFrame);
 
     Eigen::Isometry3d baseToFrontLaserTransform=Eigen::Isometry3d::Identity();
     baseToFrontLaserTransform.translation() = Eigen::Vector3d(0.2, 0, 0.2);
-    Frame* frontLaserFrame = new Frame("front_laser_frame", baseToFrontLaserTransform, baseFrame);
+    ReferenceFrame* frontLaserReferenceFrame = new ReferenceFrame("front_laser_frame", baseToFrontLaserTransform, baseReferenceFrame);
 
     Eigen::Isometry3d baseToRearLaserTransform=Eigen::Isometry3d::Identity();
     baseToRearLaserTransform.translation() = Eigen::Vector3d(-0.2, 0, 0.2);
-    Frame* rearLaserFrame = new Frame("rear_laser_frame", baseToRearLaserTransform, baseFrame);
+    ReferenceFrame* rearLaserReferenceFrame = new ReferenceFrame("rear_laser_frame", baseToRearLaserTransform, baseReferenceFrame);
 
 
     Eigen::Isometry3d baseToRGBDCamTrandform=Eigen::Isometry3d::Identity();
     baseToRGBDCamTrandform.translation() = Eigen::Vector3d(0.0, 0, 0.1);
-    Frame* rgbdFrame = new Frame("rgbd_frame", baseToRGBDCamTrandform, frontLaserFrame);
+    ReferenceFrame* rgbdReferenceFrame = new ReferenceFrame("rgbd_frame", baseToRGBDCamTrandform, frontLaserReferenceFrame);
 
     PinholeImageSensor* rgbImageSensor= new PinholeImageSensor;
-    rgbImageSensor->setFrame(rgbdFrame);
+    rgbImageSensor->setReferenceFrame(rgbdReferenceFrame);
     rgbImageSensor->setTopic("kinect/rgb");
 
     PinholeImageSensor* depthImageSensor= new PinholeImageSensor;
-    depthImageSensor->setFrame(rgbdFrame);
+    depthImageSensor->setReferenceFrame(rgbdReferenceFrame);
     depthImageSensor->setTopic("kinect/depth_registered");
 
     LaserSensor* frontLaserSensor = new LaserSensor;
-    frontLaserSensor->setFrame(frontLaserFrame);
+    frontLaserSensor->setReferenceFrame(frontLaserReferenceFrame);
     frontLaserSensor->setTopic("front_laser");
 
     LaserSensor* rearLaserSensor = new LaserSensor;
-    rearLaserSensor->setFrame(rearLaserFrame);
+    rearLaserSensor->setReferenceFrame(rearLaserReferenceFrame);
     rearLaserSensor->setTopic("rear_laser");
 
     IMUSensor* imuSensor = new IMUSensor;
     imuSensor->setTopic("imu");
-    imuSensor->setFrame(imuFrame);
+    imuSensor->setReferenceFrame(imuReferenceFrame);
   
 
     // write the frames
-    ser.write(argv[0], *originFrame);
-    ser.write(argv[0], *baseFrame);
-    ser.write(argv[0], *imuFrame);
-    ser.write(argv[0], *frontLaserFrame);
-    ser.write(argv[0], *rearLaserFrame);
-    ser.write(argv[0], *rgbdFrame);
+    ser.write(argv[0], *originReferenceFrame);
+    ser.write(argv[0], *baseReferenceFrame);
+    ser.write(argv[0], *imuReferenceFrame);
+    ser.write(argv[0], *frontLaserReferenceFrame);
+    ser.write(argv[0], *rearLaserReferenceFrame);
+    ser.write(argv[0], *rgbdReferenceFrame);
     ser.write(argv[0], *rgbImageSensor);
     // write the sensors
     ser.write(argv[0], *depthImageSensor);
@@ -73,8 +73,8 @@ int main(int argc, char** argv) {
     ser.write(argv[0], *imuSensor);
 
     // do a trivial lookup to see if all is in order
-    cerr << "rgb full name: " << rgbdFrame->path() << endl;
-    Frame* f = originFrame->childByName("base_frame/front_laser_frame/rgbd_frame");
+    cerr << "rgb full name: " << rgbdReferenceFrame->path() << endl;
+    ReferenceFrame* f = originReferenceFrame->childByName("base_frame/front_laser_frame/rgbd_frame");
     if (f) {
       cerr << "found frame " << f->path() << endl;
     }
@@ -97,16 +97,16 @@ int main(int argc, char** argv) {
     cout << "I wrote again " << messages.size() << " messages" << endl;
 
     // find the origin;
-    Frame* origin=0;
+    ReferenceFrame* origin=0;
     for (size_t i=0; i<messages.size(); i++) {
-	origin = dynamic_cast<Frame*>( messages[i]->getInstance() );
+	origin = dynamic_cast<ReferenceFrame*>( messages[i]->getInstance() );
 	if (origin && origin->name()==""){
 	    cerr << "found origin";
 	    break;
 	}
     }
     if (origin){
-      Frame* f = origin->childByName("base_frame/front_laser_frame/rgbd_frame");
+      ReferenceFrame* f = origin->childByName("base_frame/front_laser_frame/rgbd_frame");
       if (f) {
 	cerr << "found frame " << f->path() << endl;
       }
@@ -124,26 +124,26 @@ int main(int argc, char** argv) {
   
   { // object writing
     ser.setFilePath("test.log");
-    int numFrames=100;
-    Frame* previousFrame=0;
-    for (int i=0; i<numFrames; i++) {
-      Frame* f=new Frame();
+    int numReferenceFrames=100;
+    ReferenceFrame* previousReferenceFrame=0;
+    for (int i=0; i<numReferenceFrames; i++) {
+      ReferenceFrame* f=new ReferenceFrame();
       f->setTransform(Eigen::Isometry3d::Identity());
       ser.write(argv[0],*f);
 
-      if (previousFrame) {
-        FrameRelation* rel=new FrameRelation();
-        rel->setFromFrame(previousFrame);
-        rel->setToFrame(f);
+      if (previousReferenceFrame) {
+        ReferenceFrameRelation* rel=new ReferenceFrameRelation();
+        rel->setFromReferenceFrame(previousReferenceFrame);
+        rel->setToReferenceFrame(f);
         ser.write(argv[0],*rel);
         delete rel;
-        delete previousFrame;
+        delete previousReferenceFrame;
       }
 
-      previousFrame = f;
+      previousReferenceFrame = f;
     }
-    if (previousFrame) {
-      delete previousFrame;
+    if (previousReferenceFrame) {
+      delete previousReferenceFrame;
     }
   }
 

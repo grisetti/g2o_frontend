@@ -189,6 +189,31 @@ void DepthImage::fromUnsignedShort(const MatrixXus &m){
     *f = (*us) ? 0.001f*(*us) : std::numeric_limits<float>::max();
 }
 
+
+  void DepthImage::toCvMat(cv::Mat &m, float dmax) const{
+    if (m.rows != cols() && m.cols != rows() && m.type()!=CV_16UC1){
+      m=cv::Mat(cols(),rows(), CV_16UC1);
+    }
+
+    unsigned short* us=(unsigned short*)m.data;
+    const float* f=data();
+    int s = m.rows*m.cols;
+    for (int i =0; i<s; i++, f++, us++) {
+      *us = (*f<dmax) ? (int)(1000.0f*(*f)) : 0;
+    }
+    
+  }
+  
+  void DepthImage::fromCvMat(const cv::Mat &m){
+    assert (m.type==CV_16UC1);
+    resize(m.cols,m.rows);
+    const unsigned short* us=(const unsigned short*)m.data;
+    float* f=data();
+    int s = m.rows*m.cols;
+    for (int i =0; i<s; i++, f++, us++)
+      *f = (*us) ? 0.001f*(*us) : std::numeric_limits<float>::max();
+  }
+  
 bool DepthImage::load(const char* filename, bool transposed){
    MatrixXus usm;
    FILE* f=fopen(filename, "rb");

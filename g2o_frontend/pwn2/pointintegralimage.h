@@ -12,7 +12,7 @@ class PointIntegralImage : public Eigen::Matrix<PointAccumulator, Eigen::Dynamic
  public:
   PointIntegralImage();
   
-  void compute(const Eigen::MatrixXi &pointIndices, const PointVector &points);
+  void compute(const IntImage &pointIndices, const PointVector &points);
   
   void clear();
   

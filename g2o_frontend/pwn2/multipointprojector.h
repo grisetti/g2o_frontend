@@ -15,7 +15,7 @@ class MultiPointProjector: public PointProjector {
     int width;
     int height;
     Eigen::MatrixXf depthImage;
-    Eigen::MatrixXi indexImage;
+    IntImage indexImage;
 
     ChildProjectorInfo(PointProjector *pointProjector_=0,
 		       Eigen::Isometry3f sensorOffset_=Eigen::Isometry3f::Identity(),
@@ -59,20 +59,20 @@ class MultiPointProjector: public PointProjector {
 
   virtual void size(int &rows, int &cols);
 
-  virtual void project(Eigen::MatrixXi &indexImage, 
+  virtual void project(IntImage &indexImage, 
 		       Eigen::MatrixXf &depthImage, 
 		       const PointVector &points) const;
 
   virtual void unProject(PointVector &points,
-			 Eigen::MatrixXi &indexImage, 
+			 IntImage &indexImage, 
                          const Eigen::MatrixXf &depthImage) const;
 
   virtual void unProject(PointVector &points,
   			 Gaussian3fVector &gaussians,
-  			 Eigen::MatrixXi &indexImage,
+  			 IntImage &indexImage,
                          const Eigen::MatrixXf &depthImage) const;
   
-  virtual void projectIntervals(Eigen::MatrixXi& intervalImage, 
+  virtual void projectIntervals(IntImage& intervalImage, 
 				const Eigen::MatrixXf& depthImage, 
 				const float worldRadius,
 				const bool blackBorders=false) const;

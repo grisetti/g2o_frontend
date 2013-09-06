@@ -16,13 +16,13 @@
 using namespace boss;
 using namespace std;
 
-Frame f;
+ReferenceFrame f;
 PinholeImageSensor i;
 LaserSensor s;
 IMUSensor imu;
 
 StringSensorMap sensors;
-StringFrameMap  frames;
+StringReferenceFrameMap  frames;
 std::vector<boss::Serializable*> objects;
 std::vector<BaseSensorData*> sensorDatas;
 
@@ -77,8 +77,8 @@ public:
     float pixelsPerMeter = 1./metersPerPixel;
     int xcenter = laserImage.rows/2;
     int ycenter = laserImage.rows/2;
-    Eigen::Isometry3d worldToLaser = laser->robotFrame()->transform().inverse();
-    Eigen::Isometry3d rotateThing = laser->robotFrame()->transform();
+    Eigen::Isometry3d worldToLaser = laser->robotReferenceFrame()->transform().inverse();
+    Eigen::Isometry3d rotateThing = laser->robotReferenceFrame()->transform();
     rotateThing.translation() << 0,0,0;
     Eigen::Isometry3d doStuff = rotateThing*worldToLaser;
     std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > points;
@@ -178,21 +178,21 @@ int main(int argc, char** argv) {
 
   cerr << "created visaualizers" << endl;
 
-  Frame* currentFrame = 0;
+  ReferenceFrame* currentReferenceFrame = 0;
   int i=0;
   while (1) {
     char c;
     c= cv::waitKey(0);
     BaseSensorData* data =sensorDatas[i];
-    currentFrame = data->robotFrame();
+    currentReferenceFrame = data->robotReferenceFrame();
     if (c == 27)
       return 0;
     if (c == 'n'){
-      while (sensorDatas[i]->robotFrame()==currentFrame && i<sensorDatas.size()-1) {
+      while (sensorDatas[i]->robotReferenceFrame()==currentReferenceFrame && i<sensorDatas.size()-1) {
 	i++;
 	BaseSensorData* data =sensorDatas[i];
 	std::map<BaseSensor*,MySimpleVisualizer*>::iterator visIt = visualizers.find(data->baseSensor());
-	Eigen::Isometry3d T=data->robotFrame()->transform();
+	Eigen::Isometry3d T=data->robotReferenceFrame()->transform();
 	if (visIt!=visualizers.end()) {
 	  visIt->second->show(data);
 	}
@@ -200,7 +200,7 @@ int main(int argc, char** argv) {
       }
     }
     if (c == 'p'){
-      while (sensorDatas[i]->robotFrame()==currentFrame && i>1) {
+      while (sensorDatas[i]->robotReferenceFrame()==currentReferenceFrame && i>1) {
 	i--;
 	BaseSensorData* data =sensorDatas[i];
 	std::map<BaseSensor*,MySimpleVisualizer*>::iterator visIt = visualizers.find(data->baseSensor());

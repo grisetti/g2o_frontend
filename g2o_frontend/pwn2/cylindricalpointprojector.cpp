@@ -35,7 +35,7 @@ namespace pwn {
     return _projectInterval(x, y, d, worldRadius);
   }
 
-  void CylindricalPointProjector::project(Eigen::MatrixXi &indexImage,
+  void CylindricalPointProjector::project(IntImage &indexImage,
 					  Eigen::MatrixXf &depthImage, 
 					  const PointVector &points) const {
     depthImage.resize(indexImage.rows(), indexImage.cols());
@@ -60,7 +60,7 @@ namespace pwn {
     }
   }
 
-  void CylindricalPointProjector::projectIntervals(Eigen::MatrixXi& intervalImage, 
+  void CylindricalPointProjector::projectIntervals(IntImage& intervalImage, 
 						   const Eigen::MatrixXf& depthImage, 
 						   const float worldRadius,
 						   const bool /*blackBorders*/) const {
@@ -77,7 +77,7 @@ namespace pwn {
   }
 
   void CylindricalPointProjector::unProject(PointVector& points, 
-					    Eigen::MatrixXi& indexImage,
+					    IntImage& indexImage,
 					    const Eigen::MatrixXf& depthImage) const {
     points.resize(depthImage.rows()*depthImage.cols());
     int count = 0;
@@ -103,7 +103,7 @@ namespace pwn {
 
   void CylindricalPointProjector::unProject(PointVector &points, 
 					    Gaussian3fVector &gaussians,
-					    Eigen::MatrixXi &indexImage,
+					    IntImage &indexImage,
 					    const Eigen::MatrixXf &depthImage) const {
     points.resize(depthImage.rows()*depthImage.cols());
     gaussians.resize(depthImage.rows()*depthImage.cols());

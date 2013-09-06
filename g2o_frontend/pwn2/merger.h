@@ -43,7 +43,7 @@ namespace pwn {
     DepthImageConverter *_depthImageConverter;
 
     DepthImage _depthImage;
-    Eigen::MatrixXi _indexImage;
+    IntImage _indexImage;
     std::vector<int> _collapsedIndices;  
   };
 

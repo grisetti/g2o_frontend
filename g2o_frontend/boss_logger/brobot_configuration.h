@@ -11,16 +11,16 @@ namespace boss {
   public:
    RobotConfiguration(const std::string& name_="");
    const boss::StringSensorMap& sensorMap() const {return _sensorMap;}
-   const boss::StringFrameMap&  frameMap() const {return _frameMap;}
+   const boss::StringReferenceFrameMap&  frameMap() const {return _frameMap;}
    bool addSensor(BaseSensor* sensor_);
-   bool addFrame(Frame* frame_);
+   bool addReferenceFrame(ReferenceFrame* frame_);
    BaseSensor* sensor(const std::string topic);
-   Frame* frame(const std::string name);
+   ReferenceFrame* frame(const std::string name);
    inline const std::string& name() const {return _name;}
    inline void setName(const std::string& name_) {_name = name_;}
    inline bool isReady() const {return _isReady;}
-   inline const std::string& baseFrameId() const { return _baseFrameId;}
-   inline void setBaseFrameId(const std::string& baseFrameId_) {_baseFrameId = baseFrameId_;}
+   inline const std::string& baseReferenceFrameId() const { return _baseReferenceFrameId;}
+   inline void setBaseReferenceFrameId(const std::string& baseReferenceFrameId_) {_baseReferenceFrameId = baseReferenceFrameId_;}
    virtual void serialize(ObjectData& data, IdContext& context);
    virtual void deserialize(ObjectData& data, IdContext& context);
    virtual void deserializeComplete();
@@ -29,8 +29,8 @@ namespace boss {
    bool _isReady;
    void isReadyUpdate();
    StringSensorMap _sensorMap;
-   StringFrameMap _frameMap;
-   std::string _baseFrameId;
+   StringReferenceFrameMap _frameMap;
+   std::string _baseReferenceFrameId;
    std::string _name;
  };
 

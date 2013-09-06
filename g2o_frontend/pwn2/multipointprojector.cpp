@@ -38,7 +38,7 @@ namespace pwn {
     }
   }
 
-  void MultiPointProjector::project(Eigen::MatrixXi &indexImage, 
+  void MultiPointProjector::project(IntImage &indexImage, 
 				    Eigen::MatrixXf &depthImage, 
 				    const PointVector &points) const {
     // Compute total image size
@@ -62,7 +62,7 @@ namespace pwn {
       //const int currentWidth = childInfo.width;
       const int currentHeight = childInfo.height;
       PointProjector *currentPointProjector = childInfo.pointProjector;
-      Eigen::MatrixXi& currentIndexImage = childInfo.indexImage;
+      IntImage& currentIndexImage = childInfo.indexImage;
       Eigen::MatrixXf& currentDepthImage = childInfo.depthImage;
       if(currentPointProjector != 0) {
 	//currentPointProjector->setTransform(transform() * _pointProjectors[i].sensorOffset);
@@ -85,7 +85,7 @@ namespace pwn {
   }
 
   void MultiPointProjector::unProject(PointVector &points,
-				      Eigen::MatrixXi &indexImage, 
+				      IntImage &indexImage, 
 				      const Eigen::MatrixXf &depthImage) const {
     indexImage.resize(depthImage.rows(), depthImage.cols());
     indexImage.fill(-1);
@@ -122,7 +122,7 @@ namespace pwn {
 
   void MultiPointProjector::unProject(PointVector &points,
 				      Gaussian3fVector &gaussians,
-				      Eigen::MatrixXi &indexImage,
+				      IntImage &indexImage,
 				      const Eigen::MatrixXf &depthImage) const {
     indexImage.resize(depthImage.rows(), depthImage.cols());
     indexImage.fill(-1);
@@ -160,12 +160,12 @@ namespace pwn {
     }
   }
 
-  void MultiPointProjector::projectIntervals(Eigen::MatrixXi& intervalImage, 
+  void MultiPointProjector::projectIntervals(IntImage& intervalImage, 
 					     const Eigen::MatrixXf& depthImage, 
 					     const float worldRadius,
 					     const bool blackBorders) const {
     intervalImage.resize(depthImage.rows(), depthImage.cols());
-    Eigen::MatrixXi currentIntervalImage;
+    IntImage currentIntervalImage;
     int columnOffset = 0;
     for(size_t i = 0; i < _pointProjectors.size(); i++) {
       const int width = _pointProjectors[i].width;

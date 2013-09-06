@@ -17,7 +17,7 @@ using namespace boss;
 using namespace std;
 
 // StringSensorMap sensors;
-// StringFrameMap  frames;
+// StringReferenceFrameMap  frames;
 // std::vector<boss::Serializable*> objects;
 
 struct TSCompare{

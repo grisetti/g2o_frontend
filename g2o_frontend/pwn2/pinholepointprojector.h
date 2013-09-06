@@ -68,7 +68,7 @@ public:
    *  @param depthImage is an output parameter containing the depth values of the projected points.
    *  @param points is the input parameter containing the set of points to project.
    */
-  virtual void project(Eigen::MatrixXi &indexImage, 
+  virtual void project(IntImage &indexImage, 
 		       Eigen::MatrixXf &depthImage, 
 		       const PointVector& points) const;
 
@@ -83,7 +83,7 @@ public:
    *  @param x is an input parameter that contains the row of the matrix where the projected point
    *  falls.
    */
-  void projectIntervals(Eigen::MatrixXi &intervalImage, 
+  void projectIntervals(IntImage &intervalImage, 
 			const Eigen::MatrixXf &depthImage, 
 			const float worldRadius,
 			const bool blackBorders=false) const;
@@ -98,12 +98,12 @@ public:
    *  @param depthImage is an input parameter containing the depth values of the points.
    */
   virtual void unProject(PointVector &points, 
-			 Eigen::MatrixXi &indexImage, 
+			 IntImage &indexImage, 
                          const Eigen::MatrixXf &depthImage) const;
 
   virtual void unProject(PointVector &points,
   			 Gaussian3fVector &gaussians,
-  			 Eigen::MatrixXi &indexImage,
+  			 IntImage &indexImage,
                          const Eigen::MatrixXf &depthImage) const;
 
   /**

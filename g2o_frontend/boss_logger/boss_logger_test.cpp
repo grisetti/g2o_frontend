@@ -10,19 +10,19 @@ using namespace std;
 
 int main(int argc, char** argv) {
   // create an origin that will act s a frame container
-  Frame * originFrame = new Frame();
+  ReferenceFrame * originReferenceFrame = new ReferenceFrame();
   // create a robot configuration
-  Frame* baseFrame = new Frame("base_frame", originFrame);
+  ReferenceFrame* baseReferenceFrame = new ReferenceFrame("base_frame", originReferenceFrame);
 
-  Frame* imuFrame  = new Frame("imu_frame", baseFrame);
+  ReferenceFrame* imuReferenceFrame  = new ReferenceFrame("imu_frame", baseReferenceFrame);
 
   Eigen::Isometry3d baseToLaserTransform=Eigen::Isometry3f::Identity();
   baseToLaserTransform.translation() = Vector3f(0.2, 0, 0.2);
-  Frame* laserFrame = new Frame("laser_frame", baseToLaserTransform, baseFrame);
+  ReferenceFrame* laserReferenceFrame = new ReferenceFrame("laser_frame", baseToLaserTransform, baseReferenceFrame);
 
   Eigen::Isometry3d baseToRGBDCamTrandform=Eigen::Isometry3f::Identity();
   baseToLaserTransform.translation() = Vector3f(0.0, 0, 0.1);
-  Frame* rgbdcam_frame = new Frame("rgb_frame", baseToRGBDCam, laserFrame);
+  ReferenceFrame* rgbdcam_frame = new ReferenceFrame("rgb_frame", baseToRGBDCam, laserReferenceFrame);
 
 
 
@@ -31,26 +31,26 @@ int main(int argc, char** argv) {
   Serializer ser;
   { // object writing
     ser.setFilePath("test.log");
-    int numFrames=100;
-    Frame* previousFrame=0;
-    for (int i=0; i<numFrames; i++) {
-      Frame* f=new Frame();
+    int numReferenceFrames=100;
+    ReferenceFrame* previousReferenceFrame=0;
+    for (int i=0; i<numReferenceFrames; i++) {
+      ReferenceFrame* f=new ReferenceFrame();
       f->setTransform(Eigen::Isometry3d::Identity());
       ser.write(argv[0],*f);
 
-      if (previousFrame) {
-        FrameRelation* rel=new FrameRelation();
-        rel->setFromFrame(previousFrame);
-        rel->setToFrame(f);
+      if (previousReferenceFrame) {
+        ReferenceFrameRelation* rel=new ReferenceFrameRelation();
+        rel->setFromReferenceFrame(previousReferenceFrame);
+        rel->setToReferenceFrame(f);
         ser.write(argv[0],*rel);
         delete rel;
-        delete previousFrame;
+        delete previousReferenceFrame;
       }
 
-      previousFrame = f;
+      previousReferenceFrame = f;
     }
-    if (previousFrame) {
-      delete previousFrame;
+    if (previousReferenceFrame) {
+      delete previousReferenceFrame;
     }
   }
 

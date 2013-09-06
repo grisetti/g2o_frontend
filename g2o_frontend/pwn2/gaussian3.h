@@ -4,6 +4,7 @@
 #include "g2o_frontend/boss/object_data.h"
 #include "g2o_frontend/boss/identifiable.h"
 
+#include "pwn_typedefs.h"
 #include "depthimage.h"
 #include "homogeneousvector4f.h"
 #include "../basemath/gaussian.h"
@@ -26,7 +27,7 @@ public:
 		      float dmax = std::numeric_limits<float>::max(), 
 		      float baseline = 0.075f, float alpha = 0.1f);
 
-  void toIndexImage(Eigen::MatrixXi &indexImage, DepthImage &depthImage, 
+  void toIndexImage(IntImage &indexImage, DepthImage &depthImage, 
 		    const Eigen::Matrix3f &cameraMatrix, const Eigen::Isometry3f &cameraPose, 
 		    float dmax = std::numeric_limits<float>::max()) const;
 

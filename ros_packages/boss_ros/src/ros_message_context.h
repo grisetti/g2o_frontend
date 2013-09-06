@@ -17,7 +17,7 @@ public:
 
   inline ros::NodeHandle* nodeHandle() {return _nh;}
   boss::StringSensorMap& sensorMap() {return _sensorMap;}
-  boss::StringFrameMap&  frameMap() {return _frameMap;}
+  boss::StringReferenceFrameMap&  frameMap() {return _frameMap;}
   boss::SerializableQueue& messageQueue() {return _messageQueue;}
   bool addHandler(const std::string& type, const std::string& topic);
   RosMessageHandler* handler(const std::string topic);
@@ -25,8 +25,8 @@ public:
   void init();
 
   bool getOdomPose(Eigen::Isometry3d& t, double time);
-  inline void setOdomFrameId(const std::string odomFrameId_) {_odomFrameId = odomFrameId_;}
-  inline const std::string& odomFrameId() const {return _odomFrameId;}
+  inline void setOdomReferenceFrameId(const std::string odomReferenceFrameId_) {_odomReferenceFrameId = odomReferenceFrameId_;}
+  inline const std::string& odomReferenceFrameId() const {return _odomReferenceFrameId;}
   
   
 protected:
@@ -34,7 +34,7 @@ protected:
   tf::TransformListener* _tfListener;
   RosTransformMessageHandler* _transformHandler;
   boss::SerializableQueue  _messageQueue;
-  std::string _odomFrameId;
+  std::string _odomReferenceFrameId;
   std::map<std::string, RosMessageHandler*> _handlers;
   
 };

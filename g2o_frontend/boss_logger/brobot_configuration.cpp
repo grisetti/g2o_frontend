@@ -7,7 +7,7 @@ namespace boss {
 
   RobotConfiguration::RobotConfiguration::RobotConfiguration(const std::string& name_) {
     _name = name_;
-    _baseFrameId = "/base_link";
+    _baseReferenceFrameId = "/base_link";
     _isReady = true;
   }
 
@@ -20,8 +20,8 @@ namespace boss {
     return true;
   }
 
-  bool RobotConfiguration::addFrame(Frame* frame_){
-    Frame* f=frame(frame_->name());
+  bool RobotConfiguration::addReferenceFrame(ReferenceFrame* frame_){
+    ReferenceFrame* f=frame(frame_->name());
     if (f)
       return false;
     _frameMap.insert(make_pair(frame_->name(),frame_));
@@ -36,8 +36,8 @@ namespace boss {
     return it->second;
   }
 
-  Frame* RobotConfiguration::frame(const std::string name){
-    std::map<std::string, Frame*>::iterator it=_frameMap.find(name);
+  ReferenceFrame* RobotConfiguration::frame(const std::string name){
+    std::map<std::string, ReferenceFrame*>::iterator it=_frameMap.find(name);
     if(it==_frameMap.end())
       return 0;
     return it->second;
@@ -45,18 +45,18 @@ namespace boss {
 
   void RobotConfiguration::isReadyUpdate(){
     _isReady = false;
-    Frame * baseFrame = frame(_baseFrameId);
-    if (! baseFrame)
+    ReferenceFrame * baseReferenceFrame = frame(_baseReferenceFrameId);
+    if (! baseReferenceFrame)
       return;
     // for each sensor, check if you can determine the transformation to the base link
     for (std::map<std::string, BaseSensor*>::iterator it = _sensorMap.begin(); it!=_sensorMap.end(); it++){
       BaseSensor* s = it->second;
       if (! s) 
 	return;
-      Frame *  f = s->frame();
+      ReferenceFrame *  f = s->frame();
       if (! f)
 	return;
-      if (! f->canTransformTo(baseFrame))
+      if (! f->canTransformTo(baseReferenceFrame))
 	return;
     }
     _isReady = true;
@@ -66,10 +66,10 @@ namespace boss {
   void RobotConfiguration::serialize(ObjectData& data, IdContext& /*context*/) {
     /*Serializable::serialize(data,context);*/
     data.setString("name", _name);
-    data.setString("baseFrameId", _baseFrameId);
+    data.setString("baseReferenceFrameId", _baseReferenceFrameId);
     ArrayData* frameArray = new ArrayData;
-    for (std::map<std::string, Frame*>::iterator it = _frameMap.begin(); it!=_frameMap.end(); it++){
-      Frame* frame=it->second;
+    for (std::map<std::string, ReferenceFrame*>::iterator it = _frameMap.begin(); it!=_frameMap.end(); it++){
+      ReferenceFrame* frame=it->second;
       frameArray->add(new PointerData(frame));
       cerr << "adding frame:" << it->second->name() << endl;
     }
@@ -86,14 +86,14 @@ namespace boss {
   void RobotConfiguration::deserialize(ObjectData& data, IdContext& /*context*/) {
     /*Serializable::deserialize(data,context);*/
     _name = data.getString("name");
-    _baseFrameId = data.getString("baseFrameId");
+    _baseReferenceFrameId = data.getString("baseReferenceFrameId");
     ArrayData& frameArray=data.getField("frames")->getArray();
     for (size_t i =0; i< frameArray.size(); i++){
       ValueData& v = frameArray[i];
       Identifiable* id = v.getPointer();
-      Frame* f = dynamic_cast<Frame*>(id);
+      ReferenceFrame* f = dynamic_cast<ReferenceFrame*>(id);
       if (f){
-	addFrame(f);
+	addReferenceFrame(f);
       }
     }
     ArrayData& sensorArray=data.getField("sensors")->getArray();
@@ -114,8 +114,8 @@ namespace boss {
   }
   
   void RobotConfiguration::serializeInternals(Serializer& confSer){
-    for(StringFrameMap::iterator it = _frameMap.begin(); it!=_frameMap.end(); it++){
-      Frame* f = it->second;
+    for(StringReferenceFrameMap::iterator it = _frameMap.begin(); it!=_frameMap.end(); it++){
+      ReferenceFrame* f = it->second;
       confSer.writeObject(*f);
     }
 

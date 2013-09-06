@@ -5,7 +5,7 @@ namespace pwn {
 
 PointIntegralImage::PointIntegralImage() : Eigen::Matrix<PointAccumulator, Eigen::Dynamic, Eigen::Dynamic>(0, 0) {}
 
-void PointIntegralImage::compute(const Eigen::MatrixXi &indices, const PointVector &points) {
+void PointIntegralImage::compute(const IntImage &indices, const PointVector &points) {
   if (cols() != indices.cols() || rows() != indices.rows())
     resize(indices.rows(), indices.cols());
   clear();

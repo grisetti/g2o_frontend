@@ -13,7 +13,7 @@ namespace pwn {
 
   PointProjector::~PointProjector() {}
 
-  void PointProjector::project(Eigen::MatrixXi &indexImage, 
+  void PointProjector::project(IntImage &indexImage, 
 			       Eigen::MatrixXf &depthImage, 
 			       const PointVector &points) const {
     depthImage.resize(indexImage.rows(), indexImage.cols());
@@ -36,7 +36,7 @@ namespace pwn {
     }
   }
 
-  void PointProjector::projectIntervals(Eigen::MatrixXi &intervalImage, 
+  void PointProjector::projectIntervals(IntImage &intervalImage, 
 					const Eigen::MatrixXf &depthImage, 
 					const float worldRadius,
 					const bool /*blackBorders*/) const{
@@ -53,7 +53,7 @@ namespace pwn {
   }
 
   void PointProjector::unProject(PointVector &points,
-				 Eigen::MatrixXi &indexImage,
+				 IntImage &indexImage,
 				 const Eigen::MatrixXf &depthImage) const {
     points.resize(depthImage.rows()*depthImage.cols());
     int count = 0;
@@ -79,7 +79,7 @@ namespace pwn {
 
   void PointProjector::unProject(PointVector &points,
 				 Gaussian3fVector &gaussians,
-				 Eigen::MatrixXi &indexImage,
+				 IntImage &indexImage,
 				 const Eigen::MatrixXf &depthImage) const {
     points.resize(depthImage.rows()*depthImage.cols());
     gaussians.resize(points.size());

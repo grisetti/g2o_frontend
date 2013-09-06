@@ -13,6 +13,8 @@
 #include <Eigen/Geometry>
 #include "g2o_frontend/boss/blob.h"
 
+#include "opencv2/core/core.hpp"
+
 namespace pwn {
 
 /** \typedef MatrixXus
@@ -71,6 +73,23 @@ public:
    *  in millimeters.
    */
   void fromUnsignedShort(const MatrixXus &m);
+
+  /**
+   *  This method generates an image of unsigned short containing the values of the 
+   *  DepthImage object expressed in millimeters. If the optional input parameter is given,
+   *  then all the values above it will be pruned and setted to zero.
+   *  @param m is cv mat (type CV_16UC1)US
+   *  @param dmax is optional and can be used to prune depth values above its value.
+   */
+  void toCvMat(cv::Mat &m, float dmax = std::numeric_limits<float>::max()) const;
+ 
+  /**
+   *  This method updates the current depth values of the DepthImage object using the values
+   *  inside the input unsigned short image.
+   *  @param m is an image of unsigned short containing the depth values expressed 
+   *  in millimeters.
+   */
+  void fromCvMat(const cv::Mat &m);
   
   /**
    *  This method laods the values of a depth image file in the DepthImage object. 

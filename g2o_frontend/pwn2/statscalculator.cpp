@@ -20,8 +20,8 @@ namespace pwn {
 
   void StatsCalculator::compute(StatsVector &statsVector,
 				const PointIntegralImage &integralImage,
-				const Eigen::MatrixXi &intervalImage,
-				const Eigen::MatrixXi &indexImage) {
+				const IntImage &intervalImage,
+				const IntImage &indexImage) {
     assert(integralImage.rows() == intervalImage.rows());
     assert(integralImage.cols() == intervalImage.cols());
     assert(integralImage.rows() == indexImage.rows());
@@ -68,8 +68,8 @@ namespace pwn {
 				StatsVector& statsVector,
 				const PointVector& points,
 				const PointIntegralImage& integralImage,
-				const Eigen::MatrixXi& intervalImage,
-				const Eigen::MatrixXi& indexImage) {
+				const IntImage& intervalImage,
+				const IntImage& indexImage) {
     assert(integralImage.rows() == intervalImage.rows());
     assert(integralImage.cols() == intervalImage.cols());
     assert(integralImage.rows() == indexImage.rows());

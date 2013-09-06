@@ -28,10 +28,10 @@ namespace pwn {
     inline const CorrespondenceVector& correspondences() const { return _correspondences; }
     inline CorrespondenceVector& correspondences() { return _correspondences; }
     inline int numCorrespondences() const { return _numCorrespondences; }
-    inline const Eigen::MatrixXi& currentIndexImage() const {return _currentIndexImage;}
-    inline Eigen::MatrixXi& currentIndexImage() {return _currentIndexImage;}
-    inline const Eigen::MatrixXi& referenceIndexImage() const {return _referenceIndexImage;}
-    inline Eigen::MatrixXi& referenceIndexImage() {return _referenceIndexImage;}
+    inline const IntImage& currentIndexImage() const {return _currentIndexImage;}
+    inline IntImage& currentIndexImage() {return _currentIndexImage;}
+    inline const IntImage& referenceIndexImage() const {return _referenceIndexImage;}
+    inline IntImage& referenceIndexImage() {return _referenceIndexImage;}
     inline const DepthImage& currentDepthImage() const {return _currentDepthImage;}
     inline DepthImage& currentDepthImage() {return _currentDepthImage;}
     inline const DepthImage& referenceDepthImage() const {return _referenceDepthImage;}
@@ -79,7 +79,7 @@ namespace pwn {
 
     int _rows, _cols;
 
-    Eigen::MatrixXi _referenceIndexImage, _currentIndexImage;
+    IntImage _referenceIndexImage, _currentIndexImage;
     DepthImage _referenceDepthImage, _currentDepthImage;
   };
 

@@ -4,7 +4,7 @@
 namespace boss {
   BaseSensorData::BaseSensorData(int id, IdContext* context): Identifiable(id,context){
     _topic = "";
-    _robotFrame = 0;
+    _robotReferenceFrame = 0;
   }
 
   BaseSensor::BaseSensor(int id, IdContext* context): Identifiable(id,context) {

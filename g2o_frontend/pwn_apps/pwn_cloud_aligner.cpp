@@ -665,6 +665,13 @@ int main(int argc, char **argv) {
 	lastDrawableFrame->drawableCorrespondences()->setCorrespondences(&correspondenceFinder.correspondences());
 	lastDrawableFrame->drawableCorrespondences()->setNumCorrespondences(correspondenceFinder.numCorrespondences());
       }
+      cerr << "Error:   " << aligner.error() << endl;
+      cerr << "Inliers: " << aligner.inliers() << endl;
+      cerr << "Error/Inliers: ";
+      if (aligner.inliers())
+	cerr << aligner.error()/aligner.inliers() << endl;
+      else
+	cerr << "NaN" << endl;
 
       // Show zBuffers.
       referenceScene->clear();
@@ -703,6 +710,14 @@ int main(int argc, char **argv) {
       // Align
       aligner.align();  
       
+      cerr << "Error:   " << aligner.error() << endl;
+      cerr << "Inliers: " << aligner.inliers() << endl;
+      cerr << "Error/Inliers: ";
+      if (aligner.inliers())
+	cerr << aligner.error()/aligner.inliers() << endl;
+      else
+	cerr << "NaN" << endl;
+
       Drawable *lastDrawable = viewer->drawableList().back();
       DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
       if(lastDrawableFrame) {

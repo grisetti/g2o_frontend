@@ -4,6 +4,8 @@
 #include "g2o_frontend/boss/object_data.h"
 #include "g2o_frontend/boss/identifiable.h"
 
+
+#include "pwn_typedefs.h"
 #include "homogeneousvector4f.h"
 #include "depthimage.h"
 #include "gaussian3.h"
@@ -81,7 +83,7 @@ public:
    *  @param depthImage is an output parameter containing the depth values of the projected points.
    *  @param points is the input parameter containing the set of points to project.
    */
-  virtual void project(Eigen::MatrixXi &indexImage, 
+  virtual void project(IntImage &indexImage, 
 		       Eigen::MatrixXf &depthImage, 
 		       const PointVector &points) const;
 
@@ -94,7 +96,7 @@ public:
    *  @param worldRadius is the input parameter containing radius in the 3D euclidean space used to determine
    *  the side of the square regions.
    */
-  virtual void projectIntervals(Eigen::MatrixXi &intervalImage, 
+  virtual void projectIntervals(IntImage &intervalImage, 
 				const Eigen::MatrixXf &depthImage, 
 				const float worldRadius,
 				const bool blackBorders=false) const;
@@ -110,12 +112,12 @@ public:
    *  @param depthImage is an input parameter containing the depth values of the points.
    */
   virtual void unProject(PointVector &points,
-			 Eigen::MatrixXi &indexImage, 
+			 IntImage &indexImage, 
                          const Eigen::MatrixXf &depthImage) const;
 
   virtual void unProject(PointVector &points,
   			 Gaussian3fVector &gaussians,
-  			 Eigen::MatrixXi &indexImage,
+  			 IntImage &indexImage,
                          const Eigen::MatrixXf &depthImage) const;
 
   /**

@@ -55,15 +55,15 @@ namespace pwn {
     void compute(StatsVector &statsVector,
 
 		 const PointIntegralImage &_integralImage,
-		 const Eigen::MatrixXi &_intervalImage,
-		 const Eigen::MatrixXi &_indexImage);
+		 const IntImage &_intervalImage,
+		 const IntImage &_indexImage);
 
     void compute(NormalVector &normals,
 		 StatsVector &statsVector,
 		 const PointVector &points,
 		 const PointIntegralImage &integralImage,
-		 const Eigen::MatrixXi &intervalImage,
-		 const Eigen::MatrixXi &indexImage);
+		 const IntImage &intervalImage,
+		 const IntImage &indexImage);
   
 
     virtual void serialize(boss::ObjectData& data, boss::IdContext& context);

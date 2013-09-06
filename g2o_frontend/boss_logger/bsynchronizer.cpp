@@ -22,7 +22,7 @@ namespace boss {
 
   Synchronizer::Synchronizer(){
     dataPolicy = DeleteData;
-    framePolcy = DeleteFrame;
+    framePolcy = DeleteReferenceFrame;
   }
   
   SyncTopicInstance*  Synchronizer::syncTopic(std::string topic) {
@@ -72,8 +72,8 @@ namespace boss {
 
     // replace the old copy of the data
     if (st->sensorData){
-      if (st->sensorData->robotFrame() && framePolcy == DeleteFrame)
-	delete st->sensorData->robotFrame();
+      if (st->sensorData->robotReferenceFrame() && framePolcy == DeleteReferenceFrame)
+	delete st->sensorData->robotReferenceFrame();
       if (st->sensorData && dataPolicy == DeleteData)
 	delete st->sensorData;
     }
@@ -202,14 +202,14 @@ namespace boss {
   void Synchronizer::Reframer::syncDoneImpl(){
     if (_syncDatas.empty())
       return;
-    Frame * f=_syncDatas.front()->robotFrame();
+    ReferenceFrame * f=_syncDatas.front()->robotReferenceFrame();
     while (! _syncDatas.empty()){
       BaseSensorData* data = _syncDatas.front();
       _syncDatas.pop_front();
-      if(data->robotFrame() != f){
-	if (synchronizer->framePolcy == Synchronizer::DeleteFrame)
-	  delete data->robotFrame();
-	data->setRobotFrame(f);
+      if(data->robotReferenceFrame() != f){
+	if (synchronizer->framePolcy == Synchronizer::DeleteReferenceFrame)
+	  delete data->robotReferenceFrame();
+	data->setRobotReferenceFrame(f);
       }
     }
   }
@@ -220,10 +220,10 @@ namespace boss {
   void Synchronizer::Writer::syncDoneImpl(){
     if (_syncDatas.empty())
       return;
-    std::set<Frame*> frames;
+    std::set<ReferenceFrame*> frames;
     while (! _syncDatas.empty()){
       BaseSensorData* data = _syncDatas.front();
-      Frame * f=data->robotFrame();
+      ReferenceFrame * f=data->robotReferenceFrame();
       if (frames.find(f)==frames.end()){
 	ser->writeObject(*f);
 	frames.insert(f);
@@ -234,15 +234,15 @@ namespace boss {
   }
 
   void Synchronizer::Deleter::syncDoneImpl(){
-    std::set<Frame*> frames;
+    std::set<ReferenceFrame*> frames;
     while (! _syncDatas.empty()){
       BaseSensorData* data = _syncDatas.front();
-      frames.insert(data->robotFrame());
+      frames.insert(data->robotReferenceFrame());
       _syncDatas.pop_front();
       delete data;
     }
-    for (std::set<Frame*>::iterator it =  frames.begin(); it!= frames.end(); it++){
-      Frame* f = *it;
+    for (std::set<ReferenceFrame*>::iterator it =  frames.begin(); it!= frames.end(); it++){
+      ReferenceFrame* f = *it;
       delete f;
     }
       

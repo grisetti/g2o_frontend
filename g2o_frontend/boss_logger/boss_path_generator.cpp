@@ -17,7 +17,7 @@ using namespace boss;
 using namespace std;
 
 StringSensorMap sensors;
-StringFrameMap  frames;
+StringReferenceFrameMap  frames;
 std::vector<boss::Serializable*> objects;
 std::vector<BaseSensorData*> sensorDatas;
 
@@ -75,23 +75,23 @@ int main(int argc, char** argv) {
   TSCompare comp;
   std::sort(sensorDatas.begin(), sensorDatas.end(), comp);
 
-  Frame* previousFrame = 0;
+  ReferenceFrame* previousReferenceFrame = 0;
   for (size_t i = 0; i< sensorDatas.size(); i++){
     BaseSensorData* data = sensorDatas[i];
-    ser.writeObject(*data->robotFrame());
+    ser.writeObject(*data->robotReferenceFrame());
     ser.writeObject(*data);
 
-    Frame* from = previousFrame;
-    Frame* to = data->robotFrame();
+    ReferenceFrame* from = previousReferenceFrame;
+    ReferenceFrame* to = data->robotReferenceFrame();
     if (from && from!=to) {
-      FrameRelation* rel = new FrameRelation;
-      rel->setFromFrame(from);
-      rel->setToFrame(to);
+      ReferenceFrameRelation* rel = new ReferenceFrameRelation;
+      rel->setFromReferenceFrame(from);
+      rel->setToReferenceFrame(to);
       rel->setTransform(from->transform().inverse() * to->transform());
       rel->setInformationMatrix(Eigen::Matrix<double, 6,6>::Identity());
       ser.writeObject(*rel);
     }
-    previousFrame = to;
+    previousReferenceFrame = to;
     cerr << 'R';
   }
 

@@ -15,11 +15,11 @@ namespace boss {
    virtual void deserializeComplete();
    inline const std::string& topic() const { return _topic; }
    inline void setTopic(const std::string topic_) {_topic = topic_; }
-   inline Frame* frame() { return _frame; }   
-   inline const Frame* frame() const { return _frame;}
-   inline void setFrame(Frame* frame_) { _frame = frame_;}
+   inline ReferenceFrame* frame() { return _frame; }   
+   inline const ReferenceFrame* frame() const { return _frame;}
+   inline void setReferenceFrame(ReferenceFrame* frame_) { _frame = frame_;}
  protected:
-   Frame* _frame;
+   ReferenceFrame* _frame;
    std::string _topic;
  };
 
@@ -30,27 +30,27 @@ namespace boss {
       Identifiable::serialize(data,context);
       data.setDouble("timestamp",_timestamp);
       data.setString("topic",_topic);
-      data.setPointer("robotFrame", _robotFrame);
+      data.setPointer("robotReferenceFrame", _robotReferenceFrame);
     }
     virtual void deserialize(ObjectData& data, IdContext& context) {
       Identifiable::deserialize(data,context);
       _timestamp=data.getDouble("timestamp");
       _topic=data.getString("topic");
-      data.getReference("robotFrame").bind(_robotFrame);
+      data.getReference("robotReferenceFrame").bind(_robotReferenceFrame);
     }
     inline double timestamp() const {return _timestamp; }
     inline void setTimestamp(double timestamp_) { _timestamp=timestamp_;}
     inline const std::string& topic() const { return _topic; }
     inline void setTopic(const std::string topic_) {_topic = topic_; }
-    inline Frame* robotFrame() {return _robotFrame;}
-    inline const Frame* robotFrame() const {return _robotFrame;}
-    inline void setRobotFrame(Frame* frame_) {_robotFrame=frame_;}
+    inline ReferenceFrame* robotReferenceFrame() {return _robotReferenceFrame;}
+    inline const ReferenceFrame* robotReferenceFrame() const {return _robotReferenceFrame;}
+    inline void setRobotReferenceFrame(ReferenceFrame* frame_) {_robotReferenceFrame=frame_;}
     virtual BaseSensor* baseSensor() {return 0;}
     virtual const BaseSensor* baseSensor() const {return 0;}
   protected:
     std::string _topic;
     double _timestamp;
-    Frame* _robotFrame; // the frame where the  robot was when acquired the data
+    ReferenceFrame* _robotReferenceFrame; // the frame where the  robot was when acquired the data
   };
 
 
@@ -78,7 +78,7 @@ namespace boss {
   };
   
 
-  typedef std::map<std::string, boss::Frame*> StringFrameMap;
+  typedef std::map<std::string, boss::ReferenceFrame*> StringReferenceFrameMap;
   typedef std::map<std::string, boss::BaseSensor*> StringSensorMap;
   typedef std::deque<boss::Serializable*> SerializableQueue;
 
