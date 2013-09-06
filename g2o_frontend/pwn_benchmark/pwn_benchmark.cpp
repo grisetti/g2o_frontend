@@ -19,6 +19,8 @@
 
 #include "g2o_frontend/pwn_utils/pwn_file_format_converter.h"
 
+#undef _PWN_USE_CUDA_
+
 using namespace std;
 using namespace Eigen;
 using namespace cv;
