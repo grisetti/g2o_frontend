@@ -15,8 +15,8 @@
 #include "g2o/types/slam2d_addons/edge_line2d_pointxy.h"
 #include "g2o/types/slam2d_addons/edge_se2_line2d.h"
 
-#define MIN_POINTS_IN_LINES 12
-#define SPLIT_THRESHOLD 0.06*0.06
+#define MIN_POINTS_IN_LINES 10
+#define SPLIT_THRESHOLD 0.03*0.03
 #define CLUSTER_SQUARED_DISTANCE 0.3*0.3
 
 using namespace std;
@@ -49,6 +49,7 @@ void ViewerGUI::updateVal2(int val)
 	float dist = (float)val * 0.0005;
 	if (dist > 0.f) {
 		lineExtractor->_splitThreshold = dist*dist;
+        cerr << "FUUUUCK  " << lineExtractor->_splitThreshold << endl;
 	}
 	else cerr << "Split threshold is 0! Try to move the slider a bit more.." << endl;
 	
