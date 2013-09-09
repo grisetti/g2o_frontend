@@ -16,7 +16,7 @@ using namespace g2o;
 using namespace pwn;
 
 int main(int argc, char **argv) {
-  string inputFilename, outputChi2Filename, outputTimeFilename;
+  string inputFilename, outputFilename;
   int ng_minImageRadius;
   int ng_maxImageRadius;
   int ng_minPoints;
@@ -59,16 +59,15 @@ int main(int argc, char **argv) {
   arg.param("al_minNumInliers", al_minNumInliers, 10000, "Specify the minimum number of inliers to consider an alignment good");
   arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
   arg.param("al_inlierMaxChi2", al_inlierMaxChi2, 1e3, "Max chi2 error value for the alignment step");
-  arg.param("sensorType", sensorType, "kinect", "Sensor type: xtion640/xtion480/kinect");
+  arg.param("sensorType", sensorType, "kinect", "Sensor type: xtion640/xtion320/kinect");
 
   // Last parameter has to be the filename containing the name of pairs of images to match
   // The input file has to contain four columns of images paths saparated by tabs, each column represent the path for 
   // respectively reference depth image, reference color image, current depth image and current color image. If you don't want to
   // use color images you can just put a "-" as name for color images
   arg.paramLeftOver("inputFilename", inputFilename, "", "File containing pairs of depth images paths to register", true);
-  arg.paramLeftOver("outputChi2Filename", outputChi2Filename, "", "File containing the chi2 values of the benchmark", true);
-  arg.paramLeftOver("outputTimeFilename", outputTimeFilename, "", "File containing the time values of the benchmark", true);
-
+  arg.paramLeftOver("outputChi2Filename", outputFilename, "", "File containing the values of the benchmark", true);
+  
   // Set parser input
   arg.parseArgs(argc, argv);
 
@@ -80,16 +79,13 @@ int main(int argc, char **argv) {
   }
   
   // Create output file
-  ofstream osChi2(outputChi2Filename.c_str());
-  if (!osChi2) {
-    cerr << "Impossible to create the file containing the chi2 values of the benchmark... quitting." << endl;
+  ofstream os(outputFilename.c_str());
+  if (!os) {
+    cerr << "Impossible to create the file containing the values of the benchmark... quitting." << endl;
     return 0;
   }
-  ofstream osTime(outputTimeFilename.c_str());
-  if (!osTime) {
-    cerr << "Impossible to create the file containing the time values of the benchmark... quitting." << endl;
-    return 0;
-  }
+
+  os << "inliers\tchi2\ttime" << endl;
   
   // Objects Initialization
   // Projector
@@ -245,19 +241,23 @@ int main(int argc, char **argv) {
     dummyAligner.setInitialGuess(aligner.T());
     dummyAligner.setSensorOffset(sensorOffset);
     dummyAligner.align();
-    float chi2 = dummyLinearizer.computeChi2WithoutNormalsInfo();
+
+    dummyLinearizer.setT(aligner.T().inverse());
+    dummyLinearizer.computeChi2WithoutNormalsInfo();
+    float chi2 = std::numeric_limits<float>::max();
+    if (dummyLinearizer.inliers() != 0) {
+      chi2 = dummyLinearizer.computeChi2WithoutNormalsInfo() / dummyLinearizer.inliers();
+    }
     cout << "Chi2: " << chi2 << endl;
     cout << "Inliers: " << dummyLinearizer.inliers() << endl;
-    osChi2 << chi2 << "\t";
-    osTime << oend - ostart << "\t";
+    os << dummyLinearizer.inliers() << "\t";
+    os << chi2 << "\t";
+    os << oend - ostart << endl;
 
     // Save clouds
     // refFrame.save("reference.pwn", 1, true, Eigen::Isometry3f::Identity());
     // currFrame.save("current.pwn", 1, true, Eigen::Isometry3f::Identity());      
     // currFrame.save("alignedPWN.pwn", 1, true, aligner.T());
-    
-    osChi2 << endl;
-    osTime << endl;
   }
 
   return 0;
