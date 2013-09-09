@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
   arg.param("al_minNumInliers", al_minNumInliers, 10000, "Specify the minimum number of inliers to consider an alignment good");
   arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
   arg.param("al_inlierMaxChi2", al_inlierMaxChi2, 1e3, "Max chi2 error value for the alignment step");
-  arg.param("sensorType", sensorType, "kinect", "sensor type: xtion640/xtion480/kinect");
+  arg.param("sensorType", sensorType, "kinect", "sensor type: xtion640/xtion320/kinect");
 
   // Last parameter has to be the working directory.
   arg.paramLeftOver("directory", directory, "", "directory were the depth images are saved ", true);

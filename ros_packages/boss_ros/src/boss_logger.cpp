@@ -167,10 +167,14 @@ int main(int argc, char** argv){
     // we got all transforms and sensors, so we can dump the configuration
     if (! confReady && isReady){
       cerr << endl << "CONF IS NOW READY!!!, STARTING WRITING" << endl;
-      for (boss::StringFrameMap::iterator it = context.frameMap().begin(); it!=context.frameMap().end(); it++)
-	ser.writeObject(*it->second);
-      for (boss::StringSensorMap::iterator it = context.sensorMap().begin(); it!=context.sensorMap().end(); it++)
-	ser.writeObject(*it->second);
+      context.serializeInternals(ser);
+      boss::RobotConfiguration conf = context;
+      conf.serializeInternals(ser);
+      ser.writeObject(conf);
+      // for (boss::StringFrameMap::iterator it = context.frameMap().begin(); it!=context.frameMap().end(); it++)
+      // 	ser.writeObject(*it->second);
+      // for (boss::StringSensorMap::iterator it = context.sensorMap().begin(); it!=context.sensorMap().end(); it++)
+      // 	ser.writeObject(*it->second);
       confReady = isReady;
     }
     if (confReady){

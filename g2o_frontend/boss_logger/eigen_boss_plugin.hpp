@@ -9,7 +9,7 @@ inline void toBOSS(boss::ObjectData& data, const std::string name) const {
   adata->reserve(rows()*cols());
   for (int r=0; r<rows(); r++)
     for (int c=0; c<cols(); c++)
-      adata->push_back(new boss::NumberData(this->operator()(r,c)));
+      adata->push_back(new boss::NumberData((float)this->operator()(r,c)));
   matrixData->setField("values",adata);
   data.setField(name, matrixData);
 }

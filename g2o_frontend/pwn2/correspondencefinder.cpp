@@ -28,7 +28,6 @@ namespace pwn {
 
     // construct an array of counters;
     int numThreads = omp_get_max_threads();
-  
     int localCorrespondenceIndex[numThreads];
     int localOffset[numThreads];
     int columnsPerThread = _referenceIndexImage.cols()/numThreads;
@@ -38,28 +37,31 @@ namespace pwn {
       localCorrespondenceIndex[i] = localOffset[i];
     }
 
-#pragma omp parallel 
+    #pragma omp parallel 
     {
       int threadId = omp_get_thread_num();
       int cMin = threadId * columnsPerThread;
       int cMax = cMin + columnsPerThread;
       if(cMax > _referenceIndexImage.cols())
 	cMax = _referenceIndexImage.cols();
+
       int &correspondenceIndex = localCorrespondenceIndex[threadId];
       for (int c = cMin;  c < cMax; c++) {
 	for (int r = 0; r < _referenceIndexImage.rows(); r++) {
 	  const int referenceIndex = _referenceIndexImage(r, c);
 	  const int currentIndex = _currentIndexImage(r, c);
-	  if (referenceIndex < 0 || currentIndex < 0)
+	  if (referenceIndex < 0 || currentIndex < 0) {
 	    continue;
+	  }
 	
 	  const Normal &currentNormal = currentScene.normals()[currentIndex];
 	  const Normal &_referenceNormal = referenceScene.normals()[referenceIndex];
 	  const Point &currentPoint = currentScene.points()[currentIndex];
 	  const Point &_referencePoint = referenceScene.points()[referenceIndex];
 
-	  if(currentNormal.squaredNorm() == 0.0f || _referenceNormal.squaredNorm() == 0.0f)
+	  if(currentNormal.squaredNorm() == 0.0f || _referenceNormal.squaredNorm() == 0.0f) {
 	    continue;
+	  }
 
 	  // remappings
 	  Point referencePoint = T * _referencePoint;
@@ -71,14 +73,15 @@ namespace pwn {
 	  // } 
 
 	  // this condition captures the angluar offset, and is moved to the end of the loop
-	  if (currentNormal.dot(referenceNormal) < _inlierNormalAngularThreshold) 
+	  if (currentNormal.dot(referenceNormal) < _inlierNormalAngularThreshold) {
 	    continue;
+	  }
 
 	  Eigen::Vector4f pointsDistance = currentPoint - referencePoint;
 	  // the condition below has moved to the increment, fill the pipeline, baby
-	  if (pointsDistance.squaredNorm() > _squaredThreshold)
+	  if (pointsDistance.squaredNorm() > _squaredThreshold) {
 	    continue;     	
-
+          }
 	  float referenceCurvature = referenceScene.stats()[referenceIndex].curvature();
 	  float currentCurvature = currentScene.stats()[currentIndex].curvature();
 	  if (referenceCurvature < _flatCurvatureThreshold)
@@ -89,9 +92,10 @@ namespace pwn {
 
 	  // the condition below has moved to the increment, fill the pipeline, baby
 	  float curvatureRatio = (referenceCurvature + 1e-5)/(currentCurvature + 1e-5);
-	  if (curvatureRatio < minCurvatureRatio || curvatureRatio > maxCurvatureRatio)
+	  if (curvatureRatio < minCurvatureRatio || curvatureRatio > maxCurvatureRatio) {
 	    continue;
-	
+	  }
+
 	  _correspondences[correspondenceIndex].referenceIndex = referenceIndex;
 	  _correspondences[correspondenceIndex].currentIndex = currentIndex;
 	  correspondenceIndex++;

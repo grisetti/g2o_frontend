@@ -6,6 +6,7 @@
 #include "bimagesensor.h"
 #include "blasersensor.h"
 #include "bimusensor.h"
+#include "brobot_configuration.h"
 
 #include "opencv2/imgproc/imgproc.hpp"
 #include <opencv2/core/core.hpp>
@@ -151,37 +152,21 @@ int main(int argc, char** argv) {
     printBanner();
     return 0;
   }
+
     
   des.setFilePath(argv[1]);
-  Serializable *o;
 
-  while( (o=des.readObject()) ){
-    cerr << ".";
-    BaseSensor* sensor= dynamic_cast<BaseSensor*>(o);
-    if (sensor) {
-      sensors.insert(make_pair(sensor->topic(), sensor));
-    }
-
-    Frame* frame=dynamic_cast<Frame*>(o);
-    if (frame && frame->name()!=""){
-      frames.insert(make_pair(frame->name(), frame));
-    }
-    
-    BaseSensorData* sensorData=dynamic_cast<BaseSensorData*>(o);
-    if (sensorData){
-      sensorDatas.push_back(sensorData);
-     }
-    objects.push_back(o);
-  }
-  cerr << "read: " << objects.size() << " objects"  << endl;
-  cerr << "# frames: " << frames.size() << endl;
-  cerr << "# sensors: " << sensors.size() << endl;
+  std::vector<BaseSensorData*> sensorDatas;
+  RobotConfiguration* conf = readLog(sensorDatas, des);
+  cerr << "# frames: " << conf->frameMap().size() << endl;
+  cerr << "# sensors: " << conf->sensorMap().size() << endl;
   cerr << "# sensorDatas: " << sensorDatas.size() << endl;
+
   TSCompare comp;
   std::sort(sensorDatas.begin(), sensorDatas.end(), comp);
   std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d> > trajectory;
   //instantiate the visualizers;
-  for(StringSensorMap::iterator it=sensors.begin(); it!=sensors.end(); it++){
+  for(StringSensorMap::const_iterator it=conf->sensorMap().begin(); it!=conf->sensorMap().end(); it++){
     BaseSensor* sensor = it->second;
     PinholeImageSensor* pinholeSensor = dynamic_cast<PinholeImageSensor*>(sensor);
     if (pinholeSensor)
@@ -193,33 +178,37 @@ int main(int argc, char** argv) {
 
   cerr << "created visaualizers" << endl;
 
-  size_t i = 0;
+  Frame* currentFrame = 0;
+  int i=0;
   while (1) {
     char c;
     c= cv::waitKey(0);
+    BaseSensorData* data =sensorDatas[i];
+    currentFrame = data->robotFrame();
     if (c == 27)
       return 0;
-    if (c == 'n' && i<sensorDatas.size()-1){
-      i++;
-      BaseSensorData* data =sensorDatas[i];
-      std::map<BaseSensor*,MySimpleVisualizer*>::iterator visIt = visualizers.find(data->baseSensor());
-      Eigen::Isometry3d T=data->robotFrame()->transform();
-      if (visIt!=visualizers.end()) {
-	visIt->second->show(data);
+    if (c == 'n'){
+      while (sensorDatas[i]->robotFrame()==currentFrame && i<sensorDatas.size()-1) {
+	i++;
+	BaseSensorData* data =sensorDatas[i];
+	std::map<BaseSensor*,MySimpleVisualizer*>::iterator visIt = visualizers.find(data->baseSensor());
+	Eigen::Isometry3d T=data->robotFrame()->transform();
+	if (visIt!=visualizers.end()) {
+	  visIt->second->show(data);
+	}
+	trajectory.push_back(T.translation());
       }
-      trajectory.push_back(T.translation());
     }
-    if (c == 'p' && i>1){
-      i--;
-      BaseSensorData* data =sensorDatas[i];
-      std::map<BaseSensor*,MySimpleVisualizer*>::iterator visIt = visualizers.find(data->baseSensor());
-      if (visIt!=visualizers.end()) {
-	visIt->second->show(data);
+    if (c == 'p'){
+      while (sensorDatas[i]->robotFrame()==currentFrame && i>1) {
+	i--;
+	BaseSensorData* data =sensorDatas[i];
+	std::map<BaseSensor*,MySimpleVisualizer*>::iterator visIt = visualizers.find(data->baseSensor());
+	if (visIt!=visualizers.end()) {
+	  visIt->second->show(data);
+	}
+	trajectory.pop_back();
       }
-      trajectory.pop_back();
     }
-
-
-
   }
 }
