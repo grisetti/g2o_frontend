@@ -110,7 +110,59 @@ namespace pwn {
     _b.block<3, 1>(3, 0) = br.block<3, 1>(0, 0);
   }
 
+  float Linearizer::computeChi2WithoutNormalsInfo() {
+    // Variables initialization.
+    const InformationMatrixVector &pointOmegas = _aligner->currentFrame()->pointInformationMatrix();
 
+    // allocate the variables for the sum reduction;
+    int numThreads = omp_get_max_threads();
+    int _inliers[numThreads];
+    float _errors[numThreads];
+    int iterationsPerThread = _aligner->correspondenceFinder()->numCorrespondences()/numThreads;
+#pragma omp parallel
+    {
+      int threadId = omp_get_thread_num();
+      int imin = iterationsPerThread*threadId;
+      int imax = imin + iterationsPerThread;
+      if (imax > _aligner->correspondenceFinder()->numCorrespondences())
+	imax = _aligner->correspondenceFinder()->numCorrespondences();
+
+      int &inliers = _inliers[threadId];
+      float &error = _errors[threadId];
+      error = 0;
+      inliers = 0;
+      for(int i = imin; i < imax; i++) {
+	const Correspondence &correspondence = _aligner->correspondenceFinder()->correspondences()[i];
+	const Point referencePoint = _T * _aligner->referenceFrame()->points()[correspondence.referenceIndex];
+	const Point &currentPoint = _aligner->currentFrame()->points()[correspondence.currentIndex];
+	const InformationMatrix &omegaP = pointOmegas[correspondence.currentIndex];
+      
+	const Vector4f pointError = referencePoint - currentPoint;
+	const Vector4f ep = omegaP * pointError;
+	
+	float localError = pointError.dot(ep);
+	float kscale = 1;
+	if(localError > _inlierMaxChi2) {
+	  if (_robustKernel){
+	    kscale = sqrt(_inlierMaxChi2/localError);
+	  } else {
+	    continue;
+	  }
+	}
+	inliers++;
+	error += kscale * localError;
+      }
+    }
+
+    this->_inliers = 0;
+    this->_error = 0;
+    for (int t = 0; t < numThreads; t++) {
+      this->_inliers += _inliers[t];
+      this->_error += _errors[t];
+    }
+
+    return _error;
+  }
   
   void Linearizer::serialize(boss::ObjectData& data, boss::IdContext& context){
     Identifiable::serialize(data,context);
