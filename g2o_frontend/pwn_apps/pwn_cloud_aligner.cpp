@@ -420,6 +420,8 @@ int main(int argc, char **argv) {
     QString listItem(&(*it)[0]);
     if(listItem.endsWith(".pwn", Qt::CaseInsensitive))
       listWidget->addItem(listItem);
+    if(listItem.endsWith(".pgm", Qt::CaseInsensitive))
+      listWidget->addItem(listItem);
   }
 
   mainWindow->show();
