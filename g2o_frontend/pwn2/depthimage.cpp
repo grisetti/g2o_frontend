@@ -139,8 +139,8 @@ DepthImage::DepthImage(int r, int c): Eigen::MatrixXf(r,c){
   fill(std::numeric_limits<float>::max());
 }
 
-DepthImage::DepthImage(const MatrixXus &m): Eigen::MatrixXf(m.rows(),m.cols()){
-    fromUnsignedShort(m);
+  DepthImage::DepthImage(const MatrixXus &m, float scaleFactor): Eigen::MatrixXf(m.rows(),m.cols()){
+    fromUnsignedShort(m, scaleFactor);
 }
 
 void DepthImage::scale(Eigen::MatrixXf& dest, const Eigen::MatrixXf& src, int step){
@@ -170,39 +170,39 @@ void DepthImage::scale(Eigen::MatrixXf& dest, const Eigen::MatrixXf& src, int st
 }
 
 
-void DepthImage::toUnsignedShort(MatrixXus &m, float dmax) const {
+  void DepthImage::toUnsignedShort(MatrixXus &m, float dmax, float scaleFactor) const {
   m.resize(rows(), cols());
   unsigned short* us=m.data();
   const float* f=data();
   int s = m.rows()*m.cols();
   for (int i =0; i<s; i++, f++, us++) {
-    *us = (*f<dmax) ? (int)(1000.0f*(*f)) : 0;
+    *us = (*f<dmax) ? (int)((*f)/scaleFactor) : 0;
   }
 }
 
-void DepthImage::fromUnsignedShort(const MatrixXus &m){
+  void DepthImage::fromUnsignedShort(const MatrixXus &m, float scaleFactor){
   resize(m.rows(), m.cols());
   const unsigned short* us=m.data();
   float* f=data();
   int s = m.rows()*m.cols();
   for (int i =0; i<s; i++, f++, us++)
-    *f = (*us) ? 0.001f*(*us) : std::numeric_limits<float>::max();
+    *f = (*us) ? scaleFactor*(*us) : std::numeric_limits<float>::max();
 }
 
-bool DepthImage::load(const char* filename, bool transposed){
+  bool DepthImage::load(const char* filename, bool transposed, float scaleFactor) {
    MatrixXus usm;
    FILE* f=fopen(filename, "rb");
    bool result = _readPgm(usm, f, transposed);
    fclose(f);
    if (! result)
      return false;
-   fromUnsignedShort(usm);
+   fromUnsignedShort(usm, scaleFactor);
    return true;
  }
 
-bool DepthImage::save(const char* filename, bool transposed) const{
+  bool DepthImage::save(const char* filename, bool transposed, float scaleFactor) const{
    MatrixXus usm;
-   toUnsignedShort(usm, 15.0f);
+   toUnsignedShort(usm, 15.0f, scaleFactor);
    FILE* f=fopen(filename, "wb");
    return _writePgm(usm, f, transposed);
 }

@@ -14,35 +14,20 @@
 #include "g2o_frontend/pwn2/depthimageconverter.h"
 #include "g2o_frontend/pwn2/aligner.h"
 
+#include "g2o_frontend/basemath/bm_se3.h"
+
 using namespace std;
 using namespace Eigen;
 using namespace g2o;
 using namespace pwn;
 
-struct Pose{
-  float tx;
-  float ty;
-  float tz;
-  float qx;
-  float qy;
-  float qz;
-  float qw;
-
-  Pose() {
-    tx = ty = tz = qx = qy = qz = qw = 1.0f;
-  }
-};
-
-set<string> readDirectory(string dir = ".");
-void parseGroundTruth(vector<Pose> &groundTruthPoses, ifstream &is, string groundTruthTimeStamp = "");
-void poseToIsometry3f(Isometry3f &isometry, Pose &pose);
+void parseGroundTruth(Isometry3f &initialTransformation, ifstream &isGroundtruth, double targetTimestamp);
 
 int main(int argc, char **argv) {
   /************************************************************************
    *                           Input Handling                             *
    ************************************************************************/
-  string directory, groundTruthTimeStamp, benchmarkFilename, trajectoryFilename;
-  string groundTruthTrajectoryFilename, depthImageFilename, rgbImageFilename, groundTruthFilename;
+  string directory, benchmarkFilename, absoluteTrajectoryFilename, relativeTrajectoryFilename;
   int ng_minImageRadius;
   int ng_maxImageRadius;
   int ng_minPoints;
@@ -61,13 +46,16 @@ int main(int argc, char **argv) {
   float al_minError;
   float al_inlierMaxChi2;
   float pj_maxDistance;
+  float di_scaleFactor;
   string sensorType;
 
   // Input parameters handling
   CommandArgs arg;
   
   // Optional input parameters
-  arg.param("pj_maxDistance", pj_maxDistance, 6, "maximum distance of the points");
+  arg.param("pj_maxDistance", pj_maxDistance, 6, "Maximum distance of the points");
+  arg.param("di_scaleFactor", di_scaleFactor, 1000.0f, "Scale factor to apply to convert depth images in meters");
+  arg.param("sensorType", sensorType, "kinect", "Sensor type: xtion640/xtion320/kinect/kinectFreiburg1/kinectFreiburg2/kinectFreiburg3");
 
   arg.param("ng_minImageRadius", ng_minImageRadius, 10, "Specify the minimum number of pixels composing the square where to take points for a normal computation");
   arg.param("ng_maxImageRadius", ng_maxImageRadius, 30, "Specify the maximum number of pixels composing the square where to take points for a normal computation");
@@ -87,100 +75,68 @@ int main(int argc, char **argv) {
   arg.param("al_minError", al_minError, 10.0f, "Specify the minimum error to consider an alignment good");
   arg.param("al_inlierMaxChi2", al_inlierMaxChi2, 1e3, "Max chi2 error value for the alignment step");
 
-  arg.param("sensorType", sensorType, "kinect", "Sensor type: xtion640/xtion320/kinect");
-
   arg.param("benchmarkFilename", benchmarkFilename, "pwn_benchmark.txt", "Specify the name of the file that will contain the results of the benchmark");
-  arg.param("trajectoryFilename", trajectoryFilename, "trajectory.txt", "Specify the name of the file that will contain the trajectory computed");
-  arg.param("groundTruthTrajectoryFilename", groundTruthTrajectoryFilename, "ground_trajectory.txt", "Specify the name of the file that will contain the ground truth trajectory");
-  arg.param("depthImageFilename", depthImageFilename, "", "Specify the depth image from which the sequence has to start");
-  arg.param("rgbImageFilename", rgbImageFilename, "", "Specify the rgb image from which the sequence has to start");
-  arg.param("groundTruthFilename", groundTruthFilename, "groundtruth.txt", "Specify the name of the file containing the ground truth values");
-  arg.param("groundTruthTimeStamp", groundTruthTimeStamp, "groundtruth.txt", "Specify the time stamp at which the ground truth will be tracked");
-
+  arg.param("absoluteTrajectoryFilename", absoluteTrajectoryFilename, "absolute_trajectory.txt", "Specify the name of the file that will contain the absolute trajectory computed");
+  arg.param("relativeTrajectoryFilename", relativeTrajectoryFilename, "relative_trajectory.txt", "Specify the name of the file that will contain the relative trajectory computed");
   arg.paramLeftOver("directory", directory, ".", "Directory where the program will find the ground truth file and the subfolders depth and rgb containing the images", true);
   
   // Set parser input
   arg.parseArgs(argc, argv);
 
+  /************************************************************************
+   *                             Managing Files                           *
+   ************************************************************************/
   // Create benchmark file
   ofstream osBenchmark(benchmarkFilename.c_str());
   if (!osBenchmark) {
-    cerr << "Impossible to create the file containing the values of the benchmark... quitting." << endl;
+    cerr << "Impossible to create the file containing the values of the benchmark... quitting program." << endl;
     return 0;
   }
   
   osBenchmark << "inliers\tchi2\ttime" << endl;
   
-  // Create trajectory file
-  ofstream osTrajectory(trajectoryFilename.c_str());
-  if (!osTrajectory) {
-    cerr << "Impossible to create the file containing the computed trajectory poses... quitting." << endl;
+  // Create absolute trajectory file
+  ofstream osAbsoluteTrajectory(absoluteTrajectoryFilename.c_str());
+  if (!osAbsoluteTrajectory) {
+    cerr << "Impossible to create the file containing the absolute computed trajectory poses... quitting program." << endl;
     return 0;
   }
   
-  // Create trajectory file
-  ofstream osGroundTruthTrajectory(groundTruthTrajectoryFilename.c_str());
-  if (!osGroundTruthTrajectory) {
-    cerr << "Impossible to create the file containing the ground truth trajectory poses... quitting." << endl;
+  // Create relative trajectory file
+  ofstream osRelativeTrajectory(relativeTrajectoryFilename.c_str());
+  if (!osRelativeTrajectory) {
+    cerr << "Impossible to create the file containing the relative computed trajectory poses... quitting program." << endl;
     return 0;
   }
 
-  /************************************************************************
-   *                       Ground Truth File Parsing                      *
-   ************************************************************************/
-  cout << "Parsing ground truth file " << groundTruthFilename << "... ";
-  ifstream is(groundTruthFilename.c_str());
-  if (!is) {
-    cerr << "impossible to open ground truth file, quitting program." << endl;
+  // Open associations file
+  cout << "Opening associations file " << "associations.txt" << "... ";
+  ifstream isAssociations("associations.txt");
+  if (!isAssociations) {
+    cerr << "Impossible to open associations file... quitting program." << endl;
     return 0;
   }
-  vector<Pose> groundTruthPoses;
-  parseGroundTruth(groundTruthPoses, is, groundTruthTimeStamp);
-  for (size_t i = 0; i < groundTruthPoses.size(); i++) {
-    osGroundTruthTrajectory << groundTruthPoses[i].tx << " " << groundTruthPoses[i].ty << " " << groundTruthPoses[i].tz << " " 
-			    << groundTruthPoses[i].qx << " " << groundTruthPoses[i].qy << " " << groundTruthPoses[i].qz << " "  << groundTruthPoses[i].qw
-			    << endl;
-  }
+  char line[4096];
+  if (!isAssociations.getline(line, 4096)) {
+    cerr << "Associations file associations.txt is empty... quitting program." << endl;
+    return 0;
+  }    
+  istringstream issAssociations(line);
+  string refRgbTimestamp, currRgbTimestamp, refDepthTimestamp, currDepthTimestamp; 
+  string refRgbFilename, currRgbFilename, refDepthFilename, currDepthFilename;
+  issAssociations >> refRgbTimestamp >> refRgbFilename >> refDepthTimestamp >> refDepthFilename;
   cout << "done." << endl;
-
-  /************************************************************************
-   *                     Depth Images Directory Parsing                   *
-   ************************************************************************/
-  cerr << "Parsing directory " << directory + "/depth/" << "... ";
-  int startingDepthImageIndex = 0;
-  vector<string> depthImagesFilenames;
-  set<string> depthImagesFilenamesSet = readDirectory(directory + "/depth");
-  for (set<string>::const_iterator it = depthImagesFilenamesSet.begin(); it != depthImagesFilenamesSet.end(); it++) {
-    depthImagesFilenames.push_back(*it);
+  
+  // Parsing ground truth file for the initial transformation
+  cout << "Parsing ground truth file " << "groundtruth.txt" << "... ";
+  ifstream isGroundtruth("groundtruth.txt");
+  if (!isGroundtruth) {
+    cerr << "Impossible to open ground truth file... quitting program." << endl;
+    return 0;
   }
-  if (depthImageFilename != "") {
-    for (size_t i = 0; i < depthImagesFilenames.size(); i++) {
-      if (depthImagesFilenames[i] == directory + "/depth/" + depthImageFilename) {
-	startingDepthImageIndex = i;
-	break;
-      }	
-    }
-  }
-  cout << "done." << endl;
-
-  /************************************************************************
-   *                       RGB Images Directory Parsing                   *
-   ************************************************************************/
-  cerr << "Parsing directory " << directory + "/rgb/" << "... ";
-  int startingRgbImageIndex = 0;
-  vector<string> rgbImagesFilenames;
-  set<string> rgbImagesFilenamesSet = readDirectory(directory + "/rgb");
-  for (set<string>::const_iterator it = rgbImagesFilenamesSet.begin(); it != rgbImagesFilenamesSet.end(); it++) {
-    rgbImagesFilenames.push_back(*it);
-  }
-  if (rgbImageFilename != "") {
-    for (size_t i = 0; i < rgbImagesFilenames.size(); i++) {
-      if (rgbImagesFilenames[i] == directory + "/rgb/" + rgbImageFilename) {
-	startingRgbImageIndex = i;
-	break;
-      }	
-    }
-  }
+  Isometry3f initialTransformation = Isometry3f::Identity();
+  parseGroundTruth(initialTransformation, isGroundtruth, atof(refDepthTimestamp.c_str()));
+  initialTransformation.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   cout << "done." << endl;
 
   /************************************************************************
@@ -190,12 +146,12 @@ int main(int argc, char **argv) {
   PinholePointProjector projector;
   int imageRows, imageCols, scaledImageRows = 0, scaledImageCols = 0;
   Matrix3f cameraMatrix, scaledCameraMatrix;
-  Eigen::Isometry3f sensorOffset = Isometry3f::Identity();
 
   // Set sensor offset
-  sensorOffset.translation() = Vector3f(0.0f, 0.0f, 0.0f);
-  Quaternionf quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
-  sensorOffset.linear() = quaternion.toRotationMatrix();
+  Eigen::Isometry3f sensorOffset = Isometry3f::Identity();
+  // sensorOffset.translation() = Vector3f(0.0f, 0.0f, 0.0f);
+  // Quaternionf quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+  // sensorOffset.linear() = quaternion.toRotationMatrix();
   sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   
   cameraMatrix.setIdentity();
@@ -217,9 +173,33 @@ int main(int argc, char **argv) {
       525.0f,   0.0f, 319.5f,
         0.0f, 525.0f, 239.5f,
         0.0f,   0.0f,   1.0f;  
-  } 
+  }
+  else if (sensorType == "kinectFreiburg1") {
+    cameraMatrix << 
+      517.3f,   0.0f, 318.6f,
+        0.0f, 516.5f, 255.3f,
+        0.0f,   0.0f,   1.0f;  
+  }
+  else if (sensorType == "kinectFreiburg2") {
+    cameraMatrix << 
+      520.9f,   0.0f, 325.1f,
+      0.0f,   521.0f, 249.7f,
+      0.0f,     0.0f,   1.0f;  
+  }
+  // else if (sensorType == "kinectFreiburg3") {
+  //   cameraMatrix << 
+  //     535.4f,   0.0f, 320.1f,
+  //     0.0f,   539.2f, 247.6f,
+  //     0.0f,     0.0f,   1.0f;  
+  // }
+  // else if (sensorType == "kinectFreiburg1") {
+  //   cameraMatrix << 
+  //     591.1f,   0.0f, 331.0f,
+  //       0.0f, 590.1f, 234.0f,
+  //       0.0f,   0.0f,   1.0f;  
+  // }
   else {
-    cerr << "Unknown sensor type: [" << sensorType << "]... aborting (you need to specify either xtion or kinect)" << endl;
+    cerr << "Unknown sensor type: [" << sensorType << "]... aborting (you need to specify either xtion or kinect)." << endl;
     return 0;
   }
 
@@ -294,27 +274,30 @@ int main(int argc, char **argv) {
   /************************************************************************
    *                       Sequential Alignment                          *
    ************************************************************************/
-  size_t i = startingDepthImageIndex;
-  size_t j = startingRgbImageIndex;
-  size_t k = 0;
-  vector<Isometry3f> trajectory;
-  trajectory.clear();
-  Isometry3f currentPose = Isometry3f::Identity();
-  poseToIsometry3f(currentPose, groundTruthPoses[k]);
-  trajectory.push_back(currentPose);
-  cout << "Initial Pose: " << endl << trajectory[k].matrix() << endl;
-  osTrajectory << groundTruthPoses[k].tx << " " << groundTruthPoses[k].ty << " " << groundTruthPoses[k].tz << " " 
-	       << groundTruthPoses[k].qx << " " << groundTruthPoses[k].qy << " " << groundTruthPoses[k].qz << " "  << groundTruthPoses[k].qw
-	       << endl;
-  while (i < depthImagesFilenames.size() - 1 && j < depthImagesFilenames.size() - 1) {
-    const string &refDepthImageFilename = depthImagesFilenames[i];
-    const string &currDepthImageFilename = depthImagesFilenames[i + 1];
+  Isometry3f currentAbsolutePose = initialTransformation;
+  currentAbsolutePose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+  Vector6f currentAbsolutePoseVector = t2v(currentAbsolutePose);
+  Isometry3f currentRelativePose = Isometry3f::Identity();
+  currentRelativePose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+  Vector6f currentRelativePoseVector = t2v(currentRelativePose);
+  cout << "Initial Absolute Pose: " << currentAbsolutePoseVector.transpose() << endl;
+  cout << "Initial Relative Pose: " << currentRelativePoseVector.transpose() << endl;
+  float qw = sqrtf(1.0f - (currentAbsolutePoseVector[3]*currentAbsolutePoseVector[3] + 
+			   currentAbsolutePoseVector[4]*currentAbsolutePoseVector[4] +
+			   currentAbsolutePoseVector[5]*currentAbsolutePoseVector[5]));
+  osAbsoluteTrajectory << refDepthTimestamp << " "
+		       << currentAbsolutePoseVector[0] << " " << currentAbsolutePoseVector[1] << " " << currentAbsolutePoseVector[2] << " " 
+		       << currentAbsolutePoseVector[3] << " " << currentAbsolutePoseVector[4] << " " << currentAbsolutePoseVector[5] << " " << qw
+		       << endl;
+  while (isAssociations.getline(line, 4096)) {
+    istringstream issAssociations(line);
+    issAssociations >> currRgbTimestamp >> currRgbFilename >> currDepthTimestamp >> currDepthFilename;
     cout << "-------------------------------------------" << endl;
-    cout << "Aligning: " <<  refDepthImageFilename << " ---> " << currDepthImageFilename << endl;
+    cout << "Aligning: " << currDepthFilename << " ---> " << refDepthFilename << endl;
 
     // Load depth images   
-    refDepthImage.load(refDepthImageFilename.c_str());
-    currDepthImage.load(currDepthImageFilename.c_str());
+    refDepthImage.load((refDepthFilename.substr(0, refDepthFilename.size() - 3) + "pgm").c_str(), true, di_scaleFactor);
+    currDepthImage.load((currDepthFilename.substr(0, currDepthFilename.size() - 3) + "pgm").c_str(), true, di_scaleFactor);
     imageRows = refDepthImage.rows();
     imageCols = refDepthImage.cols();
     scaledImageRows = imageRows / ng_scale;
@@ -354,103 +337,75 @@ int main(int argc, char **argv) {
     dummyLinearizer.setT(aligner.T().inverse());
     dummyLinearizer.computeChi2WithoutNormalsInfo();
     float chi2 = std::numeric_limits<float>::max();
-    if (dummyLinearizer.inliers() != 0) {
+    if (dummyLinearizer.inliers() != 0)
       chi2 = dummyLinearizer.computeChi2WithoutNormalsInfo() / dummyLinearizer.inliers();
-    }
     cout << "Chi2: " << chi2 << endl;
     cout << "Inliers: " << dummyLinearizer.inliers() << endl;
     osBenchmark << dummyLinearizer.inliers() << "\t";
     osBenchmark << chi2 << "\t";
     osBenchmark << oend - ostart << endl;
 
-    currentPose = trajectory[k] * aligner.T();
-    currentPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-    trajectory.push_back(currentPose);
-
-    Vector3f translation = Vector3f(currentPose(0, 3), currentPose(1, 3), currentPose(2, 3));
-    Quaternionf quaternion = Quaternionf(currentPose.linear());
-    osTrajectory << translation.x() << " " << translation.y() << " " << translation.z() << " " 
-		 << quaternion.x() << " " << quaternion.y() << " " << quaternion.z() << " " << quaternion.w() 
-		 << endl;
+    // float maxChi2Error = 0.1f;
+    // if(chi2 >= maxChi2Error) {
+    //   cout << "Got a chi2 error equal to " << chi2 << " which is greater than " << maxChi2Error << "!" << endl;
+    //   cout << "Alignmnet " << currDepthFilename << " ---> " << refDepthFilename << " could be wrong!" << endl;
+    // }
+    currentRelativePose = aligner.T();
+    currentRelativePose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    currentAbsolutePose = currentAbsolutePose * currentRelativePose;
+    currentAbsolutePose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     
+    currentAbsolutePoseVector = t2v(currentAbsolutePose);    
+    qw = sqrtf(1.0f - (currentAbsolutePoseVector[3]*currentAbsolutePoseVector[3] + 
+		       currentAbsolutePoseVector[4]*currentAbsolutePoseVector[4] + 
+		       currentAbsolutePoseVector[5]*currentAbsolutePoseVector[5]));
+    osAbsoluteTrajectory << currDepthTimestamp << " "
+			 << currentAbsolutePoseVector[0] << " " << currentAbsolutePoseVector[1] << " " << currentAbsolutePoseVector[2] << " " 
+			 << currentAbsolutePoseVector[3] << " " << currentAbsolutePoseVector[4] << " " << currentAbsolutePoseVector[5] << " " << qw
+			 << endl;
+    currentRelativePoseVector = t2v(currentRelativePose);
+    qw = sqrtf(1.0f - (currentRelativePoseVector[3]*currentRelativePoseVector[3] + 
+		       currentRelativePoseVector[4]*currentRelativePoseVector[4] + 
+		       currentRelativePoseVector[5]*currentRelativePoseVector[5]));
+    osRelativeTrajectory << currDepthTimestamp << " "
+			 << currentRelativePoseVector[0] << " " << currentRelativePoseVector[1] << " " << currentRelativePoseVector[2] << " " 
+			 << currentRelativePoseVector[3] << " " << currentRelativePoseVector[4] << " " << currentRelativePoseVector[5] << " " << qw
+			 << endl;
+    
+    cout << "Absolute Pose: " << currentAbsolutePoseVector.transpose() << endl;
+    cout << "Relative Pose: " << currentRelativePoseVector.transpose() << endl;
+    
+    refRgbTimestamp = currRgbTimestamp;
+    refRgbFilename = currRgbFilename;
+    refDepthTimestamp = currDepthTimestamp;
+    refDepthFilename = currDepthFilename;
+   
+    // currFrame.save((currDepthFilename.substr(0, currDepthFilename.size() - 3) + "pwn").c_str(), 5, true, currentAbsolutePose);   
+
     // Save clouds
     // refFrame.save("reference.pwn", 1, true, Eigen::Isometry3f::Identity());
     // currFrame.save("current.pwn", 1, true, Eigen::Isometry3f::Identity());      
-    // currFrame.save("alignedPWN.pwn", 1, true, aligner.T());
-
-    i++;
-    j++;
-    k++;
+    // currFrame.save("alignedPWN.pwn", 1, true, currentRelativePose);
   }
 
   return 0;
 }
 
-set<string> readDirectory(string dir) {
-  DIR *dp;
-  struct dirent *dirp;
-  struct stat filestat;
-  set<string> filenames;
-  dp = opendir(dir.c_str());
-  if (dp == NULL)
-    return filenames;
-  
-  while ((dirp = readdir(dp))) {
-    string filepath = dir + "/" + dirp->d_name;
-
-    // If the file is a directory (or is in some way invalid) we'll skip it 
-    if (stat(filepath.c_str(), &filestat))
-      continue;
-    if (S_ISDIR(filestat.st_mode))
-      continue;
-    if (filepath.substr(filepath.size() - 3) != "pgm")
-      continue;
-
-    filenames.insert(filepath);
-  }
-
-  closedir(dp);
-
-  return filenames;
-}
-
-void parseGroundTruth(vector<Pose> &groundTruthPoses, ifstream &is, string groundTruthTimeStamp) {
+void parseGroundTruth(Isometry3f &initialTransformation, ifstream &isGroundtruth, double targetTimestamp) {
   char line[4096];
-  string timeStamp;
-  Pose pose;
-  bool firstFound = false;
-  if (groundTruthTimeStamp == "")
-    firstFound = true;
-  groundTruthPoses.clear();
-  while (is.getline(line, 4096)) {
-    // If the line is a comment skip it
-    if (line[0] == '#')
-      continue;
-    
-    // If the line is not a comment read the measure and save it
-    pose = Pose();
-    istringstream iss(line);
-    iss >> timeStamp
-	>> pose.tx >> pose.ty >> pose.tz
-	>> pose.qx >> pose.qy >> pose.qz >> pose.qw;
-
-    // Check if the current measure is the one the user choosed to be the first
-    if (!firstFound && timeStamp == groundTruthTimeStamp)
-      firstFound = true;
-
-    // If we found starting measure we can begin to save groun truth values
-    if (firstFound) {
-      groundTruthPoses.push_back(pose);
+  double currentTimestamp;
+  initialTransformation = Isometry3f::Identity();
+  double minDifference = numeric_limits<float>::max();
+  Vector6f initialTransformationVector;
+  while (isGroundtruth.getline(line, 4096)) {
+    istringstream issGroundtruth(line);
+    issGroundtruth >> currentTimestamp;
+    if(fabs(currentTimestamp - targetTimestamp) < minDifference) {
+      issGroundtruth >> initialTransformationVector[0] >> initialTransformationVector[1] >> initialTransformationVector[2]
+		     >> initialTransformationVector[3] >> initialTransformationVector[4] >> initialTransformationVector[5];
+      initialTransformation = v2t(initialTransformationVector);
+      minDifference = fabs(currentTimestamp - targetTimestamp);
     }
   }
-}
-
-void poseToIsometry3f(Isometry3f &isometry, Pose &pose) {
-  Vector3f translation = Vector3f(pose.tx, pose.ty, pose.tz);
-  Quaternionf quaternion = Quaternionf(pose.qw, pose.qx, pose.qy, pose.qz);
-  quaternion.normalize();
-  isometry = Isometry3f::Identity();
-  isometry.translation() = translation;
-  isometry.linear() = quaternion.toRotationMatrix();
-  isometry.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+  initialTransformation.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 }

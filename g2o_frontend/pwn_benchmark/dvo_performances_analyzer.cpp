@@ -273,10 +273,9 @@ int main(int argc, char **argv) {
     		     currentImage, currentDepthFlt, Mat(),
 		     referenceImage, referenceDepthFlt, Mat(),
     		     cvCameraMatrix, minDepth, maxDepth, maxDepthDiff,
-		     iterCounts, minGradMagnitudes, transformationType);
-    
+		     iterCounts, minGradMagnitudes, transformationType);    
     double oend = get_time();
-    cout << "DVO time: " << oend - ostart << " seconds" << endl;
+    cout << "time: " << oend - ostart << " seconds" << endl;
     Eigen::Isometry3f T = fromMat(Rt);
     T.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     dummyAligner.setReferenceFrame(&refFrame);

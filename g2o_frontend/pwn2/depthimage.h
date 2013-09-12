@@ -53,7 +53,7 @@ public:
    *  @param m is a matrix of unsigned short containing the depth values expressed 
    *  in millimeters.
    */
-  DepthImage(const MatrixXus &m);
+  DepthImage(const MatrixXus &m, float scaleFactor = 0.001f);
   
   /**
    *  This method generates a matrix of unsigned short containing the values of the 
@@ -62,7 +62,7 @@ public:
    *  @param m is a matrix of unsigned short where the output values are stored.
    *  @param dmax is optional and can be used to prune depth values above its value.
    */
-  void toUnsignedShort(MatrixXus &m, float dmax = std::numeric_limits<float>::max()) const;
+  void toUnsignedShort(MatrixXus &m, float dmax = std::numeric_limits<float>::max(), float scaleFactor = 0.001f) const;
   
   /**
    *  This method updates the current depth values of the DepthImage object using the values
@@ -70,7 +70,7 @@ public:
    *  @param m is a matrix of unsigned short containing the depth values expressed 
    *  in millimeters.
    */
-  void fromUnsignedShort(const MatrixXus &m);
+  void fromUnsignedShort(const MatrixXus &m, float scaleFactor = 0.001f);
   
   /**
    *  This method laods the values of a depth image file in the DepthImage object. 
@@ -78,7 +78,7 @@ public:
    *  @param filename is a pointer to a string containing the filename of a .pgm depth image
    *  to load.
    */
-  bool load(const char* filename, bool transposed = false); 
+  bool load(const char* filename, bool transposed = false, float scaleFactor = 0.001f); 
   
   /**
    *  This method saves the current depth values of the DepthImage object to an image file.
@@ -86,7 +86,7 @@ public:
    *  @param filename is a pointer to a string containing the filename of the .pgm depth 
    *  image to save.
    */
-  bool save(const char* filename, bool transposed = false) const;
+  bool save(const char* filename, bool transposed = false, float scaleFactor = 0.001f) const;
 
 
   /**

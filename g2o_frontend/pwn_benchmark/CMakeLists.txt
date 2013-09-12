@@ -42,3 +42,12 @@ TARGET_LINK_LIBRARIES(dvo_performances_analyzer
   ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
   ${OpenCV_LIBRARIES}
 )
+
+ADD_EXECUTABLE(dvo_sequence_performances_analyzer dvo_sequence_performances_analyzer.cpp)
+SET_TARGET_PROPERTIES(dvo_sequence_performances_analyzer PROPERTIES OUTPUT_NAME dvo_sequence_performances_analyzer)
+TARGET_LINK_LIBRARIES(dvo_sequence_performances_analyzer
+  pwn2_library
+  pwn2_utils
+  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
+  ${OpenCV_LIBRARIES}
+)

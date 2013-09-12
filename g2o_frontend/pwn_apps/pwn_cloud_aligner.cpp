@@ -86,6 +86,9 @@ QCheckBox *pinholePointProjectorCheckBox, *cylindricalPointProjectorCheckBox, *m
 QSpinBox *ng_minImageRadiusSpinBox, *ng_maxImageRadiusSpinBox, *ng_minPointsSpinBox, *al_innerIterationsSpinBox, *al_outerIterationsSpinBox, *al_minNumInliersSpinBox, *imageRowsSpinBox, *imageColsSpinBox;
 QDoubleSpinBox *ng_worldRadiusSpinBox, *ng_scaleSpinBox, *ng_curvatureThresholdSpinBox, *cf_inlierNormalAngularThresholdSpinBox, *cf_flatCurvatureThresholdSpinBox, *cf_inlierCurvatureRatioThresholdSpinBox, *cf_inlierDistanceThresholdSpinBox, *al_minErrorSpinBox, *al_inlierMaxChi2SpinBox, *fxSpinBox, *fySpinBox, *cxSpinBox, *cySpinBox, *angularFOVSpinBox;
 
+float pj_maxDistance;
+float di_scaleFactor;
+
 int main(int argc, char **argv) {
   /************************************************************************
    *                           Input Handling                             *
@@ -99,7 +102,7 @@ int main(int argc, char **argv) {
 
   int al_innerIterations, al_outerIterations, al_minNumInliers; 
   float al_minError, al_inlierMaxChi2;
-
+  
   int vz_step;
 
   int imageRows, imageCols;
@@ -109,6 +112,9 @@ int main(int argc, char **argv) {
   g2o::CommandArgs arg;
   
   // Optional input parameters.
+  arg.param("pj_maxDistance", pj_maxDistance, 6, "Maximum distance of the points");
+  arg.param("di_scaleFactor", di_scaleFactor, 1000.0f, "Scale factor to apply to convert depth images in meters");
+
   arg.param("ng_minImageRadius", ng_minImageRadius, 10, "Specify the minimum number of pixels composing the square where to take points for a normal computation");
   arg.param("ng_maxImageRadius", ng_maxImageRadius, 30, "Specify the maximum number of pixels composing the square where to take points for a normal computation");
   arg.param("ng_minPoints", ng_minPoints, 50, "Specify the minimum number of points to be used to compute a normal");
@@ -485,24 +491,46 @@ int main(int argc, char **argv) {
 	    }
 
 	    string fname = item->text().toUtf8().constData();
+	    if (fname.substr(fname.size() - 3) == "pgm") {
+	      if (!depthImage.load(fname.c_str(), true, di_scaleFactor)) {
+		cerr << "WARNING: the depth image was not added in the viewer because of a problem while loading it!" << endl;
+		frame = 0;
+		if(referenceFrame) {
+		  delete referenceFrame;
+		  referenceFrame = 0;
+		}
+		else {
+		  delete currentFrame;
+		  currentFrame = 0;
+		}
+		continue;
+	      }
+	      DepthImage::scale(scaledDepthImage, depthImage, ng_scale);
+	      converter.compute(*frame, scaledDepthImage, sensorOffset, false);
+	    }
+
 	    Eigen::Isometry3f originPose = Eigen::Isometry3f::Identity();
 	    originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-	    // Load the cloud from the .pwn file
-	    if(!frame->load(originPose, fname.c_str())) {      
-	      cerr << "WARNING: the cloud was not added in the viewer because of a problem while loading it!" << endl;
-	      frame = 0;
-	      if(referenceFrame) {
-		delete referenceFrame;
-		referenceFrame = 0;
-	      }
-	      else {
-		delete currentFrame;
-		currentFrame = 0;
+	    if (fname.substr(fname.size() - 3) == "pwn") {
+	      // Load the cloud from the .pwn file
+	      if(!frame->load(originPose, fname.c_str())) {      
+		cerr << "WARNING: the cloud was not added in the viewer because of a problem while loading it!" << endl;
+		frame = 0;
+		if(referenceFrame) {
+		  delete referenceFrame;
+		  referenceFrame = 0;
+		}
+		else {
+		  delete currentFrame;
+		  currentFrame = 0;
+		}
+		continue;
 	      }
 	    }
-	    else {
-	      originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-	     // Computing information matrices
+	    originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+	    
+	    if (frame) {
+	      // Computing information matrices
 	      frame->pointInformationMatrix().resize(frame->points().size());
 	      frame->normalInformationMatrix().resize(frame->points().size());
 	      pointInformationMatrixCalculator.compute(frame->pointInformationMatrix(), frame->stats(), frame->normals());
@@ -522,8 +550,9 @@ int main(int argc, char **argv) {
 		referenceFilename = fname;
 		referencePose = originPose;
 	      }	      
+	      
+	      break;
 	    }
-	    break;
 	  }
 	}
       }
@@ -654,6 +683,7 @@ int main(int argc, char **argv) {
       
       // Align
       aligner.align();  
+      cout << "T: " << endl << aligner.T().matrix() << endl;
       
       Drawable *lastDrawable = viewer->drawableList().back();
       DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
@@ -799,20 +829,21 @@ void applySettings() {
   
   // Compute the reduced camera matrix and image size
   cameraMatrix << 
-    fx, 0.0f, cx,
-    0.0f, fy, cy,
+    fxSpinBox->value(), 0.0f, cxSpinBox->value(),
+    0.0f, fySpinBox->value(), cySpinBox->value(),
     0.0f, 0.0f, 1.0f;  
   float scale = 1.0f / ng_scaleSpinBox->value();
   cameraMatrix = cameraMatrix * scale;
   cameraMatrix(2, 2) = 1.0f;
-  if(pinholePointProjectorCheckBox->isChecked()) {
-    fxSpinBox->setValue(cameraMatrix(0, 0));
-    fySpinBox->setValue(cameraMatrix(1, 1));
-    cxSpinBox->setValue(cameraMatrix(0, 2));
-    cySpinBox->setValue(cameraMatrix(1, 2));
-  }
+  // if(pinholePointProjectorCheckBox->isChecked()) {
+  //   fxSpinBox->setValue(cameraMatrix(0, 0));
+  //   fySpinBox->setValue(cameraMatrix(1, 1));
+  //   cxSpinBox->setValue(cameraMatrix(0, 2));
+  //   cySpinBox->setValue(cameraMatrix(1, 2));
+  // }
   
   pinholePointProjector.setCameraMatrix(cameraMatrix);
+  pinholePointProjector.setMaxDistance(pj_maxDistance);
   float angularResolution = imageColsSpinBox->value() / (2.0f * angularFOVSpinBox->value());
   cylindricalPointProjector.setAngularFov(angularFOVSpinBox->value());
   cylindricalPointProjector.setAngularResolution(angularResolution);
@@ -833,6 +864,9 @@ void applySettings() {
     converter._projector=&cylindricalPointProjector;
   else
     converter._projector=&pinholePointProjector;
+  converter._statsCalculator = &statsCalculator;
+  converter._pointInformationMatrixCalculator = &pointInformationMatrixCalculator;
+  converter._normalInformationMatrixCalculator = &normalInformationMatrixCalculator;
 
   statsCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
 
