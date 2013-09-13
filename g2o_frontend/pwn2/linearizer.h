@@ -32,6 +32,8 @@ namespace pwn {
     inline void setRobustKernel(bool robustKernel_) {_robustKernel=robustKernel_;}
     void update();
 
+    float computeChi2WithoutNormalsInfo();
+
     virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
     virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
     virtual void deserializeComplete();

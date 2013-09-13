@@ -565,31 +565,30 @@ int main(int argc, char**argv){
 
 /// merging vertexes and lines (inliers set)
                 cout << endl << "\033[22;34;1m*****MERGING STUFF******\033[0m " << endl << endl;
-		std::set<VertexLine2D*> lineSet;
-		
-		OptimizableGraph::EdgeSet& es=v_next->edges();
-		for (OptimizableGraph::EdgeSet::iterator itv = es.begin(); itv != es.end(); itv++) {
-		  EdgeSE2Line2D* el = dynamic_cast<EdgeSE2Line2D*>(*itv);
-		  if (!el)
-		    continue;
-		  VertexLine2D* vl = dynamic_cast<VertexLine2D*>(el->vertex(1));
-		  lineSet.insert(vl);
-		}
-		cerr << "number of lines in vertex: " << lineSet.size() << endl;
+                std::set<VertexLine2D*> lineSet;
+
+                OptimizableGraph::EdgeSet& es=v_next->edges();
+                for (OptimizableGraph::EdgeSet::iterator itv = es.begin(); itv != es.end(); itv++) {
+                    EdgeSE2Line2D* el = dynamic_cast<EdgeSE2Line2D*>(*itv);
+                    if (!el)
+                        continue;
+                    VertexLine2D* vl = dynamic_cast<VertexLine2D*>(el->vertex(1));
+                    lineSet.insert(vl);
+                }
+                cerr << "number of lines in vertex: " << lineSet.size() << endl;
                 for (int ci = 0; ci < (int)inliers.size(); ci++)
                 {
-                    //TODO to be UNCOMMENT
                     double inliersIndex = inliers[ci];
                     VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[/*ci*/inliersIndex].lid1].vline->id()));
                     VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[/*ci*/inliersIndex].lid2].vline->id()));
-		    lineSet.erase(vlj);
+                    lineSet.erase(vlj);
                     cout << "Line to be merged: " << endl;
                     cout << "[Frame i] line " << vli->id() << " - [Frame j] line " << vlj->id() << endl;
                     merdging = mergeLineVertex(graph, vlj, vli);
                     cout << endl << " \033[22;32;1miteration " << ci  << " -- Lines merged? " << merdging << "\033[0m" << endl;
                     cout << endl;
                 }
-		cerr << "number of outliers: " << lineSet.size() << endl;
+                cerr << "number of outliers: " << lineSet.size() << endl;
 
                 //saving the new line vertex already aligned
                 if(merdging && v_next->id() != lastID)
@@ -642,7 +641,7 @@ int main(int argc, char**argv){
 
 	graph->vertex(vfirst_id/*0*/)->setFixed(true);
 	graph->initializeOptimization();
-	graph->setVerbose(true);
+    graph->setVerbose(false);
 	graph->optimize(10);
     }
     cout << endl << "\033[22;31;1m********************************END READING THE GRAPH********************************\033[0m" << endl << endl;

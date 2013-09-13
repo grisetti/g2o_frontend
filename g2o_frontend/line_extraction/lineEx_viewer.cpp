@@ -80,7 +80,7 @@ int main(int argc, char**argv){
   float minRange;
   bool odometryIsGood;
   int incrementalFeatureTrackingWindow;
-  arg.param("o", outfilename, "graphSE2_withLine_part10.g2o", "output file name");
+  arg.param("o", outfilename, "graphSE2_withLine.g2o", "output file name");
   arg.param("maxRange", maxRange, 1e3, "maximum range to sense features"); 
   arg.param("minRange", minRange, 0.5, "minimum range to sense features");
   arg.param("minLandmarkCreationFrames", minLandmarkCreationFrames, 2, "minimum range to sense features");

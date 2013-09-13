@@ -90,6 +90,7 @@ int main (int argc, char** argv) {
 	  cerr << "unable to load points from file [" << filenames[i] << "]" << endl;
 	  return 0;
 	} else {
+	  //cout << "Transform: " << t2v(transform).transpose() << endl;
 	  listWidget->addItem(QString(filenames[i].c_str()));
 	}
 	transform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
