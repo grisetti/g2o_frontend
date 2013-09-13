@@ -145,17 +145,20 @@ namespace pwn {
   void Aligner::deserialize(boss::ObjectData& data, boss::IdContext& context){
     Identifiable::deserialize(data,context);
     cerr << "Aligner:: Deserialize" << endl;
+    cerr << "getting iterations" << endl;
     setOuterIterations(data.getInt("outerIterations"));
     setInnerIterations(data.getInt("innerIterations"));
+    cerr << "getting matrices" << endl;
     Vector6f v;
     v.fromBOSS(data,"referenceSensorOffset");
     _referenceSensorOffset=v2t(v);
     v.fromBOSS(data,"currentSensorOffset");
     _currentSensorOffset=v2t(v);
-    _referenceSensorOffset.matrix().fromBOSS(data,"referenceSensorOffset");
-    _currentSensorOffset.matrix().fromBOSS(data,"currentSensorOffset");
+    cerr << "getting projector" << endl;
     data.getReference("projector").bind(_projector);
+    cerr << "getting linearizer" << endl;
     data.getReference("linearizer").bind(_linearizer);
+    cerr << "getting correspondenceFinder" << endl;
     data.getReference("correspondenceFinder").bind(_correspondenceFinder);
   }
 

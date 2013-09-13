@@ -161,5 +161,13 @@ namespace boss {
     return conf;
   }
 
+  Eigen::Isometry3d RobotConfiguration::sensorOffset(const BaseSensor* sensor) const {
+    boss::StringReferenceFrameMap::const_iterator it=_frameMap.find(_baseReferenceFrameId);
+    assert(it!=_frameMap.end());
+    const ReferenceFrame* baseFrame = it->second;
+    const ReferenceFrame* targetFrame = sensor->frame();
+    return targetFrame->transformTo(baseFrame);
+  }
+
   BOSS_REGISTER_CLASS(RobotConfiguration);
 }

@@ -1,0 +1,33 @@
+Boss Map
+A structure that embeds the state of the front-end for ROVINA.
+The basic idea is to represent the state as  a hierarchical factor graph,
+that stores:
+- variables
+- factors (constraints)
+- in case of aggregated data (e.g.) local maps, we store also the
+  information necessary to regenerate the data (e.g. which images have been used to generate a particular reconstruction)
+
+
+More in detail, the nodes of this map represent map entities, that can be
+- Sensing Frames: an aggregate of one or more sensor data acquired
+  at the same (or close) time instants.
+  
+  Each sensing frame can be contained in one or more high level local maps.
+
+- Local maps, that are collections of sensing frames.
+  A local map
+  - has a transform (the gauge), with respect to which all the internal frames are expressed.
+  - has one or more sensing frames
+  - a list of relations, the input relations,
+    that are the input of the alignment algorithms to extabilish
+    the position of the sensing frames
+  - a list of relations connecting the frames, that are the output
+    of the local map
+  - a list of pairwise relations connecting the gauge with each other sensing frame
+  - (optionally) a singleton constraint anchoring the gauge to the global frame
+  - (optionally) an intermediate representation of the aggregated sensor data
+
+- Relations between nodes contain geometrical constraints between
+  the connected sensing frames.
+
+

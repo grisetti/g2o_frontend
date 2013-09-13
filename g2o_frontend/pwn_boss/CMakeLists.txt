@@ -8,16 +8,13 @@ endif(OPENMP_FOUND)
 
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${CSPARSE_INCLUDE_DIR})
 
-ADD_LIBRARY(pwn_boss_library  
-  pwn_boss_image.h  pwn_boss_image.cpp
-  pwn_boss_frame.h  pwn_boss_frame.cpp
- )
 
-SET_TARGET_PROPERTIES(pwn_boss_library PROPERTIES OUTPUT_NAME pwn_boss)
+ADD_EXECUTABLE(pwn_boss_process_dir pwn_boss_process_dir.cpp)
+TARGET_LINK_LIBRARIES(pwn_boss_process_dir  pwn2_library boss_map boss_logger  boss  ${G2O_STUFF_LIBRARY})
 
-TARGET_LINK_LIBRARIES(pwn_boss_library  pwn2_library  boss_logger  boss)
+ADD_EXECUTABLE(pwn_boss_process_log pwn_boss_process_log.cpp)
+TARGET_LINK_LIBRARIES(pwn_boss_process_log  pwn2_library boss_map boss_logger  boss ${G2O_STUFF_LIBRARY})
 
-ADD_EXECUTABLE(pwn_boss PROPERTIES output name pwn_boss)
-
-TARGET_LINK_LIBRARIES(pwn_boss  pwn_boss_library  pwn2_library  boss_logger  boss)
+ADD_EXECUTABLE(pwn_boss_add_sensing_frames pwn_boss_add_sensing_frames.cpp)
+TARGET_LINK_LIBRARIES(pwn_boss_add_sensing_frames  pwn2_library boss_map boss_logger  boss ${G2O_STUFF_LIBRARY})
 

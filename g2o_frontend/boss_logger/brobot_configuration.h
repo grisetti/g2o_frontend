@@ -25,6 +25,7 @@ namespace boss {
    virtual void deserialize(ObjectData& data, IdContext& context);
    virtual void deserializeComplete();
    void serializeInternals(Serializer& ser);
+   Eigen::Isometry3d sensorOffset(const BaseSensor* sensor) const;
  protected:
    bool _isReady;
    void isReadyUpdate();

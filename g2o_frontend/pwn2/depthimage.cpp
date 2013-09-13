@@ -194,14 +194,14 @@ void DepthImage::fromUnsignedShort(const MatrixXus &m){
     if (m.rows != cols() && m.cols != rows() && m.type()!=CV_16UC1){
       m=cv::Mat(cols(),rows(), CV_16UC1);
     }
-
+    Eigen::MatrixXf t=transpose();
+    
     unsigned short* us=(unsigned short*)m.data;
-    const float* f=data();
+    const float* f=t.data();
     int s = m.rows*m.cols;
     for (int i =0; i<s; i++, f++, us++) {
       *us = (*f<dmax) ? (int)(1000.0f*(*f)) : 0;
     }
-    
   }
   
   void DepthImage::fromCvMat(const cv::Mat &m){
@@ -212,6 +212,7 @@ void DepthImage::fromUnsignedShort(const MatrixXus &m){
     int s = m.rows*m.cols;
     for (int i =0; i<s; i++, f++, us++)
       *f = (*us) ? 0.001f*(*us) : std::numeric_limits<float>::max();
+    transposeInPlace();
   }
   
 bool DepthImage::load(const char* filename, bool transposed){

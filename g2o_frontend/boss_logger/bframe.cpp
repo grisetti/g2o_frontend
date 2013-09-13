@@ -36,22 +36,33 @@ namespace boss {
 
   Eigen::Isometry3d ReferenceFrame::transformTo(const ReferenceFrame* base) const {
     // find the transform to the root;
+    //cerr << "transform chain" << endl;
+    //cerr << "left: " << endl;
     Eigen::Isometry3d t1=Eigen::Isometry3d::Identity();
     const ReferenceFrame* aux1 = this;
     while(aux1->parent()){
-      t1=t1*aux1->transform();
+      t1=aux1->transform()*t1;
+      //cerr << aux1->name() << endl;
+      //cerr << t1.matrix() << endl << endl;
       aux1=static_cast<const ReferenceFrame*>(aux1->parent());
     }
 
     Eigen::Isometry3d t2=Eigen::Isometry3d::Identity();
     const ReferenceFrame* aux2 = base;
+  //cerr << "transform chain" << endl;
+  //cerr << "right: " << endl;
     while(aux2->parent()){
-      t2=t2*aux2->transform();
+      t2=aux2->transform()*t2;
+      //cerr << aux2->name() << endl;
+      //cerr << t2.matrix() << endl << endl;
       aux2=static_cast<const ReferenceFrame*>(aux2->parent());
     }
     if (aux1!=aux2)
       throw std::runtime_error("the frames do not belong to the same tree");
-    return t2.inverse()*t1;
+    Eigen::Isometry3d ret = t2.inverse()*t1;
+//cerr << "T:" << endl;
+// cerr << ret.matrix() << endl;
+return ret;
   }
 
   bool ReferenceFrame::canTransformTo(const ReferenceFrame* base) const {
