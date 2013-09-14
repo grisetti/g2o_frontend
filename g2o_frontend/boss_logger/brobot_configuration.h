@@ -16,6 +16,7 @@ namespace boss {
    bool addReferenceFrame(ReferenceFrame* frame_);
    BaseSensor* sensor(const std::string topic);
    ReferenceFrame* frame(const std::string name);
+   inline ReferenceFrame* baseFrame() { return frame(_baseReferenceFrameId); }
    inline const std::string& name() const {return _name;}
    inline void setName(const std::string& name_) {_name = name_;}
    inline bool isReady() const {return _isReady;}

@@ -23,6 +23,8 @@ using namespace cv;
 using namespace g2o;
 using namespace pwn;
 
+#undef _PWN_USE_CUDA_
+
 Eigen::Isometry3f fromMat(const cv::Mat m);
 
 string type2str(int type) {

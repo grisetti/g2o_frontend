@@ -27,6 +27,8 @@ using namespace cv;
 using namespace g2o;
 using namespace pwn;
 
+#undef _PWN_USE_CUDA_
+
 set<string> readDirectory(string dir = ".");
 void parseGroundTruth(vector<Vector6f> &groundTruthPoses, ifstream &is, string groundTruthTimeStamp = "");
 Eigen::Isometry3f fromMat(const cv::Mat m);

@@ -25,19 +25,19 @@
 using namespace std;
 using namespace g2o;
 using namespace Eigen;
-using namespace pwn;
 using namespace boss;
+using namespace pwn;
 
 template <typename T1, typename T2>
 void convertScalar(T1& dest, const T2& src){
   for (int i=0; i<src.matrix().cols(); i++)
     for (int j=0; j<src.matrix().rows(); j++)
       dest.matrix()(j,i) = src.matrix()(j,i);
+
 }
 
-
 std::string filenameExtension(const std::string& s){
-    return s.substr(s.find_last_of(".") + 1);
+  return s.substr(s.find_last_of(".") + 1);
 }
 
 std::string baseFilename(const std::string& s){
@@ -183,7 +183,9 @@ struct ImuRelationAdder : public MapNodeProcessor{
       rel->nodes()[0]=f; 
       Eigen::Matrix<double,6,6> info;
       info.setZero();
-      info.block<3,3>(3,3)=imu->orientationCovariance().inverse();
+      //info.block<3,3>(3,3)=imu->orientationCovariance().inverse()*1e9;
+      info.block<3,3>(3,3).setIdentity();
+      info.block<3,3>(3,3)*=1e3;
       rel->setInformationMatrix(info);
 	
       Eigen::Isometry3d iso;
@@ -206,6 +208,11 @@ struct OdometryRelationAdder : public MapNodeProcessor{
       rel->nodes()[0]=_previousNode;
       rel->nodes()[1]=node_;
       rel->setTransform(_previousNode->transform().inverse()*node_->transform());
+      Eigen::Matrix<double,6,6> info;
+      info.setIdentity();
+      info.block<3,3>(0,0)*=100;
+      info.block<3,3>(3,3)*=1000;
+
       rel->setInformationMatrix(Eigen::Matrix<double,6,6>::Identity());
       _manager->addRelation(rel);
       cerr << "Odom added (" << _previousNode << ", " << node_ << ")" << endl;
@@ -216,7 +223,21 @@ struct OdometryRelationAdder : public MapNodeProcessor{
   MapNode* _previousNode;
 };
 
-int j = 0;
+class PointCloudSensorData : public boss::BaseSensorData {
+  PointCloudSensorData(int id=-1, IdContext* context = 0): BaseSensorData(id,context){}
+  virtual void serialize(ObjectData& data, IdContext& context) {
+    BaseSensorData::serialize(data,context);
+    _blob.serialize(data,context);
+  }
+  virtual void deserialize(ObjectData& data, IdContext& context){
+    _blob.deserialize(data,context);
+  }
+  inline pwn::FrameBLOBReference& blob() { return _blob; }
+  inline const pwn::FrameBLOBReference& blob() const { return _blob; }
+protected:
+  pwn::FrameBLOBReference _blob;
+};
+
 struct PwnFrameGenerator : public MapNodeProcessor{
   PwnFrameGenerator(MapManager* manager_,   
 		    RobotConfiguration* config_,
@@ -226,7 +247,9 @@ struct PwnFrameGenerator : public MapNodeProcessor{
     _previousFrame = 0;
     _topic = topic_;
     _converter = converter_;
-    _scale = 2;
+    _scale = 4;
+    os = new ofstream("out.dat");
+    _counter = 0;
   }
 
   virtual void processNode(MapNode* node_){
@@ -240,6 +263,7 @@ struct PwnFrameGenerator : public MapNodeProcessor{
     cerr << "got image"  << endl;
     
     Eigen::Isometry3d _sensorOffset = _config->sensorOffset(image->baseSensor());
+    
     // cerr << "sensorOffset: " << endl;
     // cerr << _sensorOffset.matrix() << endl;
 
@@ -268,6 +292,7 @@ struct PwnFrameGenerator : public MapNodeProcessor{
     pwn::Frame* frame = new pwn::Frame;
     _converter->compute(*frame,scaledImage, sensorOffset);
 
+ 
     MapNodeBinaryRelation* odom=0;
 
     std::vector<MapNode*> oneNode(1);
@@ -277,18 +302,20 @@ struct PwnFrameGenerator : public MapNodeProcessor{
     if (_previousFrame){
       _aligner->setReferenceSensorOffset(_aligner->currentSensorOffset());
       _aligner->setCurrentSensorOffset(sensorOffset);
+      _aligner->setReferenceFrame(_previousFrame);
+      _aligner->setCurrentFrame(frame);
       
       _aligner->correspondenceFinder()->setSize(r,c);
       PinholePointProjector* projector=(PinholePointProjector*)(_aligner->projector());
       projector->setCameraMatrix(cameraMatrix);
 
       /*
-      cerr << "correspondenceFinder: "  << r << " " << c << endl; 
-      cerr << "sensorOffset" << endl;
-      cerr <<_aligner->currentSensorOffset().matrix() << endl;
-      cerr <<_aligner->referenceSensorOffset().matrix() << endl;
-      cerr << "cameraMatrix" << endl;
-      cerr << projector->cameraMatrix() << endl;
+	cerr << "correspondenceFinder: "  << r << " " << c << endl; 
+	cerr << "sensorOffset" << endl;
+	cerr <<_aligner->currentSensorOffset().matrix() << endl;
+	cerr <<_aligner->referenceSensorOffset().matrix() << endl;
+	cerr << "cameraMatrix" << endl;
+	cerr << projector->cameraMatrix() << endl;
       */
 
       std::vector<MapNode*> twoNodes(2);
@@ -297,15 +324,17 @@ struct PwnFrameGenerator : public MapNodeProcessor{
       odom = extractRelation<MapNodeBinaryRelation>(twoNodes);
       cerr << "odom:" << odom << " imu:" << imu << endl;
 
-      Eigen::Isometry3f guess;
+      Eigen::Isometry3f guess= Eigen::Isometry3f::Identity();
       _aligner->clearPriors();
       if (odom){
       	Eigen::Isometry3f mean;
       	Eigen::Matrix<float,6,6> info;
       	convertScalar(mean,odom->transform());
-      	convertScalar(info,odom->informationMatrix());
-      	_aligner->addRelativePrior(mean,info);
-	guess = mean;
+	mean.matrix().row(3) << 0,0,0,1;
+	convertScalar(info,odom->informationMatrix());
+	cerr << "odom: " << t2v(mean).transpose() << endl;
+	_aligner->addRelativePrior(mean,info);
+ 	//guess = mean;
       } 
 
       if (imu){
@@ -313,16 +342,13 @@ struct PwnFrameGenerator : public MapNodeProcessor{
       	Eigen::Matrix<float,6,6> info;
       	convertScalar(mean,imu->transform());
       	convertScalar(info,imu->informationMatrix());
-      	_aligner->addAbsolutePrior(_globalT,mean,info);
+	mean.matrix().row(3) << 0,0,0,1;
+	cerr << "imu: " << t2v(mean).transpose() << endl;
+	_aligner->addAbsolutePrior(_globalT,mean,info);
       }
       _aligner->setInitialGuess(guess);
-      _aligner->setReferenceFrame(_previousFrame);
-      _aligner->setCurrentFrame(frame);
       cerr << "Frames: " << _previousFrame << " " << frame << endl;
 
-      //char buf[1024];
-      // sprintf(buf, "frame-%05d.pwn",j);
-      // frame->save(buf, 1, true);
       
       // projector->setCameraMatrix(cameraMatrix);
       // projector->setTransform(Eigen::Isometry3f::Identity());
@@ -344,16 +370,28 @@ struct PwnFrameGenerator : public MapNodeProcessor{
       cerr << "chi2/inliers: " << _aligner->error()/_aligner->inliers() << endl;
       cerr << "initialGuess: " << t2v(guess).transpose() << endl;
       cerr << "transform   : " << t2v(_aligner->T()).transpose() << endl;
-      if (_aligner->inliers()>100){
+      if (_aligner->inliers()>-1){
  	_globalT = _globalT*_aligner->T();
+	cerr << "TRANSFORM FOUND" <<  endl;
+      } else {
+	cerr << "FAILURE" <<  endl;
+	_globalT = _globalT*guess;
       }
-      Eigen::Matrix3f R = _globalT.linear();
-      Eigen::Matrix3f E = R.transpose() * R;
-      E.diagonal().array() -= 1;
-      _globalT.linear() -= 0.5 * R * E;
-      
+      if (! (_counter%50) ) {
+	Eigen::Matrix3f R = _globalT.linear();
+	Eigen::Matrix3f E = R.transpose() * R;
+	E.diagonal().array() -= 1;
+	_globalT.linear() -= 0.5 * R * E;
+      }
+      _globalT.matrix().row(3) << 0,0,0,1;
       cerr << "globalTransform   : " << t2v(_globalT).transpose() << endl;
 
+      char buf[1024];
+      sprintf(buf, "frame-%05d.pwn",_counter);
+      frame->save(buf, 1, true, _globalT);
+
+
+      *os << _globalT.translation().transpose() << endl;
     } else {
       _aligner->setCurrentSensorOffset(sensorOffset);
       _globalT = Eigen::Isometry3f::Identity();
@@ -372,7 +410,7 @@ struct PwnFrameGenerator : public MapNodeProcessor{
 
     _previousSensingFrame = sensingFrame;
     _previousFrame = frame;
-    j++;
+    _counter++;
   }
   DepthImageConverter* _converter;
   Aligner* _aligner;
@@ -382,6 +420,8 @@ struct PwnFrameGenerator : public MapNodeProcessor{
   BaseSensor* _sensor;
   int _scale;
   Eigen::Isometry3f _globalT;
+  ofstream* os;
+  int _counter;
 };
 
 
@@ -421,9 +461,7 @@ int main(int argc, char** argv) {
 
   if (logFile==""){
     cerr << "logfile not supplied" << endl;
-  }
-  
-  
+  }  
 
 
   Deserializer des;
@@ -447,6 +485,7 @@ int main(int argc, char** argv) {
   PwnFrameGenerator* frameGenerator = new PwnFrameGenerator(manager, conf, converter,  "/kinect/depth_registered/image_raw");
   frameGenerator->_aligner = aligner;
   for (size_t i = 0; i<sensorDatas.size(); i++) {
+
     SensingFrame* s = sensingFrameMaker->processData(sensorDatas[i]);
     if (s) {
       imuAdder->processNode(s);

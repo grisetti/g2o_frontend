@@ -183,4 +183,17 @@ void Frame::transformInPlace(const Eigen::Isometry3f& T){
   }
 }
 
+  const std::string& Frame::extension() { 
+    return "pwn";
+  }
+
+  bool Frame::read(std::istream& is){
+    Eigen::Isometry3f t;
+    return this->load(t, is);
+  }
+
+  void Frame::write(std::ostream& os) {
+    save(os, 1, true);
+  }
+
 }

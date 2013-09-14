@@ -21,6 +21,8 @@ using namespace Eigen;
 using namespace g2o;
 using namespace pwn;
 
+#undef _PWN_USE_CUDA_
+
 void parseGroundTruth(Isometry3f &initialTransformation, ifstream &isGroundtruth, double targetTimestamp);
 
 int main(int argc, char **argv) {

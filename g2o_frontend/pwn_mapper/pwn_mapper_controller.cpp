@@ -219,7 +219,7 @@ namespace pwn {
    
     updateProjector();
 
-    std::string filename = rgbdData->baseFilename();// + "_depth.pgm";
+    std::string filename = rgbdData->baseFilename() + "_depth.pgm";
     cerr << "loading  " << filename << endl;
     // Read the depth image
     if (!_depthImage.load(filename.c_str(), true)){
@@ -314,12 +314,11 @@ namespace pwn {
     quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
     _sensorOffset.linear() = quaternion.toRotationMatrix();
     _sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-
     updateProjector();
 
     // Read the depth image and scale it
     //std::string filename = rgbdData->baseFilename(); + "_depth.pgm";
-    std::string filename = rgbdData->baseFilename(); //+ "_depth.pgm";
+    std::string filename = rgbdData->baseFilename() + "_depth.pgm";
 
     if(!_depthImage.load(filename.c_str(), true)) {
       cerr << "No depth image loaded." << endl;
@@ -351,6 +350,9 @@ namespace pwn {
     G2OFrame *current = _framesDeque.back();
     G2OFrame *reference = current->previousFrame();
 
+    
+    cerr << _sensorOffset.matrix() << endl;
+    
     if(_pwnSaving) {
       // Merge the scene with the new added cloud
       _scene->add(*reference, _initialScenePose.inverse() * reference->globalTransform());

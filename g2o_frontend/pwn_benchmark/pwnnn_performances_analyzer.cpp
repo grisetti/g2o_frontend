@@ -15,6 +15,8 @@ using namespace Eigen;
 using namespace g2o;
 using namespace pwn;
 
+#undef _PWN_USE_CUDA_
+
 int main(int argc, char **argv) {
   string inputFilename, outputFilename;
   int ng_minImageRadius;

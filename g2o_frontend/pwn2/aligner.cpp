@@ -30,9 +30,11 @@ namespace pwn {
 
   void Aligner::addRelativePrior(const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix){
     _priors.push_back(new SE3RelativePrior(mean,informationMatrix));
+    cerr << "priors.size() " << _priors.size() << endl;
   }
   void Aligner::addAbsolutePrior(const Eigen::Isometry3f& referenceTransform, const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix){
     _priors.push_back(new SE3AbsolutePrior(referenceTransform, mean,informationMatrix));
+    cerr << "priors.size() " << _priors.size() << endl;
   }
 
   void Aligner::clearPriors(){
@@ -95,8 +97,12 @@ namespace pwn {
 
 	_linearizer->setT(invT);
 	_linearizer->update();
-	H = _linearizer->H() + Matrix6f::Identity() * 1000.0f;
+	H = _linearizer->H() + Matrix6f::Identity();
 	b = _linearizer->b();
+
+	//H.setZero();
+	//b.setZero();
+	H += Matrix6f::Identity() * 1000.0f;
 	// add the priors
 	for (size_t j=0; j<_priors.size(); j++){
 	  const SE3Prior* prior = _priors[j];
@@ -116,7 +122,7 @@ namespace pwn {
 	Eigen::Isometry3f dT = v2t(dx);
 	invT = dT * invT;
       }
-
+      
       _T = invT.inverse();
       _T = v2t(t2v(_T));
       _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;

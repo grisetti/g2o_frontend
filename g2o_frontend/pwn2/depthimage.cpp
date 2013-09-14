@@ -189,14 +189,12 @@ void DepthImage::scale(Eigen::MatrixXf& dest, const Eigen::MatrixXf& src, int st
     *f = (*us) ? scaleFactor*(*us) : std::numeric_limits<float>::max();
 }
 
-<<<<<<< HEAD
-
   void DepthImage::toCvMat(cv::Mat &m, float dmax) const{
     if (m.rows != cols() && m.cols != rows() && m.type()!=CV_16UC1){
       m=cv::Mat(cols(),rows(), CV_16UC1);
     }
-    Eigen::MatrixXf t=transpose();
-    
+    //Eigen::MatrixXf t=transpose();
+    const DepthImage& t=*this;
     unsigned short* us=(unsigned short*)m.data;
     const float* f=t.data();
     int s = m.rows*m.cols;
@@ -213,7 +211,7 @@ void DepthImage::scale(Eigen::MatrixXf& dest, const Eigen::MatrixXf& src, int st
     int s = m.rows*m.cols;
     for (int i =0; i<s; i++, f++, us++)
       *f = (*us) ? 0.001f*(*us) : std::numeric_limits<float>::max();
-    transposeInPlace();
+    //transposeInPlace();
   }
   
   bool DepthImage::load(const char* filename, bool transposed, float scaleFactor) {
