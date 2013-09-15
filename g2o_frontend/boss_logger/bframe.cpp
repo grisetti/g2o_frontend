@@ -1,8 +1,9 @@
 #include "bframe.h"
 #include "g2o_frontend/boss/object_data.h"
 #include <stdexcept>
-namespace boss {
+namespace boss_logger {
   using namespace std;
+  using namespace boss;
 
   BaseReferenceFrame::BaseReferenceFrame (int id, IdContext* context): Identifiable(id,context){
     _transform.setIdentity();

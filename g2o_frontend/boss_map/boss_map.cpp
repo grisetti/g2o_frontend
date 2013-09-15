@@ -1,6 +1,8 @@
 #include "boss_map.h"
 #include <stdexcept>
-namespace boss {
+
+namespace boss_map {
+  using namespace boss;
 
   /***************************************** MapNode *****************************************/
   MapNode::MapNode (MapManager* manager_,int id, IdContext* context) : Identifiable(id, context) {
@@ -154,37 +156,6 @@ namespace boss {
     MapNode::deserializeComplete();
   }
   
-
-  /***************************************** SensingFrame *****************************************/
-
-  SensingFrame::SensingFrame (MapManager* manager, int id, IdContext* context):
-    MapNode(manager, id, context){
-  }
-  
-  void SensingFrame::serialize(ObjectData& data, IdContext& context){
-    MapNode::serialize(data,context);
-    ArrayData* adata = new ArrayData;
-    for (size_t i=0; i<_sensorDatas.size(); i++){
-      adata->add(new PointerData(_sensorDatas[i]));
-    }
-    data.setField("sensorDatas", adata);
-  }
-
-  void SensingFrame::deserialize(ObjectData& data, IdContext& context){
-    MapNode::deserialize(data,context);
-    ArrayData* adata = dynamic_cast<ArrayData*>(data.getField("sensorDatas"));
-    _sensorDatas.resize(adata->size());
-    for(size_t i = 0; i<adata->size(); i++){
-      (*adata)[i].getReference().bind(_sensorDatas[i]);
-    }
-  }
-
-  ReferenceFrame* SensingFrame::robotFrame(){
-    if (! _sensorDatas.size())
-      return 0;
-    return _sensorDatas[0]->robotReferenceFrame();
-  }
-
 
 
   /***************************************** MapNodeBinaryRelation *****************************************/
@@ -344,7 +315,6 @@ namespace boss {
   BOSS_REGISTER_CLASS(MapNode);
   BOSS_REGISTER_CLASS(MapNodeCollection);
   BOSS_REGISTER_CLASS(MapNodeRelation);
-  BOSS_REGISTER_CLASS(SensingFrame);
   BOSS_REGISTER_CLASS(MapNodeBinaryRelation);
   BOSS_REGISTER_CLASS(MapNodeUnaryRelation);
   BOSS_REGISTER_CLASS(MapManager);

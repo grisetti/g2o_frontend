@@ -20,35 +20,17 @@
 #include "g2o_frontend/boss_logger/brobot_configuration.h"
 
 #include "g2o_frontend/boss_map/boss_map.h"
-
+#include "g2o_frontend/boss_map/sensing_frame_node.h"
+#include "g2o_frontend/boss_map/map_node_processor.h"
+#include "two_depthimage_aligner_node.h"
 
 using namespace std;
 using namespace g2o;
 using namespace Eigen;
+using namespace boss_map;
 using namespace boss;
 using namespace pwn;
-
-template <typename T1, typename T2>
-void convertScalar(T1& dest, const T2& src){
-  for (int i=0; i<src.matrix().cols(); i++)
-    for (int j=0; j<src.matrix().rows(); j++)
-      dest.matrix()(j,i) = src.matrix()(j,i);
-
-}
-
-std::string filenameExtension(const std::string& s){
-  return s.substr(s.find_last_of(".") + 1);
-}
-
-std::string baseFilename(const std::string& s){
-  return s.substr(0,s.find_last_of("."));
-}
-
-void computeScaledParameters (int& rows, int& cols, Eigen::Matrix3f& cameraMatrix, float scale) {
-  cameraMatrix.block<2,3>(0,0)*=1./scale;
-  rows *=1./scale;
-  cols *=1./scale;
-}
+using namespace pwn_boss;
 
 
 
@@ -88,342 +70,6 @@ void readConfig(const std::string /* prefix*/, Aligner*& aligner, DepthImageConv
   }
  
 }
-
-struct TSCompare{
-  bool operator()(const BaseSensorData* a, const BaseSensorData*b){
-    return a->timestamp()<b->timestamp();
-  }
-};
-
-
-
-struct SensingFrameMaker {
-  SensingFrameMaker(){
-    _mapManager = 0;
-    _config = 0;
-    _currentSensingFrame = 0;
-  }
-
-  void init(MapManager* manager_, RobotConfiguration* config_){
-    _mapManager = manager_;
-    _config = config_;
-    _currentSensingFrame = 0;
-    _previousData = 0;
-  }
-
-  MapManager* _mapManager;
-  RobotConfiguration* _config;
-  SensingFrame* _currentSensingFrame;
-  BaseSensorData* _previousData;
-
-  SensingFrame* processData(BaseSensorData* data){
-    SensingFrame * returned = 0;
-    if (!_previousData || _previousData->robotReferenceFrame() != data->robotReferenceFrame()){
-      // new buddy, push the old one
-      returned = _currentSensingFrame;
-      _currentSensingFrame = new SensingFrame();
-      _currentSensingFrame->setTransform(data->robotReferenceFrame()->transform());
-      _mapManager->addNode(_currentSensingFrame);
-      //cerr << "New Frame created" << _currentSensingFrame << endl;
-    }
-    //cerr << "Payload added" << data->className() << endl;
-    _currentSensingFrame->sensorDatas().push_back(data);
-    _previousData = data;
-    return returned;
-  }
-};
-
-
-struct MapNodeProcessor{
-  MapNodeProcessor(MapManager* manager_,   RobotConfiguration* config_) {
-    _manager = manager_;
-    _config = config_;
-  }
-  MapManager* _manager;
-  RobotConfiguration* _config;
-  template <class T>
-  T* extractRelation(std::vector<MapNode*> nodes){
-    if (nodes.size()==0)
-      return 0;
-    std::set<MapNodeRelation*>& relations = _manager->nodeRelations(nodes[0]);
-    for (std::set<MapNodeRelation*>::iterator it=relations.begin(); it!=relations.end(); it++){
-      MapNodeRelation* _rel=*it;
-      T* rel = dynamic_cast<T*>(_rel);
-      if (!rel)
-	continue;
-      if (rel) {
-	for (size_t i=0; rel && i<nodes.size(); i++){
-	  if(nodes[i]!=rel->nodes()[i])
-	    rel = 0;
-	}
-	if (rel)
-	  return rel;
-      }
-    }
-    return 0;
-  }
-  virtual void processNode(MapNode* node) = 0;
-};
-
-
-struct ImuRelationAdder : public MapNodeProcessor{
-  ImuRelationAdder(MapManager* manager_,   RobotConfiguration* config_): MapNodeProcessor(manager_,config_){}
-  virtual void processNode(MapNode* node_){
-    SensingFrame* f = dynamic_cast<SensingFrame*>(node_);
-    if (!f)
-      return;
-    for (size_t i = 0; i<f->sensorDatas().size(); i++){
-      BaseSensorData* s = f->sensorDatas()[i];
-      IMUData* imu = dynamic_cast<IMUData*>(s);
-      if (! imu)
-	continue;
-      
-      MapNodeUnaryRelation* rel = new MapNodeUnaryRelation(_manager);
-      rel->setGenerator(imu);
-      rel->nodes()[0]=f; 
-      Eigen::Matrix<double,6,6> info;
-      info.setZero();
-      //info.block<3,3>(3,3)=imu->orientationCovariance().inverse()*1e9;
-      info.block<3,3>(3,3).setIdentity();
-      info.block<3,3>(3,3)*=1e3;
-      rel->setInformationMatrix(info);
-	
-      Eigen::Isometry3d iso;
-      iso.linear()  = imu->orientation().matrix();
-      iso.translation().setZero();
-      rel->setTransform(iso);
-      cerr << "Imu added (" << f << ")" << endl;
-      _manager->addRelation(rel);
-    }
-  }
-};
-
-struct OdometryRelationAdder : public MapNodeProcessor{
-  OdometryRelationAdder(MapManager* manager_,   RobotConfiguration* config_): MapNodeProcessor(manager_,config_){
-    _previousNode = 0;
-  }
-  virtual void processNode(MapNode* node_){
-    if (_previousNode){
-      MapNodeBinaryRelation* rel = new MapNodeBinaryRelation(_manager);
-      rel->nodes()[0]=_previousNode;
-      rel->nodes()[1]=node_;
-      rel->setTransform(_previousNode->transform().inverse()*node_->transform());
-      Eigen::Matrix<double,6,6> info;
-      info.setIdentity();
-      info.block<3,3>(0,0)*=100;
-      info.block<3,3>(3,3)*=1000;
-
-      rel->setInformationMatrix(Eigen::Matrix<double,6,6>::Identity());
-      _manager->addRelation(rel);
-      cerr << "Odom added (" << _previousNode << ", " << node_ << ")" << endl;
-      
-    }
-    _previousNode = node_;
-  }
-  MapNode* _previousNode;
-};
-
-class PointCloudSensorData : public boss::BaseSensorData {
-  PointCloudSensorData(int id=-1, IdContext* context = 0): BaseSensorData(id,context){}
-  virtual void serialize(ObjectData& data, IdContext& context) {
-    BaseSensorData::serialize(data,context);
-    _blob.serialize(data,context);
-  }
-  virtual void deserialize(ObjectData& data, IdContext& context){
-    _blob.deserialize(data,context);
-  }
-  inline pwn::FrameBLOBReference& blob() { return _blob; }
-  inline const pwn::FrameBLOBReference& blob() const { return _blob; }
-protected:
-  pwn::FrameBLOBReference _blob;
-};
-
-struct PwnFrameGenerator : public MapNodeProcessor{
-  PwnFrameGenerator(MapManager* manager_,   
-		    RobotConfiguration* config_,
-		    DepthImageConverter* converter_,
-		    const std::string& topic_): MapNodeProcessor(manager_,config_){
-    _previousSensingFrame = 0;
-    _previousFrame = 0;
-    _topic = topic_;
-    _converter = converter_;
-    _scale = 4;
-    os = new ofstream("out.dat");
-    _counter = 0;
-  }
-
-  virtual void processNode(MapNode* node_){
-    SensingFrame* sensingFrame = dynamic_cast<SensingFrame*>(node_);
-    if (! sensingFrame)
-      return;
-    
-    PinholeImageData* image = dynamic_cast<PinholeImageData*>(sensingFrame->sensorData(_topic));
-    if (! image)
-      return;
-    cerr << "got image"  << endl;
-    
-    Eigen::Isometry3d _sensorOffset = _config->sensorOffset(image->baseSensor());
-    
-    // cerr << "sensorOffset: " << endl;
-    // cerr << _sensorOffset.matrix() << endl;
-
-    Eigen::Isometry3f sensorOffset;
-    convertScalar(sensorOffset,_sensorOffset);
-    sensorOffset.matrix().row(3) << 0,0,0,1;
-
-    Eigen::Matrix3d _cameraMatrix = image->cameraMatrix();
-    
-    ImageBLOB* blob = image->imageBlob().get();
-    
-    DepthImage depthImage;
-    depthImage.fromCvMat(blob->cvImage());
-    int r=depthImage.rows();
-    int c=depthImage.cols();
-    
-    DepthImage scaledImage;
-    DepthImage::scale(scaledImage,depthImage,_scale);
-    Eigen::Matrix3f cameraMatrix;
-    convertScalar(cameraMatrix,_cameraMatrix);
-    
-    computeScaledParameters(r,c,cameraMatrix,_scale);
-    PinholePointProjector* projector=dynamic_cast<PinholePointProjector*>(_converter->_projector);
-    cameraMatrix(2,2)=1;
-    projector->setCameraMatrix(cameraMatrix);
-    pwn::Frame* frame = new pwn::Frame;
-    _converter->compute(*frame,scaledImage, sensorOffset);
-
- 
-    MapNodeBinaryRelation* odom=0;
-
-    std::vector<MapNode*> oneNode(1);
-    oneNode[0]=sensingFrame;
-    MapNodeUnaryRelation* imu = extractRelation<MapNodeUnaryRelation>(oneNode);
-    
-    if (_previousFrame){
-      _aligner->setReferenceSensorOffset(_aligner->currentSensorOffset());
-      _aligner->setCurrentSensorOffset(sensorOffset);
-      _aligner->setReferenceFrame(_previousFrame);
-      _aligner->setCurrentFrame(frame);
-      
-      _aligner->correspondenceFinder()->setSize(r,c);
-      PinholePointProjector* projector=(PinholePointProjector*)(_aligner->projector());
-      projector->setCameraMatrix(cameraMatrix);
-
-      /*
-	cerr << "correspondenceFinder: "  << r << " " << c << endl; 
-	cerr << "sensorOffset" << endl;
-	cerr <<_aligner->currentSensorOffset().matrix() << endl;
-	cerr <<_aligner->referenceSensorOffset().matrix() << endl;
-	cerr << "cameraMatrix" << endl;
-	cerr << projector->cameraMatrix() << endl;
-      */
-
-      std::vector<MapNode*> twoNodes(2);
-      twoNodes[0]=_previousSensingFrame;
-      twoNodes[1]=sensingFrame;
-      odom = extractRelation<MapNodeBinaryRelation>(twoNodes);
-      cerr << "odom:" << odom << " imu:" << imu << endl;
-
-      Eigen::Isometry3f guess= Eigen::Isometry3f::Identity();
-      _aligner->clearPriors();
-      if (odom){
-      	Eigen::Isometry3f mean;
-      	Eigen::Matrix<float,6,6> info;
-      	convertScalar(mean,odom->transform());
-	mean.matrix().row(3) << 0,0,0,1;
-	convertScalar(info,odom->informationMatrix());
-	cerr << "odom: " << t2v(mean).transpose() << endl;
-	_aligner->addRelativePrior(mean,info);
- 	//guess = mean;
-      } 
-
-      if (imu){
-      	Eigen::Isometry3f mean;
-      	Eigen::Matrix<float,6,6> info;
-      	convertScalar(mean,imu->transform());
-      	convertScalar(info,imu->informationMatrix());
-	mean.matrix().row(3) << 0,0,0,1;
-	cerr << "imu: " << t2v(mean).transpose() << endl;
-	_aligner->addAbsolutePrior(_globalT,mean,info);
-      }
-      _aligner->setInitialGuess(guess);
-      cerr << "Frames: " << _previousFrame << " " << frame << endl;
-
-      
-      // projector->setCameraMatrix(cameraMatrix);
-      // projector->setTransform(Eigen::Isometry3f::Identity());
-      // Eigen::MatrixXi debugIndices(r,c);
-      // DepthImage debugImage(r,c);
-      // projector->project(debugIndices, debugImage, frame->points());
-
-      _aligner->align();
-      
-      // sprintf(buf, "img-dbg-%05d.pgm",j);
-      // debugImage.save(buf);
-      //sprintf(buf, "img-ref-%05d.pgm",j);
-      //_aligner->correspondenceFinder()->referenceDepthImage().save(buf);
-      //sprintf(buf, "img-cur-%05d.pgm",j);
-      //_aligner->correspondenceFinder()->currentDepthImage().save(buf);
-
-      cerr << "inliers: " << _aligner->inliers() << endl;
-      cerr << "chi2: " << _aligner->error() << endl;
-      cerr << "chi2/inliers: " << _aligner->error()/_aligner->inliers() << endl;
-      cerr << "initialGuess: " << t2v(guess).transpose() << endl;
-      cerr << "transform   : " << t2v(_aligner->T()).transpose() << endl;
-      if (_aligner->inliers()>-1){
- 	_globalT = _globalT*_aligner->T();
-	cerr << "TRANSFORM FOUND" <<  endl;
-      } else {
-	cerr << "FAILURE" <<  endl;
-	_globalT = _globalT*guess;
-      }
-      if (! (_counter%50) ) {
-	Eigen::Matrix3f R = _globalT.linear();
-	Eigen::Matrix3f E = R.transpose() * R;
-	E.diagonal().array() -= 1;
-	_globalT.linear() -= 0.5 * R * E;
-      }
-      _globalT.matrix().row(3) << 0,0,0,1;
-      cerr << "globalTransform   : " << t2v(_globalT).transpose() << endl;
-
-      char buf[1024];
-      sprintf(buf, "frame-%05d.pwn",_counter);
-      frame->save(buf, 1, true, _globalT);
-
-
-      *os << _globalT.translation().transpose() << endl;
-    } else {
-      _aligner->setCurrentSensorOffset(sensorOffset);
-      _globalT = Eigen::Isometry3f::Identity();
-      if (imu){
-      	Eigen::Isometry3f mean;
-      	convertScalar(mean,imu->transform());
-	_globalT = mean;
-      }
-    }
-    
-   
-    if (_previousFrame)
-      delete _previousFrame;
-    
-    delete blob;
-
-    _previousSensingFrame = sensingFrame;
-    _previousFrame = frame;
-    _counter++;
-  }
-  DepthImageConverter* _converter;
-  Aligner* _aligner;
-  SensingFrame* _previousSensingFrame;
-  pwn::Frame* _previousFrame;
-  std::string _topic;
-  BaseSensor* _sensor;
-  int _scale;
-  Eigen::Isometry3f _globalT;
-  ofstream* os;
-  int _counter;
-};
-
 
 Aligner* aligner;
 DepthImageConverter* converter;
@@ -477,20 +123,25 @@ int main(int argc, char** argv) {
   std::sort(sensorDatas.begin(), sensorDatas.end(), comp);
 
   MapManager* manager = new MapManager;
-  SensingFrameMaker* sensingFrameMaker = new SensingFrameMaker;
+  SensingFrameNodeMaker* sensingFrameMaker = new SensingFrameNodeMaker;
   sensingFrameMaker->init(manager, conf);
 
   ImuRelationAdder* imuAdder = new ImuRelationAdder(manager, conf);
   OdometryRelationAdder* odomAdder = new OdometryRelationAdder(manager, conf);
-  PwnFrameGenerator* frameGenerator = new PwnFrameGenerator(manager, conf, converter,  "/kinect/depth_registered/image_raw");
-  frameGenerator->_aligner = aligner;
+  TwoDepthImageAlignerNode* pairwiseAligner = new TwoDepthImageAlignerNode(manager, conf, converter, aligner,  "/kinect/depth_registered/image_raw");
   for (size_t i = 0; i<sensorDatas.size(); i++) {
-
-    SensingFrame* s = sensingFrameMaker->processData(sensorDatas[i]);
+    // see if you make a sensing frame with all the infos you find
+    SensingFrameNode* s = sensingFrameMaker->processData(sensorDatas[i]);
     if (s) {
+
+      // add a unary relation modeling the imu to the sensing frame
       imuAdder->processNode(s);
+
+      // add a binary relation modeling the odometry between two sensing frames
       odomAdder->processNode(s);
-      frameGenerator->processNode(s);
+
+      // add a pwn sensing data(if you manage)
+      pairwiseAligner->processNode(s);
     }
   }
 

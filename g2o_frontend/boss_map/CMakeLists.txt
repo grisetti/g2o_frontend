@@ -10,6 +10,8 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${CSPARSE_INCLUDE_DIR})
 
 ADD_LIBRARY(boss_map  
   boss_map.cpp boss_map.h
+  sensing_frame_node.cpp sensing_frame_node.h
+  map_node_processor.cpp map_node_processor.h 
   )
 
 SET_TARGET_PROPERTIES(boss_map PROPERTIES OUTPUT_NAME boss_map)

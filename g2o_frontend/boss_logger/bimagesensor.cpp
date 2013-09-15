@@ -5,9 +5,10 @@
 
 #define BUF_BLOCK (4096*4)
 
-namespace boss {
+namespace boss_logger {
   
   using namespace std;
+  using namespace boss;
 
   ImageBLOB::ImageBLOB(){}
 

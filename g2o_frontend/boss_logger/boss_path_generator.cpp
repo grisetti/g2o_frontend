@@ -12,7 +12,7 @@
 
 
 
-
+using namespace boss_logger;
 using namespace boss;
 using namespace std;
 
@@ -20,13 +20,6 @@ StringSensorMap sensors;
 StringReferenceFrameMap  frames;
 std::vector<boss::Serializable*> objects;
 std::vector<BaseSensorData*> sensorDatas;
-
-struct TSCompare{
-  bool operator()(const BaseSensorData* a, const BaseSensorData*b){
-    return a->timestamp()<b->timestamp();
-  }
-};
-
 
 
 const char* banner[]={

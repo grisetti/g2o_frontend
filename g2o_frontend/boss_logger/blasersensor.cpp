@@ -1,6 +1,8 @@
 #include "blasersensor.h"
 #include <stdexcept>
-namespace boss {
+namespace boss_logger {
+  using namespace boss;
+
   LaserSensor::LaserSensor(int id, IdContext* context): BaseSensor(id,context){
     _minRange = 0;
     _maxRange = 30;

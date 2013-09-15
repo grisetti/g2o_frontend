@@ -6,12 +6,13 @@
 #include "g2o_frontend/boss/deserializer.h"
 #include <string>
 
-namespace boss {
+namespace boss_logger {
+  using namespace boss;
  class RobotConfiguration: public Serializable {
   public:
    RobotConfiguration(const std::string& name_="");
-   const boss::StringSensorMap& sensorMap() const {return _sensorMap;}
-   const boss::StringReferenceFrameMap&  frameMap() const {return _frameMap;}
+   const StringSensorMap& sensorMap() const {return _sensorMap;}
+   const StringReferenceFrameMap&  frameMap() const {return _frameMap;}
    bool addSensor(BaseSensor* sensor_);
    bool addReferenceFrame(ReferenceFrame* frame_);
    BaseSensor* sensor(const std::string topic);

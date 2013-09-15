@@ -2,8 +2,8 @@
 #define _BOSS_FRAME_RELATION_H_
 #include "bframe.h"
 
-namespace boss {
-
+namespace boss_logger {
+  using namespace boss;
   //! a frame relation is a transform (eventually with covariance), that specifies the relative transformation
   //! between two frames
   class ReferenceFrameRelation: public boss::Identifiable{

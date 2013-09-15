@@ -11,11 +11,11 @@ public:
   virtual void subscribe();
   virtual bool configReady() const;
   void callback(const sensor_msgs::LaserScanConstPtr& scan);
-  inline boss::LaserSensor* sensor() {return _sensor;}
+  inline boss_logger::LaserSensor* sensor() {return _sensor;}
 protected:
   ros::Subscriber _sub;
   std::string _topicName;
-  boss::LaserSensor* _sensor;
+  boss_logger::LaserSensor* _sensor;
 };
 
 #endif

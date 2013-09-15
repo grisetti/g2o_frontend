@@ -1,6 +1,8 @@
 #include "bimusensor.h"
 
-namespace boss {
+namespace boss_logger {
+  using namespace boss;
+
   IMUSensor::IMUSensor(int id, IdContext* context): BaseSensor(id,context){
   }
   

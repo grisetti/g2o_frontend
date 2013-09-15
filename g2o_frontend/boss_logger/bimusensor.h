@@ -2,7 +2,9 @@
 #define _BOSS_IMU_SENSOR_H_
 #include "bsensor.h"
 #include <Eigen/Core>
-namespace boss {
+namespace boss_logger {
+  using namespace boss;
+
   class IMUSensor : public BaseSensor {
   public:
     IMUSensor(int id=-1, IdContext* context = 0);

@@ -1,7 +1,9 @@
 #include "bsensor.h"
 #include "g2o_frontend/boss/object_data.h"
 
-namespace boss {
+namespace boss_logger {
+  using namespace boss;
+
   BaseSensorData::BaseSensorData(int id, IdContext* context): Identifiable(id,context){
     _topic = "";
     _robotReferenceFrame = 0;

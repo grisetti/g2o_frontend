@@ -8,19 +8,16 @@
 #include "g2o_frontend/boss_logger/bimusensor.h"
 #include "g2o_frontend/boss_logger/brobot_configuration.h"
 #include "boss_map.h"
+#include "boss_sensing_frame_node.h"
 
+using namespace boss_map;
 using namespace boss;
 using namespace std;
 
 
-struct TSCompare{
-  bool operator()(const BaseSensorData* a, const BaseSensorData*b){
-    return a->timestamp()<b->timestamp();
-  }
-};
 
 
-void processSequentialData(SensingFrame* previous, SensingFrame* current, const std::string& topic){
+void processSequentialData(SensingFrameNode* previous, SensingFrameNode* current, const std::string& topic){
   cerr << "got pair of frames, processing" << endl;
   PinholeImageData* pImage = 0;
   PinholeImageData* cImage = 0;
@@ -67,6 +64,9 @@ cerr << "img1: " << pImage << " img2: " << cImage << " imu1: " << imu1 << " imu2
 
 int main(int argc, char** argv) {
   Deserializer des;
+  if (argc < 2) {
+    cerr << " usage: " << argv[0] << " <input file> < output file> " << endl;
+  }
   des.setFilePath(argv[1]);
 
   std::vector<BaseSensorData*> sensorDatas;
@@ -82,39 +82,38 @@ int main(int argc, char** argv) {
 
   ReferenceFrame* currentReferenceFrame = 0;
   ReferenceFrame* previousReferenceFrame = 0;
-  SensingFrame* previousSensingFrame = 0;
-  SensingFrame* currentSensingFrame = 0;
+  SensingFrameNode* previousSensingFrameNode = 0;
+  SensingFrameNode* currentSensingFrameNode = 0;
   size_t i=0;
   std::vector<MapNodeRelation*> relations;
   MapManager* manager = new MapManager;
   newObjects.push_back(manager);
-  int j=0;
-  std::vector<SensingFrame*> sensingFrames;
+  std::vector<SensingFrameNode*> sensingFrames;
   while (i<sensorDatas.size()){
     bool newFrameAdded = 0;
     BaseSensorData* data =sensorDatas[i];
     if(data->robotReferenceFrame() == currentReferenceFrame){
       //cerr << "pushing data to node" << endl;
-      currentSensingFrame->sensorDatas().push_back(data);
+      currentSensingFrameNode->sensorDatas().push_back(data);
     } else {
-      if(currentSensingFrame) {
+      if(currentSensingFrameNode) {
 	//cerr << "adding node to manager (" << j++ << ")" << endl;
-	manager->addNode(currentSensingFrame);
+	manager->addNode(currentSensingFrameNode);
       }
 
-      currentSensingFrame = new SensingFrame(manager);
+      currentSensingFrameNode = new SensingFrameNode(manager);
       newFrameAdded=true;
-      sensingFrames.push_back(currentSensingFrame);
-      newObjects.push_back(currentSensingFrame);
-      cerr << "creating new sensing frame (" << currentSensingFrame << ")" << endl;
+      sensingFrames.push_back(currentSensingFrameNode);
+      newObjects.push_back(currentSensingFrameNode);
+      cerr << "creating new sensing frame (" << currentSensingFrameNode << ")" << endl;
       //cerr << "pushing data to node" << endl;
-      currentSensingFrame->sensorDatas().push_back(data);
+      currentSensingFrameNode->sensorDatas().push_back(data);
       IMUData* imuData = dynamic_cast<IMUData*>(data);
       if (imuData){
 	MapNodeUnaryRelation* rel = new MapNodeUnaryRelation(manager);
 	rel->setGenerator(imuData);
 	newObjects.push_back(rel);
-	rel->nodes()[0]=currentSensingFrame; 
+	rel->nodes()[0]=currentSensingFrameNode; 
 	Eigen::Matrix<double,6,6> info;
 	info.setZero();
 	info.block<3,3>(3,3)=imuData->orientationCovariance().inverse();
@@ -127,19 +126,19 @@ int main(int argc, char** argv) {
 	manager->addRelation(rel);
      }
 	
-      if (previousSensingFrame && previousSensingFrame!=currentSensingFrame){
+      if (previousSensingFrameNode && previousSensingFrameNode!=currentSensingFrameNode){
       	//cerr << "creating new relation";
       	MapNodeBinaryRelation* rel = new MapNodeBinaryRelation(manager);
 	newObjects.push_back(rel);
-      	rel->nodes()[0]=previousSensingFrame;
-      	rel->nodes()[1]=currentSensingFrame;
+      	rel->nodes()[0]=previousSensingFrameNode;
+      	rel->nodes()[1]=currentSensingFrameNode;
       	rel->setTransform(previousReferenceFrame->transform().inverse()*currentReferenceFrame->transform());
 	rel->setInformationMatrix(Eigen::Matrix<double,6,6>::Identity());
       	//cerr << "adding relation to manager";
       	manager->addRelation(rel);
       }
     }
-    previousSensingFrame  = currentSensingFrame;
+    previousSensingFrameNode  = currentSensingFrameNode;
     previousReferenceFrame = currentReferenceFrame;
     currentReferenceFrame = data->robotReferenceFrame();
     if (newFrameAdded && sensingFrames.size()>3) {
@@ -154,7 +153,7 @@ int main(int argc, char** argv) {
   
   // write back the log
   Serializer ser;
-  ser.setFilePath("sensing_frame_test.log");
+  ser.setFilePath(argv[2]);
 
   conf->serializeInternals(ser);
   ser.writeObject(*conf);

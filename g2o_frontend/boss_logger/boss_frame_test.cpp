@@ -7,6 +7,7 @@
 #include "blasersensor.h"
 #include "bimusensor.h"
 
+using namespace boss_logger;
 using namespace boss;
 using namespace std;
 

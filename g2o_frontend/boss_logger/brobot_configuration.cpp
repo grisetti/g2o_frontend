@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <iostream>
 
-namespace boss {
+namespace boss_logger {
   using namespace std;
 
   RobotConfiguration::RobotConfiguration::RobotConfiguration(const std::string& name_) {
@@ -134,6 +134,7 @@ namespace boss {
     Serializable *o;
     int numObjects=0;
     while( (! conf && (o=des.readObject())) ){
+      cerr << o->className() << endl;
       numObjects++;
       if (! conf) {
 	conf = dynamic_cast<RobotConfiguration*>(o);
@@ -162,7 +163,7 @@ namespace boss {
   }
 
   Eigen::Isometry3d RobotConfiguration::sensorOffset(const BaseSensor* sensor) const {
-    boss::StringReferenceFrameMap::const_iterator it=_frameMap.find(_baseReferenceFrameId);
+    StringReferenceFrameMap::const_iterator it=_frameMap.find(_baseReferenceFrameId);
     assert(it!=_frameMap.end());
     const ReferenceFrame* baseFrame = it->second;
     const ReferenceFrame* targetFrame = sensor->frame();

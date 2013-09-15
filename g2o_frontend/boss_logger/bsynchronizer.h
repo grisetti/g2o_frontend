@@ -10,8 +10,8 @@
 #include "blasersensor.h"
 #include "bimusensor.h"
 
-namespace boss {
-
+namespace boss_logger {
+  using namespace boss;
 
   struct SyncTopicInstance;
 

@@ -12,7 +12,11 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+// just to make the linker happy
+#include "g2o_frontend/pwn_boss/pwn_sensor_data.h"
+pwn_boss::PWNSensorData data;
 
+using namespace boss_logger;
 using namespace boss;
 using namespace std;
 
@@ -25,12 +29,6 @@ StringSensorMap sensors;
 StringReferenceFrameMap  frames;
 std::vector<boss::Serializable*> objects;
 std::vector<BaseSensorData*> sensorDatas;
-
-struct TSCompare{
-  bool operator()(const BaseSensorData* a, const BaseSensorData*b){
-    return a->timestamp()<b->timestamp();
-  }
-};
 
 class MySimpleVisualizer{
 public:
@@ -192,6 +190,7 @@ int main(int argc, char** argv) {
 	i++;
 	BaseSensorData* data =sensorDatas[i];
 	std::map<BaseSensor*,MySimpleVisualizer*>::iterator visIt = visualizers.find(data->baseSensor());
+	//cerr << "data->robotReferenceFrame(): " << data->robotReferenceFrame() << endl;
 	Eigen::Isometry3d T=data->robotReferenceFrame()->transform();
 	if (visIt!=visualizers.end()) {
 	  visIt->second->show(data);

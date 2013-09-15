@@ -6,22 +6,23 @@
 #include <string>
 #include <deque>
 
-namespace boss {
- class BaseSensor: public Identifiable{
+namespace boss_logger {
+  using namespace boss;
+  class BaseSensor: public Identifiable{
   public:
-   BaseSensor(int id=-1, IdContext* context = 0);
-   virtual void serialize(ObjectData& data, IdContext& context);
-   virtual void deserialize(ObjectData& data, IdContext& context);
-   virtual void deserializeComplete();
-   inline const std::string& topic() const { return _topic; }
-   inline void setTopic(const std::string topic_) {_topic = topic_; }
-   inline ReferenceFrame* frame() { return _frame; }   
-   inline const ReferenceFrame* frame() const { return _frame;}
-   inline void setReferenceFrame(ReferenceFrame* frame_) { _frame = frame_;}
- protected:
-   ReferenceFrame* _frame;
-   std::string _topic;
- };
+    BaseSensor(int id=-1, IdContext* context = 0);
+    virtual void serialize(ObjectData& data, IdContext& context);
+    virtual void deserialize(ObjectData& data, IdContext& context);
+    virtual void deserializeComplete();
+    inline const std::string& topic() const { return _topic; }
+    inline void setTopic(const std::string topic_) {_topic = topic_; }
+    inline ReferenceFrame* frame() { return _frame; }   
+    inline const ReferenceFrame* frame() const { return _frame;}
+    inline void setReferenceFrame(ReferenceFrame* frame_) { _frame = frame_;}
+  protected:
+    ReferenceFrame* _frame;
+    std::string _topic;
+  };
 
   class BaseSensorData: public Identifiable{
   public:
@@ -78,9 +79,16 @@ namespace boss {
   };
   
 
-  typedef std::map<std::string, boss::ReferenceFrame*> StringReferenceFrameMap;
-  typedef std::map<std::string, boss::BaseSensor*> StringSensorMap;
+  typedef std::map<std::string, ReferenceFrame*> StringReferenceFrameMap;
+  typedef std::map<std::string, BaseSensor*> StringSensorMap;
   typedef std::deque<boss::Serializable*> SerializableQueue;
+
+
+  struct TSCompare {
+    inline bool operator()(const BaseSensorData* a, const BaseSensorData*b){
+      return a->timestamp()<b->timestamp();
+    }
+  };
 
 } // end namespace
 #endif

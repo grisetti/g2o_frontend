@@ -2,8 +2,8 @@
 #include "g2o_frontend/boss/object_data.h"
 #include <stdexcept>
 
-namespace boss {
-
+namespace boss_logger {
+  using namespace boss;
   //! a frame relation is a transform (eventually with covariance), that specifies the relative transformation
   //! between two frames
   ReferenceFrameRelation::ReferenceFrameRelation(int id, IdContext* context):

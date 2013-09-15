@@ -1,8 +1,10 @@
 #include "bsynchronizer.h"
 #include <stdexcept>
-namespace boss {
-
+namespace boss_logger {
+  
+  
   using namespace std;
+  using namespace boss;
 
   SyncCondition::SyncCondition(SyncTopicInstance* m1, SyncTopicInstance*m2){
     this->m1  = m1;

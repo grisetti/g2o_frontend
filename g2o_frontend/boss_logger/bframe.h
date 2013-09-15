@@ -11,7 +11,8 @@
 #include <Eigen/Geometry>
 #include <set>
 
-namespace boss {
+namespace boss_logger {
+  using namespace boss;
 
   class BaseReferenceFrame: public Identifiable{
   public:

@@ -168,7 +168,7 @@ int main(int argc, char** argv){
     if (! confReady && isReady){
       cerr << endl << "CONF IS NOW READY!!!, STARTING WRITING" << endl;
       context.serializeInternals(ser);
-      boss::RobotConfiguration conf = context;
+      boss_logger::RobotConfiguration conf = context;
       conf.serializeInternals(ser);
       ser.writeObject(conf);
       // for (boss::StringReferenceFrameMap::iterator it = context.frameMap().begin(); it!=context.frameMap().end(); it++)
@@ -179,13 +179,13 @@ int main(int argc, char** argv){
     }
     if (confReady){
       while (context.messageQueue().size()){
-	boss::BaseSensorData* data = dynamic_cast<boss::BaseSensorData*>(context.messageQueue().front());
+	boss_logger::BaseSensorData* data = dynamic_cast<boss_logger::BaseSensorData*>(context.messageQueue().front());
 	if (! data){
 	  cerr << "fatal error, inconsistent data" << endl; 
 	  return 0;
 	}
 	context.messageQueue().pop_front();
-	boss::ReferenceFrame* f = data->robotReferenceFrame();
+	boss_logger::ReferenceFrame* f = data->robotReferenceFrame();
 	if (f){
 	  ser.writeObject(*f);
 	}

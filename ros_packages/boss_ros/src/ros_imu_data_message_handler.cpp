@@ -22,12 +22,12 @@ void RosIMUDataMessageHandler::subscribe(){
 
 void RosIMUDataMessageHandler::callback(const sensor_msgs::ImuConstPtr& imu){
   if  (! _sensor) {
-    std::map<std::string, boss::ReferenceFrame*>::iterator it = _context->frameMap().find(imu->header.frame_id);
+    std::map<std::string, boss_logger::ReferenceFrame*>::iterator it = _context->frameMap().find(imu->header.frame_id);
     if (it == _context->frameMap().end()) {
       cerr << "missing transform for frame [" << imu->header.frame_id << "], skipping" << endl;
       return;
     }
-    _sensor = new boss::IMUSensor;
+    _sensor = new boss_logger::IMUSensor;
     _sensor->setTopic(_topicName);
     _sensor->setReferenceFrame(it->second);
     cerr << "created sensor for topic[" << _sensor->topic()  << "]" << endl;
@@ -37,11 +37,11 @@ void RosIMUDataMessageHandler::callback(const sensor_msgs::ImuConstPtr& imu){
   if (! _context->getOdomPose(robotTransform, imu->header.stamp.toSec()) ){
     return;
   } 
-  boss::ReferenceFrame* newReferenceFrame = new boss::ReferenceFrame("robotPose", robotTransform);
+  boss_logger::ReferenceFrame* newReferenceFrame = new boss_logger::ReferenceFrame("robotPose", robotTransform);
   //_context->messageQueue().push_back(newReferenceFrame);
   // we get the image from ROS
 
-  boss::IMUData* imuData = new boss::IMUData(_sensor);
+  boss_logger::IMUData* imuData = new boss_logger::IMUData(_sensor);
   imuData->setTimestamp(imu->header.stamp.toSec());
   imuData->setRobotReferenceFrame(newReferenceFrame);
   imuData->setTopic(_sensor->topic());
