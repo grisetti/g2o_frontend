@@ -27,19 +27,27 @@ namespace pwn_boss {
   using namespace boss_logger;
 
 
-  class TwoDepthImageAlignerNodeRelation : public MapNodeBinaryRelation{
-    TwoDepthImageAlignerNodeRelation(MapManager* manager, int id = -1, IdContext* = 0);
-    Aligner* _aligner;
-    DepthImageConverter* _converter;
-    ImageData* image1;
-    ImageData* image2;
-    int inliners;
-    float error;
-  };
 
 
   class TwoDepthImageAlignerNode : public MapNodeProcessor, public Identifiable {
   public:
+    /*
+    class Relation : public MapNodeBinaryRelation{
+    public:
+      TwoDepthImageAlignerNodeRelation(MapManager* manager, int id = -1, IdContext* = 0);
+      inline Aligner* aligner() {return _aligner;}
+      inline Conveter* converter() {return _converter;}
+      SensingFrameNode* referenceSensingFrame() ;
+      SensingFrameNode* currentSensingFrame();
+      Aligner* _aligner;
+      DepthImageConverter* _converter;
+      SensingFrameNode* _referenceSensingFrame;
+      SensingFrameNode* _currentSensingFrame;
+      int inliners;
+      float error;
+    };
+    */
+
     TwoDepthImageAlignerNode(MapManager* manager_,
 			     RobotConfiguration* config_,
 			     DepthImageConverter* converter_,

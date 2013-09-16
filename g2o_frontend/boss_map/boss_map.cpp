@@ -1,23 +1,22 @@
 #include "boss_map.h"
 #include <stdexcept>
+#include <iostream>
 
 namespace boss_map {
   using namespace boss;
+  using namespace std;
 
   /***************************************** MapNode *****************************************/
   MapNode::MapNode (MapManager* manager_,int id, IdContext* context) : Identifiable(id, context) {
     _manager = manager_;
+    _level = 0;
   }
   
   //! boss serialization
   void MapNode::serialize(ObjectData& data, IdContext& context){
     Identifiable::serialize(data,context);
     data.setPointer("manager", _manager);
-    ArrayData* adata = new ArrayData;
-    for (size_t i=0; i<_parents.size(); i++){
-      adata->add(new PointerData(_parents[i]));
-    }
-    data.setField("parents", adata);
+    data.setInt("level", _level);
     Eigen::Quaterniond q(_transform.rotation());
     q.coeffs().toBOSS(data,"rotation");
     _transform.translation().toBOSS(data,"translation");
@@ -27,11 +26,7 @@ namespace boss_map {
   void MapNode::deserialize(ObjectData& data, IdContext& context){
     Identifiable::deserialize(data,context);
     data.getReference("manager").bind(_manager);
-    ArrayData* adata = dynamic_cast<ArrayData*>(data.getField("parents"));
-    _parents.resize(adata->size());
-    for(size_t i = 0; i<adata->size(); i++){
-      (*adata)[i].getReference().bind(_parents[i]);
-    }
+    _level = data.getInt("level");
     Eigen::Quaterniond q;
     q.coeffs().fromBOSS(data,"rotation");
     _transform.translation().fromBOSS(data,"translation");
@@ -42,20 +37,93 @@ namespace boss_map {
   void MapNode::deserializeComplete(){
     assert(_manager);
     _manager->addNode(this);
-    for(size_t i = 0; i<_parents.size(); i++){
-      _manager->addParentToNode(this,_parents[i]);
+  }
+
+  
+  std::vector<MapNode*> MapNode::parents() {
+    std::vector<MapNodeRelation*> relations=parentRelations();
+    std::set<MapNode*> pset;
+    for (size_t i = 0; i<relations.size(); i++){
+      MapNodeRelation* r=relations[i];
+      for(size_t j=0; j<r->nodes().size(); j++){
+	MapNode* n = r->nodes()[j];
+	if (n!=this)
+	  pset.insert(n);
+      }
     }
+    std::vector<MapNode*> parents_;
+    for (std::set<MapNode*>::iterator it=pset.begin(); it!=pset.end(); it++)
+      parents_.push_back(*it);
+    return parents_;
   }
   
-  //! climbs up in the hierarchy of parents by counting the level. The hierarchical map, seen vertically is a DAG
-  int MapNode::level(){
-    int l=0;
-    MapNode* n=this;
-    while(n && n->_parents.size()){
-      l++;
-      n = n->_parents[0];
+  std::vector<MapNodeRelation*> MapNode::parentRelations(){
+    std::vector<MapNodeRelation*> ret;
+    std::set<MapNodeRelation*>& rel=_manager->nodeRelations(this);
+    for(std::set<MapNodeRelation*>::iterator it = rel.begin(); it!=rel.end(); it++){
+      MapNodeRelation* r = *it;
+      if (r->owner() && r->owner()->level()>level())
+	ret.push_back(r);
     }
-    return l;
+    return ret;
+  }
+  
+  std::vector<MapNode*> MapNode::children() {
+    std::vector<MapNodeRelation*> relations=childrenRelations();
+    std::set<MapNode*> cset;
+    for (size_t i = 0; i<relations.size(); i++){
+      MapNodeRelation* r=relations[i];
+      for(size_t j=0; j<r->nodes().size(); j++){
+	MapNode* n = r->nodes()[j];
+	if (n!=this)
+	  cset.insert(n);
+      }
+    }
+    std::vector<MapNode*> children_;
+    for (std::set<MapNode*>::iterator it=cset.begin(); it!=cset.end(); it++)
+      children_.push_back(*it);
+    return children_;
+  }
+  
+  std::vector<MapNodeRelation*> MapNode::childrenRelations(){
+    std::vector<MapNodeRelation*> ret;
+    std::set<MapNodeRelation*>& rel=_manager->ownedRelations(this);
+    for(std::set<MapNodeRelation*>::iterator it = rel.begin(); it!=rel.end(); it++){
+      MapNodeRelation* r = *it;
+      ret.push_back(r);
+    }
+    return ret;
+  }
+
+  /***************************************** MapNodeAlias *****************************************/
+
+
+  MapNodeAlias::MapNodeAlias(MapNode* original_, MapManager* manager, int id, IdContext* context):
+    MapNode(manager, id, context){
+    _original = original_;
+  }
+  const Eigen::Isometry3d& MapNodeAlias::transform() const {
+    if (!_original){
+      throw std::runtime_error("getting transform in alias with no concrete instance attached");
+    }
+    return _original->transform();
+  }
+
+  void MapNodeAlias::setTransform(const Eigen::Isometry3d& transform_) {
+    if (!_original){
+      throw std::runtime_error("setting transform in alias with no concrete instance attached");
+    }
+    _original->setTransform(transform_);
+  }
+
+  void MapNodeAlias::serialize(ObjectData& data, IdContext& context){
+    MapNode::serialize(data,context);
+    data.setPointer("original", _original);
+  }
+  
+  void MapNodeAlias::deserialize(ObjectData& data, IdContext& context){
+    MapNode::serialize(data,context);
+    data.getReference("original").bind(_original);
   }
 
   /***************************************** MapNodeRelation *****************************************/
@@ -70,11 +138,13 @@ namespace boss_map {
   MapNodeRelation::MapNodeRelation (MapManager* manager_, int id, IdContext* context): Identifiable(id,context){
     _manager=manager_;
     _generator = 0;
+    _owner = 0;
   }
   
   void MapNodeRelation::serialize(ObjectData& data, IdContext& context) {
     Identifiable::serialize(data,context);
     data.setPointer("manager", _manager);
+    data.setPointer("owner", _owner);
     data.setPointer("generator", _generator);
     ArrayData* adata = new ArrayData;
     for (size_t i=0; i<_nodes.size(); i++){
@@ -86,6 +156,7 @@ namespace boss_map {
   void MapNodeRelation::deserialize(ObjectData& data, IdContext& context){
     Identifiable::deserialize(data,context);
     data.getReference("manager").bind(_manager);
+    data.getReference("owner").bind(_owner);
     data.getReference("generator").bind(_generator);
     ArrayData* adata = dynamic_cast<ArrayData*>(data.getField("parents"));
     _nodes.resize(adata->size());
@@ -99,64 +170,17 @@ namespace boss_map {
     _manager->addRelation(this);
   }
 
-
-
-  /***************************************** MapNodeRelation *****************************************/
-  MapNodeCollection::MapNodeCollection (MapManager* manager, int id, IdContext* context): MapNode(manager,id,context){
-    _gauge=0;
+  /***************************************** MapNodeAliasRelation *****************************************/
+  MapNodeAliasRelation::MapNodeAliasRelation (MapNode* owner_, MapManager* manager_, int id, IdContext* context): 
+    MapNodeRelation(manager_, id,context){
+    _owner = owner_;
+    _manager=manager_;
+    _generator = 0;
+    _nodes.resize(2,0);
   }
 
-  void MapNodeCollection::serialize(ObjectData& data, IdContext& context){
-    MapNode::serialize(data,context);
-    data.setPointer("gauge",_gauge);
-    ArrayData* adata = new ArrayData;
-    for (size_t i=0; i<_children.size(); i++){
-      adata->add(new PointerData(_children[i]));
-    }
-    data.setField("children", adata);
 
-    ArrayData* adata2 = new ArrayData;
-    for (size_t i=0; i<_internalRelations.size(); i++){
-      adata2->add(new PointerData(_internalRelations[i]));
-    }
-    data.setField("internalRelations", adata2);
-
-    ArrayData* adata3 = new ArrayData;
-    for (size_t i=0; i<_internalRelations.size(); i++){
-      adata3->add(new PointerData(_internalRelations[i]));
-    }
-    data.setField("starRelations", adata3);
-
-  }
-  void MapNodeCollection::deserialize(ObjectData& data, IdContext& context){
-    MapNode::deserialize(data,context);
-    data.getReference("gauge").bind(_gauge);
-
-    ArrayData* adata = dynamic_cast<ArrayData*>(data.getField("children"));
-    _children.resize(adata->size());
-    for(size_t i = 0; i<adata->size(); i++){
-      (*adata)[i].getReference().bind(_children[i]);
-    }
-
-    ArrayData* adata2 = dynamic_cast<ArrayData*>(data.getField("internalRelations"));
-    _internalRelations.resize(adata2->size());
-    for(size_t i = 0; i<adata->size(); i++){
-      (*adata2)[i].getReference().bind(_internalRelations[i]);
-    }
-
-    ArrayData* adata3 = dynamic_cast<ArrayData*>(data.getField("starRelations"));
-    _starRelations.resize(adata3->size());
-    for(size_t i = 0; i<adata->size(); i++){
-      (*adata3)[i].getReference().bind(_starRelations[i]);
-    }
-
-  }
-
-  void MapNodeCollection::deserializeComplete(){
-    MapNode::deserializeComplete();
-  }
   
-
 
   /***************************************** MapNodeBinaryRelation *****************************************/
 
@@ -230,91 +254,72 @@ namespace boss_map {
     std::set<MapNode*>::iterator it=_nodes.find(n);
     if (it!=_nodes.end())
       return false;
+    //cerr << "inserting node " << n << endl;
     _nodes.insert(n);
-    _nodesRelationMap.insert(make_pair(n, std::set<MapNodeRelation*>()));
-    return true;
-  }
-
-  bool MapManager::addParentToNode(MapNode* child, MapNodeCollection* parent){
-    std::set<MapNode*>::iterator ct=_nodes.find(child);
-    std::set<MapNode*>::iterator pt=_nodes.find(parent);
-    if(ct == _nodes.end() || pt == _nodes.end())
-      return false;
-    // TODO: check for consistency
-    size_t i;
-    for(i=0; i<parent->children().size(); i++){
-      if (parent->children()[i]==child)
-	break;
-    }
-    if (i==parent->children().size())
-      parent->children().push_back(child);
-
-    for(i=0; i<child->parents().size(); i++){
-      if (child->parents()[i]==child)
-	break;
-    }
-    if (i==child->parents().size())
-      child->parents().push_back(parent);
-    return true;
-  }
-
-  bool MapManager::removeParentFromNode(MapNode* child, MapNodeCollection* parent){
-    std::set<MapNode*>::iterator ct=_nodes.find(child);
-    std::set<MapNode*>::iterator pt=_nodes.find(parent);
-    if(ct == _nodes.end() || pt == _nodes.end())
-      return false;
-    // TODO: check for consistency
-    size_t i;
-    for(i=0; i<parent->children().size(); i++){
-      if (parent->children()[i]==child)
-	break;
-    }
-    if (i==parent->children().size())
-      return false;
-    parent->children().erase(parent->children().begin()+i);
-    for(i=0; i<child->parents().size(); i++){
-      if (child->parents()[i]==child)
-	break;
-    }
-    if (i==child->parents().size())
-      return false;
-    child->parents().erase(child->parents().begin()+i);
+    NodeInfo nInfo;
+    _nodeInfos.insert(std::make_pair(n, nInfo));
     return true;
   }
 
 
   bool MapManager::addRelation(MapNodeRelation* relation) {
     std::set<MapNodeRelation*>::iterator it=_relations.find(relation);
-    if (it != _relations.end())
-      return false;
-    _relations.insert(relation);
+    bool added = true;
+    if (it == _relations.end()) {
+       added = false;
+    } else {
+      _relations.insert(relation);
+    }
+    //cerr << "inserting relation " << relation << endl;
     for(size_t i=0; i<relation->nodes().size(); i++){
       MapNode* n = relation->nodes()[i];
-      std::map<MapNode*, std::set<MapNodeRelation*> >::iterator it = _nodesRelationMap.find(n);
-      if (it==_nodesRelationMap.end()){
-	throw std::runtime_error("addRelation, no node exising");
-	std::set<MapNodeRelation*> s;
-	s.insert(relation);
-	_nodesRelationMap.insert(make_pair(n,s));
-      } else {
-	it->second.insert(relation);
+      std::map<MapNode*, NodeInfo>::iterator it=_nodeInfos.find(n);
+      if (it == _nodeInfos.end()) {
+	cerr << "node: " << n << endl;
+	throw std::runtime_error("no node for relation");
       }
+      it->second.relations.insert(relation);
     }
-    return true;
+    if (relation->owner()){
+      MapNode* n = relation->owner();
+      std::map<MapNode*, NodeInfo>::iterator it=_nodeInfos.find(n);
+      if (it == _nodeInfos.end())
+	throw std::runtime_error("no owner for relation");
+      it->second.ownerRelations.insert(relation);
+    }
+    return added;
   }
-  
+
   bool MapManager::removeRelation(MapNodeRelation* relation){
     std::set<MapNodeRelation*>::iterator it=_relations.find(relation);
     if (it == _relations.end())
       return false;
+    for(size_t i=0; i<relation->nodes().size(); i++){
+      MapNode* n = relation->nodes()[i];
+      std::map<MapNode*, NodeInfo>::iterator it=_nodeInfos.find(n);
+      if (it == _nodeInfos.end()) {
+	cerr << "node: " << n << endl;
+	throw std::runtime_error("no node for relation");
+      }
+      it->second.relations.erase(relation);
+    }
+    if (relation->owner()){
+      MapNode* n = relation->owner();
+      std::map<MapNode*, NodeInfo>::iterator it=_nodeInfos.find(n);
+      if (it == _nodeInfos.end())
+	throw std::runtime_error("no owner for relation");
+      it->second.ownerRelations.erase(relation);
+    }
     _relations.erase(it);
     return true;
   }
 
 
+
   BOSS_REGISTER_CLASS(MapNode);
-  BOSS_REGISTER_CLASS(MapNodeCollection);
+  BOSS_REGISTER_CLASS(MapNodeAlias);
   BOSS_REGISTER_CLASS(MapNodeRelation);
+  BOSS_REGISTER_CLASS(MapNodeAliasRelation);
   BOSS_REGISTER_CLASS(MapNodeBinaryRelation);
   BOSS_REGISTER_CLASS(MapNodeUnaryRelation);
   BOSS_REGISTER_CLASS(MapManager);

@@ -51,7 +51,7 @@ namespace boss_map {
     if (!_previousData || _previousData->robotReferenceFrame() != data->robotReferenceFrame()){
       // new buddy, push the old one
       returned = _currentSensingFrameNode;
-      _currentSensingFrameNode = new SensingFrameNode();
+      _currentSensingFrameNode = new SensingFrameNode(_mapManager);
       _currentSensingFrameNode->setTransform(data->robotReferenceFrame()->transform());
       _mapManager->addNode(_currentSensingFrameNode);
       //cerr << "New Frame created" << _currentSensingFrameNode << endl;

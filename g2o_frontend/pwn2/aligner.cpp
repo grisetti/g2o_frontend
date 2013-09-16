@@ -30,11 +30,9 @@ namespace pwn {
 
   void Aligner::addRelativePrior(const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix){
     _priors.push_back(new SE3RelativePrior(mean,informationMatrix));
-    cerr << "priors.size() " << _priors.size() << endl;
   }
   void Aligner::addAbsolutePrior(const Eigen::Isometry3f& referenceTransform, const Eigen::Isometry3f& mean, const Matrix6f& informationMatrix){
     _priors.push_back(new SE3AbsolutePrior(referenceTransform, mean,informationMatrix));
-    cerr << "priors.size() " << _priors.size() << endl;
   }
 
   void Aligner::clearPriors(){

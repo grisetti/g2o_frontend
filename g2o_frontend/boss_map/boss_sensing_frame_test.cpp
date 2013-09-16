@@ -8,7 +8,7 @@
 #include "g2o_frontend/boss_logger/bimusensor.h"
 #include "g2o_frontend/boss_logger/brobot_configuration.h"
 #include "boss_map.h"
-#include "boss_sensing_frame_node.h"
+#include "sensing_frame_node.h"
 
 using namespace boss_map;
 using namespace boss;
@@ -96,16 +96,12 @@ int main(int argc, char** argv) {
       //cerr << "pushing data to node" << endl;
       currentSensingFrameNode->sensorDatas().push_back(data);
     } else {
-      if(currentSensingFrameNode) {
-	//cerr << "adding node to manager (" << j++ << ")" << endl;
-	manager->addNode(currentSensingFrameNode);
-      }
-
       currentSensingFrameNode = new SensingFrameNode(manager);
+      cerr << "creating new sensing frame (" << currentSensingFrameNode << ")" << endl;
+      manager->addNode(currentSensingFrameNode);
       newFrameAdded=true;
       sensingFrames.push_back(currentSensingFrameNode);
       newObjects.push_back(currentSensingFrameNode);
-      cerr << "creating new sensing frame (" << currentSensingFrameNode << ")" << endl;
       //cerr << "pushing data to node" << endl;
       currentSensingFrameNode->sensorDatas().push_back(data);
       IMUData* imuData = dynamic_cast<IMUData*>(data);

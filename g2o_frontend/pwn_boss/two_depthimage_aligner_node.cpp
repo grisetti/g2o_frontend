@@ -36,10 +36,12 @@ namespace pwn_boss {
     _aligner = aligner_;
     _scale = 4;
     _counter = 0;
-    
+    os = new std::ofstream("out.dat");
   }
 
   void TwoDepthImageAlignerNode::processNode(MapNode* node_){
+   cerr << "START ITERATION" << endl;
+ 
     SensingFrameNode* sensingFrame = dynamic_cast<SensingFrameNode*>(node_);
     if (! sensingFrame)
       return;
@@ -119,7 +121,7 @@ namespace pwn_boss {
       	convertScalar(mean,odom->transform());
 	mean.matrix().row(3) << 0,0,0,1;
 	convertScalar(info,odom->informationMatrix());
-	cerr << "odom: " << t2v(mean).transpose() << endl;
+	//cerr << "odom: " << t2v(mean).transpose() << endl;
 	_aligner->addRelativePrior(mean,info);
  	//guess = mean;
       } 
@@ -130,7 +132,7 @@ namespace pwn_boss {
       	convertScalar(mean,imu->transform());
       	convertScalar(info,imu->informationMatrix());
 	mean.matrix().row(3) << 0,0,0,1;
-	cerr << "imu: " << t2v(mean).transpose() << endl;
+	//cerr << "imu: " << t2v(mean).transpose() << endl;
 	_aligner->addAbsolutePrior(_globalT,mean,info);
       }
       _aligner->setInitialGuess(guess);
@@ -173,12 +175,56 @@ namespace pwn_boss {
       _globalT.matrix().row(3) << 0,0,0,1;
       cerr << "globalTransform   : " << t2v(_globalT).transpose() << endl;
 
-      char buf[1024];
-      sprintf(buf, "frame-%05d.pwn",_counter);
-      frame->save(buf, 1, true, _globalT);
+      // char buf[1024];
+      // sprintf(buf, "frame-%05d.pwn",_counter);
+      // frame->save(buf, 1, true, _globalT);
 
+
+      cerr << "creating alias" << endl;
+      // create an alias for the previous node
+      MapNodeAlias* newRoot = new MapNodeAlias(_previousSensingFrameNode,_previousSensingFrameNode->manager());
+      _previousSensingFrameNode->manager()->addNode(newRoot);
+      
+      cerr << "creating alias relation" << endl;
+      MapNodeAliasRelation* aliasRel = new MapNodeAliasRelation(newRoot,_previousSensingFrameNode->manager());
+      aliasRel->nodes()[0] = newRoot;
+      aliasRel->nodes()[1] = _previousSensingFrameNode;
+      _previousSensingFrameNode->manager()->addRelation(aliasRel);
+      
+      cerr << "reparenting old elements" << endl;
+      // assign all the used relations to the alias node
+      if (imu){
+	imu->setOwner(newRoot);
+	imu->manager()->addRelation(imu);
+      }
+
+      if (odom){
+	odom->setOwner(newRoot);
+	odom->manager()->addRelation(imu);
+      }
+      
+      cerr << "adding result" << endl;
+      MapNodeBinaryRelation* newRel= new MapNodeBinaryRelation(newRoot->manager());
+      newRel->nodes()[0] = newRoot;
+      newRel->nodes()[1] = _previousSensingFrameNode;
+      Eigen::Isometry3d iso;
+      convertScalar(iso,_aligner->T());
+      newRel->setTransform(iso);
+      newRel->setInformationMatrix(Eigen::Matrix<double, 6,6>::Identity());
+      newRel->manager()->addRelation(newRel);
+      
 
       *os << _globalT.translation().transpose() << endl;
+
+      // create a new alias node for the prior element
+      // bind the alias with the prior node
+
+      // add to the alias the relations that have been used to
+      // determine the transformation
+
+      // add the alias to the map
+      // add the new transformation to the map
+      
     } else {
       _aligner->setCurrentSensorOffset(sensorOffset);
       _globalT = Eigen::Isometry3f::Identity();
@@ -189,15 +235,19 @@ namespace pwn_boss {
       }
     }
     
-   
+    cerr << "deleting previous frame" << endl;
     if (_previousFrame)
       delete _previousFrame;
     
+    cerr << "deleting blob frame" << endl;
     delete blob;
 
+    cerr << "bookkeeping update" << endl;
     _previousSensingFrameNode = sensingFrame;
     _previousFrame = frame;
     _counter++;
+    
+    cerr << "END ITERATION" << endl;
   }
 
 }

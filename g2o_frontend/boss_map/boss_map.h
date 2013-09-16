@@ -9,7 +9,8 @@
 namespace boss_map {
   using namespace boss;
   class MapManager;
-  class MapNodeCollection;
+  class MapNodeRelation
+;
 
   /***************************************** MapNode *****************************************/
   
@@ -17,7 +18,8 @@ namespace boss_map {
      This is a generic map node. Can be a sensor measurement, a sensing frame or a collection of sensing frames.
      It is associated with a map_manager that is in charge of the bookkeeping between elements.
    */
-  struct MapNode : public Identifiable {
+  class MapNode : public Identifiable {
+  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     friend class MapManager;
     MapNode (MapManager* manager=0, int id=-1, IdContext* context = 0);
@@ -27,20 +29,57 @@ namespace boss_map {
     virtual void deserialize(ObjectData& data, IdContext& context);
     //! called when all links are resolved, adjusts the bookkeeping of the parents
     virtual void deserializeComplete();
-    //! climbs up in the hierarchy of parents by counting the level. The hierarchical map, seen vertically is a DAG
-    int level();
     //! returns the manager object
     inline MapManager* manager() const {return _manager;}
     //! isometry to which the map node is referred to
-    inline const Eigen::Isometry3d& transform() const {return _transform;}
+    virtual const Eigen::Isometry3d& transform() const {return _transform;}
     //! sets the isometry
-    inline void setTransform(const Eigen::Isometry3d& transform_) {_transform = transform_;}
-    //! returns the vector of parents
-    inline std::vector<MapNodeCollection*>& parents() { return _parents;}
+    virtual void setTransform(const Eigen::Isometry3d& transform_) {_transform = transform_;}
+    //! gets level of hierarchy of this node
+    inline int level() const { return _level;}
+    //! sets the level of this node
+    inline void setLevel(int level_) {_level=level_;}
+    
+    //! compute the parent nodes, scanning for all nodes that belong to a relation owned by another node
+    std::vector<MapNode*> parents();
+
+    //! compute the parent relations, scanning for all nodes that belong to a relation  owned by this
+    std::vector<MapNodeRelation*> parentRelations();
+
+    //! compute the children nodes, scanning for all relations whose owner is this node
+    //! and whose level is the current level minus one
+    std::vector<MapNode*> children();
+
+    //! computes the children relations, that are all relations whose owner is this one
+    //! and whose level is the current one minus one
+    std::vector<MapNodeRelation*> childrenRelations();
+
   protected:
     MapManager* _manager;
-    std::vector<MapNodeCollection*> _parents;
+    int _level;
     Eigen::Isometry3d _transform;
+  };
+
+  class MapNodeAlias: public MapNode{
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    MapNodeAlias(MapNode* original=0, MapManager* manager=0, int id=-1, IdContext* context = 0);
+    inline MapNode* originalNode() {return _original;}
+    inline void setOriginalNode(MapNode* original_){
+      _original = original_; 
+      if(_original) 
+	_level=_original->level()+1;
+    }
+    //! isometry to which the map node is referred to
+    virtual const Eigen::Isometry3d& transform() const;
+    //! sets the isometry
+    virtual void setTransform(const Eigen::Isometry3d& transform_);
+    //! boss serialization
+    virtual void serialize(ObjectData& data, IdContext& context);
+    //! boss deserialization
+    virtual void deserialize(ObjectData& data, IdContext& context);
+  protected:
+    MapNode* _original;
   };
 
   /***************************************** MapNodeRelation *****************************************/
@@ -62,46 +101,22 @@ namespace boss_map {
     virtual void deserializeComplete();
     Identifiable* generator() {return _generator;}
     void setGenerator(Identifiable* generator_) {_generator=generator_;}
+    //! gets level of hierarchy of this relation
+    MapNode* owner() { return _owner; }
+    void setOwner(MapNode* owner_) { _owner = owner_; }
+
   protected:
     MapManager* _manager;
+    MapNode* _owner;
     std::vector<MapNode*> _nodes;
     Identifiable* _generator;
   };
-
-  /**
-     This class models a generic local map.
-     A local map is aset of map nodes and of relations between these nodes.
-     these are the internalRelations.
-     These relations concur in determining the relative layout of the nodes w.r.t
-     one of them (the gauge). 
-     This relative layout is expressed as a set of relations between the gauge and the other nodes,
-     and stored int he star_relations;
-   */
-  struct MapNodeCollection: public MapNode {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    //! ctor
-    MapNodeCollection (MapManager* manager=0, int id=-1, IdContext* context = 0);
-    //! boss serialize
-    virtual void serialize(ObjectData& data, IdContext& context);
-    //! boss deserialize
-    virtual void deserialize(ObjectData& data, IdContext& context);
-    //! adjusts the bookkeeping when the elements have been loaded
-    virtual void deserializeComplete();
-    //! returns the guage of the local map. Must belong to one of the children
-    inline MapNode* gauge() {return _gauge;}
-    //! returns the elements in the local map. A single element can be shared among more than one local map
-    inline std::vector<MapNode*>& children() {return _children;}
-    //! returns the relations connecting the elements of the local map that have been used to determine a global alignment
-    inline std::vector<MapNodeRelation*>& internalRelations() {return _internalRelations;}
-    //! returns the summary relations connecting the gauge and all other elements of the local map
-    inline std::vector<MapNodeRelation*>& starRelations()  {return _starRelations;}
-  protected:
-    MapNode* _gauge;
-    std::vector<MapNode*> _children;
-    std::vector<MapNodeRelation*> _internalRelations;
-    std::vector<MapNodeRelation*> _starRelations;
-  };
   
+
+  struct MapNodeAliasRelation: public MapNodeRelation {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    MapNodeAliasRelation(MapNode* owner = 0, MapManager* manager=0, int id=-1, IdContext* context = 0);
+  };
 
   /***************************************** MapNodeBinaryRelation *****************************************/
 
@@ -151,6 +166,11 @@ namespace boss_map {
   
   /***************************************** MapManager********************************/
   class MapManager: public Identifiable {
+  protected:
+    struct NodeInfo{
+      std::set<MapNodeRelation*> relations;
+      std::set<MapNodeRelation*> ownerRelations;
+     };
   public:
     MapManager(int id=-1, IdContext* context = 0);
     //! boss serialization
@@ -159,20 +179,21 @@ namespace boss_map {
     virtual void deserialize(ObjectData& data, IdContext& context);
 
     bool addNode(MapNode* n);
-    bool addParentToNode(MapNode* child, MapNodeCollection* parent);
-    bool removeParentFromNode(MapNode* child, MapNodeCollection* parent);
+    bool removeNode(MapNode* n);
     bool addRelation(MapNodeRelation* relation);
     bool removeRelation(MapNodeRelation* relation);
+
     inline std::set<MapNode*>& nodes() {return _nodes;}
     inline std::set<MapNodeRelation*>& relations() {return _relations;}
+    
+    inline std::set<MapNodeRelation*>& nodeRelations(MapNode* n) {return _nodeInfos[n].relations;}
+    inline std::set<MapNodeRelation*>& ownedRelations(MapNode* n) {return _nodeInfos[n].ownerRelations;}
 
-    std::set<MapNodeRelation*>& nodeRelations(MapNode* n) {
-      return _nodesRelationMap.find(n)->second;
-    }
+
   protected:
     std::set<MapNode*> _nodes;
     std::set<MapNodeRelation*> _relations;
-    std::map<MapNode*, std::set<MapNodeRelation*> > _nodesRelationMap;
+    std::map<MapNode*, NodeInfo> _nodeInfos;
   };
 
 }
