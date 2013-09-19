@@ -55,6 +55,10 @@ namespace pwn {
 
     _ostart = 0.0;
     _oend = 0.0;
+
+    _absolutePose = Isometry3f::Identity();
+    _relativePose = Isometry3f::Identity();
+    _localPose = Isometry3f::Identity();
   }
 
   PerformancesAnalyzer::~PerformancesAnalyzer() {

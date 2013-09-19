@@ -93,7 +93,7 @@ namespace pwn {
     double _ostart, _oend;
     string _sensorType, _currentTimestamp;
     Matrix3f _cameraMatrix, _scaledCameraMatrix;
-    Isometry3f _absolutePose, _relativePose, _sensorOffset;
+    Isometry3f _absolutePose, _relativePose, _localPose, _sensorOffset;
 
     PinholePointProjector *_projector;
 

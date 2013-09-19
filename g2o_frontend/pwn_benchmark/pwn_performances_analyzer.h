@@ -3,6 +3,8 @@
 
 #include "performances_analyzer.h"
 
+#include "g2o_frontend/pwn2/merger.h"
+
 using namespace std;
 using namespace Eigen;
 using namespace g2o;
@@ -31,11 +33,13 @@ namespace pwn {
       _imageCols = imageRows_;
       updateStructures();
       _correspondenceFinder->setSize(_scaledImageRows, _scaledImageCols);
+      _merger->setImageSize(_scaledImageRows, _scaledImageCols);
     }
     virtual void setScale(float scale_) {
       _scale = scale_;
       updateStructures();
       _correspondenceFinder->setSize(_scaledImageRows, _scaledImageCols);
+      _merger->setImageSize(_scaledImageRows, _scaledImageCols);
     }
 
     inline void setScaleFactor(float scaleFactor_) { _scaleFactor = scaleFactor_; }
@@ -84,7 +88,7 @@ namespace pwn {
     string _referenceDepthFilename, _currentDepthFilename;
     DepthImage _referenceDepth, _currentDepth, _referenceScaledDepth, _currentScaledDepth;
     MatrixXi _indexImage, _scaledIndexImage;
-    Frame _referenceFrame, _currentFrame; 
+    Frame _referenceFrame, _currentFrame, _scene, _subScene; 
     StatsCalculator *_statsCalculator;
     PointInformationMatrixCalculator *_pointInformationMatrixCalculator;
     NormalInformationMatrixCalculator *_normalInformationMatrixCalculator;
@@ -96,6 +100,7 @@ namespace pwn {
 #else
     Aligner *_aligner;
 #endif
+    Merger *_merger;
   };
 }
 

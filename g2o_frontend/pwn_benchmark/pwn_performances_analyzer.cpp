@@ -41,6 +41,8 @@ namespace pwn {
     _aligner->setCorrespondenceFinder(_correspondenceFinder);
     _aligner->setInnerIterations(1);
     _aligner->setOuterIterations(10);
+    _merger = new Merger();
+    _merger->setDepthImageConverter(_converter);
 
     _referenceDepthFilename = ""; 
     _currentDepthFilename = "";
@@ -75,8 +77,7 @@ namespace pwn {
     else
       issAssociations >> _currentTimestamp >> _currentDepthFilename;
     
-    // Load depth images   
-    
+    // Load depth images      
     _referenceDepth.load((_referenceDepthFilename.substr(0, _referenceDepthFilename.size() - 3) + "pgm").c_str(), true, _scaleFactor);
     _currentDepth.load((_currentDepthFilename.substr(0, _currentDepthFilename.size() - 3) + "pgm").c_str(), true, _scaleFactor);
 
@@ -86,6 +87,9 @@ namespace pwn {
     _converter->compute(_referenceFrame, _referenceScaledDepth, _sensorOffset, false);
     _converter->compute(_currentFrame, _currentScaledDepth, _sensorOffset, false);
 
+    _scene.add(_referenceFrame, _absolutePose);
+    _merger->merge(&_scene, _absolutePose * _sensorOffset);
+    
     return true;
   }
   
@@ -96,7 +100,18 @@ namespace pwn {
     // Align clouds
     Isometry3f initialGuess = Isometry3f::Identity();
     initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-    _aligner->setReferenceFrame(&_referenceFrame);
+    
+    if(_indexImage.cols() != _imageCols || _indexImage.rows() != _imageRows) 
+      _indexImage.resize(_imageRows, _imageCols);
+    if(_scaledIndexImage.cols() != _scaledImageCols || _scaledIndexImage.rows() != _scaledImageRows) 
+      _scaledIndexImage.resize(_scaledImageRows, _scaledImageCols);
+    _projector->setTransform(_absolutePose * _sensorOffset);
+    _projector->project(_scaledIndexImage, _referenceScaledDepth, _scene.points());    
+    _converter->compute(_subScene, _referenceScaledDepth, _sensorOffset, false);
+    _aligner->setReferenceFrame(&_subScene);
+    _projector->setTransform(Isometry3f::Identity());
+
+    //_aligner->setReferenceFrame(&_referenceFrame);
     _aligner->setCurrentFrame(&_currentFrame);
     _aligner->setInitialGuess(initialGuess);
     _aligner->setSensorOffset(_sensorOffset);
@@ -109,6 +124,8 @@ namespace pwn {
     _relativePose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     _absolutePose = _absolutePose * _relativePose;
     _absolutePose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    _localPose = _localPose * _relativePose;
+    _localPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
     // Initialize dummy aligner
     _dummyAligner->setReferenceFrame(&_referenceFrame);
