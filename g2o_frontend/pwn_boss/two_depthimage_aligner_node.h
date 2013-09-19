@@ -31,22 +31,39 @@ namespace pwn_boss {
 
   class TwoDepthImageAlignerNode : public MapNodeProcessor, public Identifiable {
   public:
-    /*
+    
     class Relation : public MapNodeBinaryRelation{
     public:
-      TwoDepthImageAlignerNodeRelation(MapManager* manager, int id = -1, IdContext* = 0);
+      Relation(Aligner* aligner_=0,
+	       DepthImageConverter* converter_=0,
+	       SensingFrameNode* referenceSensingFrame_=0,
+	       SensingFrameNode* currentSensingFrame_=0,
+	       const std::string& topic_ ="",
+	       int inliers_ = 0,
+	       int error_ = 0,
+	       MapManager* manager = 0, 
+	       int id = -1, 
+	       IdContext* context= 0);
       inline Aligner* aligner() {return _aligner;}
-      inline Conveter* converter() {return _converter;}
-      SensingFrameNode* referenceSensingFrame() ;
-      SensingFrameNode* currentSensingFrame();
+      inline DepthImageConverter* converter() {return _converter;}
+      SensingFrameNode* referenceSensingFrame() {return _referenceSensingFrame;}
+      SensingFrameNode* currentSensingFrame() {return _currentSensingFrame;}
+      const std::string& topic() { return _topic;}
+      int inliers() const {return _inliers;}
+      float error() const { return _error;}
+
+      virtual void serialize(ObjectData& data, IdContext& context);
+      virtual void deserialize(ObjectData& data, IdContext& context);
+
+    protected:
       Aligner* _aligner;
       DepthImageConverter* _converter;
       SensingFrameNode* _referenceSensingFrame;
       SensingFrameNode* _currentSensingFrame;
-      int inliners;
-      float error;
+      std::string _topic;
+      int _inliers;
+      float _error;
     };
-    */
 
     TwoDepthImageAlignerNode(MapManager* manager_,
 			     RobotConfiguration* config_,

@@ -24,6 +24,50 @@ namespace pwn_boss {
   }
 
 
+  TwoDepthImageAlignerNode::Relation::Relation(Aligner* aligner_,
+					       DepthImageConverter* converter_,
+					       SensingFrameNode* referenceSensingFrame_,
+					       SensingFrameNode* currentSensingFrame_,
+					       const std::string& topic_,
+					       int inliers_,
+					       int error_,
+					       MapManager* manager_, 
+					       int id, 
+					       IdContext* context): MapNodeBinaryRelation(manager_, id, context) {
+    _aligner = aligner_;
+    _converter = converter_;
+    _referenceSensingFrame = referenceSensingFrame_;
+    _currentSensingFrame = currentSensingFrame_;
+    _topic = topic_;
+    _inliers = inliers_;
+    _error = error_;
+  }
+
+
+
+  void TwoDepthImageAlignerNode::Relation::serialize(ObjectData& data, IdContext& context) {
+    MapNodeBinaryRelation::serialize(data,context);
+    data.setPointer("aligner", _aligner);
+    data.setPointer("converter", _converter);
+    data.setPointer("currentSensingFrame", _currentSensingFrame);
+    data.setPointer("referenceSensingFrame", _referenceSensingFrame);
+    data.setString("topic", _topic);
+    data.setInt("inliers", _inliers);
+    data.setFloat("error", _error);
+  }
+  
+  void TwoDepthImageAlignerNode::Relation::deserialize(ObjectData& data, IdContext& context) {
+    MapNodeBinaryRelation::deserialize(data,context);
+    data.getReference("aligner").bind(_aligner);
+    data.getReference("converter").bind(_converter);
+    data.getReference("currentSensingFrame").bind(_currentSensingFrame);
+    data.getReference("referenceSensingFrame").bind(_referenceSensingFrame);
+    _topic = data.getString("topic");
+    _inliers = data.getInt("inliers");
+    _error = data.getFloat("error");
+  }
+  
+
   TwoDepthImageAlignerNode::TwoDepthImageAlignerNode(MapManager* manager_,
 						     RobotConfiguration* config_,
 						     DepthImageConverter* converter_,
@@ -41,7 +85,7 @@ namespace pwn_boss {
 
   void TwoDepthImageAlignerNode::processNode(MapNode* node_){
    cerr << "START ITERATION" << endl;
- 
+   std::vector<Serializable*> crearedObjects;
     SensingFrameNode* sensingFrame = dynamic_cast<SensingFrameNode*>(node_);
     if (! sensingFrame)
       return;
@@ -80,8 +124,7 @@ namespace pwn_boss {
     projector->setCameraMatrix(cameraMatrix);
     pwn::Frame* frame = new pwn::Frame;
     _converter->compute(*frame,scaledImage, sensorOffset);
-
- 
+  
     MapNodeBinaryRelation* odom=0;
 
     std::vector<MapNode*> oneNode(1);
@@ -204,7 +247,11 @@ namespace pwn_boss {
       }
       
       cerr << "adding result" << endl;
-      MapNodeBinaryRelation* newRel= new MapNodeBinaryRelation(newRoot->manager());
+      
+      Relation* newRel = new Relation(_aligner, _converter, 
+	       _previousSensingFrameNode, sensingFrame,
+	       _topic, _aligner->inliers(), _aligner->error(), _manager);
+      newRel->setOwner(newRoot);
       newRel->nodes()[0] = newRoot;
       newRel->nodes()[1] = _previousSensingFrameNode;
       Eigen::Isometry3d iso;
@@ -250,4 +297,7 @@ namespace pwn_boss {
     cerr << "END ITERATION" << endl;
   }
 
+  typedef TwoDepthImageAlignerNode::Relation TwoDepthImageAlignerNode_Relation; 
+
+  BOSS_REGISTER_CLASS(TwoDepthImageAlignerNode_Relation);
 }

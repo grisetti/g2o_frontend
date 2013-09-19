@@ -266,9 +266,11 @@ namespace boss_map {
     std::set<MapNodeRelation*>::iterator it=_relations.find(relation);
     bool added = true;
     if (it == _relations.end()) {
-       added = false;
-    } else {
       _relations.insert(relation);
+    } else {
+      removeRelation(relation);
+      _relations.insert(relation);
+      added = false;
     }
     //cerr << "inserting relation " << relation << endl;
     for(size_t i=0; i<relation->nodes().size(); i++){

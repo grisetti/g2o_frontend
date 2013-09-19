@@ -34,7 +34,7 @@ using namespace pwn_boss;
 
 
 
-void readConfig(const std::string /* prefix*/, Aligner*& aligner, DepthImageConverter*& converter, const std::string& configFile){
+std::vector<Serializable*> readConfig(const std::string /* prefix*/, Aligner*& aligner, DepthImageConverter*& converter, const std::string& configFile){
   aligner = 0;
   converter = 0;
   Deserializer des;
@@ -63,12 +63,7 @@ void readConfig(const std::string /* prefix*/, Aligner*& aligner, DepthImageConv
     
   }
 
-  Serializer ser;
-  ser.setFilePath("new.conf");
-  for (size_t i=0; i<instances.size(); i++){
-    ser.writeObject(*instances[i]);
-  }
- 
+  return instances;
 }
 
 Aligner* aligner;
@@ -99,7 +94,7 @@ int main(int argc, char** argv) {
   cerr << "processing log file [" << logFile << "] with parameters read from [" << configFile << "]" << endl;
 
   cerr << "reading the configuration from file [" << configFile << "]" << endl;
-  readConfig(argv[0], aligner, converter, configFile);
+  std::vector<Serializable*> alignerInstances =  readConfig(argv[0], aligner, converter, configFile);
 
   cerr<< "Aligner: " << aligner << endl;
   cerr<< "Converter: " << converter << endl;
@@ -144,6 +139,42 @@ int main(int argc, char** argv) {
       pairwiseAligner->processNode(s);
     }
   }
+
+  cerr << "writing out things" << endl;
+  Serializer ser;
+  ser.setFilePath("out.log");
+  for (size_t i = 0; i< alignerInstances.size(); i++){
+    ser.writeObject(*alignerInstances[i]);
+  }
+  conf->serializeInternals(ser);
+  ser.writeObject(*conf);
+
+  ReferenceFrame* lastFrame = 0;
+  for (size_t i = 0; i<sensorDatas.size(); i++) {
+    if (lastFrame != sensorDatas[i]->robotReferenceFrame()){
+      lastFrame = sensorDatas[i]->robotReferenceFrame();
+      ser.writeObject(*lastFrame);
+    }
+    ser.writeObject(*sensorDatas[i]);
+  }
+  ser.writeObject(*manager);
+  for (std::set<MapNode*>::iterator it = manager->nodes().begin(); it!=manager->nodes().end(); it++)
+    ser.writeObject(**it);
+  cerr << "writing out " << manager->relations().size() << " relations" << endl;
+  for (std::set<MapNodeRelation*>::iterator it = manager->relations().begin(); it!=manager->relations().end(); it++)
+    ser.writeObject(**it);
+
+  
+  // write the aligner stuff
+
+  // write the robot configuration
+
+  // write the sensor data
+
+  // write the manager
+
+  // write the objects in the manager
+
 
   
   // // write back the log
