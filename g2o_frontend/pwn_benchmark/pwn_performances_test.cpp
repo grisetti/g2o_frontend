@@ -17,6 +17,8 @@ int main(int argc, char **argv) {
   int pj_imageRows;
   int pj_imageCols;
   int ng_minPoints;
+  int chunkStep;
+
   float ng_worldRadius;
   float ng_scale;
   float ng_curvatureThreshold;
@@ -60,6 +62,8 @@ int main(int argc, char **argv) {
   arg.param("al_outerIterations", al_outerIterations, 10, "Specify the outer iterations");
   arg.param("al_inlierMaxChi2", al_inlierMaxChi2, 1e3, "Max chi2 error value for the alignment step");
 
+  arg.param("chunkStep", chunkStep, 30, "Reset the merging process every chunkStep images");
+
   arg.param("benchmarkFilename", benchmarkFilename, "pwn_benchmark.txt", "Specify the name of the file that will contain the results of the benchmark");
   arg.param("absoluteTrajectoryFilename", absoluteTrajectoryFilename, "pwn_absolute_trajectory.txt", "Specify the name of the file that will contain the absolute trajectory computed");
   arg.param("relativeTrajectoryFilename", relativeTrajectoryFilename, "pwn_relative_trajectory.txt", "Specify the name of the file that will contain the relative trajectory computed");
@@ -97,6 +101,7 @@ int main(int argc, char **argv) {
   pwnPerformancesAnalyzer.setInnerIterations(al_innerIterations);
   pwnPerformancesAnalyzer.setVerbose(verbose);
   pwnPerformancesAnalyzer.setMaxDistance(pj_maxDistance);
+  pwnPerformancesAnalyzer.setChunkStep(chunkStep);
 
   /************************************************************************
    *                       Sequential Alignment                           *

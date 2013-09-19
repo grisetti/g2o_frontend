@@ -47,6 +47,10 @@ namespace pwn {
     _referenceDepthFilename = ""; 
     _currentDepthFilename = "";
     _scaleFactor = 0.001f;
+    _chunkStep = 30;
+    _counter = 0;
+    _localPose = Isometry3f::Identity();
+    _chunkInitialPose = Isometry3f::Identity();
   }
 
   PWNPerformancesAnalyzer::~PWNPerformancesAnalyzer() {
@@ -71,6 +75,7 @@ namespace pwn {
 	return false;
       }
       parseGroundTruth(_absolutePose, _isGroundtruth, atof(initialTimestamp.c_str()));    
+      _chunkInitialPose = _absolutePose;
       istringstream issAssociations(line);
       issAssociations >> _currentTimestamp >> _currentDepthFilename;
     }
@@ -87,9 +92,18 @@ namespace pwn {
     _converter->compute(_referenceFrame, _referenceScaledDepth, _sensorOffset, false);
     _converter->compute(_currentFrame, _currentScaledDepth, _sensorOffset, false);
 
-    _scene.add(_referenceFrame, _absolutePose);
-    _merger->merge(&_scene, _absolutePose * _sensorOffset);
-    
+    if(_counter % _chunkStep == 0 && _counter != 0) {
+      char name[1024];
+      sprintf(name, "part-%04d.pwn", _counter);
+      _scene.save(name, 5, true, _chunkInitialPose);
+      _scene.clear();
+      _localPose = Isometry3f::Identity();
+      _chunkInitialPose = _absolutePose;
+    }
+    _scene.add(_referenceFrame, _localPose);
+    _merger->merge(&_scene, _localPose * _sensorOffset);
+    _counter++;
+
     return true;
   }
   
@@ -105,7 +119,7 @@ namespace pwn {
       _indexImage.resize(_imageRows, _imageCols);
     if(_scaledIndexImage.cols() != _scaledImageCols || _scaledIndexImage.rows() != _scaledImageRows) 
       _scaledIndexImage.resize(_scaledImageRows, _scaledImageCols);
-    _projector->setTransform(_absolutePose * _sensorOffset);
+    _projector->setTransform(_localPose * _sensorOffset);
     _projector->project(_scaledIndexImage, _referenceScaledDepth, _scene.points());    
     _converter->compute(_subScene, _referenceScaledDepth, _sensorOffset, false);
     _aligner->setReferenceFrame(&_subScene);
@@ -126,14 +140,14 @@ namespace pwn {
     _absolutePose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     _localPose = _localPose * _relativePose;
     _localPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-
+	
     // Initialize dummy aligner
     _dummyAligner->setReferenceFrame(&_referenceFrame);
     _dummyAligner->setCurrentFrame(&_currentFrame);
     _dummyAligner->setInitialGuess(_relativePose);
     _dummyAligner->setSensorOffset(_sensorOffset);
 
-    _currentFrame.save((_currentDepthFilename.substr(0, _currentDepthFilename.size() - 3) + "pwn").c_str(), 10, true, _absolutePose);   
+    //_currentFrame.save((_currentDepthFilename.substr(0, _currentDepthFilename.size() - 3) + "pwn").c_str(), 10, true, _absolutePose);   
 
     // Save clouds
     // refFrame.save("reference.pwn", 1, true, Eigen::Isometry3f::Identity());

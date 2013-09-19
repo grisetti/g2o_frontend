@@ -59,7 +59,8 @@ namespace pwn {
     inline void setInlierMaxChi2(float inlierMaxChi2) { _linearizer->setInlierMaxChi2(inlierMaxChi2); }
     inline void setInnerIterations(int innerIterations) { _aligner->setInnerIterations(innerIterations); }    
     inline void setOuterIterations(int outerIterations) { _aligner->setOuterIterations(outerIterations); }
-    
+    inline void setChunkStep(int chunkStep_) { _chunkStep = chunkStep_; }
+
     inline float scaleFactor() { return _scaleFactor; }
     inline float worldRadius() { return _statsCalculator->worldRadius(); }
     inline int minImageRadius() { return _statsCalculator->minImageRadius(); }
@@ -73,6 +74,7 @@ namespace pwn {
     inline float inlierMaxChi2() { return _linearizer->inlierMaxChi2(); }
     inline int innerIterations() { return _aligner->innerIterations(); }    
     inline int outerIterations() { return _aligner->outerIterations(); }
+    inline int chunkStep() { return _chunkStep; }
     inline const DepthImage &referenceDepth() { return _referenceDepth; }
     inline const DepthImage &currentDepth() { return _currentDepth; }
     inline const DepthImage &referenceScaledDepth() { return _referenceScaledDepth; }
@@ -84,10 +86,12 @@ namespace pwn {
 
   protected:
     // Alignment structures
+    int _chunkStep, _counter;
     float _scaleFactor;
     string _referenceDepthFilename, _currentDepthFilename;
     DepthImage _referenceDepth, _currentDepth, _referenceScaledDepth, _currentScaledDepth;
     MatrixXi _indexImage, _scaledIndexImage;
+    Isometry3f _localPose, _chunkInitialPose;
     Frame _referenceFrame, _currentFrame, _scene, _subScene; 
     StatsCalculator *_statsCalculator;
     PointInformationMatrixCalculator *_pointInformationMatrixCalculator;
