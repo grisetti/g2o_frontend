@@ -17,6 +17,12 @@ namespace pwn_boss {
 
   }
 
+  void computeScaledParameters (int& rows, int& cols, Eigen::Matrix3f& cameraMatrix, float scale) {
+    cameraMatrix.block<2,3>(0,0)*=1./scale;
+    rows *=1./scale;
+    cols *=1./scale;
+  }
+
 
   TwoDepthImageAlignerNode::Relation::Relation(Aligner* aligner_,
 					       DepthImageConverter* converter_,
@@ -108,17 +114,14 @@ namespace pwn_boss {
     int c=depthImage.cols();
     
     DepthImage scaledImage;
+    DepthImage::scale(scaledImage,depthImage,_scale);
     Eigen::Matrix3f cameraMatrix;
     convertScalar(cameraMatrix,_cameraMatrix);
     
-    //computeScaledParameters(r,c,cameraMatrix,_scale);
+    computeScaledParameters(r,c,cameraMatrix,_scale);
     PinholePointProjector* projector=dynamic_cast<PinholePointProjector*>(_converter->_projector);
     cameraMatrix(2,2)=1;
     projector->setCameraMatrix(cameraMatrix);
-    projector->setImageSize(depthImage.rows(), depthImage.cols());
-    projector->scale(1.0/_scale);
-
-    DepthImage::scale(scaledImage,depthImage,_scale);
     pwn::Frame* frame = new pwn::Frame;
     _converter->compute(*frame,scaledImage, sensorOffset);
   
@@ -134,11 +137,9 @@ namespace pwn_boss {
       _aligner->setReferenceFrame(_previousFrame);
       _aligner->setCurrentFrame(frame);
       
+      _aligner->correspondenceFinder()->setSize(r,c);
       PinholePointProjector* projector=(PinholePointProjector*)(_aligner->projector());
       projector->setCameraMatrix(cameraMatrix);
-      projector->setImageSize(depthImage.rows(), depthImage.cols());
-      projector->scale(1.0/_scale);
-      _aligner->correspondenceFinder()->setImageSize(projector->imageRows(), projector->imageCols());
 
       /*
 	cerr << "correspondenceFinder: "  << r << " " << c << endl; 

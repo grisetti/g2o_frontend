@@ -246,7 +246,7 @@ int main(int argc, char **argv) {
     imageCols = refDepthImage.cols();
     scaledImageRows = imageRows / ng_scale;
     scaledImageCols = imageCols / ng_scale;
-    dummyCorrespondenceFinder.setSize(scaledImageRows, scaledImageCols);
+    dummyCorrespondenceFinder.setImageSize(scaledImageRows, scaledImageCols);
     referenceDepth = imread(refDepthImageFilename.c_str(), -1);
     referenceDepth.convertTo(referenceDepthFlt, CV_32FC1, 1.0f/1000.0f);
     referenceImage = imread(refColorImageFilename, -1);

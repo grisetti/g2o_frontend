@@ -857,14 +857,17 @@ void applySettings() {
   //   cySpinBox->setValue(cameraMatrix(1, 2));
   // }
   
+  //cerr << "pinhole" << endl;
   pinholePointProjector.setCameraMatrix(cameraMatrix);
   pinholePointProjector.setMaxDistance(pj_maxDistance);
   float angularResolution = imageColsSpinBox->value() / (2.0f * angularFOVSpinBox->value());
+  //cerr << "cylindrical" << endl;
   cylindricalPointProjector.setAngularFov(angularFOVSpinBox->value());
   cylindricalPointProjector.setAngularResolution(angularResolution);
   cylindricalPointProjector.setVerticalCenter(imageRowsSpinBox->value() / 2.0f);
   cylindricalPointProjector.setVerticalFocalLenght(fySpinBox->value());
   
+  //cerr << "statscalculator" << endl;
   statsCalculator.setWorldRadius(ng_minImageRadiusSpinBox->value());
   statsCalculator.setMinImageRadius(ng_maxImageRadiusSpinBox->value());
   statsCalculator.setMinImageRadius(ng_minPointsSpinBox->value());
@@ -873,6 +876,7 @@ void applySettings() {
   pointInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
   normalInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
 
+  //cerr << "converter" << endl;
   if(multiPointProjectorCheckBox->isChecked() == true)
     converter._projector=&multiPointProjector;
   else if(cylindricalPointProjectorCheckBox->isChecked() == true)
@@ -885,25 +889,29 @@ void applySettings() {
 
   statsCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
 
+  //cerr << "correspondence finder" << endl;
+  
   correspondenceFinder.setInlierDistanceThreshold(cf_inlierDistanceThresholdSpinBox->value());
   correspondenceFinder.setFlatCurvatureThreshold(cf_flatCurvatureThresholdSpinBox->value());  
   correspondenceFinder.setInlierCurvatureRatioThreshold(cf_inlierCurvatureRatioThresholdSpinBox->value());
   correspondenceFinder.setInlierNormalAngularThreshold(cosf(cf_inlierNormalAngularThresholdSpinBox->value()));
-  correspondenceFinder.setSize(imageColsSpinBox->value(), imageRowsSpinBox->value());
-  
+  correspondenceFinder.setImageSize(imageColsSpinBox->value(), imageRowsSpinBox->value());
   linearizer.setInlierMaxChi2(al_inlierMaxChi2SpinBox->value());
 
+  //cerr << "aligner" << endl;
   if(multiPointProjectorCheckBox->isChecked() == true)
     aligner.setProjector(&multiPointProjector);
   else if(cylindricalPointProjectorCheckBox->isChecked() == true)
     aligner.setProjector(&cylindricalPointProjector);
   else
     aligner.setProjector(&pinholePointProjector);
+  aligner.projector()->setImageSize(imageColsSpinBox->value(), imageRowsSpinBox->value());
   aligner.setLinearizer(&linearizer);
   linearizer.setAligner(&aligner);
   aligner.setCorrespondenceFinder(&correspondenceFinder);
   aligner.setInnerIterations(al_innerIterationsSpinBox->value());
   aligner.setOuterIterations(al_outerIterationsSpinBox->value());
+  //cerr << "done" << endl;
 }
 
 void checkProjectorSelection() {

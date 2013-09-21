@@ -42,8 +42,8 @@ namespace pwn {
     inline float flatCurvatureThreshold() const { return _flatCurvatureThreshold; }
     inline float inlierCurvatureRatioThreshold() const { return _inlierCurvatureRatioThreshold; }
     inline float inlierNormalAngularThreshold() const { return _inlierNormalAngularThreshold; }
-    inline int rows() const { return _rows; }
-    inline int cols() const { return _cols; }
+    inline int imageRows() const { return _rows; }
+    inline int imageCols() const { return _cols; }
 
     inline void setInlierDistanceThreshold(const float inlierDistanceThreshold_) {
       _inlierDistanceThreshold = inlierDistanceThreshold_;
@@ -53,7 +53,7 @@ namespace pwn {
     inline void setInlierCurvatureRatioThreshold(const float inlierCurvatureRatioThreshold_) { _inlierCurvatureRatioThreshold = inlierCurvatureRatioThreshold_; }
     inline void setInlierNormalAngularThreshold(const float inlierNormalAngularThreshold_) { _inlierNormalAngularThreshold = inlierNormalAngularThreshold_; }
 
-    inline void setSize(const int rows_, const int cols_) {
+    inline void setImageSize(const int rows_, const int cols_) {
       if(_rows != rows_ || _cols != cols_) {
 	_rows = rows_;
 	_cols = cols_;

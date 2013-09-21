@@ -10,45 +10,46 @@ namespace pwn {
   void MultiPointProjector::ChildProjectorInfo::serialize(ObjectData& data, IdContext& /*context*/) {
     data.setPointer("projector",pointProjector);
     t2v(sensorOffset).toBOSS(data,"sensorOffset");
-    data.setInt("width",width);
-    data.setInt("height",height);
   }
   void MultiPointProjector::ChildProjectorInfo::deserialize(ObjectData& data, IdContext& context){
     data.getReference("projector").bind(pointProjector);
     Vector6f v;
     v.fromBOSS(data,"sensorOffset");
     sensorOffset=v2t(v);
-    width=data.getInt("width");
-    height=data.getInt("height");
-    if(indexImage.rows() != width || indexImage.cols() != height)
-      indexImage.resize(width, height);    
   }
 
   void MultiPointProjector::ChildProjectorInfo::deserializeComplete(){
   }
 
-  void MultiPointProjector::size(int &rows, int &cols) {
+  void MultiPointProjector::computeImageSize(int &rows, int &cols) const {
     // Compute total image size
     rows = 0;
     cols = 0;
     for(size_t i = 0; i < _pointProjectors.size(); i++) {
-      if(_pointProjectors[i].width > rows)
-	rows = _pointProjectors[i].width;
-      cols += _pointProjectors[i].height;
+      if(_pointProjectors[i].pointProjector->imageRows() > rows){
+	rows = _pointProjectors[i].pointProjector->imageRows();
+      }
+      cols += _pointProjectors[i].pointProjector->imageCols();
     }
   }
 
   void MultiPointProjector::project(IntImage &indexImage, 
 				    Eigen::MatrixXf &depthImage, 
-				    const PointVector &points) const {
+				    const PointVector &points) {
+
+    if (!_imageRows || ! _imageCols)
+      throw std::runtime_error("projector image not set");
+
     // Compute total image size
     int maxWidth = 0;
     int totalHeight = 0;
-    for(size_t i = 0; i < _pointProjectors.size(); i++) {
-      if(_pointProjectors[i].width > maxWidth)
-	maxWidth = _pointProjectors[i].width;
-      totalHeight += _pointProjectors[i].height;
-    }
+    computeImageSize(maxWidth, totalHeight);
+    setImageSize(maxWidth, totalHeight);
+    // for(size_t i = 0; i < _pointProjectors.size(); i++) {
+    //   if(_pointProjectors[i].width > maxWidth)
+    // 	maxWidth = _pointProjectors[i].width;
+    //   totalHeight += _pointProjectors[i].height;
+    // }
   
     // Resize the output images
     indexImage.resize(maxWidth, totalHeight);
@@ -60,7 +61,7 @@ namespace pwn {
     for(size_t i = 0; i < _pointProjectors.size(); i++) {
       ChildProjectorInfo& childInfo = _pointProjectors[i];
       //const int currentWidth = childInfo.width;
-      const int currentHeight = childInfo.height;
+      const int currentHeight = childInfo.pointProjector->imageCols();
       PointProjector *currentPointProjector = childInfo.pointProjector;
       IntImage& currentIndexImage = childInfo.indexImage;
       Eigen::MatrixXf& currentDepthImage = childInfo.depthImage;
@@ -93,8 +94,8 @@ namespace pwn {
     PointVector currentPoints;
     int columnOffset = 0;
     for(size_t i = 0; i < _pointProjectors.size(); i++) {
-      const int width = _pointProjectors[i].width;
-      const int height = _pointProjectors[i].height;
+      const int width = _pointProjectors[i].pointProjector->imageRows();
+      const int height = _pointProjectors[i].pointProjector->imageCols();
 
       PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
       if(currentPointProjector != 0) {
@@ -132,8 +133,8 @@ namespace pwn {
     Gaussian3fVector currentGaussians;
     int columnOffset = 0;
     for(size_t i = 0; i < _pointProjectors.size(); i++) {
-      const int width = _pointProjectors[i].width;
-      const int height = _pointProjectors[i].height;
+      const int width = _pointProjectors[i].pointProjector->imageRows();
+      const int height = _pointProjectors[i].pointProjector->imageCols();
 
       PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
       if(currentPointProjector != 0) {
@@ -168,8 +169,8 @@ namespace pwn {
     IntImage currentIntervalImage;
     int columnOffset = 0;
     for(size_t i = 0; i < _pointProjectors.size(); i++) {
-      const int width = _pointProjectors[i].width;
-      const int height = _pointProjectors[i].height;
+      const int width = _pointProjectors[i].pointProjector->imageRows();
+      const int height = _pointProjectors[i].pointProjector->imageCols();
 
       if(currentIntervalImage.rows() != width || currentIntervalImage.cols() != height)
 	currentIntervalImage.resize(width, height);
@@ -193,17 +194,17 @@ namespace pwn {
     int maxWidth = 0;
     int totalHeight = 0;
     for(size_t i = 0; i < _pointProjectors.size(); i++) {
-      if(_pointProjectors[i].width > maxWidth)
-	maxWidth = _pointProjectors[i].width;
-      totalHeight += _pointProjectors[i].height;
+      if(_pointProjectors[i].pointProjector->imageRows() > maxWidth)
+	maxWidth = _pointProjectors[i].pointProjector->imageRows();
+      totalHeight += _pointProjectors[i].pointProjector->imageCols();
     }
   
     int columnOffset = 0;
     int currentX = -1, currentY = -1;
     float currentF = 0.0f;
     for(size_t i = 0; i < _pointProjectors.size(); i++) {
-      const int width = _pointProjectors[i].width;
-      const int height = _pointProjectors[i].height;
+      const int width = _pointProjectors[i].pointProjector->imageRows();
+      const int height = _pointProjectors[i].pointProjector->imageCols();
     
       PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
       if(currentPointProjector != 0) {
@@ -256,6 +257,16 @@ namespace pwn {
       _pointProjectors[i].pointProjector = 0;
     }
     _pointProjectors.clear();
+  }
+
+  void  MultiPointProjector::scale(float scalingFactor){
+    for(size_t i = 0; i < _pointProjectors.size(); i++) {
+      if(_pointProjectors[i].pointProjector != 0)
+	_pointProjectors[i].pointProjector->scale(scalingFactor);
+    }
+    int r,c;
+    computeImageSize(r,c);
+    setImageSize(r,c);
   }
 
 

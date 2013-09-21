@@ -1,4 +1,5 @@
 #include "pinholepointprojector.h"
+#include <stdexcept>
 
 namespace pwn {
   using namespace boss;
@@ -50,7 +51,10 @@ namespace pwn {
 
   void PinholePointProjector::project(IntImage &indexImage,
 				      Eigen::MatrixXf &depthImage, 
-				      const PointVector &points) const {
+				      const PointVector &points) {
+    if (!_imageRows || ! _imageCols)
+      throw std::runtime_error("projector image not set");
+    indexImage.resize(_imageRows, _imageCols);
     depthImage.resize(indexImage.rows(), indexImage.cols());
     depthImage.fill(std::numeric_limits<float>::max());
     indexImage.fill(-1);
@@ -77,6 +81,9 @@ namespace pwn {
 					       const Eigen::MatrixXf& depthImage, 
 					       const float worldRadius,
 					       const bool blackBorders) const {
+    if (!_imageRows || ! _imageCols)
+      throw std::runtime_error("projector image not set");
+    intervalImage.resize(_imageRows, _imageCols);
     intervalImage.resize(depthImage.rows(), depthImage.cols());
     int cpix = 0;
     for (int c=0; c<depthImage.cols(); c++){
@@ -95,6 +102,9 @@ namespace pwn {
   void PinholePointProjector::unProject(PointVector& points, 
 					IntImage& indexImage,
 					const Eigen::MatrixXf& depthImage) const {
+    if (indexImage.rows() != _imageRows ||
+	indexImage.cols() != _imageCols)
+      throw std::runtime_error("image size does not match");
     points.resize(depthImage.rows()*depthImage.cols());
     int count = 0;
     indexImage.resize(depthImage.rows(), depthImage.cols());
@@ -157,6 +167,12 @@ namespace pwn {
     }
     points.resize(count);
     gaussians.resize(count);
+  }
+
+  void  PinholePointProjector::scale(float scalingFactor){
+    _cameraMatrix.block<2,3>(0,0) *= scalingFactor;
+    _imageRows *= scalingFactor;
+    _imageCols *= scalingFactor;
   }
 
 

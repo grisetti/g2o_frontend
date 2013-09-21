@@ -70,7 +70,7 @@ public:
    */
   virtual void project(IntImage &indexImage, 
 		       Eigen::MatrixXf &depthImage, 
-		       const PointVector& points) const;
+		       const PointVector& points);
 
   /**
    *  Virtual method that projects the sides of the square regions used to compute the stats of the given point
@@ -195,6 +195,12 @@ public:
       return p.coeff(0);
     return p.coeff(1);
   }
+
+  /**
+     computes the new camera parameters that zoom/unzoom the current view
+  */
+  virtual void scale(float scalingFactor);
+
 
   /**serialization functions*/
   virtual void serialize(boss::ObjectData& data, boss::IdContext& context);

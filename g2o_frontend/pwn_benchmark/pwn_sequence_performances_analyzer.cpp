@@ -304,8 +304,8 @@ int main(int argc, char **argv) {
     imageCols = refDepthImage.cols();
     scaledImageRows = imageRows / ng_scale;
     scaledImageCols = imageCols / ng_scale;
-    correspondenceFinder.setSize(scaledImageRows, scaledImageCols);
-    dummyCorrespondenceFinder.setSize(scaledImageRows, scaledImageCols);
+    correspondenceFinder.setImageSize(scaledImageRows, scaledImageCols);
+    dummyCorrespondenceFinder.setImageSize(scaledImageRows, scaledImageCols);
 
     // Compute stats
     Frame refFrame, currFrame, refFrameNoNormals, currFrameNoNormals;

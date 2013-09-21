@@ -72,28 +72,29 @@ void generateConfig(Aligner*& aligner, DepthImageConverter*& converter, const st
   int nCols = cols;
   MatrixXf nCameraMatrix = cameraMatrix;
   computeScaledParameters(nRows, nCols, nCameraMatrix, 1./nscale);
-
-
   PinholePointProjector * convProjector = new PinholePointProjector;
   StatsCalculator* statsCalculator = new StatsCalculator;
   PointInformationMatrixCalculator* pointInformationMatrixCalculator = new PointInformationMatrixCalculator;
   NormalInformationMatrixCalculator* normalInformationMatrixCalculator = new NormalInformationMatrixCalculator;
   converter = new DepthImageConverter (convProjector, statsCalculator, pointInformationMatrixCalculator, normalInformationMatrixCalculator);
   convProjector->setCameraMatrix(nCameraMatrix);
-  
+  convProjector->setImageSize(nRows, nCols);
     
 
 
   MatrixXf mCameraMatrix = cameraMatrix;
   int mRows = rows;
   int mCols = cols;
-  computeScaledParameters(mRows, mCols, mCameraMatrix, 1./mscale);
+
     
   PinholePointProjector * alProjector = new PinholePointProjector;
-  alProjector->setCameraMatrix(cameraMatrix);
+  computeScaledParameters(mRows, mCols, mCameraMatrix, 1./mscale);
+  alProjector->setCameraMatrix(mCameraMatrix);
+  alProjector->setImageSize(mRows, mCols);
+
   Linearizer * linearizer = new Linearizer;
   CorrespondenceFinder* correspondenceFinder = new CorrespondenceFinder;
-  correspondenceFinder->setSize(mRows, mCols);
+  correspondenceFinder->setImageSize(mRows, mCols);
   aligner = new Aligner;
   alProjector->setCameraMatrix(mCameraMatrix);
   aligner->setProjector(alProjector);

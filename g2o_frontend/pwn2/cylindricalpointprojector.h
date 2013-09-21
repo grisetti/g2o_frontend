@@ -61,7 +61,7 @@ namespace pwn {
      */
     virtual void project(IntImage &indexImage, 
 			 Eigen::MatrixXf &depthImage, 
-			 const PointVector& points) const;
+			 const PointVector& points) ;
 
     /**
      *  Virtual method that projects the sides of the square regions used to compute the stats of the given point
@@ -145,6 +145,9 @@ namespace pwn {
      *  constructors included.
      */
     void _updateMatrices();
+
+
+    virtual void  scale(float scalingFactor);
 
     /**
      *  Point projection method.

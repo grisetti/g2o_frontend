@@ -23,6 +23,18 @@ namespace pwn {
     _inverseVerticalFocalLenght = 1./_verticalFocalLenght;
   }
 
+
+  void  CylindricalPointProjector::scale(float scalingFactor){
+    _imageRows *= scalingFactor;
+    _imageCols *= scalingFactor;
+    _verticalCenter *= scalingFactor;
+    _verticalFocalLenght /=scalingFactor;
+    _angularResolution *= scalingFactor;
+    _imageRows *= scalingFactor;
+    _imageCols *= scalingFactor;
+  }
+
+
   inline bool CylindricalPointProjector::project(int &x, int &y, float &f, const Point &p) const {
     return _project(x, y, f, p);
   }
@@ -37,7 +49,12 @@ namespace pwn {
 
   void CylindricalPointProjector::project(IntImage &indexImage,
 					  Eigen::MatrixXf &depthImage, 
-					  const PointVector &points) const {
+					  const PointVector &points)  {
+
+    if (!_imageRows || ! _imageCols)
+      throw std::runtime_error("projector image not set");
+
+    indexImage.resize(_imageRows, _imageCols);
     depthImage.resize(indexImage.rows(), indexImage.cols());
     depthImage.fill(std::numeric_limits<float>::max());
     indexImage.fill(-1);
@@ -64,6 +81,9 @@ namespace pwn {
 						   const Eigen::MatrixXf& depthImage, 
 						   const float worldRadius,
 						   const bool /*blackBorders*/) const {
+    if (!_imageRows || ! _imageCols)
+      throw std::runtime_error("projector image not set");
+
     intervalImage.resize(depthImage.rows(), depthImage.cols());
     int cpix = 0;
     for (int c=0; c<depthImage.cols(); c++){

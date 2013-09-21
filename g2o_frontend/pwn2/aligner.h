@@ -31,6 +31,7 @@ namespace pwn {
     inline void setCurrentSensorOffset(const Eigen::Isometry3f currentSensorOffset_) { _currentSensorOffset = currentSensorOffset_; _currentSensorOffset.matrix().row(3) << 0,0,0,1;}
 
     inline const PointProjector* projector() const { return _projector; }
+    inline PointProjector* projector() { return _projector; }
     inline Linearizer* linearizer() { return _linearizer; }
     inline void setLinearizer(Linearizer* linearizer_) { _linearizer = linearizer_; 
       if( _linearizer) 

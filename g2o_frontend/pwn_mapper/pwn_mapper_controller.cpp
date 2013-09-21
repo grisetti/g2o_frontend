@@ -587,9 +587,9 @@ namespace pwn {
     
     // Set the camera matrix to the pinhole point projector
     _projector->setCameraMatrix(_scaledCameraMatrix);
-
+    _projector->setImageSize(_scaledImageRows, _scaledImageCols);
     // Set image size to the correspondence finder
-    _correspondenceFinder->setSize(_scaledImageRows, _scaledImageCols);
+    _correspondenceFinder->setImageSize(_scaledImageRows, _scaledImageCols);
 
     // Set image size to the merger
     _merger->setImageSize(_scaledImageRows, _scaledImageCols);

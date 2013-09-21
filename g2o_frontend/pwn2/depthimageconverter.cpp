@@ -26,7 +26,7 @@ namespace pwn {
 				    const bool blackBorders) {
     const float _normalWorldRadius = _statsCalculator->worldRadius();
     frame.clear();
-
+    _projector->setImageSize(depthImage.rows(), depthImage.cols());
     // resizing the temporaries
     if (depthImage.rows()!=_indexImage.rows() ||
 	depthImage.cols()!=_indexImage.cols()){
