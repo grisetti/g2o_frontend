@@ -95,8 +95,12 @@ namespace pwn {
 
 	_linearizer->setT(invT);
 	_linearizer->update();
-	H = _linearizer->H() + Matrix6f::Identity() * 1000.0f;
+	H = _linearizer->H() + Matrix6f::Identity();
 	b = _linearizer->b();
+
+	//H.setZero();
+	//b.setZero();
+	H += Matrix6f::Identity() * 1000.0f;
 	// add the priors
 	for (size_t j=0; j<_priors.size(); j++){
 	  const SE3Prior* prior = _priors[j];
@@ -116,7 +120,7 @@ namespace pwn {
 	Eigen::Isometry3f dT = v2t(dx);
 	invT = dT * invT;
       }
-
+      
       _T = invT.inverse();
       _T = v2t(t2v(_T));
       _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1;
@@ -145,17 +149,20 @@ namespace pwn {
   void Aligner::deserialize(boss::ObjectData& data, boss::IdContext& context){
     Identifiable::deserialize(data,context);
     cerr << "Aligner:: Deserialize" << endl;
+    cerr << "getting iterations" << endl;
     setOuterIterations(data.getInt("outerIterations"));
     setInnerIterations(data.getInt("innerIterations"));
+    cerr << "getting matrices" << endl;
     Vector6f v;
     v.fromBOSS(data,"referenceSensorOffset");
     _referenceSensorOffset=v2t(v);
     v.fromBOSS(data,"currentSensorOffset");
     _currentSensorOffset=v2t(v);
-    _referenceSensorOffset.matrix().fromBOSS(data,"referenceSensorOffset");
-    _currentSensorOffset.matrix().fromBOSS(data,"currentSensorOffset");
+    cerr << "getting projector" << endl;
     data.getReference("projector").bind(_projector);
+    cerr << "getting linearizer" << endl;
     data.getReference("linearizer").bind(_linearizer);
+    cerr << "getting correspondenceFinder" << endl;
     data.getReference("correspondenceFinder").bind(_correspondenceFinder);
   }
 

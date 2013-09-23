@@ -32,11 +32,13 @@ namespace pwn {
     inline void setCylindricalPointProjector(CylindricalPointProjector* const cylindricalPointProjector_) { _cylindricalPointProjector = cylindricalPointProjector_; }
     inline void setImageRows(const int imageRows_) { 
       _imageRows = imageRows_;
-      _correspondenceFinder->setSize(_imageRows, _imageCols);
+      _correspondenceFinder->setImageSize(_imageRows, _imageCols);
+      _cylindricalPointProjector->setImageSize(_imageRows, _imageCols);
     }
     inline void setImageCols(const int imageCols_) { 
       _imageCols = imageCols_; 
-      _correspondenceFinder->setSize(_imageRows, _imageCols);
+      _correspondenceFinder->setImageSize(_imageRows, _imageCols);
+      _cylindricalPointProjector->setImageSize(_imageRows, _imageCols);
     }
     inline void setSensorOffset(const Isometry3f sensorOffset_) { _sensorOffset = sensorOffset_; }
     
@@ -48,7 +50,8 @@ namespace pwn {
     // Correspondence finder and linearizer settings methods
     inline void setCorrespondenceFinder(CorrespondenceFinder* const correspondeceFinder_) { 
       _correspondenceFinder = correspondeceFinder_; 
-      _correspondenceFinder->setSize(_imageRows, _imageCols);
+      _correspondenceFinder->setImageSize(_imageRows, _imageCols);
+      _cylindricalPointProjector->setImageSize(_imageRows, _imageCols);
     }
     inline void setLinearizer(Linearizer* const linearizer_) { _linearizer = linearizer_; }
 

@@ -5,6 +5,7 @@
 #include "g2o_frontend/boss/object_data.h"
 #include "g2o_frontend/boss/identifiable.h"
 
+#include "pwn_typedefs.h"
 #include "homogeneousvector4f.h"
 
 namespace pwn {

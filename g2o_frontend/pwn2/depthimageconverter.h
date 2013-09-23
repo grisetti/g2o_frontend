@@ -34,9 +34,9 @@ namespace pwn {
   
     // this is the workspace of the object
     PointIntegralImage _integralImage;
-    Eigen::MatrixXi _indexImage;
-    Eigen::MatrixXi _intervalImage;
-    Eigen::MatrixXi _originalIndexImage;
+    IntImage _indexImage;
+    IntImage _intervalImage;
+    IntImage _originalIndexImage;
     Eigen::MatrixXf _zBuffer;
   
     virtual void serialize(boss::ObjectData& data, boss::IdContext& context);

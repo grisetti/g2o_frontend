@@ -12,20 +12,21 @@ class MultiPointProjector: public PointProjector {
   struct ChildProjectorInfo: public boss::Serializable{
     PointProjector *pointProjector;
     Eigen::Isometry3f sensorOffset;
-    int width;
-    int height;
+    //int width;
+    //int height;
     Eigen::MatrixXf depthImage;
-    Eigen::MatrixXi indexImage;
+    IntImage indexImage;
 
-    ChildProjectorInfo(PointProjector *pointProjector_=0,
+    ChildProjectorInfo(PointProjector *pointProjector_,
 		       Eigen::Isometry3f sensorOffset_=Eigen::Isometry3f::Identity(),
 		       int width_=0, int height_=0) {
       pointProjector = pointProjector_;
       sensorOffset = sensorOffset_;
-      width = width_;
-      height = height_;
-      if(indexImage.rows() != width || indexImage.cols() != height)
-	indexImage.resize(width, height);    
+      //width = width_;
+      //height = height_;
+      pointProjector->setImageSize(width_,height_);
+      if(indexImage.rows() != width_ || indexImage.cols() != height_)
+	indexImage.resize(width_, height_);    
     }
     virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
     virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
@@ -51,28 +52,30 @@ class MultiPointProjector: public PointProjector {
 			 int position) { 
     _pointProjectors[position].pointProjector = pointProjector_;
     _pointProjectors[position].sensorOffset = sensorOffset_;
-    _pointProjectors[position].width = width_;
-    _pointProjectors[position].height = height_;
+    pointProjector_->setImageSize(width_, height_);
   }
+
+
+  virtual void  scale(float scalingFactor);
 
   void clearProjectors();
 
-  virtual void size(int &rows, int &cols);
+  void computeImageSize(int &rows, int &cols) const;
 
-  virtual void project(Eigen::MatrixXi &indexImage, 
+  virtual void project(IntImage &indexImage, 
 		       Eigen::MatrixXf &depthImage, 
-		       const PointVector &points) const;
+		       const PointVector &points);
 
   virtual void unProject(PointVector &points,
-			 Eigen::MatrixXi &indexImage, 
+			 IntImage &indexImage, 
                          const Eigen::MatrixXf &depthImage) const;
 
   virtual void unProject(PointVector &points,
   			 Gaussian3fVector &gaussians,
-  			 Eigen::MatrixXi &indexImage,
+  			 IntImage &indexImage,
                          const Eigen::MatrixXf &depthImage) const;
   
-  virtual void projectIntervals(Eigen::MatrixXi& intervalImage, 
+  virtual void projectIntervals(IntImage& intervalImage, 
 				const Eigen::MatrixXf& depthImage, 
 				const float worldRadius,
 				const bool blackBorders=false) const;

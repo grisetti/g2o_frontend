@@ -121,8 +121,8 @@ namespace pwn {
     data.setFloat("flatCurvatureThreshold", flatCurvatureThreshold());
     data.setFloat("inlierCurvatureRatioThreshold", inlierCurvatureRatioThreshold());
     data.setFloat("inlierNormalAngularThreshold", inlierNormalAngularThreshold());
-    data.setInt("rows", rows());
-    data.setInt("cols", cols());
+    data.setInt("rows", imageRows());
+    data.setInt("cols", imageCols());
   }
 
   void CorrespondenceFinder::deserialize(boss::ObjectData& data, boss::IdContext& context){
@@ -133,7 +133,7 @@ namespace pwn {
     setInlierNormalAngularThreshold(data.getFloat("inlierNormalAngularThreshold"));
     int r = data.getInt("rows");
     int c = data.getInt("cols");
-    setSize(r,c);
+    setImageSize(r,c);
   }
 
 

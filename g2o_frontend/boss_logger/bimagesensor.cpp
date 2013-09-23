@@ -1,13 +1,14 @@
 #include "bimagesensor.h"
-#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/core/core.hpp"
 #include "g2o_frontend/boss/object_data.h"
 #include <stdexcept>
 
 #define BUF_BLOCK (4096*4)
 
-namespace boss {
+namespace boss_logger {
   
   using namespace std;
+  using namespace boss;
 
   ImageBLOB::ImageBLOB(){}
 

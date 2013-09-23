@@ -86,6 +86,9 @@ QCheckBox *pinholePointProjectorCheckBox, *cylindricalPointProjectorCheckBox, *m
 QSpinBox *ng_minImageRadiusSpinBox, *ng_maxImageRadiusSpinBox, *ng_minPointsSpinBox, *al_innerIterationsSpinBox, *al_outerIterationsSpinBox, *al_minNumInliersSpinBox, *imageRowsSpinBox, *imageColsSpinBox;
 QDoubleSpinBox *ng_worldRadiusSpinBox, *ng_scaleSpinBox, *ng_curvatureThresholdSpinBox, *cf_inlierNormalAngularThresholdSpinBox, *cf_flatCurvatureThresholdSpinBox, *cf_inlierCurvatureRatioThresholdSpinBox, *cf_inlierDistanceThresholdSpinBox, *al_minErrorSpinBox, *al_inlierMaxChi2SpinBox, *fxSpinBox, *fySpinBox, *cxSpinBox, *cySpinBox, *angularFOVSpinBox;
 
+float pj_maxDistance;
+float di_scaleFactor;
+
 int main(int argc, char **argv) {
   /************************************************************************
    *                           Input Handling                             *
@@ -99,7 +102,7 @@ int main(int argc, char **argv) {
 
   int al_innerIterations, al_outerIterations, al_minNumInliers; 
   float al_minError, al_inlierMaxChi2;
-
+  
   int vz_step;
 
   int imageRows, imageCols;
@@ -109,6 +112,9 @@ int main(int argc, char **argv) {
   g2o::CommandArgs arg;
   
   // Optional input parameters.
+  arg.param("pj_maxDistance", pj_maxDistance, 6, "Maximum distance of the points");
+  arg.param("di_scaleFactor", di_scaleFactor, 1000.0f, "Scale factor to apply to convert depth images in meters");
+
   arg.param("ng_minImageRadius", ng_minImageRadius, 10, "Specify the minimum number of pixels composing the square where to take points for a normal computation");
   arg.param("ng_maxImageRadius", ng_maxImageRadius, 30, "Specify the maximum number of pixels composing the square where to take points for a normal computation");
   arg.param("ng_minPoints", ng_minPoints, 50, "Specify the minimum number of points to be used to compute a normal");
@@ -420,6 +426,8 @@ int main(int argc, char **argv) {
     QString listItem(&(*it)[0]);
     if(listItem.endsWith(".pwn", Qt::CaseInsensitive))
       listWidget->addItem(listItem);
+    if(listItem.endsWith(".pgm", Qt::CaseInsensitive))
+      listWidget->addItem(listItem);
   }
 
   mainWindow->show();
@@ -483,24 +491,46 @@ int main(int argc, char **argv) {
 	    }
 
 	    string fname = item->text().toUtf8().constData();
+	    if (fname.substr(fname.size() - 3) == "pgm") {
+	      if (!depthImage.load(fname.c_str(), true, di_scaleFactor)) {
+		cerr << "WARNING: the depth image was not added in the viewer because of a problem while loading it!" << endl;
+		frame = 0;
+		if(referenceFrame) {
+		  delete referenceFrame;
+		  referenceFrame = 0;
+		}
+		else {
+		  delete currentFrame;
+		  currentFrame = 0;
+		}
+		continue;
+	      }
+	      DepthImage::scale(scaledDepthImage, depthImage, ng_scale);
+	      converter.compute(*frame, scaledDepthImage, sensorOffset, false);
+	    }
+
 	    Eigen::Isometry3f originPose = Eigen::Isometry3f::Identity();
 	    originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-	    // Load the cloud from the .pwn file
-	    if(!frame->load(originPose, fname.c_str())) {      
-	      cerr << "WARNING: the cloud was not added in the viewer because of a problem while loading it!" << endl;
-	      frame = 0;
-	      if(referenceFrame) {
-		delete referenceFrame;
-		referenceFrame = 0;
-	      }
-	      else {
-		delete currentFrame;
-		currentFrame = 0;
+	    if (fname.substr(fname.size() - 3) == "pwn") {
+	      // Load the cloud from the .pwn file
+	      if(!frame->load(originPose, fname.c_str())) {      
+		cerr << "WARNING: the cloud was not added in the viewer because of a problem while loading it!" << endl;
+		frame = 0;
+		if(referenceFrame) {
+		  delete referenceFrame;
+		  referenceFrame = 0;
+		}
+		else {
+		  delete currentFrame;
+		  currentFrame = 0;
+		}
+		continue;
 	      }
 	    }
-	    else {
-	      originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-	     // Computing information matrices
+	    originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+	    
+	    if (frame) {
+	      // Computing information matrices
 	      frame->pointInformationMatrix().resize(frame->points().size());
 	      frame->normalInformationMatrix().resize(frame->points().size());
 	      pointInformationMatrixCalculator.compute(frame->pointInformationMatrix(), frame->stats(), frame->normals());
@@ -520,8 +550,9 @@ int main(int argc, char **argv) {
 		referenceFilename = fname;
 		referencePose = originPose;
 	      }	      
+	      
+	      break;
 	    }
-	    break;
 	  }
 	}
       }
@@ -652,6 +683,7 @@ int main(int argc, char **argv) {
       
       // Align
       aligner.align();  
+      cout << "T: " << endl << aligner.T().matrix() << endl;
       
       Drawable *lastDrawable = viewer->drawableList().back();
       DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
@@ -665,6 +697,13 @@ int main(int argc, char **argv) {
 	lastDrawableFrame->drawableCorrespondences()->setCorrespondences(&correspondenceFinder.correspondences());
 	lastDrawableFrame->drawableCorrespondences()->setNumCorrespondences(correspondenceFinder.numCorrespondences());
       }
+      cerr << "Error:   " << aligner.error() << endl;
+      cerr << "Inliers: " << aligner.inliers() << endl;
+      cerr << "Error/Inliers: ";
+      if (aligner.inliers())
+	cerr << aligner.error()/aligner.inliers() << endl;
+      else
+	cerr << "NaN" << endl;
 
       // Show zBuffers.
       referenceScene->clear();
@@ -703,6 +742,14 @@ int main(int argc, char **argv) {
       // Align
       aligner.align();  
       
+      cerr << "Error:   " << aligner.error() << endl;
+      cerr << "Inliers: " << aligner.inliers() << endl;
+      cerr << "Error/Inliers: ";
+      if (aligner.inliers())
+	cerr << aligner.error()/aligner.inliers() << endl;
+      else
+	cerr << "NaN" << endl;
+
       Drawable *lastDrawable = viewer->drawableList().back();
       DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
       if(lastDrawableFrame) {
@@ -797,26 +844,30 @@ void applySettings() {
   
   // Compute the reduced camera matrix and image size
   cameraMatrix << 
-    fx, 0.0f, cx,
-    0.0f, fy, cy,
+    fxSpinBox->value(), 0.0f, cxSpinBox->value(),
+    0.0f, fySpinBox->value(), cySpinBox->value(),
     0.0f, 0.0f, 1.0f;  
   float scale = 1.0f / ng_scaleSpinBox->value();
   cameraMatrix = cameraMatrix * scale;
   cameraMatrix(2, 2) = 1.0f;
-  if(pinholePointProjectorCheckBox->isChecked()) {
-    fxSpinBox->setValue(cameraMatrix(0, 0));
-    fySpinBox->setValue(cameraMatrix(1, 1));
-    cxSpinBox->setValue(cameraMatrix(0, 2));
-    cySpinBox->setValue(cameraMatrix(1, 2));
-  }
+  // if(pinholePointProjectorCheckBox->isChecked()) {
+  //   fxSpinBox->setValue(cameraMatrix(0, 0));
+  //   fySpinBox->setValue(cameraMatrix(1, 1));
+  //   cxSpinBox->setValue(cameraMatrix(0, 2));
+  //   cySpinBox->setValue(cameraMatrix(1, 2));
+  // }
   
+  //cerr << "pinhole" << endl;
   pinholePointProjector.setCameraMatrix(cameraMatrix);
+  pinholePointProjector.setMaxDistance(pj_maxDistance);
   float angularResolution = imageColsSpinBox->value() / (2.0f * angularFOVSpinBox->value());
+  //cerr << "cylindrical" << endl;
   cylindricalPointProjector.setAngularFov(angularFOVSpinBox->value());
   cylindricalPointProjector.setAngularResolution(angularResolution);
   cylindricalPointProjector.setVerticalCenter(imageRowsSpinBox->value() / 2.0f);
   cylindricalPointProjector.setVerticalFocalLenght(fySpinBox->value());
   
+  //cerr << "statscalculator" << endl;
   statsCalculator.setWorldRadius(ng_minImageRadiusSpinBox->value());
   statsCalculator.setMinImageRadius(ng_maxImageRadiusSpinBox->value());
   statsCalculator.setMinImageRadius(ng_minPointsSpinBox->value());
@@ -825,34 +876,42 @@ void applySettings() {
   pointInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
   normalInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
 
+  //cerr << "converter" << endl;
   if(multiPointProjectorCheckBox->isChecked() == true)
     converter._projector=&multiPointProjector;
   else if(cylindricalPointProjectorCheckBox->isChecked() == true)
     converter._projector=&cylindricalPointProjector;
   else
     converter._projector=&pinholePointProjector;
+  converter._statsCalculator = &statsCalculator;
+  converter._pointInformationMatrixCalculator = &pointInformationMatrixCalculator;
+  converter._normalInformationMatrixCalculator = &normalInformationMatrixCalculator;
 
   statsCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
 
+  //cerr << "correspondence finder" << endl;
+  
   correspondenceFinder.setInlierDistanceThreshold(cf_inlierDistanceThresholdSpinBox->value());
   correspondenceFinder.setFlatCurvatureThreshold(cf_flatCurvatureThresholdSpinBox->value());  
   correspondenceFinder.setInlierCurvatureRatioThreshold(cf_inlierCurvatureRatioThresholdSpinBox->value());
   correspondenceFinder.setInlierNormalAngularThreshold(cosf(cf_inlierNormalAngularThresholdSpinBox->value()));
-  correspondenceFinder.setSize(imageColsSpinBox->value(), imageRowsSpinBox->value());
-  
+  correspondenceFinder.setImageSize(imageColsSpinBox->value(), imageRowsSpinBox->value());
   linearizer.setInlierMaxChi2(al_inlierMaxChi2SpinBox->value());
 
+  //cerr << "aligner" << endl;
   if(multiPointProjectorCheckBox->isChecked() == true)
     aligner.setProjector(&multiPointProjector);
   else if(cylindricalPointProjectorCheckBox->isChecked() == true)
     aligner.setProjector(&cylindricalPointProjector);
   else
     aligner.setProjector(&pinholePointProjector);
+  aligner.projector()->setImageSize(imageColsSpinBox->value(), imageRowsSpinBox->value());
   aligner.setLinearizer(&linearizer);
   linearizer.setAligner(&aligner);
   aligner.setCorrespondenceFinder(&correspondenceFinder);
   aligner.setInnerIterations(al_innerIterationsSpinBox->value());
   aligner.setOuterIterations(al_outerIterationsSpinBox->value());
+  //cerr << "done" << endl;
 }
 
 void checkProjectorSelection() {

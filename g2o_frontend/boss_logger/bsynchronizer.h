@@ -10,8 +10,8 @@
 #include "blasersensor.h"
 #include "bimusensor.h"
 
-namespace boss {
-
+namespace boss_logger {
+  using namespace boss;
 
   struct SyncTopicInstance;
 
@@ -65,7 +65,7 @@ namespace boss {
     };
 
     enum DroppedDataPolicy {KeepData,DeleteData};
-    enum DroppedFramePolicy {KeepFrame,DeleteFrame};
+    enum DroppedReferenceFramePolicy {KeepReferenceFrame,DeleteReferenceFrame};
 
     Synchronizer();
     SyncTopicInstance* addSyncTopic(const std::string& topic);
@@ -83,7 +83,7 @@ namespace boss {
 
     std::map<std::string, SyncTopicInstance*> syncTopics;
     std::set<SyncCondition*> syncConditions;
-    DroppedFramePolicy framePolcy;
+    DroppedReferenceFramePolicy framePolcy;
     DroppedDataPolicy  dataPolicy;
     std::vector<OutputHandler*> outputHandlers;
   };

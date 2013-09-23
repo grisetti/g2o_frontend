@@ -33,7 +33,8 @@ namespace pwn {
     
     // Correspondence finder and linearizer init
     _correspondenceFinder = new CorrespondenceFinder();
-    _correspondenceFinder->setSize(_imageRows, _imageCols);
+    _correspondenceFinder->setImageSize(_imageRows, _imageCols);
+    _cylindricalPointProjector->setImageSize(_imageRows, _imageCols);
     _linearizer = new Linearizer();
     
     // Information matrix calculators init

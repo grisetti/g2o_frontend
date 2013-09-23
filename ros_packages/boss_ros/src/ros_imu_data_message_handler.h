@@ -11,11 +11,11 @@ public:
   virtual void subscribe();
   virtual bool configReady() const;
   void callback(const sensor_msgs::ImuConstPtr& imu);
-  inline boss::IMUSensor* sensor() {return _sensor;}
+  inline boss_logger::IMUSensor* sensor() {return _sensor;}
 protected:
   ros::Subscriber _sub;
   std::string _topicName;
-  boss::IMUSensor* _sensor;
+  boss_logger::IMUSensor* _sensor;
 };
 
 #endif

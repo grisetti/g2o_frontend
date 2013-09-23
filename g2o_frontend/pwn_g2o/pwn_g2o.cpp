@@ -227,7 +227,8 @@ int main(int argc, char** argv) {
       imageCols = depthImage.cols();
       scaledImageRows = imageRows / ng_scale;
       scaledImageCols = imageCols / ng_scale;
-      correspondenceFinder.setSize(scaledImageRows, scaledImageCols);
+      correspondenceFinder.setImageSize(scaledImageRows, scaledImageCols);
+      projector.setImageSize(scaledImageRows, scaledImageCols);
 
       trajectory = Isometry3f::Identity();
       trajectory.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;

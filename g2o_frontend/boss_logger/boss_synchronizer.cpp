@@ -9,22 +9,15 @@
 #include "bimusensor.h"
 #include "bsynchronizer.h"
 #include "brobot_configuration.h"
+#include "g2o_frontend/pwn_boss/pwn_sensor_data.h"
 
 
-
-
+using namespace boss_logger;
 using namespace boss;
 using namespace std;
 
-// StringSensorMap sensors;
-// StringFrameMap  frames;
-// std::vector<boss::Serializable*> objects;
+pwn_boss::PWNSensorData data;
 
-struct TSCompare{
-  bool operator()(const BaseSensorData* a, const BaseSensorData*b){
-    return a->timestamp()<b->timestamp();
-  }
-};
 
 const char* banner[]={
   "boss_synchronizer: takes a raw boss log and aggregates messages into single frames",

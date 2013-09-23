@@ -11,7 +11,7 @@
 #include <set>
 
 namespace boss {
-
+  
 //! a frame represents a transform in the system. This transform is relative to the 
 //! parentLinkedTree. If parentLinkedTree is null, the transform is global.
 class LinkedTree: public Identifiable {

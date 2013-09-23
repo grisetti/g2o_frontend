@@ -4,8 +4,8 @@
 #include "g2o_frontend/boss/blob.h"
 #include <Eigen/Core>
 #include "opencv2/highgui/highgui.hpp"
-namespace boss {
-  
+namespace boss_logger {
+  using namespace boss;
   class ImageBLOB: public BLOB {
   public:
     enum Format {mono8=0x0, mono16=0x1, rgb8=0x2};

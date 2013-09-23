@@ -21,16 +21,17 @@ namespace pwn {
     inline void setCurrentFrame(Frame*currentFrame_) { _currentFrame = currentFrame_; clearPriors();}
     inline void setOuterIterations(const int outerIterations_) { _outerIterations = outerIterations_; }
     inline void setInnerIterations(const int innerIterations_) { _innerIterations = innerIterations_; }
-    inline void setT(const Eigen::Isometry3f T_) { _T = T_; }
-    inline void setInitialGuess(const Eigen::Isometry3f initialGuess_) { _initialGuess = initialGuess_; }
+    inline void setT(const Eigen::Isometry3f T_) { _T = T_; _T.matrix().row(3) << 0,0,0,1; }
+    inline void setInitialGuess(const Eigen::Isometry3f initialGuess_) { _initialGuess = initialGuess_; _initialGuess.matrix().row(3) << 0,0,0,1;}
     inline void setSensorOffset(const Eigen::Isometry3f sensorOffset_) { 
-      _referenceSensorOffset = sensorOffset_;
-      _currentSensorOffset = sensorOffset_;
+      setReferenceSensorOffset(sensorOffset_);
+      setCurrentSensorOffset(sensorOffset_);
     }
-    inline void setReferenceSensorOffset(const Eigen::Isometry3f referenceSensorOffset_) { _referenceSensorOffset = referenceSensorOffset_; }
-    inline void setCurrentSensorOffset(const Eigen::Isometry3f currentSensorOffset_) { _currentSensorOffset = currentSensorOffset_; }
+    inline void setReferenceSensorOffset(const Eigen::Isometry3f referenceSensorOffset_) { _referenceSensorOffset = referenceSensorOffset_; _referenceSensorOffset.matrix().row(3) << 0,0,0,1;}
+    inline void setCurrentSensorOffset(const Eigen::Isometry3f currentSensorOffset_) { _currentSensorOffset = currentSensorOffset_; _currentSensorOffset.matrix().row(3) << 0,0,0,1;}
 
     inline const PointProjector* projector() const { return _projector; }
+    inline PointProjector* projector() { return _projector; }
     inline Linearizer* linearizer() { return _linearizer; }
     inline void setLinearizer(Linearizer* linearizer_) { _linearizer = linearizer_; 
       if( _linearizer) 

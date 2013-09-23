@@ -24,9 +24,9 @@ const char* banner[]={
   "   - Images, use the '-image:topic' option, e.g. '-image:/camera_array/camera_image';"
   "   - Laser,  use the '-laser:topic' option  e.g.  '-laser:/front_laser';",
   "   - IMU,    use the '-imu:topic' option    e.g.  '-imu:/top_imu';",
-  " - the odom frame id, by using the '-odomFrame:frame' option e.g.: '-odomFrame:/odom';",
+  " - the odom frame id, by using the '-odomReferenceFrame:frame' option e.g.: '-odomReferenceFrame:/odom';",
   "   if unspecified it defaults to '/odom'.",
-  " - the base frame id, by using the '-baseFrame:frame' option e.g.: '-baseFrame:/base_link';",
+  " - the base frame id, by using the '-baseReferenceFrame:frame' option e.g.: '-baseReferenceFrame:/base_link';",
   "   if unspecified it defaults to '/base_link'.", 
   "",
   "call it with: boss_logger [arguments] <output filename>",
@@ -104,12 +104,12 @@ void processArgs(RosMessageContext* context, std::list<CommandArg>& list){
       context->addHandler("imu", arg.asString());
       continue;
     }
-    if (arg.param =="-odomFrame"){
-      context->setOdomFrameId(arg.asString());
+    if (arg.param =="-odomReferenceFrame"){
+      context->setOdomReferenceFrameId(arg.asString());
       continue;
     }
-    if (arg.param =="-baseFrame"){
-      context->setBaseFrameId(arg.asString());
+    if (arg.param =="-baseReferenceFrame"){
+      context->setBaseReferenceFrameId(arg.asString());
       continue;
     }
     throw std::runtime_error("unknown argument");
@@ -141,8 +141,8 @@ int main(int argc, char** argv){
   RosMessageContext context(&nh);
 
   // tell the context what is the odom frame and the base link frame
-  context.setOdomFrameId("/odom");
-  context.setBaseFrameId("/base_link");
+  context.setOdomReferenceFrameId("/odom");
+  context.setBaseReferenceFrameId("/base_link");
 
   processArgs(&context, parsedArgs);
   
@@ -160,7 +160,7 @@ int main(int argc, char** argv){
   bool confReady=false;
   while (ros::ok()){
     ros::spinOnce();
-    // cerr << "tf: " << tfFrameMap.size() 
+    // cerr << "tf: " << tfReferenceFrameMap.size() 
     // 	 << ", sensors: "<<sensorTopicMap.size()
     // 	 << ", messages: "<<dataQueue.size() << endl;
     bool isReady = context.configReady();
@@ -168,10 +168,10 @@ int main(int argc, char** argv){
     if (! confReady && isReady){
       cerr << endl << "CONF IS NOW READY!!!, STARTING WRITING" << endl;
       context.serializeInternals(ser);
-      boss::RobotConfiguration conf = context;
+      boss_logger::RobotConfiguration conf = context;
       conf.serializeInternals(ser);
       ser.writeObject(conf);
-      // for (boss::StringFrameMap::iterator it = context.frameMap().begin(); it!=context.frameMap().end(); it++)
+      // for (boss::StringReferenceFrameMap::iterator it = context.frameMap().begin(); it!=context.frameMap().end(); it++)
       // 	ser.writeObject(*it->second);
       // for (boss::StringSensorMap::iterator it = context.sensorMap().begin(); it!=context.sensorMap().end(); it++)
       // 	ser.writeObject(*it->second);
@@ -179,13 +179,13 @@ int main(int argc, char** argv){
     }
     if (confReady){
       while (context.messageQueue().size()){
-	boss::BaseSensorData* data = dynamic_cast<boss::BaseSensorData*>(context.messageQueue().front());
+	boss_logger::BaseSensorData* data = dynamic_cast<boss_logger::BaseSensorData*>(context.messageQueue().front());
 	if (! data){
 	  cerr << "fatal error, inconsistent data" << endl; 
 	  return 0;
 	}
 	context.messageQueue().pop_front();
-	boss::Frame* f = data->robotFrame();
+	boss_logger::ReferenceFrame* f = data->robotReferenceFrame();
 	if (f){
 	  ser.writeObject(*f);
 	}

@@ -2,7 +2,8 @@
 #define _BOSS_LASER_SENSOR_H_
 #include "bsensor.h"
 #include <Eigen/Core>
-namespace boss {
+namespace boss_logger {
+  using namespace boss;
   class LaserSensor : public BaseSensor {
   public:
     LaserSensor(int id=-1, IdContext* context = 0);

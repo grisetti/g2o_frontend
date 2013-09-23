@@ -35,14 +35,14 @@ bool RosPinholeImageDataMessageHandler::configReady() const{
   
 void RosPinholeImageDataMessageHandler::callback(const sensor_msgs::Image::ConstPtr& img, const sensor_msgs::CameraInfo::ConstPtr& info){
   if  (! _sensor) {
-    std::map<std::string, boss::Frame*>::iterator it = _context->frameMap().find(info->header.frame_id);
+    boss_logger::StringReferenceFrameMap::iterator it = _context->frameMap().find(info->header.frame_id);
     if (it == _context->frameMap().end()) {
       cerr << "missing transform for frame [" << info->header.frame_id << "], skipping" << endl;
       return;
     }
-    _sensor = new boss::PinholeImageSensor;
+    _sensor = new boss_logger::PinholeImageSensor;
     _sensor->setTopic(_topicName);
-    _sensor->setFrame(it->second);
+    _sensor->setReferenceFrame(it->second);
     Eigen::Matrix3d cmat;
     int i=0;
     for (int r=0; r<3; r++)
@@ -61,19 +61,19 @@ void RosPinholeImageDataMessageHandler::callback(const sensor_msgs::Image::Const
   if (! _context->getOdomPose(robotTransform, img->header.stamp.toSec()) ){
     return;
   } 
-  boss::Frame* newFrame = new boss::Frame("robotPose", robotTransform);
-  // _context->messageQueue().push_back(newFrame);
+  boss_logger::ReferenceFrame* newReferenceFrame = new boss_logger::ReferenceFrame("robotPose", robotTransform);
+  // _context->messageQueue().push_back(newReferenceFrame);
   // we get the image from ROS
 
   cv_bridge::CvImagePtr ptr=cv_bridge::toCvCopy(img, img->encoding);
-  boss::ImageBLOB* imageBlob = new boss::ImageBLOB();
+  boss_logger::ImageBLOB* imageBlob = new boss_logger::ImageBLOB();
   imageBlob->cvImage() = ptr->image.clone();
   imageBlob->adjustFormat();
-  boss::PinholeImageData* imageData = new boss::PinholeImageData(_sensor);
+  boss_logger::PinholeImageData* imageData = new boss_logger::PinholeImageData(_sensor);
   imageData->setTimestamp(img->header.stamp.toSec());
   imageData->setTopic(_sensor->topic());
   imageData->imageBlob().set(imageBlob);
-  imageData->setRobotFrame(newFrame);
+  imageData->setRobotReferenceFrame(newReferenceFrame);
   _context->messageQueue().push_back(imageData);
   //delete imageData;
   //cerr << ".";

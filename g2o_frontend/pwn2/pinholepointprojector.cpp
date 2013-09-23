@@ -1,4 +1,5 @@
 #include "pinholepointprojector.h"
+#include <stdexcept>
 
 namespace pwn {
   using namespace boss;
@@ -48,9 +49,12 @@ namespace pwn {
     return _projectInterval(x, y, d, worldRadius);
   }
 
-  void PinholePointProjector::project(Eigen::MatrixXi &indexImage,
+  void PinholePointProjector::project(IntImage &indexImage,
 				      Eigen::MatrixXf &depthImage, 
-				      const PointVector &points) const {
+				      const PointVector &points) {
+    if (!_imageRows || ! _imageCols)
+      throw std::runtime_error("projector image not set");
+    indexImage.resize(_imageRows, _imageCols);
     depthImage.resize(indexImage.rows(), indexImage.cols());
     depthImage.fill(std::numeric_limits<float>::max());
     indexImage.fill(-1);
@@ -73,10 +77,13 @@ namespace pwn {
     }
   }
 
-  void PinholePointProjector::projectIntervals(Eigen::MatrixXi& intervalImage, 
+  void PinholePointProjector::projectIntervals(IntImage& intervalImage, 
 					       const Eigen::MatrixXf& depthImage, 
 					       const float worldRadius,
 					       const bool blackBorders) const {
+    if (!_imageRows || ! _imageCols)
+      throw std::runtime_error("projector image not set");
+    intervalImage.resize(_imageRows, _imageCols);
     intervalImage.resize(depthImage.rows(), depthImage.cols());
     int cpix = 0;
     for (int c=0; c<depthImage.cols(); c++){
@@ -93,8 +100,11 @@ namespace pwn {
   }
 
   void PinholePointProjector::unProject(PointVector& points, 
-					Eigen::MatrixXi& indexImage,
+					IntImage& indexImage,
 					const Eigen::MatrixXf& depthImage) const {
+    if (indexImage.rows() != _imageRows ||
+	indexImage.cols() != _imageCols)
+      throw std::runtime_error("image size does not match");
     points.resize(depthImage.rows()*depthImage.cols());
     int count = 0;
     indexImage.resize(depthImage.rows(), depthImage.cols());
@@ -119,7 +129,7 @@ namespace pwn {
 
   void PinholePointProjector::unProject(PointVector &points, 
 					Gaussian3fVector &gaussians,
-					Eigen::MatrixXi &indexImage,
+					IntImage &indexImage,
 					const Eigen::MatrixXf &depthImage) const {
     points.resize(depthImage.rows()*depthImage.cols());
     gaussians.resize(depthImage.rows()*depthImage.cols());
@@ -157,6 +167,12 @@ namespace pwn {
     }
     points.resize(count);
     gaussians.resize(count);
+  }
+
+  void  PinholePointProjector::scale(float scalingFactor){
+    _cameraMatrix.block<2,3>(0,0) *= scalingFactor;
+    _imageRows *= scalingFactor;
+    _imageCols *= scalingFactor;
   }
 
 

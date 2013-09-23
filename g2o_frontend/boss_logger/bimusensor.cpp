@@ -1,6 +1,8 @@
 #include "bimusensor.h"
 
-namespace boss {
+namespace boss_logger {
+  using namespace boss;
+
   IMUSensor::IMUSensor(int id, IdContext* context): BaseSensor(id,context){
   }
   
@@ -23,12 +25,12 @@ namespace boss {
 
   void IMUData::deserialize(ObjectData& data, IdContext& context) {
     SensorData<IMUSensor>::deserialize(data,context);
-    _orientation.coeffs().toBOSS(data,"orientation");
-    _orientationCovariance.toBOSS(data, "orientationCovariance");
-    _angularVelocity.toBOSS(data, "angularVelocity");
-    _angularVelocityCovariance.toBOSS(data,"angularVelocityCovariance");
-    _linearAcceleration.toBOSS(data,"linearAcceleration");
-    _linearAccelerationCovariance.toBOSS(data, "linearAccelerationCovariance");
+    _orientation.coeffs().fromBOSS(data,"orientation");
+    _orientationCovariance.fromBOSS(data, "orientationCovariance");
+    _angularVelocity.fromBOSS(data, "angularVelocity");
+    _angularVelocityCovariance.fromBOSS(data,"angularVelocityCovariance");
+    _linearAcceleration.fromBOSS(data,"linearAcceleration");
+    _linearAccelerationCovariance.fromBOSS(data, "linearAccelerationCovariance");
   }
   
 

@@ -28,10 +28,10 @@ namespace pwn {
     inline const CorrespondenceVector& correspondences() const { return _correspondences; }
     inline CorrespondenceVector& correspondences() { return _correspondences; }
     inline int numCorrespondences() const { return _numCorrespondences; }
-    inline const Eigen::MatrixXi& currentIndexImage() const {return _currentIndexImage;}
-    inline Eigen::MatrixXi& currentIndexImage() {return _currentIndexImage;}
-    inline const Eigen::MatrixXi& referenceIndexImage() const {return _referenceIndexImage;}
-    inline Eigen::MatrixXi& referenceIndexImage() {return _referenceIndexImage;}
+    inline const IntImage& currentIndexImage() const {return _currentIndexImage;}
+    inline IntImage& currentIndexImage() {return _currentIndexImage;}
+    inline const IntImage& referenceIndexImage() const {return _referenceIndexImage;}
+    inline IntImage& referenceIndexImage() {return _referenceIndexImage;}
     inline const DepthImage& currentDepthImage() const {return _currentDepthImage;}
     inline DepthImage& currentDepthImage() {return _currentDepthImage;}
     inline const DepthImage& referenceDepthImage() const {return _referenceDepthImage;}
@@ -42,8 +42,8 @@ namespace pwn {
     inline float flatCurvatureThreshold() const { return _flatCurvatureThreshold; }
     inline float inlierCurvatureRatioThreshold() const { return _inlierCurvatureRatioThreshold; }
     inline float inlierNormalAngularThreshold() const { return _inlierNormalAngularThreshold; }
-    inline int rows() const { return _rows; }
-    inline int cols() const { return _cols; }
+    inline int imageRows() const { return _rows; }
+    inline int imageCols() const { return _cols; }
 
     inline void setInlierDistanceThreshold(const float inlierDistanceThreshold_) {
       _inlierDistanceThreshold = inlierDistanceThreshold_;
@@ -53,7 +53,7 @@ namespace pwn {
     inline void setInlierCurvatureRatioThreshold(const float inlierCurvatureRatioThreshold_) { _inlierCurvatureRatioThreshold = inlierCurvatureRatioThreshold_; }
     inline void setInlierNormalAngularThreshold(const float inlierNormalAngularThreshold_) { _inlierNormalAngularThreshold = inlierNormalAngularThreshold_; }
 
-    inline void setSize(const int rows_, const int cols_) {
+    inline void setImageSize(const int rows_, const int cols_) {
       if(_rows != rows_ || _cols != cols_) {
 	_rows = rows_;
 	_cols = cols_;
@@ -79,7 +79,7 @@ namespace pwn {
 
     int _rows, _cols;
 
-    Eigen::MatrixXi _referenceIndexImage, _currentIndexImage;
+    IntImage _referenceIndexImage, _currentIndexImage;
     DepthImage _referenceDepthImage, _currentDepthImage;
   };
 

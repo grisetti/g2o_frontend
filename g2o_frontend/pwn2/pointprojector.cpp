@@ -9,13 +9,15 @@ namespace pwn {
     _transform.setIdentity();
     _minDistance = 0.01;
     _maxDistance = 6.0f;
+    _imageRows = 0;
+    _imageCols = 0;
   }
 
   PointProjector::~PointProjector() {}
 
-  void PointProjector::project(Eigen::MatrixXi &indexImage, 
+  void PointProjector::project(IntImage &indexImage, 
 			       Eigen::MatrixXf &depthImage, 
-			       const PointVector &points) const {
+			       const PointVector &points) {
     depthImage.resize(indexImage.rows(), indexImage.cols());
     depthImage.fill(std::numeric_limits<float>::max());
     indexImage.fill(-1);
@@ -36,7 +38,7 @@ namespace pwn {
     }
   }
 
-  void PointProjector::projectIntervals(Eigen::MatrixXi &intervalImage, 
+  void PointProjector::projectIntervals(IntImage &intervalImage, 
 					const Eigen::MatrixXf &depthImage, 
 					const float worldRadius,
 					const bool /*blackBorders*/) const{
@@ -53,7 +55,7 @@ namespace pwn {
   }
 
   void PointProjector::unProject(PointVector &points,
-				 Eigen::MatrixXi &indexImage,
+				 IntImage &indexImage,
 				 const Eigen::MatrixXf &depthImage) const {
     points.resize(depthImage.rows()*depthImage.cols());
     int count = 0;
@@ -79,7 +81,7 @@ namespace pwn {
 
   void PointProjector::unProject(PointVector &points,
 				 Gaussian3fVector &gaussians,
-				 Eigen::MatrixXi &indexImage,
+				 IntImage &indexImage,
 				 const Eigen::MatrixXf &depthImage) const {
     points.resize(depthImage.rows()*depthImage.cols());
     gaussians.resize(points.size());
@@ -116,6 +118,8 @@ namespace pwn {
     t2v(_transform).toBOSS(data,"transform");
     data.setFloat("minDistance", minDistance());
     data.setFloat("maxDistance", maxDistance());
+    data.setInt("imageRows", _imageRows);
+    data.setInt("imageCols", _imageCols);
   }
   
   void PointProjector::deserialize(boss::ObjectData& data, boss::IdContext& context){
@@ -125,9 +129,9 @@ namespace pwn {
     setTransform(v2t(t));
     setMinDistance(data.getFloat("minDistance"));
     setMaxDistance(data.getFloat("maxDistance"));
+    _imageRows = data.getInt("imageRows");
+    _imageCols = data.getInt("imageCols");
  }
 
-
-  BOSS_REGISTER_CLASS(PointProjector);
 
 }

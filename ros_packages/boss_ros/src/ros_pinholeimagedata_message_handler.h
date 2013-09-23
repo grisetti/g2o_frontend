@@ -13,13 +13,13 @@ public:
   virtual void subscribe();
   virtual bool configReady() const;
   virtual void callback(const sensor_msgs::Image::ConstPtr& img, const sensor_msgs::CameraInfo::ConstPtr& info);
-  inline boss::PinholeImageSensor* sensor() {return _sensor;}
+  inline boss_logger::PinholeImageSensor* sensor() {return _sensor;}
 protected:
   
   std::string _topicName;
   image_transport::ImageTransport * _imageTransport;
   image_transport::CameraSubscriber *_cameraSubscriber;
-  boss::PinholeImageSensor* _sensor;
+  boss_logger::PinholeImageSensor* _sensor;
   sensor_msgs::CameraInfo _cameraInfo;
 };
 

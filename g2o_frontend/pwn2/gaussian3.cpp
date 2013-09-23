@@ -73,7 +73,7 @@ void Gaussian3fVector::fromDepthImage(const DepthImage &depthImage,
 }
 
 
-void Gaussian3fVector::toIndexImage(Eigen::MatrixXi &indexImage, DepthImage &depthImage, 
+void Gaussian3fVector::toIndexImage(IntImage &indexImage, DepthImage &depthImage, 
 				    const Matrix3f &cameraMatrix, const Eigen::Isometry3f &cameraPose, 
 				    float dmax) const {
   PinholePointProjector pointProjector;

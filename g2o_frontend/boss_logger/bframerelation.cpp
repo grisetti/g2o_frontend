@@ -2,21 +2,21 @@
 #include "g2o_frontend/boss/object_data.h"
 #include <stdexcept>
 
-namespace boss {
-
+namespace boss_logger {
+  using namespace boss;
   //! a frame relation is a transform (eventually with covariance), that specifies the relative transformation
   //! between two frames
-  FrameRelation::FrameRelation(int id, IdContext* context):
+  ReferenceFrameRelation::ReferenceFrameRelation(int id, IdContext* context):
     Identifiable(id,context){
-    _fromFrame = 0;
-    _toFrame = 0;
+    _fromReferenceFrame = 0;
+    _toReferenceFrame = 0;
   }
 
-  void FrameRelation::serialize(ObjectData& data, IdContext& context){
+  void ReferenceFrameRelation::serialize(ObjectData& data, IdContext& context){
     Identifiable::serialize(data, context);
 
-    data.setPointer("fromFrame", _fromFrame);
-    data.setPointer("toFrame", _toFrame);
+    data.setPointer("fromReferenceFrame", _fromReferenceFrame);
+    data.setPointer("toReferenceFrame", _toReferenceFrame);
 
     Eigen::Quaterniond q(_transform.rotation());
     q.coeffs().toBOSS(data,"rotation");
@@ -24,11 +24,11 @@ namespace boss {
     _informationMatrix.toBOSS(data,"informationMatrix");
   }
   
-  void FrameRelation::deserialize(ObjectData& data, IdContext& context){
+  void ReferenceFrameRelation::deserialize(ObjectData& data, IdContext& context){
     Identifiable::deserialize(data, context);
 
-    data.getReference("fromFrame").bind(_fromFrame);
-    data.getReference("toFrame").bind(_toFrame);
+    data.getReference("fromReferenceFrame").bind(_fromReferenceFrame);
+    data.getReference("toReferenceFrame").bind(_toReferenceFrame);
 
     Eigen::Quaterniond q;
     q.coeffs().fromBOSS(data,"rotation");
@@ -37,8 +37,8 @@ namespace boss {
     _informationMatrix.fromBOSS(data,"informationMatrix");
   }
 
-  void FrameRelation::deserializeComplete(){
+  void ReferenceFrameRelation::deserializeComplete(){
   }
-  BOSS_REGISTER_CLASS(FrameRelation);
+  BOSS_REGISTER_CLASS(ReferenceFrameRelation);
 
 } // end namespace

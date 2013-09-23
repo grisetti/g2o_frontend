@@ -26,6 +26,7 @@ namespace pwn {
 				    const bool blackBorders) {
     const float _normalWorldRadius = _statsCalculator->worldRadius();
     frame.clear();
+    _projector->setImageSize(depthImage.rows(), depthImage.cols());
     // resizing the temporaries
     if (depthImage.rows()!=_indexImage.rows() ||
 	depthImage.cols()!=_indexImage.cols()){
@@ -33,10 +34,10 @@ namespace pwn {
       _integralImage.resize(depthImage.rows(), depthImage.cols());
       _intervalImage.resize(depthImage.rows(), depthImage.cols());
     }
+
     // unprojecting
     _projector->setTransform(Eigen::Isometry3f::Identity());
     _projector->unProject(frame.points(), frame.gaussians(), _indexImage, depthImage);
-
     frame.normals().resize(frame.points().size());
     frame.pointInformationMatrix().resize(frame.points().size());
     frame.normalInformationMatrix().resize(frame.points().size());

@@ -59,9 +59,9 @@ namespace pwn {
      *  @param depthImage is an output parameter containing the depth values of the projected points.
      *  @param points is the input parameter containing the set of points to project.
      */
-    virtual void project(Eigen::MatrixXi &indexImage, 
+    virtual void project(IntImage &indexImage, 
 			 Eigen::MatrixXf &depthImage, 
-			 const PointVector& points) const;
+			 const PointVector& points) ;
 
     /**
      *  Virtual method that projects the sides of the square regions used to compute the stats of the given point
@@ -74,7 +74,7 @@ namespace pwn {
      *  @param x is an input parameter that contains the row of the matrix where the projected point
      *  falls.
      */
-    void projectIntervals(Eigen::MatrixXi &intervalImage, 
+    void projectIntervals(IntImage &intervalImage, 
 			  const Eigen::MatrixXf &depthImage, 
 			  const float worldRadius,
 			  const bool blackBorders=false) const;
@@ -89,12 +89,12 @@ namespace pwn {
      *  @param depthImage is an input parameter containing the depth values of the points.
      */
     virtual void unProject(PointVector &points, 
-			   Eigen::MatrixXi &indexImage, 
+			   IntImage &indexImage, 
 			   const Eigen::MatrixXf &depthImage) const;
 
     virtual void unProject(PointVector &points,
 			   Gaussian3fVector &gaussians,
-			   Eigen::MatrixXi &indexImage,
+			   IntImage &indexImage,
 			   const Eigen::MatrixXf &depthImage) const;
 
     /**
@@ -145,6 +145,9 @@ namespace pwn {
      *  constructors included.
      */
     void _updateMatrices();
+
+
+    virtual void  scale(float scalingFactor);
 
     /**
      *  Point projection method.
