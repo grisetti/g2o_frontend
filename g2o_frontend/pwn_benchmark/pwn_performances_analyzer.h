@@ -42,6 +42,10 @@ namespace pwn {
       _merger->setImageSize(_scaledImageRows, _scaledImageCols);
     }
 
+    virtual inline void setMaxDistance(float maxDistance) { 
+      _projector->setMaxDistance(maxDistance); 
+      _merger->setMaxPointDepth(maxDistance);
+    }
     inline void setScaleFactor(float scaleFactor_) { _scaleFactor = scaleFactor_; }
     inline void setWorldRadius(float worldRadius) { _statsCalculator->setWorldRadius(worldRadius); }
     inline void setMinImageRadius(int minImageRadius) { _statsCalculator->setMinImageRadius(minImageRadius); }
@@ -52,10 +56,16 @@ namespace pwn {
       _pointInformationMatrixCalculator->setCurvatureThreshold(curvatureThreshold);
       _normalInformationMatrixCalculator->setCurvatureThreshold(curvatureThreshold);
     }
-    inline void setInlierDistanceThreshold(float inlierDistanceThreshold) { _correspondenceFinder->setInlierDistanceThreshold(inlierDistanceThreshold); }
+    inline void setInlierDistanceThreshold(float inlierDistanceThreshold) { 
+      _correspondenceFinder->setInlierDistanceThreshold(inlierDistanceThreshold);
+      _merger->setDistanceThreshold(inlierDistanceThreshold);
+    }
     inline void setFlatCurvatureThreshold(float flatCurvatureThreshold) { _correspondenceFinder->setFlatCurvatureThreshold(flatCurvatureThreshold); }
     inline void setInlierCurvatureRatioThreshold(float inlierCurvatureRatioThreshold) { _correspondenceFinder->setInlierCurvatureRatioThreshold(inlierCurvatureRatioThreshold); }
-    inline void setInlierNormalAngularThreshold(float inlierNormalAngularThreshold) { _correspondenceFinder->setInlierNormalAngularThreshold(cosf(inlierNormalAngularThreshold)); }
+    inline void setInlierNormalAngularThreshold(float inlierNormalAngularThreshold) { 
+      _correspondenceFinder->setInlierNormalAngularThreshold(cosf(inlierNormalAngularThreshold)); 
+      _merger->setNormalThreshold(cosf(inlierNormalAngularThreshold));
+    }
     inline void setInlierMaxChi2(float inlierMaxChi2) { _linearizer->setInlierMaxChi2(inlierMaxChi2); }
     inline void setInnerIterations(int innerIterations) { _aligner->setInnerIterations(innerIterations); }    
     inline void setOuterIterations(int outerIterations) { _aligner->setOuterIterations(outerIterations); }

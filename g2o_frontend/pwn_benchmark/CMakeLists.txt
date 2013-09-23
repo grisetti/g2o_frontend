@@ -10,3 +10,12 @@ TARGET_LINK_LIBRARIES(pwn_performances_test
   pwn2_utils
   ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
 )
+
+ADD_EXECUTABLE(dvo_performances_test dvo_performances_test.cpp)
+SET_TARGET_PROPERTIES(dvo_performances_test PROPERTIES OUTPUT_NAME dvo_performances_test)
+TARGET_LINK_LIBRARIES(dvo_performances_test
+  pwn2_library
+  pwn2_utils
+  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
+  ${OpenCV_LIBRARIES}
+)

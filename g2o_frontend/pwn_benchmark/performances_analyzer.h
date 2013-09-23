@@ -53,7 +53,7 @@ namespace pwn {
       _scale = scale_;
       updateStructures();
     }
-    inline void setMaxDistance(float maxDistance) { _projector->setMaxDistance(maxDistance); }
+    virtual inline void setMaxDistance(float maxDistance) { _projector->setMaxDistance(maxDistance); }
     inline void setSensorOffset(Isometry3f sensorOffset_) { _sensorOffset = sensorOffset_; }
     inline void setVerbose(int verbose_) { _verbose = verbose_; }
 
