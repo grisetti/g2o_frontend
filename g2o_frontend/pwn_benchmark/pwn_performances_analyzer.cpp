@@ -43,6 +43,9 @@ namespace pwn {
     _aligner->setOuterIterations(10);
     _merger = new Merger();
     _merger->setDepthImageConverter(_converter);
+    _merger->setMaxPointDepth(6.0f);
+    _merger->setDistanceThreshold(0.5f);
+    _merger->setNormalThreshold(cosf(M_PI / 6.0f));
 
     _referenceDepthFilename = ""; 
     _currentDepthFilename = "";
@@ -66,10 +69,12 @@ namespace pwn {
       cout << "No more depth images to analyze." << endl;
       return false;
     }
+    string dummy;
     istringstream issAssociations(line);
     if (_referenceDepthFilename == "") {
       string initialTimestamp;
-      issAssociations >> initialTimestamp >> _referenceDepthFilename;
+      issAssociations >> initialTimestamp >> dummy;
+      issAssociations >> dummy >> _referenceDepthFilename;
       if (!_isAssociations.getline(line, 4096)) {
 	cout << "Only one depth image can be read." << endl;
 	return false;
@@ -77,11 +82,14 @@ namespace pwn {
       parseGroundTruth(_absolutePose, _isGroundtruth, atof(initialTimestamp.c_str()));    
       _chunkInitialPose = _absolutePose;
       istringstream issAssociations(line);
-      issAssociations >> _currentTimestamp >> _currentDepthFilename;
+      issAssociations >> _currentTimestamp >> dummy;
+      issAssociations >> dummy >> _currentDepthFilename;
     }
-    else
-      issAssociations >> _currentTimestamp >> _currentDepthFilename;
-    
+    else {
+      issAssociations >> _currentTimestamp >> dummy;
+      issAssociations >> dummy >> _currentDepthFilename;
+    }
+
     // Load depth images      
     _referenceDepth.load((_referenceDepthFilename.substr(0, _referenceDepthFilename.size() - 3) + "pgm").c_str(), true, _scaleFactor);
     _currentDepth.load((_currentDepthFilename.substr(0, _currentDepthFilename.size() - 3) + "pgm").c_str(), true, _scaleFactor);
