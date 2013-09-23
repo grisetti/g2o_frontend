@@ -68,11 +68,10 @@ int main(int argc, char** argv){
   
   int ca = 0;
   while(ca!=27){
-    cv::Mat shownImage = comparison.clone();
-    cv::Mat cutoffImage = comparison>cutoff;
-    //
-cv::Mat shownImage = cutoffImage;
-    int nz = images.size()*images.size() -cv::countNonZero(cutoffImage);
+    //cv::Mat shownImage = comparison.clone();
+    cv::Mat shownImage = comparison>cutoff;
+    //cv::Mat shownImage = cutoffImage;
+    int nz = images.size()*images.size() -cv::countNonZero(shownImage);
     nz -= images.size()*(images.size()+1)/2;
     cv::circle(shownImage, cv::Point(r,c), 4, 0.0f);
     cv::imshow("comparison", shownImage);

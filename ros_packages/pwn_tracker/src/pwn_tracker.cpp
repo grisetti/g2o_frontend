@@ -33,9 +33,7 @@ using namespace boss;
     for (int i=0; i<src.matrix().cols(); i++)
       for (int j=0; j<src.matrix().rows(); j++)
 	dest.matrix()(j,i) = src.matrix()(j,i);
-
   }
-
 
 struct PwnTracker{
   PwnTracker(ros::NodeHandle& nh_,   
