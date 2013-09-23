@@ -16,7 +16,7 @@ inline Eigen::Matrix2f angle2mat_2f(float theta)
 
 inline float mat2angle_2f(const Eigen::Matrix2f& R)
 {
-  return atan2(R(2,1),R(1,1));
+  return atan2(R(1,0),R(0,0));
 }
 
 inline Eigen::Isometry2f v2t_2f(const Eigen::Vector3f& x)
