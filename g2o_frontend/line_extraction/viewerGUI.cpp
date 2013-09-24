@@ -170,7 +170,7 @@ void ViewerGUI::lineExtraction()
 			clusterer->compute();
 			cout << "I found " << clusterer->numClusters() << " clusters in the pool" << endl;
 			
-			//for adjacent lines
+            //for adjacent lines
 			LinesAdjacent la;
 			
 			for (int i =0; i< clusterer->numClusters(); ++i){
@@ -229,19 +229,34 @@ void ViewerGUI::lineExtraction()
 				
 				/** saving some information about the line extracted and its line adjacent, if exists **/	
 				Line2DExtractor::IntLineMap::const_iterator bit=linesMap.begin();
-				la.push_back(bit->second);
-				while(bit != linesMap.end()) {
-					const Line2D& line = bit->second;
-					
+                const Line2D& linea = bit->second;
+                const Vector2f& lp0 = lineExtractor->points()[linea.p0Index];
+                const Vector2f& lp1 = lineExtractor->points()[linea.p1Index];
+                line2DwithPoints lps;
+                lps.l = linea;
+                lps.p0 = lp0;
+                lps.p1 = lp1;
+                la.push_back(lps);
+
+                while(bit != linesMap.end()) {
+                    const Line2D& line = bit->second;
+
 					//printing some info
-					linesInfoExtraction(bit, linesMap, currentPoints);
+                    linesInfoExtraction(bit, linesMap, currentPoints);
 					
 					Line2DExtractor::IntLineMap::const_iterator tmp = bit;
 					if((++tmp) != linesMap.end()) {
-						const Line2D& lineRight = tmp->second;
+                        const Line2D& lineRight = tmp->second;
+                        const Vector2f& lrp0 = lineExtractor->points()[lineRight.p0Index];
+                        const Vector2f& lrp1 = lineExtractor->points()[lineRight.p1Index];
+                        line2DwithPoints lrps;
+                        lrps.l = lineRight;
+                        lrps.p0 = lrp0;
+                        lrps.p1 = lrp1;
 						if(line.p1Index == lineRight.p0Index)
 						{
-							la.push_back(lineRight);
+                            la.push_back(lrps);
+//                            cout << "line with point " << la[la.size()-1].p0 << "and" << la[la.size()-1].p1 << endl;
 							bit++;
 						}
 						else {
@@ -528,7 +543,7 @@ void ViewerGUI::ComputeAll()
 				vl->p1Id = id1;
 			else
 				vl->p1Id = id1_oldId2;
-			vl->p2Id = id2;
+            vl->p2Id = id2;
 			graph->addVertex(vl);
 	// 		graph->saveVertex(ofG2OLine, vl);
 
