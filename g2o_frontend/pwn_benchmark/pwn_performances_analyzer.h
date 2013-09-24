@@ -32,13 +32,15 @@ namespace pwn {
       _imageRows = imageCols_;
       _imageCols = imageRows_;
       updateStructures();
-      _correspondenceFinder->setSize(_scaledImageRows, _scaledImageCols);
+      _correspondenceFinder->setImageSize(_scaledImageRows, _scaledImageCols);
+      _projector->setImageSize(_scaledImageRows, _scaledImageCols);
       _merger->setImageSize(_scaledImageRows, _scaledImageCols);
     }
     virtual void setScale(float scale_) {
       _scale = scale_;
       updateStructures();
-      _correspondenceFinder->setSize(_scaledImageRows, _scaledImageCols);
+      _correspondenceFinder->setImageSize(_scaledImageRows, _scaledImageCols);
+      _projector->setImageSize(_scaledImageRows, _scaledImageCols);
       _merger->setImageSize(_scaledImageRows, _scaledImageCols);
     }
 

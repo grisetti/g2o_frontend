@@ -209,7 +209,6 @@ int main(int argc, char** argv) {
 
     // If it is the first frame add the parameter
     if(restarted || ! referenceFrame) {
-      cerr << "@@@@@@@@@@@@@@@@@@@@2REFFREMA" << endl;
       os << "PARAMS_CAMERACALIB 0 " 
 	 << sensorOffset.translation().x() << " " 
 	 << sensorOffset.translation().y() << " " 
@@ -249,7 +248,7 @@ int main(int argc, char** argv) {
     }
     
     os << "VERTEX_SE3:QUAT " << i << " " << t.transpose() << " " << mq.transpose() << " " << w << endl;
-    os << "RGBD_DATA 0 " << filenames[i] << " 0 hostname 0 " << endl;
+    os << "RGBD_DATA 0 " << filenames[i].substr(0, filenames[i].size() - 10) << " 0 hostname 0 " << endl;
   
     // Compute stats
     Frame *currentFrame = new Frame();
@@ -367,6 +366,11 @@ set<string> readDirectory(string dir) {
       continue;
     }
 
+    // If the file name does not ends with the string "_depth.pgm" skip it
+    if(filepath.rfind("_depth.pgm") == string::npos) {
+      continue;
+    }
+    
     filenames.insert(filepath);
   }
 

@@ -59,7 +59,7 @@ bool RGBDData::read(std::istream& is)
   setTimeStamp(ts);
   _intensityImage = 0;
   _depthImage = 0;
-  //update();
+  update();
   return true;
 }
 
@@ -94,12 +94,12 @@ void RGBDData::update()
   if (!_intensityImage) 
   {
     _intensityImage = new cv::Mat();
-    *_intensityImage = cv::imread((_baseFilename + "_intensity.pgm") .c_str(), -1);
+    *_intensityImage = cv::imread((_baseFilename + "_intensity.pgm").c_str(), -1);
     _intensityImageModified = false;
   }
   if (!_depthImage) {
     _depthImage = new cv::Mat();
-    *_depthImage = cv::imread((_baseFilename + "_depth.pgm") .c_str(), -1);
+    *_depthImage = cv::imread((_baseFilename + "_depth.pgm").c_str(), -1);
     _depthImageModified = false;
   }
 }
@@ -124,8 +124,8 @@ bool RGBDDataDrawAction::refreshPropertyPtrs(HyperGraphElementAction::Parameters
     return false;
   if (_previousParams)
   {
-    _beamsDownsampling = _previousParams->makeProperty<IntProperty>(_typeName + "::BEAMS_DOWNSAMPLING", 10);
-    _pointSize = _previousParams->makeProperty<FloatProperty>(_typeName + "::POINT_SIZE", .05f);
+    _beamsDownsampling = _previousParams->makeProperty<IntProperty>(_typeName + "::BEAMS_DOWNSAMPLING", 20);
+    _pointSize = _previousParams->makeProperty<FloatProperty>(_typeName + "::POINT_SIZE", 1.0f);
   } 
   else 
   {
@@ -140,7 +140,7 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
 {
   if(typeid(*element).name()!=_typeName)
     return 0;
-  
+
   refreshPropertyPtrs(params_);
   if (!_previousParams)
   {
@@ -161,7 +161,7 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
     glPointSize(_pointSize->value());
   else 
     glPointSize(1);
-  
+
   const unsigned short* dptr = reinterpret_cast<unsigned short*>(that->depthImage()->data);
   const unsigned char* dptrIntensity = reinterpret_cast<unsigned char*>(that->intensityImage()->data);
 	
@@ -170,7 +170,7 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
   //g2o::HyperGraph::DataContainer* container = that->dataContainer();
   
   const g2o::Parameter* p = that->parameter();
-  
+
   const g2o::ParameterCamera* param = dynamic_cast<const g2o::ParameterCamera*> (p);
   
   Eigen::Matrix3d K = param->Kcam();
@@ -210,7 +210,7 @@ HyperGraphElementAction* RGBDDataDrawAction::operator()(HyperGraph::HyperGraphEl
 	dptrIntensity = dptrIntensity + step;
     } 
   }
-	
+
   glEnd();
   glPopMatrix();
   return this;
