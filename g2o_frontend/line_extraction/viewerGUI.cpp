@@ -475,21 +475,23 @@ void ViewerGUI::ComputeAll()
 		for (int i = 0; i < lc.size(); i++)
 		{
 			Vector2fVector l = lc[i];
-			Vector2d p1(l[0].x(), l[0].y());
-			Vector2d p2(l[1].x(), l[1].y());
-			Vector2d lp1 = iT * p1;
-			Vector2d lp2 = iT * p2;
+            Vector2d p1(l[0].x(), l[0].y());
+            Vector2d p2(l[1].x(), l[1].y());
+            Vector2d lp1 = iT * p1;
+            Vector2d lp2 = iT * p2;
 			
             //controlling if this line have a common vertex with the previous one
             double soiola = 0.05;
+            Vector2d prev0d(prev[0].x(), prev[0].y());
+            Vector2d prev1d(prev[1].x(), prev[1].y());
 			if(prev[1].x() == p1.x() && prev[1].y() == p1.y()){
 				commonVertex = true;
 				
 			}
             //they are not the same but really close one to each other..
-//            else if((p1-prev[1]).norm() <= soiola){
-//                commonVertex = true;
-//            }
+            else if((p1-prev1d).norm() <= soiola){
+                commonVertex = true;
+            }
             else
 				commonVertex = false;
 			
@@ -497,10 +499,10 @@ void ViewerGUI::ComputeAll()
 	 		
 			if(!commonVertex){
                 // checking if the right point is a REAL extreme point
-                //TODO ??????
-//                Line2D& lcurrent = pointsToLine(p1,p2);
-//                Line2D& lprev = pointsToLine(prev[0],prev[1]);
-//                double similarrho = 0; //rho1/rho2 < 1.5 --> ok
+                //TODO
+                Vector2d lcurrent = pointsToLine(p1,p2);
+                Vector2d lprev = pointsToLine(prev0d,prev1d);
+                double similarrho = 0; //rho1/rho2 < 1.5 --> ok
 
 
                 //first vertex
