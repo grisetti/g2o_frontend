@@ -90,7 +90,7 @@ bool lengthError(VertexLine2D* vl1, VertexLine2D* vl2){
     else
         result = (d2/d1) < 1.5;
 
-//    result = fabs(d1-d2) > lenghterr;
+//    result = fabs(d1-d2) > lenghtThreshold;
 
     if(!result){
         cout << "lenght diff NOT OK: " << fabs(d1-d2) << endl;
