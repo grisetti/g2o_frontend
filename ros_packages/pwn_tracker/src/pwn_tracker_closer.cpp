@@ -29,7 +29,6 @@ using namespace boss;
 using namespace pwn_tracker;
 
 
-
   template <typename T1, typename T2>
   void convertScalar(T1& dest, const T2& src){
     for (int i=0; i<src.matrix().cols(); i++)
@@ -72,6 +71,9 @@ float cutoff = 0;
 float a=0.5;
 
 void matchImages(Aligner* aligner, DepthImageConverter* converter, PwnTrackerFrame* from, PwnTrackerFrame* to){
+  if (from == to)
+    return;
+
   //pwn::Frame* fromCloud = from->cloud.get();
   //pwn::Frame* toCloud = to->cloud.get();
   boss_logger::ImageBLOB* fromDepthBlob = from->depthImage.get();
@@ -229,42 +231,46 @@ int main(int argc, char** argv){
 
   normalsComparison = cv::Mat(numImages, numImages, CV_32FC1);
   float maxNormalDifference = 0;
-  for (int i = 0; i<normalsComparison.rows; i++)
-    for (int j = 0; j<=i; j++){
+  for (int i = 0; i<normalsComparison.rows; i++) {
+    normalsComparison.at<float>(i,i)=0;
+    for (int j = 0; j<i; j++){
       cv::Mat& m1  = normalImages[i];
       cv::Mat& m2  = normalImages[j];
       float f = compareNormals(m1,m2);
       //cerr << "val: " << i << " " << j << " " << f << endl;
-      normalsComparison.at<float>(j,i)=0;
+      normalsComparison.at<float>(j,i)=f;
       normalsComparison.at<float>(i,j)=f;
       if (maxNormalDifference<f)
 	maxNormalDifference = f;
     }
+  }
   cerr << "maxNormalDifference: " << maxNormalDifference;
   maxNormalDifference = 1./maxNormalDifference;
   for (int i = 0; i<normalsComparison.rows; i++)
-    for (int j = 0; j<=i; j++){
+    for (int j = 0; j<normalsComparison.rows; j++){
       normalsComparison.at<float>(i,j)*=maxNormalDifference;
     }
 
 
  depthsComparison = cv::Mat(numImages, numImages, CV_32FC1);
   float maxDepthDifference = 0;
-  for (int i = 0; i<depthsComparison.rows; i++)
-    for (int j = 0; j<=i; j++){
+  for (int i = 0; i<depthsComparison.rows; i++) {
+    depthsComparison.at<float>(i,i)=0;
+    for (int j = 0; j<i; j++){
       cv::Mat& m1  = depthImages[i];
       cv::Mat& m2  = depthImages[j];
       float f = compareDepths(m1,m2);
       //cerr << "val: " << i << " " << j << " " << f << endl;
-      depthsComparison.at<float>(j,i)=0;
+      depthsComparison.at<float>(j,i)=f;
       depthsComparison.at<float>(i,j)=f;
       if (maxDepthDifference<f)
 	maxDepthDifference = f;
     }
+  }
   cerr << "maxDepthDifference: " << maxDepthDifference;
   maxDepthDifference = 1./maxDepthDifference;
   for (int i = 0; i<depthsComparison.rows; i++)
-    for (int j = 0; j<=i; j++){
+    for (int j = 0; j<depthsComparison.rows; j++){
       depthsComparison.at<float>(i,j)*=maxDepthDifference;
     }
 
@@ -284,8 +290,7 @@ int main(int argc, char** argv){
   while(ca!=27){
     cv::Mat mix = depthsComparison*a + normalsComparison*(1-a);
     cv::Mat shownImage = mix>cutoff;
-    int nz = numImages*numImages -cv::countNonZero(shownImage);
-    nz -= numImages*(numImages+1)/2;
+    int nz = numImages*numImages-countNonZero(shownImage)-numImages;
     cv::circle(shownImage, cv::Point(r,c), 4, 0.0f);
     cv::imshow("cutoff", shownImage);
     cv::imshow("similarity", mix);
