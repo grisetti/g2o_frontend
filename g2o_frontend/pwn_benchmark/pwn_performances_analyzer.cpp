@@ -119,14 +119,15 @@ namespace pwn {
     cout << "-------------------------------------------" << endl;
 
     // Load depth and color images   
-    refDepthImage.load(refDepthImageFilename.c_str());
-    currDepthImage.load(currDepthImageFilename.c_str());
-    imageRows = refDepthImage.rows();
-    imageCols = refDepthImage.cols();
-    scaledImageRows = imageRows / ng_scale;
-    scaledImageCols = imageCols / ng_scale;
-    correspondenceFinder.setImageSize(scaledImageRows, scaledImageCols);
-    dummyCorrespondenceFinder.setImageSize(scaledImageRows, scaledImageCols);
+    _referenceDepth.load(_referenceDepthFilename.c_str());
+    _currentDepth.load(_currentDepthFilename.c_str());
+    _imageRows = _referenceDepth.rows();
+    _imageCols = _referenceDepth.cols();
+    _scaledImageRows = _imageRows / _scale;
+    _scaledImageCols = _imageCols / _scale;
+    _correspondenceFinder->setImageSize(_scaledImageRows, _scaledImageCols);
+    _dummyCorrespondenceFinder->setImageSize(_scaledImageRows, _scaledImageCols);
+    _projector->setImageSize(_scaledImageRows, _scaledImageCols);
 
     // Align clouds
     Isometry3f initialGuess = Isometry3f::Identity();

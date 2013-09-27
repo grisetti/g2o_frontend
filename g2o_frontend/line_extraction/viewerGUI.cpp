@@ -170,7 +170,7 @@ void ViewerGUI::lineExtraction()
 			clusterer->compute();
 			cout << "I found " << clusterer->numClusters() << " clusters in the pool" << endl;
 			
-			//for adjacent lines
+            //for adjacent lines
 			LinesAdjacent la;
 			
 			for (int i =0; i< clusterer->numClusters(); ++i){
@@ -179,10 +179,10 @@ void ViewerGUI::lineExtraction()
 				cout << "processing cluster: " << i << ", npoints: " << cluster.second - cluster.first;
 				
 				if (clusterSize < minPointsCluster) {
-					cout << ": IGNORE" << endl;
+                    cout << ": CLUSTER IGNORED" << endl;
 					continue;
 				}
-				cout << ": ACCEPT" << endl;
+                cout << ": CLUSTER ACCEPTED" << endl;
 				Vector2fVector::const_iterator first = cartesianPoints.begin() + cluster.first;
 				Vector2fVector::const_iterator last = cartesianPoints.begin() + cluster.second + 1;
 				Vector2fVector currentPoints(first, last);				
@@ -206,8 +206,8 @@ void ViewerGUI::lineExtraction()
 				for (Line2DExtractor::IntLineMap::const_iterator it=linesMap.begin(); it!=linesMap.end(); it++) {	
 					const Line2D& line = it->second;					
 					const Vector2f& p0 = lineExtractor->points()[line.p0Index];
-					const Vector2f& p1 = lineExtractor->points()[line.p1Index];
-					
+                    const Vector2f& p1 = lineExtractor->points()[line.p1Index];
+
 					Vector2d p0_g(p0.x(), p0.y()); //without , 0.f in SE2
 					Vector2d p1_g(p1.x(), p1.y());
 					p0_g = T*p0_g;
@@ -229,19 +229,34 @@ void ViewerGUI::lineExtraction()
 				
 				/** saving some information about the line extracted and its line adjacent, if exists **/	
 				Line2DExtractor::IntLineMap::const_iterator bit=linesMap.begin();
-				la.push_back(bit->second);
-				while(bit != linesMap.end()) {
-					const Line2D& line = bit->second;
-					
+                const Line2D& linea = bit->second;
+                const Vector2f& lp0 = lineExtractor->points()[linea.p0Index];
+                const Vector2f& lp1 = lineExtractor->points()[linea.p1Index];
+                line2DwithPoints lps;
+                lps.l = linea;
+                lps.p0 = lp0;
+                lps.p1 = lp1;
+                la.push_back(lps);
+
+                while(bit != linesMap.end()) {
+                    const Line2D& line = bit->second;
+
 					//printing some info
-					linesInfoExtraction(bit, linesMap, currentPoints);
+                    linesInfoExtraction(bit, linesMap, currentPoints);
 					
 					Line2DExtractor::IntLineMap::const_iterator tmp = bit;
 					if((++tmp) != linesMap.end()) {
-						const Line2D& lineRight = tmp->second;
+                        const Line2D& lineRight = tmp->second;
+                        const Vector2f& lrp0 = lineExtractor->points()[lineRight.p0Index];
+                        const Vector2f& lrp1 = lineExtractor->points()[lineRight.p1Index];
+                        line2DwithPoints lrps;
+                        lrps.l = lineRight;
+                        lrps.p0 = lrp0;
+                        lrps.p1 = lrp1;
 						if(line.p1Index == lineRight.p0Index)
 						{
-							la.push_back(lineRight);
+                            la.push_back(lrps);
+//                            cout << "line with point " << la[la.size()-1].p0 << "and" << la[la.size()-1].p1 << endl;
 							bit++;
 						}
 						else {
@@ -450,8 +465,8 @@ void ViewerGUI::ComputeAll()
 		
 		Vector2fVector prev;
 		prev.reserve(lc[0].size());
-		prev.push_back(Vector2f(-1e9, -1e9));
-		prev.push_back(Vector2f(-1e9, -1e9));
+        prev.push_back(Vector2f(-1e9, -1e9));//prev left [0]
+        prev.push_back(Vector2f(-1e9, -1e9));//prev right [1]
 		bool commonVertex = false;
 		
 		int id = (int)graph->vertices().size() - 1;
@@ -460,31 +475,44 @@ void ViewerGUI::ComputeAll()
 		for (int i = 0; i < lc.size(); i++)
 		{
 			Vector2fVector l = lc[i];
-			Vector2d p1(l[0].x(), l[0].y());
-			Vector2d p2(l[1].x(), l[1].y());
-			Vector2d lp1 = iT * p1;
-			Vector2d lp2 = iT * p2;
+            Vector2d p1(l[0].x(), l[0].y());
+            Vector2d p2(l[1].x(), l[1].y());
+            Vector2d lp1 = iT * p1;
+            Vector2d lp2 = iT * p2;
 			
-			//controlling if this line have a common vertex with the previous one
+            //controlling if this line have a common vertex with the previous one
+            double soiola = 0.05;
+            Vector2d prev0d(prev[0].x(), prev[0].y());
+            Vector2d prev1d(prev[1].x(), prev[1].y());
 			if(prev[1].x() == p1.x() && prev[1].y() == p1.y()){
 				commonVertex = true;
 				
 			}
-			else 
+            //they are not the same but really close one to each other..
+            else if((p1-prev1d).norm() <= soiola){
+                commonVertex = true;
+            }
+            else
 				commonVertex = false;
 			
-			prev = l;
+
 	 		
 			if(!commonVertex){
-				//first vertice
+                // checking if the right point is a REAL extreme point
+                //TODO
+                Vector2d lcurrent = pointsToLine(p1,p2);
+                Vector2d lprev = pointsToLine(prev0d,prev1d);
+                double similarrho = 0; //rho1/rho2 < 1.5 --> ok
+
+
+                //first vertex
 				vp1 = new g2o::VertexPointXY();
 				id1 = ++id;
 				vp1->setId(id1);
 				vp1->setEstimate(p1); //ce li ho già trasformati, non moltiplico per T
 				graph->addVertex(vp1);
-		// 		graph->saveVertex(ofG2OLine, vp1);
 				
-				//edge between v and  first vertice
+                //edge between v and  first vertex
 				g2o::EdgeSE2PointXY* erp1 = new g2o::EdgeSE2PointXY();
 				erp1->setVertex(0,v);
 				erp1->setVertex(1,vp1);
@@ -493,10 +521,11 @@ void ViewerGUI::ComputeAll()
 				info1 << 1000, 0, 0, 1000;
 				erp1->setInformation(info1);
 				graph->addEdge(erp1);
-		// 		graph->saveEdge(ofG2OLine, erp1);
 			}
-			
-			//second vertice
+
+            prev = l;
+
+            //second vertex
 			vp2 = new g2o::VertexPointXY();
 			id2 = ++id;
 			vp2->setId(id2);
@@ -506,7 +535,6 @@ void ViewerGUI::ComputeAll()
 			id1_oldId2 = tmpId2;
 			tmpVp2 = vp2;
 			tmpId2 = id2;
-	// 		graph->saveVertex(ofG2OLine, vp2);
 
 			//edge between v and second vertice
 			g2o::EdgeSE2PointXY* erp2 = new g2o::EdgeSE2PointXY();
@@ -517,9 +545,8 @@ void ViewerGUI::ComputeAll()
 			info2 << 1000, 0, 0, 1000;
 			erp2->setInformation(info2);
 			graph->addEdge(erp2);
-	// 		graph->saveEdge(ofG2OLine, erp2);
 
-			//line vertice
+            //line vertex
 			vl = new g2o::VertexLine2D();
 			lid = ++id;
 			vl->setId(lid);
@@ -528,9 +555,8 @@ void ViewerGUI::ComputeAll()
 				vl->p1Id = id1;
 			else
 				vl->p1Id = id1_oldId2;
-			vl->p2Id = id2;
+            vl->p2Id = id2;
 			graph->addVertex(vl);
-	// 		graph->saveVertex(ofG2OLine, vl);
 
 			//Edge between v and vl
 			g2o::EdgeSE2Line2D* erl = new g2o::EdgeSE2Line2D();
@@ -541,7 +567,6 @@ void ViewerGUI::ComputeAll()
 			infovl << 1000, 0, 0, 1000;
 			erl->setInformation(infovl);
 			graph->addEdge(erl);
-	// 		graph->saveEdge(ofG2OLine, erl);
 
 			
 			//Edge between vl and vp1
@@ -557,7 +582,6 @@ void ViewerGUI::ComputeAll()
 			infolp1(0,0) = 1e3;
 			elp1->setInformation(infolp1);
 			graph->addEdge(elp1);
-	// 		graph->saveEdge(ofG2OLine, elp1);
 		
 			//Edge between vl and vp2				
 			g2o::EdgeLine2DPointXY* elp2 = new g2o::EdgeLine2DPointXY;
@@ -568,7 +592,6 @@ void ViewerGUI::ComputeAll()
 			infolp2(0,0) = 1e3;
 			elp2->setInformation(infolp2);
 			graph->addEdge(elp2);
-// 	 		graph->saveEdge(ofG2OLine, elp2);
 		}
 	}
 	
@@ -578,8 +601,8 @@ void ViewerGUI::ComputeAll()
 	ofG2OLine.close();
 }
 
-void ViewerGUI::addingData(VertexDataVector::iterator it)
-{	
+//void ViewerGUI::addingData(VertexDataVector::iterator it)
+//{
 // 	ofstream ofG2OLine("pippo2.g2o");/*, ios::app*/
 // 	VertexData vld = *(it);
 // 	g2o::VertexSE2* v = vld.first;
@@ -695,7 +718,7 @@ void ViewerGUI::addingData(VertexDataVector::iterator it)
 // 	}
 // 
 // 	ofG2OLine.flush();
-}
+//}
 
 
 // TODO

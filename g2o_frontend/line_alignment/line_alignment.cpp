@@ -113,9 +113,9 @@ bool updateVertexPointID(SparseOptimizer* graph, SparseOptimizer* graphline, Ver
 
 
 #if 1
- ofstream os1("Line1CurrCorr.dat");
- ofstream os2("Line2CurrCorr.dat");
- ofstream os2R("Line2CurrCorrRemapped.dat");
+ //ofstream os1("Line1CurrCorr.dat");
+ //ofstream os2("Line2CurrCorr.dat");
+ //ofstream os2R("Line2CurrCorrRemapped.dat");
 // ofstream osletto("LineAppenaLetto.dat");
 #endif
 
@@ -471,14 +471,18 @@ int main(int argc, char**argv){
 
                 //debug: plotting lines frame i and lines frame j remapped with the transform found
 #if 1
-//                ofstream os1("Line1CurrCorr.dat");
+                ofstream os1("Line1.dat");
+                ofstream os1line("Line1_octave.dat");
                 for (int ci = 0; ci < (int)currCorrs.size(); ci++)
                 {
-//                    VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[ci].lid1].vline->id()));
-//                    Vector2d line1 = Vector2d(vli->estimate());
+                    VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[ci].lid1].vline->id()));
+                    Vector2d theLine1 = Vector2d(vli->estimate());
+                    Eigen::Vector3d line1 = Eigen::Vector3d(cos(theLine1(0)), sin(theLine1(0)), theLine1(1));
+                    os1line << line1.transpose() << endl;
+                    os1line << endl;
+
                     VertexPointXY* vpl1_1 = dynamic_cast<VertexPointXY*>(graph->vertex(s1[currCorrs[ci].lid1].vline->p1Id));
                     VertexPointXY* vpl2_1 = dynamic_cast<VertexPointXY*>(graph->vertex(s1[currCorrs[ci].lid1].vline->p2Id));
-
                     Vector2d p1line1 = vpl1_1->estimate();
                     Vector2d p2line1 = vpl2_1->estimate();
                     os1 << p1line1.transpose() << endl;
@@ -488,15 +492,19 @@ int main(int argc, char**argv){
                     os1.flush();
                 }
 
-//                ofstream os2("Line2CurrCorr.dat");
-//                ofstream os2R("Line2CurrCorrRemapped.dat");
+                ofstream os2("Line2.dat");
+                ofstream os2line("Line2_octave.dat");
+                ofstream os2R("Line2Remapped.dat");
                 for (int ci = 0; ci < (int)currCorrs.size(); ci++)
                 {
-//                    VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[ci].lid2].vline->id()));
-//                    Vector2d line2 = Vector2d(vlj->estimate());
+                    VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[ci].lid2].vline->id()));
+                    Vector2d theLine2 = Vector2d(vlj->estimate());
+                    Eigen::Vector3d line2 = Eigen::Vector3d(cos(theLine2(0)), sin(theLine2(0)), theLine2(1));
+                    os2line << line2.transpose() << endl;
+                    os2line << endl;
+
                     VertexPointXY* vpl1_2 = dynamic_cast<VertexPointXY*>(graph->vertex(s2[currCorrs[ci].lid2].vline->p1Id));
                     VertexPointXY* vpl2_2 = dynamic_cast<VertexPointXY*>(graph->vertex(s2[currCorrs[ci].lid2].vline->p2Id));
-
                     Vector2d p1line2 = vpl1_2->estimate();
                     Vector2d p2line2 = vpl2_2->estimate();
                     os2 << p1line2.transpose() << endl;

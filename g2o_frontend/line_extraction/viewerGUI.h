@@ -24,7 +24,12 @@ typedef std::pair<g2o::VertexSE2*, LaserRobotData::Vector2fVector> VertexData;
 typedef std::vector<VertexData> VertexDataVector;
 
 /**for adjacent lines**/
-typedef std::vector<Line2D, Eigen::aligned_allocator<Line2D> > LinesAdjacent;
+struct line2DwithPoints{
+    Line2D l;
+    Eigen::Vector2f p0;
+    Eigen::Vector2f p1;
+};
+typedef std::vector<line2DwithPoints/*, Eigen::aligned_allocator<Line2D>*/ > LinesAdjacent;
 typedef std::vector<LinesAdjacent/*, Eigen::aligned_allocator<std::vector<Line2D> > */> LinesAdjacentVector;
 
 // file .g2o to be read for the line extraction, it has to be modified with the line info founded
@@ -46,7 +51,7 @@ class ViewerGUI : public QMainWindow, public Ui::MainWindow
 		ViewerGUI(VertexDataVector* TheVLdvector, const Eigen::Isometry2d TheOffset, QWidget *parent=0);
 
 		void linesInfoExtraction(Line2DExtractor::IntLineMap::const_iterator it_, const Line2DExtractor::IntLineMap& linesMap_, Vector2fVector& currentPoints_) const;
-		void addingData(VertexDataVector::iterator it_);
+//		void addingData(VertexDataVector::iterator it_);
 		int slider1value;
 		int slider2value;
 		int slider3value;

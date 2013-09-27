@@ -45,7 +45,7 @@ struct Stats : public Eigen::Matrix4f {
 
   inline float curvature() const {
     if(!_curvatureComputed)
-      _curvature = _eigenValues(0) / (_eigenValues(1) + _eigenValues(1) + _eigenValues(2) + 1e-9);
+      _curvature = _eigenValues(0) / (_eigenValues(0) + _eigenValues(1) + _eigenValues(2) + 1e-9);
     _curvatureComputed = true;
     return _curvature;
   }

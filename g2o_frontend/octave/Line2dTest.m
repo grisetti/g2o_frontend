@@ -1,10 +1,9 @@
 # generate the lines (here i use the same generation procedure as for the points, since the
 # lines in cartesian coords are mapped as points with a normal
 # in this case i threat the normal as the direction
+# when not generating random lines, use files .dat generated with c++ line alignement code
 
-
-#  generate a transform
-
+# generate a transform
 gtx = [-0.00129444 0.000101912 -0.139905]'; #4 e 5 no
 # gtx = [2.46308e-07 3.77269e-06 -0.0912328]'; #3 e 4 si
 printf("ground truth vector is:\n");
@@ -73,4 +72,4 @@ for i = [1:size(Ljpoint)(1)]
  TLjpoint(i,:)= point2d_remapCartesian(Xs, Ljpoint(i,:)');
 endfor;
 save("l2_transformed.dat", "TLjpoint");
-TLjpoint
+
