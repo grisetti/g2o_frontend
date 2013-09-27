@@ -1,17 +1,7 @@
+#ifndef _PWN_TRACKER_H_
+#define _PWN_TRACKER_H_
+
 #include "g2o_frontend/boss_map/boss_map.h"
-
-#include "cv_bridge/cv_bridge.h"
-#include "image_transport/image_transport.h"
-#include "tf/transform_listener.h"
-#include "tf/transform_broadcaster.h"
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/time_synchronizer.h>
-#include <message_filters/time_synchronizer.h>
-#include <visualization_msgs/Marker.h>
-
-
 #include "g2o_frontend/boss_logger/bframe.h"
 #include "g2o_frontend/pwn2/frame.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
@@ -20,10 +10,7 @@
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 #include "g2o_frontend/boss_logger/bimagesensor.h"
-//#include "g2o_frontend/boss_map/boss_map.h"
-
 #include "highgui.h"
-#include <boost/bind.hpp>
 #include <fstream>
 #include <iostream>
 
@@ -72,11 +59,7 @@ using namespace pwn;
 
 
   struct PwnTracker{
-    PwnTracker(ros::NodeHandle& nh_,   
-	       tf::TransformListener* tfListener_, 
-	       tf::TransformBroadcaster* tfBroadcaster_, 
-	       std::string& topicName_,
-	       const std::string& filename);
+    PwnTracker(pwn::Aligner* aligner, pwn::DepthImageConverter* converter, boss_map::MapManager* manager);
 
     void makeThumbnails(cv::Mat& depthThumbnail, cv::Mat& normalThumbnail, 
 			Frame* f, int r, int c, 
@@ -88,20 +71,21 @@ using namespace pwn;
 			  Eigen::Matrix3f& cameraMatrix, 
 			  const Eigen::Isometry3f& sensorOffset, 
 			  const DepthImage& depthImage);
-    void subscribe();
-    void broadcastTransform(const sensor_msgs::Image::ConstPtr& img);
-    bool retrieveImageParameters(Eigen::Isometry3f& sensorOffset, 
-				 Eigen::Matrix3f& cameraMatrix, 
-				 const sensor_msgs::Image::ConstPtr& img,
-				 const sensor_msgs::CameraInfo::ConstPtr& info);
 
-    virtual void callback(const sensor_msgs::Image::ConstPtr& img, const sensor_msgs::CameraInfo::ConstPtr& info);
+    virtual void processFrame(const pwn::DepthImage& depthImage, 
+			      const Eigen::Isometry3f& sensorOffset, 
+			      const Eigen::Matrix3f& cameraMatrix);
 
     virtual ~PwnTracker();  
   
-    ros::NodeHandle& _nh;
-    image_transport::ImageTransport * _imageTransport;
-    image_transport::CameraSubscriber *_cameraSubscriber;
+    virtual void newFrameCallback(PwnTrackerFrame* frame) {}
+    virtual void newAlignmentCallback(const Eigen::Isometry3f& globalT, 
+				      const Eigen::Isometry3f& localT, 
+				      int inliers, float error ) {}
+    virtual void newRelationCallback(PwnTrackerRelation* relation) {}
+    virtual void initCallback() {}
+    
+    void init();
 
     Aligner* _aligner;
     DepthImageConverter* _converter;
@@ -109,18 +93,24 @@ using namespace pwn;
     pwn::Frame* _previousCloud;
     PwnTrackerFrame* _previousTrackerFrame;
     Eigen::Isometry3f _previousCloudTransform;
-    std::string _topic;
-    std::string _base_frame_id;
     Eigen::Isometry3f _globalT;
-    tf::TransformListener* _tfListener;
-    tf::TransformBroadcaster* _tfBroadcaster;
     int _counter;
     int _numKeyframes;
-    visualization_msgs::Marker m_odometry; 
-    ros::Publisher _markerPub; 
-    MapManager* manager;
-    Serializer ser;
+    MapManager* _manager;
   };
 
+
+  template <typename T1, typename T2>
+  void convertScalar(T1& dest, const T2& src){
+    for (int i=0; i<src.matrix().cols(); i++)
+      for (int j=0; j<src.matrix().rows(); j++)
+	dest.matrix()(j,i) = src.matrix()(j,i);
+
+  }
+
   std::vector<Serializable*> readConfig(Aligner*& aligner, DepthImageConverter*& converter, const std::string& configFile);
+
 }// end namespace
+
+
+#endif
