@@ -154,11 +154,15 @@ namespace boss_map {
   }
   
   void MapNodeRelation::deserialize(ObjectData& data, IdContext& context){
+    //cerr << __PRETTY_FUNCTION__ << endl;
     Identifiable::deserialize(data,context);
     data.getReference("manager").bind(_manager);
     data.getReference("owner").bind(_owner);
     data.getReference("generator").bind(_generator);
-    ArrayData* adata = dynamic_cast<ArrayData*>(data.getField("parents"));
+    // cerr << "manager: " << _manager << endl;
+    // cerr << "owner: " << _owner << endl;
+    // cerr << "generator: " << _generator << endl;
+    ArrayData* adata = dynamic_cast<ArrayData*>(data.getField("nodes"));
     _nodes.resize(adata->size());
     for(size_t i = 0; i<adata->size(); i++){
       (*adata)[i].getReference().bind(_nodes[i]);

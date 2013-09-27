@@ -4,6 +4,7 @@
 #include "g2o_frontend/boss_logger/bframe.h"
 #include "g2o_frontend/boss_logger/bframerelation.h"
 #include "g2o_frontend/boss_logger/bsensor.h"
+\
 
 
 namespace boss_map {
