@@ -460,7 +460,7 @@ void ViewerGUI::ComputeAll()
 		
 		graph = v->graph();
 		int id1, id2, lid,  id1_oldId2, tmpId2 = -1;
-		g2o::VertexPointXY* vp1, *vp2, *vp1_oldVp2, *tmpVp2 = 0;
+        g2o::VertexPointXY* vp1, *vp2, *vprev2, *vp1_oldVp2, *tmpVp2 = 0;
 		g2o::VertexLine2D* vl;
 		
 		Vector2fVector prev;
@@ -468,10 +468,11 @@ void ViewerGUI::ComputeAll()
         prev.push_back(Vector2f(-1e9, -1e9));//prev left [0]
         prev.push_back(Vector2f(-1e9, -1e9));//prev right [1]
 		bool commonVertex = false;
+        bool fakeExtremePoint = false;
 		
 		int id = (int)graph->vertices().size() - 1;
 			cout << "id ultimo: " << id << endl;
-		//for each line (ho entrambi i vertici per ora)
+        //for each line
 		for (int i = 0; i < lc.size(); i++)
 		{
 			Vector2fVector l = lc[i];
@@ -480,56 +481,62 @@ void ViewerGUI::ComputeAll()
             Vector2d lp1 = iT * p1;
             Vector2d lp2 = iT * p2;
 			
-            //controlling if this line have a common vertex with the previous one
-            double soiola = 0.05;
-            Vector2d prev0d(prev[0].x(), prev[0].y());
-            Vector2d prev1d(prev[1].x(), prev[1].y());
-			if(prev[1].x() == p1.x() && prev[1].y() == p1.y()){
+            //controlling if this line have a common vertex with the previous one(the same point or really closed one to each other..)
+            Vector2d prev1d(prev[0].x(), prev[0].y());
+            Vector2d prev2d(prev[1].x(), prev[1].y());
+            if((prev2d.x() == p1.x() && prev2d.y() == p1.y()) || (p1-prev2d).squaredNorm() <= 0.05)
+            {
 				commonVertex = true;
-				
-			}
-            //they are not the same but really close one to each other..
-            else if((p1-prev1d).norm() <= soiola){
-                commonVertex = true;
             }
             else
 				commonVertex = false;
-			
 
-	 		
-			if(!commonVertex){
-                // checking if the right point is a REAL extreme point
+            if(!commonVertex)
+            {
+                // checking if the left point is a REAL extreme point
                 //TODO
-                Vector2d lcurrent = pointsToLine(p1,p2);
-                Vector2d lprev = pointsToLine(prev0d,prev1d);
-                double similarrho = 0; //rho1/rho2 < 1.5 --> ok
+                double thetaPointTh = 0.016; //hokuyo angularstep is 0.0043.. //theta1/theta2 < 1.5 --> ok
+                double thetaP1 = atan2(p1.y(), p1.x());
+                double rhoP1 = p1.x()/sin(thetaP1);
+                double thetaPrev2 = atan2(prev2d.y(), prev2d.x());
+                double rhoPrev2 = prev2d.x()/sin(thetaPrev2);
 
+                if((p1-prev1d).squaredNorm() > 0.4 && fabs(thetaP1-thetaPrev2) < thetaPointTh){
+                    fakeExtremePoint = true;
+                }
+                if(rhoPrev2 < rhoP1)
+                {
+                    vprev2 = dynamic_cast<g2o::VertexPointXY*>(graph->vertex(id1_oldId2));
+                    //vprev2->setFakeFlag(fakeExtremePoint);
+                }
+                //first current vertex
+                vp1 = new g2o::VertexPointXY();
+                id1 = ++id;
+                vp1->setId(id1);
+                vp1->setEstimate(p1); //ce li ho già trasformati, non moltiplico per T
+                if(rhoP1 < rhoPrev2)
+                {
+                    // add this point as a fake extreme point of the line: we need to change VertexSE2PointXY structure
+                    //vp1->setFakeFlag(fakeExtremePoint);
+                }
+                graph->addVertex(vp1);
 
-                //first vertex
-				vp1 = new g2o::VertexPointXY();
-				id1 = ++id;
-				vp1->setId(id1);
-				vp1->setEstimate(p1); //ce li ho già trasformati, non moltiplico per T
-				graph->addVertex(vp1);
-				
                 //edge between v and  first vertex
-				g2o::EdgeSE2PointXY* erp1 = new g2o::EdgeSE2PointXY();
-				erp1->setVertex(0,v);
-				erp1->setVertex(1,vp1);
-				erp1->setMeasurement(lp1); // p1 not transformed(in global frame)
-				Eigen::Matrix2d info1;
-				info1 << 1000, 0, 0, 1000;
-				erp1->setInformation(info1);
-				graph->addEdge(erp1);
-			}
+                g2o::EdgeSE2PointXY* erp1 = new g2o::EdgeSE2PointXY();
+                erp1->setVertex(0,v);
+                erp1->setVertex(1,vp1);
+                erp1->setMeasurement(lp1); // p1 not transformed(in global frame)
+                Eigen::Matrix2d info1;
+                info1 << 1000, 0, 0, 1000;
+                erp1->setInformation(info1);
+                graph->addEdge(erp1);
+            }
 
-            prev = l;
-
-            //second vertex
+            //second current vertex
 			vp2 = new g2o::VertexPointXY();
 			id2 = ++id;
 			vp2->setId(id2);
-			vp2->setEstimate(p2); //ce li ho già trasformati, non moltiplico per T
+            vp2->setEstimate(p2); //ce li ho già trasformati, non moltiplico per T
 			graph->addVertex(vp2);
 			vp1_oldVp2 = tmpVp2;
 			id1_oldId2 = tmpId2;
@@ -592,6 +599,9 @@ void ViewerGUI::ComputeAll()
 			infolp2(0,0) = 1e3;
 			elp2->setInformation(infolp2);
 			graph->addEdge(elp2);
+
+            //save the current line points as previous
+            prev = l;
 		}
 	}
 	
