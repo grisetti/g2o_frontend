@@ -41,7 +41,11 @@ struct Line2D: public Vector4f{
     dp+=d()*tmin;
     return dp.squaredNorm();
   }
-  int p0Index, p1Index;
+
+  int getFakeExtremePoint() {return fakeExtremeIndex;}
+  void setFakeExtremePoint(int pIndex){ fakeExtremeIndex = pIndex;}
+
+  int p0Index, p1Index, fakeExtremeIndex;
 };
 	
 

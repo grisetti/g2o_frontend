@@ -150,9 +150,9 @@ void ViewerGUI::lineExtraction()
 		Eigen::Isometry2d T = vEstimate*offset;
 		
 // 		cerr << T.translation().transpose() << endl;
-		
+        cout << endl << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<" << endl;
 		if (algotype == splitMergeType){
-			cout << "#----------------------------------------------#" << endl;
+            cout << "#------------------------------------------------#" << endl;
 			cout << "Starting extraction with: " << algotype << endl;
 			cout << "#------------------------------------------------#" << endl;			
 			
@@ -176,7 +176,7 @@ void ViewerGUI::lineExtraction()
 			for (int i =0; i< clusterer->numClusters(); ++i){
 				const Point2DClusterer::Cluster& cluster = clusterer->cluster(i);
 				int clusterSize = cluster.second - cluster.first;
-				cout << "processing cluster: " << i << ", npoints: " << cluster.second - cluster.first;
+                cout << "!!!!!! Processing NEW CLUSTER: " << i << ", npoints: " << cluster.second - cluster.first;
 				
 				if (clusterSize < minPointsCluster) {
                     cout << ": CLUSTER IGNORED" << endl;
@@ -238,10 +238,13 @@ void ViewerGUI::lineExtraction()
                 lps.p1 = lp1;
                 la.push_back(lps);
 
+                //printing some info
+                cout << endl;
+                cout << "\tInfo about the lines of this cluster: " << endl;
+                cout << endl;
                 while(bit != linesMap.end()) {
                     const Line2D& line = bit->second;
 
-					//printing some info
                     linesInfoExtraction(bit, linesMap, currentPoints);
 					
 					Line2DExtractor::IntLineMap::const_iterator tmp = bit;
@@ -363,7 +366,7 @@ void ViewerGUI::linesInfoExtraction(Line2DExtractor::IntLineMap::const_iterator 
 		}
 	}
 	int numPointsInLine = (line.p1Index - line.p0Index) + 1; //tmpPoints.size();
-	cout << "NEW LINE! Point with max distance from the line:"  <<  v.x() << " ," << v.y() << endl;
+    cout << "-->NEW LINE! Point with max distance from the line:"  <<  v.x() << " ," << v.y() << endl;
 	cout << "------------------" << endl;
 	cout << "Line extreme points: " << endl;
 	cout << "\tLEFT: " << p0.x() << ", " << p0.y() << endl; cout << "\tRIGHT: " << p1.x() << ", " << p1.y() << endl;
@@ -435,7 +438,6 @@ void ViewerGUI::ComputeAll()
 		cout << "WARNING! No type of algorithm extraction choosen yet. Please select one of the available options." << endl;
 		return;
 	}
-	
 	g2o::OptimizableGraph* graph;
 	
 	int count = 0;
@@ -445,8 +447,7 @@ void ViewerGUI::ComputeAll()
 		numIteration = count;
 		this->lineExtraction();
 		count+=step;
-		
-		//addingData(it);
+
 		VertexData vld = *(it);
 		g2o::VertexSE2* v = vld.first;
 		
@@ -471,7 +472,7 @@ void ViewerGUI::ComputeAll()
         bool fakeExtremePoint = false;
 		
 		int id = (int)graph->vertices().size() - 1;
-			cout << "id ultimo: " << id << endl;
+            cout << ">>>>>>>>>> NEW FRAME: saving new info in the graph: (id ultimo: " << id << ")" << endl;
         //for each line
 		for (int i = 0; i < lc.size(); i++)
 		{
@@ -486,6 +487,7 @@ void ViewerGUI::ComputeAll()
             Vector2d prev2d(prev[1].x(), prev[1].y());
             if((prev2d.x() == p1.x() && prev2d.y() == p1.y()) || (p1-prev2d).squaredNorm() <= 0.05)
             {
+                cerr << "[COMMON VERTEX]" << endl;
 				commonVertex = true;
             }
             else
@@ -493,31 +495,34 @@ void ViewerGUI::ComputeAll()
 
             if(!commonVertex)
             {
+                cerr << "[NO COMMON VERTEX]" << endl;
+
                 // checking if the left point is a REAL extreme point
-                //TODO
-                double thetaPointTh = 0.016; //hokuyo angularstep is 0.0043.. //theta1/theta2 < 1.5 --> ok
+                double thetaPointTh = 0.0129; //hokuyo angularstep is 0.0043..
                 double thetaP1 = atan2(p1.y(), p1.x());
                 double rhoP1 = p1.x()/sin(thetaP1);
                 double thetaPrev2 = atan2(prev2d.y(), prev2d.x());
                 double rhoPrev2 = prev2d.x()/sin(thetaPrev2);
-
-                if((p1-prev1d).squaredNorm() > 0.4 && fabs(thetaP1-thetaPrev2) < thetaPointTh){
+                if(/*(p1-prev1d).squaredNorm() > 0.4 && */fabs(thetaP1-thetaPrev2) < thetaPointTh){
                     fakeExtremePoint = true;
                 }
-                if(rhoPrev2 < rhoP1)
-                {
-                    vprev2 = dynamic_cast<g2o::VertexPointXY*>(graph->vertex(id1_oldId2));
-                    //vprev2->setFakeFlag(fakeExtremePoint);
-                }
+
                 //first current vertex
                 vp1 = new g2o::VertexPointXY();
                 id1 = ++id;
                 vp1->setId(id1);
                 vp1->setEstimate(p1); //ce li ho già trasformati, non moltiplico per T
-                if(rhoP1 < rhoPrev2)
+                if(fakeExtremePoint && rhoPrev2 <= rhoP1)
                 {
-                    // add this point as a fake extreme point of the line: we need to change VertexSE2PointXY structure
-                    //vp1->setFakeFlag(fakeExtremePoint);
+                    vprev2 = dynamic_cast<g2o::VertexPointXY*>(graph->vertex(tmpId2));
+//                    vprev2->setFakeExtremePoint(fakeExtremePoint);
+                    cerr << "<<<<<<< the previous line has a fake extreme point(RIGHT): " << vprev2->estimate().transpose() << " must be = to " << prev2d.transpose() << endl;
+                }
+                else if(fakeExtremePoint && rhoP1 < rhoPrev2)
+                {
+                    // add this point as a fake extreme point of the line
+//                    vp1->setFakeExtremePoint(fakeExtremePoint);
+                    cerr << "<<<<<<< this line has a fake extreme point(LEFT): " << vp1->estimate().transpose() << " must be = to " << p1.transpose() << endl;
                 }
                 graph->addVertex(vp1);
 
@@ -575,9 +580,7 @@ void ViewerGUI::ComputeAll()
 			erl->setInformation(infovl);
 			graph->addEdge(erl);
 
-			
 			//Edge between vl and vp1
-			
 			g2o::EdgeLine2DPointXY* elp1 = new g2o::EdgeLine2DPointXY();
 			elp1->setVertex(0,vl);
 			if(!commonVertex)
@@ -602,6 +605,7 @@ void ViewerGUI::ComputeAll()
 
             //save the current line points as previous
             prev = l;
+            fakeExtremePoint = false;
 		}
 	}
 	
@@ -610,126 +614,6 @@ void ViewerGUI::ComputeAll()
 	ofG2OLine.flush();
 	ofG2OLine.close();
 }
-
-//void ViewerGUI::addingData(VertexDataVector::iterator it)
-//{
-// 	ofstream ofG2OLine("pippo2.g2o");/*, ios::app*/
-// 	VertexData vld = *(it);
-// 	g2o::VertexSE2* v = vld.first;
-// 	
-// 	// we need T to transform points in gloabl frame
-// 	Eigen::Isometry2d vEstimate;
-// 	Vector3d ev = v->estimate().toVector();
-// 	vEstimate.linear() = Rotation2Dd(ev.z()).matrix();
-// 	vEstimate.translation() = ev.head<2>();
-// 	Eigen::Isometry2d T = vEstimate*offset;
-// 	Eigen::Isometry2d iT = T.inverse();
-// 	
-// 	g2o::OptimizableGraph* graph = v->graph();
-// 	int id1 = -1, id2 = -1;
-// 	int lid;
-// 	g2o::VertexPointXY* vp1, *vp2;
-// 	g2o::VertexLine2D* vl;
-// 	int id = (int)graph->vertices().size() - 1;
-// 	
-// // 		for each line (ho entrambi i vertici per ora)
-// 	for (int i = 0; i < lc.size(); i++)
-// 	{
-// 		Vector2fVector l = lc[i];		
-// 		Vector2d p1(l[0].x(), l[0].y());
-// 		Vector2d p2(l[1].x(), l[1].y());
-// 		Vector2d lp1 = iT * p1;
-// 		Vector2d lp2 = iT * p2;
-// 		
-// 		
-// 			
-// 		//first vertice
-// 		vp1 = new g2o::VertexPointXY();
-// 		id1=id++;
-// 		vp1->setId(id1);
-// 		vp1->setEstimate(p1); //ce li ho già trasformati, non moltiplico per T
-// 		graph->addVertex(vp1);
-// 		graph->saveVertex(ofG2OLine, vp1);
-// 		
-// 		//edge between v and  first vertice
-// 		g2o::EdgeSE2PointXY* erp1 = new g2o::EdgeSE2PointXY();
-// 		erp1->setVertex(0,v);
-// 		erp1->setVertex(1,vp1);
-// 		erp1->setMeasurement(lp1); // p1 not transformed(in global frame)
-// 		Eigen::Matrix2d info1;
-// 		info1 << 1000, 0, 0, 1000;
-// 		erp1->setInformation(info1);
-// 		graph->addEdge(erp1);
-// 		graph->saveEdge(ofG2OLine, erp1);
-// 		
-// 		//second vertice
-// 		vp2 = new g2o::VertexPointXY();
-// 		id2=id++;
-// 		vp2->setId(id2);
-// 		vp2->setEstimate(p2); //ce li ho già trasformati, non moltiplico per T
-// 		graph->addVertex(vp2);
-// 		graph->saveVertex(ofG2OLine, vp2);
-// 
-// 		//edge between v and second vertice
-// 		g2o::EdgeSE2PointXY* erp2 = new g2o::EdgeSE2PointXY();
-// 		erp2->setVertex(0,v);
-// 		erp2->setVertex(1,vp2);
-// 		erp2->setMeasurement(lp2); // p2 not transformed(in global frame)
-// 		Eigen::Matrix2d info2;
-// 		info2 << 1000, 0, 0, 1000;
-// 		erp2->setInformation(info2);
-// 		graph->addEdge(erp2);
-// 		graph->saveEdge(ofG2OLine, erp2);
-// 
-// 		//line vertice
-// 		vl = new g2o::VertexLine2D();
-// 		lid = id++;
-// 		vl->setId(lid);
-// 		vl->setEstimate(pointsToLine(p1,p2));
-// 		vl->p1Id = id1;
-// 		vl->p2Id = id2;
-// 		graph->addVertex(vl);
-// 		graph->saveVertex(ofG2OLine, vl);
-// 
-// 		//Edge between v and vl
-// 		g2o::EdgeSE2Line2D* erl = new g2o::EdgeSE2Line2D();
-// 		erl->setMeasurement(pointsToLine(lp1,lp2));
-// 		erl->setVertex(0,v);
-// 		erl->setVertex(1,vl);
-// 		Eigen::Matrix2d infovl;
-// 		infovl << 1000, 0, 0, 1000;
-// 		erl->setInformation(infovl);
-// 		graph->addEdge(erl);
-// 		graph->saveEdge(ofG2OLine, erl);
-// 
-// 		
-// 		//Edge between vl and vp1
-// 		g2o::EdgeLine2DPointXY* elp1 = new g2o::EdgeLine2DPointXY();
-// 		elp1->setVertex(0,vl);
-// 		elp1->setVertex(1,vp1);
-// 		elp1->setMeasurement(0);
-// 		Eigen::Matrix<double, 1, 1> infolp1;
-// 		infolp1(0,0) = 1e9;
-// 		elp1->setInformation(infolp1);
-// 		graph->addEdge(elp1);
-// 		graph->saveEdge(ofG2OLine, elp1);
-// 
-// 		
-// 		//Edge between vl and vp2
-// 		g2o::EdgeLine2DPointXY* elp2 = new g2o::EdgeLine2DPointXY;
-// 		elp2->setVertex(0,vl);
-// 		elp2->setVertex(1,vp2);
-// 		elp2->setMeasurement(0);
-// 		Eigen::Matrix<double, 1, 1> infolp2;
-// 		infolp2(0,0) = 1e9;
-// 		elp2->setInformation(infolp2);
-// 		graph->addEdge(elp2);
-// 		graph->saveEdge(ofG2OLine, elp2);
-// 	}
-// 
-// 	ofG2OLine.flush();
-//}
-
 
 // TODO
 ViewerGUI::ViewerGUI(VertexDataVector* theVLdVector, Eigen::Isometry2d TheOffset, QWidget* parent)
@@ -741,7 +625,7 @@ ViewerGUI::ViewerGUI(VertexDataVector* theVLdVector, Eigen::Isometry2d TheOffset
   QObject::connect(pushButton, SIGNAL(clicked()), this, SLOT(lineExtraction()));
   QObject::connect(pushButton_2, SIGNAL(clicked()), this, SLOT(showOriginal()));	
   QObject::connect(pushButton_3, SIGNAL(clicked()), this, SLOT(setIdIteration()));
-	QObject::connect(pushButton_4, SIGNAL(clicked()), this, SLOT(ComputeAll()));
+  QObject::connect(pushButton_4, SIGNAL(clicked()), this, SLOT(ComputeAll()));
   QObject::connect(checkBox, SIGNAL(clicked(bool)),this, SLOT(setAlgorithm()));
   QObject::connect(checkBox_2, SIGNAL(clicked(bool)),this, SLOT(setAlgorithm()));
 
@@ -751,11 +635,11 @@ ViewerGUI::ViewerGUI(VertexDataVector* theVLdVector, Eigen::Isometry2d TheOffset
   slider3value = 0;
   algotype = noType;
   edgeExtr = 0;
-	lineExtractor = 0;
-	clusterer = 0;
-	vldvector = theVLdVector;
-	offset = TheOffset;
-	numIteration = 0;
+  lineExtractor = 0;
+  clusterer = 0;
+  vldvector = theVLdVector;
+  offset = TheOffset;
+  numIteration = 0;
 }
 
 // ViewerGUI::ViewerGUI(LaserDataVector* theLdVector, QWidget* parent)
@@ -780,5 +664,4 @@ ViewerGUI::ViewerGUI(VertexDataVector* theVLdVector, Eigen::Isometry2d TheOffset
 // 	clusterer = 0;
 // 	ldvector = theLdVector;
 // 	numIteration = 0;
-// 
 // }
