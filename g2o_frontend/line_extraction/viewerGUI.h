@@ -51,7 +51,6 @@ class ViewerGUI : public QMainWindow, public Ui::MainWindow
 		ViewerGUI(VertexDataVector* TheVLdvector, const Eigen::Isometry2d TheOffset, QWidget *parent=0);
 
 		void linesInfoExtraction(Line2DExtractor::IntLineMap::const_iterator it_, const Line2DExtractor::IntLineMap& linesMap_, Vector2fVector& currentPoints_) const;
-//		void addingData(VertexDataVector::iterator it_);
 		int slider1value;
 		int slider2value;
 		int slider3value;
