@@ -18,6 +18,17 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+#find g2o
+FIND_PACKAGE(G2O REQUIRED)
+IF(G2O_FOUND)
+  SET(${PROJECT_NAME}_G2O_INCLUDE ${G2O_INCLUDE_DIR} CACHE PATH "Directory of G2O include")
+  SET(${PROJECT_NAME}_G2O_LIBRARY_PATH ${G2O_LIBRARY_PATH} CACHE PATH "Directory of G2O libraries")
+  MESSAGE("g2o library found.")
+ELSE(G2O_FOUND)
+  SET(${PROJECT_NAME}_G2O_INCLUDE "" CACHE PATH "Directory of G2O include")
+  MESSAGE("g2o library NOT found.")
+ENDIF(G2O_FOUND)
+
 #set the path for g2o_frontend
 set(G2O_FRONTEND $ENV{G2O_FRONTEND_ROOT})
 link_directories(${G2O_FRONTEND}/lib)
@@ -30,7 +41,7 @@ ELSE(EIGEN3_FOUND)
   MESSAGE("Eigen3 library NOT found.")
 ENDIF(EIGEN3_FOUND)
 
-include_directories(${EIGEN3_INCLUDE_DIR} ${G2O_FRONTEND} )
+include_directories(${G2O_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} ${G2O_FRONTEND} )
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
@@ -46,7 +57,18 @@ rosbuild_add_executable(pwn_tracker_node src/pwn_tracker.cpp src/pwn_tracker_ros
 target_link_libraries(pwn_tracker_node g2o_frontend_pwn2_library boss_map boss_logger g2o_frontend_boss)
 rosbuild_link_boost(pwn_tracker_node  signals)
 
-#rosbuild_add_executable(pwn_tracker_closer src/pwn_tracker_closer.cpp src/pwn_tracker.cpp)
-#target_link_libraries(pwn_tracker_closer g2o_frontend_pwn2_library boss_map boss_logger g2o_frontend_boss)
+rosbuild_add_executable(pwn_tracker_closer src/pwn_tracker_closer.cpp src/pwn_tracker.cpp)
+target_link_libraries(pwn_tracker_closer g2o_frontend_pwn2_library boss_map boss_logger g2o_frontend_boss
+${G2O_CORE_LIBRARY}
+  ${G2O_OPENGL_HELPER_LIBRARY}
+  ${G2O_TYPES_DATA}
+  ${G2O_TYPES_SLAM2D}
+  ${G2O_TYPES_SLAM3D}
+  ${G2O_STUFF_LIBRARY}
+  ${G2O_CORE_LIBRARY}
+  ${G2O_SOLVER_CSPARSE}
+  ${G2O_STUFF_LIBRARY}
+  ${G2O_SOLVER_CSPARSE_EXTENSION}
+  ${CSPARSE_LIBRARY})
 
 #rosbuild_add_executable(cfind src/cfind.cpp)

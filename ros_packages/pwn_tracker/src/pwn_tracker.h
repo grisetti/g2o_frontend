@@ -67,6 +67,8 @@ using namespace pwn;
 			const Eigen::Matrix3f& cameraMatrix,
 			float scale);
 
+    float compareDepthThumbnails();
+    float compareNormalThumbnails();
     pwn::Frame* makeCloud(int& r, int& c,
 			  Eigen::Matrix3f& cameraMatrix, 
 			  const Eigen::Isometry3f& sensorOffset, 
