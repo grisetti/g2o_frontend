@@ -18,6 +18,10 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+find_package(Qt4 REQUIRED)
+#SET(QT_USE_QTOPENGL TRUE)
+#include(${QT_USE_FILE})
+
 #find g2o
 FIND_PACKAGE(G2O REQUIRED)
 IF(G2O_FOUND)
@@ -41,7 +45,7 @@ ELSE(EIGEN3_FOUND)
   MESSAGE("Eigen3 library NOT found.")
 ENDIF(EIGEN3_FOUND)
 
-include_directories(${G2O_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} ${G2O_FRONTEND} )
+include_directories(${G2O_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} ${G2O_FRONTEND} ${QT_INCLUDES})
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
@@ -69,6 +73,22 @@ ${G2O_CORE_LIBRARY}
   ${G2O_SOLVER_CSPARSE}
   ${G2O_STUFF_LIBRARY}
   ${G2O_SOLVER_CSPARSE_EXTENSION}
-  ${CSPARSE_LIBRARY})
+  ${CSPARSE_LIBRARY}
+)
+
+rosbuild_add_executable(pwn_tracker_log_viewer src/pwn_tracker_log_viewer.cpp 
+	src/pwn_tracker_ros.cpp src/pwn_tracker.cpp
+)
+include_directories(
+  ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} 
+  ${QGLVIEWER_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR}/..
+)
+target_link_libraries(pwn_tracker_log_viewer 
+  g2o_frontend_pwn_viewer g2o_frontend_pwn2_library
+  boss_map boss_logger g2o_frontend_boss
+  ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
+  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
+  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
+)
 
 #rosbuild_add_executable(cfind src/cfind.cpp)

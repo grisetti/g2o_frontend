@@ -102,7 +102,7 @@ namespace pwn {
 
     if(_counter % _chunkStep == 0 && _counter != 0) {
       char name[1024];
-      sprintf(name, "part-%04d.pwn", _counter);
+      sprintf(name, "pwn-part-%04d.pwn", _counter);
       _scene.save(name, 5, true, _chunkInitialPose);
       _scene.clear();
       _localPose = Isometry3f::Identity();
@@ -119,8 +119,8 @@ namespace pwn {
     cout << "-------------------------------------------" << endl;
 
     // Load depth and color images   
-    _referenceDepth.load(_referenceDepthFilename.c_str());
-    _currentDepth.load(_currentDepthFilename.c_str());
+    // _referenceDepth.load(_referenceDepthFilename.c_str());
+    // _currentDepth.load(_currentDepthFilename.c_str());
     _imageRows = _referenceDepth.rows();
     _imageCols = _referenceDepth.cols();
     _scaledImageRows = _imageRows / _scale;

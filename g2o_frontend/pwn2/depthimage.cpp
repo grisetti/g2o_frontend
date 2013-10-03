@@ -219,9 +219,9 @@ void DepthImage::scale(Eigen::MatrixXf& dest, const Eigen::MatrixXf& src, int st
    FILE* f=fopen(filename, "rb");
    bool result = _readPgm(usm, f, transposed);
    fclose(f);
+   fromUnsignedShort(usm, scaleFactor);
    if (! result)
      return false;
-   fromUnsignedShort(usm, scaleFactor);
    return true;
  }
 
