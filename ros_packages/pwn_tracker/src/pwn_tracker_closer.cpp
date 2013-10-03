@@ -428,6 +428,34 @@ void autoMatch(Aligner* aligner, DepthImageConverter* converter,
 	 << " rd: " << candidates[i].reprojectionDistance << endl; 
   }
 }
+/*
+std::vector<int> cluster(std::vector<MatchingCandidate>& candidates, std::vector<PwnTrackerFrame*>& trackerFrames){
+  std::vector<int> parents(trackerFrames.size(), -1);
+  for (size_t i = 0; i<candidates.size(); i++){
+    MatchingCandidate& match;
+    int from = match.fromIdx;
+    int to = match.toIdx;
+    int& pFrom = parents[from];
+    int& pTo = parents[to];
+    if (pFrom>-1 && pTo>-1){
+      if (pFrom>pTo)
+	pFrom = pTo;
+      else
+	pTo = pFrom;
+    } else if (pFrom == -1 && pTo >-1) {
+      pFrom = pTo;
+    } else if (pFrom > -1 && pTo ==-1) {
+      pTo = pFrom;
+    } else {
+      pFrom = -1;
+      pTo = from;
+    }
+  }
+  return parents;
+  //; scan to find the clusters:
+}
+*/
+
 
 void scoreCandidates(std::vector<MatchingCandidate>& candidates, float inlierThreshold){
   for (size_t i=0; i<candidates.size(); i++){
