@@ -31,6 +31,8 @@ bool DrawableFrame::setParameter(GLParameter *parameter_) {
 }
 
 void DrawableFrame::clearDrawableObjects() {
+  if (! _frame)
+    return;
   if(_drawablePoints)
     delete _drawablePoints;
   if(_drawableNormals)
@@ -59,7 +61,7 @@ void DrawableFrame::constructDrawableObjects(){
 }
 
 void DrawableFrame::setFrame(Frame *f) {
-  if(f != _frame) {
+  if(f && f != _frame) {
     clearDrawableObjects();
     _frame = f;
     constructDrawableObjects();

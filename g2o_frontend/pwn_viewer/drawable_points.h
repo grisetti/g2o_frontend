@@ -30,6 +30,13 @@ class DrawablePoints : public Drawable {
     _normals = normals_; 
     updatePointDrawList();
   }
+  
+  virtual void setPointsAndNormals(PointVector *points_, NormalVector *normals_) {
+    _points = points_;
+    _normals = normals_; 
+    updatePointDrawList();
+  }
+
   virtual void setTraversabilityVector(std::vector<int> *traversabilityVector_) { 
     _traversabilityVector = traversabilityVector_; 
     updatePointDrawList();
@@ -44,7 +51,7 @@ class DrawablePoints : public Drawable {
   }
 
   virtual void draw();
-  void updatePointDrawList();
+  virtual void updatePointDrawList();
 
  protected:
   GLParameterPoints *_parameter;

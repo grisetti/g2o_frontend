@@ -25,6 +25,8 @@ class Drawable {
   virtual void setViewer(PWNQGLViewer *viewer_) { _viewer = viewer_; }
   virtual bool setParameter(GLParameter *parameter_) = 0;
 
+  //virtual void updatePointDrawList() { }
+
  protected:
   Eigen::Isometry3f _transformation;
   PWNQGLViewer *_viewer;

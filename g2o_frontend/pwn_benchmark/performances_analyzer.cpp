@@ -37,7 +37,7 @@ namespace pwn {
     _dummyCorrespondenceFinder->setFlatCurvatureThreshold(1.0f);  
     _dummyCorrespondenceFinder->setInlierCurvatureRatioThreshold(std::numeric_limits<float>::max());
     _dummyCorrespondenceFinder->setInlierNormalAngularThreshold(cosf(M_PI));
-    //_dummyCorrespondenceFinder->setSize(_scaledImageRows, _scaledImageCols);
+    _dummyCorrespondenceFinder->setImageSize(_scaledImageRows, _scaledImageCols);
     
     _dummyLinearizer = new Linearizer();
     _dummyLinearizer->setInlierMaxChi2(1e3);        
@@ -239,7 +239,7 @@ namespace pwn {
 
     _scaledImageRows = _imageRows / _scale;
     _scaledImageCols = _imageCols / _scale;
-    //_dummyCorrespondenceFinder->setSize(_scaledImageRows, _scaledImageCols);
+    _dummyCorrespondenceFinder->setImageSize(_scaledImageRows, _scaledImageCols);
     _projector->setImageSize(_scaledImageRows, _scaledImageCols);
   }
 }
