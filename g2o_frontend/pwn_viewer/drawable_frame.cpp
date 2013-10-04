@@ -89,7 +89,7 @@ void DrawableFrame::draw() {
     sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     glMultMatrixf(sensorOffset.data());
     glColor4f(1,0,0,0.5);
-    g2o::opengl::drawPyramid(0.2, 0.2);
+    //g2o::opengl::drawPyramid(0.2, 0.2);
     glPopMatrix();
 
     glPopMatrix();

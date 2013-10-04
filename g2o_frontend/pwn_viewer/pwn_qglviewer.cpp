@@ -5,6 +5,7 @@
 #include <iostream>
 
 using namespace std;
+using namespace Eigen;
 
 namespace pwn {
 
@@ -37,6 +38,29 @@ class StandardCamera : public qglviewer::Camera {
 PWNQGLViewer::PWNQGLViewer(QWidget *parent, const QGLWidget *shareWidget, Qt::WFlags flags) : QGLViewer(parent, shareWidget, flags) {
   _ellipsoidDrawList = 0;
   _numDrawLists = 2;
+}
+
+void PWNQGLViewer::updateCameraPosition(Eigen::Isometry3f pose, Eigen::Isometry3f sensorOffset) {
+  Eigen::Vector3f translation = pose.translation();
+  qglviewer::Camera *oldcam = camera();
+  qglviewer::Camera *cam = new StandardCamera();
+  setCamera(cam);
+
+  // Eigen::Vector3f position = translation + (pose*sensorOffset).linear()*Vector3f(0.0f, -0.5f, -1.0f);
+  // cam->setPosition(qglviewer::Vec(position[0], position[1], position[2]));
+  // Eigen::Vector3f upVector = translation + (pose*sensorOffset).linear()*Vector3f(0.0f, -1.5f, -1.0f);
+  // cam->setUpVector(qglviewer::Vec(upVector[0], upVector[1], upVector[2]));
+  // Eigen::Vector3f lookAt = translation + (pose*sensorOffset).linear()*Vector3f(0.0f, 0.0f, 2.0f);
+  // cam->lookAt(qglviewer::Vec(lookAt[0], lookAt[1], lookAt[2]));
+
+  Eigen::Vector3f position = translation + (pose*sensorOffset).linear()*Vector3f(0.0f, -1.0f, -3.0f);
+  cam->setPosition(qglviewer::Vec(position[0], position[1], position[2]));
+  Eigen::Vector3f upVector = translation + (pose*sensorOffset).linear()*Vector3f(0.0f, -2.0f, -3.0f);
+  cam->setUpVector(qglviewer::Vec(upVector[0], upVector[1], upVector[2]));
+  Eigen::Vector3f lookAt = translation + (pose*sensorOffset).linear()*Vector3f(0.0f, 0.0f, 1.0f);
+  cam->lookAt(qglviewer::Vec(lookAt[0], lookAt[1], lookAt[2]));
+
+  delete oldcam;
 }
 
 void PWNQGLViewer::init() {
