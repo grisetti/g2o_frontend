@@ -203,14 +203,25 @@ void DepthImage::scale(Eigen::MatrixXf& dest, const Eigen::MatrixXf& src, int st
     }
   }
   
-  void DepthImage::fromCvMat(const cv::Mat &m){
+  void DepthImage::fromCvMat(const cv::Mat &m, float scaleFactor){
     assert (m.type==CV_16UC1);
     resize(m.cols,m.rows);
     const unsigned short* us=(const unsigned short*)m.data;
     float* f=data();
     int s = m.rows*m.cols;
     for (int i =0; i<s; i++, f++, us++)
-      *f = (*us) ? 0.001f*(*us) : std::numeric_limits<float>::max();
+      *f = (*us) ? scaleFactor*(*us) : std::numeric_limits<float>::max();
+    //transposeInPlace();
+  }
+
+  void DepthImage::fromCvMat32FC1(const cv::Mat &m, float scaleFactor){
+    assert (m.type==CV_32FC1);
+    resize(m.cols,m.rows);
+    const float* us=(const float*)m.data;
+    float* f=data();
+    int s = m.rows*m.cols;
+    for (int i =0; i<s; i++, f++, us++)
+      *f = (*us) ? scaleFactor*(*us) : std::numeric_limits<float>::max();
     //transposeInPlace();
   }
   
