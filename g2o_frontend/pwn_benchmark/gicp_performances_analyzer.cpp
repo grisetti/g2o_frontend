@@ -66,7 +66,6 @@ namespace pwn {
       issAssociations >> dummy >> _currentDepthFilename;
     }
 
-    cout << "Scale factor: " << _scaleFactor << endl;
     // Load depth images      
     _referenceDepth.load((_referenceDepthFilename.substr(0, _referenceDepthFilename.size() - 3) + "pgm").c_str(), true, _scaleFactor);
     _currentDepth.load((_currentDepthFilename.substr(0, _currentDepthFilename.size() - 3) + "pgm").c_str(), true, _scaleFactor);
@@ -114,8 +113,6 @@ namespace pwn {
     pwnToPclPointCloud(currPclPointCloud, &_currentFrame);   
     
     cout << "Aligning: " << _currentDepthFilename << " --> " << _referenceDepthFilename << endl;
-    cout << "Ref Size: " << refPclPointCloud->points.size() << " --- " << _referenceFrame.points().size() << endl;
-    cout << "CUr Size: " << currPclPointCloud->points.size() << " --- " << _currentFrame.points().size() << endl;
     pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> gicp;
     // Set the maximum correspondence distance
     gicp.setMaxCorrespondenceDistance(0.5);
@@ -130,7 +127,7 @@ namespace pwn {
     _ostart = get_time();
     gicp.align(aligned);
     _oend = get_time();
-
+    cout << "Time: " << _oend - _ostart << " seconds" << endl;
     Matrix4f finalTransformation = gicp.getFinalTransformation();
     Isometry3f T = Isometry3f::Identity();
     T.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;

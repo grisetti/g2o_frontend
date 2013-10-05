@@ -99,7 +99,7 @@ namespace pwn {
 
     // Open associations file
     cout << "Opening associations file \'" << associationsFilename <<"\'... ";
-    _isAssociations.open("pwn_associations.txt");
+    _isAssociations.open(associationsFilename.c_str());
     if (!_isAssociations) {
       cerr << "Impossible to open associations file." << endl;
       return false;
@@ -113,7 +113,7 @@ namespace pwn {
 
     // Parsing ground truth file for the initial transformation
     cout << "Opening ground truth file \'" << groundtruthFilename <<"\'... ";
-    _isGroundtruth.open("groundtruth.txt");
+    _isGroundtruth.open(groundtruthFilename.c_str());
     if (!_isGroundtruth) {
       cerr << "Impossible to open ground truth file." << endl;
       return false;

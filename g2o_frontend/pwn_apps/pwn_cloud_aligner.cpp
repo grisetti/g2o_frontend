@@ -17,6 +17,7 @@
 #include <QGraphicsView>
 
 #include "g2o/stuff/command_args.h"
+#include "g2o/stuff/timeutil.h"
 
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/cylindricalpointprojector.h"
@@ -682,7 +683,11 @@ int main(int argc, char **argv) {
       aligner.setSensorOffset(sensorOffset);
       
       // Align
+      double ostart, oend;
+      ostart = get_time();
       aligner.align();  
+      oend = get_time();
+      cout << "Time: " << oend - ostart << " seconds" << endl;
       cout << "T: " << endl << aligner.T().matrix() << endl;
       
       Drawable *lastDrawable = viewer->drawableList().back();

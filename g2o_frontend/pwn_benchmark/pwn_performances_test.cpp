@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
   arg.param("absoluteTrajectoryFilename", absoluteTrajectoryFilename, "pwn_absolute_trajectory.txt", "Specify the name of the file that will contain the absolute trajectory computed");
   arg.param("relativeTrajectoryFilename", relativeTrajectoryFilename, "pwn_relative_trajectory.txt", "Specify the name of the file that will contain the relative trajectory computed");
   arg.param("associationsFilename", associationsFilename, "pwn_associations.txt", "Specify the name of the file that will contain the images associations");
-  arg.param("groundTruthFilename", groundTruthFilename, "groudtruth.txt", "Specify the name of the file that will contain the ground truth trajectory");
+  arg.param("groundTruthFilename", groundTruthFilename, "groundtruth.txt", "Specify the name of the file that will contain the ground truth trajectory");
   arg.paramLeftOver("directory", directory, ".", "Directory where the program will find the ground truth file and the subfolders depth and rgb containing the images", true);
   
   // Set parser input
