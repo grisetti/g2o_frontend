@@ -84,7 +84,7 @@ namespace pwn_tracker{
     _previousCloud = 0;
     _globalT.setIdentity();
     _previousCloudTransform.setIdentity();
-    _scale = 8;
+    _scale = 4;
     _counter = 0;
     _numKeyframes = 0;
     this->_aligner = aligner;
