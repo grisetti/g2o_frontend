@@ -77,6 +77,16 @@ namespace pwn_tracker{
       for (int c=0; c<3; c++, i++)
     	cameraMatrix(r,c) = info->K[i];
     cameraMatrix(2,2) = 1;
+    
+    std::cout << "Sensor offset: " << t2v(sensorOffset).transpose() << endl;
+
+    sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+
+    // cameraMatrix << 
+    //   525.0f,   0.0f, 319.5f,
+    //   0.0f, 525.0f, 239.5f,
+    //   0.0f,   0.0f,   1.0f;  
+
     return true;
   }
 
@@ -90,7 +100,11 @@ namespace pwn_tracker{
     
     cv_bridge::CvImagePtr ptr=cv_bridge::toCvCopy(img, img->encoding);
     DepthImage depthImage;
-    depthImage.fromCvMat(ptr->image);
+    if(img->encoding == "32FC1")
+      depthImage.fromCvMat32FC1(ptr->image, 1.0f);
+    else
+      depthImage.fromCvMat(ptr->image);
+
     processFrame(depthImage, sensorOffset, cameraMatrix);
 
   }

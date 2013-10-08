@@ -89,7 +89,8 @@ public:
    *  @param m is an image of unsigned short containing the depth values expressed 
    *  in millimeters.
    */
-  void fromCvMat(const cv::Mat &m);
+  void fromCvMat(const cv::Mat &m, float scaleFactor = 0.001f);
+  void fromCvMat32FC1(const cv::Mat &m, float scaleFactor = 1.0f);
   
   /**
    *  This method laods the values of a depth image file in the DepthImage object. 

@@ -29,6 +29,8 @@ class PWNQGLViewer : public QGLViewer {
   inline GLuint pyramidDrawList() { return _ellipsoidDrawList; }
   inline std::vector<Drawable*>& drawableList() { return _drawableList; }   
   
+  void updateCameraPosition(Eigen::Isometry3f pose,Eigen::Isometry3f sensorOffset);
+
   inline const std::vector<Drawable*>& drawableList() const { return _drawableList; }   
 
  protected:

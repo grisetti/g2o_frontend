@@ -103,7 +103,7 @@ int main (int argc, char** argv) {
   for(size_t i = 0; i < trackerFrames.size(); i++) {
     PwnTrackerFrame *pwnTrackerFrame = trackerFrames[i];
     char nummero[1024];
-    sprintf(nummero, "%05d",i);
+    sprintf(nummero, "%05d", (int)i);
     listWidget->addItem(QString(nummero));
     
     Isometry3f transform = Isometry3f::Identity();
@@ -152,7 +152,7 @@ int main (int argc, char** argv) {
 	  delete fromDepthBlob;
 	}	
       } else {
-	drawableFrame->parameter()->setShow(! drawableFrame->parameter()->show() );
+	drawableFrame->parameter()->setShow(false);
 	selectionChanged = true;
       }
     }

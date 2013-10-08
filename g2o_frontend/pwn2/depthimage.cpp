@@ -203,22 +203,44 @@ void DepthImage::scale(Eigen::MatrixXf& dest, const Eigen::MatrixXf& src, int st
     }
   }
   
-  void DepthImage::fromCvMat(const cv::Mat &m){
+  void DepthImage::fromCvMat(const cv::Mat &m, float scaleFactor){
     assert (m.type==CV_16UC1);
     resize(m.cols,m.rows);
     const unsigned short* us=(const unsigned short*)m.data;
     float* f=data();
     int s = m.rows*m.cols;
     for (int i =0; i<s; i++, f++, us++)
-      *f = (*us) ? 0.001f*(*us) : std::numeric_limits<float>::max();
+      *f = (*us) ? scaleFactor*(*us) : std::numeric_limits<float>::max();
+    //transposeInPlace();
+  }
+
+  void DepthImage::fromCvMat32FC1(const cv::Mat &m, float scaleFactor){
+    assert (m.type==CV_32FC1);
+    resize(m.cols,m.rows);
+    const float* us=(const float*)m.data;
+    float* f=data();
+    int s = m.rows*m.cols;
+    for (int i =0; i<s; i++, f++, us++) {
+      if (*us != *us) {
+	*f = std::numeric_limits<float>::max();
+      }
+      else if (*us == 0.0f) {
+	*f = std::numeric_limits<float>::max();
+      }
+      else {
+    	*f = scaleFactor * (*us);
+      }
+    }
     //transposeInPlace();
   }
   
   bool DepthImage::load(const char* filename, bool transposed, float scaleFactor) {
    MatrixXus usm;
-   FILE* f=fopen(filename, "rb");
+   FILE *f = NULL;
+   f = fopen(filename, "rb");
    bool result = _readPgm(usm, f, transposed);
-   fclose(f);
+   if(f != NULL)
+     fclose(f);
    fromUnsignedShort(usm, scaleFactor);
    if (! result)
      return false;
