@@ -220,16 +220,27 @@ void DepthImage::scale(Eigen::MatrixXf& dest, const Eigen::MatrixXf& src, int st
     const float* us=(const float*)m.data;
     float* f=data();
     int s = m.rows*m.cols;
-    for (int i =0; i<s; i++, f++, us++)
-      *f = (*us) ? scaleFactor*(*us) : std::numeric_limits<float>::max();
+    for (int i =0; i<s; i++, f++, us++) {
+      if (*us != *us) {
+	*f = std::numeric_limits<float>::max();
+      }
+      else if (*us == 0.0f) {
+	*f = std::numeric_limits<float>::max();
+      }
+      else {
+    	*f = scaleFactor * (*us);
+      }
+    }
     //transposeInPlace();
   }
   
   bool DepthImage::load(const char* filename, bool transposed, float scaleFactor) {
    MatrixXus usm;
-   FILE* f=fopen(filename, "rb");
+   FILE *f = NULL;
+   f = fopen(filename, "rb");
    bool result = _readPgm(usm, f, transposed);
-   fclose(f);
+   if(f != NULL)
+     fclose(f);
    fromUnsignedShort(usm, scaleFactor);
    if (! result)
      return false;

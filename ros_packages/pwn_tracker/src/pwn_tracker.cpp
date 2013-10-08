@@ -6,6 +6,13 @@ namespace pwn_tracker{
   using namespace pwn;
   using namespace boss;
 
+  inline double get_time() 
+  {
+    struct timeval ts;
+    gettimeofday(&ts,0);
+    return ts.tv_sec + ts.tv_usec*1e-6;
+  }
+
   PwnTrackerFrame::PwnTrackerFrame(MapManager* manager, int id, IdContext* context):
     MapNode ( manager, id, context) {
     sensorOffset.setIdentity();
@@ -84,7 +91,7 @@ namespace pwn_tracker{
     _previousCloud = 0;
     _globalT.setIdentity();
     _previousCloudTransform.setIdentity();
-    _scale = 8;
+    _scale = 2;
     _counter = 0;
     _numKeyframes = 0;
     this->_aligner = aligner;
@@ -101,7 +108,7 @@ namespace pwn_tracker{
     _previousCloud = 0;
     _globalT.setIdentity();
     _previousCloudTransform.setIdentity();
-    _scale = 4;
+    _scale = 2;
     _counter = 0;
     _numKeyframes = 0;
     initCallback();
@@ -145,18 +152,24 @@ namespace pwn_tracker{
 				    const Eigen::Isometry3f& sensorOffset,  const DepthImage& depthImage) {
     PinholePointProjector* projector=dynamic_cast<PinholePointProjector*>(_converter->_projector);
 
-    cameraMatrix(2,2)=1;
-    projector->setCameraMatrix(cameraMatrix);
-    projector->setImageSize(depthImage.rows(), depthImage.cols());
+    float invScale = 1.0f / _scale;
+    Matrix3f scaledCameraMatrix = cameraMatrix * invScale;
+    scaledCameraMatrix(2, 2) = 1.0f;
+
+    projector->setCameraMatrix(scaledCameraMatrix);
+    int scaledImageRows = depthImage.rows() / _scale;
+    int scaledImageCols = depthImage.cols() / _scale;
+    projector->setImageSize(scaledImageRows, scaledImageCols);
 
     DepthImage scaledImage;
     DepthImage::scale(scaledImage,depthImage,_scale);
-    projector->scale(1.0/_scale);
-    cameraMatrix=projector->cameraMatrix();
+
+    cameraMatrix = projector->cameraMatrix();
     r = projector->imageRows();
     c = projector->imageCols();
     pwn::Frame* cloud = new pwn::Frame;
-    _converter->compute(*cloud,scaledImage, sensorOffset);
+    cout << "NUMS: " << r << " --- " << c << " --- " << cameraMatrix << endl;
+    _converter->compute(*cloud, scaledImage, sensorOffset);
     // scale image and camera matrix
     return cloud;
   }
@@ -181,7 +194,11 @@ namespace pwn_tracker{
 
       Eigen::Isometry3f guess=_previousCloudTransform.inverse()*_globalT;
       _aligner->setInitialGuess(guess);
+      double t0, t1;
+      t0 = get_time();
       _aligner->align();
+      t1 = get_time();
+      std::cout << "Time: " << t1 - t0 << " seconds " << std::endl;
  
       // cerr << "inliers: " << _aligner->inliers() << endl;
       // cerr << "chi2: " << _aligner->error() << endl;

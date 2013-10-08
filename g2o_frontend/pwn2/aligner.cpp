@@ -83,7 +83,7 @@ namespace pwn {
       // Correspondences computation.  
       _correspondenceFinder->compute(*_referenceFrame, *_currentFrame, _T.inverse());
       // cerr << "cf, numFound:" << _correspondenceFinder->numCorrespondences() << endl;
-    
+
       /************************************************************************
        *                            Alignment                                 *
        ************************************************************************/
