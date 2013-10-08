@@ -29,11 +29,7 @@ ADD_SUBDIRECTORY(pwn_mapper)
 ADD_SUBDIRECTORY(pwn_test)
 ADD_SUBDIRECTORY(pwn_g2o)
 ADD_SUBDIRECTORY(pwn_apps)
-<<<<<<< HEAD
-#ADD_SUBDIRECTORY(pwn_benchmark)
-=======
 ADD_SUBDIRECTORY(pwn_odometry)
->>>>>>> 2f75c0050b04f5f33f88c67e9a4a3c9556051e2c
 #ADD_SUBDIRECTORY(voronoi)
 
 if(PCL_FOUND)
