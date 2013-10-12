@@ -16,7 +16,7 @@ namespace pwn {
       cerr << "Impossible to create the file containing the values of the benchmark." << endl;
       return false;
     }
-    _ofsBenchmark << "time" << std::endl;
+    // _ofsBenchmark << "time" << std::endl;
     cout << "done." << endl;
   
     // Create trajectory file

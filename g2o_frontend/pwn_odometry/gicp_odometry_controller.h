@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Eigen/Core>
+
 #include "g2o/stuff/timeutil.h"
 
 #include "odometry_controller.h"
@@ -9,17 +11,16 @@
 
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/depthimageconverter.h"
-#include "g2o_frontend/pwn2/aligner.h"
 #include "g2o_frontend/pwn2/merger.h"
 
 namespace pwn {
 
-  class PWNOdometryController : public OdometryController {
+  class GICPOdometryController : public OdometryController {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-    PWNOdometryController(const char *configFilename_, const char *logFilename_);
-    virtual ~PWNOdometryController();
+    GICPOdometryController(const char *configFilename_, const char *logFilename_);
+    virtual ~GICPOdometryController();
 
     // Load next frame
     virtual bool loadFrame(Frame *&frame);
@@ -32,7 +33,6 @@ namespace pwn {
     virtual void update();
 
     inline void setScaleFactor(const float scaleFactor_) { _scaleFactor = scaleFactor_; }
-    inline void setInliersFraction(const float inliersFraction_) { _inliersFraction = inliersFraction_; }
     inline void setScale(const float scale_) { 
       _scale = scale_;
       update();
@@ -41,9 +41,10 @@ namespace pwn {
       _sensorType = sensorType_;
       update();
     }
-
+    inline void setChunkStep(int chunkStep_) { _chunkStep = chunkStep_; }
+    
     inline Eigen::Isometry3f globalPose() { return _globalPose; }
-    inline Eigen::Isometry3f relativePose() { return _aligner->T(); }
+    inline Eigen::Isometry3f relativePose() { return _relativePose; }
     inline int counter() { return _counter; }
     inline string timestamp() { return _timestamp; }
     inline Frame* referenceFrame() { return _referenceFrame; }
@@ -54,22 +55,21 @@ namespace pwn {
     ofstream _ofsLog;
 
     // Pwn structures
-    bool _updateReference;
-    int _scaledImageRows, _scaledImageCols, _counter; 
-    float _scale, _scaleFactor, _inliersFraction;
+    bool _newChunk;
+    int _scaledImageRows, _scaledImageCols, _counter, _chunkStep; 
+    float _scale, _scaleFactor;
     double _ostart, _oend;
     string _timestamp, _depthFilename, _sensorType;
-    Matrix3f _cameraMatrix, _scaledCameraMatrix;
-    Eigen::Isometry3f _sensorOffset, _startingPose, _globalPose, _referencePose, _localPose;
+    Eigen::Matrix3f _cameraMatrix, _scaledCameraMatrix;
+    Eigen::Isometry3f _sensorOffset, _startingPose, _globalPose, _relativePose, _referencePose, _localPose;
     DepthImage _depthImage, _scaledDepthImage;
     Frame *_currentFrame, *_referenceFrame, *_scene;
     std::vector<boss::Serializable*> pwnStructures;
     DepthImageConverter *_converter;
-    Aligner *_aligner;
     Merger *_merger;
 
     // Pwn configuration file reader
-    std::vector<boss::Serializable*> readPWNConfigFile(const char *configFilename);
+    std::vector<boss::Serializable*> readGICPConfigFile(const char *configFilename);
   };
 
 }

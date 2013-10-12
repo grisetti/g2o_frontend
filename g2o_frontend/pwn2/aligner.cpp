@@ -76,7 +76,7 @@ namespace pwn {
       // char buf[1024];
       // sprintf(buf, "reference-%02d.pgm", i);
       // _correspondenceFinder->referenceDepthImage().save(buf, true);
-    
+ 
       // sprintf(buf, "reference-%02d.pwn", i);
       // _referenceFrame->save(buf, 1, true, _T);
     

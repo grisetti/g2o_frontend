@@ -12,7 +12,7 @@
 #include "g2o_frontend/pwn_viewer/drawable_trajectory.h"
 #include "g2o_frontend/pwn_viewer/gl_parameter_trajectory.h"
 
-#include "pwn_odometry_controller.h"
+#include "pwn_odometry_sequential_controller.h"
 
 using namespace std;
 using namespace Eigen;
@@ -22,8 +22,9 @@ using namespace pwn;
 int main (int argc, char** argv) {
   // Handle input
   int vz_applyTransform, vz_pointStep;
+  int pwn_chunkStep;
   float vz_pointSize, vz_alpha;
-  float pwn_scaleFactor, pwn_scale, pwn_inliersFraction;
+  float pwn_scaleFactor, pwn_scale;
 
   string pwn_configFilename, pwn_logFilename, pwn_sensorType;
   string oc_benchmarkFilename, oc_trajectoryFilename, oc_groundTruthFilename, oc_associationsFilename;
@@ -36,7 +37,7 @@ int main (int argc, char** argv) {
   arg.param("vz_alpha", vz_alpha, 1.0f, "Alpha channel value of the points to visualize");
   arg.param("vz_pointStep", vz_pointStep, 1, "Step value at which points are drawn");
   
-  arg.param("pwn_inliersFraction", pwn_inliersFraction, 0.6f, "Inliers fraction to accept before to take a new reference frame");
+  arg.param("pwn_chunkStep", pwn_chunkStep, 30, "Number of cloud composing a registered scene");
   arg.param("pwn_scaleFactor", pwn_scaleFactor, 0.001f, "Scale factor at which the depth images were saved");
   arg.param("pwn_scale", pwn_scale, 4.0f, "Scale factor the depth images are loaded");
   arg.param("pwn_configFilename", pwn_configFilename, "pwn.conf", "Specify the name of the file that contains the parameter configurations of the pwn structures");
@@ -54,7 +55,7 @@ int main (int argc, char** argv) {
   // Create GUI
   QApplication application(argc,argv);
   QWidget* mainWindow = new QWidget();
-  mainWindow->setWindowTitle("PWN Odometry");
+  mainWindow->setWindowTitle("PWN Odometry Sequential");
   QHBoxLayout* hlayout = new QHBoxLayout();
   mainWindow->setLayout(hlayout);
   PWNQGLViewer* viewer = new PWNQGLViewer(mainWindow);
@@ -66,13 +67,13 @@ int main (int argc, char** argv) {
   mainWindow->show();
   
   // Init odometry controller
-  PWNOdometryController *pwnOdometryController = new PWNOdometryController(pwn_configFilename.c_str(), pwn_logFilename.c_str());
-  pwnOdometryController->fileInitialization(oc_groundTruthFilename.c_str(), oc_associationsFilename.c_str(),
-					    oc_trajectoryFilename.c_str(), oc_benchmarkFilename.c_str());
-  pwnOdometryController->setScaleFactor(pwn_scaleFactor);
-  pwnOdometryController->setScale(pwn_scale);
-  pwnOdometryController->setSensorType(pwn_sensorType);
-  pwnOdometryController->setInliersFraction(pwn_inliersFraction);
+  PWNOdometrySequentialController *pwnOdometrySequentialController = new PWNOdometrySequentialController(pwn_configFilename.c_str(), pwn_logFilename.c_str());
+  pwnOdometrySequentialController->fileInitialization(oc_groundTruthFilename.c_str(), oc_associationsFilename.c_str(),
+						      oc_trajectoryFilename.c_str(), oc_benchmarkFilename.c_str());
+  pwnOdometrySequentialController->setScaleFactor(pwn_scaleFactor);
+  pwnOdometrySequentialController->setScale(pwn_scale);
+  pwnOdometrySequentialController->setSensorType(pwn_sensorType);
+  pwnOdometrySequentialController->setChunkStep(pwn_chunkStep);
 
   // Compute odometry
   bool sceneHasChanged;
@@ -92,12 +93,20 @@ int main (int argc, char** argv) {
 								 &trajectoryColors);
   viewer->addDrawable(drawableGroundTruthTrajectory);
   viewer->addDrawable(drawableTrajectory);
+  bool finished = false;
   while (mainWindow->isVisible()) {
-    if (pwnOdometryController->loadFrame(frame)) {
+    if (sceneHasChanged)
+      viewer->updateGL();
+    application.processEvents();
+
+    if (finished) {
+      continue;
+    }
+    if (pwnOdometrySequentialController->loadFrame(frame)) {
       sceneHasChanged = false;
     
-      if(pwnOdometryController->counter() == 1) {
-	pwnOdometryController->getGroundTruthPose(groundTruthPose, atof(pwnOdometryController->timestamp().c_str()));
+      if(pwnOdometrySequentialController->counter() == 1) {
+	pwnOdometrySequentialController->getGroundTruthPose(groundTruthPose, atof(pwnOdometrySequentialController->timestamp().c_str()));
 	// Add first frame to draw
 	groundTruthReferenceFrame = new Frame();
 	*groundTruthReferenceFrame = *frame;
@@ -110,7 +119,7 @@ int main (int argc, char** argv) {
 	GLParameterFrame *frameParams = new GLParameterFrame();
 	frameParams->setStep(vz_pointStep);
 	frameParams->setShow(true);	
-	DrawableFrame *drawableFrame = new DrawableFrame(pwnOdometryController->globalPose(), frameParams, frame);
+	DrawableFrame *drawableFrame = new DrawableFrame(pwnOdometrySequentialController->globalPose(), frameParams, frame);
 
 	viewer->addDrawable(drawableGroundTruthReferenceFrame);
 	viewer->addDrawable(drawableFrame);
@@ -118,26 +127,26 @@ int main (int argc, char** argv) {
 	sceneHasChanged = true;
       }
       // Compute current transformation
-      if (pwnOdometryController->processFrame()) {
-	pwnOdometryController->getGroundTruthPose(groundTruthPose, atof(pwnOdometryController->timestamp().c_str()));	
+      if (pwnOdometrySequentialController->processFrame()) {
+	pwnOdometrySequentialController->getGroundTruthPose(groundTruthPose, atof(pwnOdometrySequentialController->timestamp().c_str()));	
 	
 	// Add frame to draw
 	GLParameterFrame *frameParams = new GLParameterFrame();
 	frameParams->setStep(vz_pointStep);
 	frameParams->setShow(true);	
-	DrawableFrame *drawableFrame = new DrawableFrame(pwnOdometryController->globalPose(), frameParams, frame);
+	DrawableFrame *drawableFrame = new DrawableFrame(pwnOdometrySequentialController->globalPose(), frameParams, frame);
 	viewer->addDrawable(drawableFrame);
 	
 	// Add trajectory pose
 	groundTruthTrajectory.push_back(groundTruthPose);
 	groundTruthTrajectoryColors.push_back(Vector4f(0.0f, 1.0f, 0.0f, 0.6f));
-	trajectory.push_back(pwnOdometryController->globalPose());
+	trajectory.push_back(pwnOdometrySequentialController->globalPose());
 	trajectoryColors.push_back(Vector4f(1.0f, 0.0f, 0.0f, 0.6f));
 	drawableGroundTruthTrajectory->updateTrajectoryDrawList();
 	drawableTrajectory->updateTrajectoryDrawList();
       
 	// Write results
-	pwnOdometryController->writeResults();
+	pwnOdometrySequentialController->writeResults();
       
 	sceneHasChanged = true;
       }
@@ -147,8 +156,8 @@ int main (int argc, char** argv) {
 	DrawableFrame *d = dynamic_cast<DrawableFrame*>(viewer->drawableList()[3]);
 	if (d) {
 	  Frame *f = d->frame();
-	  if (pwnOdometryController->referenceFrame() != f &&
-	      pwnOdometryController->currentFrame() != f) {
+	  if (pwnOdometrySequentialController->referenceFrame() != f &&
+	      pwnOdometrySequentialController->currentFrame() != f) {
 	    viewer->erase(3);
 	    delete d;
 	    delete f; 
@@ -158,10 +167,9 @@ int main (int argc, char** argv) {
 
       frame = 0;
     }
-
-    if (sceneHasChanged)
-      viewer->updateGL();
-    application.processEvents();
+    else {
+      finished = true;
+    }
   }
 
   return 0;

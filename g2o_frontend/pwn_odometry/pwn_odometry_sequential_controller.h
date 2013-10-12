@@ -14,12 +14,12 @@
 
 namespace pwn {
 
-  class PWNOdometryController : public OdometryController {
+  class PWNOdometrySequentialController : public OdometryController {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-    PWNOdometryController(const char *configFilename_, const char *logFilename_);
-    virtual ~PWNOdometryController();
+    PWNOdometrySequentialController(const char *configFilename_, const char *logFilename_);
+    virtual ~PWNOdometrySequentialController();
 
     // Load next frame
     virtual bool loadFrame(Frame *&frame);
@@ -32,7 +32,6 @@ namespace pwn {
     virtual void update();
 
     inline void setScaleFactor(const float scaleFactor_) { _scaleFactor = scaleFactor_; }
-    inline void setInliersFraction(const float inliersFraction_) { _inliersFraction = inliersFraction_; }
     inline void setScale(const float scale_) { 
       _scale = scale_;
       update();
@@ -41,6 +40,7 @@ namespace pwn {
       _sensorType = sensorType_;
       update();
     }
+    inline void setChunkStep(int chunkStep_) { _chunkStep = chunkStep_; }
 
     inline Eigen::Isometry3f globalPose() { return _globalPose; }
     inline Eigen::Isometry3f relativePose() { return _aligner->T(); }
@@ -54,9 +54,9 @@ namespace pwn {
     ofstream _ofsLog;
 
     // Pwn structures
-    bool _updateReference;
-    int _scaledImageRows, _scaledImageCols, _counter; 
-    float _scale, _scaleFactor, _inliersFraction;
+    bool _newChunk;
+    int _scaledImageRows, _scaledImageCols, _counter, _chunkStep; 
+    float _scale, _scaleFactor;
     double _ostart, _oend;
     string _timestamp, _depthFilename, _sensorType;
     Matrix3f _cameraMatrix, _scaledCameraMatrix;

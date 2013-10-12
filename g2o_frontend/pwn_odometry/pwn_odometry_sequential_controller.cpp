@@ -1,16 +1,16 @@
-#include "pwn_odometry_controller.h"
+#include "pwn_odometry_sequential_controller.h"
 
 namespace pwn {
 
-  PWNOdometryController::PWNOdometryController(const char *configFilename, const char *logFilename) {
+  PWNOdometrySequentialController::PWNOdometrySequentialController(const char *configFilename, const char *logFilename) {
     // Pwn objects init
-    _updateReference = false;
+    _newChunk = false;
+    _chunkStep = 30;
     _counter = 0;
     _scaledImageRows = 0;
     _scaledImageCols = 0;
     _scale = 1.0f;
     _scaleFactor = 0.001f;
-    _inliersFraction = 0.6f;
     _sensorType = "kinect";
     _sensorOffset = Eigen::Isometry3f::Identity();
     _sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
@@ -51,12 +51,18 @@ namespace pwn {
     update();
   }
 
-  PWNOdometryController::~PWNOdometryController() {}
+  PWNOdometrySequentialController::~PWNOdometrySequentialController() {}
 
-  bool PWNOdometryController::loadFrame(Frame *&frame) {
+  bool PWNOdometrySequentialController::loadFrame(Frame *&frame) {
     // Read a line from associations
     char line[4096];    
     if (!_ifsAssociations.getline(line, 4096)) {
+      char name[1024];
+      sprintf(name, "./depth/pwn-part-%05d.pwn", _counter);
+      _scene->save(name, 1, true, _globalPose);
+      _scene->clear();
+      _localPose = Isometry3f::Identity();
+      _referencePose = _globalPose;
       return false;
     }
     istringstream issAssociations(line);
@@ -79,38 +85,35 @@ namespace pwn {
     frame = new pwn::Frame();
     _converter->compute(*frame, _scaledDepthImage, _sensorOffset);
 
-    if (!_referenceFrame) {
+    if (!_currentFrame) {
       cout << "Starting timestamp: " << _timestamp << endl;
       getGroundTruthPose(_startingPose, atof(_timestamp.c_str()));
       _globalPose = _startingPose;
       _referencePose = _startingPose;
+      _localPose = Eigen::Isometry3f::Identity();
       std::cout << "Starting pose: " << t2v(_startingPose).transpose() << std::endl;
-      _referenceFrame = frame;
-      _scene->add(*_referenceFrame, Eigen::Isometry3f::Identity());
+      _scene->add(*frame, _localPose);
     }
-    else if (!_currentFrame) {
-      _currentFrame = frame;
-    }
-    else if (_updateReference) {
-      _referenceFrame = _currentFrame;
-      _currentFrame = frame;
+
+    _referenceFrame = _currentFrame;
+    _currentFrame = frame;
+
+    if (_counter%_chunkStep == 0 && _counter != 0) {
+      std::cout << "New chunk created" << std::endl;
+      char name[1024];
+      sprintf(name, "./depth/pwn-part-%05d.pwn", _counter);
+      _scene->save(name, 1, true, _globalPose);
+      _scene->clear();
+      _localPose = Isometry3f::Identity();
       _referencePose = _globalPose;
-      _updateReference = false;
-      _scene->add(*_referenceFrame, Eigen::Isometry3f::Identity());
-    }
-    else {
-      // Merge clouds
-      _scene->add(*_currentFrame, _aligner->T());
-      _merger->merge(_scene, _aligner->T() * _sensorOffset);
-      
-      _currentFrame = frame;
+      _scene->add(*_referenceFrame, _localPose);
     }
     _counter++;
     
     return true;
   }
 
-  bool PWNOdometryController::processFrame() {
+  bool PWNOdometrySequentialController::processFrame() {
     if(!_referenceFrame || !_currentFrame) {
       return false;
     }
@@ -123,6 +126,7 @@ namespace pwn {
     // Align clouds
     Isometry3f initialGuess = Isometry3f::Identity();
     initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    _scene->transformInPlace(_aligner->T().inverse());
     // _aligner->setReferenceFrame(_referenceFrame);
     _aligner->setReferenceFrame(_scene);
     _aligner->setCurrentFrame(_currentFrame);
@@ -133,25 +137,12 @@ namespace pwn {
     _oend = g2o::get_time();
 
     // Update transformations
-    _globalPose = _referencePose * _aligner->T();
+    _globalPose = _globalPose * _aligner->T();
     _globalPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    _localPose = _localPose * _aligner->T();
+    _localPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
-    int maxInliers = _scaledImageRows * _scaledImageCols;
-    float inliersFraction = (float)_aligner->inliers() / (float)maxInliers;
-    std::cout << "Max possible inliers: " << maxInliers << std::endl;
-    std::cout << "Inliers found: " << _aligner->inliers() << std::endl;
-    std::cout << "Inliers fraction: " << inliersFraction << std::endl;
-    
-    if (inliersFraction < _inliersFraction) {
-      _updateReference = true;
-      std::cout << "New reference frame selected" << std::endl;
-      char name[1024];
-      sprintf(name, "./depth/pwn-part-%05d.pwn", _counter);
-      _scene->save(name, 5, true, _referencePose);
-      _scene->clear();
-    }
-
-    else if (!_counter%50 && _counter != 0) {
+    if(!_counter%50 && _counter != 0) {
       Eigen::Matrix3f R = _globalPose.linear();
       Eigen::Matrix3f E = R.transpose() * R;
       E.diagonal().array() -= 1;
@@ -159,13 +150,17 @@ namespace pwn {
     }
     _globalPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     
+    // Merge clouds
+    _scene->add(*_currentFrame, _aligner->T());
+    _merger->merge(_scene, _aligner->T() * _sensorOffset);      
+
     // Save current frame for debug
     // _currentFrame->save(("pwn_" + _depthFilename.substr(0, _depthFilename.size() - 3) + "pwn").c_str(), 10, true, _globalPose);   
     
     return true;
   }
 
-  std::vector<boss::Serializable*> PWNOdometryController::readPWNConfigFile(const char *configFilename) {
+  std::vector<boss::Serializable*> PWNOdometrySequentialController::readPWNConfigFile(const char *configFilename) {
     _converter = 0;
     _aligner = 0;
     boss::Deserializer des;
@@ -186,7 +181,7 @@ namespace pwn {
     return instances;
   }
 
-  void PWNOdometryController::writeResults() {
+  void PWNOdometrySequentialController::writeResults() {
     // Write out global pose
     Vector6f absolutePoseVector = t2v(_globalPose);
     float qw = sqrtf(1.0f - (absolutePoseVector[3]*absolutePoseVector[3] + 
@@ -204,7 +199,7 @@ namespace pwn {
     std::cout << "Time: " << _oend - _ostart << " seconds" << std::endl;	  
   }
 
-  void PWNOdometryController::update() {
+  void PWNOdometrySequentialController::update() {
     _cameraMatrix.setIdentity();
     if (_sensorType == "xtion640") {
       _cameraMatrix << 
