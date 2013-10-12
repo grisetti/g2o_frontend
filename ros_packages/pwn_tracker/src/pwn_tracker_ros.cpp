@@ -78,7 +78,7 @@ namespace pwn_tracker{
     	cameraMatrix(r,c) = info->K[i];
     cameraMatrix(2,2) = 1;
     
-    std::cout << "Sensor offset: " << t2v(sensorOffset).transpose() << endl;
+    //std::cout << "Sensor offset: " << t2v(sensorOffset).transpose() << endl;
 
     sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 

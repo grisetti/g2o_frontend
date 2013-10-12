@@ -108,7 +108,6 @@ namespace pwn_tracker{
     _previousCloud = 0;
     _globalT.setIdentity();
     _previousCloudTransform.setIdentity();
-    _scale = 2;
     _counter = 0;
     _numKeyframes = 0;
     initCallback();
@@ -168,7 +167,7 @@ namespace pwn_tracker{
     r = projector->imageRows();
     c = projector->imageCols();
     pwn::Frame* cloud = new pwn::Frame;
-    cout << "NUMS: " << r << " --- " << c << " --- " << cameraMatrix << endl;
+    //cout << "NUMS: " << r << " --- " << c << " --- " << cameraMatrix << endl;
     _converter->compute(*cloud, scaledImage, sensorOffset);
     // scale image and camera matrix
     return cloud;

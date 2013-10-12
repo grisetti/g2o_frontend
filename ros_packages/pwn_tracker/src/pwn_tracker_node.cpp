@@ -27,7 +27,9 @@ int main(int argc, char** argv){
   PwnTrackerRos* tracker = new PwnTrackerRos(nh, tfListener, tfBroadcaster, _topic, argv[2],
 					  aligner, converter, manager);
   tracker->_base_frame_id = "/camera_link";
+  tracker->_scale = 4;
   tracker->init();
+  
   tracker->subscribe();
   while (ros::ok()){
     ros::spinOnce();

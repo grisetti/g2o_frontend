@@ -31,6 +31,31 @@ using namespace boss;
 using namespace pwn_tracker;
 
 
+  
+struct PwnTrackerClosureRelation: public PwnTrackerRelation {
+  PwnTrackerClosureRelation(MapManager* manager=0, int id=-1, IdContext* context = 0):
+    PwnTrackerRelation(manager, id, context){
+    reprojectionInliers = 0;
+    reprojectionOutliers = 0;
+  }
+
+  virtual void serialize(ObjectData& data, IdContext& context){
+    PwnTrackerRelation::serialize(data,context);
+    data.setInt("reprojectionInliers", reprojectionInliers);
+    data.setInt("reprojectionOutliers", reprojectionOutliers);
+  }
+
+  virtual void deserialize(ObjectData& data, IdContext& context){
+    PwnTrackerRelation::deserialize(data,context);
+    reprojectionInliers = data.getInt("reprojectionInliers");
+    reprojectionOutliers = data.getInt("reprojectionOutliers");
+  }
+
+  int reprojectionInliers;
+  int reprojectionOutliers;
+};
+
+BOSS_REGISTER_CLASS(PwnTrackerClosureRelation);
 
   float compareNormals(cv::Mat& m1, cv::Mat& m2){
     if (m1.rows!=m2.rows || m1.cols != m2.cols)
@@ -56,12 +81,10 @@ using namespace pwn_tracker;
     return norm(diff);
   }
 
-
-
 struct MatchingCandidate{
   int fromIdx;
   int toIdx;
-  PwnTrackerRelation* relation;
+  PwnTrackerClosureRelation* relation;
   float normalDifference;
   float depthDifference;
   float reprojectionDistance;
@@ -69,8 +92,141 @@ struct MatchingCandidate{
   int inliers;
   cv::Mat  diffRegistered;
   cv::Mat  normalsRegistered;
-
 };
+
+Frame* makeFrame(DepthImageConverter* converter, PwnTrackerFrame* trackerFrame, int scale = 8){
+  boss_logger::ImageBLOB* depthBLOB = trackerFrame->depthImage.get();
+  PinholePointProjector* projector = (PinholePointProjector*)converter->_projector;
+  projector->setImageSize(trackerFrame->imageRows, trackerFrame->imageCols);
+  pwn::DepthImage depth;
+  pwn::Frame* cloud=new pwn::Frame;
+  Eigen::Matrix3f cameraMatrix;
+  Eigen::Isometry3f offset;
+  depth.fromCvMat(depthBLOB->cvImage());
+  convertScalar(offset, trackerFrame->sensorOffset);
+  convertScalar(cameraMatrix, trackerFrame->cameraMatrix);
+  projector->setCameraMatrix(cameraMatrix);
+  pwn::DepthImage scaledDepth;
+  DepthImage::scale(scaledDepth, depth, scale);
+  projector->scale (1./scale);
+  converter->compute(*cloud, scaledDepth, offset);
+  delete depthBLOB;
+  return cloud;
+}
+
+
+struct FrameCluster{
+  int clusterNumber;
+  std::vector<PwnTrackerFrame*>  trackerFrames;
+  std::map<PwnTrackerFrame*,pwn::Frame*> pwnFrames;
+  std::vector<MatchingCandidate*> matchingCandidates;
+
+  void makeClouds(DepthImageConverter* converter,
+		  int scale = 8){
+    cerr << "   frames: ";
+    for (size_t i = 0; i<trackerFrames.size(); i++){
+      Frame* f = makeFrame(converter, trackerFrames[i], scale);
+      pwnFrames.insert(make_pair(trackerFrames[i],f));
+      cerr << trackerFrames[i] << "(" <<  f->points().size() << ") ";
+      // char filename[1024]; sprintf(filename, "frame-%05d.pwn",i);
+      // f->save(filename, 1,  true);
+    }
+    cerr << endl;
+  }
+
+  void clearClouds() {
+    for (std::map<PwnTrackerFrame*,pwn::Frame*>::iterator it = pwnFrames.begin(); it!=pwnFrames.end(); it++){
+      delete it->second;
+    }
+    pwnFrames.clear();
+  } 
+
+  void matchCorrespondence(Aligner* aligner, MatchingCandidate& candidate,
+			   std::vector<PwnTrackerFrame*>& trackerFrames,
+			   MapManager* manager, int scale = 8){
+    PwnTrackerFrame* from = trackerFrames[candidate.fromIdx];
+    PwnTrackerFrame* to = trackerFrames[candidate.toIdx];
+    if (from == to)
+      return; 
+   
+    cerr <<  " matching frames: " << from << " " << to << endl;
+    
+    pwn::Frame* fromCloud, *toCloud; 
+    toCloud = this->pwnFrames[to];
+    fromCloud = this->pwnFrames[from];
+
+    cerr << "retrieved clouds: " << fromCloud << " " << toCloud << endl;
+
+    Eigen::Isometry3f fromOffset, toOffset;
+    Eigen::Matrix3f fromCameraMatrix, toCameraMatrix;
+
+    convertScalar(fromOffset, from->sensorOffset);
+    convertScalar(fromCameraMatrix, from->cameraMatrix);
+
+    convertScalar(toOffset, to->sensorOffset);
+    convertScalar(toCameraMatrix, to->cameraMatrix);
+    
+    PinholePointProjector* projector = (PinholePointProjector*)aligner->projector();
+    int r, c;
+  
+    aligner->setReferenceSensorOffset(fromOffset);
+    aligner->setCurrentSensorOffset(toOffset);
+    aligner->setInitialGuess(Eigen::Isometry3f::Identity());
+    projector->setCameraMatrix(toCameraMatrix);
+    projector->setImageSize(to->imageRows,to->imageCols);
+    projector->scale(1./scale);
+    
+    cerr << "cameraMatrix: " << endl;
+    cerr << projector->cameraMatrix() << endl;
+    r = projector->imageRows();
+    c = projector->imageCols();
+    cerr << "r: " << r << ", c: " << c << endl;
+
+    aligner->correspondenceFinder()->setImageSize(r,c);
+    aligner->setReferenceFrame(fromCloud);
+    aligner->setCurrentFrame(toCloud);
+    aligner->align();
+    
+    Eigen::Isometry3d relationMean;
+    convertScalar(relationMean, aligner->T());
+    PwnTrackerClosureRelation* rel = new PwnTrackerClosureRelation(manager);
+    rel->setTransform(relationMean);
+    rel->setInformationMatrix(Eigen::Matrix<double, 6,6>::Identity());
+    rel->setTo(from);
+    rel->setFrom(to);
+    candidate.relation = rel;
+
+    DepthImage 
+      currentDepthThumb = aligner->correspondenceFinder()->currentDepthImage(),
+      referenceDepthThumb = aligner->correspondenceFinder()->referenceDepthImage();
+    cv::Mat currentRect, referenceRect;
+    currentDepthThumb.toCvMat(currentRect);
+    referenceDepthThumb.toCvMat(referenceRect);
+    cv::Mat mask = (currentRect>0) & (referenceRect>0);
+    currentRect.convertTo(currentRect, CV_32FC1);
+    referenceRect.convertTo(referenceRect, CV_32FC1);
+    mask.convertTo(mask, currentRect.type());
+    cv::Mat diff = abs(currentRect-referenceRect)&mask;
+    candidate.diffRegistered = diff.clone();
+    int nonZeros = countNonZero(mask);
+    float sum=0;
+    for (int i = 0; i<diff.rows; i++)
+      for (int j = 0; j<diff.cols; j++){
+	float d = candidate.diffRegistered.at<float>(i,j);
+	sum +=d;
+      }
+    candidate.relation = rel;
+    candidate.reprojectionDistance = sum/nonZeros;
+  }
+
+  void matchCorrespondences(Aligner* aligner, std::vector<PwnTrackerFrame*>& pwnFrames,
+			    MapManager* manager, int scale = 8){
+    for(size_t i=0; i<matchingCandidates.size(); i++){
+      matchCorrespondence(aligner, *matchingCandidates[i], pwnFrames, manager, scale);
+    }
+  }
+};
+
 
 cv::Mat normalsComparison;
 cv::Mat depthsComparison;
@@ -85,7 +241,7 @@ int c = 0;
 float a = 0.0;
 float cutoff = 0;
 float inlierThreshold = 50;
-int maxOutliers = 750;
+int maxOutliers = 100;
 
 MapManager* load(std::vector<PwnTrackerFrame*>& trackerFrames,
 		 std::vector<PwnTrackerRelation*>& trackerRelations,
@@ -119,16 +275,12 @@ MapManager* load(std::vector<PwnTrackerFrame*>& trackerFrames,
 void save(std::vector<Serializable*>& objects,
 	  MapManager* manager,
 	  std::vector<MatchingCandidate>& candidates,
-	  Serializer& ser,
-	  int maxOutliers){
+	  Serializer& ser){
   for (size_t i = 0; i<objects.size(); i++)
     ser.writeObject(*objects[i]);
   for(size_t i = 0; i<candidates.size(); i++){
     MatchingCandidate& c = candidates[i];
-    if (c.outliers<maxOutliers){
-      manager->addRelation(c.relation);
-      ser.writeObject(*c.relation);
-    }
+    ser.writeObject(*c.relation);
   }
 }
 
@@ -276,7 +428,7 @@ void constructCandidates(std::vector<MatchingCandidate>& candidates,
 			 cv::Mat depthComparison, float depthThreshold,
 			 cv::Mat normalsComparison, float normalsThreshold){
   int r = depthComparison.rows;
-  int c = depthComparison.cols;
+  //int c = depthComparison.cols;
   for (int i=0; i<r; i++)
     for (int j=0; j<i; j++){
       float d = depthComparison.at<float>(i,j);
@@ -292,6 +444,9 @@ void constructCandidates(std::vector<MatchingCandidate>& candidates,
       }
     }
 }
+
+
+
 
 void alignFrames(Aligner* aligner, DepthImageConverter* converter,
 		 MatchingCandidate& candidate,
@@ -319,6 +474,7 @@ void alignFrames(Aligner* aligner, DepthImageConverter* converter,
     fromDepth.fromCvMat(fromDepthBlob->cvImage());
     convertScalar(fromOffset, from->sensorOffset);
     convertScalar(fromCameraMatrix, from->cameraMatrix);
+    projector->setImageSize(from->imageRows, from->imageCols);
     projector->setCameraMatrix(fromCameraMatrix);
     pwn::DepthImage scaledFromDepth;
     DepthImage::scale(scaledFromDepth, fromDepth, scale);
@@ -332,6 +488,7 @@ void alignFrames(Aligner* aligner, DepthImageConverter* converter,
     convertScalar(toCameraMatrix, to->cameraMatrix);
     projector->setCameraMatrix(toCameraMatrix);
     pwn::DepthImage scaledToDepth;
+    projector->setImageSize(from->imageRows, from->imageCols);
     DepthImage::scale(scaledToDepth, toDepth, scale);
     projector->scale (1./scale);
     converter->compute(toCloud, scaledToDepth, toOffset);
@@ -352,7 +509,7 @@ void alignFrames(Aligner* aligner, DepthImageConverter* converter,
 
   Eigen::Isometry3d relationMean;
   convertScalar(relationMean, aligner->T());
-  PwnTrackerRelation* rel = new PwnTrackerRelation(manager);
+  PwnTrackerClosureRelation* rel = new PwnTrackerClosureRelation(manager);
   rel->setTransform(relationMean);
   rel->setInformationMatrix(Eigen::Matrix<double, 6,6>::Identity());
   rel->setTo(from);
@@ -385,6 +542,74 @@ void alignFrames(Aligner* aligner, DepthImageConverter* converter,
 }
 
 
+int findRoot(std::vector<int>& assignment, int idx){
+  if (assignment[idx]==-1 || assignment[idx] == idx){
+    assignment[idx] = idx;
+    return idx;
+  }
+  int r = findRoot(assignment, assignment[idx]); 
+  assignment[idx] = r;
+  return r;
+}
+
+void partition(std::vector<int>& parents, 
+	       std::vector<PwnTrackerFrame*>& trackerFrames, 
+	       std::vector<MatchingCandidate>&  matchingCandidates) {
+  parents.resize(trackerFrames.size(), -1);
+
+  for (size_t i = 0; i< trackerFrames.size(); i++)
+    parents[i] = -1;
+
+  for (size_t i =0; i<matchingCandidates.size(); i++) {
+    const MatchingCandidate& m=matchingCandidates[i];
+    int aIdx = std::min(m.fromIdx, m.toIdx);
+    int bIdx = std::max(m.fromIdx, m.toIdx);
+    int aRoot = findRoot(parents, aIdx);
+    int bRoot = findRoot(parents, bIdx);
+    if (aRoot < bRoot ){
+      parents[bRoot] = aRoot;
+    } else {
+      parents[aRoot] = bRoot;
+    }
+  }
+  //cerr << "Constructed tree" << endl;
+  for (size_t i=0; i<parents.size(); i++) {
+    parents[i] = findRoot(parents, i);
+    //cerr << "node: " << i << "cluster:" << parents[i] << endl;
+  }
+}
+
+void makeClusters(std::map<int, FrameCluster >& clusters,
+		  std::vector<PwnTrackerFrame*>& trackerFrames, 
+		  std::vector<MatchingCandidate>&  matchingCandidates) {
+  std::vector<int> partitions;
+  partition(partitions, trackerFrames, matchingCandidates); 
+
+  for(size_t i=0; i<partitions.size(); i++) {
+    std::map<int, FrameCluster >::iterator it=clusters.find(partitions[i]);
+    if (it == clusters.end()) {
+      FrameCluster cluster;
+      cluster.clusterNumber = partitions[i];
+      cluster.trackerFrames.push_back(trackerFrames[i]);
+      clusters.insert(make_pair(cluster.clusterNumber, cluster));
+    } else { 
+      it->second.trackerFrames.push_back(trackerFrames[i]);
+    }
+  }
+
+  for (size_t i =0; i<matchingCandidates.size(); i++) {
+    MatchingCandidate& m = matchingCandidates[i];
+    int cnum1 = partitions[m.fromIdx];
+    int cnum2 = partitions[m.toIdx];
+    if (cnum1 != cnum2) {
+      cerr << "ERROR: " 
+	   << matchingCandidates[i].fromIdx << ":" << cnum1 << " "
+	   << matchingCandidates[i].toIdx   << ":" << cnum2 << endl;
+      throw runtime_error("correspondences mismatch");
+    }
+    clusters[cnum1].matchingCandidates.push_back(&matchingCandidates[i]);
+  }
+}
 
 void scoreCandidate(MatchingCandidate& candidate, float inlierThreshold){
   cv::Mat& diff = candidate.diffRegistered;
@@ -415,17 +640,30 @@ void scoreCandidate(MatchingCandidate& candidate, float inlierThreshold){
     }
   candidate.inliers = inliers;
   candidate.outliers = outliers;
+  candidate.relation->reprojectionInliers=inliers;
+  candidate.relation->reprojectionOutliers=outliers;
 }
 
-void autoMatch(Aligner* aligner, DepthImageConverter* converter,
-	       std::vector<MatchingCandidate>& candidates,
-	       std::vector<PwnTrackerFrame*>& trackerFrames,
-	       MapManager* manager){
-  for (size_t i=0; i<candidates.size(); i++){
-    alignFrames(aligner, converter, candidates[i], trackerFrames, manager);
-    cerr << "matching frame " << i << "/" << candidates.size() 
-	 << " indices: " << candidates[i].fromIdx << "," << candidates[i].toIdx
-	 << " rd: " << candidates[i].reprojectionDistance << endl; 
+
+void autoMatch2(Aligner* aligner, DepthImageConverter* converter,
+		std::map<int, FrameCluster>& clusters,
+		std::vector<PwnTrackerFrame*>& trackerFrames,
+		MapManager* manager, int scale = 8){
+  for (std::map<int, FrameCluster>::iterator it = clusters.begin(); it!=clusters.end(); it++){
+    FrameCluster& cluster = it->second;
+    if (cluster.matchingCandidates.size()<1)
+      continue;
+    cerr << "processing cluster: " << it->first << endl;
+    cerr << "  size: " << it->second.trackerFrames.size() << endl;
+    cerr << "  computing clouds...  ";
+    cluster.makeClouds(converter, scale);
+    cerr << "Done" << endl;
+    
+    cerr << "  computing alignments (" << cluster.matchingCandidates.size() << ") ... ";
+    cluster.matchCorrespondences(aligner, trackerFrames, manager, scale);
+    cerr << "Done" << endl;
+
+    cluster.clearClouds();
   }
 }
 
@@ -494,6 +732,7 @@ int main(int argc, char** argv){
       
   int numImages = trackerFrames.size();
   int ca = 0;
+  std::map<int, FrameCluster> clusters;
   while(ca!=27){
     cv::Mat mix = depthsComparison*a + normalsComparison*(1-a);
     cv::Mat shownImage = mix>cutoff;
@@ -537,21 +776,44 @@ int main(int argc, char** argv){
 			  depthsComparison, 1, 
 			  normalsComparison, cutoff);
       cerr << "found " << matchingCandidates.size() << " matching candidates" << endl;
+      {
+	std::vector<int> assignments;
+	partition(assignments, trackerFrames, matchingCandidates);
+	clusters.clear();
+	makeClusters(clusters, trackerFrames, matchingCandidates);
+	for (std::map<int, FrameCluster>::iterator it=clusters.begin(); it!=clusters.end(); it++){
+	  
+	  FrameCluster& cluster = it->second;
+	  if (cluster.trackerFrames.size()>1) {
+	    cerr << "partition " << cluster.clusterNumber << "[ " << cluster.trackerFrames.size() << " ] : ";
+	    for (size_t i=0; i<cluster.trackerFrames.size(); i++){
+	      cerr << cluster.trackerFrames[i] << " ";
+	    }
+	    cerr << endl;
+	  }
+	}
+	cerr << "number of non zero partitions: " << clusters.size() << endl;
+      }
       break;
     case 1048676: // 'd'
-      autoMatch(aligner, converter,
-		matchingCandidates,
-		trackerFrames,
-		manager);
+      autoMatch2(aligner, converter,
+		 clusters,
+		 trackerFrames,
+		 manager,4);
 	break;
     case 1048677: // 'e'
       scoreCandidates(matchingCandidates, inlierThreshold);
       break;
     case 1048678: // 'f'
+      cerr << "writing g2o" << endl;
       //ser.setFilePath(argv[3]);
       //save(objects,manager,matchingCandidates,ser,200);
       g2oSave(trackerFrames,trackerRelations,matchingCandidates,maxOutliers);
       break;
+    case 1048679: // 'g'
+      cerr << "writing boss with closures" << endl;
+      ser.setFilePath(argv[3]);
+      save(objects,manager,matchingCandidates,ser);
     default: std::cerr << ca << endl;
     }
     if (r>=numImages)
