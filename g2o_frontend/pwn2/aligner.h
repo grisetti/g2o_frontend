@@ -37,6 +37,11 @@ namespace pwn {
       if( _linearizer) 
 	_linearizer->setAligner(this); 
     }
+    inline void setDebug(const bool debug_) { _debug = debug_; }
+    inline void setMinInliers(const int minInliers_) { _minInliers = minInliers_; }
+    inline void setTranslationalMinEigenRatio(const float translationalMinEigenRatio_) { _translationalMinEigenRatio = translationalMinEigenRatio_; }
+    inline void setRotationalMinEigenRatio(const float rotationalMinEigenRatio_) { _rotationalMinEigenRatio = rotationalMinEigenRatio_; }
+    
 
     inline CorrespondenceFinder* correspondenceFinder() { return _correspondenceFinder; }
     inline void setCorrespondenceFinder(CorrespondenceFinder* correspondenceFinder_) { _correspondenceFinder = correspondenceFinder_; }
@@ -49,6 +54,8 @@ namespace pwn {
     inline const Eigen::Isometry3f& sensorOffset() const { return _referenceSensorOffset; }
     inline const Eigen::Isometry3f& referenceSensorOffset() const { return _referenceSensorOffset; }
     inline const Eigen::Isometry3f& currentSensorOffset() const { return _currentSensorOffset; }
+    inline bool debug() const { return _debug; }
+    inline int minInliers() const { return _minInliers; }
 
     virtual void align();
 
@@ -65,6 +72,9 @@ namespace pwn {
     virtual void deserializeComplete();
 
   protected:
+    void _computeStatistics(Vector6f& mean, Matrix6f& Omega, 
+			   float& translationalRatio, float& rotationalRatio) const;
+
     PointProjector *_projector;
     Linearizer *_linearizer;
     CorrespondenceFinder *_correspondenceFinder;
@@ -72,17 +82,22 @@ namespace pwn {
     Frame *_referenceFrame;
     Frame *_currentFrame;
   
-    int _outerIterations, _innerIterations;
+    bool _debug;
+    int _outerIterations, _innerIterations, _minInliers;
 
     Eigen::Isometry3f _T;
     Eigen::Isometry3f _initialGuess;
-    //Eigen::Isometry3f _sensorOffset;
+    // Eigen::Isometry3f _sensorOffset;
     Eigen::Isometry3f _referenceSensorOffset;
     Eigen::Isometry3f _currentSensorOffset;
+    
+    Matrix6f _omega;
+    Vector6f _mean;
 
     int _inliers;
     double _totalTime;
     float _error;
+    float  _translationalEigenRatio, _rotationalEigenRatio, _translationalMinEigenRatio, _rotationalMinEigenRatio;
 
     std::vector<SE3Prior*> _priors;
   };

@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
   
   // Optional input parameters.
   arg.param("pj_maxDistance", pj_maxDistance, 6, "Maximum distance of the points");
-  arg.param("di_scaleFactor", di_scaleFactor, 1000.0f, "Scale factor to apply to convert depth images in meters");
+  arg.param("di_scaleFactor", di_scaleFactor, 0.001f, "Scale factor to apply to convert depth images in meters");
 
   arg.param("ng_minImageRadius", ng_minImageRadius, 10, "Specify the minimum number of pixels composing the square where to take points for a normal computation");
   arg.param("ng_maxImageRadius", ng_maxImageRadius, 30, "Specify the maximum number of pixels composing the square where to take points for a normal computation");
@@ -442,6 +442,7 @@ int main(int argc, char **argv) {
   string referenceFilename, currentFilename;
   GLParameterFrame *referenceParameterFrame = new GLParameterFrame(vz_step);
   GLParameterFrame *currentParameterFrame = new GLParameterFrame(vz_step);
+  currentParameterFrame->parameterPoints()->setColor(Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
   Isometry3f initialGuess = Isometry3f::Identity();
   initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   while(mainWindow->isVisible()) {

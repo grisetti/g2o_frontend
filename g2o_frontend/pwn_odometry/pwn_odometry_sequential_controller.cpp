@@ -34,6 +34,7 @@ namespace pwn {
     cout << "... done" << endl;
 
     _scene = new Frame();
+    _subScene = new Frame();
     _merger = new Merger();
     _merger->setDepthImageConverter(_converter);
     _merger->setMaxPointDepth(6.0f);
@@ -59,7 +60,7 @@ namespace pwn {
     if (!_ifsAssociations.getline(line, 4096)) {
       char name[1024];
       sprintf(name, "./depth/pwn-part-%05d.pwn", _counter);
-      _scene->save(name, 1, true, _globalPose);
+      _scene->save(name, 1, true, _referencePose);
       _scene->clear();
       _localPose = Isometry3f::Identity();
       _referencePose = _globalPose;
@@ -102,7 +103,7 @@ namespace pwn {
       std::cout << "New chunk created" << std::endl;
       char name[1024];
       sprintf(name, "./depth/pwn-part-%05d.pwn", _counter);
-      _scene->save(name, 1, true, _globalPose);
+      _scene->save(name, 1, true, _referencePose);
       _scene->clear();
       _localPose = Isometry3f::Identity();
       _referencePose = _globalPose;
@@ -126,9 +127,16 @@ namespace pwn {
     // Align clouds
     Isometry3f initialGuess = Isometry3f::Identity();
     initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-    _scene->transformInPlace(_aligner->T().inverse());
+    // _scene->transformInPlace(_aligner->T().inverse());
     // _aligner->setReferenceFrame(_referenceFrame);
-    _aligner->setReferenceFrame(_scene);
+    // _aligner->setReferenceFrame(_scene);
+    if(_scaledIndexImage.cols() != _scaledImageCols || _scaledIndexImage.rows() != _scaledImageRows) 
+      _scaledIndexImage.resize(_scaledImageRows, _scaledImageCols);
+    _converter->_projector->setTransform(_localPose * _sensorOffset);
+    _converter->_projector->project(_scaledIndexImage, _scaledDepthImage, _scene->points());    
+    _converter->compute(*_subScene, _scaledDepthImage, _sensorOffset, false);
+    _converter->_projector->setTransform(Isometry3f::Identity());
+    _aligner->setReferenceFrame(_subScene);
     _aligner->setCurrentFrame(_currentFrame);
     _aligner->setInitialGuess(initialGuess);
     _aligner->setSensorOffset(_sensorOffset);
@@ -151,8 +159,10 @@ namespace pwn {
     _globalPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     
     // Merge clouds
-    _scene->add(*_currentFrame, _aligner->T());
-    _merger->merge(_scene, _aligner->T() * _sensorOffset);      
+    // _scene->add(*_currentFrame, _aligner->T());
+    // _merger->merge(_scene, _aligner->T() * _sensorOffset);      
+    _scene->add(*_currentFrame, _localPose);
+    _merger->merge(_scene, _localPose * _sensorOffset);
 
     // Save current frame for debug
     // _currentFrame->save(("pwn_" + _depthFilename.substr(0, _depthFilename.size() - 3) + "pwn").c_str(), 10, true, _globalPose);   

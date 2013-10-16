@@ -186,7 +186,7 @@ int main(int argc, char** argv) {
     if (c == 27)
       return 0;
     if (c == 'n'){
-      while (sensorDatas[i]->robotReferenceFrame()==currentReferenceFrame && i<sensorDatas.size()-1) {
+      while (sensorDatas[i]->robotReferenceFrame()==currentReferenceFrame && i<sensorDatas.size() - 1) {
 	i++;
 	BaseSensorData* data =sensorDatas[i];
 	std::map<BaseSensor*,MySimpleVisualizer*>::iterator visIt = visualizers.find(data->baseSensor());

@@ -76,7 +76,7 @@ int main (int argc, char** argv) {
   pwnOdometrySequentialController->setChunkStep(pwn_chunkStep);
 
   // Compute odometry
-  bool sceneHasChanged;
+  bool sceneHasChanged = false;
   Frame *frame = 0, *groundTruthReferenceFrame = 0;
   Isometry3f groundTruthPose;	
   GLParameterTrajectory *groundTruthTrajectoryParam = new GLParameterTrajectory(0.02f, Vector4f(0.0f, 1.0f, 0.0f, 0.6f));
@@ -99,12 +99,12 @@ int main (int argc, char** argv) {
       viewer->updateGL();
     application.processEvents();
 
+    sceneHasChanged = false;
+
     if (finished) {
       continue;
     }
-    if (pwnOdometrySequentialController->loadFrame(frame)) {
-      sceneHasChanged = false;
-    
+    if (pwnOdometrySequentialController->loadFrame(frame)) {    
       if(pwnOdometrySequentialController->counter() == 1) {
 	pwnOdometrySequentialController->getGroundTruthPose(groundTruthPose, atof(pwnOdometrySequentialController->timestamp().c_str()));
 	// Add first frame to draw

@@ -39,6 +39,7 @@ namespace pwn {
     cout << "... done" << endl;
 
     _scene = new Frame();
+    _subScene = new Frame();
     _merger = new Merger();
     _merger->setDepthImageConverter(_converter);
     _merger->setMaxPointDepth(6.0f);
@@ -64,7 +65,7 @@ namespace pwn {
     if (!_ifsAssociations.getline(line, 4096)) {
       char name[1024];
       sprintf(name, "./depth/gicp-part-%05d.pwn", _counter);
-      _scene->save(name, 1, true, _globalPose);
+      _scene->save(name, 1, true, _referencePose);
       _scene->clear();
       _localPose = Isometry3f::Identity();
       _referencePose = _globalPose;
@@ -108,7 +109,7 @@ namespace pwn {
       std::cout << "New chunk created" << std::endl;
       char name[1024];
       sprintf(name, "./depth/gicp-part-%05d.pwn", _counter);
-      _scene->save(name, 1, true, _globalPose);
+      _scene->save(name, 1, true, _referencePose);
       _scene->clear();
       _localPose = Isometry3f::Identity();
       _referencePose = _globalPose;
@@ -126,13 +127,21 @@ namespace pwn {
     
     std::cout << "****************** Aligning frame " << _depthFilename << " ******************" << std::endl; 
 
+    if(_scaledIndexImage.cols() != _scaledImageCols || _scaledIndexImage.rows() != _scaledImageRows) 
+      _scaledIndexImage.resize(_scaledImageRows, _scaledImageCols);
+    _converter->_projector->setTransform(_localPose * _sensorOffset);
+    _converter->_projector->project(_scaledIndexImage, _scaledDepthImage, _scene->points());    
+    _converter->compute(*_subScene, _scaledDepthImage, _sensorOffset, false);
+    _converter->_projector->setTransform(Isometry3f::Identity());
+
     // Convert pwn clouds to pcl type
     pcl::PointCloud<pcl::PointXYZ>::Ptr refPclPointCloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr currPclPointCloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ> aligned;
-    _scene->transformInPlace(_relativePose.inverse());
+    // _scene->transformInPlace(_relativePose.inverse());
     // pwnToPclPointCloud(refPclPointCloud, _referenceFrame);
-    pwnToPclPointCloud(refPclPointCloud, _scene);
+    // pwnToPclPointCloud(refPclPointCloud, _scene);
+    pwnToPclPointCloud(refPclPointCloud, _subScene);
     pwnToPclPointCloud(currPclPointCloud, _currentFrame);   
     
     // Align clouds
@@ -161,6 +170,8 @@ namespace pwn {
     _relativePose.linear() = finalTransformation.block<3, 3>(0, 0);
     _globalPose = _globalPose * _relativePose;
     _globalPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    _localPose = _localPose * _relativePose;
+    _localPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
     if(!_counter%50 && _counter != 0) {
       Eigen::Matrix3f R = _globalPose.linear();
@@ -171,8 +182,8 @@ namespace pwn {
     _globalPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
     // Merge clouds
-    _scene->add(*_currentFrame, _relativePose);
-    _merger->merge(_scene, _relativePose * _sensorOffset);      
+    _scene->add(*_currentFrame, _localPose);
+    _merger->merge(_scene, _localPose * _sensorOffset);      
 
     // Save current frame for debug
     // _currentFrame->save(("gicp_" + _depthFilename.substr(0, _depthFilename.size() - 3) + "pwn").c_str(), 5, true, _globalPose);   

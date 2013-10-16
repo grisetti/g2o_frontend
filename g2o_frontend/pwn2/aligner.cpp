@@ -1,7 +1,11 @@
 #include "aligner.h"
+
 #include <iostream>
 #include <sys/time.h>
 #include <fstream>
+#include <omp.h>
+
+#include "g2o/stuff/unscented.h"
 
 #include "g2o_frontend/basemath/bm_se3.h"
 
@@ -24,6 +28,10 @@ namespace pwn {
     _totalTime = 0;
     _error = 0;
     _inliers = 0;
+    _minInliers = 100;
+    _debug = false;
+    _rotationalMinEigenRatio = 50;
+    _translationalMinEigenRatio = 50;
   };
 
 
@@ -132,8 +140,91 @@ namespace pwn {
     _totalTime = tEnd - tStart;
     _error = _linearizer->error();
     _inliers = _linearizer->inliers();
+
+    _computeStatistics(_mean, _omega, _translationalEigenRatio, _rotationalEigenRatio);
+    if (_rotationalEigenRatio > _rotationalMinEigenRatio || _translationalEigenRatio > _translationalMinEigenRatio) {
+      cerr << "************** WARNING SOLUTION MIGHT BE INVALID (eigenratio failure) **************" << endl;
+      cerr << "tr: " << _translationalEigenRatio << " rr: " << _rotationalEigenRatio << endl;
+      cerr << "************************************************************************************" << endl;
+    } 
+    else {
+      cout << "************** I FOUND SOLUTION VALID SOLUTION   (eigenratio ok) *******************" << endl;
+      cout << "tr: " << _translationalEigenRatio << " rr: " << _rotationalEigenRatio << endl;
+      cout << "************************************************************************************" << endl;
+    }
+
+    if (_debug) {
+      cout << "Solution statistics in (t, mq): " << endl;
+      cout << "mean: " << _mean.transpose() << endl;
+      cout << "Omega: " << endl;
+      cout << _omega << endl;
+    }
+
   }
 
+  void Aligner::_computeStatistics(Vector6f& mean, Matrix6f& Omega, 
+				  float& translationalRatio, float& rotationalRatio) const {
+
+    typedef g2o::SigmaPoint<Vector6f> SigmaPoint;
+    typedef std::vector<SigmaPoint, Eigen::aligned_allocator<SigmaPoint> > SigmaPointVector;
+  
+    // Output init
+    Vector6f b;
+    Matrix6f H;
+    b.setZero();
+    H.setZero();
+    translationalRatio = std::numeric_limits<float>::max();
+    rotationalRatio = std::numeric_limits<float>::max();
+
+#pragma omp parallel 
+    {
+#pragma omp critical 
+      {
+	b += _linearizer->b();
+	H += _linearizer->H();
+      }
+    }
+
+    JacobiSVD<Matrix6f> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Matrix6f localSigma = svd.solve(Matrix6f::Identity());
+    SigmaPointVector sigmaPoints;
+    Vector6f localMean = Vector6f::Zero();
+    g2o::sampleUnscented(sigmaPoints, localMean, localSigma);
+  
+    Eigen::Isometry3f dT = _T;  // transform from current to reference
+    if (_debug) {
+      cerr << "##T: " << t2v(dT).transpose() << endl;
+      cerr << "##hDet(): " << H.determinant() << endl;
+      cerr << "##localH: " <<endl << H << endl;
+      cerr << "##localSigma: " <<endl << localSigma << endl;
+      cerr << "##localSigma * localH: " << endl << localSigma * H << endl;
+    }
+    // remap each of the sigma points to their original position
+    for (size_t i = 0; i < sigmaPoints.size(); i++) {
+      SigmaPoint& p = sigmaPoints[i];
+      p._sample = t2v(dT*v2t(p._sample).inverse());
+    }
+    // reconstruct the gaussian 
+    g2o::reconstructGaussian(mean,localSigma, sigmaPoints);
+
+    // compute the information matrix from the covariance
+    Omega = localSigma.inverse();
+  
+    // have a look at the svd of the rotational and the translational part;
+    JacobiSVD<Matrix3f> partialSVD;
+    partialSVD.compute(Omega.block<3,3>(0,0));
+    translationalRatio = partialSVD.singularValues()(0) / partialSVD.singularValues()(2);
+    if (_debug) {
+      cerr << "##singular values of the Omega_t: " << partialSVD.singularValues().transpose() << endl;
+      cerr << "##translational_ratio: " <<  translationalRatio << endl;
+    } 
+    partialSVD.compute(Omega.block<3,3>(3,3));
+    rotationalRatio = partialSVD.singularValues()(0)/partialSVD.singularValues()(2);
+    if (_debug) {
+      cerr << "##singular values of the Omega_r: " << partialSVD.singularValues().transpose() << endl; 
+      cerr << "##rotational_ratio: " << rotationalRatio << endl;
+    }
+  }
 
   void Aligner::serialize(boss::ObjectData& data, boss::IdContext& context){
     Identifiable::serialize(data,context);

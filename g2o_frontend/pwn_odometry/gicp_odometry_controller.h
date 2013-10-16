@@ -63,7 +63,8 @@ namespace pwn {
     Eigen::Matrix3f _cameraMatrix, _scaledCameraMatrix;
     Eigen::Isometry3f _sensorOffset, _startingPose, _globalPose, _relativePose, _referencePose, _localPose;
     DepthImage _depthImage, _scaledDepthImage;
-    Frame *_currentFrame, *_referenceFrame, *_scene;
+    Eigen::MatrixXi _scaledIndexImage;
+    Frame *_currentFrame, *_referenceFrame, *_scene, *_subScene;
     std::vector<boss::Serializable*> pwnStructures;
     DepthImageConverter *_converter;
     Merger *_merger;
