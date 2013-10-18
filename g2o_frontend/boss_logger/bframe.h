@@ -45,7 +45,12 @@ namespace boss_logger {
     inline ReferenceFrame* parent() { return (ReferenceFrame*)_parent;}
     ReferenceFrame * childByName(const std::string& childName) {return (ReferenceFrame*) LinkedTree<BaseReferenceFrame>::childByName(childName);}
     const ReferenceFrame * childByName(const std::string& childName) const {return (const ReferenceFrame*) LinkedTree<BaseReferenceFrame>::childByName(childName);}
-
+    
+    inline bool isChildrenOf(const ReferenceFrame* p) const {
+      const ReferenceFrame* f=this;
+      while (f && f!=p){ f = (f->parent()); }
+      return f!=0;
+    }
   };
 
 

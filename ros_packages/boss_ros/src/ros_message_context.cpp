@@ -81,10 +81,18 @@ bool RosMessageContext::configReady() const{
   return allReady;
 }
 
-void RosMessageContext::init(){
+void RosMessageContext::initSubscribers(){
   _transformHandler->subscribe();
   for (std::map<std::string, RosMessageHandler*>::iterator it = _handlers.begin(); it!=_handlers.end(); it++){
     RosMessageHandler* handler=it->second;
     handler->subscribe();
+  }
+}
+
+void RosMessageContext::initPublishers(){
+  _transformHandler->advertise();
+  for (std::map<std::string, RosMessageHandler*>::iterator it = _handlers.begin(); it!=_handlers.end(); it++){
+    RosMessageHandler* handler=it->second;
+    handler->advertise();
   }
 }
