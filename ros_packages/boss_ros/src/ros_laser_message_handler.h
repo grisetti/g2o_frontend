@@ -9,6 +9,8 @@ public:
   RosLaserDataMessageHandler(RosMessageContext* context, std::string topicName_);
   virtual ~RosLaserDataMessageHandler();
   virtual void subscribe();
+  virtual void publish(boss_logger::BaseSensorData* sdata=0){}
+  virtual void advertise(){}
   virtual bool configReady() const;
   void callback(const sensor_msgs::LaserScanConstPtr& scan);
   inline boss_logger::LaserSensor* sensor() {return _sensor;}

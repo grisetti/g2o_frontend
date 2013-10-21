@@ -22,7 +22,8 @@ public:
   bool addHandler(const std::string& type, const std::string& topic);
   RosMessageHandler* handler(const std::string topic);
   bool configReady() const;
-  void init();
+  void initSubscribers();
+  void initPublishers();
 
   bool getOdomPose(Eigen::Isometry3d& t, double time);
   inline void setOdomReferenceFrameId(const std::string odomReferenceFrameId_) {_odomReferenceFrameId = odomReferenceFrameId_;}

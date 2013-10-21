@@ -155,7 +155,7 @@ int main(int argc, char** argv){
   // context.addHandler("image","/kinect/rgb/image_color");
 
   // start the machine
-  context.init();
+  context.initSubscribers();
 
   bool confReady=false;
   while (ros::ok()){

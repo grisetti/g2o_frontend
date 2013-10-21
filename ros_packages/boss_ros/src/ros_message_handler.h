@@ -12,6 +12,9 @@ public:
   RosMessageHandler(RosMessageContext* context_) {_context=context_;}
   virtual ~RosMessageHandler();
   virtual void subscribe()=0;
+  virtual void publish(boss_logger::BaseSensorData* sdata){}
+  virtual void publish(double timestamp){}
+  virtual void advertise()=0;
   virtual bool configReady() const;
 protected:
   RosMessageContext* _context;

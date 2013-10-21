@@ -78,3 +78,10 @@ void RosPinholeImageDataMessageHandler::callback(const sensor_msgs::Image::Const
   //delete imageData;
   //cerr << ".";
 }
+
+
+voids RosPinholeImageDataMessageHandler::advertise(){
+}
+
+void RosPinholeImageDataMessageHandler::publish(boss_logger::BaseSensorData* sdata=0){
+}
