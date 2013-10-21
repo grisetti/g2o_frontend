@@ -4,7 +4,7 @@
 #include "ros_message_handler.h"
 #include "sensor_msgs/LaserScan.h"
 
-class RosLaserDataMessageHandler : public RosMessageHandler{
+class RosLaserDataMessageHandler : public RosMessageHandler {
 public:
   RosLaserDataMessageHandler(RosMessageContext* context, std::string topicName_);
   virtual ~RosLaserDataMessageHandler();
