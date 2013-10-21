@@ -45,3 +45,12 @@ rosbuild_add_executable(boss_logger_executable
 target_link_libraries(boss_logger_executable boss_logger g2o_frontend_boss)
 SET_TARGET_PROPERTIES(boss_logger_executable PROPERTIES OUTPUT_NAME boss_logger)
 rosbuild_link_boost(boss_logger_executable  signals)
+
+rosbuild_add_executable(boss_publisher
+	src/ros_sensor_publisher_handler.cpp src/ros_sensor_publisher_handler.h
+	src/ros_laser_publisher_handler.cpp src/ros_laser_publisher_handler.h
+	src/ros_pinhole_camera_publisher_handler.cpp src/ros_pinhole_camera_publisher_handler.h
+	src/ros_imu_publisher_handler.cpp src/ros_imu_publisher_handler.h
+	src/boss_publisher.cpp )
+target_link_libraries(boss_publisher boss_logger g2o_frontend_boss)
+SET_TARGET_PROPERTIES(boss_publisher PROPERTIES OUTPUT_NAME boss_publisher)
