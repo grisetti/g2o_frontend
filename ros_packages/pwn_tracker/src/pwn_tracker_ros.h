@@ -25,6 +25,7 @@ using namespace pwn;
 
 
   struct PwnTrackerRos: public PwnTracker{
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     PwnTrackerRos(ros::NodeHandle& nh_,   
 	       tf::TransformListener* tfListener_, 
 	       tf::TransformBroadcaster* tfBroadcaster_, 
@@ -36,7 +37,8 @@ using namespace pwn;
     virtual ~PwnTrackerRos();  
     void subscribe();
     void broadcastTransform(const sensor_msgs::Image::ConstPtr& img);
-    bool retrieveImageParameters(Eigen::Isometry3f& sensorOffset, 
+    bool retrieveImageParameters(Eigen::Isometry3f& odometry,
+				 Eigen::Isometry3f& sensorOffset, 
 				 Eigen::Matrix3f& cameraMatrix, 
 				 const sensor_msgs::Image::ConstPtr& img,
 				 const sensor_msgs::CameraInfo::ConstPtr& info);
@@ -53,7 +55,8 @@ using namespace pwn;
     
 
     ros::NodeHandle& _nh;
-    std::string _filename, _topic, _base_frame_id;
+    Eigen::Isometry3f _previousFrameOdom;
+    std::string _filename, _topic, _base_frame_id, _odom_frame_id;
     image_transport::ImageTransport * _imageTransport;
     image_transport::CameraSubscriber *_cameraSubscriber;
     tf::TransformListener* _tfListener;

@@ -143,14 +143,15 @@ namespace pwn {
 
     _computeStatistics(_mean, _omega, _translationalEigenRatio, _rotationalEigenRatio);
     if (_rotationalEigenRatio > _rotationalMinEigenRatio || _translationalEigenRatio > _translationalMinEigenRatio) {
+      cerr << endl;
       cerr << "************** WARNING SOLUTION MIGHT BE INVALID (eigenratio failure) **************" << endl;
       cerr << "tr: " << _translationalEigenRatio << " rr: " << _rotationalEigenRatio << endl;
       cerr << "************************************************************************************" << endl;
     } 
     else {
-      cout << "************** I FOUND SOLUTION VALID SOLUTION   (eigenratio ok) *******************" << endl;
-      cout << "tr: " << _translationalEigenRatio << " rr: " << _rotationalEigenRatio << endl;
-      cout << "************************************************************************************" << endl;
+      // cout << "************** I FOUND SOLUTION VALID SOLUTION   (eigenratio ok) *******************" << endl;
+      // cout << "tr: " << _translationalEigenRatio << " rr: " << _rotationalEigenRatio << endl;
+      // cout << "************************************************************************************" << endl;
     }
 
     if (_debug) {

@@ -94,6 +94,7 @@ namespace pwn_tracker{
     _scale = 2;
     _counter = 0;
     _numKeyframes = 0;
+    _newFrameInliersFraction = 0.4;
     this->_aligner = aligner;
     this->_converter = converter;
     this->_manager = manager;
@@ -173,7 +174,10 @@ namespace pwn_tracker{
     return cloud;
   }
 
-  void PwnTracker::processFrame(const DepthImage& depthImage, const Eigen::Isometry3f& sensorOffset, const Eigen::Matrix3f& cameraMatrix){
+  void PwnTracker::processFrame(const DepthImage& depthImage, 
+				const Eigen::Isometry3f& sensorOffset, 
+				const Eigen::Matrix3f& cameraMatrix,
+				const Eigen::Isometry3f& initialGuess){
     int r,c;
     Eigen::Matrix3f scaledCameraMatrix = cameraMatrix;
     pwn::Frame* cloud = makeCloud(r,c,scaledCameraMatrix,sensorOffset,depthImage);
@@ -185,13 +189,12 @@ namespace pwn_tracker{
     if (_previousCloud){
       _aligner->setCurrentSensorOffset(sensorOffset);
       _aligner->setCurrentFrame(cloud);
-      
       _aligner->correspondenceFinder()->setImageSize(r,c);
       PinholePointProjector* alprojector=(PinholePointProjector*)(_aligner->projector());
       alprojector->setCameraMatrix(scaledCameraMatrix);
       alprojector->setImageSize(r,c);
 
-      Eigen::Isometry3f guess=_previousCloudTransform.inverse()*_globalT;
+      Eigen::Isometry3f guess=_previousCloudTransform.inverse()*_globalT*initialGuess;
       _aligner->setInitialGuess(guess);
       double t0, t1;
       t0 = get_time();
@@ -224,7 +227,8 @@ namespace pwn_tracker{
 			   
       int maxInliers = r*c;
       float inliersFraction = (float) _aligner->inliers()/(float) maxInliers;
-      if (inliersFraction<0.6){
+      cerr << "inliers/maxinliers/fraction: " << _aligner->inliers() << "/" << maxInliers << "/" << inliersFraction << endl;
+      if (inliersFraction<_newFrameInliersFraction){
 	newFrame = true;
 	newRelation = true;
 

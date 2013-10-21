@@ -76,7 +76,8 @@ using namespace pwn;
 
     virtual void processFrame(const pwn::DepthImage& depthImage, 
 			      const Eigen::Isometry3f& sensorOffset, 
-			      const Eigen::Matrix3f& cameraMatrix);
+			      const Eigen::Matrix3f& cameraMatrix,
+			      const Eigen::Isometry3f& initialGuess=Eigen::Isometry3f::Identity());
 
     virtual ~PwnTracker();  
   
@@ -98,6 +99,7 @@ using namespace pwn;
     Eigen::Isometry3f _globalT;
     int _counter;
     int _numKeyframes;
+    float _newFrameInliersFraction;
     MapManager* _manager;
   };
 

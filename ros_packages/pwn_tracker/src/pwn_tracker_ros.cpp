@@ -21,6 +21,7 @@ namespace pwn_tracker{
     _tfListener = tfListener_;
     _tfBroadcaster = tfBroadcaster_;
     _filename = filename;
+    _odom_frame_id="";
   }
   
   PwnTrackerRos::~PwnTrackerRos() {
@@ -50,11 +51,13 @@ namespace pwn_tracker{
     _tfBroadcaster->sendTransform(st);
   }
 
-  bool PwnTrackerRos::retrieveImageParameters(Eigen::Isometry3f& sensorOffset, 
+  bool PwnTrackerRos::retrieveImageParameters(Eigen::Isometry3f& odometry,
+					      Eigen::Isometry3f& sensorOffset, 
 					      Eigen::Matrix3f& cameraMatrix, 
 					      const sensor_msgs::Image::ConstPtr& img,
 					      const sensor_msgs::CameraInfo::ConstPtr& info) {
     sensorOffset = Eigen::Isometry3f::Identity();
+    _tfListener->waitForTransform(_base_frame_id, img->header.frame_id, img->header.stamp, ros::Duration(1./30.));
     try{
       tf::StampedTransform t;
       _tfListener->lookupTransform(_base_frame_id, img->header.frame_id, img->header.stamp, t);
@@ -72,6 +75,29 @@ namespace pwn_tracker{
       ROS_ERROR("%s",ex.what());
       return false;
     }
+
+    odometry.setIdentity();
+    if (_odom_frame_id!=""){
+      _tfListener->waitForTransform(_odom_frame_id, _base_frame_id,  img->header.stamp, ros::Duration(1./30.));
+      try{
+	tf::StampedTransform t;
+	_tfListener->lookupTransform(_odom_frame_id, _base_frame_id, img->header.stamp, t);
+	odometry.translation().x()=t.getOrigin().x();
+	odometry.translation().y()=t.getOrigin().y();
+	odometry.translation().z()=t.getOrigin().z();
+	Eigen::Quaternionf rot;
+	rot.x()=t.getRotation().x();
+	rot.y()=t.getRotation().y();
+	rot.z()=t.getRotation().z();
+	rot.w()=t.getRotation().w();
+	odometry.linear()=rot.toRotationMatrix();
+      }
+      catch (tf::TransformException ex){
+	ROS_ERROR("%s",ex.what());
+	return false;
+      }
+    }
+
     int i=0;
     for (int r=0; r<3; r++)
       for (int c=0; c<3; c++, i++)
@@ -93,9 +119,9 @@ namespace pwn_tracker{
   void PwnTrackerRos::callback(const sensor_msgs::Image::ConstPtr& img, const sensor_msgs::CameraInfo::ConstPtr& info) {
 
     
-    Eigen::Isometry3f sensorOffset;
+    Eigen::Isometry3f sensorOffset, odometry;
     Eigen::Matrix3f cameraMatrix;
-    if (!retrieveImageParameters(sensorOffset, cameraMatrix, img, info))
+    if (!retrieveImageParameters(odometry, sensorOffset, cameraMatrix, img, info))
       return;
     
     cv_bridge::CvImagePtr ptr=cv_bridge::toCvCopy(img, img->encoding);
@@ -105,8 +131,10 @@ namespace pwn_tracker{
     else
       depthImage.fromCvMat(ptr->image);
 
-    processFrame(depthImage, sensorOffset, cameraMatrix);
-
+    Eigen::Isometry3f initialGuess = _previousFrameOdom.inverse()*odometry;
+    cerr << "odometry guess:" << t2v(initialGuess).transpose() << endl;
+    processFrame(depthImage, sensorOffset, cameraMatrix, initialGuess);
+    _previousFrameOdom = odometry;
   }
 
 
