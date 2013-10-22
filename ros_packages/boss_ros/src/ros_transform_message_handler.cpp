@@ -49,18 +49,23 @@ void RosTransformMessageHandler::tfMessageCallback(const tf::tfMessage::ConstPtr
   }
 }
 
-
 void RosTransformMessageHandler::publish(double timestamp){
   std::vector<geometry_msgs::TransformStamped>  msgtf;
   boss_logger::ReferenceFrame* odomFrame = _context->frameMap()[_context->odomReferenceFrameId()];
-  for (boss_logger::StringReferenceFrameMap::iterator it=_context->frameMap().begin(); it!=_context->frameMap().end(); it++){
+  for (boss_logger::StringReferenceFrameMap::iterator it = _context->frameMap().begin(); it != _context->frameMap().end(); it++) {
     boss_logger::ReferenceFrame* f = it->second;
     const std::string& frame_id = it->first;
-    if (f->isChildrenOf(odomFrame)){
+    if (f->isChildrenOf(odomFrame)) {
       geometry_msgs::TransformStamped t;
       boss_logger::ReferenceFrame* parentReferenceFrame = f->parent();
-      t.header.frame_id = parentReferenceFrame->name();
+      if(!parentReferenceFrame) {
+	continue;
+      }
+      else {
+	t.header.frame_id = parentReferenceFrame->name();
+      }
       t.child_frame_id = f->name();
+      t.header.seq = _sequenceID;
       t.header.stamp = ros::Time(timestamp);
       const Eigen::Isometry3d& transform = f->transform();
       t.transform.translation.x = transform.translation().x();
@@ -75,4 +80,5 @@ void RosTransformMessageHandler::publish(double timestamp){
     }
   }
   _tfPub.sendTransform(msgtf);
+  _sequenceID++;
 }

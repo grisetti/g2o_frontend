@@ -2,25 +2,73 @@
 
 using namespace std;
 
-RosLaserDataMessageHandler::RosLaserDataMessageHandler(RosMessageContext* context, std::string topicName_): RosMessageHandler(context){
-    _topicName = topicName_;
-    _sensor = 0;
-  }
+RosLaserDataMessageHandler::RosLaserDataMessageHandler(RosMessageContext* context_, std::string topicName_) : RosMessageHandler(context_) {
+  _pubQueueSize = 100;
+  _topicName = topicName_;
+  _sensor = 0;
+}
 
 RosLaserDataMessageHandler::~RosLaserDataMessageHandler() {
 }
 
-bool RosLaserDataMessageHandler::configReady() const{
+bool RosLaserDataMessageHandler::configReady() const {
   return _sensor;
 }
 
-void RosLaserDataMessageHandler::subscribe(){
-  _sub= _context->nodeHandle()->subscribe(_topicName, 1, &RosLaserDataMessageHandler::callback, this);
-  cerr << "subscribed topics: [" <<  _topicName << "]" << endl;
+void RosLaserDataMessageHandler::subscribe() {
+  _sub = _context->nodeHandle()->subscribe(_topicName, 1, &RosLaserDataMessageHandler::callback, this);
+  cerr << "subscribing to topic: [" <<  _topicName << "]" << endl;
 }
 
+void RosLaserDataMessageHandler::setSensor(boss_logger::BaseSensor* sensor_) {
+  boss_logger::LaserSensor* laserSensor = dynamic_cast<boss_logger::LaserSensor*>(sensor_);
+  if(!laserSensor) {
+    cerr << "WARNING: tried to set a non laser sensor to a laser message handler, skipping" << endl;
+    return;
+  }
+  _sensor = laserSensor;
+}
 
-void RosLaserDataMessageHandler::callback(const sensor_msgs::LaserScanConstPtr& scan){
+void RosLaserDataMessageHandler::publish(boss_logger::BaseSensorData* sdata) {
+  if(!_sensor) {
+    cerr << "WARNING: missing laser sensor, skipping" << endl;
+    return;
+  }
+
+  boss_logger::LaserData *laserData = dynamic_cast<boss_logger::LaserData*>(sdata);
+  if(!laserData) {
+    cerr << "WARNING: trying to publish non laser data from a laser message handler, skipping" << endl;
+    return;
+  }
+
+  // Create message
+  sensor_msgs::LaserScan laserScan;
+  std_msgs::Header header;
+  header.seq = _sequenceID;
+  header.stamp = ros::Time(laserData->timestamp());
+  header.frame_id = _sensor->frame()->name();
+  laserScan.header = header;
+  laserScan.angle_min = -1.57079637051f;
+  laserScan.angle_max = laserData->fov() + laserScan.angle_min;
+  laserScan.angle_increment = 0.00436332309619f; 
+  laserScan.time_increment = 1.73611115315e-05;
+  laserScan.scan_time = 0.0250000003725;
+  laserScan.range_min = _sensor->minRange();
+  laserScan.range_max = _sensor->maxRange();
+  laserScan.ranges = laserData->ranges();
+  laserScan.intensities = laserData->remissions();
+
+  // Publish message
+  _pub.publish(laserScan);
+  _sequenceID++;
+}
+
+void RosLaserDataMessageHandler::advertise() {
+  cout << "publishing on topic: [" << _topicName << "]" << endl;
+  _pub = _context->nodeHandle()->advertise<sensor_msgs::LaserScan>(_topicName, _pubQueueSize);
+}
+
+void RosLaserDataMessageHandler::callback(const sensor_msgs::LaserScanConstPtr& scan) {
   if  (! _sensor) {
     std::map<std::string, boss_logger::ReferenceFrame*>::iterator it = _context->frameMap().find(scan->header.frame_id);
     if (it == _context->frameMap().end()) {

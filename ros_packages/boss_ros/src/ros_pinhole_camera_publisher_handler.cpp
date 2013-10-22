@@ -6,7 +6,6 @@ RosPinholeCameraPublisherHandler::RosPinholeCameraPublisherHandler(ros::NodeHand
   _nh = nh_;
   _sensor = sensor_;
   _topic = topic_;
-  _sequenceID = 0;
   _publishingQueueSize = 100;
   size_t index = _topic.rfind("/");
   _cameraInfoTopic = _topic.substr(0, index) + "/camera_info";

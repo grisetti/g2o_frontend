@@ -2,25 +2,93 @@
 
 using namespace std;
 
-RosIMUDataMessageHandler::RosIMUDataMessageHandler(RosMessageContext* context, std::string topicName_): RosMessageHandler(context){
-    _topicName = topicName_;
-    _sensor = 0;
-  }
+RosIMUDataMessageHandler::RosIMUDataMessageHandler(RosMessageContext* context, std::string topicName_) : RosMessageHandler(context) {
+  _pubQueueSize = 100;
+  _topicName = topicName_;
+  _sensor = 0;
+}
 
 RosIMUDataMessageHandler::~RosIMUDataMessageHandler() {
 }
 
-bool RosIMUDataMessageHandler::configReady() const{
+bool RosIMUDataMessageHandler::configReady() const {
   return _sensor;
 }
 
 void RosIMUDataMessageHandler::subscribe(){
-  _sub= _context->nodeHandle()->subscribe(_topicName, 1, &RosIMUDataMessageHandler::callback, this);
-  cerr << "subscribed topics: [" <<  _topicName << "]" << endl;
+  _sub = _context->nodeHandle()->subscribe(_topicName, 1, &RosIMUDataMessageHandler::callback, this);
+  cout << "subscribing to topic: [" <<  _topicName << "]" << endl;
 }
 
+void RosIMUDataMessageHandler::setSensor(boss_logger::BaseSensor* sensor_) {
+  boss_logger::IMUSensor* imuSensor = dynamic_cast<boss_logger::IMUSensor*>(sensor_);
+  if(!imuSensor) {
+    cerr << "WARNING: tried to set a non IMU sensor to an IMU message handler, skipping" << endl;
+    return;
+  }
+  _sensor = imuSensor;
+}
 
-void RosIMUDataMessageHandler::callback(const sensor_msgs::ImuConstPtr& imu){
+void RosIMUDataMessageHandler::publish(boss_logger::BaseSensorData* sdata) {
+  if(!_sensor) {
+    cerr << "WARNING: missing IMU sensor, skipping" << endl;
+    return;
+  }
+
+  boss_logger::IMUData *imuData = dynamic_cast<boss_logger::IMUData*>(sdata);
+  if(!imuData) {
+    cerr << "WARNING: trying to publish non IMU data from an IMU message handler, skipping" << endl;
+    return;
+  }
+
+  // Create message
+  sensor_msgs::Imu imu;
+  std_msgs::Header header;
+  header.seq = _sequenceID;
+  header.stamp = ros::Time(imuData->timestamp());
+  header.frame_id = _sensor->frame()->name();
+  imu.header = header;
+  
+  geometry_msgs::Quaternion orientation;
+  orientation.x = imuData->orientation().x();
+  orientation.y = imuData->orientation().y();
+  orientation.z = imuData->orientation().z();  
+  orientation.w = imuData->orientation().w();
+  imu.orientation = orientation;
+  boost::array<int, 9> orientation_covariance = {{imuData->orientationCovariance()(0, 0), imuData->orientationCovariance()(0, 1), imuData->orientationCovariance()(0, 2),
+						  imuData->orientationCovariance()(1, 0), imuData->orientationCovariance()(1, 1), imuData->orientationCovariance()(1, 2),
+						  imuData->orientationCovariance()(2, 0), imuData->orientationCovariance()(2, 1), imuData->orientationCovariance()(2, 2)}};
+  imu.orientation_covariance = orientation_covariance;
+  geometry_msgs::Vector3 angular_velocity;
+  angular_velocity.x = imuData->angularVelocity().x();
+  angular_velocity.y = imuData->angularVelocity().y();
+  angular_velocity.z = imuData->angularVelocity().z();
+  imu.angular_velocity = angular_velocity; 
+  boost::array<int, 9> angular_velocity_covariance = {{imuData->angularVelocityCovariance()(0, 0), imuData->angularVelocityCovariance()(0, 1), imuData->angularVelocityCovariance()(0, 2),
+						       imuData->angularVelocityCovariance()(1, 0), imuData->angularVelocityCovariance()(1, 1), imuData->angularVelocityCovariance()(1, 2),
+						       imuData->angularVelocityCovariance()(2, 0), imuData->angularVelocityCovariance()(2, 1), imuData->angularVelocityCovariance()(2, 2)}};
+  imu.angular_velocity_covariance = angular_velocity_covariance;
+  geometry_msgs::Vector3 linear_acceleration;
+  linear_acceleration.x = imuData->linearAcceleration().x();
+  linear_acceleration.y = imuData->linearAcceleration().y();
+  linear_acceleration.z = imuData->linearAcceleration().z();
+  imu.linear_acceleration = linear_acceleration; 
+  boost::array<int, 9> linear_acceleration_covariance = {{imuData->linearAccelerationCovariance()(0, 0), imuData->linearAccelerationCovariance()(0, 1), imuData->linearAccelerationCovariance()(0, 2),
+							  imuData->linearAccelerationCovariance()(1, 0), imuData->linearAccelerationCovariance()(1, 1), imuData->linearAccelerationCovariance()(1, 2),
+							  imuData->linearAccelerationCovariance()(2, 0), imuData->linearAccelerationCovariance()(2, 1), imuData->linearAccelerationCovariance()(2, 2)}};
+  imu.linear_acceleration_covariance = linear_acceleration_covariance;
+
+  // Publish message
+  _pub.publish(imu);
+  _sequenceID++;
+}
+
+void RosIMUDataMessageHandler::advertise() {
+  cout << "publishing on topic: [" << _topicName << "]" << endl;
+  _pub = _context->nodeHandle()->advertise<sensor_msgs::Imu>(_topicName, _pubQueueSize);
+}
+
+void RosIMUDataMessageHandler::callback(const sensor_msgs::ImuConstPtr& imu) {
   if  (! _sensor) {
     std::map<std::string, boss_logger::ReferenceFrame*>::iterator it = _context->frameMap().find(imu->header.frame_id);
     if (it == _context->frameMap().end()) {
@@ -34,7 +102,7 @@ void RosIMUDataMessageHandler::callback(const sensor_msgs::ImuConstPtr& imu){
     _context->sensorMap().insert(make_pair(_sensor->topic(), _sensor));
   }
   Eigen::Isometry3d robotTransform;
-  if (! _context->getOdomPose(robotTransform, imu->header.stamp.toSec()) ){
+  if (! _context->getOdomPose(robotTransform, imu->header.stamp.toSec()) ) {
     return;
   } 
   boss_logger::ReferenceFrame* newReferenceFrame = new boss_logger::ReferenceFrame("robotPose", robotTransform);
