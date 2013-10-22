@@ -75,7 +75,9 @@ bool RosMessageContext::addHandler(const std::string& type, const std::string& t
     if (it == _sensorMap.end()) {
       cerr << "WARNING: laser sensor not found while adding laser message handler" << endl;
     }
-    rosLaserMessageHandler->setSensor(it->second);
+    else {
+      rosLaserMessageHandler->setSensor(it->second);
+    }
     cerr <<"added handler for topic" << topic << endl;
     _handlers.insert(make_pair(topic, rosLaserMessageHandler));
     return true;
@@ -86,7 +88,9 @@ bool RosMessageContext::addHandler(const std::string& type, const std::string& t
     if (it == _sensorMap.end()) {
       cerr << "WARNING: camera sensor not found while adding camera message handler" << endl;
     }
-    rosPinholeImageMessageHandler->setSensor(it->second);
+    else {
+      rosPinholeImageMessageHandler->setSensor(it->second);
+    }
     cerr << "added handler for topic" << topic << endl;
     _handlers.insert(make_pair(topic, rosPinholeImageMessageHandler));
     return true;
@@ -97,8 +101,9 @@ bool RosMessageContext::addHandler(const std::string& type, const std::string& t
     if (it == _sensorMap.end()) {
       cerr << "WARNING: IMU sensor not found while adding imu message handler" << endl;
     }
-    rosIMUMessageHandler->setSensor(it->second);
-
+    else {
+      rosIMUMessageHandler->setSensor(it->second);
+    }
     cerr << "added handler for topic" << topic << endl;
     _handlers.insert(make_pair(topic, rosIMUMessageHandler));
     return true;

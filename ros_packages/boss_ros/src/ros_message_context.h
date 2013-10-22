@@ -37,6 +37,5 @@ protected:
   RosTransformMessageHandler* _transformHandler;
   boss_logger::SerializableQueue  _messageQueue;
   std::string _odomReferenceFrameId;
-  std::map<std::string, RosMessageHandler*> _handlers;
-  
+  std::map<std::string, RosMessageHandler*> _handlers;  
 };

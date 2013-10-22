@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
     rosTransformMessageHandler->publish(data->timestamp());
     RosMessageHandler* messageHandler = context->handler(data->topic());
     messageHandler->publish(data);
-    cout << ".";
+    cerr << ".";
     ros::spinOnce();
   }
   cout << endl;
