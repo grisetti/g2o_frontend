@@ -12,6 +12,22 @@ RosMessageContext::RosMessageContext(ros::NodeHandle* nh_) {
   _baseReferenceFrameId = "/base_link";
 }
 
+RosMessageContext::RosMessageContext(ros::NodeHandle* nh_, boss_logger::RobotConfiguration* robotConfiguration) {
+  _nh = nh_;
+  _transformHandler = new RosTransformMessageHandler(this);
+  _tfListener = new tf::TransformListener(*_nh, ros::Duration(30.0));
+  _odomReferenceFrameId = "/odom";
+  _baseReferenceFrameId = "/base_link";
+  this->_isReady = robotConfiguration->isReady();
+  const StringSensorMap& sensorMap = robotConfiguration->sensorMap(); 
+  this->_sensorMap = sensorMap;
+  const StringReferenceFrameMap& frameMap = robotConfiguration->frameMap();
+  this->_frameMap = frameMap;
+  this->_baseReferenceFrameId = robotConfiguration->baseReferenceFrameId();
+  const std::string& name = robotConfiguration->name();
+  this->_name = name;
+}
+
 RosMessageContext::~RosMessageContext(){
   delete _tfListener;
 }
@@ -53,22 +69,47 @@ RosMessageHandler* RosMessageContext::handler(const std::string topic) {
 }
 
 bool RosMessageContext::addHandler(const std::string& type, const std::string& topic) {
-  if (type == "laser"){
+  if (type == "laser") {
+    RosLaserDataMessageHandler* rosLaserMessageHandler = new RosLaserDataMessageHandler(this, topic);
+    StringSensorMap::iterator it = _sensorMap.find(topic);
+    if (it == _sensorMap.end()) {
+      cerr << "WARNING: laser sensor not found while adding laser message handler" << endl;
+    }
+    else {
+      rosLaserMessageHandler->setSensor(it->second);
+    }
     cerr <<"added handler for topic" << topic << endl;
-    _handlers.insert(make_pair(topic, new RosLaserDataMessageHandler(this,topic)));
+    _handlers.insert(make_pair(topic, rosLaserMessageHandler));
     return true;
   }
-  if (type == "image"){
+  if (type == "image") {
+    RosPinholeImageDataMessageHandler* rosPinholeImageMessageHandler = new RosPinholeImageDataMessageHandler(this, topic);
+    StringSensorMap::iterator it = _sensorMap.find(topic);
+    if (it == _sensorMap.end()) {
+      cerr << "WARNING: camera sensor not found while adding camera message handler" << endl;
+    }
+    else {
+      rosPinholeImageMessageHandler->setSensor(it->second);
+    }
     cerr << "added handler for topic" << topic << endl;
-    _handlers.insert(make_pair(topic, new RosPinholeImageDataMessageHandler(this,topic)));
+    _handlers.insert(make_pair(topic, rosPinholeImageMessageHandler));
     return true;
   }
-  if (type == "imu"){
+  if (type == "imu") {
+    RosIMUDataMessageHandler* rosIMUMessageHandler = new RosIMUDataMessageHandler(this, topic);
+    StringSensorMap::iterator it = _sensorMap.find(topic);
+    if (it == _sensorMap.end()) {
+      cerr << "WARNING: IMU sensor not found while adding imu message handler" << endl;
+    }
+    else {
+      rosIMUMessageHandler->setSensor(it->second);
+    }
     cerr << "added handler for topic" << topic << endl;
-    _handlers.insert(make_pair(topic, new RosIMUDataMessageHandler(this,topic)));
+    _handlers.insert(make_pair(topic, rosIMUMessageHandler));
     return true;
   }
-  cerr << "unknown handler type [" << type << "]" <<  endl;
+
+  cerr << "WARNING: unknown handler type [" << type << "]" <<  endl;
   return false;
 }
 
@@ -94,5 +135,15 @@ void RosMessageContext::initPublishers(){
   for (std::map<std::string, RosMessageHandler*>::iterator it = _handlers.begin(); it!=_handlers.end(); it++){
     RosMessageHandler* handler=it->second;
     handler->advertise();
+  }
+}
+
+void RosMessageContext::updateOdomReferenceFrame(boss_logger::ReferenceFrame* newOdomReRerenceFrame) {
+  boss_logger::ReferenceFrame* baseReferenceFrame = this->frameMap()[this->baseReferenceFrameId()];
+  if (baseReferenceFrame) {
+    baseReferenceFrame->setTransform(newOdomReRerenceFrame->transform());
+  }
+  else {
+    cerr << "WARNING: tried to update odom frame but was not possible to find the base frame, skipping" << endl;
   }
 }

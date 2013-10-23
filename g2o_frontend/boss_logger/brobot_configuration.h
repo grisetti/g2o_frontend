@@ -35,10 +35,8 @@ namespace boss_logger {
    StringReferenceFrameMap _frameMap;
    std::string _baseReferenceFrameId;
    std::string _name;
- };
+};
 
-
-  
   RobotConfiguration* readLog(std::vector<BaseSensorData*>& sensorDatas, Deserializer& des);
 
 } // end namespace

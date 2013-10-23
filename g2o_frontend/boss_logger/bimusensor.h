@@ -29,8 +29,8 @@ namespace boss_logger {
     inline void setOrientationCovariance(const Eigen::Matrix3d& orientationCovariance_)  {_orientationCovariance=orientationCovariance_;}
     inline void setAngularVelocity(Eigen::Vector3d& angularVelocity_)  {_angularVelocity=angularVelocity_; }
     inline void setAngularVelocityCovariance(Eigen::Matrix3d&  angularVelocityCovariance_) {_angularVelocityCovariance=angularVelocityCovariance_;}
-    inline void linearAcceleration(const Eigen::Vector3d& linearAcceleration_) {_linearAcceleration=linearAcceleration_;}
-    inline void linearAccelerationCovariance(const Eigen::Matrix3d& linearAccelerationCovariance_) {_linearAccelerationCovariance = linearAccelerationCovariance_;}
+    inline void setLinearAcceleration(const Eigen::Vector3d& linearAcceleration_) {_linearAcceleration=linearAcceleration_;}
+    inline void setLinearAccelerationCovariance(const Eigen::Matrix3d& linearAccelerationCovariance_) {_linearAccelerationCovariance = linearAccelerationCovariance_;}
   protected:
     Eigen::Quaterniond _orientation;
     Eigen::Matrix3d _orientationCovariance;
