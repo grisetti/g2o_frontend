@@ -169,7 +169,7 @@ int main(int argc, char** argv){
       cerr << endl << "CONF IS NOW READY!!!, STARTING WRITING" << endl;
       context.serializeInternals(ser);
       boss_logger::RobotConfiguration conf = context;
-      conf.serializeInternals(ser);
+      //conf.serializeInternals(ser);
       ser.writeObject(conf);
       // for (boss::StringReferenceFrameMap::iterator it = context.frameMap().begin(); it!=context.frameMap().end(); it++)
       // 	ser.writeObject(*it->second);

@@ -55,27 +55,27 @@ void RosIMUDataMessageHandler::publish(boss_logger::BaseSensorData* sdata) {
   orientation.z = imuData->orientation().z();  
   orientation.w = imuData->orientation().w();
   imu.orientation = orientation;
-  boost::array<int, 9> orientation_covariance = {{imuData->orientationCovariance()(0, 0), imuData->orientationCovariance()(0, 1), imuData->orientationCovariance()(0, 2),
-						  imuData->orientationCovariance()(1, 0), imuData->orientationCovariance()(1, 1), imuData->orientationCovariance()(1, 2),
-						  imuData->orientationCovariance()(2, 0), imuData->orientationCovariance()(2, 1), imuData->orientationCovariance()(2, 2)}};
+  boost::array<double, 9> orientation_covariance = {{imuData->orientationCovariance()(0, 0), imuData->orientationCovariance()(0, 1), imuData->orientationCovariance()(0, 2),
+						     imuData->orientationCovariance()(1, 0), imuData->orientationCovariance()(1, 1), imuData->orientationCovariance()(1, 2),
+						     imuData->orientationCovariance()(2, 0), imuData->orientationCovariance()(2, 1), imuData->orientationCovariance()(2, 2)}};
   imu.orientation_covariance = orientation_covariance;
   geometry_msgs::Vector3 angular_velocity;
   angular_velocity.x = imuData->angularVelocity().x();
   angular_velocity.y = imuData->angularVelocity().y();
   angular_velocity.z = imuData->angularVelocity().z();
   imu.angular_velocity = angular_velocity; 
-  boost::array<int, 9> angular_velocity_covariance = {{imuData->angularVelocityCovariance()(0, 0), imuData->angularVelocityCovariance()(0, 1), imuData->angularVelocityCovariance()(0, 2),
-						       imuData->angularVelocityCovariance()(1, 0), imuData->angularVelocityCovariance()(1, 1), imuData->angularVelocityCovariance()(1, 2),
-						       imuData->angularVelocityCovariance()(2, 0), imuData->angularVelocityCovariance()(2, 1), imuData->angularVelocityCovariance()(2, 2)}};
+  boost::array<double, 9> angular_velocity_covariance = {{imuData->angularVelocityCovariance()(0, 0), imuData->angularVelocityCovariance()(0, 1), imuData->angularVelocityCovariance()(0, 2),
+							  imuData->angularVelocityCovariance()(1, 0), imuData->angularVelocityCovariance()(1, 1), imuData->angularVelocityCovariance()(1, 2),
+							  imuData->angularVelocityCovariance()(2, 0), imuData->angularVelocityCovariance()(2, 1), imuData->angularVelocityCovariance()(2, 2)}};
   imu.angular_velocity_covariance = angular_velocity_covariance;
   geometry_msgs::Vector3 linear_acceleration;
   linear_acceleration.x = imuData->linearAcceleration().x();
   linear_acceleration.y = imuData->linearAcceleration().y();
   linear_acceleration.z = imuData->linearAcceleration().z();
   imu.linear_acceleration = linear_acceleration; 
-  boost::array<int, 9> linear_acceleration_covariance = {{imuData->linearAccelerationCovariance()(0, 0), imuData->linearAccelerationCovariance()(0, 1), imuData->linearAccelerationCovariance()(0, 2),
-							  imuData->linearAccelerationCovariance()(1, 0), imuData->linearAccelerationCovariance()(1, 1), imuData->linearAccelerationCovariance()(1, 2),
-							  imuData->linearAccelerationCovariance()(2, 0), imuData->linearAccelerationCovariance()(2, 1), imuData->linearAccelerationCovariance()(2, 2)}};
+  boost::array<double, 9> linear_acceleration_covariance = {{imuData->linearAccelerationCovariance()(0, 0), imuData->linearAccelerationCovariance()(0, 1), imuData->linearAccelerationCovariance()(0, 2),
+							     imuData->linearAccelerationCovariance()(1, 0), imuData->linearAccelerationCovariance()(1, 1), imuData->linearAccelerationCovariance()(1, 2),
+							     imuData->linearAccelerationCovariance()(2, 0), imuData->linearAccelerationCovariance()(2, 1), imuData->linearAccelerationCovariance()(2, 2)}};
   imu.linear_acceleration_covariance = linear_acceleration_covariance;
 
   // Publish message
@@ -127,7 +127,7 @@ void RosIMUDataMessageHandler::callback(const sensor_msgs::ImuConstPtr& imu) {
       orientationCovariance(i,j) = imu->orientation_covariance[k];
   imuData->setOrientationCovariance(orientationCovariance);
 
-  Eigen::Vector3d angularVelocity;
+  Eigen::Vector3d angularVelocity;  
   angularVelocity.x() = imu->angular_velocity.x;
   angularVelocity.y() = imu->angular_velocity.y;
   angularVelocity.z() = imu->angular_velocity.z;
@@ -144,14 +144,14 @@ void RosIMUDataMessageHandler::callback(const sensor_msgs::ImuConstPtr& imu) {
   linearAcceleration.x() = imu->linear_acceleration.x;
   linearAcceleration.y() = imu->linear_acceleration.y;
   linearAcceleration.z() = imu->linear_acceleration.z;
-  imuData->setAngularVelocity(linearAcceleration);
+  imuData->setLinearAcceleration(linearAcceleration);
 
   Eigen::Matrix3d linearAccelerationCovariance;
   k=0;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++, k++)
       linearAccelerationCovariance(i,j) = imu->linear_acceleration_covariance[k];
-  imuData->setAngularVelocityCovariance(angularVelocityCovariance);
+  imuData->setLinearAccelerationCovariance(linearAccelerationCovariance);
 
   _context->messageQueue().push_back(imuData);
   //delete imageData;
