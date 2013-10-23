@@ -54,7 +54,7 @@ void RosTransformMessageHandler::publish(double timestamp){
   boss_logger::ReferenceFrame* odomFrame = _context->frameMap()[_context->odomReferenceFrameId()];
   for (boss_logger::StringReferenceFrameMap::iterator it = _context->frameMap().begin(); it != _context->frameMap().end(); it++) {
     boss_logger::ReferenceFrame* f = it->second;
-    const std::string& frame_id = it->first;
+    //const std::string& frame_id = it->first;
     if (f->isChildrenOf(odomFrame)) {
       geometry_msgs::TransformStamped t;
       boss_logger::ReferenceFrame* parentReferenceFrame = f->parent();
@@ -82,3 +82,4 @@ void RosTransformMessageHandler::publish(double timestamp){
   _tfPub.sendTransform(msgtf);
   _sequenceID++;
 }
+

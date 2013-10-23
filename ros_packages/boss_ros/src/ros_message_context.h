@@ -25,11 +25,13 @@ public:
   bool configReady() const;
   void initSubscribers();
   void initPublishers();
+  void updateOdomReferenceFrame(boss_logger::ReferenceFrame* newOdomReRerenceFrame);
 
   bool getOdomPose(Eigen::Isometry3d& t, double time);
   inline void setOdomReferenceFrameId(const std::string odomReferenceFrameId_) {_odomReferenceFrameId = odomReferenceFrameId_;}
   inline const std::string& odomReferenceFrameId() const {return _odomReferenceFrameId;}
   inline std::map<std::string, RosMessageHandler*> handlers() { return _handlers; }
+  inline RosTransformMessageHandler* transformHandler() { return _transformHandler; } 
   
 protected:
   ros::NodeHandle* _nh;

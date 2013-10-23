@@ -66,13 +66,32 @@ int main(int argc, char **argv) {
   context->initPublishers();
 
   // Publish data
-  for(size_t i = 0; i < sensorDatas.size() && ros::ok(); i++) { 
-    boss_logger::BaseSensorData* data = sensorDatas[i];
-    rosTransformMessageHandler->publish(data->timestamp());
-    RosMessageHandler* messageHandler = context->handler(data->topic());
-    messageHandler->publish(data);
-    cerr << ".";
+  des.setFilePath(argv[1]);
+  boss::Serializable *s;
+  while((s = des.readObject()) && ros::ok()) {
     ros::spinOnce();
+    
+    // Check for data
+    boss_logger::BaseSensorData* data = dynamic_cast<boss_logger::BaseSensorData*>(s);
+    if(data) {
+      rosTransformMessageHandler->publish(data->timestamp());
+      RosMessageHandler* messageHandler = context->handler(data->topic());
+      messageHandler->publish(data);
+      cerr << ".";
+      delete(s);
+      continue;
+    }
+    
+    // Check for robot pose
+    boss_logger::ReferenceFrame* referenceFrame = dynamic_cast<boss_logger::ReferenceFrame*>(s);
+    if(referenceFrame) {
+      if(referenceFrame->name() == "robotPose") {
+	// Update odometry transform
+	context->updateOdomReferenceFrame(referenceFrame);
+	delete(s);
+	continue;
+      }
+    }
   }
   cout << endl;
 

@@ -137,3 +137,13 @@ void RosMessageContext::initPublishers(){
     handler->advertise();
   }
 }
+
+void RosMessageContext::updateOdomReferenceFrame(boss_logger::ReferenceFrame* newOdomReRerenceFrame) {
+  boss_logger::ReferenceFrame* baseReferenceFrame = this->frameMap()[this->baseReferenceFrameId()];
+  if (baseReferenceFrame) {
+    baseReferenceFrame->setTransform(newOdomReRerenceFrame->transform());
+  }
+  else {
+    cerr << "WARNING: tried to update odom frame but was not possible to find the base frame, skipping" << endl;
+  }
+}
