@@ -442,7 +442,7 @@ int main(int argc, char **argv) {
   string referenceFilename, currentFilename;
   GLParameterFrame *referenceParameterFrame = new GLParameterFrame(vz_step);
   GLParameterFrame *currentParameterFrame = new GLParameterFrame(vz_step);
-  currentParameterFrame->parameterPoints()->setColor(Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+  currentParameterFrame->parameterPoints()->setColor(Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
   Isometry3f initialGuess = Isometry3f::Identity();
   initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   while(mainWindow->isVisible()) {
@@ -874,9 +874,9 @@ void applySettings() {
   cylindricalPointProjector.setVerticalFocalLenght(fySpinBox->value());
   
   //cerr << "statscalculator" << endl;
-  statsCalculator.setWorldRadius(ng_minImageRadiusSpinBox->value());
-  statsCalculator.setMinImageRadius(ng_maxImageRadiusSpinBox->value());
-  statsCalculator.setMinImageRadius(ng_minPointsSpinBox->value());
+  statsCalculator.setMinImageRadius(ng_minImageRadiusSpinBox->value());
+  statsCalculator.setMaxImageRadius(ng_maxImageRadiusSpinBox->value());
+  statsCalculator.setMinPoints(ng_minPointsSpinBox->value());
   statsCalculator.setWorldRadius(ng_worldRadiusSpinBox->value());
 
   pointInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());

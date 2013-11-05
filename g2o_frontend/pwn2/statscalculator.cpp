@@ -157,6 +157,87 @@ namespace pwn {
     }
   }
 
+  void StatsCalculator::fastCompute(NormalVector& normals,
+				    const PointVector& points,
+				    const IntImage& indexImage,
+				    const int imageRadius) {
+    std::fill(normals.begin(), normals.end(), Normal());
+#pragma omp parallel for
+    for(int r = 0; r < indexImage.rows(); r++) {
+#pragma omp parallel for
+      for(int c = 0; c < indexImage.cols(); c++) {
+	// Check if index is valid
+	if(indexImage(r, c) < 0)
+	  continue;
+	if(r < imageRadius || r > indexImage.rows() - imageRadius)
+	  continue;
+	if(c < imageRadius || c > indexImage.cols() - imageRadius)
+	  continue;
+
+	// Compute normals with cross products
+	const Point &queryPoint = points[indexImage(r, c)];
+	Point squaredDist = Point(Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+	for(int i = r - imageRadius; i <= r + imageRadius; i++) {
+	  for(int j = c - imageRadius; j <= c + imageRadius; j++) {
+	    const Point &currentPoint = points[indexImage(i, j)];
+	    if(i == r && j == c)
+	      continue;
+	    squaredDist += Point(Eigen::Vector3f(queryPoint.x()*queryPoint.x() - currentPoint.x()*currentPoint.x(),
+						 queryPoint.y()*queryPoint.y() - currentPoint.y()*currentPoint.y(),
+						 queryPoint.z()*queryPoint.z() - currentPoint.z()*currentPoint.z()));
+	    
+	  }
+	}
+	
+	int constIndex;
+	squaredDist.minCoeff(&constIndex);	
+	Normal normal = Normal(Eigen::Vector3f(0.0f, 0.0f, 0.0f));	
+	bool referenceFound = false;
+	Eigen::Vector3f referenceVector = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+	Eigen::Vector3f currentVector = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+	float maxDist = 0.000001f;
+	float count = 0.0f;
+	if(squaredDist[constIndex] < maxDist) {
+	  normal = Normal(Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+	  for(int i = r - imageRadius; i <= r + imageRadius; i++) {
+	    for(int j = c - imageRadius; j <= c + imageRadius; j++) {
+	      const Point &currentPoint = points[indexImage(i, j)];
+	      if(i == r && j == c)
+		continue;
+	      if(queryPoint[constIndex]*queryPoint[constIndex] - 
+		 currentPoint[constIndex]*currentPoint[constIndex] >= 
+		 maxDist/squaredDist[3]) {
+		continue;
+	      }
+	      if(referenceFound) {
+		currentVector = currentPoint.head<3>() - queryPoint.head<3>();		
+		Normal currentNormal = Normal(referenceVector.cross(currentVector));
+		if(currentNormal.squaredNorm() == 0.0f)
+		  continue;
+		currentNormal = currentNormal.normalized();
+		if(currentNormal.dot(queryPoint) > 0)
+		  currentNormal = -currentNormal;
+		normal += currentNormal;
+		count = count + 1.0f;
+	      }
+	      else {
+		referenceVector = currentPoint.head<3>() - queryPoint.head<3>();
+		referenceFound = true;
+	      }		
+	    }
+	  }
+	}
+	if(count >= 15.0f) {
+	  normal = normal / count;
+	  normal = normal.normalized();
+	}
+	else
+	  normal = Normal(Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+	normals[indexImage(r, c)] = normal;
+      }	
+    }
+  }
+
   void StatsCalculator::serialize(boss::ObjectData& data, boss::IdContext& context) {
     Identifiable::serialize(data,context);
     data.setFloat("worldRadius", worldRadius());

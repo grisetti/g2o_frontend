@@ -64,7 +64,11 @@ namespace pwn {
 		 const PointIntegralImage &integralImage,
 		 const IntImage &intervalImage,
 		 const IntImage &indexImage);
-  
+    
+    void fastCompute(NormalVector& normals,
+		     const PointVector& points,
+		     const IntImage& indexImage,
+		     const int imageRadius);
 
     virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
     virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
