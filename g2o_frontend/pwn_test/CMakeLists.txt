@@ -23,3 +23,7 @@ TARGET_LINK_LIBRARIES(fileconvertertest pwn2_utils)
 ADD_EXECUTABLE(cyilindricalprojector_test cyilindricalprojector_test.cpp)
 SET_TARGET_PROPERTIES(cyilindricalprojector_test PROPERTIES OUTPUT_NAME cyilindricalprojector_test)
 TARGET_LINK_LIBRARIES(cyilindricalprojector_test pwn2_library ${G2O_STUFF_LIBRARY})
+
+ADD_EXECUTABLE(pwn_fast_normal_computation pwn_fast_normal_computation.cpp)
+SET_TARGET_PROPERTIES(pwn_fast_normal_computation PROPERTIES OUTPUT_NAME pwn_fast_normal_computation)
+TARGET_LINK_LIBRARIES(pwn_fast_normal_computation pwn2_library ${G2O_STUFF_LIBRARY})

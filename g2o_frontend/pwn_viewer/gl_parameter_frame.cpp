@@ -3,7 +3,7 @@
 namespace pwn {
 
 GLParameterFrame::GLParameterFrame(int step) : GLParameter() {
-  _parameterPoints = new GLParameterPoints(1.0f, Eigen::Vector4f(0.3f, 0.3f, 0.9f, 1.0f));
+  _parameterPoints = new GLParameterPoints(1.0f, Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
   _parameterNormals = new GLParameterNormals(1.0f, Eigen::Vector4f(0.0f, 0.0f, 1.0f, 1.0f), 0.0f);
   _parameterCovariances = new GLParameterCovariances(1.0f, 
 						     Eigen::Vector4f(0.0f, 1.0f, 0.0f, 1.0f), Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f),
