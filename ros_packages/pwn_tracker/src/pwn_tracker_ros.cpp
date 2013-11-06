@@ -57,7 +57,7 @@ namespace pwn_tracker{
 					      const sensor_msgs::Image::ConstPtr& img,
 					      const sensor_msgs::CameraInfo::ConstPtr& info) {
     sensorOffset = Eigen::Isometry3f::Identity();
-    _tfListener->waitForTransform(_base_frame_id, img->header.frame_id, img->header.stamp, ros::Duration(1./30.));
+    _tfListener->waitForTransform(_base_frame_id, img->header.frame_id, img->header.stamp, ros::Duration(1.));
     try{
       tf::StampedTransform t;
       _tfListener->lookupTransform(_base_frame_id, img->header.frame_id, img->header.stamp, t);
@@ -78,7 +78,7 @@ namespace pwn_tracker{
 
     odometry.setIdentity();
     if (_odom_frame_id!=""){
-      _tfListener->waitForTransform(_odom_frame_id, _base_frame_id,  img->header.stamp, ros::Duration(1./30.));
+      _tfListener->waitForTransform(_odom_frame_id, _base_frame_id,  img->header.stamp, ros::Duration(1.));
       try{
 	tf::StampedTransform t;
 	_tfListener->lookupTransform(_odom_frame_id, _base_frame_id, img->header.stamp, t);
