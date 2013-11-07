@@ -2,6 +2,13 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 PROJECT(g2o_frontend)
 
+OPTION(BUILD_OLD_SENSOR_DATA "enables some legacy, needed for most of the stuff" true )
+OPTION(BUILD_PWN "enables pwn" true )
+OPTION(BUILD_LINE_SLAM "enables line_slam and other utilities" true )
+OPTION(BUILD_PLANE_SLAM "enables plane slam and other utilities" true)
+OPTION(BUILD_VORONOI_SLAM "enables voronoi slam" true)
+
+
 # The library prefix
 SET(LIB_PREFIX g2o_frontend)
 
