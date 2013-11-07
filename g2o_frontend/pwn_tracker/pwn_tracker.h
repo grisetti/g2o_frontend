@@ -10,7 +10,7 @@
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 #include "g2o_frontend/boss_logger/bimagesensor.h"
-#include "highgui.h"
+#include "opencv2/core/core.hpp"
 #include <fstream>
 #include <iostream>
 

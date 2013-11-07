@@ -1,14 +1,3 @@
-#include "cv_bridge/cv_bridge.h"
-#include "image_transport/image_transport.h"
-#include "tf/transform_listener.h"
-#include "tf/transform_broadcaster.h"
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/time_synchronizer.h>
-#include <message_filters/time_synchronizer.h>
-#include <visualization_msgs/Marker.h>
-
 
 #include "g2o_frontend/boss_logger/bframe.h"
 #include "g2o_frontend/pwn2/frame.h"
@@ -20,8 +9,7 @@
 #include "g2o/types/slam3d/vertex_se3.h"
 #include "g2o/types/slam3d/edge_se3.h"
 
-#include "highgui.h"
-#include <boost/bind.hpp>
+#include "opencv2/highgui/highgui.hpp"
 #include <fstream>
 #include <iostream>
 #include "pwn_tracker.h"

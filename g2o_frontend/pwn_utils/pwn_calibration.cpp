@@ -3,7 +3,6 @@
 #include <unistd.h>
 
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv/cv.hpp>
 
 #include <QApplication>
 #include <QMainWindow>

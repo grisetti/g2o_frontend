@@ -1,7 +1,7 @@
 #ifndef _PWN_TRACKER_ROS_
 #define _PWN_TRACKER_ROS_
 
-#include "pwn_tracker.h"
+#include "g2o_frontend/pwn_tracker/pwn_tracker.h"
 #include "cv_bridge/cv_bridge.h"
 #include "image_transport/image_transport.h"
 #include "tf/transform_listener.h"
