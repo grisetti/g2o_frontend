@@ -57,53 +57,8 @@ include_directories(${G2O_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} ${G2O_FRONTEND} ${Q
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
-rosbuild_add_executable(pwn_tracker_node src/pwn_tracker.cpp src/pwn_tracker_ros.cpp  src/pwn_tracker_node.cpp )
-target_link_libraries(pwn_tracker_node g2o_frontend_pwn2_library boss_map boss_logger g2o_frontend_boss)
+rosbuild_add_executable(pwn_tracker_node src/pwn_tracker_ros.cpp  src/pwn_tracker_node.cpp )
+target_link_libraries(pwn_tracker_node g2o_frontend_pwn_tracker g2o_frontend_pwn2_library boss_map boss_logger g2o_frontend_boss)
 rosbuild_link_boost(pwn_tracker_node  signals)
-
-rosbuild_add_executable(pwn_tracker_closer src/pwn_tracker_closer.cpp src/pwn_tracker.cpp)
-target_link_libraries(pwn_tracker_closer g2o_frontend_pwn2_library boss_map boss_logger g2o_frontend_boss
-${G2O_CORE_LIBRARY}
-  ${G2O_OPENGL_HELPER_LIBRARY}
-  ${G2O_TYPES_DATA}
-  ${G2O_TYPES_SLAM2D}
-  ${G2O_TYPES_SLAM3D}
-  ${G2O_STUFF_LIBRARY}
-  ${G2O_CORE_LIBRARY}
-  ${G2O_SOLVER_CSPARSE}
-  ${G2O_STUFF_LIBRARY}
-  ${G2O_SOLVER_CSPARSE_EXTENSION}
-  ${CSPARSE_LIBRARY}
-)
-
-rosbuild_add_executable(pwn_tracker_log_viewer src/pwn_tracker_log_viewer.cpp 
-	src/pwn_tracker_ros.cpp src/pwn_tracker.cpp
-)
-include_directories(
-  ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} 
-  ${QGLVIEWER_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR}/..
-)
-target_link_libraries(pwn_tracker_log_viewer 
-  g2o_frontend_pwn_viewer g2o_frontend_pwn2_library
-  boss_map boss_logger g2o_frontend_boss
-  ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
-  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
-  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
-)
-
-rosbuild_add_executable(pwn_tracker_log_follower src/pwn_tracker_log_follower.cpp 
-	src/pwn_tracker_ros.cpp src/pwn_tracker.cpp
-)
-include_directories(
-  ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} 
-  ${QGLVIEWER_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR}/..
-)
-target_link_libraries(pwn_tracker_log_follower 
-  g2o_frontend_pwn_viewer g2o_frontend_pwn2_library
-  boss_map boss_logger g2o_frontend_boss
-  ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
-  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
-  ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
-)
 
 #rosbuild_add_executable(cfind src/cfind.cpp)
