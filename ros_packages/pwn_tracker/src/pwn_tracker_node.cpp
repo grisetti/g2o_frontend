@@ -37,12 +37,10 @@ int main(int argc, char** argv){
   tracker->_scale = 2;
   */
 
-  // giorgio home
-  /*
-  tracker->_base_frame_id = "/base_link";
-  tracker->_odom_frame_id = "/odom";
-  tracker->_scale = 4;
-  */
+  // giorgio home  
+  // tracker->_base_frame_id = "/base_link";
+  // tracker->_odom_frame_id = "/odom";
+  // tracker->_scale = 4;
 
   tracker->init();
   

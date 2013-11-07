@@ -40,6 +40,7 @@ int main (int argc, char** argv) {
   float pointStep;
   float alpha;
   int applyTransform;
+  int step;
   string logFilename;
   string configFilename;
   float di_scaleFactor;
@@ -48,6 +49,7 @@ int main (int argc, char** argv) {
   g2o::CommandArgs arg;
   arg.param("vz_pointSize", pointSize, 1.0f, "Size of the points where are visualized");
   arg.param("vz_transform", applyTransform, 1, "Choose if you want to apply the absolute transform of the point clouds");
+  arg.param("vz_step", step, 1, "Visualize a point cloud each vz_step point clouds");
   arg.param("vz_alpha", alpha, 1.0f, "Alpha channel value used for the color points");
   arg.param("vz_pointStep", pointStep, 1, "Step at which point are drawn");  
   arg.param("vz_scale", scale, 2, "Depth image size reduction factor");
@@ -105,7 +107,11 @@ int main (int argc, char** argv) {
     char nummero[1024];
     sprintf(nummero, "%05d", (int)i);
     listWidget->addItem(QString(nummero));
-    
+    if(i % step != 0) {
+      QListWidgetItem *lastItem = listWidget->item(listWidget->count() - 1);
+      lastItem->setHidden(true);
+    }
+
     Isometry3f transform = Isometry3f::Identity();
     if(applyTransform) {
       isometry3d2f(transform, pwnTrackerFrame->transform());
