@@ -4,7 +4,7 @@
 #include "g2o_frontend/boss_logger/bframe.h"
 #include "g2o_frontend/boss_logger/bframerelation.h"
 #include "g2o_frontend/boss_logger/bsensor.h"
-\
+
 
 
 namespace boss_map {
@@ -163,39 +163,7 @@ namespace boss_map {
     Eigen::Matrix<double, 6,6> _informationMatrix;
     Eigen::Isometry3d _transform;
   };
-  
-  
-  /***************************************** MapManager********************************/
-  class MapManager: public Identifiable {
-  protected:
-    struct NodeInfo{
-      std::set<MapNodeRelation*> relations;
-      std::set<MapNodeRelation*> ownerRelations;
-     };
-  public:
-    MapManager(int id=-1, IdContext* context = 0);
-    //! boss serialization
-    virtual void serialize(ObjectData& data, IdContext& context);
-    //! boss deserialization
-    virtual void deserialize(ObjectData& data, IdContext& context);
-
-    bool addNode(MapNode* n);
-    bool removeNode(MapNode* n);
-    bool addRelation(MapNodeRelation* relation);
-    bool removeRelation(MapNodeRelation* relation);
-
-    inline std::set<MapNode*>& nodes() {return _nodes;}
-    inline std::set<MapNodeRelation*>& relations() {return _relations;}
-    
-    inline std::set<MapNodeRelation*>& nodeRelations(MapNode* n) {return _nodeInfos[n].relations;}
-    inline std::set<MapNodeRelation*>& ownedRelations(MapNode* n) {return _nodeInfos[n].ownerRelations;}
-
-
-  protected:
-    std::set<MapNode*> _nodes;
-    std::set<MapNodeRelation*> _relations;
-    std::map<MapNode*, NodeInfo> _nodeInfos;
-  };
+ 
 
 }
 

@@ -10,6 +10,7 @@
 #include "g2o/types/slam3d/edge_se3.h"
 
 #include "opencv2/highgui/highgui.hpp"
+#include "g2o_frontend/boss_map/boss_map_g2o_reflector.h"
 #include <fstream>
 #include <iostream>
 #include "pwn_tracker.h"
@@ -17,6 +18,7 @@ using namespace std;
 using namespace pwn;
 using namespace boss;
 using namespace pwn_tracker;
+
 
 
   
@@ -655,7 +657,7 @@ void autoMatch2(Aligner* aligner, DepthImageConverter* converter,
   }
 }
 
-void scoreCandidates(std::vector<MatchingCandidate>& candidates, float inlierThreshold){
+void scoreCandidates(std::vector<MatchingCandidate>& candidates, float inlierThreshold, MapManager* manager){
   for (size_t i=0; i<candidates.size(); i++){
     scoreCandidate(candidates[i], inlierThreshold);
     cerr << "scoring frame " << i << "/" << candidates.size() 
@@ -663,6 +665,8 @@ void scoreCandidates(std::vector<MatchingCandidate>& candidates, float inlierThr
 	 << " rd: " << candidates[i].reprojectionDistance 
 	 << " inliers: " << candidates[i].inliers  
 	 << " outliers: " << candidates[i].outliers << endl; 
+    if (candidates[i].outliers<maxOutliers)
+      manager->addRelation(candidates[i].relation);
   }
 }
 
@@ -692,7 +696,13 @@ int main(int argc, char** argv){
   des.setFilePath(argv[2]);
   // load the log
   MapManager* manager = load(trackerFrames, trackerRelations, objects, des);
-
+  
+  cerr << "initializing reflector" << endl;
+  g2o::OptimizableGraph * graph = new g2o::OptimizableGraph;
+  MapG2OReflector * reflector = new MapG2OReflector(manager,graph);
+  manager->actionHandlers().push_back(reflector);
+  reflector->init();
+ 
   cerr << "generating fingerprints" << endl;
   fetchDepthThumbnails(depthImages, trackerFrames, des);
   fetchNormalThumbnails(normalImages, trackerFrames, des);
@@ -718,6 +728,7 @@ int main(int argc, char** argv){
   
   cv::Mat regDiff;
       
+
   int numImages = trackerFrames.size();
   int ca = 0;
   std::map<int, FrameCluster> clusters;
@@ -790,13 +801,14 @@ int main(int argc, char** argv){
 		 manager,4);
 	break;
     case 1048677: // 'e'
-      scoreCandidates(matchingCandidates, inlierThreshold);
+      scoreCandidates(matchingCandidates, inlierThreshold, manager);
       break;
     case 1048678: // 'f'
       cerr << "writing g2o" << endl;
       //ser.setFilePath(argv[3]);
       //save(objects,manager,matchingCandidates,ser,200);
       g2oSave(trackerFrames,trackerRelations,matchingCandidates,maxOutliers);
+      graph->save("manager.g2o");
       break;
     case 1048679: // 'g'
       cerr << "writing boss with closures" << endl;
