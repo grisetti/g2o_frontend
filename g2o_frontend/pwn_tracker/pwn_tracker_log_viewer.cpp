@@ -32,7 +32,8 @@ using namespace pwn_tracker;
 MapManager* load(std::vector<PwnTrackerFrame*> &trackerFrames,
 		 std::vector<PwnTrackerRelation*> &trackerRelations,
 		 std::vector<Serializable*> &objects,
-		 Deserializer &des);
+		 Deserializer &des,
+		 int step);
   
 int main (int argc, char** argv) {
   // Handle input
@@ -94,7 +95,7 @@ int main (int argc, char** argv) {
   Deserializer des;
   des.setFilePath(logFilename);
   cout << "Loading log file..." << endl;
-  load(trackerFrames, trackerRelations, objects, des);
+  load(trackerFrames, trackerRelations, objects, des, step);
   cout << "... done" << endl;
 
   // Load the drawable list with the PwnTrackerFrame objects
@@ -107,11 +108,8 @@ int main (int argc, char** argv) {
     char nummero[1024];
     sprintf(nummero, "%05d", (int)i);
     listWidget->addItem(QString(nummero));
-    if(i % step != 0) {
-      QListWidgetItem *lastItem = listWidget->item(listWidget->count() - 1);
-      lastItem->setHidden(true);
-    }
-
+    QListWidgetItem *lastItem = listWidget->item(listWidget->count() - 1);
+    
     Isometry3f transform = Isometry3f::Identity();
     if(applyTransform) {
       isometry3d2f(transform, pwnTrackerFrame->transform());
@@ -174,10 +172,12 @@ int main (int argc, char** argv) {
 MapManager* load(std::vector<PwnTrackerFrame*> &trackerFrames,
 		 std::vector<PwnTrackerRelation*> &trackerRelations,
 		 std::vector<Serializable*> &objects,
-		 Deserializer &des) {
+		 Deserializer &des,
+		 int step) {
   ofstream os("path.dat");
   Serializable *o = 0;
   boss_map::MapManager *manager = 0;
+  int count = 0;
   while ((o = des.readObject())) {
     objects.push_back(o);
     boss_map::MapManager *m = dynamic_cast<boss_map::MapManager*>(o);
@@ -185,8 +185,11 @@ MapManager* load(std::vector<PwnTrackerFrame*> &trackerFrames,
       manager = m;
     PwnTrackerFrame *f = dynamic_cast<PwnTrackerFrame*>(o);
     if (f) {
-      trackerFrames.push_back(f);
-      os << f->transform().translation().transpose() << endl;
+      if(count % step == 0) {
+	trackerFrames.push_back(f);
+	os << f->transform().translation().transpose() << endl;
+      }
+      count++;
     }
     PwnTrackerRelation *r = dynamic_cast<PwnTrackerRelation*>(o);
     if (r) {
