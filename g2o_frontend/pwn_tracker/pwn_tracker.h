@@ -1,7 +1,7 @@
 #ifndef _PWN_TRACKER_H_
 #define _PWN_TRACKER_H_
 
-#include "g2o_frontend/boss_map/boss_map.h"
+#include "g2o_frontend/boss_map/boss_map_manager.h"
 #include "g2o_frontend/boss_logger/bframe.h"
 #include "g2o_frontend/pwn2/frame.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
@@ -81,11 +81,11 @@ using namespace pwn;
 
     virtual ~PwnTracker();  
   
-    virtual void newFrameCallback(PwnTrackerFrame* frame) {}
-    virtual void newAlignmentCallback(const Eigen::Isometry3f& globalT, 
-				      const Eigen::Isometry3f& localT, 
-				      int inliers, float error ) {}
-    virtual void newRelationCallback(PwnTrackerRelation* relation) {}
+    virtual void newFrameCallback(PwnTrackerFrame* /*frame*/) {}
+    virtual void newAlignmentCallback(const Eigen::Isometry3f& /*globalT*/, 
+				      const Eigen::Isometry3f& /*localT*/, 
+				      int /*inliers*/, float /*error*/ ) {}
+    virtual void newRelationCallback(PwnTrackerRelation* /*relation*/) {}
     virtual void initCallback() {}
     
     void init();

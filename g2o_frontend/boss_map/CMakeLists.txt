@@ -10,17 +10,19 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${CSPARSE_INCLUDE_DIR})
 
 ADD_LIBRARY(boss_map  
   boss_map.cpp boss_map.h
+  boss_map_manager.cpp boss_map_manager.h
   sensing_frame_node.cpp sensing_frame_node.h
   map_node_processor.cpp map_node_processor.h 
+  boss_map_g2o_reflector.cpp boss_map_g2o_reflector.h
   )
 
 SET_TARGET_PROPERTIES(boss_map PROPERTIES OUTPUT_NAME boss_map)
 
-TARGET_LINK_LIBRARIES(boss_map boss_logger  boss)
+TARGET_LINK_LIBRARIES(boss_map boss_logger  boss ${G2O_TYPES_SLAM3D}  ${G2O_CORE_LIBRARY}  )
 
 ADD_executable(boss_sensing_frame_test boss_sensing_frame_test.cpp)
 
 SET_TARGET_PROPERTIES(boss_sensing_frame_test PROPERTIES OUTPUT_NAME boss_sensing_frame_test)
 
-TARGET_LINK_LIBRARIES(boss_sensing_frame_test boss_map boss_logger  boss)
+TARGET_LINK_LIBRARIES(boss_sensing_frame_test boss_map boss_logger  boss ${G2O_TYPES_SLAM3D}  ${G2O_CORE_LIBRARY} )
 

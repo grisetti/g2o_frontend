@@ -7,7 +7,7 @@
 #include "g2o_frontend/boss_logger/blasersensor.h"
 #include "g2o_frontend/boss_logger/bimusensor.h"
 #include "g2o_frontend/boss_logger/brobot_configuration.h"
-#include "boss_map.h"
+#include "boss_map_manager.h"
 #include "sensing_frame_node.h"
 
 using namespace boss_map;
