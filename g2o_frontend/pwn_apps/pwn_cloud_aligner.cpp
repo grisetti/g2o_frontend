@@ -508,7 +508,8 @@ int main(int argc, char **argv) {
 		continue;
 	      }
 	      DepthImage::scale(scaledDepthImage, depthImage, ng_scale);
-	      converter.compute(*frame, scaledDepthImage, sensorOffset, false);
+	      //converter.compute(*frame, scaledDepthImage, sensorOffset, false);
+	      converter.fastCompute(*frame, scaledDepthImage, sensorOffset);
 	    }
 
 	    Eigen::Isometry3f originPose = Eigen::Isometry3f::Identity();

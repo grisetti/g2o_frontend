@@ -13,7 +13,7 @@ namespace pwn {
 					   StatsCalculator *statsCalculator_,
 					   PointInformationMatrixCalculator *pointInformationMatrixCalculator_,
 					   NormalInformationMatrixCalculator *normalInformationMatrixCalculator_,
-	int id, boss::IdContext* context): Identifiable(id,context) {
+					   int id, boss::IdContext* context): Identifiable(id,context) {
     _projector = projector_;
     _statsCalculator = statsCalculator_;
     _pointInformationMatrixCalculator = pointInformationMatrixCalculator_;
@@ -56,6 +56,38 @@ namespace pwn {
 			      _indexImage);
     _pointInformationMatrixCalculator->compute(frame.pointInformationMatrix(), frame.stats(), frame.normals());
     _normalInformationMatrixCalculator->compute(frame.normalInformationMatrix(), frame.stats(), frame.normals());
+
+    frame.transformInPlace(sensorOffset);
+  }
+
+  void DepthImageConverter::fastCompute(Frame &frame,
+				    const DepthImage &depthImage, 
+				    const Eigen::Isometry3f &sensorOffset) {
+    frame.clear();
+    _projector->setImageSize(depthImage.rows(), depthImage.cols());
+    
+    // resizing the temporaries
+    if (depthImage.rows()!=_indexImage.rows() ||
+	depthImage.cols()!=_indexImage.cols()){
+      _indexImage.resize(depthImage.rows(), depthImage.cols());
+    }
+
+    // unprojecting
+    _projector->setTransform(Eigen::Isometry3f::Identity());
+    _projector->unProject(frame.points(), frame.gaussians(), _indexImage, depthImage);
+    frame.normals().resize(frame.points().size());
+    frame.pointInformationMatrix().resize(frame.points().size());
+    frame.normalInformationMatrix().resize(frame.points().size());
+    frame.stats().resize(frame.points().size());
+    std::fill(frame.stats().begin(), frame.stats().end(), Stats());
+
+    // computing the integral image and the intervals
+    _statsCalculator->fastCompute(frame.normals(),
+				  frame.pointInformationMatrix(),
+				  frame.normalInformationMatrix(),
+				  frame.points(),
+				  _indexImage,
+				  3);
 
     frame.transformInPlace(sensorOffset);
   }

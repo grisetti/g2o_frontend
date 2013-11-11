@@ -165,6 +165,8 @@ namespace pwn {
   }
 
   void StatsCalculator::fastCompute(NormalVector& normals,
+				    InformationMatrixVector &pointInformationMatrix,
+				    InformationMatrixVector &normalInformationMatrix,
 				    const PointVector& points,
 				    const IntImage& indexImage,
 				    const int imageRadius) {
@@ -179,8 +181,6 @@ namespace pwn {
       it = annulusCoordinates.end();
       annulusCoordinates.insert(it, coord);
     }
-
-    std::fill(normals.begin(), normals.end(), Normal());
     
 #pragma omp parallel for
     for(int r = 0; r < indexImage.rows(); r++) {
@@ -189,7 +189,10 @@ namespace pwn {
 	if(indexImage(r, c) < 0)
 	  continue;
 	int count = 0;
+	Point p = Point(Eigen::Vector3f(0.0, 0.0, 0.0));	
 	Normal n = Normal(Eigen::Vector3f(0.0, 0.0, 0.0));
+	Eigen::Matrix3f squareP = Eigen::Matrix3f::Zero();
+	Eigen::Matrix3f squareN = Eigen::Matrix3f::Zero();
 	Eigen::Vector2i centerCoord = Eigen::Vector2i(r, c);
 	Point centerPoint = points[indexImage(centerCoord.x(), centerCoord.y())];
 
@@ -197,8 +200,8 @@ namespace pwn {
 	for(size_t i = 0; i < annulusCoordinates.size(); i++) {
 	  std::set<Eigen::Vector2i>::iterator iterator = annulusCoordinates.begin();
 	  std::advance(iterator, i);
-	  Eigen::Vector2i currentCoord = *iterator;//*it;
-	  Eigen::Vector2i firstTranslatedCoord, secondTranslatedCoord;
+	  Eigen::Vector2i currentCoord = *iterator;
+	  Eigen::Vector2i firstTranslatedCoord, secondTranslatedCoord;	  
 	  
 	  // First quadrant	  
 	  firstTranslatedCoord = Eigen::Vector2i(-currentCoord.x(), currentCoord.y()) + centerCoord;
@@ -213,7 +216,10 @@ namespace pwn {
 	    currentNormal = currentNormal.normalized();
 	    if(currentNormal.dot(centerPoint) > 0)
 	      currentNormal = -currentNormal;
+	    p += firstPoint;
 	    n += currentNormal;
+	    squareP += firstPoint.head<3>() * firstPoint.head<3>().transpose(); 
+	    squareN += currentNormal.head<3>() * currentNormal.head<3>().transpose();
 	    count++;
 	  }
 
@@ -230,7 +236,10 @@ namespace pwn {
 	    currentNormal = currentNormal.normalized();
 	    if(currentNormal.dot(centerPoint) > 0)
 	      currentNormal = -currentNormal;
+	    p += firstPoint;
 	    n += currentNormal;
+	    squareP += firstPoint.head<3>() * firstPoint.head<3>().transpose(); 
+	    squareN += currentNormal.head<3>() * currentNormal.head<3>().transpose();
 	    count++;
 	  }
 
@@ -247,7 +256,10 @@ namespace pwn {
 	    currentNormal = currentNormal.normalized();
 	    if(currentNormal.dot(centerPoint) > 0)
 	      currentNormal = -currentNormal;
+	    p += firstPoint;
 	    n += currentNormal;
+	    squareP += firstPoint.head<3>() * firstPoint.head<3>().transpose(); 
+	    squareN += currentNormal.head<3>() * currentNormal.head<3>().transpose();
 	    count++;
 	  }
 
@@ -264,22 +276,34 @@ namespace pwn {
 	    currentNormal = currentNormal.normalized();
 	    if(currentNormal.dot(centerPoint) > 0)
 	      currentNormal = -currentNormal;
+	    p += firstPoint;
 	    n += currentNormal;
+	    squareP += firstPoint.head<3>() * firstPoint.head<3>().transpose(); 
+	    squareN += currentNormal.head<3>() * currentNormal.head<3>().transpose();
 	    count++;
 	  }	  
 	}
 	
-	// Assign normal
-	if(count >= 1.0f) {
-	  n = n / (float)count;
-          n = n.normalized();
+	InformationMatrix pInformationMatrix = InformationMatrix::Zero();
+	InformationMatrix nInformationMatrix = InformationMatrix::Zero();
+	Normal meanN = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+	if(count >= 10) {
+	  Point meanP = p / (float)count;
+	  meanN = n / (float)count;
+	  meanN = meanN.normalized();
 	  if(n.dot(centerPoint) > 0)
-	    n = -n;
+	    meanN = -meanN;
+	  pInformationMatrix.block<3, 3>(0, 0) = ((squareP / count) - (meanP.head<3>() * meanP.head<3>().transpose())).inverse();	  
+	  nInformationMatrix.block<3, 3>(0, 0) = ((squareN / count) - (meanN.head<3>() * meanN.head<3>().transpose())).inverse();
         }
-        else {
-         n = Normal(Eigen::Vector3f(0.0f, 0.0f, 0.0f));
-        }
-	normals[indexImage(r, c)] = n;
+	
+	normals[indexImage(r, c)] = meanN;
+	pointInformationMatrix[indexImage(r, c)] = pInformationMatrix;
+	normalInformationMatrix[indexImage(r, c)] = nInformationMatrix;
+	
+	// std::cerr << "Normal: " << normals[indexImage(r, c)].transpose() << std::endl;
+	// std::cerr << "pInfo: " << std::endl << pointInformationMatrix[indexImage(r, c)] << std::endl;
+	// std::cerr << "nInfo: " << std::endl << normalInformationMatrix[indexImage(r, c)] << std::endl;
       }
     }
   }
