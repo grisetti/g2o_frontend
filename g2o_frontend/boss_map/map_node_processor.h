@@ -1,7 +1,7 @@
 #ifndef _BOSS_MAP_NODE_PROCESSOR_H_
 #define _BOSS_MAP_NODE_PROCESSOR_H_
 
-#include "boss_map.h"
+#include "boss_map_manager.h"
 #include "sensing_frame_node.h"
 #include "g2o_frontend/boss_logger/bimusensor.h"
 #include "g2o_frontend/boss_logger/brobot_configuration.h"
