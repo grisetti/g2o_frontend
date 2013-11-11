@@ -71,7 +71,7 @@ void makePartitions(std::vector<std::set<MapNode*> >& partitions,
 		    std::set<PwnTrackerNodeRelation*>& relations, 
 		    std::set<PwnTrackerNode*>& nodes, 
 		    MapManager* manager) {
-  
+ 
   std::vector<MapNodeRelation*> rels(relations.size());
   int k = 0;
   for (std::set<MapNodeRelation*>::iterator it=relations.begin(); it!=relations.end(); it++){
