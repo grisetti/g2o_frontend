@@ -1,12 +1,21 @@
 #include "statscalculator.h"
-#include <Eigen/Eigenvalues>
-#include <omp.h>
 
 #include <iostream>
 #include <fstream>
+#include <set>
+#include <omp.h>
+#include <Eigen/Eigenvalues>
 
 namespace pwn {
+
   using namespace boss;
+
+  struct CoordComp {
+    bool operator() (const Eigen::Vector2i& lhs, const Eigen::Vector2i& rhs) const
+    {
+      return lhs.x() < rhs.x();
+    }
+  };
 
   StatsCalculator::StatsCalculator(int id, IdContext* context): Identifiable(id,context){
     _worldRadius = 0.1;
@@ -150,9 +159,7 @@ namespace pwn {
 	    n.normalize();
 	    normal = n;
 	  }
-	}
-	
-      
+	}      
       }
     }
   }
@@ -161,80 +168,119 @@ namespace pwn {
 				    const PointVector& points,
 				    const IntImage& indexImage,
 				    const int imageRadius) {
+    // Generate annulus image coordinates
+    std::set<Eigen::Vector2i, CoordComp> annulusCoordinates;
+    std::set<Eigen::Vector2i>::iterator it;
+    for(int i = 0; i < 90; i++) {
+      float rad = M_PI_2 * i / 90.0f;
+      Eigen::Vector2i coord;
+      coord.x() = imageRadius * sinf(rad); // row 
+      coord.y() = imageRadius * cosf(rad); // col
+      it = annulusCoordinates.end();
+      annulusCoordinates.insert(it, coord);
+    }
+
     std::fill(normals.begin(), normals.end(), Normal());
+    
 #pragma omp parallel for
     for(int r = 0; r < indexImage.rows(); r++) {
 #pragma omp parallel for
       for(int c = 0; c < indexImage.cols(); c++) {
-	// Check if index is valid
 	if(indexImage(r, c) < 0)
 	  continue;
-	if(r < imageRadius || r > indexImage.rows() - imageRadius)
-	  continue;
-	if(c < imageRadius || c > indexImage.cols() - imageRadius)
-	  continue;
+	int count = 0;
+	Normal n = Normal(Eigen::Vector3f(0.0, 0.0, 0.0));
+	Eigen::Vector2i centerCoord = Eigen::Vector2i(r, c);
+	Point centerPoint = points[indexImage(centerCoord.x(), centerCoord.y())];
 
-	// Compute normals with cross products
-	const Point &queryPoint = points[indexImage(r, c)];
-	Point squaredDist = Point(Eigen::Vector3f(0.0f, 0.0f, 0.0f));
-	for(int i = r - imageRadius; i <= r + imageRadius; i++) {
-	  for(int j = c - imageRadius; j <= c + imageRadius; j++) {
-	    const Point &currentPoint = points[indexImage(i, j)];
-	    if(i == r && j == c)
-	      continue;
-	    squaredDist += Point(Eigen::Vector3f(queryPoint.x()*queryPoint.x() - currentPoint.x()*currentPoint.x(),
-						 queryPoint.y()*queryPoint.y() - currentPoint.y()*currentPoint.y(),
-						 queryPoint.z()*queryPoint.z() - currentPoint.z()*currentPoint.z()));
-	    
+#pragma omp parallel for
+	for(size_t i = 0; i < annulusCoordinates.size(); i++) {
+	  std::set<Eigen::Vector2i>::iterator iterator = annulusCoordinates.begin();
+	  std::advance(iterator, i);
+	  Eigen::Vector2i currentCoord = *iterator;//*it;
+	  Eigen::Vector2i firstTranslatedCoord, secondTranslatedCoord;
+	  
+	  // First quadrant	  
+	  firstTranslatedCoord = Eigen::Vector2i(-currentCoord.x(), currentCoord.y()) + centerCoord;
+	  secondTranslatedCoord = Eigen::Vector2i(-currentCoord.y(), -currentCoord.x()) + centerCoord;
+	  if(indexImage(firstTranslatedCoord.x(), firstTranslatedCoord.y()) >= 0 &&
+	     indexImage(secondTranslatedCoord.x(), secondTranslatedCoord.y()) >= 0) {
+	    Point firstPoint = points[indexImage(firstTranslatedCoord.x(), firstTranslatedCoord.y())];
+	    Point secondPoint = points[indexImage(secondTranslatedCoord.x(), secondTranslatedCoord.y())];
+	    Eigen::Vector3f firstVector = (firstPoint - centerPoint).head<3>();
+	    Eigen::Vector3f secondVector = (secondPoint - centerPoint).head<3>();
+	    Normal currentNormal = Normal(firstVector.cross(secondVector));
+	    currentNormal = currentNormal.normalized();
+	    if(currentNormal.dot(centerPoint) > 0)
+	      currentNormal = -currentNormal;
+	    n += currentNormal;
+	    count++;
 	  }
+
+	  // Second quadrant
+	  firstTranslatedCoord = Eigen::Vector2i(-currentCoord.x(), -currentCoord.y()) + centerCoord;
+	  secondTranslatedCoord = Eigen::Vector2i(-currentCoord.y(), currentCoord.x()) + centerCoord;	  
+	  if(indexImage(firstTranslatedCoord.x(), firstTranslatedCoord.y()) >= 0 &&
+	     indexImage(secondTranslatedCoord.x(), secondTranslatedCoord.y()) >= 0) {
+	    Point firstPoint = points[indexImage(firstTranslatedCoord.x(), firstTranslatedCoord.y())];
+	    Point secondPoint = points[indexImage(secondTranslatedCoord.x(), secondTranslatedCoord.y())];
+	    Eigen::Vector3f firstVector = (firstPoint - centerPoint).head<3>();
+	    Eigen::Vector3f secondVector = (secondPoint - centerPoint).head<3>();
+	    Normal currentNormal = Normal(firstVector.cross(secondVector));
+	    currentNormal = currentNormal.normalized();
+	    if(currentNormal.dot(centerPoint) > 0)
+	      currentNormal = -currentNormal;
+	    n += currentNormal;
+	    count++;
+	  }
+
+	  // Third quadrant
+	  firstTranslatedCoord = Eigen::Vector2i(currentCoord.x(), -currentCoord.y()) + centerCoord;
+	  secondTranslatedCoord = Eigen::Vector2i(currentCoord.y(), currentCoord.x()) + centerCoord;	  
+	  if(indexImage(firstTranslatedCoord.x(), firstTranslatedCoord.y()) >= 0 &&
+	     indexImage(secondTranslatedCoord.x(), secondTranslatedCoord.y()) >= 0) {
+	    Point firstPoint = points[indexImage(firstTranslatedCoord.x(), firstTranslatedCoord.y())];
+	    Point secondPoint = points[indexImage(secondTranslatedCoord.x(), secondTranslatedCoord.y())];
+	    Eigen::Vector3f firstVector = (firstPoint - centerPoint).head<3>();
+	    Eigen::Vector3f secondVector = (secondPoint - centerPoint).head<3>();
+	    Normal currentNormal = Normal(firstVector.cross(secondVector));
+	    currentNormal = currentNormal.normalized();
+	    if(currentNormal.dot(centerPoint) > 0)
+	      currentNormal = -currentNormal;
+	    n += currentNormal;
+	    count++;
+	  }
+
+	  // Fourth quadrant
+	  firstTranslatedCoord = Eigen::Vector2i(currentCoord.x(), currentCoord.y()) + centerCoord;
+	  secondTranslatedCoord = Eigen::Vector2i(currentCoord.y(), -currentCoord.x()) + centerCoord;	  
+	  if(indexImage(firstTranslatedCoord.x(), firstTranslatedCoord.y()) >= 0 &&
+	     indexImage(secondTranslatedCoord.x(), secondTranslatedCoord.y()) >= 0) {
+	    Point firstPoint = points[indexImage(firstTranslatedCoord.x(), firstTranslatedCoord.y())];
+	    Point secondPoint = points[indexImage(secondTranslatedCoord.x(), secondTranslatedCoord.y())];
+	    Eigen::Vector3f firstVector = (firstPoint - centerPoint).head<3>();
+	    Eigen::Vector3f secondVector = (secondPoint - centerPoint).head<3>();
+	    Normal currentNormal = Normal(firstVector.cross(secondVector));
+	    currentNormal = currentNormal.normalized();
+	    if(currentNormal.dot(centerPoint) > 0)
+	      currentNormal = -currentNormal;
+	    n += currentNormal;
+	    count++;
+	  }	  
 	}
 	
-	int constIndex;
-	squaredDist.minCoeff(&constIndex);	
-	Normal normal = Normal(Eigen::Vector3f(0.0f, 0.0f, 0.0f));	
-	bool referenceFound = false;
-	Eigen::Vector3f referenceVector = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
-	Eigen::Vector3f currentVector = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
-	float maxDist = 0.000001f;
-	float count = 0.0f;
-	if(squaredDist[constIndex] < maxDist) {
-	  normal = Normal(Eigen::Vector3f(0.0f, 0.0f, 0.0f));
-	  for(int i = r - imageRadius; i <= r + imageRadius; i++) {
-	    for(int j = c - imageRadius; j <= c + imageRadius; j++) {
-	      const Point &currentPoint = points[indexImage(i, j)];
-	      if(i == r && j == c)
-		continue;
-	      if(queryPoint[constIndex]*queryPoint[constIndex] - 
-		 currentPoint[constIndex]*currentPoint[constIndex] >= 
-		 maxDist/squaredDist[3]) {
-		continue;
-	      }
-	      if(referenceFound) {
-		currentVector = currentPoint.head<3>() - queryPoint.head<3>();		
-		Normal currentNormal = Normal(referenceVector.cross(currentVector));
-		if(currentNormal.squaredNorm() == 0.0f)
-		  continue;
-		currentNormal = currentNormal.normalized();
-		if(currentNormal.dot(queryPoint) > 0)
-		  currentNormal = -currentNormal;
-		normal += currentNormal;
-		count = count + 1.0f;
-	      }
-	      else {
-		referenceVector = currentPoint.head<3>() - queryPoint.head<3>();
-		referenceFound = true;
-	      }		
-	    }
-	  }
-	}
-	if(count >= 15.0f) {
-	  normal = normal / count;
-	  normal = normal.normalized();
-	}
-	else
-	  normal = Normal(Eigen::Vector3f(0.0f, 0.0f, 0.0f));
-	normals[indexImage(r, c)] = normal;
-      }	
+	// Assign normal
+	if(count >= 1.0f) {
+	  n = n / (float)count;
+          n = n.normalized();
+	  if(n.dot(centerPoint) > 0)
+	    n = -n;
+        }
+        else {
+         n = Normal(Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+        }
+	normals[indexImage(r, c)] = n;
+      }
     }
   }
 
