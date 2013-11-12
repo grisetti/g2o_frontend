@@ -99,6 +99,8 @@ int main(int argc, char **argv) {
   int ng_minImageRadius, ng_maxImageRadius, ng_minPoints;
   float ng_worldRadius, ng_scale, ng_curvatureThreshold;
 
+  int fng_imageRadius;
+
   float cf_inlierNormalAngularThreshold, cf_flatCurvatureThreshold, cf_inlierCurvatureRatioThreshold, cf_inlierDistanceThreshold;
 
   int al_innerIterations, al_outerIterations, al_minNumInliers; 
@@ -122,7 +124,8 @@ int main(int argc, char **argv) {
   arg.param("ng_worldRadius", ng_worldRadius, 0.1f, "Specify the max distance for a point to be used to compute a normal");
   arg.param("ng_scale", ng_scale, 1.0f, "Specify the scaling factor to apply on the depth image");
   arg.param("ng_curvatureThreshold", ng_curvatureThreshold, 1.0f, "Specify the max surface curvature threshold for which normals are discarded");
-  
+  arg.param("fng_imageRadius", fng_imageRadius, 3, "Specify the radius of the annulus in the depth image used for fast normal computation");
+
   arg.param("cf_inlierNormalAngularThreshold", cf_inlierNormalAngularThreshold, 1.0f, "Maximum angle between the normals of two points to regard them as iniliers");
   arg.param("cf_flatCurvatureThreshold", cf_flatCurvatureThreshold, 0.02f, "Maximum curvature value for a point to be used for data association");
   arg.param("cf_inlierCurvatureRatioThreshold", cf_inlierCurvatureRatioThreshold, 1.3f, "Maximum curvature ratio value between two points to regard them as iniliers");
@@ -508,8 +511,8 @@ int main(int argc, char **argv) {
 		continue;
 	      }
 	      DepthImage::scale(scaledDepthImage, depthImage, ng_scale);
-	      //converter.compute(*frame, scaledDepthImage, sensorOffset, false);
-	      converter.fastCompute(*frame, scaledDepthImage, sensorOffset);
+	      converter.compute(*frame, scaledDepthImage, sensorOffset, false);
+	      //converter.fastCompute(*frame, scaledDepthImage, sensorOffset, fng_imageRadius);
 	    }
 
 	    Eigen::Isometry3f originPose = Eigen::Isometry3f::Identity();

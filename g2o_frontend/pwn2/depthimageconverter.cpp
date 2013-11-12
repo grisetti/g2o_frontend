@@ -57,12 +57,18 @@ namespace pwn {
     _pointInformationMatrixCalculator->compute(frame.pointInformationMatrix(), frame.stats(), frame.normals());
     _normalInformationMatrixCalculator->compute(frame.normalInformationMatrix(), frame.stats(), frame.normals());
 
+    // for(size_t i = 0; i < frame.pointInformationMatrix().size(); i++) {
+    //   std::cout << "pInfo: " << std::endl << frame.pointInformationMatrix()[i] << std::endl;
+    //   std::cout << "nInfo: " << std::endl << frame.normalInformationMatrix()[i] << std::endl;
+    // }
+
     frame.transformInPlace(sensorOffset);
   }
 
   void DepthImageConverter::fastCompute(Frame &frame,
-				    const DepthImage &depthImage, 
-				    const Eigen::Isometry3f &sensorOffset) {
+					const DepthImage &depthImage, 
+					const Eigen::Isometry3f &sensorOffset,
+					const int imageRadius) {
     frame.clear();
     _projector->setImageSize(depthImage.rows(), depthImage.cols());
     
@@ -83,11 +89,12 @@ namespace pwn {
 
     // computing the integral image and the intervals
     _statsCalculator->fastCompute(frame.normals(),
+				  frame.stats(),
 				  frame.pointInformationMatrix(),
 				  frame.normalInformationMatrix(),
 				  frame.points(),
 				  _indexImage,
-				  3);
+				  imageRadius);
 
     frame.transformInPlace(sensorOffset);
   }

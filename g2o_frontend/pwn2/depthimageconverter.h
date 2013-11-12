@@ -26,7 +26,8 @@ namespace pwn {
 
     void fastCompute(Frame& frame,
 		     const DepthImage &depthImage, 
-		     const Eigen::Isometry3f &sensorOffset = Eigen::Isometry3f::Identity());
+		     const Eigen::Isometry3f &sensorOffset = Eigen::Isometry3f::Identity(),
+		     const int imageRadius = 3);
 
     // todo: add accessor methods, separate public and private
     //protected:

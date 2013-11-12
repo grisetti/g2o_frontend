@@ -165,6 +165,7 @@ namespace pwn {
   }
 
   void StatsCalculator::fastCompute(NormalVector& normals,
+				    StatsVector& statsVector,
 				    InformationMatrixVector &pointInformationMatrix,
 				    InformationMatrixVector &normalInformationMatrix,
 				    const PointVector& points,
@@ -186,11 +187,13 @@ namespace pwn {
     for(int r = 0; r < indexImage.rows(); r++) {
 #pragma omp parallel for
       for(int c = 0; c < indexImage.cols(); c++) {
+	Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigenSolver;
 	if(indexImage(r, c) < 0)
 	  continue;
 	int count = 0;
 	Point p = Point(Eigen::Vector3f(0.0, 0.0, 0.0));	
 	Normal n = Normal(Eigen::Vector3f(0.0, 0.0, 0.0));
+	Normal sumN = Normal(Eigen::Vector3f(0.0, 0.0, 0.0));
 	Eigen::Matrix3f squareP = Eigen::Matrix3f::Zero();
 	Eigen::Matrix3f squareN = Eigen::Matrix3f::Zero();
 	Eigen::Vector2i centerCoord = Eigen::Vector2i(r, c);
@@ -214,10 +217,11 @@ namespace pwn {
 	    Eigen::Vector3f secondVector = (secondPoint - centerPoint).head<3>();
 	    Normal currentNormal = Normal(firstVector.cross(secondVector));
 	    currentNormal = currentNormal.normalized();
+	    n += currentNormal;	    
 	    if(currentNormal.dot(centerPoint) > 0)
 	      currentNormal = -currentNormal;
+	    sumN += currentNormal;
 	    p += firstPoint;
-	    n += currentNormal;
 	    squareP += firstPoint.head<3>() * firstPoint.head<3>().transpose(); 
 	    squareN += currentNormal.head<3>() * currentNormal.head<3>().transpose();
 	    count++;
@@ -234,10 +238,11 @@ namespace pwn {
 	    Eigen::Vector3f secondVector = (secondPoint - centerPoint).head<3>();
 	    Normal currentNormal = Normal(firstVector.cross(secondVector));
 	    currentNormal = currentNormal.normalized();
+	    n += currentNormal;	    
 	    if(currentNormal.dot(centerPoint) > 0)
 	      currentNormal = -currentNormal;
+	    sumN += currentNormal;
 	    p += firstPoint;
-	    n += currentNormal;
 	    squareP += firstPoint.head<3>() * firstPoint.head<3>().transpose(); 
 	    squareN += currentNormal.head<3>() * currentNormal.head<3>().transpose();
 	    count++;
@@ -254,10 +259,11 @@ namespace pwn {
 	    Eigen::Vector3f secondVector = (secondPoint - centerPoint).head<3>();
 	    Normal currentNormal = Normal(firstVector.cross(secondVector));
 	    currentNormal = currentNormal.normalized();
+	    n += currentNormal;	    
 	    if(currentNormal.dot(centerPoint) > 0)
 	      currentNormal = -currentNormal;
+	    sumN += currentNormal;
 	    p += firstPoint;
-	    n += currentNormal;
 	    squareP += firstPoint.head<3>() * firstPoint.head<3>().transpose(); 
 	    squareN += currentNormal.head<3>() * currentNormal.head<3>().transpose();
 	    count++;
@@ -274,10 +280,11 @@ namespace pwn {
 	    Eigen::Vector3f secondVector = (secondPoint - centerPoint).head<3>();
 	    Normal currentNormal = Normal(firstVector.cross(secondVector));
 	    currentNormal = currentNormal.normalized();
+	    n += currentNormal;	    
 	    if(currentNormal.dot(centerPoint) > 0)
 	      currentNormal = -currentNormal;
+	    sumN += currentNormal;
 	    p += firstPoint;
-	    n += currentNormal;
 	    squareP += firstPoint.head<3>() * firstPoint.head<3>().transpose(); 
 	    squareN += currentNormal.head<3>() * currentNormal.head<3>().transpose();
 	    count++;
@@ -286,24 +293,44 @@ namespace pwn {
 	
 	InformationMatrix pInformationMatrix = InformationMatrix::Zero();
 	InformationMatrix nInformationMatrix = InformationMatrix::Zero();
+	Normal meanNormals = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
 	Normal meanN = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
-	if(count >= 10) {
+	Stats stats = Stats();
+	stats.setZero();
+	if(count >= 1) {
 	  Point meanP = p / (float)count;
-	  meanN = n / (float)count;
-	  meanN = meanN.normalized();
-	  if(n.dot(centerPoint) > 0)
+	  meanNormals = n / (float)count;
+	  pInformationMatrix.block<3, 3>(0, 0) = ((squareP / (float)count) - (centerPoint.head<3>() * centerPoint.head<3>().transpose())).inverse();	  	  
+	  nInformationMatrix.block<3, 3>(0, 0) = ((squareN / (float)count) - (meanNormals.head<3>() * meanNormals.head<3>().transpose())).inverse();
+
+	  // Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigenSolver;
+	  // eigenSolver.computeDirect(nInformationMatrix.block<3, 3>(0, 0), Eigen::ComputeEigenvectors);
+	  // stats.setEigenVectors(eigenSolver.eigenvectors());
+	  // stats.setMean(centerPoint);
+	  // Eigen::Vector3f eigenValues = eigenSolver.eigenvalues();
+	  // if(eigenValues(0) < 0.0f)
+	  //   eigenValues(0) = 0.0f;
+	  // if(eigenValues(1) < 0.0f)
+	  //   eigenValues(1) = 0.0f;
+	  // if(eigenValues(2) < 0.0f)
+	  //   eigenValues(2) = 0.0f;
+	  // stats.setEigenValues(eigenValues);
+	  // stats.setN(count);
+	  
+	  meanN = (sumN / (float)count).normalized();	  	  
+	  if(meanN.dot(centerPoint) > 0)
 	    meanN = -meanN;
-	  pInformationMatrix.block<3, 3>(0, 0) = ((squareP / count) - (meanP.head<3>() * meanP.head<3>().transpose())).inverse();	  
-	  nInformationMatrix.block<3, 3>(0, 0) = ((squareN / count) - (meanN.head<3>() * meanN.head<3>().transpose())).inverse();
-        }
+	}
 	
 	normals[indexImage(r, c)] = meanN;
+	statsVector[indexImage(r, c)] = stats;
 	pointInformationMatrix[indexImage(r, c)] = pInformationMatrix;
 	normalInformationMatrix[indexImage(r, c)] = nInformationMatrix;
-	
+      
 	// std::cerr << "Normal: " << normals[indexImage(r, c)].transpose() << std::endl;
 	// std::cerr << "pInfo: " << std::endl << pointInformationMatrix[indexImage(r, c)] << std::endl;
 	// std::cerr << "nInfo: " << std::endl << normalInformationMatrix[indexImage(r, c)] << std::endl;
+	// std::cerr << "-----------------------------------------------------------------" << std::endl;
       }
     }
   }

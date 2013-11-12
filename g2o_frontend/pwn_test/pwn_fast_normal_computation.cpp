@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
   for(int i = 0; i < numComputations; i++) {
     ts = g2o::get_time();
     //statsCalculator.fastCompute(frame.normals(), frame.points(), index, ng_imageRadius, ng_minimumPoints, ng_maxDist);
-    statsCalculator.fastCompute(frame.normals(), frame.pointInformationMatrix(), frame.normalInformationMatrix(), frame.points(), index, ng_imageRadius);
+    statsCalculator.fastCompute(frame.normals(), frame.stats(), frame.pointInformationMatrix(), frame.normalInformationMatrix(), frame.points(), index, ng_imageRadius);
     tf = g2o::get_time();
     totalTime += tf - ts;
   }
