@@ -83,7 +83,9 @@ namespace pwn {
     _projector->unProject(frame.points(), frame.gaussians(), _indexImage, depthImage);
     frame.normals().resize(frame.points().size());
     frame.pointInformationMatrix().resize(frame.points().size());
+    std::fill(frame.pointInformationMatrix().begin(), frame.pointInformationMatrix().end(), Eigen::Matrix4f::Zero());
     frame.normalInformationMatrix().resize(frame.points().size());
+    std::fill(frame.normalInformationMatrix().begin(), frame.normalInformationMatrix().end(), Eigen::Matrix4f::Zero());
     frame.stats().resize(frame.points().size());
     std::fill(frame.stats().begin(), frame.stats().end(), Stats());
 

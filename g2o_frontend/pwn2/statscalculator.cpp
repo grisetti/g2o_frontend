@@ -183,9 +183,9 @@ namespace pwn {
       annulusCoordinates.insert(it, coord);
     }
     
-#pragma omp parallel for
+    //#pragma omp parallel for
     for(int r = 0; r < indexImage.rows(); r++) {
-#pragma omp parallel for
+      //#pragma omp parallel for
       for(int c = 0; c < indexImage.cols(); c++) {
 	Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigenSolver;
 	if(indexImage(r, c) < 0)
@@ -199,7 +199,7 @@ namespace pwn {
 	Eigen::Vector2i centerCoord = Eigen::Vector2i(r, c);
 	Point centerPoint = points[indexImage(centerCoord.x(), centerCoord.y())];
 
-#pragma omp parallel for
+	//#pragma omp parallel for
 	for(size_t i = 0; i < annulusCoordinates.size(); i++) {
 	  std::set<Eigen::Vector2i>::iterator iterator = annulusCoordinates.begin();
 	  std::advance(iterator, i);
@@ -316,7 +316,23 @@ namespace pwn {
 	  //   eigenValues(2) = 0.0f;
 	  // stats.setEigenValues(eigenValues);
 	  // stats.setN(count);
-	  
+
+	  // stats.setEigenVectors(pInformationMatrix.block<3, 3>(0, 0));
+	  // stats.setMean(centerPoint);
+	  // stats.setEigenValues(Eigen::Vector3f(1.0f, 0.0f, 0.0f));
+	  // stats.setN(count);
+
+	  //	  std::cout << "INFO: " << nInformationMatrix(0, 0)*nInformationMatrix(1, 1)*nInformationMatrix(2, 2) << std::endl;
+
+	  if(fabs(nInformationMatrix(0, 0)*nInformationMatrix(1, 1)*nInformationMatrix(2, 2)) > 1e03) {
+	    nInformationMatrix = Eigen::Matrix4f::Zero();
+	    nInformationMatrix(0, 0) = 100.0f;
+	    nInformationMatrix(1, 1) = 100.0f;
+	    nInformationMatrix(2, 2) = 100.0f;
+	  }
+	  else {
+	    nInformationMatrix = Eigen::Matrix4f::Identity();
+	  }
 	  meanN = (sumN / (float)count).normalized();	  	  
 	  if(meanN.dot(centerPoint) > 0)
 	    meanN = -meanN;
