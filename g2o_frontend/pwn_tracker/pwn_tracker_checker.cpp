@@ -27,6 +27,166 @@ std::vector<boss::Serializable*> objects;
 std::vector<PwnTrackerFrame*> trackerFrames;
 std::vector<PwnTrackerRelation*> trackerRelations;
 
+
+Frame* makeFrame(DepthImageConverter* converter, PwnTrackerFrame* trackerFrame, int scale = 8){
+  boss_logger::ImageBLOB* depthBLOB = trackerFrame->depthImage.get();
+  PinholePointProjector* projector = (PinholePointProjector*)converter->_projector;
+  projector->setImageSize(trackerFrame->imageRows, trackerFrame->imageCols);
+  pwn::DepthImage depth;
+  pwn::Frame* cloud=new pwn::Frame;
+  Eigen::Matrix3f cameraMatrix;
+  Eigen::Isometry3f offset;
+  depth.fromCvMat(depthBLOB->cvImage());
+  convertScalar(offset, trackerFrame->sensorOffset);
+  convertScalar(cameraMatrix, trackerFrame->cameraMatrix);
+  projector->setCameraMatrix(cameraMatrix);
+  pwn::DepthImage scaledDepth;
+  DepthImage::scale(scaledDepth, depth, scale);
+  projector->scale (1./scale);
+  converter->compute(*cloud, scaledDepth, offset);
+  delete depthBLOB;
+  return cloud;
+}
+
+class PwnCache;
+
+
+class PwnFrameCacheEntry {
+public:
+  PwnFrameCacheEntry(PwnCache* cache_, PwnTrackerFrame* frame_){
+    _frame = frame_;
+    _cache = cache_;
+    _instance = 0;
+    _isLocked = 0;
+    _lastAccess = 0;
+  }
+
+  pwn::Frame* get(size_t access);
+  bool isLoaded() const {return _instance;}
+  inline bool release() {
+    if (_instance && ! _isLocked) {
+      delete _instance; 
+      _instance = 0; 
+      return true;
+    } 
+    return false;
+  }
+
+  inline bool isLocked() {
+    return _instance && _isLocked;
+  }
+
+  void lock() {
+    if (_instance) 
+      _isLocked = true;
+    else 
+      _isLocked = false;
+  }
+
+  void unlock() {
+    _isLocked = false; 
+  }
+
+  inline int lastAccess() const {return _lastAccess;}
+
+protected:
+  pwn::Frame* _instance;
+  PwnTrackerFrame* _frame;
+  PwnCache* _cache;
+  bool _isLocked;
+  size_t _lastAccess;
+};
+
+class PwnCache{
+public:
+  PwnCache(DepthImageConverter* converter_, int scale_, int maxActiveEntries){
+    _converter = converter_;
+    _scale = scale_;
+    _lastAccess = 0;
+    _hits = 0;
+    _misses = 0;
+    _maxElements = maxActiveEntries;
+  }
+  bool addEntry(PwnTrackerFrame* frame){
+    //cerr << "adding entry for frame" << frame << endl;
+    if (_entries.count(frame))
+      return false;
+    PwnFrameCacheEntry* entry = new PwnFrameCacheEntry(this, frame);
+    _entries.insert(make_pair(frame, entry));
+    //cerr << "DONE" << frame << endl;
+    return true;
+  }
+
+  pwn::Frame* get(PwnTrackerFrame* frame) {
+    // seek if you have it in the entries;
+    std::map<PwnTrackerFrame*, PwnFrameCacheEntry*>::iterator it = _entries.find(frame);
+    if (it==_entries.end())
+      return 0;
+    PwnFrameCacheEntry* entry = it->second;
+    if (entry->isLoaded()){
+      _hits++;
+      return entry->get(_lastAccess++);
+    } 
+    if (_active.size()>_maxElements){
+      if (! makeRoom() )
+	throw std::runtime_error("no room in cache, no disposable element. Aborting");
+    }
+    //cerr << "inserting new entry in the pool" << endl;
+      _misses++;
+    _active.insert(entry);
+    return entry->get(_lastAccess++);
+  }
+
+  inline DepthImageConverter* converter() {return _converter;}
+  inline int scale() const {return _scale;}
+  inline int hits() const { return _hits; }
+  inline int misses() const { return _misses; }
+
+  bool makeRoom() {
+    // seek for the oldest element in the set that is not locked
+    PwnFrameCacheEntry* oldest = 0;
+    for (std::set<PwnFrameCacheEntry*>::iterator it=_active.begin(); it!=_active.end(); it++){
+      PwnFrameCacheEntry* entry = *it;
+      if (entry->isLocked())
+	continue;
+      if(! oldest) {
+	oldest = entry;
+	continue;
+      }
+      if (oldest->lastAccess()>entry->lastAccess())
+	oldest = entry;
+    }
+    if (oldest) {
+      oldest->release();
+      _active.erase(oldest);
+      return true;
+    }
+    return false;
+  }
+protected:
+  std::map<PwnTrackerFrame*, PwnFrameCacheEntry*> _entries;
+  std::set<PwnFrameCacheEntry*> _active;
+  DepthImageConverter* _converter;
+  int _scale;
+  size_t _maxElements;
+  size_t _lastAccess;
+  size_t _hits;
+  size_t _misses;
+};
+
+
+pwn::Frame* PwnFrameCacheEntry::get(size_t access) {
+  if (_instance)
+    return _instance;
+  _instance = makeFrame(_cache->converter(), _frame, _cache->scale());
+  //cerr << "loading frame: " << _instance  << endl;
+  _lastAccess = access;
+  return _instance;
+}
+
+
+
+
 float compareNormals(cv::Mat& m1, cv::Mat& m2){
   if (m1.rows!=m2.rows || m1.cols != m2.cols)
     return 0;
@@ -52,6 +212,9 @@ float compareDepths(cv::Mat& m1, cv::Mat& m2){
 }
 
 
+PwnCache* cache = 0;
+
+
 void seekForMatches(std::set<MapNode*> nodes, MapNode* current_){
   PwnTrackerFrame* current = dynamic_cast<PwnTrackerFrame*>(current_);
 
@@ -67,9 +230,9 @@ void seekForMatches(std::set<MapNode*> nodes, MapNode* current_){
   currentDepthThumbnail=currentDepthThumbnail-127.0f;
   currentDepthThumbnail=currentDepthThumbnail*(1./255);
 
-  ImageBLOB* currentDepthBLOB = current->depthImage.get();
-  cv::Mat currentDepth = currentDepthBLOB->cvImage();
 
+  pwn::Frame* f=cache->get(current);
+  cerr << "FRAME: " << f << endl; 
   for (std::set <MapNode*>::iterator it=nodes.begin(); it!=nodes.end(); it++){
     PwnTrackerFrame* other = dynamic_cast<PwnTrackerFrame*>(*it);
     if (other==current)
@@ -89,14 +252,18 @@ void seekForMatches(std::set<MapNode*> nodes, MapNode* current_){
     float dc = compareNormals(currentNormalThumbnail, otherNormalThumbnail);
     float nc = compareDepths(currentDepthThumbnail, otherDepthThumbnail);
     cerr << "matching" << other << " " << current << ", dc:" << dc << ", nc:" << nc << endl;
-    delete otherDepthThumbnailBLOB;
-    delete otherNormalThumbnailBLOB;
+
+    pwn::Frame* f2=cache->get(other);
+    cerr << "INNER FRAME: " << f2 << endl; 
+ 
+    //delete otherDepthThumbnailBLOB;
+    //delete otherNormalThumbnailBLOB;
   }
   cerr << "done" << endl;
 
-  delete currentDepthBLOB;
-  delete currentDepthThumbnailBLOB;
-  delete currentNormalThumbnailBLOB;
+  //delete currentDepthBLOB;
+  //delete currentDepthThumbnailBLOB;
+  //delete currentNormalThumbnailBLOB;
 }
 
 MapManager* load(std::vector<PwnTrackerFrame*>& trackerFrames,
@@ -121,6 +288,7 @@ MapManager* load(std::vector<PwnTrackerFrame*>& trackerFrames,
     PwnTrackerFrame* f = dynamic_cast<PwnTrackerFrame*>(o);
     if (f) {
       trackerFrames.push_back(f);
+      cache->addEntry(f);
       lastTrackerFrame = f;
       nodeCount++;
     }
@@ -169,7 +337,12 @@ int main(int argc, char** argv){
   des.setFilePath(argv[2]);
   // load the log
 
+  cache = new PwnCache(converter,4,50);
   MapManager* manager = load(trackerFrames, trackerRelations, objects, des);
+
+  cerr << "Cache Statistics" << endl;
+  cerr << "  hits:" << cache->hits() << endl;
+  cerr << "  misses:" << cache->misses() << endl;
 
   return 0;
 }
