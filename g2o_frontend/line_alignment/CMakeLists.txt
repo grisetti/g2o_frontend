@@ -8,6 +8,7 @@ TARGET_LINK_LIBRARIES(line_alignment
   ransac
   sensor_data_library
   types_data
+  g2o_line_addons_library
   ${G2O_TYPES_SLAM2D}
   ${G2O_TYPES_SLAM3D}
   ${G2O_TYPES_SLAM2D_ADDONS}

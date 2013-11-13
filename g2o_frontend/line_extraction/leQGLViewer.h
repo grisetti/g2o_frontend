@@ -35,7 +35,7 @@
       bool _standard;
   };
 
-typedef std::vector<Vector2fVector> lineContainer;
+typedef std::vector<Vector3fVector> lineContainer;
 
 
 class leQGLViewer: public QGLViewer

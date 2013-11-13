@@ -1,0 +1,181 @@
+***********************************
+***********NEW ITERATION***********
+***********************************
+Current Vertex 0
+laser parameter offset: 
+1 0 0 0
+0 1 0 0
+0 0 1 0
+0 0 0 1
+###### edges from the current robot poses ######
+This vertex has 28 edge.
+- Odom edge from vertex  0 to 1
+Odometry transformation between the current vertex 0 and the next one 1:
+          1 -0.00016106           0
+ 0.00016106           1           0
+          0           0           1
+The next vertex has 29 edge.
+
+***Extracting lines from CURRENT frame***
+Saving lines of the current vertex, size is: 11
+
+***Extracting lines from NEXT frame***
+Saving lines of the next vertex, size is:11
+
+ ### iteration 0, SIZE of the container(pair of lines sets): 1
+
+*********END OF ITERATION*********
+
+
+***********************************
+***********NEW ITERATION***********
+***********************************
+Current Vertex 1
+###### edges from the current robot poses ######
+This vertex has 29 edge.
+- Odom edge from vertex  0 to 1
+###Skipping this edge (forward evaluation of the odometry)###
+- Odom edge from vertex  1 to 2
+Odometry transformation between the current vertex 1 and the next one 2:
+    0.994743     0.102403 -0.000225601
+   -0.102403     0.994743  1.99201e-05
+           0            0            1
+The next vertex has 29 edge.
+
+***Extracting lines from CURRENT frame***
+Saving lines of the current vertex, size is: 11
+
+***Extracting lines from NEXT frame***
+Saving lines of the next vertex, size is:12
+
+ ### iteration 1, SIZE of the container(pair of lines sets): 2
+
+*********END OF ITERATION*********
+
+
+***********************************
+***********NEW ITERATION***********
+***********************************
+Current Vertex 2
+###### edges from the current robot poses ######
+This vertex has 29 edge.
+- Odom edge from vertex  1 to 2
+###Skipping this edge (forward evaluation of the odometry)###
+!!!! There is no next vertex --> END OF GRAPH - size of edgeset of v_next:0
+
+***Extracting lines from CURRENT frame***
+Saving lines of the current vertex, size is: 0
+*********END OF ITERATION*********
+
+
+
+ ### Done with the graph reading, ready for the correspondences finder.. 
+ ### SIZE OF THE FINAL CONTAINER: 2
+....start finding correspondences
+number of pairs to be matched: 2
+* Iteration 0
+number of lines in the first set: 11
+number of lines in the second set: 11
+* Iteration 1
+number of lines in the first set: 11
+number of lines in the second set: 12
+!!! End of findCorrespondances(pair of vertex to be matched), size is 2
+
+
+*******************************STARTING ALIGNMENT ALGORITHM: ITERATION 0*******************************
+
+!!! Size of correspondances founded for the 0-th pair of vertex: 11
+Correspondances position in lines sets: 0, 0, with error:  26.718
+Correspondances position in lines sets: 1, 1, with error:  4024.73
+Correspondances position in lines sets: 2, 2, with error:  11.4994
+Correspondances position in lines sets: 3, 3, with error:  2896.99
+Correspondances position in lines sets: 4, 4, with error:  2.01339
+Correspondances position in lines sets: 5, 5, with error:  9749.93
+Correspondances position in lines sets: 6, 6, with error:  472.565
+Correspondances position in lines sets: 7, 7, with error:  3209.25
+Correspondances position in lines sets: 8, 8, with error:  11.8409
+Correspondances position in lines sets: 9, 9, with error:  160.072
+Correspondances position in lines sets: 10, 10, with error:  7.50179
+size of correspondances vector: 11
+iteration: 0
+R after reconditioning the rotation:
+   0.99958 -0.0289759
+ 0.0289759    0.99958
+t after recompute the translation: -0.271573 0.215939
+OK
+transformFound:0
+inliers:10
+error:0.176183
+enough inliers: 10
+good error: 0.176183
+excellent inlier fraction: 90.9091%
+R after reconditioning the rotation:
+  0.999814 -0.0192905
+ 0.0192905   0.999814
+t after recompute the translation: -0.131771 0.0477823
+***********FOUND!***********
+
+ground truth: 
+          1 -0.00016106           0
+ 0.00016106           1           0
+          0           0           1
+
+
+transform error vector: 
+-0.131779
+0.0477611
+0.0194527
+
+********************************END OF ALIGNMENT ALGORITHM: ITERATION 0********************************
+
+ransac aligned took 0.23082ms.
+
+*******************************STARTING ALIGNMENT ALGORITHM: ITERATION 1*******************************
+
+!!! Size of correspondances founded for the 1-th pair of vertex: 11
+Correspondances position in lines sets: 0, 2, with error:  67144.8
+Correspondances position in lines sets: 1, 1, with error:  21782.4
+Correspondances position in lines sets: 2, 2, with error:  17692.9
+Correspondances position in lines sets: 3, 7, with error:  53638.6
+Correspondances position in lines sets: 4, 2, with error:  19199.5
+Correspondances position in lines sets: 5, 4, with error:  50.7964
+Correspondances position in lines sets: 6, 7, with error:  27901.8
+Correspondances position in lines sets: 7, 11, with error:  514776
+Correspondances position in lines sets: 8, 4, with error:  9032.7
+Correspondances position in lines sets: 9, 4, with error:  10288.6
+Correspondances position in lines sets: 10, 11, with error:  29208.3
+size of correspondances vector: 11
+iteration: 0
+R after reconditioning the rotation:
+0.994883 0.101032
+-0.101032 0.994883
+t after recompute the translation: -0.221247 0.80535
+OK
+transformFound:0
+inliers:6
+error:0.567369
+enough inliers: 6
+good error: 0.567369
+excellent inlier fraction: 54.5455%
+R after reconditioning the rotation:
+ 0.997994 0.0633017
+-0.0633017  0.997994
+t after recompute the translation: 0.053735 0.116952
+***********FOUND!***********
+
+ground truth: 
+    0.994743     0.102403 -0.000225601
+   -0.102403     0.994743  1.99201e-05
+           0            0            1
+
+
+transform error vector: 
+0.0652031
+0.110855
+-0.165927
+
+********************************END OF ALIGNMENT ALGORITHM: ITERATION 1********************************
+
+ransac aligned took 0.198297ms.
+
+...saving graph in newGraph.g2o

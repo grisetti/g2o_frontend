@@ -10,10 +10,14 @@
 #include "RansacEE.h"
 #include "SplitMergeEE.h"
 
+#include "g2o_frontend/basemath/bm_se2.h"
+
 #include "g2o/types/slam2d/types_slam2d.h"
 #include "g2o/types/slam2d_addons/vertex_line2d.h"
 #include "g2o/types/slam2d_addons/edge_line2d_pointxy.h"
 #include "g2o/types/slam2d_addons/edge_se2_line2d.h"
+#include "g2o_frontend/g2o_line_addons/g2o_line_addons.h"
+
 
 #define MIN_POINTS_IN_LINES 10
 #define SPLIT_THRESHOLD 0.03*0.03
@@ -88,6 +92,11 @@ void ViewerGUI::showOriginal()
 // 	this->viewer->setDataPointer(&(ld.second));
 	//in this...
 	VertexDataVector::iterator it = vldvector->begin();
+    if(numIteration > (int)vldvector->size()-1)
+    {
+        cout << "!!!Graph Ended!!!" << endl;
+        return;
+    }
 	vld = *(it+numIteration);
 	// TODO changing from SE3:
 // 	g2o::VertexSE3* v = vld.first;
@@ -110,11 +119,13 @@ void ViewerGUI::showOriginal()
 	this->viewer->updateGL();
 }
 
-#if 0
+#if 1
 // 					ofstream osp1PrimaC("points1PrimaC.dat");
 // 					ofstream osp1("points1.dat");
-					ofstream os("myLines.dat");
+//                    ofstream os("myCurrentLines.dat");
+                    ofstream oslines("lines_likelihood.dat");
 #endif
+
 void ViewerGUI::lineExtraction()
 {
   if (algotype == noType) {
@@ -123,17 +134,21 @@ void ViewerGUI::lineExtraction()
   }
 	else
 	{
-		ofstream os("myLines.dat");
 		this->lc.clear();
 		this->lAdjacentVector.clear();
 		
 		int minPointsCluster = 10;
-		Vector2fVector linePoints;
+        Vector3fVector linePoints;
 		//changing this..
 // 		LaserDataVector::iterator it = ldvector->begin();
 // 		ld = *(it+numIteration);	
 		//in this..
 		VertexDataVector::iterator it = vldvector->begin();
+        if(numIteration > (int)vldvector->size()-1)
+        {
+            cout << "!!!Graph Ended!!!" << endl;
+            return;
+        }
 		vld = *(it+numIteration);
 
 		
@@ -208,20 +223,23 @@ void ViewerGUI::lineExtraction()
 					const Vector2f& p0 = lineExtractor->points()[line.p0Index];
                     const Vector2f& p1 = lineExtractor->points()[line.p1Index];
 
-					Vector2d p0_g(p0.x(), p0.y()); //without , 0.f in SE2
+                    Vector2d p0_g(p0.x(), p0.y()); //remember the z field [0.f] if in SE3
 					Vector2d p1_g(p1.x(), p1.y());
-					p0_g = T*p0_g;
-					p1_g = T*p1_g;
-#if 1
+                    p0_g = T*p0_g;
+                    p1_g = T*p1_g;
+
+#if 0
 					os << p0_g.transpose() << endl;
 					os << p1_g.transpose() << endl;
 					os << endl;
 					os << endl;
 					os.flush();
 #endif
-					//creating structure to draw lines (considering the odometry of the robot,use of p0_3 and p1_3)
-					linePoints.push_back(Eigen::Vector2f(p0_g.x(), p0_g.y()));					
-					linePoints.push_back(Eigen::Vector2f(p1_g.x(), p1_g.y()));
+
+                    //creating structure to draw lines (considering the odometry (T) pf the robot)
+                    //the third value is the default likelihood to be an extreme of the line
+                    linePoints.push_back(Eigen::Vector3f(p0_g.x(), p0_g.y(), 0.5));
+                    linePoints.push_back(Eigen::Vector3f(p1_g.x(), p1_g.y(), 0.5));
 					
 					this->lc.push_back(linePoints);
 					linePoints.clear();
@@ -238,7 +256,7 @@ void ViewerGUI::lineExtraction()
                 lps.p1 = lp1;
                 la.push_back(lps);
 
-                //printing some info
+                /// printing some info about the current extraction
                 cout << endl;
                 cout << "\tInfo about the lines of this cluster: " << endl;
                 cout << endl;
@@ -259,7 +277,7 @@ void ViewerGUI::lineExtraction()
 						if(line.p1Index == lineRight.p0Index)
 						{
                             la.push_back(lrps);
-//                            cout << "line with point " << la[la.size()-1].p0 << "and" << la[la.size()-1].p1 << endl;
+//                            cout << "line with points " << la[la.size()-1].p0 << "and" << la[la.size()-1].p1 << endl;
 							bit++;
 						}
 						else {
@@ -283,59 +301,167 @@ void ViewerGUI::lineExtraction()
 		}
 		else if (algotype == ransacType) 
 		{
-			cout << "#----------------------------------------------#" << endl;
-			cout << "Starting extraction with: " << algotype << endl;
-			cout << "#------------------------------------------------#" << endl;
-			//changing this...
-// 			LaserRobotData* laserData = ld.first;
-			//in this...
-			g2o::OptimizableGraph::Data* d = v->userData();			
-			LaserRobotData* laserData = dynamic_cast<LaserRobotData*>(d);
+            cout << "#----------------------------------------------#" << endl;
+            cout << "Starting extraction with: " << algotype << endl;
+            cout << "#------------------------------------------------#" << endl;
+            cout << "RANSAC METHODS IS NOT WORKING ANYMORE, CHOOSE THE OTHER OPTION! " << endl;
+
+//            //changing this...
+//// 			LaserRobotData* laserData = ld.first;
+//            //in this...
+//            g2o::OptimizableGraph::Data* d = v->userData();
+//            LaserRobotData* laserData = dynamic_cast<LaserRobotData*>(d);
 			
-			double maxRangeFinderLimit = laserData->maxRange();
-			float angularStep = laserData->fov() / laserData->ranges().size();
-			float angle = laserData->firstBeamAngle();
+//            double maxRangeFinderLimit = laserData->maxRange();
+//            float angularStep = laserData->fov() / laserData->ranges().size();
+//            float angle = laserData->firstBeamAngle();
 			
-			//creating a map of all the vertices corrisponding the laserData ranges    
-			VerticesMap map_vertex;
-			for (size_t i = 0; i < laserData->ranges().size(); ++i) {
-			  cout << "saving ranges into map_vertices: " << laserData->ranges().size() <<  endl;
-			  const float& rho = laserData->ranges()[i];
-			  const float& theta = angle;
+//            //creating a map of all the vertices corrisponding the laserData ranges
+//            VerticesMap map_vertex;
+//            for (size_t i = 0; i < laserData->ranges().size(); ++i) {
+//              cout << "saving ranges into map_vertices: " << laserData->ranges().size() <<  endl;
+//              const float& rho = laserData->ranges()[i];
+//              const float& theta = angle;
 				
-			  Vertex* v = new Vertex(i, rho, theta);
-			  map_vertex.insert(pair<int,Vertex*>(i,v));
+//              Vertex* v = new Vertex(i, rho, theta);
+//              map_vertex.insert(pair<int,Vertex*>(i,v));
 				
-			  angle+=angularStep;
-			}	
-// 			cout << "map_vertices dim: " << map_vertex.size() << endl;
-			Edges edges; //edges ia a vector of Edge
-			Edges satEdges;
-			edgeExtr->purgeBoundaryVertices(map_vertex, satEdges, maxRangeFinderLimit);
-			edgeExtr->step(map_vertex, edges);
-			//edgeExtr->mergeCollinearSegments(edges);
+//              angle+=angularStep;
+//            }
+//// 			cout << "map_vertices dim: " << map_vertex.size() << endl;
+//            Edges edges; //edges ia a vector of Edge
+//            Edges satEdges;
+//            edgeExtr->purgeBoundaryVertices(map_vertex, satEdges, maxRangeFinderLimit);
+//            edgeExtr->step(map_vertex, edges);
+//            //edgeExtr->mergeCollinearSegments(edges);
 			
-			cout << "*** End of extraction: the number of lines found is " << edges.size() << " ***" << endl;
+//            cout << "*** End of extraction: the number of lines found is " << edges.size() << " ***" << endl;
 			
-			if (edges.size() == 0) {
-			  this->viewer->lineFound = false;
-			  cout << "WARNING! The algorithm you used haven't found any lines.." << endl;
-			}
-			else {
-			  //create the linecontainer structure from the edges inside the vector of edges
-			  for (int i = 0; i < (int)edges.size(); i++) {
-					linePoints.push_back(Eigen::Vector2f(edges[i]->getVertexFrom().x(),	edges[i]->getVertexFrom().y()));
-					linePoints.push_back(Eigen::Vector2f(edges[i]->getVertexTo().x(), edges[i]->getVertexTo().y()));
-	// 				cout << "***NEW LINE FOUND!*** " << edges[i]->getVertexFrom().x() << ", " << edges[i]->getVertexFrom().y() << " to "  << edges[i]->getVertexTo().x() << ", " << edges[i]->getVertexTo().y() << endl;
-					this->lc.push_back(linePoints);
-					linePoints.clear();
-			  }
-			cout << "Drawing is starting....." << endl;
-			this->viewer->lineFound = true;
-			}
-		}
-		this->viewer->lContainer = &(this->lc);
-		this->viewer->updateGL();
+//            if (edges.size() == 0) {
+//              this->viewer->lineFound = false;
+//              cout << "WARNING! The algorithm you used haven't found any lines.." << endl;
+//            }
+//            else {
+//              //create the linecontainer structure from the edges inside the vector of edges
+//              for (int i = 0; i < (int)edges.size(); i++) {
+//                    linePoints.push_back(Eigen::Vector3f(edges[i]->getVertexFrom().x(),	edges[i]->getVertexFrom().y(), 0.5));
+//                    linePoints.push_back(Eigen::Vector3f(edges[i]->getVertexTo().x(), edges[i]->getVertexTo().y(), 0.5));
+//    // 				cout << "***NEW LINE FOUND!*** " << edges[i]->getVertexFrom().x() << ", " << edges[i]->getVertexFrom().y() << " to "  << edges[i]->getVertexTo().x() << ", " << edges[i]->getVertexTo().y() << endl;
+//                    this->lc.push_back(linePoints);
+//                    linePoints.clear();
+//              }
+//            cout << "Drawing is starting....." << endl;
+//            this->viewer->lineFound = true;
+//			}
+        }
+
+        /// finding the extreme likelihood, for each lines:
+
+        Vector3fVector prev;
+        prev.reserve(lc[0].size());
+        prev.push_back(Vector3f(-1e9, -1e9, 0.5));//prev left [p0]
+        prev.push_back(Vector3f(-1e9, -1e9, 0.5));//prev right [p1]
+
+        float thetaP1, rhoP1, thetaPrev2, rhoPrev2 = -1e9;
+
+        bool commonVertex = false;
+
+        float dist_point = -1e9;
+        float pdiV_common, pdiV_notCommon = -1;
+
+        for (int i = 0; i < (int)lc.size(); i++)
+        {
+            Vector3fVector l = lc[i];
+            Vector2d p1(l[0].x(), l[0].y());
+
+            thetaP1 = atan2(p1.y(), p1.x());
+            rhoP1 = p1.x()/sin(thetaP1);
+            float dist_min = 0.10; //??? it depends on the laser(alpha angular step = 0.0004..)
+            float thetaPointTh = 0.0086; //joint discontinuity:hokuyo angularstep is 0.0043..
+
+            if(i==0)
+            {
+                commonVertex = false;
+                dist_point = rhoP1;
+            }
+            else
+            {
+                //controlling if this line have a common vertex with the previous one(the same point or really closed one to each other..)
+                prev = lc[i-1];
+                Vector2d prev1d(prev[0].x(), prev[0].y());
+                Vector2d prev2d(prev[1].x(), prev[1].y());
+                thetaPrev2 = atan2(prev2d.y(), prev2d.x());
+                rhoPrev2 = prev2d.x()/sin(thetaPrev2);
+                dist_point = (rhoP1 < rhoPrev2 ? rhoP1 : rhoPrev2);
+                cout << "dist nearest point: "  << dist_point << endl;
+                //TODO
+                float distPointTh = 4*rhoP1*sin(0.5*fabs(thetaP1-thetaPrev2)); //distance threshold (0.3)
+                cout << "distPointTh " << distPointTh << endl;
+                if((p1-prev2d).squaredNorm() <= distPointTh)
+                {
+                    commonVertex = true;
+                    if((p1-prev2d).squaredNorm() == 0)
+                    {
+                        cerr << "[COMMON VERTEX]" << endl;
+                        pdiV_common = 1;
+                    }
+                    else
+                    {
+                        cerr << "[ALMOST COMMON VERTEX]" << endl;
+                        pdiV_common = 0.5/(1+(fabs(dist_point)-dist_min)) + 0.5;
+                    }
+                    lc[i][0].z() = pdiV_common;
+                    lc[i-1][1].z() = pdiV_common;
+                    cout << " - PdiV_common " << pdiV_common << " !!!!!!!!!!!must be equal to" << lc[i][0].z() << endl;
+                }
+                else
+                    commonVertex = false;
+            }
+            if(!commonVertex)
+            {
+                cerr << "[NO COMMON VERTEX]" << endl;
+                pdiV_notCommon = 0.5/(1+(fabs(dist_point)-dist_min)) + 0.5;
+                cout << " - PdiV_NotCommon " << pdiV_notCommon << endl;
+                if(i == 0)
+                    lc[i][0].z() = pdiV_notCommon;
+                else
+                {
+                    if(rhoPrev2 <= rhoP1)
+                    {
+                        lc[i-1][1].z() = pdiV_notCommon;
+                        lc[i][0].z() = 0.25; //for now
+                        cerr << "<<<<<<< this line has a possibly fake extreme point(LEFT): " << lc[i][0].transpose() << " with pdiV = " << lc[i][0].z() << endl;
+
+                    }
+                    else if(rhoP1 < rhoPrev2)
+                    {
+                        lc[i-1][1].z() = 0.25; //for now
+                        lc[i][0].z() = pdiV_notCommon;
+                        cerr << "<<<<<<< the previous line has a possibly fake extreme point(RIGHT): " << lc[i-1][1].transpose() << " with pdiV = " << lc[i-1][1].z() << endl;
+                    }
+                }
+            }
+            //save the current line points as previous
+            prev = l;
+        }
+
+        //file for Matlab alignment
+#if 1
+        //in lc there are the line already trasformed with the odometry
+        for(int i=0; i<lc.size(); i++)
+        {
+            Vector3fVector line = lc[i];
+            oslines << "% Frame n " << numIteration << " with odometry [x y theta]" << endl;
+            oslines << "% " << t2v_2d(T).transpose()/*.matrix()*/ << endl;
+            oslines << line[0].x() << " " << line[0].y() << " " << line[0].z() << endl;
+            oslines << line[1].x() << " " << line[1].y() << " " << line[1].z() << endl;
+            oslines << endl;
+            oslines << endl;
+        }
+        oslines.flush();
+#endif
+        this->viewer->lContainer = &(this->lc);
+        this->viewer->updateGL();
 	}
 }
 
@@ -419,7 +545,11 @@ void ViewerGUI::setAlgorithm()
 void ViewerGUI::setIdIteration()
 {
 	numIteration+=1;
-	this->showOriginal();
+    if(numIteration <= (int)vldvector->size()-1)
+        this->showOriginal();
+    else {
+        cout << "!!!Graph Ended!!!" << endl;
+    }
 }
 
 
@@ -461,98 +591,126 @@ void ViewerGUI::ComputeAll()
 		
 		graph = v->graph();
 		int id1, id2, lid,  id1_oldId2, tmpId2 = -1;
-        g2o::VertexPointXY* vp1, *vp2, *vprev2, *vp1_oldVp2, *tmpVp2 = 0;
+        g2o::VertexExtremePointXY* vp1, *vp2, *vprev2, *vp1_oldVp2, *tmpVp2 = 0;
 		g2o::VertexLine2D* vl;
-		
-		Vector2fVector prev;
-		prev.reserve(lc[0].size());
-        prev.push_back(Vector2f(-1e9, -1e9));//prev left [0]
-        prev.push_back(Vector2f(-1e9, -1e9));//prev right [1]
-		bool commonVertex = false;
-        bool fakeExtremePoint = false;
-		
-		int id = (int)graph->vertices().size() - 1;
-            cout << ">>>>>>>>>> NEW FRAME: saving new info in the graph: (id ultimo: " << id << ")" << endl;
+
+        Vector3fVector prev;
+        prev.reserve(lc[0].size());
+        prev.push_back(Vector3f(-1e9, -1e9, 0.5));//prev left [p0]
+        prev.push_back(Vector3f(-1e9, -1e9, 0.5));//prev right [p1]
+
+        float thetaP1, rhoP1, thetaPrev2, rhoPrev2 = -1e9;
+
+        bool commonVertex = false;
+
+        float distPointTh = -1e9;
+        double pdiV_common, pdiV_notCommon = -1;
+
+        int id = (int)graph->vertices().size() - 1;
+        cout << ">>>>>>>>>> NEW FRAME: saving new info in the graph: (id ultimo: " << id << ")" << endl;
+
         //for each line
 		for (int i = 0; i < lc.size(); i++)
 		{
-			Vector2fVector l = lc[i];
+            Vector3fVector l = lc[i];
             Vector2d p1(l[0].x(), l[0].y());
             Vector2d p2(l[1].x(), l[1].y());
             Vector2d lp1 = iT * p1;
             Vector2d lp2 = iT * p2;
-			
-            //controlling if this line have a common vertex with the previous one(the same point or really closed one to each other..)
-            Vector2d prev1d(prev[0].x(), prev[0].y());
-            Vector2d prev2d(prev[1].x(), prev[1].y());
-            if((prev2d.x() == p1.x() && prev2d.y() == p1.y()) || (p1-prev2d).squaredNorm() <= 0.05)
-            {
-                cerr << "[COMMON VERTEX]" << endl;
-				commonVertex = true;
-            }
+
+            thetaP1 = atan2(p1.y(), p1.x());
+            rhoP1 = p1.x()/sin(thetaP1);
+
+            if(i==0)
+                commonVertex = false;
             else
-				commonVertex = false;
+            {
+                //controlling if this line have a common vertex with the previous one(the same point or really closed one to each other..)
+//                Vector2d prev1d(prev[0].x(), prev[0].y());
+                Vector2d prev2d(prev[1].x(), prev[1].y());
+
+                thetaPrev2 = atan2(prev2d.y(), prev2d.x());
+                rhoPrev2 = prev2d.x()/sin(thetaPrev2);
+
+                distPointTh = 4*rhoP1*sin(0.5*fabs(thetaP1-thetaPrev2)); //distance threshold (0.3)
+                if((p1-prev2d).squaredNorm() <= distPointTh)
+                {
+                    cerr << "[COMMON VERTEX]" << endl;
+                    commonVertex = true;
+                    pdiV_common = lc[i-1][1].z();
+                    vprev2 = dynamic_cast<g2o::VertexExtremePointXY*>(graph->vertex(tmpId2));
+                    if(vprev2)
+                        vprev2->setIsExtremePoint(pdiV_common);
+                }
+                else
+                    commonVertex = false;
+            }
 
             if(!commonVertex)
             {
                 cerr << "[NO COMMON VERTEX]" << endl;
-
-                // checking if the left point is a REAL extreme point
-                double thetaPointTh = 0.0129; //hokuyo angularstep is 0.0043..
-                double thetaP1 = atan2(p1.y(), p1.x());
-                double rhoP1 = p1.x()/sin(thetaP1);
-                double thetaPrev2 = atan2(prev2d.y(), prev2d.x());
-                double rhoPrev2 = prev2d.x()/sin(thetaPrev2);
-                if(/*(p1-prev1d).squaredNorm() > 0.4 && */fabs(thetaP1-thetaPrev2) < thetaPointTh){
-                    fakeExtremePoint = true;
-                }
+                pdiV_notCommon = lc[i][0].z();
 
                 //first current vertex
-                vp1 = new g2o::VertexPointXY();
+                vp1 = new g2o::VertexExtremePointXY();
                 id1 = ++id;
                 vp1->setId(id1);
-                vp1->setEstimate(p1); //ce li ho già trasformati, non moltiplico per T
-                if(fakeExtremePoint && rhoPrev2 <= rhoP1)
+                vp1->setEstimate(p1); //p1 in local frame (già trasformati, non moltiplico per T)
+                if(!vprev2)                
+                    vp1->setIsExtremePoint(pdiV_notCommon);
+                else
                 {
-                    vprev2 = dynamic_cast<g2o::VertexPointXY*>(graph->vertex(tmpId2));
-//                    vprev2->setFakeExtremePoint(fakeExtremePoint);
-                    cerr << "<<<<<<< the previous line has a fake extreme point(RIGHT): " << vprev2->estimate().transpose() << " must be = to " << prev2d.transpose() << endl;
+                    if(rhoPrev2 <= rhoP1)
+                    {
+                        vprev2->setIsExtremePoint(pdiV_notCommon);
+                        vp1->setIsExtremePoint(0.25); //for now
+                        cerr << "<<<<<<< this line has a possibly fake extreme point(LEFT): " << vp1->estimate().transpose() << " with pdiV = " << vp1->isExtremePoint() << endl;
+
+                    }
+                    else if(rhoP1 < rhoPrev2)
+                    {
+                        // add this point as a fake extreme point of the line
+                        vp1->setIsExtremePoint(pdiV_notCommon);
+                        vprev2->setIsExtremePoint(0.25); //for now
+                        cerr << "<<<<<<< the previous line has a possibly fake extreme point(RIGHT): " << vprev2->estimate().transpose() << " with pdiV = " << vprev2->isExtremePoint() << endl;
+                    }
                 }
-                else if(fakeExtremePoint && rhoP1 < rhoPrev2)
-                {
-                    // add this point as a fake extreme point of the line
-//                    vp1->setFakeExtremePoint(fakeExtremePoint);
-                    cerr << "<<<<<<< this line has a fake extreme point(LEFT): " << vp1->estimate().transpose() << " must be = to " << p1.transpose() << endl;
-                }
+
                 graph->addVertex(vp1);
 
                 //edge between v and  first vertex
                 g2o::EdgeSE2PointXY* erp1 = new g2o::EdgeSE2PointXY();
                 erp1->setVertex(0,v);
                 erp1->setVertex(1,vp1);
-                erp1->setMeasurement(lp1); // p1 not transformed(in global frame)
+                erp1->setMeasurement(lp1); //p1 in global frame (not transformed, moltiplico per iT)
                 Eigen::Matrix2d info1;
                 info1 << 1000, 0, 0, 1000;
                 erp1->setInformation(info1);
                 graph->addEdge(erp1);
             }
 
+            /*TODO
+             * MODIFY THE KEEPING COMMON VERTEX:
+             *  NOT THE PROVIOUS ONE BY DEFAULT
+             *  BUT THE ONE WITH SMALLEST DISTANCE
+            */
+
             //second current vertex
-			vp2 = new g2o::VertexPointXY();
+            vp2 = new g2o::VertexExtremePointXY();
 			id2 = ++id;
 			vp2->setId(id2);
-            vp2->setEstimate(p2); //ce li ho già trasformati, non moltiplico per T
+            vp2->setEstimate(p2); //p2 in local frame (già trasformati, non moltiplico per T)
 			graph->addVertex(vp2);
 			vp1_oldVp2 = tmpVp2;
 			id1_oldId2 = tmpId2;
-			tmpVp2 = vp2;
+            tmpVp2 = vp2;
 			tmpId2 = id2;
 
 			//edge between v and second vertice
-			g2o::EdgeSE2PointXY* erp2 = new g2o::EdgeSE2PointXY();
+            g2o::EdgeSE2PointXY* erp2 = new g2o::EdgeSE2PointXY();
 			erp2->setVertex(0,v);
 			erp2->setVertex(1,vp2);
-			erp2->setMeasurement(lp2); // p2 not transformed(in global frame)
+            erp2->setMeasurement(lp2); //p2 in global frame (not transformed, moltiplico per iT)
 			Eigen::Matrix2d info2;
 			info2 << 1000, 0, 0, 1000;
 			erp2->setInformation(info2);
@@ -562,7 +720,7 @@ void ViewerGUI::ComputeAll()
 			vl = new g2o::VertexLine2D();
 			lid = ++id;
 			vl->setId(lid);
-			vl->setEstimate(pointsToLine(p1,p2));
+            vl->setEstimate(pointsToLine(p1,p2)); //line in local frame
 			if(!commonVertex)
 				vl->p1Id = id1;
 			else
@@ -605,8 +763,7 @@ void ViewerGUI::ComputeAll()
 
             //save the current line points as previous
             prev = l;
-            fakeExtremePoint = false;
-		}
+        }
 	}
 	
 	ofstream ofG2OLine(outfilename.c_str());/*, ios::app*/
