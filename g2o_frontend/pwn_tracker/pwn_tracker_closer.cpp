@@ -13,83 +13,12 @@
 #include "g2o_frontend/boss_map/boss_map_g2o_reflector.h"
 #include <fstream>
 #include <iostream>
+#include <queue>
 #include "pwn_tracker.h"
 using namespace std;
 using namespace pwn;
 using namespace boss;
 using namespace pwn_tracker;
-
-/*
-Giorgio: queste sono le mie cose. Non guardatele, sono geloso.
-
-void findNeighborNodes(std::set<MapNode*>& nodes, MapManager* manager, const Eigen::Isometry3d& pose, const Matrix6d& info, double distance){
-  Eigen::Isometry3d invT = pose.inverse();
-  for (std::set<MapNode*>::iterator it=manager->nodes().begin(); it!=manager.nodes().end(); it++){
-    MapNode* n = *it;
-    Eigen::Isometry3f errorT = invT * n->transform();
-    Vector6d error = t2v(errorT);
-    double e = error.transpose() * info * error;
-    if (e<distance)
-      nodes.insert(*it);
-  }
-}
-
-void extractInternalRelations(std::set<MapNodeRelation*>& internalRelations, 
-			      std::set<MapNode*>& nodes, 
-			      MapManager* manager){
-  for (std::set<MapNode*>::iterator it=manager->nodes().begin(); it!=manager.nodes().end(); it++){
-    PwnTrackerNode* n = *it;
-    std::set<MapNodeRelation*>& relations = manager->nodeRelations(n);
-    for (std::set<MapNodeRelation*>::iterator rt=relations.begin(); rt!=relations.end(); rt++){
-      bool add = true;
-      MapNodeRelation* rel=*rt;
-      for (size_t i = 0; i<rel->nodes().size(); i++){
-	MapNode* n2=rel->nodes()[i];
-	if (nodes.find(n2)==nodes.end()){
-	  add = false;
-	  break;
-	}
-      }
-      if (add)
-	internalRelations.insert(rel); 
-    }
-  }
-}
-
-
-struct _RelationComparator{
-  bool operator()(const MapNodeRelation* r1, const MapNodeRelation* r2){
-    std::vector<MapNode*> rn1=r1->nodes();
-    std::vector<MapNode*> rn2=r2->nodeS();
-    std::sort(rn1.begin(), rn1.end());
-    std::sort(rn2.begin(), rn2.end());
-    return std::lexicographical_compare(rn1.begin(), rn1.end(), rn2.begin(), rn2.end());
-  }
-};
-
-void makePartitions(std::vector<std::set<MapNode*> >& partitions, 
-		    std::set<PwnTrackerNodeRelation*>& relations, 
-		    std::set<PwnTrackerNode*>& nodes, 
-		    MapManager* manager) {
- 
-  std::vector<MapNodeRelation*> rels(relations.size());
-  int k = 0;
-  for (std::set<MapNodeRelation*>::iterator it=relations.begin(); it!=relations.end(); it++){
-    rels[k++]=*it;
-  }
-  std::sort(rels.begin(), rels.end(), _RelationComparator);
-
-  std::map<MapNode*, MapNode*> parentMap;
-  for (std::set<MapNode* iterator it=nodes.begin(); it!=nodes.end(); it++){
-    parentMap.insert(make_pair(*it, 0));
-  }
-
-  for (size_t i=0; i<rels.size(); i++){
-    
-  }
-    
-} 
-*/
 
 struct PwnTrackerClosureRelation: public PwnTrackerRelation {
   PwnTrackerClosureRelation(MapManager* manager=0, int id=-1, IdContext* context = 0):
