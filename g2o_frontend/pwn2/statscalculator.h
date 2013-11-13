@@ -68,6 +68,7 @@ namespace pwn {
 		 const IntImage &indexImage);
     
     void fastCompute(NormalVector& normals,
+		     StatsVector& statsVector,
 		     InformationMatrixVector &pointInformationMatrix,
 		     InformationMatrixVector &normalInformationMatrix,
 		     const PointVector& points,
