@@ -47,9 +47,11 @@ struct Line2D: public Vector4f{
 
   int p0Index, p1Index, fakeExtremeIndex;
 };
-	
 
-typedef std::vector<Vector2f, Eigen::aligned_allocator<Vector2f> > Vector2fVector; //vector of original points
+//TODO
+//vector of original points(size = 2)
+typedef std::vector<Vector2f, Eigen::aligned_allocator<Vector2f> > Vector2fVector;
+typedef std::vector<Vector3f, Eigen::aligned_allocator<Vector3f> > Vector3fVector;//plus their likelihood to be extreme(default 0.5)
 	
 
 class Point2DClusterer {

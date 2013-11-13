@@ -139,7 +139,7 @@ int main(int argc, char**argv){
     arg.parseArgs(argc, argv);
     ofstream mergedG2O(outfilename.c_str());
 
-    kernelCreator =     RobustKernelFactory::instance()->creator("Cauchy");
+    kernelCreator = RobustKernelFactory::instance()->creator("Cauchy");
     if (! kernelCreator) {
       cerr << "mothaffukka" << endl;
       return 0;
@@ -197,18 +197,12 @@ int main(int argc, char**argv){
     //lines vector to be sorted
     std::vector<VertexLine2D*> lines1sort, lines2sort;
 
-    //fixing the first vertex of the graph
-    
-//    graph->initializeOptimization();
-
-
 /** Building the new graph with vertex payload aligned:
      * -for each vertex, reading its own payload and saving the payload of the following vertex,
      * -call findCorrespondances,
      * -call ransac to find the inliers,
      * -merging vertex of the inliers found
 **/
-
     cout << "\033[22;31;1m********************************START READING THE GRAPH********************************\033[0m" << endl;
     cerr << "num vertici totali: " << vertexIds.size() << ", num vertices to be processed: " << lastID+1 << endl;
     for (int i = vfirst_id/*0*/; i<=lastID/*(int)vertexIds.size()*/; i++)
