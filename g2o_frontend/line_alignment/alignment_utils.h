@@ -18,6 +18,7 @@
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "g2o/types/slam2d/types_slam2d.h"
 #include "g2o/types/slam2d_addons/types_slam2d_addons.h"
+#include "g2o_frontend/g2o_line_addons/g2o_line_addons.h"
 #include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "g2o_frontend/basemath/bm_se2.h"
 #include "g2o_frontend/ransac/alignment_line2d_linear.h"
@@ -40,16 +41,16 @@ struct lineCorrespondence
 {
 	double error;
 	int lid1;
-	int lid2;  
+    int lid2;
 };
 
 struct LineLengthComparator{
     inline bool operator()(const VertexLine2D* v1, const VertexLine2D* v2 ){
         const OptimizableGraph* inputGraph=v1->graph();
-        Eigen::Vector2d p11=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(v1->p1Id))->estimate();
-        Eigen::Vector2d p12=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(v1->p2Id))->estimate();
-        Eigen::Vector2d p21=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(v2->p1Id))->estimate();
-        Eigen::Vector2d p22=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(v2->p2Id))->estimate();
+        Eigen::Vector2d p11=dynamic_cast<const VertexExtremePointXY*>(inputGraph->vertex(v1->p1Id))->estimate();
+        Eigen::Vector2d p12=dynamic_cast<const VertexExtremePointXY*>(inputGraph->vertex(v1->p2Id))->estimate();
+        Eigen::Vector2d p21=dynamic_cast<const VertexExtremePointXY*>(inputGraph->vertex(v2->p1Id))->estimate();
+        Eigen::Vector2d p22=dynamic_cast<const VertexExtremePointXY*>(inputGraph->vertex(v2->p2Id))->estimate();
         double l1=(p11-p12).squaredNorm();
         double l2=(p21-p22).squaredNorm();
         return l1>l2;
@@ -76,12 +77,12 @@ bool lengthError(VertexLine2D* vl1, VertexLine2D* vl2){
     bool result = false;
 //    double lenghtThreshold = 0.5;
     const OptimizableGraph* inputGraph=vl1->graph();
-    Eigen::Vector2d p11=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl1->p1Id))->estimate();
-    Eigen::Vector2d p12=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl1->p2Id))->estimate();
+    Eigen::Vector2d p11=dynamic_cast<const VertexExtremePointXY*>(inputGraph->vertex(vl1->p1Id))->estimate();
+    Eigen::Vector2d p12=dynamic_cast<const VertexExtremePointXY*>(inputGraph->vertex(vl1->p2Id))->estimate();
     double d1=(p11-p12).norm();
 
-    Eigen::Vector2d p21=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl2->p1Id))->estimate();
-    Eigen::Vector2d p22=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl2->p2Id))->estimate();
+    Eigen::Vector2d p21=dynamic_cast<const VertexExtremePointXY*>(inputGraph->vertex(vl2->p1Id))->estimate();
+    Eigen::Vector2d p22=dynamic_cast<const VertexExtremePointXY*>(inputGraph->vertex(vl2->p2Id))->estimate();
     double d2=(p21-p22).norm();
 
     //checking if the lines have similar lenght
@@ -117,8 +118,8 @@ bool findCorrespondences(LineCorrs& _currCorrs,  LinesForMatching& _pairLinesSet
 
         VertexLine2D* vl1 = s1[j].vline;
         const OptimizableGraph* inputGraph=vl1->graph();
-        Eigen::Vector2d p11=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl1->p1Id))->estimate();
-        Eigen::Vector2d p12=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl1->p2Id))->estimate();
+        Eigen::Vector2d p11=dynamic_cast<const VertexExtremePointXY*>(inputGraph->vertex(vl1->p1Id))->estimate();
+        Eigen::Vector2d p12=dynamic_cast<const VertexExtremePointXY*>(inputGraph->vertex(vl1->p2Id))->estimate();
 
         Line2D l1 = s1[j].line;
         Vector3d l1_coeff(cos(l1(0)), sin(l1(0)), l1(1));
@@ -127,8 +128,8 @@ bool findCorrespondences(LineCorrs& _currCorrs,  LinesForMatching& _pairLinesSet
         {
 
             VertexLine2D* vl2 = s2[k].vline;
-            Eigen::Vector2d p21=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl2->p1Id))->estimate();
-            Eigen::Vector2d p22=dynamic_cast<const VertexPointXY*>(inputGraph->vertex(vl2->p2Id))->estimate();
+            Eigen::Vector2d p21=dynamic_cast<const VertexExtremePointXY*>(inputGraph->vertex(vl2->p1Id))->estimate();
+            Eigen::Vector2d p22=dynamic_cast<const VertexExtremePointXY*>(inputGraph->vertex(vl2->p2Id))->estimate();
 
             //checking the lenght of the two lines
             bool similarLenght = lengthError(vl1, vl2);
@@ -173,7 +174,7 @@ bool findCorrespondences(LineCorrs& _currCorrs,  LinesForMatching& _pairLinesSet
 }
 
 
-void mergePointVertex(OptimizableGraph* graph, VertexPointXY* pNew, VertexPointXY* pOld){
+void mergePointVertex(OptimizableGraph* graph, VertexExtremePointXY* pNew, VertexExtremePointXY* pOld){
 	if (!pNew || !pOld || pNew == pOld)
 	    return;
 	int idNew=pNew->id();
@@ -207,7 +208,7 @@ bool mergeLineVertex(OptimizableGraph* graph, VertexLine2D* lNew, VertexLine2D* 
 	if ((!lNew || !lOld) && (lNew == lOld))
 	    return merdging;
 	
-	VertexPointXY* vlOldp2 = dynamic_cast<VertexPointXY*>(graph->vertex(lOld->p2Id));
+    VertexExtremePointXY* vlOldp2 = dynamic_cast<VertexExtremePointXY*>(graph->vertex(lOld->p2Id));
 	int count = 0;
 	if(vlOldp2)
 	{
@@ -221,14 +222,14 @@ bool mergeLineVertex(OptimizableGraph* graph, VertexLine2D* lNew, VertexLine2D* 
 	}
 	if(count == 1 && lNew->p2Id > -1){
 		cerr << "merging the second point vertices..." << endl;
-		mergePointVertex(graph, dynamic_cast<VertexPointXY*>(graph->vertex(lNew->p2Id)), 
+        mergePointVertex(graph, dynamic_cast<VertexExtremePointXY*>(graph->vertex(lNew->p2Id)),
 						    vlOldp2);
 	}	
 	    
 	if (lOld->p1Id > -1 && lNew->p1Id > -1){ // merge the first vertices of both lines
 		cerr << "merging the first point vertices..." << endl;
-		mergePointVertex(graph, dynamic_cast<VertexPointXY*>(graph->vertex(lNew->p1Id)),
-						    dynamic_cast<VertexPointXY*>(graph->vertex(lOld->p1Id)));
+        mergePointVertex(graph, dynamic_cast<VertexExtremePointXY*>(graph->vertex(lNew->p1Id)),
+                            dynamic_cast<VertexExtremePointXY*>(graph->vertex(lOld->p1Id)));
 		
 	} else if (lOld->p1Id > -1 && lNew->p1Id < 0){ // just update the point id of the keeping line
 		cerr << "the new line doesn't have the first point: updating the first point id of the keeping line" << endl;
@@ -291,10 +292,10 @@ void deleteVertices(int first, int last, OptimizableGraph* graph) {
             VertexLine2D* vl = dynamic_cast<VertexLine2D*>(el->vertices()[1]);
             if (!vl)
                 continue;
-            VertexPointXY* vpl1 = dynamic_cast<VertexPointXY*>(graph->vertex(vl->p1Id));
+            VertexExtremePointXY* vpl1 = dynamic_cast<VertexExtremePointXY*>(graph->vertex(vl->p1Id));
             if (vpl1)
                 graph->removeVertex(vpl1);
-            VertexPointXY* vpl2 = dynamic_cast<VertexPointXY*>(graph->vertex(vl->p2Id));
+            VertexExtremePointXY* vpl2 = dynamic_cast<VertexExtremePointXY*>(graph->vertex(vl->p2Id));
             if (vpl2)
                 graph->removeVertex(vpl2);
 

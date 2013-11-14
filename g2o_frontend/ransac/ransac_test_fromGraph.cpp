@@ -7,6 +7,7 @@
 #include "line2d_correspondence_validator.h"
 #include "id_correspondence_validator.h"
 #include "g2o_frontend/basemath/bm_se2.h"
+#include "g2o_frontend/g2o_line_addons/g2o_line_addons.h"
 #include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "g2o_frontend/line_alignment/alignment_utils.h"
 #include <iostream>
