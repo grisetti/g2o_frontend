@@ -17,10 +17,12 @@ namespace pwn_tracker{
     MapNode ( manager, id, context) {
     sensorOffset.setIdentity();
     scale=1;
+    seq=0;
   }
   
   void PwnTrackerFrame::serialize(ObjectData& data, IdContext& context) {
     MapNode::serialize(data,context);
+    data.setInt("seq", seq);
     sensorOffset.matrix().toBOSS(data, "sensorOffset");
     cameraMatrix.toBOSS(data, "cameraMatrix");
     data.setInt("imageRows", imageRows);
@@ -46,6 +48,7 @@ namespace pwn_tracker{
 
   
   void PwnTrackerFrame::deserialize(ObjectData& data, IdContext& context) {
+    seq=data.getInt("seq");
     MapNode::deserialize(data,context);
     sensorOffset.matrix().fromBOSS(data,"sensorOffset");
     cameraMatrix.fromBOSS(data, "cameraMatrix");
@@ -111,6 +114,7 @@ namespace pwn_tracker{
     _previousCloudTransform.setIdentity();
     _counter = 0;
     _numKeyframes = 0;
+    _seq = 0;
     initCallback();
   }
   void PwnTracker::makeThumbnails(cv::Mat& depthThumbnail, cv::Mat& normalThumbnail, 
@@ -302,6 +306,7 @@ namespace pwn_tracker{
       convertScalar(_iso, _globalT);
       currentTrackerFrame->setTransform(_iso);
       convertScalar(currentTrackerFrame->sensorOffset, sensorOffset);
+      currentTrackerFrame->seq = _seq++;
       _manager->addNode(currentTrackerFrame);
       newFrameCallback(currentTrackerFrame);
       //ser.writeObject(*currentTrackerFrame);
@@ -368,64 +373,4 @@ namespace pwn_tracker{
 BOSS_REGISTER_CLASS(PwnTrackerFrame);
 BOSS_REGISTER_CLASS(PwnTrackerRelation);
 
-
 }
-
-#if 0
-
-
-bool PwnTracker::retrieveImageParameters(Eigen::Isometry3f& sensorOffset, 
-					 Eigen::Matrix3f& cameraMatrix, 
-					 const sensor_msgs::Image::ConstPtr& img,
-					 const sensor_msgs::CameraInfo::ConstPtr& info){
-   sensorOffset = Eigen::Isometry3f::Identity();
-    try{
-      tf::StampedTransform t;
-      _tfListener->lookupTransform(_base_frame_id, img->header.frame_id, img->header.stamp, t);
-      sensorOffset.translation().x()=t.getOrigin().x();
-      sensorOffset.translation().y()=t.getOrigin().y();
-      sensorOffset.translation().z()=t.getOrigin().z();
-      Eigen::Quaternionf rot;
-      rot.x()=t.getRotation().x();
-      rot.y()=t.getRotation().y();
-      rot.z()=t.getRotation().z();
-      rot.w()=t.getRotation().w();
-      sensorOffset.linear()=rot.toRotationMatrix();
-    }
-    catch (tf::TransformException ex){
-      ROS_ERROR("%s",ex.what());
-      return false;
-    }
-    int i=0;
-    for (int r=0; r<3; r++)
-      for (int c=0; c<3; c++, i++)
-    	cameraMatrix(r,c) = info->K[i];
-    cameraMatrix(2,2) = 1;
-    return true;
-  }
-
-
-void PwnTracker::broadcastTransform(const sensor_msgs::Image::ConstPtr& img){
-  geometry_msgs::TransformStamped st;
-  {
-    st.header.frame_id = "/world";
-    st.child_frame_id =  _base_frame_id;
-    st.header.stamp = img->header.stamp;
-    st.transform.translation.x = _globalT.translation().x();
-    st.transform.translation.y = _globalT.translation().y();
-    st.transform.translation.z = _globalT.translation().z();
-    Eigen::Quaternionf rot(_globalT.linear());
-    st.transform.rotation.x = rot.x();
-    st.transform.rotation.y = rot.y();
-    st.transform.rotation.z = rot.z();
-    st.transform.rotation.w = rot.w();
-    _tfBroadcaster->sendTransform(st);
-  }
-}
-  void PwnTracker::subscribe(){
-    _cameraSubscriber = new image_transport::CameraSubscriber(_imageTransport->subscribeCamera(_topic,1,boost::bind(&PwnTracker::callback,this, _1, _2)));
-    cerr << "subscribed image: [" <<  _topic << "]" << endl;
-  }
-
-
-#endif

@@ -16,6 +16,7 @@
 #include <queue>
 #include "pwn_tracker.h"
 #include "g2o_frontend/boss_map/boss_map_utils.h"
+#include "cache.h"
 
 using namespace std;
 using namespace pwn;
@@ -24,168 +25,8 @@ using namespace boss_map;
 using namespace pwn_tracker;
 
 std::vector<boss::Serializable*> objects;
-std::vector<PwnTrackerFrame*> trackerFrames;
 std::vector<PwnTrackerRelation*> trackerRelations;
-
-
-Frame* makeFrame(DepthImageConverter* converter, PwnTrackerFrame* trackerFrame, int scale = 8){
-  boss_logger::ImageBLOB* depthBLOB = trackerFrame->depthImage.get();
-  PinholePointProjector* projector = (PinholePointProjector*)converter->_projector;
-  projector->setImageSize(trackerFrame->imageRows, trackerFrame->imageCols);
-  pwn::DepthImage depth;
-  pwn::Frame* cloud=new pwn::Frame;
-  Eigen::Matrix3f cameraMatrix;
-  Eigen::Isometry3f offset;
-  depth.fromCvMat(depthBLOB->cvImage());
-  convertScalar(offset, trackerFrame->sensorOffset);
-  convertScalar(cameraMatrix, trackerFrame->cameraMatrix);
-  projector->setCameraMatrix(cameraMatrix);
-  pwn::DepthImage scaledDepth;
-  DepthImage::scale(scaledDepth, depth, scale);
-  projector->scale (1./scale);
-  converter->compute(*cloud, scaledDepth, offset);
-  delete depthBLOB;
-  return cloud;
-}
-
-class PwnCache;
-
-
-class PwnFrameCacheEntry {
-public:
-  PwnFrameCacheEntry(PwnCache* cache_, PwnTrackerFrame* frame_){
-    _frame = frame_;
-    _cache = cache_;
-    _instance = 0;
-    _isLocked = 0;
-    _lastAccess = 0;
-  }
-
-  pwn::Frame* get(size_t access);
-  bool isLoaded() const {return _instance;}
-  inline bool release() {
-    if (_instance && ! _isLocked) {
-      delete _instance; 
-      _instance = 0; 
-      return true;
-    } 
-    return false;
-  }
-
-  inline bool isLocked() {
-    return _instance && _isLocked;
-  }
-
-  void lock() {
-    if (_instance) 
-      _isLocked = true;
-    else 
-      _isLocked = false;
-  }
-
-  void unlock() {
-    _isLocked = false; 
-  }
-
-  inline int lastAccess() const {return _lastAccess;}
-
-protected:
-  pwn::Frame* _instance;
-  PwnTrackerFrame* _frame;
-  PwnCache* _cache;
-  bool _isLocked;
-  size_t _lastAccess;
-};
-
-class PwnCache{
-public:
-  PwnCache(DepthImageConverter* converter_, int scale_, int maxActiveEntries){
-    _converter = converter_;
-    _scale = scale_;
-    _lastAccess = 0;
-    _hits = 0;
-    _misses = 0;
-    _maxElements = maxActiveEntries;
-  }
-  bool addEntry(PwnTrackerFrame* frame){
-    //cerr << "adding entry for frame" << frame << endl;
-    if (_entries.count(frame))
-      return false;
-    PwnFrameCacheEntry* entry = new PwnFrameCacheEntry(this, frame);
-    _entries.insert(make_pair(frame, entry));
-    //cerr << "DONE" << frame << endl;
-    return true;
-  }
-
-  pwn::Frame* get(PwnTrackerFrame* frame) {
-    // seek if you have it in the entries;
-    std::map<PwnTrackerFrame*, PwnFrameCacheEntry*>::iterator it = _entries.find(frame);
-    if (it==_entries.end())
-      return 0;
-    PwnFrameCacheEntry* entry = it->second;
-    if (entry->isLoaded()){
-      _hits++;
-      return entry->get(_lastAccess++);
-    } 
-    if (_active.size()>_maxElements){
-      if (! makeRoom() )
-	throw std::runtime_error("no room in cache, no disposable element. Aborting");
-    }
-    //cerr << "inserting new entry in the pool" << endl;
-      _misses++;
-    _active.insert(entry);
-    return entry->get(_lastAccess++);
-  }
-
-  inline DepthImageConverter* converter() {return _converter;}
-  inline int scale() const {return _scale;}
-  inline int hits() const { return _hits; }
-  inline int misses() const { return _misses; }
-
-  bool makeRoom() {
-    // seek for the oldest element in the set that is not locked
-    PwnFrameCacheEntry* oldest = 0;
-    for (std::set<PwnFrameCacheEntry*>::iterator it=_active.begin(); it!=_active.end(); it++){
-      PwnFrameCacheEntry* entry = *it;
-      if (entry->isLocked())
-	continue;
-      if(! oldest) {
-	oldest = entry;
-	continue;
-      }
-      if (oldest->lastAccess()>entry->lastAccess())
-	oldest = entry;
-    }
-    if (oldest) {
-      oldest->release();
-      _active.erase(oldest);
-      return true;
-    }
-    return false;
-  }
-protected:
-  std::map<PwnTrackerFrame*, PwnFrameCacheEntry*> _entries;
-  std::set<PwnFrameCacheEntry*> _active;
-  DepthImageConverter* _converter;
-  int _scale;
-  size_t _maxElements;
-  size_t _lastAccess;
-  size_t _hits;
-  size_t _misses;
-};
-
-
-pwn::Frame* PwnFrameCacheEntry::get(size_t access) {
-  if (_instance)
-    return _instance;
-  _instance = makeFrame(_cache->converter(), _frame, _cache->scale());
-  //cerr << "loading frame: " << _instance  << endl;
-  _lastAccess = access;
-  return _instance;
-}
-
-
-
+std::map<int, PwnTrackerFrame*> trackerFrames;
 
 float compareNormals(cv::Mat& m1, cv::Mat& m2){
   if (m1.rows!=m2.rows || m1.cols != m2.cols)
@@ -213,11 +54,135 @@ float compareDepths(cv::Mat& m1, cv::Mat& m2){
 
 
 PwnCache* cache = 0;
+Aligner* aligner = 0;
 
+
+
+struct PwnTrackerClosureRelation: public PwnTrackerRelation {
+  PwnTrackerClosureRelation(MapManager* manager=0, int id=-1, IdContext* context = 0):
+    PwnTrackerRelation(manager, id, context){
+    reprojectionInliers = 0;
+    reprojectionOutliers = 0;
+  }
+
+  virtual void serialize(ObjectData& data, IdContext& context){
+    PwnTrackerRelation::serialize(data,context);
+    data.setInt("reprojectionInliers", reprojectionInliers);
+    data.setInt("reprojectionOutliers", reprojectionOutliers);
+  }
+
+  virtual void deserialize(ObjectData& data, IdContext& context){
+    PwnTrackerRelation::deserialize(data,context);
+    reprojectionInliers = data.getInt("reprojectionInliers");
+    reprojectionOutliers = data.getInt("reprojectionOutliers");
+  }
+
+  int reprojectionInliers;
+  int reprojectionOutliers;
+};
+
+struct MatchingResult{
+  PwnTrackerFrame* from;
+  PwnTrackerFrame* to;
+  PwnTrackerClosureRelation* relation;
+  float normalDifference;
+  float depthDifference;
+  float reprojectionDistance;
+  int outliers;
+  int inliers;
+  cv::Mat  diffRegistered;
+  cv::Mat  normalsRegistered;
+};
+
+void matchFrames(MatchingResult& result,
+		 Aligner* aligner, 
+		 PwnTrackerFrame* from, PwnTrackerFrame* to, 
+		 pwn::Frame* fromCloud, pwn::Frame* toCloud,
+		 const Eigen::Isometry3d& initialGuess,
+		 int scale=4){
+  if (from == to)
+    return; 
+  MapManager* manager = from->manager();
+   
+  cerr <<  " matching frames: " << from->seq << " " << to->seq << endl;
+    
+  
+  Eigen::Isometry3f fromOffset, toOffset;
+  Eigen::Matrix3f fromCameraMatrix, toCameraMatrix;
+
+  convertScalar(fromOffset, from->sensorOffset);
+  convertScalar(fromCameraMatrix, from->cameraMatrix);
+
+  convertScalar(toOffset, to->sensorOffset);
+  convertScalar(toCameraMatrix, to->cameraMatrix);
+    
+  PinholePointProjector* projector = (PinholePointProjector*)aligner->projector();
+  int r, c;
+  
+  aligner->setReferenceSensorOffset(fromOffset);
+  aligner->setCurrentSensorOffset(toOffset);
+  aligner->setInitialGuess(Eigen::Isometry3f::Identity());
+  projector->setCameraMatrix(toCameraMatrix);
+  projector->setImageSize(to->imageRows,to->imageCols);
+  projector->scale(1./scale);
+    
+  // cerr << "cameraMatrix: " << endl;
+  // cerr << projector->cameraMatrix() << endl;
+  r = projector->imageRows();
+  c = projector->imageCols();
+  
+  Eigen::Isometry3f ig;
+  convertScalar(ig, initialGuess);
+  aligner->setInitialGuess(ig);
+  aligner->correspondenceFinder()->setImageSize(r,c);
+  aligner->setReferenceFrame(fromCloud);
+  aligner->setCurrentFrame(toCloud);
+  aligner->align();
+  
+  Eigen::Isometry3d relationMean;
+  convertScalar(relationMean, aligner->T());
+  PwnTrackerClosureRelation* rel = new PwnTrackerClosureRelation(manager);
+  rel->setTransform(relationMean);
+  rel->setInformationMatrix(Eigen::Matrix<double, 6,6>::Identity());
+  rel->setTo(from);
+  rel->setFrom(to);
+  result.relation = rel;
+
+  DepthImage 
+    currentDepthThumb = aligner->correspondenceFinder()->currentDepthImage(),
+    referenceDepthThumb = aligner->correspondenceFinder()->referenceDepthImage();
+  cv::Mat currentRect, referenceRect;
+  currentDepthThumb.toCvMat(currentRect);
+  referenceDepthThumb.toCvMat(referenceRect);
+  cv::Mat mask = (currentRect>0) & (referenceRect>0);
+  currentRect.convertTo(currentRect, CV_32FC1);
+  referenceRect.convertTo(referenceRect, CV_32FC1);
+  mask.convertTo(mask, currentRect.type());
+  cv::Mat diff = abs(currentRect-referenceRect)&mask;
+  result.diffRegistered = diff.clone();
+  int nonZeros = countNonZero(mask);
+  float sum=0;
+  for (int i = 0; i<diff.rows; i++)
+    for (int j = 0; j<diff.cols; j++){
+      float d = result.diffRegistered.at<float>(i,j);
+      sum +=d;
+    }
+  result.relation = rel;
+  result.reprojectionDistance = sum/nonZeros;
+
+  cerr << "  initialGuess : " << t2v(ig).transpose() << endl;
+  cerr << "  transform    : " << t2v(aligner->T()).transpose() << endl;
+  cerr << "  inliers      : " << aligner->inliers() <<  "/" << r*c << endl;
+  cerr << "  reprojection : " << sum/nonZeros;
+}
+
+std::vector<MatchingResult> results;
 
 void seekForMatches(std::set<MapNode*> nodes, MapNode* current_){
   PwnTrackerFrame* current = dynamic_cast<PwnTrackerFrame*>(current_);
 
+  if (nodes.count(current)>0)
+    return;
   cv::Mat currentNormalThumbnail;
   ImageBLOB* currentNormalThumbnailBLOB = current->normalThumbnail.get();
   currentNormalThumbnailBLOB->cvImage().convertTo(currentNormalThumbnail, CV_32FC3);
@@ -230,9 +195,10 @@ void seekForMatches(std::set<MapNode*> nodes, MapNode* current_){
   currentDepthThumbnail=currentDepthThumbnail-127.0f;
   currentDepthThumbnail=currentDepthThumbnail*(1./255);
 
-
+  Eigen::Isometry3d iT=current->transform().inverse();
   pwn::Frame* f=cache->get(current);
-  cerr << "FRAME: " << f << endl; 
+  cache->lock(current);
+  cerr << "FRAME: " << current->seq << endl; 
   for (std::set <MapNode*>::iterator it=nodes.begin(); it!=nodes.end(); it++){
     PwnTrackerFrame* other = dynamic_cast<PwnTrackerFrame*>(*it);
     if (other==current)
@@ -254,11 +220,18 @@ void seekForMatches(std::set<MapNode*> nodes, MapNode* current_){
     cerr << "matching" << other << " " << current << ", dc:" << dc << ", nc:" << nc << endl;
 
     pwn::Frame* f2=cache->get(other);
-    cerr << "INNER FRAME: " << f2 << endl; 
- 
+    cerr << "INNER FRAME: " << other->seq << endl; 
+  
+    
+    Eigen::Isometry3d ig=iT*other->transform();
+    MatchingResult result;
+    results.push_back(result);
+    matchFrames(results.back(), aligner, current, other, f, f2, ig);
+    
     //delete otherDepthThumbnailBLOB;
     //delete otherNormalThumbnailBLOB;
   }
+  cache->unlock(current);
   cerr << "done" << endl;
 
   //delete currentDepthBLOB;
@@ -266,7 +239,8 @@ void seekForMatches(std::set<MapNode*> nodes, MapNode* current_){
   //delete currentNormalThumbnailBLOB;
 }
 
-MapManager* load(std::vector<PwnTrackerFrame*>& trackerFrames,
+
+MapManager* load(std::map<int, PwnTrackerFrame*>& trackerFrames,
 		 std::vector<PwnTrackerRelation*>& trackerRelations,
 		 std::vector<Serializable*>& objects,
 		 Deserializer& des){
@@ -287,7 +261,7 @@ MapManager* load(std::vector<PwnTrackerFrame*>& trackerFrames,
     }
     PwnTrackerFrame* f = dynamic_cast<PwnTrackerFrame*>(o);
     if (f) {
-      trackerFrames.push_back(f);
+      trackerFrames.insert(make_pair(f->seq,f));
       cache->addEntry(f);
       lastTrackerFrame = f;
       nodeCount++;
@@ -325,7 +299,6 @@ int main(int argc, char** argv){
     return 0;
   }
 
-  Aligner* aligner;
   DepthImageConverter* converter;
   std::vector<Serializable*> instances = readConfig(aligner, converter, argv[1]);
   cerr << "config loaded" << endl;
