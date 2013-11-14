@@ -27,9 +27,10 @@ int main(int argc, char** argv){
   PwnTrackerRos* tracker = new PwnTrackerRos(nh, tfListener, tfBroadcaster, _topic, argv[2],
 					  aligner, converter, manager);
   //hand held camera
+  /*
   tracker->_base_frame_id = "/camera_link";
   tracker->_scale = 4;
-
+  */
   // catacombs
   /*
   tracker->_base_frame_id = "/base_link";
@@ -38,9 +39,9 @@ int main(int argc, char** argv){
   */
 
   // giorgio home  
-  // tracker->_base_frame_id = "/base_link";
-  // tracker->_odom_frame_id = "/odom";
-  // tracker->_scale = 4;
+  tracker->_base_frame_id = "/base_link";
+  tracker->_odom_frame_id = "/odom";
+  tracker->_scale = 4;
 
   tracker->init();
   

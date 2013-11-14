@@ -29,8 +29,7 @@ using namespace pwn;
     virtual void serialize(ObjectData& data, IdContext& context);
     //! boss deserialization
     virtual void deserialize(ObjectData& data, IdContext& context);
-
-
+    int seq;
     pwn::FrameBLOBReference cloud;
     boss_logger::ImageBLOBReference depthImage;
     int imageRows, imageCols;
@@ -101,6 +100,7 @@ using namespace pwn;
     int _numKeyframes;
     float _newFrameInliersFraction;
     MapManager* _manager;
+    int _seq;
   };
 
 

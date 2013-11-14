@@ -1,6 +1,11 @@
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${QGLVIEWER_INCLUDE_DIR} ${QT_INCLUDES})
 
-ADD_LIBRARY(pwn_tracker_library pwn_tracker.cpp pwn_tracker.h)
+ADD_LIBRARY(pwn_tracker_library 
+  cache.cpp cache.h 
+  pwn_tracker.cpp pwn_tracker.h
+  pwn_closer.cpp pwn_closer.h
+)
+
 SET_TARGET_PROPERTIES(pwn_tracker_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn_tracker)
 TARGET_LINK_LIBRARIES(pwn_tracker_library  pwn2_library boss_map boss_logger boss)
 
