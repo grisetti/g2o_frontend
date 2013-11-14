@@ -47,7 +47,11 @@ namespace pwn_tracker {
     pwn::Frame* get(PwnTrackerFrame* frame);
 
     inline DepthImageConverter* converter() {return _converter;}
+    inline void setConverter(DepthImageConverter* converter_) {_converter = converter_;}
+
     inline int scale() const {return _scale;}
+    inline void setScale(int scale_)  {_scale=scale_;}
+
     inline int hits() const { return _hits; }
     inline int misses() const { return _misses; }
 

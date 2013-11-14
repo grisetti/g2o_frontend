@@ -203,6 +203,7 @@ namespace pwn_tracker{
       double t0, t1;
       t0 = get_time();
       _aligner->align();
+
       t1 = get_time();
       std::cout << "Time: " << t1 - t0 << " seconds " << std::endl;
  
@@ -319,7 +320,9 @@ namespace pwn_tracker{
     if (newRelation) {
       PwnTrackerRelation* rel = new PwnTrackerRelation(_manager);
       rel->setTransform(relationMean);
-      rel->setInformationMatrix(Eigen::Matrix<double, 6,6>::Identity());
+      Matrix6d omega;
+      convertScalar(omega, _aligner->omega());
+      rel->setInformationMatrix(omega);
       rel->setTo(currentTrackerFrame);
       rel->setFrom(_previousTrackerFrame);
       //cerr << "saved relation" << _previousTrackerFrame << " " << currentTrackerFrame << endl;
