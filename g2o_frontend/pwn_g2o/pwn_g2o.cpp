@@ -10,7 +10,8 @@
 
 #include "g2o_frontend/pwn2/frame.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/depthimageconverter.h"
+#include "g2o_frontend/pwn2/depthimageconverterintegralimage.h"
+#include "g2o_frontend/pwn2/statscalculatorintegralimage.h"
 #include "g2o_frontend/pwn2/aligner.h"
 
 #undef _PWN_USE_CUDA_
@@ -143,7 +144,7 @@ int main(int argc, char** argv) {
   projector.setMaxDistance(pj_maxDistance);
 
   // Stats calculator
-  StatsCalculator statsCalculator;
+  StatsCalculatorIntegralImage statsCalculator;
   statsCalculator.setWorldRadius(ng_minImageRadius);
   statsCalculator.setMinImageRadius(ng_maxImageRadius);
   statsCalculator.setMinImageRadius(ng_minPoints);
@@ -156,8 +157,8 @@ int main(int argc, char** argv) {
   normalInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThreshold);
 
   // Depth image converter
-  DepthImageConverter converter(&projector, &statsCalculator, 
-				&pointInformationMatrixCalculator, &normalInformationMatrixCalculator);
+  DepthImageConverterIntegralImage converter(&projector, &statsCalculator, 
+					     &pointInformationMatrixCalculator, &normalInformationMatrixCalculator);
   statsCalculator.setCurvatureThreshold(ng_curvatureThreshold);
   DepthImage depthImage, scaledDepthImage;
   Eigen::MatrixXi indexImage, scaledIndexImage;
@@ -253,7 +254,7 @@ int main(int argc, char** argv) {
     // Compute stats
     Frame *currentFrame = new Frame();
     DepthImage::scale(scaledDepthImage, depthImage, ng_scale);
-    converter.compute(*currentFrame, scaledDepthImage, sensorOffset, false);
+    converter.compute(*currentFrame, scaledDepthImage, sensorOffset);
 
     // Align
     if(referenceFrame) {

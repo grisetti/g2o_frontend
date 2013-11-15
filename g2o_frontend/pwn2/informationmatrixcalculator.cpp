@@ -21,6 +21,7 @@ namespace pwn {
 						 const StatsVector &statsVector,
 						 const NormalVector &imageNormals) {
     informationMatrix.resize(statsVector.size());
+    
 
 #pragma omp parallel for
     for(size_t i = 0; i < statsVector.size(); i++) {

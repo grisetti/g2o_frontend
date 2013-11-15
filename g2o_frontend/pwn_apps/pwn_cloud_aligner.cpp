@@ -22,8 +22,8 @@
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/cylindricalpointprojector.h"
 #include "g2o_frontend/pwn2/multipointprojector.h"
-#include "g2o_frontend/pwn2/statscalculator.h"
-#include "g2o_frontend/pwn2/depthimageconverter.h"
+#include "g2o_frontend/pwn2/statscalculatorintegralimage.h"
+#include "g2o_frontend/pwn2/depthimageconverterintegralimage.h"
 #include "g2o_frontend/pwn2/informationmatrixcalculator.h"
 #include "g2o_frontend/pwn2/aligner.h"
 #include "g2o_frontend/pwn2/frame.h"
@@ -61,10 +61,10 @@ Isometry3f referencePose;
 Isometry3f currentPose;
 
 // Stats calculator
-StatsCalculator statsCalculator;
+StatsCalculatorIntegralImage statsCalculator;
 
 // Depth image converter
-DepthImageConverter converter;
+DepthImageConverterIntegralImage converter;
 DepthImage depthImage, scaledDepthImage;
 MatrixXi indexImage, scaledIndexImage;
 
@@ -511,7 +511,7 @@ int main(int argc, char **argv) {
 		continue;
 	      }
 	      DepthImage::scale(scaledDepthImage, depthImage, ng_scale);
-	      converter.compute(*frame, scaledDepthImage, sensorOffset, false);
+	      converter.compute(*frame, scaledDepthImage, sensorOffset);
 	      //converter.fastCompute(*frame, scaledDepthImage, sensorOffset, fng_imageRadius);
 	    }
 
@@ -888,14 +888,14 @@ void applySettings() {
 
   //cerr << "converter" << endl;
   if(multiPointProjectorCheckBox->isChecked() == true)
-    converter._projector=&multiPointProjector;
+    converter.setProjector(&multiPointProjector);
   else if(cylindricalPointProjectorCheckBox->isChecked() == true)
-    converter._projector=&cylindricalPointProjector;
+    converter.setProjector(&cylindricalPointProjector);
   else
-    converter._projector=&pinholePointProjector;
-  converter._statsCalculator = &statsCalculator;
-  converter._pointInformationMatrixCalculator = &pointInformationMatrixCalculator;
-  converter._normalInformationMatrixCalculator = &normalInformationMatrixCalculator;
+    converter.setProjector(&pinholePointProjector);
+  converter.setStatsCalculator(&statsCalculator);
+  converter.setPointInformationMatrixCalculator(&pointInformationMatrixCalculator);
+  converter.setNormalInformationMatrixCalculator(&normalInformationMatrixCalculator);
 
   statsCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
 

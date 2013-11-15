@@ -5,7 +5,7 @@
 #include "g2o_frontend/boss_logger/bframe.h"
 #include "g2o_frontend/pwn2/frame.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/depthimageconverter.h"
+#include "g2o_frontend/pwn2/depthimageconverterintegralimage.h"
 #include "g2o_frontend/pwn2/aligner.h"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"

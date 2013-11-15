@@ -150,7 +150,7 @@ namespace pwn_tracker{
 
   pwn::Frame* PwnTracker::makeCloud(int& r, int& c, Eigen::Matrix3f& cameraMatrix,
 				    const Eigen::Isometry3f& sensorOffset,  const DepthImage& depthImage) {
-    PinholePointProjector* projector=dynamic_cast<PinholePointProjector*>(_converter->_projector);
+    PinholePointProjector* projector=dynamic_cast<PinholePointProjector*>(_converter->projector());
 
     float invScale = 1.0f / _scale;
     Matrix3f scaledCameraMatrix = cameraMatrix * invScale;
@@ -367,7 +367,6 @@ namespace pwn_tracker{
 
 BOSS_REGISTER_CLASS(PwnTrackerFrame);
 BOSS_REGISTER_CLASS(PwnTrackerRelation);
-
 
 }
 

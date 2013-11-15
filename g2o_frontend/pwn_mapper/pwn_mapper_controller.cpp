@@ -44,7 +44,7 @@ namespace pwn {
 
     // Stats calculator init
     _curvatureThreshold = 0.2f;
-    _statsCalculator = new StatsCalculator();
+    _statsCalculator = new StatsCalculatorIntegralImage();
     _statsCalculator->setWorldRadius(0.1f);
     _statsCalculator->setMinImageRadius(10);
 
@@ -55,8 +55,8 @@ namespace pwn {
     _normalInformationMatrixCalculator->setCurvatureThreshold(_curvatureThreshold);
     
     // Depth image converter init
-    _converter = new DepthImageConverter(_projector, _statsCalculator, 
-					 _pointInformationMatrixCalculator, _normalInformationMatrixCalculator);
+    _converter = new DepthImageConverterIntegralImage(_projector, _statsCalculator, 
+						      _pointInformationMatrixCalculator, _normalInformationMatrixCalculator);
     _statsCalculator->setWorldRadius(0.1);
     _statsCalculator->setCurvatureThreshold(_curvatureThreshold);
     
@@ -255,7 +255,7 @@ namespace pwn {
     frame->setPreviousFrame(previousFrame);
 
     // Compute the stats for the current cloud
-    _converter->compute(*frame, _scaledDepthImage, _sensorOffset, false);
+    _converter->compute(*frame, _scaledDepthImage, _sensorOffset);
     _framesDeque.push_back(frame);
 
     // Keep at most maxDequeSize elements in the queue
@@ -334,7 +334,7 @@ namespace pwn {
     frame.previousFrameTransform().setIdentity();
     frame.setPreviousFrame(0);
 
-    _converter->compute(frame, _scaledDepthImage, _sensorOffset, false);
+    _converter->compute(frame, _scaledDepthImage, _sensorOffset);
 
     return true;
   }
@@ -401,7 +401,7 @@ namespace pwn {
       _projector->setTransform(_initialScenePose.inverse() * reference->globalTransform() * _sensorOffset);
       _projector->project(_indexImage, _depthImage, _scene->points());
       
-      _converter->compute(*_subScene, _depthImage, _sensorOffset, false);
+      _converter->compute(*_subScene, _depthImage, _sensorOffset);
       _aligner->setReferenceFrame(_subScene);
     }
     else {

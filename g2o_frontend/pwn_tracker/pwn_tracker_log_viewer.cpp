@@ -86,7 +86,7 @@ int main (int argc, char** argv) {
   Aligner *aligner;
   DepthImageConverter *converter;
   std::vector<Serializable*> instances = readConfig(aligner, converter, configFilename.c_str());
-  converter->_projector->scale(1.0f/scale);
+  converter->projector()->scale(1.0f/scale);
   cout << "... done" << endl;
 
   // Read and parse log file

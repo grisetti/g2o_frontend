@@ -112,7 +112,7 @@ namespace pwn_boss {
     convertScalar(cameraMatrix,_cameraMatrix);
     
     //computeScaledParameters(r,c,cameraMatrix,_scale);
-    PinholePointProjector* projector=dynamic_cast<PinholePointProjector*>(_converter->_projector);
+    PinholePointProjector* projector=dynamic_cast<PinholePointProjector*>(_converter->projector());
     cameraMatrix(2,2)=1;
     projector->setCameraMatrix(cameraMatrix);
     projector->setImageSize(depthImage.rows(), depthImage.cols());

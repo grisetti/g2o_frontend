@@ -155,7 +155,7 @@ struct MatchingCandidate{
 
 Frame* makeFrame(DepthImageConverter* converter, PwnTrackerFrame* trackerFrame, int scale = 8){
   boss_logger::ImageBLOB* depthBLOB = trackerFrame->depthImage.get();
-  PinholePointProjector* projector = (PinholePointProjector*)converter->_projector;
+  PinholePointProjector* projector = (PinholePointProjector*)converter->projector();
   projector->setImageSize(trackerFrame->imageRows, trackerFrame->imageCols);
   pwn::DepthImage depth;
   pwn::Frame* cloud=new pwn::Frame;
@@ -521,7 +521,7 @@ void alignFrames(Aligner* aligner, DepthImageConverter* converter,
   boss_logger::ImageBLOB* fromDepthBlob = from->depthImage.get();
   boss_logger::ImageBLOB* toDepthBlob = to->depthImage.get();
   
-  PinholePointProjector* projector = (PinholePointProjector*)converter->_projector;
+  PinholePointProjector* projector = (PinholePointProjector*)converter->projector();
   pwn::DepthImage fromDepth, toDepth;
   pwn::Frame fromCloud, toCloud; 
   Eigen::Isometry3f fromOffset, toOffset;
