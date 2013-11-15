@@ -24,6 +24,9 @@
 #include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "line_extraction2d.h"
 
+//to be fixed: move deleteVertices from here
+//#include "g2o_frontend/line_alignment/alignment_utils.h"
+
 
 #include <qapplication.h>
 #include <qobject.h>
@@ -53,6 +56,7 @@ void sigquit_handler(int sig)
 int main(int argc, char**argv){
   hasToStop = false;
   string filename;
+  int vfirst_id = 0, vlast_id = 0;
 //  string outfilename;
   bool noLoop;
   CommandArgs arg;
@@ -80,6 +84,8 @@ int main(int argc, char**argv){
   float minRange;
   bool odometryIsGood;
   int incrementalFeatureTrackingWindow;
+  arg.param("idfirst", vfirst_id, 0, "id of vfirst");
+  arg.param("idlast", vlast_id, -1, "id of vlast");
   arg.param("o", outfilename, "graphSE2_withLine.g2o", "output file name");
   arg.param("maxRange", maxRange, 1e3, "maximum range to sense features"); 
   arg.param("minRange", minRange, 0.5, "minimum range to sense features");
@@ -131,7 +137,7 @@ int main(int argc, char**argv){
   SparseOptimizer * graph = new SparseOptimizer();
   graph->setAlgorithm(solverGauss);
   graph->load(filename.c_str());
-  graph->save("inputGraph_extraction.g2o");
+  graph->save("inputGraph4extraction.g2o");
 	
   // sort the vertices based on the id
   std::vector<int> vertexIds(graph->vertices().size());
@@ -146,48 +152,60 @@ int main(int argc, char**argv){
 	//changing this...
 	//LaserDataVector ldvector;
 	//int this...
-	VertexDataVector vldvector;
-	
+	VertexDataVector vldvector;	
 	//TODO
-// 	Eigen::Isometry3d offset = Eigen::Isometry3d::Identity();
+    //Eigen::Isometry3d offset = Eigen::Isometry3d::Identity();
 	Eigen::Isometry2d offset = Eigen::Isometry2d::Identity();
 
-	for (size_t i=0; i<vertexIds.size() && ! hasToStop; i++){
+    //setting the of graph to use for the extraction
+//    int lastID;
+//    int veryLastID = vertexIds.size()-1;
+//    if (vlast_id != -1) {
+//        lastID = vlast_id;
+//        cout << "....deleting vertices not to be processed" << endl;
+//        int firstNotUsedID = lastID+1;
+//        deleteVertices(firstNotUsedID, veryLastID, graph);
+//        graph->save("inputGraph_cutted.g2o");
+
+//    }
+//    else lastID = (int)vertexIds.size()-1;
+
+    for (size_t i=/*vfirst_id*/0; i<=/*lastID*/vertexIds.size() && ! hasToStop; i++){
 		
-    OptimizableGraph::Vertex* _v=graph->vertex(vertexIds[i]);
-// 		VertexSE3* v=dynamic_cast<VertexSE3*>(_v);
-    VertexSE2* v=dynamic_cast<VertexSE2*>(_v);
-    if (!v)
-      continue;
-		
-		//read laser data from the graph constructed given the graph.g2o as filename
-    OptimizableGraph::Data* d = v->userData();	
-    while(d){
-			ldata = dynamic_cast<LaserRobotData*>(d);
-			d=d->next();
-      if (ldata) {
-				//get laser Parameter
-				const Parameter* p = graph->parameters().getParameter(ldata->paramIndex());
-				const ParameterSE3Offset* param = dynamic_cast<const ParameterSE3Offset*> (p);
-				//conversion to 2d, with SE3 is:
-// 				offset = param->offset();
-				Vector3d ov = toVector3D(param->offset());
-				offset.linear() = Rotation2Dd(ov.z()).matrix();
-				offset.translation() = ov.head<2>(); 
-				
-				pointsOriginal = ldata->floatCartesian();
-				if (pointsOriginal.size()==0) {
-					cerr << "WARNING! No laser ranges detected, the g2o file you are using is wrong" << endl;
-					return 0;
-				}
-				//for generating lines files, changing this...
-				//ldvector.push_back(make_pair(ldata,pointsOriginal));
-				//in this
-        vldvector.push_back(make_pair(v,pointsOriginal));				
-//			cout << "LaserDataVector size is "<< ldvector.size() << "\tthe last reading has " << ldvector[i].second.size() << " points." << endl;
-      }
-		}
-	}
+        OptimizableGraph::Vertex* _v=graph->vertex(vertexIds[i]);
+        // 		VertexSE3* v=dynamic_cast<VertexSE3*>(_v);
+        VertexSE2* v=dynamic_cast<VertexSE2*>(_v);
+        if (!v)
+            continue;
+
+        //read laser data from the graph constructed given the graph.g2o as filename
+        OptimizableGraph::Data* d = v->userData();
+        while(d){
+            ldata = dynamic_cast<LaserRobotData*>(d);
+            d=d->next();
+            if (ldata) {
+                //get laser Parameter
+                const Parameter* p = graph->parameters().getParameter(ldata->paramIndex());
+                const ParameterSE3Offset* param = dynamic_cast<const ParameterSE3Offset*> (p);
+                //conversion to 2d, with SE3 is: offset = param->offset();
+                Vector3d ov = toVector3D(param->offset());
+//                cout << "LASER PARAMETER: " << ov.transpose() << endl;
+                offset.linear() = Rotation2Dd(ov.z()).matrix();
+                offset.translation() = ov.head<2>();
+
+                pointsOriginal = ldata->floatCartesian();
+                if (pointsOriginal.size()==0) {
+                    cerr << "WARNING! No laser ranges detected, the g2o file you are using is wrong" << endl;
+                    return 0;
+                }
+                //for generating lines files, changing this...
+                //ldvector.push_back(make_pair(ldata,pointsOriginal));
+                //in this
+                vldvector.push_back(make_pair(v,pointsOriginal));
+                //			cout << "LaserDataVector size is "<< ldvector.size() << "\tthe last reading has " << ldvector[i].second.size() << " points." << endl;
+            }
+        }
+    }
 	cout << "End of file!" << endl;
 
 #if 0

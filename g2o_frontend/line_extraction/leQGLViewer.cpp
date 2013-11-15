@@ -72,10 +72,12 @@ void leQGLViewer::init()
   cam->lookAt(qglviewer::Vec(0., 0., 0.));
   delete oldcam;
 }
+
 #if 0
-				ofstream osp2("points2.dat");
-				ofstream os2("lines2.dat");
+//ofstream osp("points2.dat");
+ofstream oslines("lines2.dat");
 #endif
+
 
 void leQGLViewer::draw()
 {drawAxis();
@@ -102,23 +104,24 @@ void leQGLViewer::draw()
 	else 
 	{
 #if 0
-		for(int i=0; i<lContainer->size(); i++)
-		{
-			Vector2fVector line = (*lContainer)[i];
-			os2 << line[0].x() << " " << line[0].y() << endl;
-			os2 << line[1].x() << " " << line[1].y() << endl;
-			os2 << endl;
-			os2 << endl;
-		}
-			os2.flush();
+        for(int i=0; i<lContainer->size(); i++)
+        {
+            Vector3fVector line = (*lContainer)[i];
+            oslines << line[0].x() << " " << line[0].y() << " " << line[0].z() << endl;
+            oslines << line[1].x() << " " << line[1].y() << " " << line[1].z() << endl;
+            oslines << endl;
+            oslines << endl;
+        }
+        oslines.flush();
 #endif
 		
-		glLineWidth(3.f);
+        glLineWidth(4.f);
+        double radius = 0.1f;
 		//cout << "line found!" << endl;
 		for(size_t i=0; i<lContainer->size(); i++)
 		{
-			Vector2fVector line = (*lContainer)[i];
-			
+            Vector3fVector line = (*lContainer)[i];
+            cout << "likelihood of p1: " << line[0].z() << " and of p2: " << line[1].z() << endl;
 			glBegin(GL_LINES);
 			glColor4f(0.f, 1.f, 0.f, 0.5f);			
 			glVertex3f(line[0].x(), line[0].y(), 0.f);
@@ -129,11 +132,16 @@ void leQGLViewer::draw()
 // 			glColor4f(0.f, 0.f, 1.f, 0.5f);
 // 			glutSolidSphere(0.5f,20, 20);
 // 			glPopMatrix();
-			
+
+            //the radius of the points depends on the likelihood value of being extreme vertices: normalizing the value between min=0.02 and max=0.2 [norm_val=(val*(max-min)+min)]
+            //drawing p1
 			glColor4f(0.f, 0.f, 1.f, 0.5f);
-			drawCircle(0.08f,line[0].x(), line[0].y(), 0.f, 60, 360);
+            radius = (line[0].z() * 0.18f) + 0.02f;
+            drawCircle(0.1f, line[0].x(), line[0].y(), 0.f, 60, 360);
+            //drawing p2
 			glColor4f(1.f, 0.f, 0.f, 0.5f);
-			drawCircle(0.08f,line[1].x(), line[1].y(), 0.f, 60, 360);
+            radius = (line[1].z() * 0.18f) + 0.02f;
+            drawCircle(radius, line[1].x(), line[1].y(), 0.f, 60, 360);
 			glEnd();
 		}
 	}

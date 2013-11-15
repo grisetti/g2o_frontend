@@ -58,7 +58,7 @@ namespace pwn {
     inline int minInliers() const { return _minInliers; }
 
     virtual void align();
-
+    const Matrix6f& omega() const {return _omega;}
     inline float error() const {return _error;}
     inline int inliers() const {return _inliers; }
     inline double totalTime() const {return _totalTime; }
@@ -70,7 +70,7 @@ namespace pwn {
     virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
     virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
     virtual void deserializeComplete();
-
+    
   protected:
     void _computeStatistics(Vector6f& mean, Matrix6f& Omega, 
 			   float& translationalRatio, float& rotationalRatio) const;

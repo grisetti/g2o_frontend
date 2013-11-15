@@ -14,11 +14,10 @@
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 #include "g2o/core/robust_kernel.h"
 #include "g2o/core/robust_kernel_factory.h"
-
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "g2o/types/slam2d/types_slam2d.h"
 #include "g2o/types/slam2d_addons/types_slam2d_addons.h"
-#include "g2o_frontend/sensor_data/laser_robot_data.h"
+//#include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "g2o_frontend/basemath/bm_se2.h"
 #include "g2o_frontend/ransac/alignment_line2d_linear.h"
 #include "g2o_frontend/ransac/line2d_correspondence_validator.h"
@@ -45,8 +44,8 @@ AbstractRobustKernelCreator* kernelCreator = 0;
 bool updateVertexPointID(SparseOptimizer* graph, SparseOptimizer* graphline, VertexLine2D* vli, VertexLine2D* vlj) {
   //checking if the first extreme point of a line is a common vertex
   bool updated = false;
-  VertexPointXY* vlip1 = dynamic_cast<VertexPointXY*>(graph->vertex(vli->p1Id));
-  // 	VertexPointXY* vljp1 = dynamic_cast<VertexPointXY*>(graph->vertex(vlj->p1Id));
+  VertexExtremePointXY* vlip1 = dynamic_cast<VertexExtremePointXY*>(graph->vertex(vli->p1Id));
+  // 	VertexExtremePointXY* vljp1 = dynamic_cast<VertexExtremePointXY*>(graph->vertex(vlj->p1Id));
   OptimizableGraph::EdgeSet epoint1 = vlip1->edges();
   int count1 = 0;
   for (OptimizableGraph::EdgeSet::iterator it_vp1 = epoint1.begin(); it_vp1 != epoint1.end(); it_vp1++)
@@ -84,8 +83,8 @@ bool updateVertexPointID(SparseOptimizer* graph, SparseOptimizer* graphline, Ver
   else updated = false;
 	
   //checking if the second extreme point of a line is a common vertex
-  VertexPointXY* vlip2 = dynamic_cast<VertexPointXY*>(graph->vertex(vli->p2Id));
-  //VertexPointXY* vljp2 = dynamic_cast<VertexPointXY*>(graph->vertex(vlj->p2Id));
+  VertexExtremePointXY* vlip2 = dynamic_cast<VertexExtremePointXY*>(graph->vertex(vli->p2Id));
+  //VertexExtremePointXY* vljp2 = dynamic_cast<VertexExtremePointXY*>(graph->vertex(vlj->p2Id));
   if(!vlip2)
     updated = false;
   OptimizableGraph::EdgeSet epoint2 = vlip2->edges();
@@ -139,7 +138,7 @@ int main(int argc, char**argv){
     arg.parseArgs(argc, argv);
     ofstream mergedG2O(outfilename.c_str());
 
-    kernelCreator =     RobustKernelFactory::instance()->creator("Cauchy");
+    kernelCreator = RobustKernelFactory::instance()->creator("Cauchy");
     if (! kernelCreator) {
       cerr << "mothaffukka" << endl;
       return 0;
@@ -197,18 +196,12 @@ int main(int argc, char**argv){
     //lines vector to be sorted
     std::vector<VertexLine2D*> lines1sort, lines2sort;
 
-    //fixing the first vertex of the graph
-    
-//    graph->initializeOptimization();
-
-
 /** Building the new graph with vertex payload aligned:
      * -for each vertex, reading its own payload and saving the payload of the following vertex,
      * -call findCorrespondances,
      * -call ransac to find the inliers,
      * -merging vertex of the inliers found
 **/
-
     cout << "\033[22;31;1m********************************START READING THE GRAPH********************************\033[0m" << endl;
     cerr << "num vertici totali: " << vertexIds.size() << ", num vertices to be processed: " << lastID+1 << endl;
     for (int i = vfirst_id/*0*/; i<=lastID/*(int)vertexIds.size()*/; i++)
@@ -382,13 +375,13 @@ int main(int argc, char**argv){
 
 
                 VertexLine2D* vli = dynamic_cast<VertexLine2D*>(graph->vertex(s1[currCorrs[ci].lid1].vline->id()));
-                Eigen::Vector2d p11=dynamic_cast<const VertexPointXY*>(graph->vertex(vli->p1Id))->estimate();
-                Eigen::Vector2d p12=dynamic_cast<const VertexPointXY*>(graph->vertex(vli->p2Id))->estimate();
+                Eigen::Vector2d p11=dynamic_cast<const VertexExtremePointXY*>(graph->vertex(vli->p1Id))->estimate();
+                Eigen::Vector2d p12=dynamic_cast<const VertexExtremePointXY*>(graph->vertex(vli->p2Id))->estimate();
                 double d1=(p11-p12).squaredNorm();
 
                 VertexLine2D* vlj = dynamic_cast<VertexLine2D*>(graph->vertex(s2[currCorrs[ci].lid2].vline->id()));
-                Eigen::Vector2d p21=dynamic_cast<const VertexPointXY*>(graph->vertex(vlj->p1Id))->estimate();
-                Eigen::Vector2d p22=dynamic_cast<const VertexPointXY*>(graph->vertex(vlj->p2Id))->estimate();
+                Eigen::Vector2d p21=dynamic_cast<const VertexExtremePointXY*>(graph->vertex(vlj->p1Id))->estimate();
+                Eigen::Vector2d p22=dynamic_cast<const VertexExtremePointXY*>(graph->vertex(vlj->p2Id))->estimate();
                 double d2=(p21-p22).squaredNorm();
                 double diff=1./(1+fabs(d1-d2));
 
@@ -481,8 +474,8 @@ int main(int argc, char**argv){
                     os1line << line1.transpose() << endl;
                     os1line << endl;
 
-                    VertexPointXY* vpl1_1 = dynamic_cast<VertexPointXY*>(graph->vertex(s1[currCorrs[ci].lid1].vline->p1Id));
-                    VertexPointXY* vpl2_1 = dynamic_cast<VertexPointXY*>(graph->vertex(s1[currCorrs[ci].lid1].vline->p2Id));
+                    VertexExtremePointXY* vpl1_1 = dynamic_cast<VertexExtremePointXY*>(graph->vertex(s1[currCorrs[ci].lid1].vline->p1Id));
+                    VertexExtremePointXY* vpl2_1 = dynamic_cast<VertexExtremePointXY*>(graph->vertex(s1[currCorrs[ci].lid1].vline->p2Id));
                     Vector2d p1line1 = vpl1_1->estimate();
                     Vector2d p2line1 = vpl2_1->estimate();
                     os1 << p1line1.transpose() << endl;
@@ -503,8 +496,8 @@ int main(int argc, char**argv){
                     os2line << line2.transpose() << endl;
                     os2line << endl;
 
-                    VertexPointXY* vpl1_2 = dynamic_cast<VertexPointXY*>(graph->vertex(s2[currCorrs[ci].lid2].vline->p1Id));
-                    VertexPointXY* vpl2_2 = dynamic_cast<VertexPointXY*>(graph->vertex(s2[currCorrs[ci].lid2].vline->p2Id));
+                    VertexExtremePointXY* vpl1_2 = dynamic_cast<VertexExtremePointXY*>(graph->vertex(s2[currCorrs[ci].lid2].vline->p1Id));
+                    VertexExtremePointXY* vpl2_2 = dynamic_cast<VertexExtremePointXY*>(graph->vertex(s2[currCorrs[ci].lid2].vline->p2Id));
                     Vector2d p1line2 = vpl1_2->estimate();
                     Vector2d p2line2 = vpl2_2->estimate();
                     os2 << p1line2.transpose() << endl;
@@ -541,8 +534,8 @@ int main(int argc, char**argv){
 //                    VertexLine2D* vl_next = dynamic_cast<VertexLine2D*>(el_next->vertices()[1]);
 //                    if(!vl_next) continue;
 
-//                    VertexPointXY* vpl1 = dynamic_cast<VertexPointXY*>(graph->vertex(vl_next->p1Id));
-//                    VertexPointXY* vpl2 = dynamic_cast<VertexPointXY*>(graph->vertex(vl_next->p2Id));
+//                    VertexExtremePointXY* vpl1 = dynamic_cast<VertexExtremePointXY*>(graph->vertex(vl_next->p1Id));
+//                    VertexExtremePointXY* vpl2 = dynamic_cast<VertexExtremePointXY*>(graph->vertex(vl_next->p2Id));
 
 //                    vpl1->setEstimate(transform*vpl1->estimate());
 //                    vpl2->setEstimate(transform*vpl2->estimate());
@@ -640,7 +633,7 @@ int main(int argc, char**argv){
 
 
 	for (SparseOptimizer::EdgeSet::iterator it = graph->edges().begin(); it != graph->edges().end(); ++it) {
-	  SparseOptimizer::Edge* e = dynamic_cast<SparseOptimizer::Edge*>(*it);
+      SparseOptimizer::Edge* e = dynamic_cast<SparseOptimizer::Edge*>(*it);
 	  if (!e->robustKernel()) {
 	    e->setRobustKernel(kernelCreator->construct());
 	    e->robustKernel()->setDelta(1.0);
@@ -658,14 +651,14 @@ int main(int argc, char**argv){
     lvector_merged.clear();
     cout << "vectors of lines at the end: current " << lvector.size() << ", next " << lvector_next.size() << ", merged " << lvector_merged.size() << endl;
 
-    //workaround: deleting VertexPointXY not conneted with any VertexLine2D, not deleted by the merging procedure
+    //workaround: deleting VertexExtremePointXY not conneted with any VertexLine2D, not deleted by the merging procedure
     for (int i = 0; i < veryLastID; i++)
     {
         OptimizableGraph::Vertex* _x = graph->vertex(i);
         if(!_x){
             continue;
         }
-        VertexPointXY* x = dynamic_cast<VertexPointXY*>(_x);
+        VertexExtremePointXY* x = dynamic_cast<VertexExtremePointXY*>(_x);
         if(!x){
             continue;
         }
@@ -679,7 +672,7 @@ int main(int argc, char**argv){
         if(count == 0)
             cout << "removing id: " << x->id() << " - done? " << graph->removeVertex(x) << endl;
 //        else
-//            cerr << "VertexPointXY not to be deleted: " << x->id() << " number of edges: " << count << endl;
+//            cerr << "VertexExtremePointXY not to be deleted: " << x->id() << " number of edges: " << count << endl;
     }
 
     cout << "...saving merged graph in " << outfilename.c_str() << endl;

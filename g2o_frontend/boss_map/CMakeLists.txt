@@ -13,6 +13,7 @@ ADD_LIBRARY(boss_map
   boss_map_manager.cpp boss_map_manager.h
   sensing_frame_node.cpp sensing_frame_node.h
   map_node_processor.cpp map_node_processor.h 
+  boss_map_utils.cpp
   boss_map_g2o_reflector.cpp boss_map_g2o_reflector.h
   )
 

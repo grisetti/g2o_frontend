@@ -70,12 +70,12 @@ class ViewerGUI : public QMainWindow, public Ui::MainWindow
 		VertexData vld;
 		
 		//TODO
-		/*to calculate the offset of the laser data, taking into account the odometry of the robot*/
+        //to calculate the offset of the laser data, taking into account the odometry of the robot
 		Eigen::Isometry2d offset;
 		
 		lineContainer lc;
 		int numIteration;
-		/*vector of adajcent lines*/
+        //vector of adajcent lines/
 		LinesAdjacentVector lAdjacentVector;
 
 	public slots:

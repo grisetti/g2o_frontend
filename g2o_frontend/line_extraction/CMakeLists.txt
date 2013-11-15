@@ -25,7 +25,8 @@ SET_TARGET_PROPERTIES(line_extraction_library PROPERTIES OUTPUT_NAME ${LIB_PREFI
 
 TARGET_LINK_LIBRARIES(line_extraction_library
   sensor_data_library
-	${G2O_TYPES_SLAM2D_ADDONS}
+  g2o_line_addons_library
+  ${G2O_TYPES_SLAM2D_ADDONS}
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY}
   ${PCL_LIBRARIES}
@@ -33,10 +34,11 @@ TARGET_LINK_LIBRARIES(line_extraction_library
 
 
 ADD_EXECUTABLE(lineEx_viewer lineEx_viewer.cpp)
-SET_TARGET_PROPERTIES(lineEx_viewer PROPERTIES OUTPUT_NAME lineEx_viewer)
+SET_TARGET_PROPERTIES(lineEx_viewer PROPERTIES OUTPUT_NAME g2o_lineEx_viewer${EXE_POSTFIX})
 TARGET_LINK_LIBRARIES( lineEx_viewer 
   line_extraction_library
   sensor_data_library
+  g2o_line_addons_library
   ${G2O_STUFF_LIBRARY} 	${G2O_SOLVER_CSPARSE} ${G2O_SOLVER_CSPARSE_EXTENSION}
   ${G2O_CORE_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${CSPARSE_LIBRARY} 
 	#${GLUT_LIBRARY}
@@ -44,14 +46,14 @@ TARGET_LINK_LIBRARIES( lineEx_viewer
 )
 
 ADD_EXECUTABLE(toGraphSE2 toGraphSE2.cpp)
-SET_TARGET_PROPERTIES(toGraphSE2 PROPERTIES OUTPUT_NAME toGraphSE2)
+SET_TARGET_PROPERTIES(toGraphSE2 PROPERTIES OUTPUT_NAME g2o_toGraphSE2${EXE_POSTFIX})
 TARGET_LINK_LIBRARIES( toGraphSE2 
   line_extraction_library
   sensor_data_library
   types_data
+  g2o_line_addons_library
   ${G2O_STUFF_LIBRARY} 	${G2O_SOLVER_CSPARSE} ${G2O_SOLVER_CSPARSE_EXTENSION}
   ${G2O_CORE_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY} ${CSPARSE_LIBRARY} 
-
 )
 
 # ADD_EXECUTABLE(lineEx_viewer_old lineEx_viewer_old.cpp)

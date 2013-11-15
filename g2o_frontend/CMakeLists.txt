@@ -34,6 +34,7 @@ if(BUILD_PWN)
 endif(BUILD_PWN)
 
 if(BUILD_LINE_SLAM)
+  ADD_SUBDIRECTORY(g2o_line_addons)
   ADD_SUBDIRECTORY(line_extraction)
   ADD_SUBDIRECTORY(line_alignment)
 endif(BUILD_LINE_SLAM)

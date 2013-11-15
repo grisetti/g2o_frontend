@@ -26,7 +26,7 @@ int main(int argc, char** argv){
 
   PwnTrackerRos* tracker = new PwnTrackerRos(nh, tfListener, tfBroadcaster, _topic, argv[2],
 					     aligner, converter, manager);
-  //hand held camera
+  // hand held camera
   // tracker->_base_frame_id = "/camera_link";
   // tracker->_scale = 4;
 
