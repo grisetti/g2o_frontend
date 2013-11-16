@@ -322,6 +322,8 @@ namespace pwn_tracker{
       rel->setTransform(relationMean);
       Matrix6d omega;
       convertScalar(omega, _aligner->omega());
+      omega.setIdentity();
+      omega *= 100;
       rel->setInformationMatrix(omega);
       rel->setTo(currentTrackerFrame);
       rel->setFrom(_previousTrackerFrame);

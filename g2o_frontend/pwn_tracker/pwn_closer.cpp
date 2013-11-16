@@ -5,6 +5,7 @@ namespace pwn_tracker {
     PwnTrackerRelation(manager, id, context){
     reprojectionInliers = 0;
     reprojectionOutliers = 0;
+    accepted = false;
   }
 
   void PwnCloserRelation::serialize(ObjectData& data, IdContext& context){
@@ -27,14 +28,28 @@ namespace pwn_tracker {
     _converter = converter_;
     _manager = manager_;
     _scale = 4;
-    _cache = new PwnCache(_converter, _scale, 50);
-    _criterion.setRotationalDistance(M_PI/8);
-    _criterion.setTranslationalDistance(.5);
-    _criterion.setManager(_manager);
+    _cache = new PwnCache(_converter, _scale, 100);
     _lastTrackerFrame = 0;
+    _inlierDepthThreshold = 50;
+    _criterion = 0;
   }
 
   
+  class MyRelationSelector: public MapRelationSelector {
+  public:
+    MyRelationSelector(boss_map::MapManager* manager): MapRelationSelector(manager){}
+    virtual bool accept(MapNodeRelation* r) {
+      if (!r)
+	return false;
+      {
+	PwnCloserRelation* _r = dynamic_cast<PwnCloserRelation*>(r);
+	if (_r){
+	  return _r->accepted;
+	}
+      }
+      return dynamic_cast<PwnTrackerRelation*>(r);
+    }
+  };
 
   void PwnCloser::addFrame(PwnTrackerFrame* f) {
     _trackerFrames.insert(make_pair(f->seq,f));
@@ -49,13 +64,16 @@ namespace pwn_tracker {
   }
 
   void PwnCloser::process(){
+    if (! _criterion)
+      return;
     if (!_lastTrackerFrame)
       return;
     std::set<MapNode*> selectedNodes;
-    _criterion.setReferencePose(_lastTrackerFrame->transform());
-    selectNodes(selectedNodes,&_criterion);
+    _criterion->setReferencePose(_lastTrackerFrame->transform());
+    selectNodes(selectedNodes,_criterion);
     std::vector< std::set<MapNode*> > partitions;
-    makePartitions(partitions, selectedNodes);
+    MyRelationSelector selector(_manager);
+    makePartitions(partitions, selectedNodes, &selector);
     cerr << "node: " << _lastTrackerFrame->seq 
 	 << ", neighbors: " << selectedNodes.size() 
 	 << "partitions: " << partitions.size() << endl;
@@ -76,6 +94,7 @@ namespace pwn_tracker {
     currentNormalThumbnailBLOB->cvImage().convertTo(currentNormalThumbnail, CV_32FC3);
     currentNormalThumbnail=currentNormalThumbnail-127.0f;
     currentNormalThumbnail=currentNormalThumbnail*(1./255);
+    
     
     cv::Mat currentDepthThumbnail;
     ImageBLOB* currentDepthThumbnailBLOB = current->depthThumbnail.get();
@@ -99,29 +118,33 @@ namespace pwn_tracker {
       
       cv::Mat otherDepthThumbnail;
       ImageBLOB* otherDepthThumbnailBLOB = other->depthThumbnail.get();
-      otherDepthThumbnailBLOB->cvImage().convertTo(otherDepthThumbnail, CV_32FC3);
+      otherDepthThumbnailBLOB->cvImage().convertTo(otherDepthThumbnail, CV_32FC1);
       otherDepthThumbnail=otherDepthThumbnail-127.0f;
       otherDepthThumbnail=otherDepthThumbnail*(1./255);
 
       float dc = compareNormals(currentNormalThumbnail, otherNormalThumbnail);
       float nc = compareDepths(currentDepthThumbnail, otherDepthThumbnail);
       
-      pwn::Frame* f2=_cache->get(other);
-    
-      Eigen::Isometry3d ig=iT*other->transform();
-      MatchingResult result;
-      bool framesMatched = matchFrames(result, current, other, f, f2, ig);
-      if (framesMatched)
-	_results.push_back(result);
-      //delete otherDepthThumbnailBLOB;
-      //delete otherNormalThumbnailBLOB;
+      float _normalTuhmbnailThreshold = 1e3;
+      if (nc<_normalTuhmbnailThreshold) {
+	pwn::Frame* f2=_cache->get(other);
+	
+	Eigen::Isometry3d ig=iT*other->transform();
+	MatchingResult result;
+	bool framesMatched = matchFrames(result, current, other, f, f2, ig);
+	cerr << "  framesMatched: " << framesMatched << " dc:"  << dc << " nc:" << nc << endl; 
+	if (framesMatched)
+	  _results.push_back(result);
+      }
+      delete otherDepthThumbnailBLOB;
+      delete otherNormalThumbnailBLOB;
     }
     _cache->unlock(current);
     cerr << "done" << endl;
 
     //delete currentDepthBLOB;
-    //delete currentDepthThumbnailBLOB;
-    //delete currentNormalThumbnailBLOB;
+    delete currentDepthThumbnailBLOB;
+    delete currentNormalThumbnailBLOB;
   }
 
 
@@ -152,6 +175,7 @@ namespace pwn_tracker {
     _aligner->setCurrentSensorOffset(toOffset);
     Eigen::Isometry3f ig;
     convertScalar(ig, initialGuess);
+    ig.translation().z() = 0;
     _aligner->setInitialGuess(ig);
     projector->setCameraMatrix(toCameraMatrix);
     projector->setImageSize(to->imageRows,to->imageCols);
@@ -168,45 +192,19 @@ namespace pwn_tracker {
     _aligner->align();
     Matrix6d omega;
     convertScalar(omega, _aligner->omega());
-  
-    
-    DepthImage 
-      currentDepthThumb = _aligner->correspondenceFinder()->currentDepthImage(),
-      referenceDepthThumb = _aligner->correspondenceFinder()->referenceDepthImage();
-    cv::Mat currentRect, referenceRect;
-    currentDepthThumb.toCvMat(currentRect);
-    referenceDepthThumb.toCvMat(referenceRect);
-    cv::Mat mask = (currentRect>0) & (referenceRect>0);
-    currentRect.convertTo(currentRect, CV_32FC1);
-    referenceRect.convertTo(referenceRect, CV_32FC1);
-    mask.convertTo(mask, currentRect.type());
-    cv::Mat diff = abs(currentRect-referenceRect)&mask;
-    result.diffRegistered = diff.clone();
-    int nonZeros = countNonZero(mask);
-    float sum=0;
-    for (int i = 0; i<diff.rows; i++)
-      for (int j = 0; j<diff.cols; j++){
-	float d = diff.at<float>(i,j);
-	sum +=d;
-      }
-    result.reprojectionDistance = sum/nonZeros;
-    result.nonZeros = nonZeros;
     result.from = from;
     result.to = to;
-    cerr << "  initialGuess         : " << t2v(ig).transpose() << endl;
-    cerr << "  transform            : " << t2v(_aligner->T()).transpose() << endl;
-    cerr << "  inliers              : " << _aligner->inliers() <<  "/" << r*c << endl;
-    cerr << "  reprojectionDistance : " << sum/nonZeros << endl;
-    cerr << "  nonZeros/total        : " << nonZeros << "/" << r*c  << endl;
-    
     Eigen::Isometry3d relationMean;
     convertScalar(relationMean, _aligner->T());
     PwnCloserRelation* rel = new PwnCloserRelation(manager);
     rel->setTransform(relationMean);
+    omega.setIdentity(); //HACK
+    omega*=100;
     rel->setInformationMatrix(omega);
-    rel->setTo(from);
-    rel->setFrom(to);
+    rel->setTo(to);
+    rel->setFrom(from);
     result.relation = rel;
+    scoreCandidate(result);
     return true;
   }
 
@@ -227,7 +225,7 @@ namespace pwn_tracker {
     // consides only the pixels that are >0;
     cv::Mat mask = (m1>0) & (m2>0);
     //cerr << "mask!" << endl;
-
+    
     mask.convertTo(mask, m1.type());
     //cerr << "convert" << endl;
 
@@ -237,6 +235,45 @@ namespace pwn_tracker {
 
     diff.convertTo(diff, CV_32FC1);
     return norm(diff);
+  }
+
+  void PwnCloser::scoreCandidate(MatchingResult& candidate){
+    DepthImage 
+      currentDepthThumb = _aligner->correspondenceFinder()->currentDepthImage(),
+      referenceDepthThumb = _aligner->correspondenceFinder()->referenceDepthImage();
+    cv::Mat currentRect, referenceRect;
+    currentDepthThumb.toCvMat(currentRect);
+    referenceDepthThumb.toCvMat(referenceRect);
+    cv::Mat mask = (currentRect>0) & (referenceRect>0);
+    currentRect.convertTo(currentRect, CV_32FC1);
+    referenceRect.convertTo(referenceRect, CV_32FC1);
+    mask.convertTo(mask, currentRect.type());
+    cv::Mat diff = abs(currentRect-referenceRect)&mask;
+    candidate.diffRegistered = diff.clone();
+    int nonZeros = countNonZero(mask);
+    float sum=0;
+    int inliers = 0;
+    int outliers = 0;
+    for (int i = 0; i<diff.rows; i++)
+      for (int j = 0; j<diff.cols; j++){
+	float d = diff.at<float>(i,j);
+	if (mask.at<float>(i,j) && d < _inlierDepthThreshold)
+	  inliers ++;
+	sum +=d;
+      }
+    int imSize = diff.rows*diff.cols;
+    candidate.reprojectionDistance = sum/nonZeros;
+    candidate.nonZeros = nonZeros;
+
+    cerr << "  transform            : " << t2v(_aligner->T()).transpose() << endl;
+    cerr << "  imsize               : " << imSize << endl;
+    cerr << "  inliers              : " << _aligner->inliers()<< endl;
+    cerr << "  reprojectionDistance : " << sum/nonZeros << endl;
+    cerr << "  nonZeros             : " << nonZeros << endl;
+    candidate.outliers = nonZeros-inliers;
+    candidate.inliers = inliers;
+    candidate.relation->reprojectionInliers=inliers;
+    candidate.relation->reprojectionOutliers=outliers;
   }
   
 }

@@ -55,13 +55,24 @@ namespace boss_map {
   };
 
 
+  class MapRelationSelector{
+  public:
+    MapRelationSelector(MapManager* manager_=0);
+    virtual bool accept(MapNodeRelation* r) = 0;
+    virtual ~MapRelationSelector();
+    inline MapManager* manager() {return _manager;}
+    inline void setManager(MapManager* manager_) {_manager = manager_;}
+  protected:
+    MapManager* _manager;
+  };
+
 
   void selectNodes(std::set<MapNode*>& nodes, NodeAcceptanceCriterion* criterion);
   void extractInternalRelations(std::set<MapNodeRelation*>& internalRelations, 
 				std::set<MapNode*>& nodes, 
 				MapManager* manager);
   void makePartitions(std::vector<std::set<MapNode*> >& partitions,
-		      std::set<MapNode*>& nodes);
+		      std::set<MapNode*>& nodes, MapRelationSelector* relationSelector=0);
 }
 
 #endif

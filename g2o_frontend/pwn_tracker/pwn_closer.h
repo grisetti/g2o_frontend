@@ -24,6 +24,7 @@ namespace pwn_tracker {
     PwnCloserRelation(MapManager* manager=0, int id=-1, IdContext* context = 0);
     virtual void serialize(ObjectData& data, IdContext& context);
     virtual void deserialize(ObjectData& data, IdContext& context);
+    bool accepted;
     int reprojectionInliers;
     int reprojectionOutliers;
   };
@@ -57,11 +58,15 @@ namespace pwn_tracker {
     PwnCloser(pwn::Aligner* aligner_, 
 	      pwn::DepthImageConverter* converter_,
 	      MapManager* manager_);
+    
     inline pwn::Aligner* aligner() { return _aligner;}
     inline void setAligner(pwn::Aligner* aligner_) { _aligner=aligner_;}
 
     inline pwn::DepthImageConverter* converter() { return _converter;}
     inline void setConverter(pwn::DepthImageConverter* converter_) { _converter=converter_; updateCache();}
+
+    inline boss_map::PoseAcceptanceCriterion* criterion() {return _criterion;}
+    void setCriterion(boss_map::PoseAcceptanceCriterion* criterion_) { _criterion= criterion_;}
 
     inline int scale() const {return _scale;}
     inline void setScale(int scale_) {_scale = scale_; updateCache();}
@@ -75,20 +80,23 @@ namespace pwn_tracker {
 		     pwn::Frame* fromCloud, pwn::Frame* toCloud,
 		     const Eigen::Isometry3d& initialGuess);
     std::vector<MatchingResult>& results() {return _results;}
+    void scoreCandidate(MatchingResult& candidate);
+    std::vector<PwnTrackerRelation*> _trackerRelations;
+    std::map<int, PwnTrackerFrame*> _trackerFrames;
+    
   protected:
     void updateCache();
     static float compareNormals(cv::Mat& m1, cv::Mat& m2);
     static float compareDepths(cv::Mat& m1, cv::Mat& m2);  
     int _scale;
     PwnTrackerFrame* _lastTrackerFrame;
-    std::vector<PwnTrackerRelation*> _trackerRelations;
-    std::map<int, PwnTrackerFrame*> _trackerFrames;
     boss_map::MapManager* _manager;
     pwn::DepthImageConverter* _converter;
     pwn::Aligner* _aligner;
     PwnCache* _cache;
-    DistancePoseAcceptanceCriterion _criterion;
+    PoseAcceptanceCriterion* _criterion;
     std::vector<MatchingResult> _results;
+    int _inlierDepthThreshold;
   };
 }
 
