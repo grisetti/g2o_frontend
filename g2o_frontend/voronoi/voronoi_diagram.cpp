@@ -2,6 +2,7 @@
 
 #define INF 1000000
 
+
 using namespace std;
 using namespace Eigen;
 
