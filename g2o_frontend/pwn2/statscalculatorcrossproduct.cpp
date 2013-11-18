@@ -8,7 +8,7 @@ namespace pwn {
 
   StatsCalculatorCrossProduct::StatsCalculatorCrossProduct(int id, 
 							   boss::IdContext *context) : StatsCalculator(id, context) {
-    _imageRadius = 3;
+    _imageRadius = 1;
     _minPoints = 4;
     _normalsTraceThreshold = 1e3;
   }
@@ -33,7 +33,6 @@ namespace pwn {
       normals.resize(points.size());
     Normal dummyNormal = Normal::Zero();
     std::fill(normals.begin(), normals.end(), dummyNormal);
-    //std::fill(statsVector.begin(), statsVector.end(), Stats());
     
     // Generate annulus image coordinates
     std::set<Eigen::Vector2i, CoordComp> annulusCoordinates;
@@ -47,12 +46,15 @@ namespace pwn {
       annulusCoordinates.insert(it, coord);
     }
     
+    Eigen::Matrix3f nCovarianceMatrix;
+    Eigen::Matrix3f orthonormalBase;
 #pragma omp parallel for
     for(int r = 0; r < indexImage.rows(); r++) {
 #pragma omp parallel for
       for(int c = 0; c < indexImage.cols(); c++) {
-	if(indexImage(r, c) < 0)
+	if(indexImage(r, c) < 0) {
 	  continue;
+	}
 	int count = 0;
 	Point p = Point(Eigen::Vector3f(0.0, 0.0, 0.0));	
 	Normal n = Normal(Eigen::Vector3f(0.0, 0.0, 0.0));
@@ -154,37 +156,35 @@ namespace pwn {
 	  }	  
 	}
 	
-	// InformationMatrix pInformationMatrix = InformationMatrix::Zero();
-	// InformationMatrix nInformationMatrix = InformationMatrix::Zero();
 	Normal meanNormals = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
 	Normal meanN = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
-	Stats stats = Stats();
+	Stats &stats = statsVector[indexImage(r, c)];
 	stats.setZero();
-	// Add stats filler
 	if(count >= _minPoints) {
-	  // Point meanP = p / (float)count;
-	  // meanNormals = n / (float)count;
-	  // pInformationMatrix.block<3, 3>(0, 0) = ((squareP / (float)count) - (centerPoint.head<3>() * centerPoint.head<3>().transpose())).inverse();	  	  
-	  // nInformationMatrix.block<3, 3>(0, 0) = ((squareN / (float)count) - (meanNormals.head<3>() * meanNormals.head<3>().transpose())).inverse();
-
-	  // if(fabs(nInformationMatrix(0, 0)*nInformationMatrix(1, 1)*nInformationMatrix(2, 2)) > 1e03) {
-	  //   nInformationMatrix = Eigen::Matrix4f::Zero();
-	  //   nInformationMatrix(0, 0) = 100.0f;
-	  //   nInformationMatrix(1, 1) = 100.0f;
-	  //   nInformationMatrix(2, 2) = 100.0f;
-	  // }
-	  // else {
-	  //   nInformationMatrix = Eigen::Matrix4f::Identity();
-	  // }
 	  meanN = (sumN / (float)count).normalized();	  	  
 	  if(meanN.dot(centerPoint) > 0)
 	    meanN = -meanN;
+	  
+	  stats.setN(count);
+	  stats.setMean(centerPoint);
+	  orthonormalBase = Eigen::Matrix3f::Zero();
+	  orthonormalBase.block<3, 1>(0, 0) = meanN.head<3>();
+	  orthonormalBase.block<3, 1>(0, 1) = meanN.head<3>().unitOrthogonal().normalized();
+	  orthonormalBase.block<3, 1>(0, 2) = (meanN.head<3>().cross(orthonormalBase.block<3, 1>(0, 1))).normalized();
+	  stats.block<3, 3>(0, 0) = orthonormalBase;
+	  
+	  meanNormals = n / (float)count;	  
+	  nCovarianceMatrix = (squareN / (float)count) - (meanNormals.head<3>() * meanNormals.head<3>().transpose());
+	  float curvature = fabs(nCovarianceMatrix(0, 0) * nCovarianceMatrix(1, 1) * nCovarianceMatrix(2, 2));
+	  if(curvature < _normalsTraceThreshold) {
+	    stats.setEigenValues(Eigen::Vector3f(1.0f, 1000.0f, 1000.0f));
+	  }
+	  else {
+	    stats.setEigenValues(Eigen::Vector3f(1000.0f, 1.0f, 1.0f));
+	  }
 	}
-	
+ 
 	normals[indexImage(r, c)] = meanN;
-	statsVector[indexImage(r, c)] = stats;
-	// pointInformationMatrix[indexImage(r, c)] = pInformationMatrix;
-	// normalInformationMatrix[indexImage(r, c)] = nInformationMatrix;
       }
     }
   }
