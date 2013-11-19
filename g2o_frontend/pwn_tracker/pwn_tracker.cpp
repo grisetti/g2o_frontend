@@ -174,6 +174,7 @@ namespace pwn_tracker{
     pwn::Frame* cloud = new pwn::Frame;
     //cout << "NUMS: " << r << " --- " << c << " --- " << cameraMatrix << endl;
     _converter->compute(*cloud, scaledImage, sensorOffset);
+    // cloud->save("temp.pwn", 1, true);
     // scale image and camera matrix
     return cloud;
   }
@@ -207,7 +208,7 @@ namespace pwn_tracker{
       t1 = get_time();
       std::cout << "Time: " << t1 - t0 << " seconds " << std::endl;
  
-      // cerr << "inliers: " << _aligner->inliers() << endl;
+      cerr << "inliers: " << _aligner->inliers() << endl;
       // cerr << "chi2: " << _aligner->error() << endl;
       // cerr << "chi2/inliers: " << _aligner->error()/_aligner->inliers() << endl;
       // cerr << "initialGuess: " << t2v(guess).transpose() << endl;

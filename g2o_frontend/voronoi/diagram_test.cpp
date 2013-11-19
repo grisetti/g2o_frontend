@@ -20,18 +20,18 @@ cv::Mat eigen2cv(cv::Mat &out, const MatrixXf* in)
 }
 
 
-//void mouseEvent(int evt, int x, int y, int flags, void *param)
-//{
-//    if(evt == CV_EVENT_LBUTTONDOWN)
-//    {
-//        vd->titSeeker(Vector2i(x, y));
-//        vd->spikeFinder();
-//        vd->savePGM("tit.pgm", *(vd->_tit));
-//        cv::Mat im2 = cv::imread("tit.pgm", CV_LOAD_IMAGE_UNCHANGED);
-//        cv::imshow("tit", im2);
-//        im2.release();
-//    }
-//}
+void mouseEvent(int evt, int x, int y, int flags, void *param)
+{
+    if(evt == CV_EVENT_LBUTTONDOWN)
+    {
+        vd->titSeeker(Vector2i(x, y));
+        vd->spikeFinder();
+        vd->savePGM("tit.pgm", *(vd->_tit));
+        cv::Mat im2 = cv::imread("tit.pgm", CV_LOAD_IMAGE_UNCHANGED);
+        cv::imshow("tit", im2);
+        im2.release();
+    }
+}
 
 
 int main(int argc, char** argv)
@@ -50,8 +50,8 @@ int main(int argc, char** argv)
         exit(-1);
     }
 
-    int res = 2500; // res = 2500 for MIT dataset
-//    int res = 100; // res = 100 for DIS basement
+//    int res = 2500; // res = 2500 for MIT dataset
+    int res = 100; // res = 100 for DIS basement
     int dt = 256;
     float dr = 0.125;
     int max = 20;
@@ -60,11 +60,9 @@ int main(int argc, char** argv)
 
     double a = vd->get_time();
     vd->loadPGM();
-//    vd->newLoad();
     double b = vd->get_time();
     cout << "IMAGE LOADED: " << b-a << endl;
     vd->queueFiller();
-//    vd->newQueueFiller();
     double c = vd->get_time();
     cout << "FILLING QUEUE: " << c-b << endl;
     vd->distmap();
@@ -83,12 +81,14 @@ int main(int argc, char** argv)
     vd->savePGM("eroded.pgm", vd->_drawableEroded);
 
     vd->fillLookUpTable(dt, dr, max);
-//    cout << "PRE PROXY" << endl;
+
+//    double prepro = vd->get_time();
 //    vd->proxySetter();
-//    cout << "POST PROXY" << endl;
+//    double popro = vd->get_time();
+//    cout << "Proxy TIME: " << popro-prepro << endl;
 
     cv::namedWindow("MyWindow", CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
-//    cv::setMouseCallback("MyWindow", mouseEvent, 0);
+    cv::setMouseCallback("MyWindow", mouseEvent, 0);
     cv::namedWindow("tit", CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
 
     //load and display an image
