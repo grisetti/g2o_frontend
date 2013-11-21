@@ -20,23 +20,21 @@ namespace pwn_tracker {
   using namespace boss_map;
   using namespace pwn_tracker;
 
+
   struct PwnCloserRelation: public PwnTrackerRelation {
     PwnCloserRelation(MapManager* manager=0, int id=-1, IdContext* context = 0);
     virtual void serialize(ObjectData& data, IdContext& context);
     virtual void deserialize(ObjectData& data, IdContext& context);
+
+    // status
     bool accepted;
-    int cumInlier;
-    int cumOutlierTimes;
-    int timesChecked;
+    int consensusCumInlier;
+    int consensusCumOutlierTimes;
+    int consensusTimeChecked;
+
+    // matching result parameters
     int reprojectionInliers;
     int reprojectionOutliers;
-  };
-
-  struct MatchingResult{
-    MatchingResult();
-    PwnTrackerFrame* from;
-    PwnTrackerFrame* to;
-    PwnCloserRelation* relation;
     float normalDifference;
     float depthDifference;
     float reprojectionDistance;
@@ -44,31 +42,10 @@ namespace pwn_tracker {
     int outliers;
     int inliers;
     cv::Mat  diffRegistered;
-    cv::Mat  normalsRegistered;
   };
-
-  // struct RelationValidator{
-  //   std::set<PwnTrackerFrame*> referenceSet;
-  //   std::set<PwnTrackerFrame*> currentSet;
-  //   std::set<PwnTrackerRelation*> relations;
-  //   PwnTrackerFrame* currentFrame;
-  //   std::vector<Eigen::Isometry3d, Eigen::allocator<Isometry3d> > transforms;
-  //   void saveTransforms();
-  //   void restoreTransforms();
-  //   void validateRelation(PwnTrackerFrameRelation*);
-  // }
 
   class PwnCloser{
   public:
-
-    class AcceptanceCriterion{
-    public:
-      AcceptanceCriterion(PwnCloser* closer_) {_closer = closer_;}
-      inline PwnCloser* closer() {return  _closer;}
-      virtual bool accept(const MatchingResult& result);
-    protected:
-      PwnCloser* _closer;
-    };
 
     PwnCloser(pwn::Aligner* aligner_, 
 	      pwn::DepthImageConverter* converter_,
@@ -90,12 +67,10 @@ namespace pwn_tracker {
     void addRelation(PwnTrackerRelation* r);
     void process();
     void processPartition(std::set<MapNode*> & otherPartition, MapNode* current_);
-    bool matchFrames(MatchingResult& result,
-		     PwnTrackerFrame* from, PwnTrackerFrame* to, 
-		     pwn::Frame* fromCloud, pwn::Frame* toCloud,
-		     const Eigen::Isometry3d& initialGuess);
-    std::vector<MatchingResult>& results() {return _results;}
-    void scoreCandidate(MatchingResult& candidate);
+    PwnCloserRelation* matchFrames(PwnTrackerFrame* from, PwnTrackerFrame* to, 
+				    pwn::Frame* fromCloud, pwn::Frame* toCloud,
+				    const Eigen::Isometry3d& initialGuess);
+    std::list<PwnCloserRelation*>& results() {return _results;}
     std::vector<PwnTrackerRelation*> _trackerRelations;
     std::map<int, PwnTrackerFrame*> _trackerFrames;
 
@@ -104,11 +79,13 @@ namespace pwn_tracker {
     void updateCache();
     static float compareNormals(cv::Mat& m1, cv::Mat& m2);
     static float compareDepths(cv::Mat& m1, cv::Mat& m2);
-    void validatePartitions(PwnTrackerFrame* currentNode,
-			    int partitionIndex,
-			    std::set<MapNode*>& other, 
+    void validatePartitions(std::set<MapNode*>& other, 
 			    std::set<MapNode*>& current);
-  
+
+    float _consensusInlierTranslationalThreshold;
+    float _consensusInlierRotationalThreshold;
+    int    _consensusMinTimesCheckedThreshold;
+
     int _scale;
     PwnTrackerFrame* _pendingTrackerFrame, *_lastTrackerFrame;
     boss_map::MapManager* _manager;
@@ -116,12 +93,15 @@ namespace pwn_tracker {
     pwn::Aligner* _aligner;
     PwnCache* _cache;
     PoseAcceptanceCriterion* _criterion;
-    std::vector<MatchingResult> _results;
+    std::list<PwnCloserRelation*> _results;
     float _frameInlierDepthThreshold;
     int _frameMinNonZeroThreshold;
     int _frameMaxOutliersThreshold;
     int _frameMinInliersThreshold;
     int _committedRelations;
+    bool _debug;
+  private:
+    void scoreMatch(PwnCloserRelation* rel);
   };
 }
 

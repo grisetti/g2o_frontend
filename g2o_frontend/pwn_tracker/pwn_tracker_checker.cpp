@@ -31,6 +31,8 @@
 #include "pwn_tracker.h"
 #include "g2o_frontend/boss_map/boss_map_utils.h"
 #include "cache.h"
+#include "pwn_closer.h"
+#include "pwn_tracker_g2o_wrapper.h"
 
 using namespace std;
 using namespace g2o;
@@ -39,9 +41,8 @@ using namespace boss;
 using namespace boss_map;
 using namespace pwn_tracker;
 
-#include "pwn_closer.h"
 
-
+/*
 struct G2oWrapper{
   G2oWrapper(MapManager* manager){
     this->manager = manager;
@@ -99,9 +100,8 @@ struct G2oWrapper{
   MapG2OReflector * reflector;
   SparseOptimizer * graph;
 };
+*/
 
-
-struct 
 MapManager* load(std::vector<Serializable*>& objects,
 		 Deserializer& des){
   Serializable* o=0;
@@ -210,8 +210,6 @@ int main(int argc, char** argv){
   cerr << "writing out" << endl;
   Serializer ser;
   ser.setFilePath("output.log");
-  cerr << "writing out manager" << endl;
-  ser.writeObject(*manager);
   cerr << "writing out fixed input" << endl;
   for (size_t i = 0; i<objects.size(); i++)
     ser.writeObject(*objects[i]);

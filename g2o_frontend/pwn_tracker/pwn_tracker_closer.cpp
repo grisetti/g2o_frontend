@@ -262,7 +262,6 @@ MapManager* load(std::vector<PwnTrackerFrame*>& trackerFrames,
 
 void save(std::vector<Serializable*>& objects,
 	  MapManager* manager,
-	  std::vector<MatchingCandidate>& candidates,
 	  Serializer& ser){
   for (size_t i = 0; i<objects.size(); i++)
     ser.writeObject(*objects[i]);
