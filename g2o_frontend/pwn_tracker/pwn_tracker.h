@@ -24,6 +24,7 @@ using namespace pwn;
 
 
   struct PwnTrackerFrame: public boss_map::MapNode {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     PwnTrackerFrame (MapManager* manager=0, int id=-1, IdContext* context = 0);
     //! boss serialization
     virtual void serialize(ObjectData& data, IdContext& context);

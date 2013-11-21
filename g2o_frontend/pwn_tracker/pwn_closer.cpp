@@ -5,6 +5,9 @@ namespace pwn_tracker {
     PwnTrackerRelation(manager, id, context){
     reprojectionInliers = 0;
     reprojectionOutliers = 0;
+    cumInlier=0;
+    cumOutlierTimes=0;
+    timesChecked=0;
     accepted = false;
   }
 
@@ -20,6 +23,12 @@ namespace pwn_tracker {
     reprojectionOutliers = data.getInt("reprojectionOutliers");
   }
 
+  MatchingResult::MatchingResult(){
+    from = 0;
+    to = 0;
+    relation = 0;
+  }
+
 
   PwnCloser::PwnCloser(pwn::Aligner* aligner_, 
 		       pwn::DepthImageConverter* converter_,
@@ -29,8 +38,12 @@ namespace pwn_tracker {
     _manager = manager_;
     _scale = 4;
     _cache = new PwnCache(_converter, _scale, 100);
+    _pendingTrackerFrame = 0;
     _lastTrackerFrame = 0;
-    _inlierDepthThreshold = 50;
+    _frameInlierDepthThreshold = 50;
+    _frameMinNonZeroThreshold = 3000;
+    _frameMaxOutliersThreshold = 100;
+    _frameMinInliersThreshold = 1000;
     _criterion = 0;
   }
 
@@ -54,40 +67,69 @@ namespace pwn_tracker {
   void PwnCloser::addFrame(PwnTrackerFrame* f) {
     _trackerFrames.insert(make_pair(f->seq,f));
     _cache->addEntry(f);
-    _lastTrackerFrame = f;
+    _lastTrackerFrame = _pendingTrackerFrame;
+    _pendingTrackerFrame = f;
+    
   }
   
   void PwnCloser::addRelation(PwnTrackerRelation* r){
     _trackerRelations.push_back(r);
-    if(r->nodes()[0]==_lastTrackerFrame || r->nodes()[1] == _lastTrackerFrame)
+    Eigen::Isometry3d dt;
+    bool doSomething = false;
+    if ( r->nodes()[0]==_lastTrackerFrame && r->nodes()[1]==_pendingTrackerFrame) {
+      dt=r->transform();
+      doSomething = true;
+    } 
+    if ( r->nodes()[1]==_lastTrackerFrame && r->nodes()[0]==_pendingTrackerFrame) {
+      dt=r->transform().inverse();
+      doSomething = true;
+    }
+    
+    if (doSomething) {
+      _pendingTrackerFrame->setTransform(_lastTrackerFrame->transform()*dt);
       process();
+    }
+
   }
 
   void PwnCloser::process(){
+    _committedRelations = 0;
     if (! _criterion)
       return;
-    if (!_lastTrackerFrame)
+    if (!_pendingTrackerFrame)
       return;
     std::set<MapNode*> selectedNodes;
-    _criterion->setReferencePose(_lastTrackerFrame->transform());
+    _criterion->setReferencePose(_pendingTrackerFrame->transform());
     selectNodes(selectedNodes,_criterion);
     std::vector< std::set<MapNode*> > partitions;
     MyRelationSelector selector(_manager);
     makePartitions(partitions, selectedNodes, &selector);
-    cerr << "node: " << _lastTrackerFrame->seq 
+    cerr << "node: " << _pendingTrackerFrame->seq 
 	 << ", neighbors: " << selectedNodes.size() 
 	 << "partitions: " << partitions.size() << endl;
+    int currentPartitionIndex = -1;
     for (size_t i=0; i<partitions.size(); i++){
+      if (partitions[i].count(_pendingTrackerFrame)){
+	currentPartitionIndex=i; 
+	break;
+      }
+    }
+    for (size_t i=0; i<partitions.size(); i++){
+      if (i==currentPartitionIndex)
+	continue;
       cerr << "  " << i << "(" << partitions[i].size() << ")" << endl;
-      processPartition(partitions[i], _lastTrackerFrame);
+      processPartition(partitions[i], _pendingTrackerFrame);
+      validatePartitions(_pendingTrackerFrame, i, partitions[i],partitions[currentPartitionIndex]);
     }
   }
   
 
-  void PwnCloser::processPartition(std::set<MapNode*> nodes, MapNode* current_){
+  void extractCommonEdges(){
+  }
+
+  void PwnCloser::processPartition(std::set<MapNode*>& otherPartition, MapNode* current_){
     PwnTrackerFrame* current = dynamic_cast<PwnTrackerFrame*>(current_);
-    
-    if (nodes.count(current)>0)
+    if (otherPartition.count(current)>0)
       return;
     cv::Mat currentNormalThumbnail;
     ImageBLOB* currentNormalThumbnailBLOB = current->normalThumbnail.get();
@@ -106,7 +148,7 @@ namespace pwn_tracker {
     pwn::Frame* f=_cache->get(current);
     _cache->lock(current);
     cerr << "FRAME: " << current->seq << endl; 
-    for (std::set <MapNode*>::iterator it=nodes.begin(); it!=nodes.end(); it++){
+    for (std::set <MapNode*>::iterator it=otherPartition.begin(); it!=otherPartition.end(); it++){
       PwnTrackerFrame* other = dynamic_cast<PwnTrackerFrame*>(*it);
       if (other==current)
 	continue;
@@ -132,9 +174,11 @@ namespace pwn_tracker {
 	Eigen::Isometry3d ig=iT*other->transform();
 	MatchingResult result;
 	bool framesMatched = matchFrames(result, current, other, f, f2, ig);
-	cerr << "  framesMatched: " << framesMatched << " dc:"  << dc << " nc:" << nc << endl; 
-	if (framesMatched)
+	cerr << "  framesMatched: " << framesMatched << " dc:"  << dc << " nc:" << nc << endl;
+	if (framesMatched) {
 	  _results.push_back(result);
+	  _manager->addRelation(result.relation);
+      	}
       }
       delete otherDepthThumbnailBLOB;
       delete otherNormalThumbnailBLOB;
@@ -146,6 +190,172 @@ namespace pwn_tracker {
     delete currentDepthThumbnailBLOB;
     delete currentNormalThumbnailBLOB;
   }
+
+
+  void scoreRelation(float* translationalErrors,
+		float* rotationalErrors ,
+		std::vector<PwnCloserRelation*>& relations, 
+		PwnTrackerRelation* r, 
+		std::set<MapNode*>& current){
+    Eigen::Isometry3d tc, to, tr;
+    if (current.count(r->nodes()[0])) {
+      tc=r->nodes()[0]->transform();
+      to=r->nodes()[1]->transform();
+      tr=r->transform(); 
+    }
+    else if (current.count(r->nodes()[1])) {
+      to=r->nodes()[0]->transform();
+      tc=r->nodes()[1]->transform();
+      tr=r->transform().inverse();
+    } else {
+	throw std::runtime_error("node in current partition missing");
+    }
+ 
+
+    Eigen::Isometry3d tcInv = tc.inverse();
+    Eigen::Isometry3d tfix = to*tr*tcInv;
+    for (size_t i = 0; i<relations.size(); i++){
+      PwnCloserRelation* r=relations[i];
+      PwnTrackerFrame* f0=dynamic_cast<PwnTrackerFrame*>(r->nodes()[0]);
+      PwnTrackerFrame* f1=dynamic_cast<PwnTrackerFrame*>(r->nodes()[1]);
+      Eigen::Isometry3d tc, to, tr;
+      if (current.count(f0)) {
+	tc=f0->transform();
+	to=f1->transform();
+	tr=r->transform(); 
+      } else if (current.count(f1)) {
+	tc=f1->transform();
+	to=f0->transform();
+	tr=r->transform().inverse();
+      } else{
+ 	throw std::runtime_error("node in current partition missing");
+      }
+      // compute the position of the node in current
+      Eigen::Isometry3d tcp=tfix*tc;
+      // compute the predicted position of the node
+      Eigen::Isometry3d trp=to.inverse()*tcp;
+      
+      // compute the error
+      Eigen::Isometry3d te=tr.inverse()*trp;
+      
+      // extract rotational and translational part
+      float transErr=te.translation().squaredNorm();
+      Eigen::AngleAxisd aa(te.linear());
+      float rotErr=aa.angle();
+      translationalErrors[i]=transErr;
+      rotationalErrors[i]=rotErr;
+    }
+  }
+
+
+  void PwnCloser::validatePartitions(PwnTrackerFrame* currentNode,
+				     int partitionIndex,
+				     std::set<MapNode*>& other, 
+				     std::set<MapNode*>& current) {
+    // scan for the pwn closure relations connecting a node in current and a node in others
+    std::vector<PwnCloserRelation*> rels;
+    for (std::set<MapNode*>::iterator it=other.begin(); it!=other.end(); it++){
+      PwnTrackerFrame* n=dynamic_cast<PwnTrackerFrame*>(*it);
+      if (!n)
+	continue;
+      std::set<MapNodeRelation*>& nrel=_manager->nodeRelations(n);
+      for (std::set<MapNodeRelation*>::iterator rit= nrel.begin(); rit!=nrel.end(); rit++){
+	PwnCloserRelation* r=dynamic_cast<PwnCloserRelation*>(*rit);
+	if (! r)
+	  continue;
+	for (size_t i = 0; i<r->nodes().size(); i++){
+	  if (current.count(r->nodes()[i])){
+	    rels.push_back(r);
+	    break;
+	  }
+	}
+      }
+    }
+    if (rels.size()){
+      cerr << "Checking " << rels.size() << " relations" << endl;
+      cerr << "current: ";
+      for (std::set<MapNode*>::iterator it=current.begin(); it!=current.end(); it++){
+	PwnTrackerFrame* n=(PwnTrackerFrame*)(*it);
+	cerr << n->seq << " ";
+      }
+      cerr<< endl;
+      cerr << "other: ";
+      for (std::set<MapNode*>::iterator it=other.begin(); it!=other.end(); it++){
+	PwnTrackerFrame* n=(PwnTrackerFrame*)(*it);
+	cerr << n->seq << " ";
+      }
+      cerr<< endl;
+
+      Eigen::MatrixXf translationalErrors(rels.size(), rels.size());
+      Eigen::MatrixXf rotationalErrors(rels.size(), rels.size());
+
+      for (size_t i=0; i<rels.size(); i++){
+      	scoreRelation(translationalErrors.col(i).data(),
+		      rotationalErrors.col(i).data() ,
+		      rels, 
+		      rels[i], 
+		      current);
+	rels[i]->timesChecked++;
+      }
+          
+      // now get the matrix of consensus.
+      // for each relation, count its consensus, add it to all inliers
+      std::vector<bool> relInliers(rels.size());
+      //for (size_t i=0; i<rels.size(); i++){
+      // 	rels[i]->outlierCount=0;
+      // 	rels[i]->inlierCount=0;
+      // }
+      for (size_t i=0; i<rels.size(); i++){
+	PwnCloserRelation* rOut=rels[i];
+	int inliersCount=0;
+	for (int j=0; j<rels.size(); j++){
+	  float te=translationalErrors(j,i);
+	  float re=fabs(rotationalErrors(j,i));
+	  bool isIn=(te<0.25) && (re<15*M_PI/180);
+	  relInliers[j]=isIn;
+	  inliersCount+=isIn;
+	}
+	if (! inliersCount ) {
+	  cerr << "te: " << endl;
+	  cerr << translationalErrors << endl;
+	  cerr << "re: " << endl;
+	  cerr << rotationalErrors << endl;
+	  throw std::runtime_error("no inliers");
+        }
+	for (int j=0; j<rels.size(); j++){
+	  if (relInliers[j]){
+	    rels[j]->cumInlier+=inliersCount;
+	  } else
+	    rels[j]->cumOutlierTimes+=1;
+	}
+      }
+
+      
+
+      for (size_t i=0; i<rels.size(); i++){
+	PwnCloserRelation* r=rels[i];
+	PwnTrackerFrame* n1=(PwnTrackerFrame*)(r->nodes()[0]);
+	PwnTrackerFrame* n2=(PwnTrackerFrame*)(r->nodes()[1]);
+	cerr << "r" << r << "(" 
+	     << n1->seq << "," << n2->seq << "): nChecks= " << r->timesChecked << " inliers="
+	     << r->cumInlier << " outliers=" << r->cumOutlierTimes;
+	if(r->timesChecked<5) {
+	  cerr << "skip" << endl;
+	  continue;
+	} 
+	if (r->cumInlier>r->cumOutlierTimes){
+	  r->accepted = true;
+	  cerr << "accept" << endl;
+	  _committedRelations++;
+	} else {
+	  _manager->removeRelation(r);
+	  cerr << "delete" << endl;
+	}
+      }
+      cerr << "done" << endl;
+    }
+  }
+
 
 
   bool PwnCloser::matchFrames(MatchingResult& result,
@@ -205,6 +415,13 @@ namespace pwn_tracker {
     rel->setFrom(from);
     result.relation = rel;
     scoreCandidate(result);
+
+    if ((result.nonZeros<_frameMinNonZeroThreshold) || 
+	(result.outliers>_frameMaxOutliersThreshold) || 
+	(result.inliers<_frameMinInliersThreshold)) {
+      delete rel;
+      return false;
+    }
     return true;
   }
 
@@ -257,7 +474,7 @@ namespace pwn_tracker {
     for (int i = 0; i<diff.rows; i++)
       for (int j = 0; j<diff.cols; j++){
 	float d = diff.at<float>(i,j);
-	if (mask.at<float>(i,j) && d < _inlierDepthThreshold)
+	if (mask.at<float>(i,j) && d < _frameInlierDepthThreshold)
 	  inliers ++;
 	sum +=d;
       }

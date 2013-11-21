@@ -25,11 +25,15 @@ namespace pwn_tracker {
     virtual void serialize(ObjectData& data, IdContext& context);
     virtual void deserialize(ObjectData& data, IdContext& context);
     bool accepted;
+    int cumInlier;
+    int cumOutlierTimes;
+    int timesChecked;
     int reprojectionInliers;
     int reprojectionOutliers;
   };
 
   struct MatchingResult{
+    MatchingResult();
     PwnTrackerFrame* from;
     PwnTrackerFrame* to;
     PwnCloserRelation* relation;
@@ -42,6 +46,17 @@ namespace pwn_tracker {
     cv::Mat  diffRegistered;
     cv::Mat  normalsRegistered;
   };
+
+  // struct RelationValidator{
+  //   std::set<PwnTrackerFrame*> referenceSet;
+  //   std::set<PwnTrackerFrame*> currentSet;
+  //   std::set<PwnTrackerRelation*> relations;
+  //   PwnTrackerFrame* currentFrame;
+  //   std::vector<Eigen::Isometry3d, Eigen::allocator<Isometry3d> > transforms;
+  //   void saveTransforms();
+  //   void restoreTransforms();
+  //   void validateRelation(PwnTrackerFrameRelation*);
+  // }
 
   class PwnCloser{
   public:
@@ -74,7 +89,7 @@ namespace pwn_tracker {
     void addFrame(PwnTrackerFrame* f);
     void addRelation(PwnTrackerRelation* r);
     void process();
-    void processPartition(std::set<MapNode*> nodes, MapNode* current_);
+    void processPartition(std::set<MapNode*> & otherPartition, MapNode* current_);
     bool matchFrames(MatchingResult& result,
 		     PwnTrackerFrame* from, PwnTrackerFrame* to, 
 		     pwn::Frame* fromCloud, pwn::Frame* toCloud,
@@ -83,20 +98,30 @@ namespace pwn_tracker {
     void scoreCandidate(MatchingResult& candidate);
     std::vector<PwnTrackerRelation*> _trackerRelations;
     std::map<int, PwnTrackerFrame*> _trackerFrames;
-    
+
+    int committedRelations() const {return _committedRelations;}
   protected:
     void updateCache();
     static float compareNormals(cv::Mat& m1, cv::Mat& m2);
-    static float compareDepths(cv::Mat& m1, cv::Mat& m2);  
+    static float compareDepths(cv::Mat& m1, cv::Mat& m2);
+    void validatePartitions(PwnTrackerFrame* currentNode,
+			    int partitionIndex,
+			    std::set<MapNode*>& other, 
+			    std::set<MapNode*>& current);
+  
     int _scale;
-    PwnTrackerFrame* _lastTrackerFrame;
+    PwnTrackerFrame* _pendingTrackerFrame, *_lastTrackerFrame;
     boss_map::MapManager* _manager;
     pwn::DepthImageConverter* _converter;
     pwn::Aligner* _aligner;
     PwnCache* _cache;
     PoseAcceptanceCriterion* _criterion;
     std::vector<MatchingResult> _results;
-    int _inlierDepthThreshold;
+    float _frameInlierDepthThreshold;
+    int _frameMinNonZeroThreshold;
+    int _frameMaxOutliersThreshold;
+    int _frameMinInliersThreshold;
+    int _committedRelations;
   };
 }
 

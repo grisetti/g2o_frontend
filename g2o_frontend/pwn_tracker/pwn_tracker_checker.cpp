@@ -53,9 +53,23 @@ struct G2oWrapper{
 
   void optimize(){
     cerr << "optimizing" << endl;
+    // scan for all edges that are of type PwnTrackerRelation that are not active and remove them from the optimization
+    OptimizableGraph::EdgeSet eset;
+    cerr << "total number of relations: " << manager->relations().size() << endl;
+    for (std::set<MapNodeRelation*>::iterator it=manager->relations().begin(); it!=manager->relations().end(); it++){
+      g2o::EdgeSE3* e=reflector->relation(*it);
+      if (!e)
+	continue;
+      PwnCloserRelation* rel=dynamic_cast<PwnCloserRelation*>(*it);
+      if (! rel || rel && rel->accepted){
+	  eset.insert(e);
+      } 
+    }
+    cerr << "active ones: : " << eset.size() << endl;
     OptimizableGraph::Vertex* gauge = graph->findGauge();
     gauge->setFixed(true);
-    graph->initializeOptimization();
+    graph->initializeOptimization(eset);
+    
     graph->setVerbose(true);
     graph->optimize(10);
     cerr << "copying estimate" << endl;
@@ -70,7 +84,7 @@ struct G2oWrapper{
     SlamLinearSolver* linearSolver = new SlamLinearSolver();
     linearSolver->setBlockOrdering(false);
     SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
-    OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
+    OptimizationAlgorithmLevenberg* solverGauss   = new OptimizationAlgorithmLevenberg(blockSolver);
     SparseOptimizer * graph = new SparseOptimizer();
     graph->setAlgorithm(solverGauss);
     return graph;
@@ -86,6 +100,8 @@ struct G2oWrapper{
   SparseOptimizer * graph;
 };
 
+
+struct 
 MapManager* load(std::vector<Serializable*>& objects,
 		 Deserializer& des){
   Serializable* o=0;
@@ -131,8 +147,8 @@ int main(int argc, char** argv){
   
   // install a closure criterion to select nodes in the clser
   DistancePoseAcceptanceCriterion criterion(manager);
-  criterion.setRotationalDistance(M_PI/8);
-  criterion.setTranslationalDistance(1.);
+  criterion.setRotationalDistance(M_PI/4);
+  criterion.setTranslationalDistance(1);
   closer->setCriterion(&criterion);
 
 
@@ -140,7 +156,6 @@ int main(int argc, char** argv){
   boss::Serializable* o=0;
   size_t lastAddedResult = 0;
   int count=0;
-  int newRelations = 0;
   while( (o=des.readObject()) ){
     objects.push_back(o);
     PwnTrackerFrame* f = dynamic_cast<PwnTrackerFrame*>(o);
@@ -152,25 +167,26 @@ int main(int argc, char** argv){
     if (r) {
       closer->addRelation(r);
     }
-    for (size_t k = lastAddedResult; k<closer->results().size(); k++){
-      MatchingResult& result = closer->results()[k];
-      if (result.nonZeros< 3000 || result.outliers>100 || result.inliers<1000)
-	continue;
-      // char fname[1024];
-      // sprintf(fname, "match-%05d-%05d-%06d-%06d.pgm",result.from->seq, result.to->seq, result.inliers, result.outliers);
-      // cerr << "k: " << k <<  " [" << fname << "]" <<  endl;
-      // cv::Mat m=result.diffRegistered;
-      // cv::imwrite(fname, m);
-      manager->addRelation(result.relation);
-      newRelations ++;
-    }
+    int committedRelations = closer->committedRelations();
+    // for (size_t k = lastAddedResult; k<closer->results().size(); k++){
+    //   MatchingResult& result = closer->results()[k];
+    //   //if (result.relation->accepted)
+    // 	newRelations ++;
+    //   // if (result.nonZeros< 3000 || result.outliers>100 || result.inliers<1000)
+    //   //  	continue;
+    //   // char fname[1024];
+    //   // sprintf(fname, "match-%05d-%05d-%06d-%06d.pgm",result.from->seq, result.to->seq, result.inliers, result.outliers);
+    //   // cerr << "k: " << k <<  " [" << fname << "]" <<  endl;
+    //   // cv::Mat m=result.diffRegistered;
+    //   // cv::imwrite(fname, m);
+    //   // manager->addRelation(result.relation);
+    // }
     lastAddedResult = closer->results().size();
-    if (newRelations ){
-      wrapper->optimize();
+    if (committedRelations ){
       char fname[100];
+      wrapper->optimize();
       sprintf(fname, "out-%05d.g2o", count);
       wrapper->save(fname);
-      newRelations = 0;
     }
   }
   
