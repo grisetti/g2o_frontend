@@ -83,4 +83,32 @@ namespace boss_map {
     _graph->removeEdge(gr);
   }
 
+  MapNode* MapG2OReflector::node(g2o::VertexSE3* n){
+    std::map<g2o::VertexSE3*, MapNode*>::iterator it=_ng2m.find(n);
+    if (it==_ng2m.end())
+      return 0;
+    return it->second;
+  }
+  
+  MapNodeRelation* MapG2OReflector::relation(g2o::EdgeSE3* r){
+    std::map<g2o::EdgeSE3*, MapNodeRelation*>::iterator it=_rg2m.find(r);
+    if (it==_rg2m.end())
+      return 0;
+    return it->second;
+  }
+  
+  g2o::VertexSE3* MapG2OReflector::node(MapNode* n){
+    std::map<MapNode*, g2o::VertexSE3*>::iterator it=_nm2g.find(n);
+    if (it==_nm2g.end())
+      return 0;
+    return it->second;
+  }
+  
+  g2o::EdgeSE3* MapG2OReflector::relation(MapNodeRelation* r){
+    std::map<MapNodeRelation*, g2o::EdgeSE3*>::iterator it=_rm2g.find(r);
+    if (it==_rm2g.end())
+      return 0;
+    return it->second;
+  }
+
 }

@@ -188,7 +188,7 @@ IF(PCL_FOUND)
   add_definitions(${PCL_DEFINITIONS})
 ENDIF(PCL_FOUND)
 
-FIND_PACKAGE( OpenCV 2.4.2 REQUIRED )
+FIND_PACKAGE( OpenCV 2.4.7 REQUIRED )
 
 find_package(OpenNI2)
 

@@ -72,8 +72,13 @@ namespace boss_map {
     }
   }
 
+
+  MapRelationSelector::MapRelationSelector(MapManager* manager_) {_manager=manager_;}
+  MapRelationSelector::~MapRelationSelector() {}
+
+
   void makePartitions(std::vector<std::set<MapNode*> >& partitions,
-		      std::set<MapNode*>& nodes){
+		      std::set<MapNode*>& nodes, MapRelationSelector* relationSelector){
     std::set<MapNode*> openNodes = nodes;
     while(! openNodes.empty()){
       std::queue<MapNode*> queue;
@@ -88,6 +93,8 @@ namespace boss_map {
 	std::set<MapNodeRelation*>& relations=n->manager()->nodeRelations(n);
 	for(std::set<MapNodeRelation*>::iterator it=relations.begin(); it!=relations.end(); it++){
 	  MapNodeRelation* rel=*it;
+	  if (relationSelector && !relationSelector->accept(rel))
+	    continue;
 	  for (size_t i=0; i<rel->nodes().size(); i++){
 	    MapNode* nOther = rel->nodes()[i];
 	    // if the node has already been visited or is not in the set, skip)

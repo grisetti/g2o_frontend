@@ -31,7 +31,7 @@ namespace boss {
 class MessageWriter;
 class ObjectWriter;
 
-class Serializer: public SerializationContext {
+class Serializer: virtual public SerializationContext {
 public:
   Serializer();
   

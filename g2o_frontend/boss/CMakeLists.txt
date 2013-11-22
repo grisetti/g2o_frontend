@@ -2,6 +2,7 @@ ADD_LIBRARY(boss ${G2O_FRONTEND_LIB_TYPE}
   serialization_context.cpp
   serializer.cpp
   deserializer.cpp
+  bidirectional_serializer.cpp
   id_placeholder.cpp
   id_context.cpp
   message_data.cpp
