@@ -32,7 +32,6 @@ class ObjectWriter;
 
   class BidirectionalSerializer: public Serializer, public Deserializer {
   public:
-    BidirectionalSerializer();
   
     /*
      * Set file path for main data file.

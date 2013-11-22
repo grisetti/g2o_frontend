@@ -13,27 +13,29 @@ namespace pwn_tracker {
   class PwnCache;
   class PwnFrameCacheEntry {
   public:
+    friend class PwnCache;
     PwnFrameCacheEntry(PwnCache* cache_, PwnTrackerFrame* frame_);
 
     pwn::Frame* get(size_t access);
 
-    inline bool isLoaded() const {return _instance;}
+    inline bool isLoaded() const {return _frame->cloud;}
 
     bool release();
 
-    inline bool isLocked() { return _instance && _isLocked; }
+    inline bool isLocked() { return _frame->cloud && _numLocks>0; }
 
-    inline void lock() { _isLocked = _instance; }
+    inline int  numLocks() { return _numLocks; }
 
-    inline void unlock() { _isLocked = false; }
+    inline void lock() { _numLocks += ( _frame->cloud ? 1 : 0); }
+
+    inline void unlock() { _numLocks --; }
 
     inline int lastAccess() const {return _lastAccess;}
 
   protected:
-    pwn::Frame* _instance;
     PwnTrackerFrame* _frame;
     PwnCache* _cache;
-    bool _isLocked;
+    int _numLocks;
     size_t _lastAccess;
   };
 
@@ -42,7 +44,9 @@ namespace pwn_tracker {
     friend class PwnFrameCacheEntry;
     PwnCache(DepthImageConverter* converter_, int scale_, int maxActiveEntries);
     
-    bool addEntry(PwnTrackerFrame* frame);
+    void addEntry(PwnTrackerFrame* frame);
+
+    void removeEntry(PwnTrackerFrame* frame);
 
     pwn::Frame* get(PwnTrackerFrame* frame);
 
@@ -63,7 +67,7 @@ namespace pwn_tracker {
 
     
   protected:
-    Frame* makeFrame(PwnTrackerFrame* trackerFrame);
+    Frame* loadFrame(PwnTrackerFrame* trackerFrame);
     std::map<PwnTrackerFrame*, PwnFrameCacheEntry*> _entries;
     std::set<PwnFrameCacheEntry*> _active;
     DepthImageConverter* _converter;
@@ -74,6 +78,23 @@ namespace pwn_tracker {
     size_t _misses;
   };
 
+
+  class PwnCacheHandler: public MapManagerActionHandler {
+  public:
+    PwnCacheHandler(MapManager* _manager, PwnCache* cache);
+    inline PwnCache* cache() {return _cache;}
+    virtual ~PwnCacheHandler();
+    void init();
+
+    virtual void nodeAdded(MapNode* n);
+    virtual void nodeRemoved(MapNode* n);
+    virtual void relationAdded(MapNodeRelation* _r);
+    virtual void relationRemoved(MapNodeRelation* r);
+  protected:
+    PwnCache* _cache;
+  };
+
+  
 }
 
 #endif

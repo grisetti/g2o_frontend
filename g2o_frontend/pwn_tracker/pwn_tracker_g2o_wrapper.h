@@ -9,6 +9,7 @@
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 
+#include "g2o/core/sparse_optimizer.h"
 #include "g2o/types/slam3d/vertex_se3.h"
 #include "g2o/types/slam3d/edge_se3.h"
 #include "g2o_frontend/boss_map/boss_map_g2o_reflector.h"

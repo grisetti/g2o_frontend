@@ -32,6 +32,7 @@ namespace pwn {
     _debug = false;
     _rotationalMinEigenRatio = 50;
     _translationalMinEigenRatio = 50;
+    _debug = false;
   };
 
 
@@ -143,10 +144,12 @@ namespace pwn {
 
     _computeStatistics(_mean, _omega, _translationalEigenRatio, _rotationalEigenRatio);
     if (_rotationalEigenRatio > _rotationalMinEigenRatio || _translationalEigenRatio > _translationalMinEigenRatio) {
-      cerr << endl;
-      cerr << "************** WARNING SOLUTION MIGHT BE INVALID (eigenratio failure) **************" << endl;
-      cerr << "tr: " << _translationalEigenRatio << " rr: " << _rotationalEigenRatio << endl;
-      cerr << "************************************************************************************" << endl;
+      if (_debug) {
+	cerr << endl;
+	cerr << "************** WARNING SOLUTION MIGHT BE INVALID (eigenratio failure) **************" << endl;
+	cerr << "tr: " << _translationalEigenRatio << " rr: " << _rotationalEigenRatio << endl;
+	cerr << "************************************************************************************" << endl;
+      }
     } 
     else {
       // cout << "************** I FOUND SOLUTION VALID SOLUTION   (eigenratio ok) *******************" << endl;

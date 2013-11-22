@@ -22,6 +22,7 @@ using namespace boss_logger;
 using namespace boss_map;
 using namespace pwn;
 
+  class PwnCache;
 
   struct PwnTrackerFrame: public boss_map::MapNode {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -31,7 +32,7 @@ using namespace pwn;
     //! boss deserialization
     virtual void deserialize(ObjectData& data, IdContext& context);
     int seq;
-    pwn::FrameBLOBReference cloud;
+    pwn::Frame* cloud;
     boss_logger::ImageBLOBReference depthImage;
     int imageRows, imageCols;
     boss_logger::ImageBLOBReference normalThumbnail;
@@ -59,7 +60,7 @@ using namespace pwn;
 
 
   struct PwnTracker{
-    PwnTracker(pwn::Aligner* aligner, pwn::DepthImageConverter* converter, boss_map::MapManager* manager);
+    PwnTracker(pwn::Aligner* aligner, pwn::DepthImageConverter* converter, boss_map::MapManager* manager, PwnCache* cache=0);
 
     void makeThumbnails(cv::Mat& depthThumbnail, cv::Mat& normalThumbnail, 
 			Frame* f, int r, int c, 
@@ -101,6 +102,7 @@ using namespace pwn;
     int _numKeyframes;
     float _newFrameInliersFraction;
     MapManager* _manager;
+    PwnCache* _cache;
     int _seq;
   };
 

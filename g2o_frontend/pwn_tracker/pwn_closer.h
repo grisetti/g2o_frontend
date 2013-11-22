@@ -49,7 +49,8 @@ namespace pwn_tracker {
 
     PwnCloser(pwn::Aligner* aligner_, 
 	      pwn::DepthImageConverter* converter_,
-	      MapManager* manager_);
+	      MapManager* manager_,
+	      PwnCache* cache_);
     
     inline pwn::Aligner* aligner() { return _aligner;}
     inline void setAligner(pwn::Aligner* aligner_) { _aligner=aligner_;}
@@ -74,7 +75,7 @@ namespace pwn_tracker {
     std::vector<PwnTrackerRelation*> _trackerRelations;
     std::map<int, PwnTrackerFrame*> _trackerFrames;
 
-    int committedRelations() const {return _committedRelations;}
+    std::list<PwnCloserRelation*>& committedRelations() {return _committedRelations;}
   protected:
     void updateCache();
     static float compareNormals(cv::Mat& m1, cv::Mat& m2);
@@ -98,7 +99,7 @@ namespace pwn_tracker {
     int _frameMinNonZeroThreshold;
     int _frameMaxOutliersThreshold;
     int _frameMinInliersThreshold;
-    int _committedRelations;
+    std::list<PwnCloserRelation*> _committedRelations;
     bool _debug;
   private:
     void scoreMatch(PwnCloserRelation* rel);

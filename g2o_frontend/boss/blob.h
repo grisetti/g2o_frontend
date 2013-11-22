@@ -68,6 +68,7 @@ public:
   
   virtual ~BaseBLOBReference();
 
+  inline BLOB* instance() {return _instance;}
 protected:
   bool load(BLOB& instance);
   
