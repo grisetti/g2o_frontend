@@ -148,7 +148,7 @@ int main (int argc, char** argv) {
       Isometry3f temp;
       isometry3d2f(temp, pwnTrackerFrame->transform());
       temp.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-      viewer->updateCameraPosition(temp, pwnTrackerFrame->sensorOffset);
+      viewer->updateCameraPosition(temp);
       viewer->updateGL();
 
       application.processEvents();

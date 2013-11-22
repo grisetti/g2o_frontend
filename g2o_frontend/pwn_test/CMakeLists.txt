@@ -27,3 +27,7 @@ TARGET_LINK_LIBRARIES(cyilindricalprojector_test pwn2_library ${G2O_STUFF_LIBRAR
 ADD_EXECUTABLE(pwn_fast_normal_computation pwn_fast_normal_computation.cpp)
 SET_TARGET_PROPERTIES(pwn_fast_normal_computation PROPERTIES OUTPUT_NAME pwn_fast_normal_computation)
 TARGET_LINK_LIBRARIES(pwn_fast_normal_computation pwn2_library ${G2O_STUFF_LIBRARY})
+
+ADD_EXECUTABLE(03-align 03-align.cpp)
+SET_TARGET_PROPERTIES(03-align PROPERTIES OUTPUT_NAME 03-align)
+TARGET_LINK_LIBRARIES(03-align pwn2_library ${G2O_STUFF_LIBRARY})
