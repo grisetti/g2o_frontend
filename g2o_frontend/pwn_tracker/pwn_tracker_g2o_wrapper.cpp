@@ -56,16 +56,17 @@ namespace pwn_tracker {
 	eset.insert(e);
       } 
     }
-    cerr << "active ones: : " << eset.size() << endl;
+    //cerr << "active ones: : " << eset.size() << endl;
     OptimizableGraph::Vertex* gauge = graph->findGauge();
     gauge->setFixed(true);
     graph->initializeOptimization(eset);
     
-    graph->setVerbose(true);
+    cerr << "GLOBAL OPT" << endl;
+    graph->setVerbose(false);
     graph->optimize(10);
-    cerr << "copying estimate" << endl;
+    //cerr << "copying estimate" << endl;
     reflector->copyEstimatesFromG2O();
-    cerr << "done" << endl;
+    //cerr << "done" << endl;
   }
 
   SparseOptimizer * G2oWrapper::g2oInit(){

@@ -9,8 +9,6 @@ namespace pwn_tracker {
     consensusCumOutlierTimes = 0;
     consensusTimeChecked = 0;
 
-    reprojectionInliers = 0;
-    reprojectionOutliers = 0;
     normalDifference = 0;
     depthDifference = 0;
     reprojectionDistance = 0;
@@ -21,14 +19,32 @@ namespace pwn_tracker {
 
   void PwnCloserRelation::serialize(ObjectData& data, IdContext& context){
     PwnTrackerRelation::serialize(data,context);
-    data.setInt("reprojectionInliers", reprojectionInliers);
-    data.setInt("reprojectionOutliers", reprojectionOutliers);
+    data.setFloat("normalDifference", normalDifference);
+    data.setFloat("depthDifference", depthDifference);
+    data.setFloat("reprojectionDistance", reprojectionDistance);
+    data.setInt("nonZeros", nonZeros);
+    data.setInt("outliers", outliers);
+    data.setInt("inliers", inliers);
+
+    data.setBool("accepted", accepted);
+    data.setInt("consensusCumInlier", consensusCumInlier);
+    data.setInt("consensusCumOutlierTimes", consensusCumOutlierTimes);
+    data.setInt("consensusTimeChecked", consensusTimeChecked);
   }
 
   void PwnCloserRelation::deserialize(ObjectData& data, IdContext& context){
     PwnTrackerRelation::deserialize(data,context);
-    reprojectionInliers = data.getInt("reprojectionInliers");
-    reprojectionOutliers = data.getInt("reprojectionOutliers");
+    normalDifference = data.getFloat("normalDifference");
+    depthDifference = data.getFloat("depthDifference");
+    reprojectionDistance = data.getFloat("reprojectionDistance");
+    nonZeros = data.getInt("nonZeros");
+    outliers = data.getInt("outliers");
+    inliers  = data.getInt("inliers");
+
+    accepted = data.getBool("accepted");
+    consensusCumInlier=data.getInt("consensusCumInlier");
+    consensusCumOutlierTimes = data.getInt("consensusCumOutlierTimes");
+    consensusTimeChecked = data.getInt("consensusTimeChecked");
   }
 
 
@@ -43,13 +59,14 @@ namespace pwn_tracker {
     _pendingTrackerFrame = 0;
     _lastTrackerFrame = 0;
     _frameInlierDepthThreshold = 50;
-    _frameMinNonZeroThreshold = 3000;
+    _frameMinNonZeroThreshold = 3000;// was 3000
     _frameMaxOutliersThreshold = 100;
-    _frameMinInliersThreshold = 1000;
+    _frameMinInliersThreshold = 1000; // was 1000
     _consensusInlierTranslationalThreshold = 0.5*0.5;
     _consensusInlierRotationalThreshold = 15.0f*M_PI/180.0f;
     _consensusMinTimesCheckedThreshold = 5;
     _debug = false;
+    _currentPartition = 0;
     setScale(4);
   }
 
@@ -99,6 +116,7 @@ namespace pwn_tracker {
 
   void PwnCloser::process(){
     _committedRelations.clear();
+    _candidateRelations.clear();
     if (! _criterion)
       return;
     if (!_pendingTrackerFrame)
@@ -106,30 +124,30 @@ namespace pwn_tracker {
     std::set<MapNode*> selectedNodes;
     _criterion->setReferencePose(_pendingTrackerFrame->transform());
     selectNodes(selectedNodes,_criterion);
-    std::vector< std::set<MapNode*> > partitions;
+    _partitions.clear();
     MyRelationSelector selector(_manager);
-    makePartitions(partitions, selectedNodes, &selector);
+    makePartitions(_partitions, selectedNodes, &selector);
     cerr << "node: " << _pendingTrackerFrame->seq 
 	 << ", neighbors: " << selectedNodes.size() 
-	 << "partitions: " << partitions.size() << endl;
+	 << "partitions: " << _partitions.size() << endl;
 
-    std::set<MapNode*>* currentPartition = 0;
-    for (size_t i=0; i<partitions.size(); i++){
-      if (partitions[i].count(_pendingTrackerFrame)){
-	currentPartition=&(partitions[i]); 
+    _currentPartition = 0;
+    for (size_t i=0; i<_partitions.size(); i++){
+      if (_partitions[i].count(_pendingTrackerFrame)){
+	_currentPartition=&(_partitions[i]); 
 	break;
       }
     }
-    if (! currentPartition) {
+    if (! _currentPartition) {
       throw std::runtime_error("no current partition");
     }
-    for (size_t i=0; i<partitions.size(); i++){
-      std::set<MapNode*>* otherPartition = &partitions[i];
-      if (currentPartition == otherPartition)
+    for (size_t i=0; i<_partitions.size(); i++){
+      std::set<MapNode*>* otherPartition = &(_partitions[i]);
+      if (_currentPartition == otherPartition)
 	continue;
       cerr << "  " << i << "(" << otherPartition->size() << "): ";
       processPartition(*otherPartition, _pendingTrackerFrame);
-      validatePartitions(*otherPartition, *currentPartition);
+      validatePartitions(*otherPartition, *_currentPartition);
     }
   }
   
@@ -183,9 +201,12 @@ namespace pwn_tracker {
 	PwnCloserRelation* rel = matchFrames(current, other, f, f2, ig);
 	//cerr << "  framesMatched: " << rel << " dc:"  << dc << " nc:" << nc << endl;
 	if (rel) {
+	  rel->depthDifference = dc;
+	  rel->normalDifference = nc;
 	  cerr << "o";
 	  _results.push_back(rel);
 	  _manager->addRelation(rel);
+	  _candidateRelations.push_back(rel);
       	} else 
 	  cerr << ".";
       }
@@ -396,6 +417,7 @@ namespace pwn_tracker {
     convertScalar(ig, initialGuess);
     ig.translation().z() = 0;
     _aligner->setInitialGuess(ig);
+    //cerr << "initialGuess: " << t2v(ig).transpose() << endl;
     projector->setCameraMatrix(toCameraMatrix);
     projector->setImageSize(to->imageRows,to->imageCols);
     projector->scale(1./_scale);
@@ -409,6 +431,9 @@ namespace pwn_tracker {
     _aligner->setReferenceFrame(fromCloud);
     _aligner->setCurrentFrame(toCloud);
     _aligner->align();
+    // cerr << "_fromCloud.points():" << fromCloud->points().size() << endl;
+    // cerr << "_toCloud.points():" << toCloud->points().size() << endl;
+    // cerr << "AlInliers: " << _aligner->inliers() << endl;
     Matrix6d omega;
     convertScalar(omega, _aligner->omega());
     rel->setFrom(from);
@@ -475,7 +500,6 @@ namespace pwn_tracker {
     int nonZeros = countNonZero(mask);
     float sum=0;
     int inliers = 0;
-    int outliers = 0;
     for (int i = 0; i<diff.rows; i++)
       for (int j = 0; j<diff.cols; j++){
 	float d = diff.at<float>(i,j);
@@ -483,21 +507,21 @@ namespace pwn_tracker {
 	  inliers ++;
 	sum +=d;
       }
-    int imSize = diff.rows*diff.cols;
+    //int imSize = diff.rows*diff.cols;
     rel->reprojectionDistance = sum/nonZeros;
     rel->nonZeros = nonZeros;
-    if (_debug) 
+    if ( 0 && _debug) 
       rel->diffRegistered = diff.clone();
 
-    //cerr << "  transform            : " << t2v(_aligner->T()).transpose() << endl;
-    //cerr << "  imsize               : " << imSize << endl;
-    //cerr << "  inliers              : " << _aligner->inliers()<< endl;
-    //cerr << "  reprojectionDistance : " << sum/nonZeros << endl;
-    //cerr << "  nonZeros             : " << nonZeros << endl;
     rel->outliers = nonZeros-inliers;
     rel->inliers = inliers;
-    rel->reprojectionInliers=inliers;
-    rel->reprojectionOutliers=outliers;
+    
+    if (_debug) {
+      cerr << "  transform            : " << t2v(rel->transform()).transpose() << endl;
+      cerr << "  inliers              : " << rel->inliers<< endl;
+      cerr << "  reprojectionDistance : " << rel->reprojectionDistance << endl;
+      cerr << "  nonZeros             : " << rel->nonZeros << endl;
+    }
   }
 
   BOSS_REGISTER_CLASS(PwnCloserRelation);

@@ -33,12 +33,10 @@ namespace pwn_tracker {
     int consensusTimeChecked;
 
     // matching result parameters
-    int reprojectionInliers;
-    int reprojectionOutliers;
     float normalDifference;
     float depthDifference;
     float reprojectionDistance;
-    float nonZeros;
+    int nonZeros;
     int outliers;
     int inliers;
     cv::Mat  diffRegistered;
@@ -76,12 +74,19 @@ namespace pwn_tracker {
     std::map<int, PwnTrackerFrame*> _trackerFrames;
 
     std::list<PwnCloserRelation*>& committedRelations() {return _committedRelations;}
+    std::list<PwnCloserRelation*>& candidateRelations() {return _candidateRelations;}
+    std::vector<std::set<MapNode*> >& partitions() {return _partitions;}
+    std::set<MapNode*>* currentPartition() {return _currentPartition;}
+    bool _debug;
   protected:
     void updateCache();
     static float compareNormals(cv::Mat& m1, cv::Mat& m2);
     static float compareDepths(cv::Mat& m1, cv::Mat& m2);
     void validatePartitions(std::set<MapNode*>& other, 
 			    std::set<MapNode*>& current);
+
+    std::vector<std::set<MapNode*> > _partitions;
+    std::set<MapNode*>* _currentPartition;
 
     float _consensusInlierTranslationalThreshold;
     float _consensusInlierRotationalThreshold;
@@ -100,7 +105,7 @@ namespace pwn_tracker {
     int _frameMaxOutliersThreshold;
     int _frameMinInliersThreshold;
     std::list<PwnCloserRelation*> _committedRelations;
-    bool _debug;
+    std::list<PwnCloserRelation*> _candidateRelations;
   private:
     void scoreMatch(PwnCloserRelation* rel);
   };
