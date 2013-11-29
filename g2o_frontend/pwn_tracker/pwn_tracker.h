@@ -5,7 +5,7 @@
 #include "g2o_frontend/boss_logger/bframe.h"
 #include "g2o_frontend/pwn2/frame.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/depthimageconverter.h"
+#include "g2o_frontend/pwn2/depthimageconverterintegralimage.h"
 #include "g2o_frontend/pwn2/aligner.h"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
@@ -22,15 +22,17 @@ using namespace boss_logger;
 using namespace boss_map;
 using namespace pwn;
 
+  class PwnCache;
 
   struct PwnTrackerFrame: public boss_map::MapNode {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     PwnTrackerFrame (MapManager* manager=0, int id=-1, IdContext* context = 0);
     //! boss serialization
     virtual void serialize(ObjectData& data, IdContext& context);
     //! boss deserialization
     virtual void deserialize(ObjectData& data, IdContext& context);
     int seq;
-    pwn::FrameBLOBReference cloud;
+    pwn::Frame* cloud;
     boss_logger::ImageBLOBReference depthImage;
     int imageRows, imageCols;
     boss_logger::ImageBLOBReference normalThumbnail;
@@ -58,7 +60,7 @@ using namespace pwn;
 
 
   struct PwnTracker{
-    PwnTracker(pwn::Aligner* aligner, pwn::DepthImageConverter* converter, boss_map::MapManager* manager);
+    PwnTracker(pwn::Aligner* aligner, pwn::DepthImageConverter* converter, boss_map::MapManager* manager, PwnCache* cache=0);
 
     void makeThumbnails(cv::Mat& depthThumbnail, cv::Mat& normalThumbnail, 
 			Frame* f, int r, int c, 
@@ -100,6 +102,7 @@ using namespace pwn;
     int _numKeyframes;
     float _newFrameInliersFraction;
     MapManager* _manager;
+    PwnCache* _cache;
     int _seq;
   };
 

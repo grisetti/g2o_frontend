@@ -22,6 +22,10 @@ namespace boss_map {
     virtual void nodeRemoved(MapNode* n);
     virtual void relationAdded(MapNodeRelation* _r);
     virtual void relationRemoved(MapNodeRelation* r);
+    MapNode* node(g2o::VertexSE3* n);
+    MapNodeRelation* relation(g2o::EdgeSE3* r);
+    g2o::VertexSE3* node(MapNode* n);
+    g2o::EdgeSE3* relation(MapNodeRelation* r);
   protected:
     g2o::OptimizableGraph* _graph;
     std::map<g2o::VertexSE3*, MapNode*> _ng2m;

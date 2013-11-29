@@ -19,6 +19,8 @@ ADD_LIBRARY(pwn2_library
   correspondencefinder.cpp correspondencefinder.h
   depthimage.cpp depthimage.h
   depthimageconverter.cpp depthimageconverter.h
+  depthimageconverterintegralimage.cpp depthimageconverterintegralimage.h
+  depthimageconvertercrossproduct.cpp depthimageconvertercrossproduct.h
   frame.cpp frame.h
   gaussian3.cpp gaussian3.h
   voxelcalculator.cpp voxelcalculator.h
@@ -31,6 +33,8 @@ ADD_LIBRARY(pwn2_library
   se3_prior.cpp se3_prior.h
   stats.h
   statscalculator.cpp statscalculator.h
+  statscalculatorintegralimage.cpp statscalculatorintegralimage.h
+  statscalculatorcrossproduct.cpp statscalculatorcrossproduct.h
 )
 
 TARGET_LINK_LIBRARIES(pwn2_library boss ${OpenCV_LIBS})

@@ -5,28 +5,27 @@ namespace pwn_tracker{
   PwnFrameCacheEntry::PwnFrameCacheEntry(PwnCache* cache_, PwnTrackerFrame* frame_){
     _frame = frame_;
     _cache = cache_;
-    _instance = 0;
-    _isLocked = 0;
+    _numLocks = 0;
     _lastAccess = 0;
   }
 
 
   bool PwnFrameCacheEntry::release() {
-    if (_instance && ! _isLocked) {
-      delete _instance; 
-      _instance = 0; 
+    if (_frame->cloud && _numLocks>=0) {
+      delete _frame->cloud; 
+      _frame->cloud = 0;  
       return true;
     } 
     return false;
   }
 
   pwn::Frame* PwnFrameCacheEntry::get(size_t access) {
-    if (_instance)
-      return _instance;
-    _instance = _cache->makeFrame(_frame);
-    //cerr << "loading frame: " << _instance  << endl;
+    if (_frame->cloud)
+      return _frame->cloud;
+    _frame->cloud = _cache->loadFrame(_frame);
+    //cerr << "loading frame: " << _frame->cloud  << endl;
     _lastAccess = access;
-    return _instance;
+    return _frame->cloud;
   }
 
   PwnCache::PwnCache(DepthImageConverter* converter_, int scale_, int maxActiveEntries){
@@ -38,21 +37,43 @@ namespace pwn_tracker{
     _maxElements = maxActiveEntries;
   }
 
-  bool PwnCache::addEntry(PwnTrackerFrame* frame){
-    //cerr << "adding entry for frame" << frame << endl;
+  void PwnCache::addEntry(PwnTrackerFrame* frame){
     if (_entries.count(frame))
-      return false;
+	throw std::runtime_error("entry already in cache, aborting.");
     PwnFrameCacheEntry* entry = new PwnFrameCacheEntry(this, frame);
     _entries.insert(make_pair(frame, entry));
-    //cerr << "DONE" << frame << endl;
-    return true;
+    if (frame->cloud){
+      if (_active.size()>_maxElements){
+	if (! makeRoom() )
+	  throw std::runtime_error("no room in cache, no disposable element. Aborting");
+      }
+      entry->_lastAccess = _lastAccess++;
+      _active.insert(entry);
+    }
   }
+  
+
+  void PwnCache::removeEntry(PwnTrackerFrame* frame){
+    std::map<PwnTrackerFrame*, PwnFrameCacheEntry*>::iterator it = _entries.find(frame);
+    if (it==_entries.end()) {
+	throw std::runtime_error("no entry in cache. Aborting");
+    }
+    if(it->second->isLocked())
+	throw std::runtime_error("no entry in cache. illegal delete");
+    _entries.erase(it);
+    PwnFrameCacheEntry* e = it->second;
+    _active.erase(it->second);
+    delete e;
+  }
+
 
   pwn::Frame* PwnCache::get(PwnTrackerFrame* frame) {
     // seek if you have it in the entries;
     std::map<PwnTrackerFrame*, PwnFrameCacheEntry*>::iterator it = _entries.find(frame);
-    if (it==_entries.end())
-      return 0;
+    if (it==_entries.end()) {
+	throw std::runtime_error("no entry in cache. Aborting");
+	return 0;
+    }
     PwnFrameCacheEntry* entry = it->second;
     if (entry->isLoaded()){
       _hits++;
@@ -105,9 +126,9 @@ namespace pwn_tracker{
     it->second->unlock();
   }
 
-  Frame* PwnCache::makeFrame(PwnTrackerFrame* trackerFrame){
+  Frame* PwnCache::loadFrame(PwnTrackerFrame* trackerFrame){
     boss_logger::ImageBLOB* depthBLOB = trackerFrame->depthImage.get();
-    PinholePointProjector* projector = (PinholePointProjector*)_converter->_projector;
+    PinholePointProjector* projector = (PinholePointProjector*)_converter->projector();
     projector->setImageSize(trackerFrame->imageRows, trackerFrame->imageCols);
     pwn::DepthImage depth;
     pwn::Frame* cloud=new pwn::Frame;
@@ -121,9 +142,37 @@ namespace pwn_tracker{
     DepthImage::scale(scaledDepth, depth, _scale);
     projector->scale (1./_scale);
     _converter->compute(*cloud, scaledDepth, offset);
-    delete depthBLOB;
+    trackerFrame->depthImage.set(0);
+    //delete depthBLOB;
     return cloud;
   }
+
+  PwnCacheHandler::PwnCacheHandler(MapManager* manager_, PwnCache* cache_):
+    MapManagerActionHandler(manager_){
+    _cache = cache_;
+  }
+
+  PwnCacheHandler::~PwnCacheHandler() {}
+  void PwnCacheHandler::init(){
+    for (std::set<MapNode*>::iterator it = _manager->nodes().begin(); it!=_manager->nodes().end(); it++){
+      nodeAdded(*it);
+    }
+  }
+
+  void PwnCacheHandler::nodeAdded(MapNode* n) {
+    PwnTrackerFrame* f = dynamic_cast<PwnTrackerFrame*>(n);
+    if (f)
+      _cache->addEntry(f);
+  }
+
+  void PwnCacheHandler::nodeRemoved(MapNode* n) {
+    PwnTrackerFrame* f = dynamic_cast<PwnTrackerFrame*>(n);
+    if (f)
+      _cache->removeEntry(f);
+  }
+
+  void PwnCacheHandler::relationAdded(MapNodeRelation* ) {}
+  void PwnCacheHandler::relationRemoved(MapNodeRelation* ) {}
 
 } // end namespace
 

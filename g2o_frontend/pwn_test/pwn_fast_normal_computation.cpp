@@ -5,10 +5,12 @@
 
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/pointprojector.h"
-#include "g2o_frontend/pwn2/statscalculator.h"
+#include "g2o_frontend/pwn2/statscalculatorcrossproduct.h"
+#include "g2o_frontend/pwn2/statscalculatorintegralimage.h"
 #include "g2o_frontend/pwn2/informationmatrixcalculator.h"
 #include "g2o_frontend/pwn2/frame.h"
-#include "g2o_frontend/pwn2/depthimageconverter.h"
+#include "g2o_frontend/pwn2/depthimageconvertercrossproduct.h"
+#include "g2o_frontend/pwn2/depthimageconverterintegralimage.h"
 
 using namespace std;
 using namespace Eigen;
@@ -58,17 +60,17 @@ int main(int argc, char **argv) {
   projector.setMinDistance(minDistance);
   projector.scale(1.0f/(float)di_scale);
   
-  StatsCalculator statsCalculator;
+  StatsCalculatorIntegralImage statsCalculatorIntegralImage;
   int minImageRadius = 10;
   int maxImageRadius = 30;
   int minPoints = 50;
   float worldRadius = 0.1f;
   float curvatureThreshold = 1.0f;
-  statsCalculator.setWorldRadius(worldRadius);
-  statsCalculator.setMinImageRadius(minImageRadius);
-  statsCalculator.setMaxImageRadius(maxImageRadius);
-  statsCalculator.setMinPoints(minPoints);
-  statsCalculator.setCurvatureThreshold(curvatureThreshold);
+  statsCalculatorIntegralImage.setWorldRadius(worldRadius);
+  statsCalculatorIntegralImage.setMinImageRadius(minImageRadius);
+  statsCalculatorIntegralImage.setMaxImageRadius(maxImageRadius);
+  statsCalculatorIntegralImage.setMinPoints(minPoints);
+  statsCalculatorIntegralImage.setCurvatureThreshold(curvatureThreshold);
   
   PointInformationMatrixCalculator pointInformationMatrixCalculator;
   pointInformationMatrixCalculator.setCurvatureThreshold(curvatureThreshold);
@@ -84,9 +86,10 @@ int main(int argc, char **argv) {
   double ts, tf;
   double totalTime = 0.0;  
   Frame frame;
-  DepthImageConverter *converter = new DepthImageConverter(&projector, &statsCalculator,
-							   &pointInformationMatrixCalculator, 
-							   &normalInformationMatrixCalculator);
+  DepthImageConverterIntegralImage *converter = new DepthImageConverterIntegralImage(&projector, 
+										     &statsCalculatorIntegralImage,
+										     &pointInformationMatrixCalculator, 
+										     &normalInformationMatrixCalculator);
   for(int i = 0; i < numComputations; i++) {
     ts = g2o::get_time();
     converter->compute(frame, scaledDepth);
@@ -106,11 +109,15 @@ int main(int argc, char **argv) {
   frame.stats().resize(frame.points().size());
   std::fill(frame.stats().begin(), frame.stats().end(), Stats());
 
+  StatsCalculatorCrossProduct statsCalculatorCrossProduct;
+  DepthImageConverterCrossProduct *crossConverter = new DepthImageConverterCrossProduct(&projector, &statsCalculatorCrossProduct,
+											&pointInformationMatrixCalculator, 
+											&normalInformationMatrixCalculator);
+
   totalTime = 0.0;
   for(int i = 0; i < numComputations; i++) {
     ts = g2o::get_time();
-    //statsCalculator.fastCompute(frame.normals(), frame.points(), index, ng_imageRadius, ng_minimumPoints, ng_maxDist);
-    statsCalculator.fastCompute(frame.normals(), frame.stats(), frame.pointInformationMatrix(), frame.normalInformationMatrix(), frame.points(), index, ng_imageRadius);
+    crossConverter->compute(frame, scaledDepth);
     tf = g2o::get_time();
     totalTime += tf - ts;
   }

@@ -1,6 +1,7 @@
 #include "pwn_tracker_ros.h"
 #include <fstream>
 #include <iostream>
+
 using namespace std;
 using namespace pwn;
 using namespace boss;
@@ -8,7 +9,7 @@ using namespace pwn_tracker;
 
 int main(int argc, char** argv){
   if (argc<3) {
-    cerr << " u should provide a config file AND an oputput file" << endl;
+    cerr << " You should provide a config file AND an oputput file" << endl;
     return 0;
   }
 
@@ -25,18 +26,15 @@ int main(int argc, char** argv){
   boss_map::MapManager* manager = new boss_map::MapManager();
 
   PwnTrackerRos* tracker = new PwnTrackerRos(nh, tfListener, tfBroadcaster, _topic, argv[2],
-					  aligner, converter, manager);
-  //hand held camera
-  /*
-  tracker->_base_frame_id = "/camera_link";
-  tracker->_scale = 4;
-  */
+					     aligner, converter, manager);
+  // hand held camera
+  // tracker->_base_frame_id = "/camera_link";
+  // tracker->_scale = 4;
+
   // catacombs
-  /*
-  tracker->_base_frame_id = "/base_link";
-  tracker->_odom_frame_id = "/odom";
-  tracker->_scale = 2;
-  */
+  // tracker->_base_frame_id = "/base_link";
+  // tracker->_odom_frame_id = "/odom";
+  // tracker->_scale = 2;
 
   // giorgio home  
   tracker->_base_frame_id = "/base_link";

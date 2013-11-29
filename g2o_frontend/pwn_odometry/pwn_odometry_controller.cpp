@@ -72,7 +72,7 @@ namespace pwn {
     
     // Compute cloud
     update();
-    PinholePointProjector *projector = dynamic_cast<PinholePointProjector*>(_converter->_projector);
+    PinholePointProjector *projector = dynamic_cast<PinholePointProjector*>(_converter->projector());
     projector->setCameraMatrix(_scaledCameraMatrix);
     projector->setImageSize(_scaledImageRows, _scaledImageCols);
 

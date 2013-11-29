@@ -85,7 +85,7 @@ namespace pwn {
     
     // Compute cloud
     update();
-    PinholePointProjector *projector = dynamic_cast<PinholePointProjector*>(_converter->_projector);
+    PinholePointProjector *projector = dynamic_cast<PinholePointProjector*>(_converter->projector());
     projector->setCameraMatrix(_scaledCameraMatrix);
     projector->setImageSize(_scaledImageRows, _scaledImageCols);
 
@@ -129,10 +129,10 @@ namespace pwn {
 
     if(_scaledIndexImage.cols() != _scaledImageCols || _scaledIndexImage.rows() != _scaledImageRows) 
       _scaledIndexImage.resize(_scaledImageRows, _scaledImageCols);
-    _converter->_projector->setTransform(_localPose * _sensorOffset);
-    _converter->_projector->project(_scaledIndexImage, _scaledDepthImage, _scene->points());    
-    _converter->compute(*_subScene, _scaledDepthImage, _sensorOffset, false);
-    _converter->_projector->setTransform(Isometry3f::Identity());
+    _converter->projector()->setTransform(_localPose * _sensorOffset);
+    _converter->projector()->project(_scaledIndexImage, _scaledDepthImage, _scene->points());    
+    _converter->compute(*_subScene, _scaledDepthImage, _sensorOffset);
+    _converter->projector()->setTransform(Isometry3f::Identity());
 
     // Convert pwn clouds to pcl type
     pcl::PointCloud<pcl::PointXYZ>::Ptr refPclPointCloud(new pcl::PointCloud<pcl::PointXYZ>);

@@ -49,6 +49,10 @@ struct Stats : public Eigen::Matrix4f {
     _curvatureComputed = true;
     return _curvature;
   }
+  inline void setCurvature(float curvature_) {
+    _curvature = curvature_;
+    _curvatureComputed = true;
+  }
   
 
  protected:  	

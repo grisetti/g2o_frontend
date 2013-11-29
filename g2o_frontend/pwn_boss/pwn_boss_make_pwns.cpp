@@ -146,7 +146,7 @@ int main(int argc, char** argv) {
   ser.writeObject(*conf);
   
   cerr << "writing data" << endl;
-  PinholePointProjector* proj= (PinholePointProjector*)converter->_projector;
+  PinholePointProjector* proj= (PinholePointProjector*)converter->projector();
   
   ReferenceFrame* lastFrame = 0;
   

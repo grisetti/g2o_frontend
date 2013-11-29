@@ -22,8 +22,10 @@
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/cylindricalpointprojector.h"
 #include "g2o_frontend/pwn2/multipointprojector.h"
-#include "g2o_frontend/pwn2/statscalculator.h"
-#include "g2o_frontend/pwn2/depthimageconverter.h"
+#include "g2o_frontend/pwn2/statscalculatorintegralimage.h"
+#include "g2o_frontend/pwn2/statscalculatorcrossproduct.h"
+#include "g2o_frontend/pwn2/depthimageconverterintegralimage.h"
+#include "g2o_frontend/pwn2/depthimageconvertercrossproduct.h"
 #include "g2o_frontend/pwn2/informationmatrixcalculator.h"
 #include "g2o_frontend/pwn2/aligner.h"
 #include "g2o_frontend/pwn2/frame.h"
@@ -61,10 +63,12 @@ Isometry3f referencePose;
 Isometry3f currentPose;
 
 // Stats calculator
-StatsCalculator statsCalculator;
+StatsCalculatorIntegralImage statsCalculator;
+StatsCalculatorCrossProduct crossStatsCalculator;
 
 // Depth image converter
-DepthImageConverter converter;
+DepthImageConverterIntegralImage converter;
+DepthImageConverterCrossProduct crossConverter;
 DepthImage depthImage, scaledDepthImage;
 MatrixXi indexImage, scaledIndexImage;
 
@@ -89,6 +93,7 @@ QDoubleSpinBox *ng_worldRadiusSpinBox, *ng_scaleSpinBox, *ng_curvatureThresholdS
 
 float pj_maxDistance;
 float di_scaleFactor;
+int fng_imageRadius;
 
 int main(int argc, char **argv) {
   /************************************************************************
@@ -98,8 +103,6 @@ int main(int argc, char **argv) {
 
   int ng_minImageRadius, ng_maxImageRadius, ng_minPoints;
   float ng_worldRadius, ng_scale, ng_curvatureThreshold;
-
-  int fng_imageRadius;
 
   float cf_inlierNormalAngularThreshold, cf_flatCurvatureThreshold, cf_inlierCurvatureRatioThreshold, cf_inlierDistanceThreshold;
 
@@ -511,8 +514,8 @@ int main(int argc, char **argv) {
 		continue;
 	      }
 	      DepthImage::scale(scaledDepthImage, depthImage, ng_scale);
-	      converter.compute(*frame, scaledDepthImage, sensorOffset, false);
-	      //converter.fastCompute(*frame, scaledDepthImage, sensorOffset, fng_imageRadius);
+	      converter.compute(*frame, scaledDepthImage, sensorOffset);
+	      //crossConverter.compute(*frame, scaledDepthImage, sensorOffset);
 	    }
 
 	    Eigen::Isometry3f originPose = Eigen::Isometry3f::Identity();
@@ -883,19 +886,27 @@ void applySettings() {
   statsCalculator.setMinPoints(ng_minPointsSpinBox->value());
   statsCalculator.setWorldRadius(ng_worldRadiusSpinBox->value());
 
+  crossStatsCalculator.setMinPoints(12);
+  crossStatsCalculator.setImageRadius(fng_imageRadius);
+
   pointInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
   normalInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
 
   //cerr << "converter" << endl;
   if(multiPointProjectorCheckBox->isChecked() == true)
-    converter._projector=&multiPointProjector;
+    converter.setProjector(&multiPointProjector);
   else if(cylindricalPointProjectorCheckBox->isChecked() == true)
-    converter._projector=&cylindricalPointProjector;
+    converter.setProjector(&cylindricalPointProjector);
   else
-    converter._projector=&pinholePointProjector;
-  converter._statsCalculator = &statsCalculator;
-  converter._pointInformationMatrixCalculator = &pointInformationMatrixCalculator;
-  converter._normalInformationMatrixCalculator = &normalInformationMatrixCalculator;
+    converter.setProjector(&pinholePointProjector);
+  converter.setStatsCalculator(&statsCalculator);
+  converter.setPointInformationMatrixCalculator(&pointInformationMatrixCalculator);
+  converter.setNormalInformationMatrixCalculator(&normalInformationMatrixCalculator);
+
+  crossConverter.setProjector(&pinholePointProjector);
+  crossConverter.setStatsCalculator(&crossStatsCalculator);
+  crossConverter.setPointInformationMatrixCalculator(&pointInformationMatrixCalculator);
+  crossConverter.setNormalInformationMatrixCalculator(&normalInformationMatrixCalculator);
 
   statsCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
 

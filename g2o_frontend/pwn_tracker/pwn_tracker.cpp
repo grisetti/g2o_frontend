@@ -1,4 +1,5 @@
 #include "pwn_tracker.h"
+#include "cache.h"
 
 namespace pwn_tracker{
 
@@ -18,6 +19,7 @@ namespace pwn_tracker{
     sensorOffset.setIdentity();
     scale=1;
     seq=0;
+    cloud=0;
   }
   
   void PwnTrackerFrame::serialize(ObjectData& data, IdContext& context) {
@@ -90,7 +92,10 @@ namespace pwn_tracker{
     //! called when all links are resolved, adjusts the bookkeeping of the parents
 
 
-  PwnTracker::PwnTracker(pwn::Aligner* aligner, pwn::DepthImageConverter* converter, boss_map::MapManager* manager) {
+  PwnTracker::PwnTracker(pwn::Aligner* aligner, 
+			 pwn::DepthImageConverter* converter, 
+			 boss_map::MapManager* manager,
+			 PwnCache* cache_) {
     _previousCloud = 0;
     _globalT.setIdentity();
     _previousCloudTransform.setIdentity();
@@ -101,6 +106,7 @@ namespace pwn_tracker{
     this->_aligner = aligner;
     this->_converter = converter;
     this->_manager = manager;
+    _cache=cache_;
   }
 
   void PwnTracker::init(){
@@ -108,7 +114,6 @@ namespace pwn_tracker{
       delete _previousTrackerFrame;
     if (_previousCloud)
       delete _previousCloud;
-    
     _previousCloud = 0;
     _globalT.setIdentity();
     _previousCloudTransform.setIdentity();
@@ -154,7 +159,7 @@ namespace pwn_tracker{
 
   pwn::Frame* PwnTracker::makeCloud(int& r, int& c, Eigen::Matrix3f& cameraMatrix,
 				    const Eigen::Isometry3f& sensorOffset,  const DepthImage& depthImage) {
-    PinholePointProjector* projector=dynamic_cast<PinholePointProjector*>(_converter->_projector);
+    PinholePointProjector* projector=dynamic_cast<PinholePointProjector*>(_converter->projector());
 
     float invScale = 1.0f / _scale;
     Matrix3f scaledCameraMatrix = cameraMatrix * invScale;
@@ -174,6 +179,7 @@ namespace pwn_tracker{
     pwn::Frame* cloud = new pwn::Frame;
     //cout << "NUMS: " << r << " --- " << c << " --- " << cameraMatrix << endl;
     _converter->compute(*cloud, scaledImage, sensorOffset);
+    // cloud->save("temp.pwn", 1, true);
     // scale image and camera matrix
     return cloud;
   }
@@ -207,7 +213,7 @@ namespace pwn_tracker{
       t1 = get_time();
       std::cout << "Time: " << t1 - t0 << " seconds " << std::endl;
  
-      // cerr << "inliers: " << _aligner->inliers() << endl;
+      cerr << "inliers: " << _aligner->inliers() << endl;
       // cerr << "chi2: " << _aligner->error() << endl;
       // cerr << "chi2/inliers: " << _aligner->error()/_aligner->inliers() << endl;
       // cerr << "initialGuess: " << t2v(guess).transpose() << endl;
@@ -242,7 +248,10 @@ namespace pwn_tracker{
 	// frame->save(filename,1,true,_globalT);
 
 	_numKeyframes ++;
-	delete _previousCloud;
+	if (!_cache) 
+	  delete _previousCloud;
+	else
+	  _cache->unlock(_previousTrackerFrame);
 	_aligner->setReferenceSensorOffset(sensorOffset);
 	_aligner->setReferenceFrame(cloud);
 	_previousCloud = cloud;
@@ -281,6 +290,7 @@ namespace pwn_tracker{
       //cerr << "maing new frame, previous: " << _previousTrackerFrame << endl;
       currentTrackerFrame = new PwnTrackerFrame(_manager);
       //currentTrackerFrame->cloud.set(cloud);
+      currentTrackerFrame->cloud=cloud;
 
       boss_logger::ImageBLOB* depthBLOB=new boss_logger::ImageBLOB();
       depthImage.toCvMat(depthBLOB->cvImage());
@@ -309,12 +319,12 @@ namespace pwn_tracker{
       convertScalar(currentTrackerFrame->sensorOffset, sensorOffset);
       currentTrackerFrame->seq = _seq++;
       _manager->addNode(currentTrackerFrame);
+      if (_cache)
+	_cache->lock(currentTrackerFrame);
       newFrameCallback(currentTrackerFrame);
-      //ser.writeObject(*currentTrackerFrame);
-      //cerr << "saved frame" << currentTrackerFrame << endl;
-      delete depthThumbnailBLOB;
-      delete normalThumbnailBLOB;
-      delete depthBLOB;
+      currentTrackerFrame->depthThumbnail.set(0);
+      currentTrackerFrame->normalThumbnail.set(0);
+      currentTrackerFrame->depthImage.set(0);
     }
 
     if (newRelation) {
@@ -322,6 +332,8 @@ namespace pwn_tracker{
       rel->setTransform(relationMean);
       Matrix6d omega;
       convertScalar(omega, _aligner->omega());
+      omega.setIdentity();
+      omega *= 100;
       rel->setInformationMatrix(omega);
       rel->setTo(currentTrackerFrame);
       rel->setFrom(_previousTrackerFrame);
@@ -373,7 +385,7 @@ namespace pwn_tracker{
     return instances;
   }
 
-BOSS_REGISTER_CLASS(PwnTrackerFrame);
-BOSS_REGISTER_CLASS(PwnTrackerRelation);
+  BOSS_REGISTER_CLASS(PwnTrackerFrame);
+  BOSS_REGISTER_CLASS(PwnTrackerRelation);
 
 }

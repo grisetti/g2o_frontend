@@ -19,7 +19,7 @@ namespace pwn {
 
   void Merger::merge(Frame *frame, Eigen::Isometry3f transform) {
     assert(_indexImage.rows() != 0 && _indexImage.cols());  
-    PointProjector *pointProjector = _depthImageConverter->_projector;
+    PointProjector *pointProjector = _depthImageConverter->projector();
     assert(pointProjector);
     pointProjector->setTransform(transform);
     pointProjector->project(_indexImage, 

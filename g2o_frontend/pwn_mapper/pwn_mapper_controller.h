@@ -12,8 +12,8 @@
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/multipointprojector.h"
 #include "g2o_frontend/pwn2/informationmatrixcalculator.h"
-#include "g2o_frontend/pwn2/statscalculator.h"
-#include "g2o_frontend/pwn2/depthimageconverter.h"
+#include "g2o_frontend/pwn2/statscalculatorintegralimage.h"
+#include "g2o_frontend/pwn2/depthimageconverterintegralimage.h"
 #include "g2o_frontend/pwn2/aligner.h"
 #include "g2o_frontend/pwn2/merger.h"
 #include "g2o_frontend/pwn2/voxelcalculator.h"
@@ -70,7 +70,7 @@ namespace pwn {
     inline Isometry3f sensorOffset() const { return _sensorOffset; }
 
     // Stats calculator settings methods
-    inline void setStatsCalculator(StatsCalculator* const statsCalculator_) { _statsCalculator = statsCalculator_; }
+    inline void setStatsCalculator(StatsCalculatorIntegralImage* const statsCalculator_) { _statsCalculator = statsCalculator_; }
     inline void setCurvatureThreshold(const float curvatureThreshold_) { 
       _curvatureThreshold = curvatureThreshold_; 
       _pointInformationMatrixCalculator->setCurvatureThreshold(_curvatureThreshold);
@@ -88,7 +88,7 @@ namespace pwn {
     inline NormalInformationMatrixCalculator* normalInformationMatrixCalculator() { return _normalInformationMatrixCalculator; }
 
     // Depth image converter settings methods
-    inline void setConverter(DepthImageConverter* const converter_) { _converter = converter_; }
+    inline void setConverter(DepthImageConverterIntegralImage* const converter_) { _converter = converter_; }
     inline void setDepthImage(DepthImage* const depthImage_) { _depthImage = *depthImage_; }
 
     inline DepthImageConverter* converter() { return _converter; }
@@ -187,7 +187,7 @@ namespace pwn {
     Eigen::Isometry3f _sensorOffset;
 
     // Stats calculator
-    StatsCalculator *_statsCalculator;
+    StatsCalculatorIntegralImage *_statsCalculator;
     float _curvatureThreshold;
 
     // Information matrix calculators
@@ -195,7 +195,7 @@ namespace pwn {
     NormalInformationMatrixCalculator *_normalInformationMatrixCalculator;
 
     // Depth image converter
-    DepthImageConverter *_converter;
+    DepthImageConverterIntegralImage *_converter;
     DepthImage _depthImage, _scaledDepthImage;
     Eigen::MatrixXi _indexImage, _scaledIndexImage;
 
