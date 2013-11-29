@@ -75,27 +75,29 @@ public:
   virtual void newFrameCallback(PwnTrackerFrame* frame) {
     objects.push_back(frame);
     ser->writeObject(*frame);
-    closer->addFrame(frame);
+    if (closer)
+      closer->addFrame(frame);
     lastFrameAdded=frame;
   }
   virtual void newRelationCallback(PwnTrackerRelation* relation) {
     objects.push_back(relation);
-
     ser->writeObject(*relation);
-    closer->addRelation(relation);
-    int cr = 0;
-    for(std::list<PwnCloserRelation*>::iterator it=closer->committedRelations().begin();
-	it!=closer->committedRelations().end(); it++){
-      objects.push_back(*it);
-      cr++;
+    if (closer) {
+      closer->addRelation(relation);
+      int cr = 0;
+      for(std::list<PwnCloserRelation*>::iterator it=closer->committedRelations().begin();
+	  it!=closer->committedRelations().end(); it++){
+	objects.push_back(*it);
+	cr++;
+      }
+      if (cr>committedRelations){
+	char fname[100];
+	optimizer->optimize();
+	sprintf(fname, "out-%05d.g2o", lastFrameAdded->seq);
+	optimizer->save(fname);
+      }
+      cr=committedRelations;
     }
-    if (cr>committedRelations){
-      char fname[100];
-      optimizer->optimize();
-      sprintf(fname, "out-%05d.g2o", lastFrameAdded->seq);
-      optimizer->save(fname);
-    }
-    cr=committedRelations;
   }
 std::list<Serializable*> objects;
 protected:
@@ -182,7 +184,8 @@ int main(int argc, char** argv) {
   criterion.setTranslationalDistance(1);
   closer->setCriterion(&criterion);
 
-  MyTracker* tracker=new MyTracker(aligner, converter, manager, cache, closer, wrapper, &ser);
+  //MyTracker* tracker=new MyTracker(aligner, converter, manager, cache, closer, wrapper, &ser);
+  MyTracker* tracker=new MyTracker(aligner, converter, manager, cache, 0, wrapper, &ser);
   tracker->_scale = scale;
   tracker->init();
 

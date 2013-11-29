@@ -335,8 +335,8 @@ int main(int argc, char** argv) {
   std::string odom_frame_id = conf->baseReferenceFrameId();
   cerr << "base reference frame id: " << odom_frame_id << endl;
   
-  //std::string depth_topic = "/camera/depth_registered/image_rect_raw";
-  std::string depth_topic = "/camera/depth_registered/image_raw";
+  std::string depth_topic = "/camera/depth_registered/image_rect_raw";
+  //std::string depth_topic = "/camera/depth_registered/image_raw";
   cerr << "depth topic: " << depth_topic << endl;
   
 
@@ -368,7 +368,7 @@ int main(int argc, char** argv) {
 
   int scale = 4;
   // create a cache for the frames
-  PwnCache* cache  = new PwnCache(converter, scale, 100);
+  PwnCache* cache  = new PwnCache(converter, scale, 300);
   PwnCacheHandler* cacheHandler = new PwnCacheHandler(manager, cache);
   manager->actionHandlers().push_back(cacheHandler);
   cacheHandler->init();
@@ -381,9 +381,9 @@ int main(int argc, char** argv) {
   // install a closure criterion to select nodes in the clser
   DistancePoseAcceptanceCriterion criterion(manager);
   criterion.setRotationalDistance(M_PI/4);
-  criterion.setTranslationalDistance(2);
+  criterion.setTranslationalDistance(1);
   closer->setCriterion(&criterion);
-  //closer->_debug = true;
+  closer->_debug = false;
   
   MyTracker* tracker=new MyTracker(aligner, converter, manager, cache, closer, wrapper, &ser);
   tracker->_scale = scale;
