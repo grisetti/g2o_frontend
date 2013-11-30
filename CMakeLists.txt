@@ -199,11 +199,13 @@ find_package(OpenNI2)
 # mar SET(OPENNI_INCLUDE_DIRS ${OPENNI2_INCLUDE_DIR} CACHE PATH "The OpenNI2 include path.")
 
 # Find RobotEye
-FIND_PACKAGE( RobotEye REQUIRED )
+FIND_PACKAGE( RobotEye )
 if( RobotEye_FOUND )
-  include_directories(${RobotEye_INCLUDE_DIR})
+  MESSAGE("RobotEye library found")
+  #include_directories(${RobotEye_INCLUDE_DIR})
   #link_directories(${RobotEye_LIBRARIES})
-  #message ("-- RobotEye include-directory: ${RobotEye_INCLUDE_DIR}")
+elseif( RobotEye_FOUND )
+    MESSAGE("RobotEye library not found")
 endif( RobotEye_FOUND )
 
 find_package(ZLIB REQUIRED)
