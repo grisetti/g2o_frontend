@@ -29,6 +29,8 @@ ADD_LIBRARY(pwn_viewer_library
   drawable_covariances.cpp drawable_covariances.h
   gl_parameter_correspondences.cpp gl_parameter_correspondences.h
   drawable_correspondences.cpp drawable_correspondences.h
+  gl_parameter_transform_covariance.cpp gl_parameter_transform_covariance.h
+  drawable_transform_covariance.cpp drawable_transform_covariance.h
   ${UI_HEADERS}
   ${UI_SOURCES}
 )

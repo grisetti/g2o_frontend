@@ -258,6 +258,7 @@ int main(int argc, char** argv) {
    * MAIN DRAWING LOOP *
    ************************************************************************/
   int i = 0;
+  // int count = 0;
   Isometry3f previousEstimate = Isometry3f::Identity();
   previousEstimate.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   while(viewer->isVisible()) {
@@ -314,10 +315,17 @@ int main(int argc, char** argv) {
       viewer->updateGL();
     application.processEvents();
 
-    if(i == 1) {
-      int a;
-      std::cin >> a;
-    }
+    // char screenName[1024];
+    // sprintf(screenName, "screen%06d.jpg", count);
+    // viewer->setSnapshotFormat(QString("PNG"));
+    // viewer->setSnapshotQuality(-1);
+    // viewer->saveSnapshot(QString().sprintf(screenName, "screen%06d.jpg", count), true);    
+    // count++;
+    
+    // if(i == 1) {
+    //   int a;
+    //   std::cin >> a;
+    // }
   }
 
   return 0;
@@ -363,7 +371,7 @@ bool extractRGBDData(G2OFrame *frame, DepthImageConverter *converter) {
     
     // Compute the stats for the current cloud
     converter->compute(*frame, scaledDepthImage, sensorOffset);
-    
+
     return true;
   }
   else

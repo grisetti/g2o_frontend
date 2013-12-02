@@ -2,8 +2,8 @@
 #define _MY_CALLBACKS
 
 #include <iostream>
-#include </usr/local/RobotEye/include/roboteye/RobotEye.h>
-#include </usr/local/RobotEye/include/roboteye/RE05Driver.h>
+#include "RobotEye.h"
+#include "RE05Driver.h"
 
 //#include "mutex.h"
 
