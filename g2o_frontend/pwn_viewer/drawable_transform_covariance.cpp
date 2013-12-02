@@ -38,7 +38,7 @@ namespace pwn {
   }
 
   bool DrawableTransformCovariance::setParameter(GLParameter *parameter_) {
-    GLParameterTransformCovariances *covarianceParameter = dynamic_cast<GLParameterTransformCovariances*>(parameter_);
+    GLParameterTransformCovariance *covarianceParameter = dynamic_cast<GLParameterTransformCovariance*>(parameter_);
     if (covarianceParameter == 0) {
       _parameter = 0;
       return false;
@@ -49,7 +49,7 @@ namespace pwn {
   }
 
   void DrawableTransformCovariance::draw() {
-    GLParameterTransformCovariances *covarianceParameter = dynamic_cast<GLParameterTransformCovariances*>(_parameter);
+    GLParameterTransformCovariance *covarianceParameter = dynamic_cast<GLParameterTransformCovariance*>(_parameter);
     if(covarianceParameter && 
        covarianceParameter->show() && 
        covarianceParameter->scale() > 0.0f) {
@@ -62,7 +62,7 @@ namespace pwn {
   }
 
   void DrawableTransformCovariance::updateCovarianceDrawList() {
-    GLParameterTransformCovariances *covarianceParameter = dynamic_cast<GLParameterTransformCovariances*>(_parameter);
+    GLParameterTransformCovariance *covarianceParameter = dynamic_cast<GLParameterTransformCovariance*>(_parameter);
     glNewList(_covarianceDrawList, GL_COMPILE); 
     if(_covariance != Eigen::Matrix3f::Zero() && 
        covarianceParameter && 
@@ -83,6 +83,9 @@ namespace pwn {
       float sy = sqrt(lambda[1]) * scale;
       float sz = sqrt(lambda[2]) * scale;
       
+      //std::cerr << "lambda: " << lambda[0] << " --- " << lambda[1] << " --- " << lambda[2] << std::endl;
+      //std::cerr << "scales: " << sx << " --- " << sy << " --- " << sz << std::endl;
+
       glPushMatrix();
       glMultMatrixf(I.data());
       glColor4f(color[0], color[1], color[2], color[3]);

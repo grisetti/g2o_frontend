@@ -6,11 +6,11 @@
 
 namespace pwn {
 
-  class GLParameterTransformCovariances : public GLParameter{
+  class GLParameterTransformCovariance : public GLParameter{
   public:
-    GLParameterTransformCovariances();
-    GLParameterTransformCovariances(Eigen::Vector4f color_, float scale_);
-    virtual ~GLParameterTransformCovariances() {}
+    GLParameterTransformCovariance();
+    GLParameterTransformCovariance(Eigen::Vector4f color_, float scale_);
+    virtual ~GLParameterTransformCovariance() {}
   
     virtual void applyGLParameter();
 

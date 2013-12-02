@@ -34,7 +34,7 @@ namespace pwn {
     void updateCovarianceDrawList();
 
   protected:
-    GLParameterTransformCovariances *_parameter;
+    GLParameterTransformCovariance *_parameter;
     Eigen::Matrix3f _covariance;
     Eigen::Vector3f _mean;
     GLuint _covarianceDrawList; 

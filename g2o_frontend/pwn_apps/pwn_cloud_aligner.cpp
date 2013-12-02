@@ -26,9 +26,7 @@
 #include "g2o_frontend/pwn2/statscalculatorcrossproduct.h"
 #include "g2o_frontend/pwn2/depthimageconverterintegralimage.h"
 #include "g2o_frontend/pwn2/depthimageconvertercrossproduct.h"
-#include "g2o_frontend/pwn2/informationmatrixcalculator.h"
 #include "g2o_frontend/pwn2/aligner.h"
-#include "g2o_frontend/pwn2/frame.h"
 
 #include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
 #include "g2o_frontend/pwn_viewer/pwn_imageview.h"
@@ -37,12 +35,7 @@
 #include "g2o_frontend/pwn_viewer/drawable_covariances.h"
 #include "g2o_frontend/pwn_viewer/drawable_correspondences.h"
 #include "g2o_frontend/pwn_viewer/drawable_frame.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_points.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_normals.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_covariances.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_correspondences.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_frame.h"
+#include "g2o_frontend/pwn_viewer/drawable_transform_covariance.h"
 
 using namespace std;
 using namespace Eigen;
