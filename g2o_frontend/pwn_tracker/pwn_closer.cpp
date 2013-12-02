@@ -403,7 +403,6 @@ namespace pwn_tracker {
 
     convertScalar(fromOffset, from->sensorOffset);
     convertScalar(fromCameraMatrix, from->cameraMatrix);
-
     convertScalar(toOffset, to->sensorOffset);
     convertScalar(toCameraMatrix, to->cameraMatrix);
     
@@ -426,11 +425,15 @@ namespace pwn_tracker {
     // cerr << projector->cameraMatrix() << endl;
     r = projector->imageRows();
     c = projector->imageCols();
-  
+    // char dbgName[1024];
+    // sprintf(dbgName, "match-%06d-%06d",from->seq, to->seq);
+    // _aligner->debugPrefix()=dbgName;
     _aligner->correspondenceFinder()->setImageSize(r,c);
     _aligner->setReferenceFrame(fromCloud);
     _aligner->setCurrentFrame(toCloud);
     _aligner->align();
+    _aligner->debugPrefix()="";
+
     // cerr << "_fromCloud.points():" << fromCloud->points().size() << endl;
     // cerr << "_toCloud.points():" << toCloud->points().size() << endl;
     // cerr << "AlInliers: " << _aligner->inliers() << endl;

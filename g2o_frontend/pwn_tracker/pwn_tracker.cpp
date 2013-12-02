@@ -54,6 +54,7 @@ namespace pwn_tracker{
     MapNode::deserialize(data,context);
     sensorOffset.matrix().fromBOSS(data,"sensorOffset");
     cameraMatrix.fromBOSS(data, "cameraMatrix");
+    cameraMatrix(2,2)=1;
     imageRows = data.getInt("imageRows");
     imageCols = data.getInt("imageCols");
 

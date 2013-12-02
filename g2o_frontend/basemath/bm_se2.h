@@ -128,13 +128,13 @@ inline Eigen::Matrix3d vector2homogeneous_2d(const Vector6d x){
   return transform.matrix();
 }
 
-g2o::SE2 iso3toSE_2d(const Eigen::Isometry3d& iso){
-	Eigen::AngleAxisd aa(iso.linear());
-	float angle = aa.angle();
-	if (aa.axis().z()<0){
-			angle=-angle;
-	}
-	return g2o::SE2(iso.translation().x(), iso.translation().y(), angle);
+inline g2o::SE2 iso3toSE_2d(const Eigen::Isometry3d& iso){
+  Eigen::AngleAxisd aa(iso.linear());
+  float angle = aa.angle();
+  if (aa.axis().z()<0){
+    angle=-angle;
+  }
+  return g2o::SE2(iso.translation().x(), iso.translation().y(), angle);
 }
 
 #endif

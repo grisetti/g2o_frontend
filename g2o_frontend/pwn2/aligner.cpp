@@ -8,6 +8,7 @@
 #include "g2o/stuff/unscented.h"
 
 #include "g2o_frontend/basemath/bm_se3.h"
+#include <boost/lexical_cast.hpp>
 
 using namespace std;
 
@@ -33,6 +34,7 @@ namespace pwn {
     _rotationalMinEigenRatio = 50;
     _translationalMinEigenRatio = 50;
     _debug = false;
+    _debugPrefix = "";
   };
 
 
@@ -66,9 +68,11 @@ namespace pwn {
 			_correspondenceFinder->currentDepthImage(),
 			_currentFrame->points());
     _T = _initialGuess;
-  
-    // _correspondenceFinder->currentDepthImage().save("current.pgm", true);
-    // _currentFrame->save("current.pwn", 1, true);
+
+    if (_debugPrefix.length()){
+      _correspondenceFinder->currentDepthImage().save((_debugPrefix+"_current.pgm").c_str(), true);
+      _currentFrame->save("current.pwn", 1, true);
+    }
 
     for(int i = 0; i < _outerIterations; i++) {
       /************************************************************************
@@ -84,7 +88,8 @@ namespace pwn {
     
       // char buf[1024];
       // sprintf(buf, "reference-%02d.pgm", i);
-      // _correspondenceFinder->referenceDepthImage().save(buf, true);
+      if(_debugPrefix.length())
+	_correspondenceFinder->referenceDepthImage().save( (_debugPrefix+"_"+boost::lexical_cast<std::string>(i)+"_reference.pgm").c_str(), true);
  
       // sprintf(buf, "reference-%02d.pwn", i);
       // _referenceFrame->save(buf, 1, true, _T);

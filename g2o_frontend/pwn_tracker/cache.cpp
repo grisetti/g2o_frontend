@@ -137,6 +137,7 @@ namespace pwn_tracker{
     depth.fromCvMat(depthBLOB->cvImage());
     convertScalar(offset, trackerFrame->sensorOffset);
     convertScalar(cameraMatrix, trackerFrame->cameraMatrix);
+    cameraMatrix(2,2)=1;
     projector->setCameraMatrix(cameraMatrix);
     pwn::DepthImage scaledDepth;
     DepthImage::scale(scaledDepth, depth, _scale);

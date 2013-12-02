@@ -435,6 +435,7 @@ int main(int argc, char** argv) {
     cerr << ".";
   }
 
+  viewer->updateGL();
   while(viewer->isVisible()){
     app.processEvents();
   }
