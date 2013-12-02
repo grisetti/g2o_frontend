@@ -7,6 +7,8 @@ OPTION(BUILD_PWN "enables pwn" true )
 OPTION(BUILD_LINE_SLAM "enables line_slam and other utilities" true )
 OPTION(BUILD_PLANE_SLAM "enables plane slam and other utilities" true)
 OPTION(BUILD_VORONOI_SLAM "enables voronoi slam" true)
+# OPTION(BUILD_ROBOTEYE_TEST "enables roboteye_test" false )
+OPTION(BUILD_ROBOTEYE_LOGGER "enables roboteye_logger" true )
 
 
 # The library prefix
@@ -188,9 +190,23 @@ IF(PCL_FOUND)
   add_definitions(${PCL_DEFINITIONS})
 ENDIF(PCL_FOUND)
 
+
+# Find Opencv
 FIND_PACKAGE( OpenCV 2.4.7 REQUIRED )
 
+# Find OpenNI2
 find_package(OpenNI2)
+# mar SET(OPENNI_INCLUDE_DIRS ${OPENNI2_INCLUDE_DIR} CACHE PATH "The OpenNI2 include path.")
+
+# Find RobotEye
+FIND_PACKAGE( RobotEye )
+if( RobotEye_FOUND )
+  MESSAGE("RobotEye library found")
+  #include_directories(${RobotEye_INCLUDE_DIR})
+  #link_directories(${RobotEye_LIBRARIES})
+elseif( RobotEye_FOUND )
+    MESSAGE("RobotEye library not found")
+endif( RobotEye_FOUND )
 
 find_package(ZLIB REQUIRED)
 

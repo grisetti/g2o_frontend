@@ -119,11 +119,11 @@ void ViewerGUI::showOriginal()
 	this->viewer->updateGL();
 }
 
-#if 1
+#if 0
 // 					ofstream osp1PrimaC("points1PrimaC.dat");
 // 					ofstream osp1("points1.dat");
 //                    ofstream os("myCurrentLines.dat");
-                    ofstream oslines("lines_likelihood.dat");
+//                    ofstream oslines("currentLines_likelihood.dat");
 #endif
 
 void ViewerGUI::lineExtraction()
@@ -377,7 +377,7 @@ void ViewerGUI::lineExtraction()
             thetaP1 = atan2(p1.y(), p1.x());
             rhoP1 = p1.x()/sin(thetaP1);
             float dist_min = 0.10; //??? it depends on the laser(alpha angular step = 0.0004..)
-            float thetaPointTh = 0.0086; //joint discontinuity:hokuyo angularstep is 0.0043..
+//            float thetaPointTh = 0.0086; //joint discontinuity:hokuyo angularstep is 0.0043..
 
             if(i==0)
             {
@@ -388,7 +388,7 @@ void ViewerGUI::lineExtraction()
             {
                 //controlling if this line have a common vertex with the previous one(the same point or really closed one to each other..)
                 prev = lc[i-1];
-                Vector2d prev1d(prev[0].x(), prev[0].y());
+//                Vector2d prev1d(prev[0].x(), prev[0].y());
                 Vector2d prev2d(prev[1].x(), prev[1].y());
                 thetaPrev2 = atan2(prev2d.y(), prev2d.x());
                 rhoPrev2 = prev2d.x()/sin(thetaPrev2);
@@ -412,7 +412,7 @@ void ViewerGUI::lineExtraction()
                     }
                     lc[i][0].z() = pdiV_common;
                     lc[i-1][1].z() = pdiV_common;
-                    cout << " - PdiV_common " << pdiV_common << " !!!!!!!!!!!must be equal to" << lc[i][0].z() << endl;
+                    cout << " - PdiV_common " << pdiV_common << endl;
                 }
                 else
                     commonVertex = false;
@@ -447,12 +447,24 @@ void ViewerGUI::lineExtraction()
 
         //file for Matlab alignment
 #if 1
+
+
+        char fileOdom[260];
+        char fileLines[260];
+        sprintf(fileOdom,"odometryPose%d.dat",numIteration+1);
+        ofstream osOdom(fileOdom);
+        sprintf(fileLines,"lines_%d_likelihood.dat",numIteration+1);
+        ofstream oslines(fileLines);
         //in lc there are the line already trasformed with the odometry
         for(int i=0; i<lc.size(); i++)
         {
+
             Vector3fVector line = lc[i];
-            oslines << "% Frame n " << numIteration << " with odometry [x y theta]" << endl;
-            oslines << "% " << t2v_2d(T).transpose()/*.matrix()*/ << endl;
+//            oslines << "% Frame n " << numIteration << " with odometry [x y theta]" << endl;
+//            oslines << "% " << t2v_2d(T).transpose()/*.matrix()*/ << endl;
+            osOdom << t2v_2d(T).transpose() << endl;
+            osOdom << endl;
+            osOdom << endl;
             oslines << line[0].x() << " " << line[0].y() << " " << line[0].z() << endl;
             oslines << line[1].x() << " " << line[1].y() << " " << line[1].z() << endl;
             oslines << endl;

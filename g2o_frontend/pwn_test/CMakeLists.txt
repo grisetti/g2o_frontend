@@ -10,7 +10,7 @@ if(OPENMP_FOUND)
  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif(OPENMP_FOUND)
 
-INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${CSPARSE_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${CSPARSE_INCLUDE_DIR} ${QT_INCLUDES})
 
 ADD_EXECUTABLE(multiprojectortest multiprojectortest.cpp)
 SET_TARGET_PROPERTIES(multiprojectortest PROPERTIES OUTPUT_NAME multiprojectortest)
@@ -31,3 +31,7 @@ TARGET_LINK_LIBRARIES(pwn_fast_normal_computation pwn2_library ${G2O_STUFF_LIBRA
 ADD_EXECUTABLE(03-align 03-align.cpp)
 SET_TARGET_PROPERTIES(03-align PROPERTIES OUTPUT_NAME 03-align)
 TARGET_LINK_LIBRARIES(03-align pwn2_library ${G2O_STUFF_LIBRARY})
+
+ADD_EXECUTABLE(pwn_dtcovariance_test pwn_dtcovariance_test.cpp)
+SET_TARGET_PROPERTIES(pwn_dtcovariance_test PROPERTIES OUTPUT_NAME pwn_dtcovariance_test)
+TARGET_LINK_LIBRARIES(pwn_dtcovariance_test pwn_viewer_library pwn2_library ${G2O_STUFF_LIBRARY})

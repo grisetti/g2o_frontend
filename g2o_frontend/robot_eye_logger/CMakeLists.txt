@@ -1,0 +1,9 @@
+INCLUDE_DIRECTORIES( ${RobotEye_INCLUDE_DIR} ${Boost_INCLUDE_DIR} ${EIGEN_INCLUDE_DIR})
+
+ADD_EXECUTABLE(eyebot_logger 
+eyebot_test.cpp 
+myCallbacks.h mutex.h)
+
+TARGET_LINK_LIBRARIES( eyebot_logger ${RobotEye_LIBRARIES} )
+
+SET_TARGET_PROPERTIES( eyebot_logger PROPERTIES OUTPUT_NAME eyebot_logger${EXE_POSTFIX} )
