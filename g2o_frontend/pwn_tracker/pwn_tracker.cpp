@@ -54,6 +54,7 @@ namespace pwn_tracker{
     MapNode::deserialize(data,context);
     sensorOffset.matrix().fromBOSS(data,"sensorOffset");
     cameraMatrix.fromBOSS(data, "cameraMatrix");
+    cameraMatrix(2,2)=1;
     imageRows = data.getInt("imageRows");
     imageCols = data.getInt("imageCols");
 
@@ -218,7 +219,7 @@ namespace pwn_tracker{
       // cerr << "chi2/inliers: " << _aligner->error()/_aligner->inliers() << endl;
       // cerr << "initialGuess: " << t2v(guess).transpose() << endl;
       // cerr << "transform   : " << t2v(_aligner->T()).transpose() << endl;
-      if (_aligner->inliers()>-1){
+      if (_aligner->inliers()>0){
     	_globalT = _previousCloudTransform*_aligner->T();
     	//cerr << "TRANSFORM FOUND" <<  endl;
       } else {

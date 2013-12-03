@@ -132,6 +132,7 @@ int main(int argc, char** argv){
   
   boss::Serializer ser;
   ser.setFilePath(filename);
+  ser.setBinaryPath(filename+".d/<classname>.<id>.<ext>");
   
   ros::init(argc, argv, "boss_logger");
   ros::NodeHandle nh;

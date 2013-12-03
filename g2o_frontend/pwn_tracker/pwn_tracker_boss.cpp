@@ -27,18 +27,17 @@ using namespace boss_logger;
 using namespace boss;
 using namespace std;
 
-
 const char* banner[]={
-  "boss_playback: visualizes a boss log",
-  "",
-  "usage: boss_playback filein",
-  "example: boss_playback test.log sync_test.log", 
-  "",
-  "commands:", 
-  "'n': moves to the next frame", 
-  "'p': moves to the previous frame", 
-    0
+  "pwn_tracker_boss: does SLAM on a raw boss log",
+  "usage: pwn_tracker_boss <configfile> <inputFile>",
+  "example: pwn_tracker_boss  integral_kinect_3m.conf myInput.log", 
+  "the ouptur is written in "
+  " - myInput_tracked.log (tracker output)",
+  " - myInput_tracked_closed.log (tracker + closer output)",
+  " - myInput_tracked.d (binary files)", 
 };
+
+
 
 void printBanner (){
   int c=0;
@@ -46,6 +45,12 @@ void printBanner (){
     cerr << banner [c] << endl;
     c++;
   }
+}
+
+std::string removeExtension(const std::string& filename) {
+    size_t lastdot = filename.find_last_of(".");
+    if (lastdot == std::string::npos) return filename;
+    return filename.substr(0, lastdot); 
 }
 
 
@@ -70,27 +75,29 @@ public:
   virtual void newFrameCallback(PwnTrackerFrame* frame) {
     objects.push_back(frame);
     ser->writeObject(*frame);
-    closer->addFrame(frame);
+    if (closer)
+      closer->addFrame(frame);
     lastFrameAdded=frame;
   }
   virtual void newRelationCallback(PwnTrackerRelation* relation) {
     objects.push_back(relation);
-
     ser->writeObject(*relation);
-    closer->addRelation(relation);
-    int cr = 0;
-    for(std::list<PwnCloserRelation*>::iterator it=closer->committedRelations().begin();
-	it!=closer->committedRelations().end(); it++){
-      objects.push_back(*it);
-      cr++;
+    if (closer) {
+      closer->addRelation(relation);
+      int cr = 0;
+      for(std::list<PwnCloserRelation*>::iterator it=closer->committedRelations().begin();
+	  it!=closer->committedRelations().end(); it++){
+	objects.push_back(*it);
+	cr++;
+      }
+      if (cr>committedRelations){
+	char fname[100];
+	optimizer->optimize();
+	sprintf(fname, "out-%05d.g2o", lastFrameAdded->seq);
+	optimizer->save(fname);
+      }
+      cr=committedRelations;
     }
-    if (cr>committedRelations){
-      char fname[100];
-      optimizer->optimize();
-      sprintf(fname, "out-%05d.g2o", lastFrameAdded->seq);
-      optimizer->save(fname);
-    }
-    cr=committedRelations;
   }
 std::list<Serializable*> objects;
 protected:
@@ -132,12 +139,26 @@ int main(int argc, char** argv) {
   cerr << "depth topic: " << depth_topic << endl;
   
   
+  string outBaseFile;
+  if (argc==3){
+    outBaseFile = removeExtension(argv[2]);
+    cerr << "baseFile: " << outBaseFile << endl;
+  } else {
+    outBaseFile = removeExtension(argv[3]); 
+    cerr << "baseFile: " << outBaseFile << endl;
+ }
 
-  string outfile=argv[3];
-  string outBinaryDir=outfile+".d/<classname>.<id>.<ext>";
+  string outTrackerFile = outBaseFile+"_tracked.log";
+  string outCloserFile = outBaseFile+"_tracked_closed.log";
+  string outBinaryDir=outTrackerFile+".d/<classname>.<id>.<ext>";
+
+  cerr << "tracker output: [" << outTrackerFile << "]" << endl;
+  cerr << "closer output : [" << outCloserFile << "]" << endl;
+  cerr << "binary dir    : [" << outBinaryDir << "]" << endl;
+
 
   Serializer ser;
-  ser.setFilePath(outfile);
+  ser.setFilePath(outTrackerFile);
   ser.setBinaryPath(outBinaryDir);
   MapManager* manager = new MapManager();
   ser.writeObject(*manager);
@@ -163,7 +184,8 @@ int main(int argc, char** argv) {
   criterion.setTranslationalDistance(1);
   closer->setCriterion(&criterion);
 
-  MyTracker* tracker=new MyTracker(aligner, converter, manager, cache, closer, wrapper, &ser);
+  //MyTracker* tracker=new MyTracker(aligner, converter, manager, cache, closer, wrapper, &ser);
+  MyTracker* tracker=new MyTracker(aligner, converter, manager, cache, 0, wrapper, &ser);
   tracker->_scale = scale;
   tracker->init();
 
@@ -201,7 +223,7 @@ int main(int argc, char** argv) {
   }
 
   cerr << "done, writing out" << endl;
-  ser.setFilePath("out2.log");
+  ser.setFilePath(outCloserFile);
   for (std::list<Serializable*>::iterator it=tracker->objects.begin(); it!=tracker->objects.end(); it++){
     ser.writeObject(**it);
     cerr << ".";

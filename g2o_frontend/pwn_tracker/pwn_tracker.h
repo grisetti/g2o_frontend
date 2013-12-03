@@ -58,7 +58,6 @@ using namespace pwn;
     float error;
   };
 
-
   struct PwnTracker{
     PwnTracker(pwn::Aligner* aligner, pwn::DepthImageConverter* converter, boss_map::MapManager* manager, PwnCache* cache=0);
 
@@ -116,7 +115,6 @@ using namespace pwn;
   }
 
   std::vector<Serializable*> readConfig(Aligner*& aligner, DepthImageConverter*& converter, const std::string& configFile);
-
 }// end namespace
 
 

@@ -154,6 +154,7 @@ namespace pwn_tracker{
   
   void PwnTrackerRos::initCallback(){
     ser.setFilePath(_filename);
+    ser.setBinaryPath(_filename+".d/<classname>.<id>.<ext>");
     ser.writeObject(*_manager);
   }
 }
