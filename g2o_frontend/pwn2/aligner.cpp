@@ -185,7 +185,7 @@ namespace pwn {
 #pragma omp critical 
       {
 	b += _linearizer->b();
-	H += _linearizer->H();
+	H += _linearizer->H() + Matrix6f::Identity();
       }
     }
 
@@ -195,7 +195,7 @@ namespace pwn {
     Vector6f localMean = Vector6f::Zero();
     g2o::sampleUnscented(sigmaPoints, localMean, localSigma);
   
-    Eigen::Isometry3f dT = _T;  // transform from current to reference
+    Eigen::Isometry3f dT = _initialGuess * _T;  // transform from current to reference
     if (_debug) {
       cerr << "##T: " << t2v(dT).transpose() << endl;
       cerr << "##hDet(): " << H.determinant() << endl;
@@ -204,9 +204,10 @@ namespace pwn {
       cerr << "##localSigma * localH: " << endl << localSigma * H << endl;
     }
     // remap each of the sigma points to their original position
+#pragma omp parallel 
     for (size_t i = 0; i < sigmaPoints.size(); i++) {
       SigmaPoint& p = sigmaPoints[i];
-      p._sample = t2v(dT*v2t(p._sample).inverse());
+      p._sample = t2v(dT * v2t(p._sample).inverse());
     }
     // reconstruct the gaussian 
     g2o::reconstructGaussian(mean,localSigma, sigmaPoints);
@@ -216,14 +217,14 @@ namespace pwn {
   
     // have a look at the svd of the rotational and the translational part;
     JacobiSVD<Matrix3f> partialSVD;
-    partialSVD.compute(Omega.block<3,3>(0,0));
+    partialSVD.compute(Omega.block<3, 3>(0, 0));
     translationalRatio = partialSVD.singularValues()(0) / partialSVD.singularValues()(2);
     if (_debug) {
       cerr << "##singular values of the Omega_t: " << partialSVD.singularValues().transpose() << endl;
       cerr << "##translational_ratio: " <<  translationalRatio << endl;
     } 
-    partialSVD.compute(Omega.block<3,3>(3,3));
-    rotationalRatio = partialSVD.singularValues()(0)/partialSVD.singularValues()(2);
+    partialSVD.compute(Omega.block<3, 3>(3, 3));
+    rotationalRatio = partialSVD.singularValues()(0) / partialSVD.singularValues()(2);
     if (_debug) {
       cerr << "##singular values of the Omega_r: " << partialSVD.singularValues().transpose() << endl; 
       cerr << "##rotational_ratio: " << rotationalRatio << endl;

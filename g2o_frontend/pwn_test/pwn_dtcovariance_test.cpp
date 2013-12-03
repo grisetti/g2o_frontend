@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
   arg.param("di_scale", di_scale, 1.0f, "Scaling factor to apply on the size of the depth image");
   arg.param("di_scaleFactor", di_scaleFactor, 0.001f, "Depth image values scaling factor");
   arg.param("vz_step", vz_step, 1, "Save in the output file one point each vz_step points");
-  arg.param("vz_ellipsoidScale", vz_ellipsoidScale, 1000.0f, "Scale for the covariance's ellipsoid");
+  arg.param("vz_ellipsoidScale", vz_ellipsoidScale, 100.0f, "Scale for the covariance's ellipsoid");
 
   // Last parameter has to be the working directory.
   arg.paramLeftOver("configFilename", configFilename, "", "Boss config filename", true);  
@@ -71,11 +71,19 @@ int main(int argc, char **argv) {
   std::vector<Serializable*> elements = readConfig(aligner, converter, configFilename);
 
   Eigen::Isometry3f sensorOffset = Eigen::Isometry3f::Identity();
+  sensorOffset.translation() = Vector3f(0.0f, 0.0f, 0.0f);
+  Quaternionf quaternion = Quaternionf(0.5f, -0.5f, 0.5f, -0.5f);
+  sensorOffset.linear() = quaternion.toRotationMatrix();
   sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   Frame referenceFrame, currentFrame;
   converter->compute(referenceFrame, referenceScaledDepth, sensorOffset);
-  converter->compute(currentFrame, currentScaledDepth, sensorOffset);
-    
+  //converter->compute(currentFrame, currentScaledDepth, sensorOffset);
+  converter->compute(currentFrame, referenceScaledDepth, sensorOffset);
+  Isometry3f displacement = Isometry3f::Identity();
+  displacement.translation() = Vector3f(0.2f, 0.0f, -0.2f);
+  displacement.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+  currentFrame.transformInPlace(displacement);
+
   Eigen::Isometry3f initialGuess = Eigen::Isometry3f::Identity();
   initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   aligner->setReferenceFrame(&referenceFrame);
