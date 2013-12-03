@@ -70,7 +70,8 @@ namespace pwn {
     virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
     virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
     virtual void deserializeComplete();
-    
+
+    inline std::string& debugPrefix() {return _debugPrefix;}
   protected:
     void _computeStatistics(Vector6f& mean, Matrix6f& Omega, 
 			   float& translationalRatio, float& rotationalRatio) const;
@@ -99,6 +100,7 @@ namespace pwn {
     float _error;
     float  _translationalEigenRatio, _rotationalEigenRatio, _translationalMinEigenRatio, _rotationalMinEigenRatio;
 
+    std::string _debugPrefix;
     std::vector<SE3Prior*> _priors;
   };
 

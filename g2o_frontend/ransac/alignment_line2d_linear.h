@@ -8,7 +8,7 @@ namespace g2o_frontend{
 	
   typedef AlignmentAlgorithm<g2o::SE2,g2o::VertexLine2D>   AlignmentAlgorithmSE2Line2D;
 	
-  Eigen::Vector3d line2d_remapCartesian(const Eigen::Isometry2d& _X, Eigen::Vector3d& _l){
+  inline Eigen::Vector3d line2d_remapCartesian(const Eigen::Isometry2d& _X, Eigen::Vector3d& _l){
     
     Eigen::Vector3d tl = _l;
     Eigen::Matrix3d X = _X.matrix();

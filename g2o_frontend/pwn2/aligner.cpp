@@ -8,6 +8,7 @@
 #include "g2o/stuff/unscented.h"
 
 #include "g2o_frontend/basemath/bm_se3.h"
+#include <boost/lexical_cast.hpp>
 
 using namespace std;
 
@@ -33,6 +34,7 @@ namespace pwn {
     _rotationalMinEigenRatio = 50;
     _translationalMinEigenRatio = 50;
     _debug = false;
+    _debugPrefix = "";
   };
 
 
@@ -66,9 +68,11 @@ namespace pwn {
 			_correspondenceFinder->currentDepthImage(),
 			_currentFrame->points());
     _T = _initialGuess;
-  
-    // _correspondenceFinder->currentDepthImage().save("current.pgm", true);
-    // _currentFrame->save("current.pwn", 1, true);
+
+    if (_debugPrefix.length()){
+      _correspondenceFinder->currentDepthImage().save((_debugPrefix+"_current.pgm").c_str(), true);
+      _currentFrame->save("current.pwn", 1, true);
+    }
 
     for(int i = 0; i < _outerIterations; i++) {
       /************************************************************************
@@ -84,7 +88,8 @@ namespace pwn {
     
       // char buf[1024];
       // sprintf(buf, "reference-%02d.pgm", i);
-      // _correspondenceFinder->referenceDepthImage().save(buf, true);
+      if(_debugPrefix.length())
+	_correspondenceFinder->referenceDepthImage().save( (_debugPrefix+"_"+boost::lexical_cast<std::string>(i)+"_reference.pgm").c_str(), true);
  
       // sprintf(buf, "reference-%02d.pwn", i);
       // _referenceFrame->save(buf, 1, true, _T);
@@ -152,11 +157,12 @@ namespace pwn {
       }
     } 
     else {
-      // cout << "************** I FOUND SOLUTION VALID SOLUTION   (eigenratio ok) *******************" << endl;
-      // cout << "tr: " << _translationalEigenRatio << " rr: " << _rotationalEigenRatio << endl;
-      // cout << "************************************************************************************" << endl;
+      if (_debug) {
+	cerr << "************** I FOUND SOLUTION VALID SOLUTION   (eigenratio ok) *******************" << endl;
+	cerr << "tr: " << _translationalEigenRatio << " rr: " << _rotationalEigenRatio << endl;
+	cerr << "************************************************************************************" << endl;
+      }
     }
-
     if (_debug) {
       cout << "Solution statistics in (t, mq): " << endl;
       cout << "mean: " << _mean.transpose() << endl;
@@ -180,14 +186,21 @@ namespace pwn {
     translationalRatio = std::numeric_limits<float>::max();
     rotationalRatio = std::numeric_limits<float>::max();
 
-#pragma omp parallel 
-    {
-#pragma omp critical 
-      {
-	b += _linearizer->b();
-	H += _linearizer->H();
-      }
-    }
+// #pragma omp parallel 
+//     {
+// #pragma omp critical 
+//       {
+// 	b += _linearizer->b();
+// 	H += _linearizer->H() + Matrix6f::Identity();
+//       }
+//     }
+
+    Eigen::Isometry3f invT = _T.inverse();
+    invT.matrix().block<1, 4>(3, 0) << 0.0f, 0.0f, 0.0f, 1.0f;
+    _linearizer->setT(invT);
+    _linearizer->update();
+    H += _linearizer->H() + Matrix6f::Identity();
+    b += _linearizer->b();
 
     JacobiSVD<Matrix6f> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
     Matrix6f localSigma = svd.solve(Matrix6f::Identity());
@@ -196,17 +209,12 @@ namespace pwn {
     g2o::sampleUnscented(sigmaPoints, localMean, localSigma);
   
     Eigen::Isometry3f dT = _T;  // transform from current to reference
-    if (_debug) {
-      cerr << "##T: " << t2v(dT).transpose() << endl;
-      cerr << "##hDet(): " << H.determinant() << endl;
-      cerr << "##localH: " <<endl << H << endl;
-      cerr << "##localSigma: " <<endl << localSigma << endl;
-      cerr << "##localSigma * localH: " << endl << localSigma * H << endl;
-    }
+    
     // remap each of the sigma points to their original position
+#pragma omp parallel 
     for (size_t i = 0; i < sigmaPoints.size(); i++) {
       SigmaPoint& p = sigmaPoints[i];
-      p._sample = t2v(dT*v2t(p._sample).inverse());
+      p._sample = t2v(dT * v2t(p._sample).inverse());
     }
     // reconstruct the gaussian 
     g2o::reconstructGaussian(mean,localSigma, sigmaPoints);
@@ -216,18 +224,11 @@ namespace pwn {
   
     // have a look at the svd of the rotational and the translational part;
     JacobiSVD<Matrix3f> partialSVD;
-    partialSVD.compute(Omega.block<3,3>(0,0));
+    partialSVD.compute(Omega.block<3, 3>(0, 0));
     translationalRatio = partialSVD.singularValues()(0) / partialSVD.singularValues()(2);
-    if (_debug) {
-      cerr << "##singular values of the Omega_t: " << partialSVD.singularValues().transpose() << endl;
-      cerr << "##translational_ratio: " <<  translationalRatio << endl;
-    } 
-    partialSVD.compute(Omega.block<3,3>(3,3));
-    rotationalRatio = partialSVD.singularValues()(0)/partialSVD.singularValues()(2);
-    if (_debug) {
-      cerr << "##singular values of the Omega_r: " << partialSVD.singularValues().transpose() << endl; 
-      cerr << "##rotational_ratio: " << rotationalRatio << endl;
-    }
+    
+    partialSVD.compute(Omega.block<3, 3>(3, 3));
+    rotationalRatio = partialSVD.singularValues()(0) / partialSVD.singularValues()(2);
   }
 
   void Aligner::serialize(boss::ObjectData& data, boss::IdContext& context){

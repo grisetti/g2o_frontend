@@ -25,6 +25,7 @@ int main(int argc, char** argv){
   std::string _topic = "/camera/depth_registered/image_rect_raw";
   boss_map::MapManager* manager = new boss_map::MapManager();
 
+
   PwnTrackerRos* tracker = new PwnTrackerRos(nh, tfListener, tfBroadcaster, _topic, argv[2],
 					     aligner, converter, manager);
   // hand held camera

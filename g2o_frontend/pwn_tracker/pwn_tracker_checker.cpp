@@ -101,7 +101,6 @@ int main(int argc, char** argv){
 
   // sequentially process the data
   boss::Serializable* o=0;
-  size_t lastAddedResult = 0;
   int count=0;
 
   while( (o=des.readObject()) ){
@@ -117,7 +116,6 @@ int main(int argc, char** argv){
       closer->addRelation(r);
     }
     int committedRelations = closer->committedRelations().size();
-    lastAddedResult = closer->results().size();
     if (committedRelations ){
       char fname[100];
       wrapper->optimize();
