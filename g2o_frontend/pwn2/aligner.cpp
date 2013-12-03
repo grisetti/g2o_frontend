@@ -157,11 +157,12 @@ namespace pwn {
       }
     } 
     else {
-      // cout << "************** I FOUND SOLUTION VALID SOLUTION   (eigenratio ok) *******************" << endl;
-      // cout << "tr: " << _translationalEigenRatio << " rr: " << _rotationalEigenRatio << endl;
-      // cout << "************************************************************************************" << endl;
+      if (_debug) {
+	cerr << "************** I FOUND SOLUTION VALID SOLUTION   (eigenratio ok) *******************" << endl;
+	cerr << "tr: " << _translationalEigenRatio << " rr: " << _rotationalEigenRatio << endl;
+	cerr << "************************************************************************************" << endl;
+      }
     }
-
     if (_debug) {
       cout << "Solution statistics in (t, mq): " << endl;
       cout << "mean: " << _mean.transpose() << endl;
@@ -185,14 +186,21 @@ namespace pwn {
     translationalRatio = std::numeric_limits<float>::max();
     rotationalRatio = std::numeric_limits<float>::max();
 
-#pragma omp parallel 
-    {
-#pragma omp critical 
-      {
-	b += _linearizer->b();
-	H += _linearizer->H() + Matrix6f::Identity();
-      }
-    }
+// #pragma omp parallel 
+//     {
+// #pragma omp critical 
+//       {
+// 	b += _linearizer->b();
+// 	H += _linearizer->H() + Matrix6f::Identity();
+//       }
+//     }
+
+    Eigen::Isometry3f invT = _T.inverse();
+    invT.matrix().block<1, 4>(3, 0) << 0.0f, 0.0f, 0.0f, 1.0f;
+    _linearizer->setT(invT);
+    _linearizer->update();
+    H += _linearizer->H() + Matrix6f::Identity();
+    b += _linearizer->b();
 
     JacobiSVD<Matrix6f> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
     Matrix6f localSigma = svd.solve(Matrix6f::Identity());
@@ -200,14 +208,8 @@ namespace pwn {
     Vector6f localMean = Vector6f::Zero();
     g2o::sampleUnscented(sigmaPoints, localMean, localSigma);
   
-    Eigen::Isometry3f dT = _initialGuess * _T;  // transform from current to reference
-    if (_debug) {
-      cerr << "##T: " << t2v(dT).transpose() << endl;
-      cerr << "##hDet(): " << H.determinant() << endl;
-      cerr << "##localH: " <<endl << H << endl;
-      cerr << "##localSigma: " <<endl << localSigma << endl;
-      cerr << "##localSigma * localH: " << endl << localSigma * H << endl;
-    }
+    Eigen::Isometry3f dT = _T;  // transform from current to reference
+    
     // remap each of the sigma points to their original position
 #pragma omp parallel 
     for (size_t i = 0; i < sigmaPoints.size(); i++) {
@@ -224,16 +226,9 @@ namespace pwn {
     JacobiSVD<Matrix3f> partialSVD;
     partialSVD.compute(Omega.block<3, 3>(0, 0));
     translationalRatio = partialSVD.singularValues()(0) / partialSVD.singularValues()(2);
-    if (_debug) {
-      cerr << "##singular values of the Omega_t: " << partialSVD.singularValues().transpose() << endl;
-      cerr << "##translational_ratio: " <<  translationalRatio << endl;
-    } 
+    
     partialSVD.compute(Omega.block<3, 3>(3, 3));
     rotationalRatio = partialSVD.singularValues()(0) / partialSVD.singularValues()(2);
-    if (_debug) {
-      cerr << "##singular values of the Omega_r: " << partialSVD.singularValues().transpose() << endl; 
-      cerr << "##rotational_ratio: " << rotationalRatio << endl;
-    }
   }
 
   void Aligner::serialize(boss::ObjectData& data, boss::IdContext& context){

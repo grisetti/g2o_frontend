@@ -77,12 +77,12 @@ int main(int argc, char **argv) {
   sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   Frame referenceFrame, currentFrame;
   converter->compute(referenceFrame, referenceScaledDepth, sensorOffset);
-  //converter->compute(currentFrame, currentScaledDepth, sensorOffset);
-  converter->compute(currentFrame, referenceScaledDepth, sensorOffset);
-  Isometry3f displacement = Isometry3f::Identity();
-  displacement.translation() = Vector3f(0.2f, 0.0f, -0.2f);
-  displacement.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-  currentFrame.transformInPlace(displacement);
+  converter->compute(currentFrame, currentScaledDepth, sensorOffset);
+  // converter->compute(currentFrame, referenceScaledDepth, sensorOffset);
+  // Isometry3f displacement = Isometry3f::Identity();
+  // displacement.translation() = Vector3f(0.2f, 0.0f, -0.2f);
+  // displacement.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+  // currentFrame.transformInPlace(displacement);
 
   Eigen::Isometry3f initialGuess = Eigen::Isometry3f::Identity();
   initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
