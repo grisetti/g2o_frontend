@@ -18,7 +18,7 @@ namespace pwn_tracker{
 
 using namespace std;
 using namespace boss;
-using namespace boss_logger;
+using namespace boss_map;
 using namespace boss_map;
 using namespace pwn;
 

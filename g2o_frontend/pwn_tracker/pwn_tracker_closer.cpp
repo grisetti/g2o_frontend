@@ -1,5 +1,5 @@
 
-#include "g2o_frontend/boss_logger/bframe.h"
+#include "g2o_frontend/boss_map/bframe.h"
 #include "g2o_frontend/pwn2/frame.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/depthimageconverter.h"
@@ -83,7 +83,7 @@ struct MatchingCandidate{
 };
 
 Frame* makeFrame(DepthImageConverter* converter, PwnTrackerFrame* trackerFrame, int scale = 8){
-  boss_logger::ImageBLOB* depthBLOB = trackerFrame->depthImage.get();
+  boss_map::ImageBLOB* depthBLOB = trackerFrame->depthImage.get();
   PinholePointProjector* projector = (PinholePointProjector*)converter->projector();
   projector->setImageSize(trackerFrame->imageRows, trackerFrame->imageCols);
   pwn::DepthImage depth;
@@ -451,8 +451,8 @@ void alignFrames(Aligner* aligner, DepthImageConverter* converter,
 
   //pwn::Frame* fromCloud = from->cloud.get();
   //pwn::Frame* toCloud = to->cloud.get();
-  boss_logger::ImageBLOB* fromDepthBlob = from->depthImage.get();
-  boss_logger::ImageBLOB* toDepthBlob = to->depthImage.get();
+  boss_map::ImageBLOB* fromDepthBlob = from->depthImage.get();
+  boss_map::ImageBLOB* toDepthBlob = to->depthImage.get();
   
   PinholePointProjector* projector = (PinholePointProjector*)converter->projector();
   pwn::DepthImage fromDepth, toDepth;

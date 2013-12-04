@@ -58,7 +58,7 @@ include_directories(${G2O_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} ${G2O_FRONTEND} ${Q
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 rosbuild_add_executable(pwn_tracker_node src/pwn_tracker_ros.cpp  src/pwn_tracker_node.cpp )
-target_link_libraries(pwn_tracker_node g2o_frontend_pwn_tracker g2o_frontend_pwn2_library boss_map boss_logger g2o_frontend_boss)
+target_link_libraries(pwn_tracker_node g2o_frontend_pwn_tracker g2o_frontend_pwn2_library boss_map boss_map g2o_frontend_boss)
 rosbuild_link_boost(pwn_tracker_node  signals)
 
 #rosbuild_add_executable(cfind src/cfind.cpp)

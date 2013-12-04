@@ -31,8 +31,8 @@ void RosPinholeImageDataMessageHandler::subscribe() {
   cout << "subscribing to topic: [" <<  _topicName << "]" << endl;
 }
 
-void RosPinholeImageDataMessageHandler::setSensor(boss_logger::BaseSensor* sensor_) {
-  boss_logger::PinholeImageSensor* cameraSensor = dynamic_cast<boss_logger::PinholeImageSensor*>(sensor_);
+void RosPinholeImageDataMessageHandler::setSensor(boss_map::BaseSensor* sensor_) {
+  boss_map::PinholeImageSensor* cameraSensor = dynamic_cast<boss_map::PinholeImageSensor*>(sensor_);
   if(!cameraSensor) {
     cerr << "WARNING: tried to set a non camera sensor to a camera message handler, skipping" << endl;
     return;
@@ -40,13 +40,13 @@ void RosPinholeImageDataMessageHandler::setSensor(boss_logger::BaseSensor* senso
   _sensor = cameraSensor;
 }
 
-void RosPinholeImageDataMessageHandler::publish(boss_logger::BaseSensorData* sdata) {
+void RosPinholeImageDataMessageHandler::publish(boss_map::BaseSensorData* sdata) {
   if(!_sensor) {
     cerr << "WARNING: missing camera sensor, skipping" << endl;
     return;
   }
 
-  boss_logger::PinholeImageData *pinholeImageData = dynamic_cast<boss_logger::PinholeImageData*>(sdata);
+  boss_map::PinholeImageData *pinholeImageData = dynamic_cast<boss_map::PinholeImageData*>(sdata);
   if(!pinholeImageData) {
     cerr << "WARNING: trying to publish non camera data from a camera message handler, skipping" << endl;
     return;
@@ -58,7 +58,7 @@ void RosPinholeImageDataMessageHandler::publish(boss_logger::BaseSensorData* sda
   cameraInfoHeader.stamp = ros::Time(pinholeImageData->timestamp());
   cameraInfoHeader.frame_id = _sensor->frame()->name();
   cameraInfo.header = cameraInfoHeader;
-  boss_logger::ImageBLOB* imageBlob = pinholeImageData->imageBlob().get();
+  boss_map::ImageBLOB* imageBlob = pinholeImageData->imageBlob().get();
   cameraInfo.height = imageBlob->cvImage().rows;
   cameraInfo.width = imageBlob->cvImage().cols;
   Eigen::VectorXd distParam = _sensor->distortionParameters();
@@ -123,12 +123,12 @@ bool RosPinholeImageDataMessageHandler::configReady() const {
   
 void RosPinholeImageDataMessageHandler::callback(const sensor_msgs::Image::ConstPtr& img, const sensor_msgs::CameraInfo::ConstPtr& info) {
   if  (! _sensor) {
-    boss_logger::StringReferenceFrameMap::iterator it = _context->frameMap().find(info->header.frame_id);
+    boss_map::StringReferenceFrameMap::iterator it = _context->frameMap().find(info->header.frame_id);
     if (it == _context->frameMap().end()) {
       cerr << "missing transform for frame [" << info->header.frame_id << "], skipping" << endl;
       return;
     }
-    _sensor = new boss_logger::PinholeImageSensor;
+    _sensor = new boss_map::PinholeImageSensor;
     _sensor->setTopic(_topicName);
     _sensor->setReferenceFrame(it->second);
     Eigen::Matrix3d cmat;
@@ -149,15 +149,15 @@ void RosPinholeImageDataMessageHandler::callback(const sensor_msgs::Image::Const
   if (! _context->getOdomPose(robotTransform, img->header.stamp.toSec()) ){
     return;
   } 
-  boss_logger::ReferenceFrame* newReferenceFrame = new boss_logger::ReferenceFrame("robotPose", robotTransform);
+  boss_map::ReferenceFrame* newReferenceFrame = new boss_map::ReferenceFrame("robotPose", robotTransform);
   // _context->messageQueue().push_back(newReferenceFrame);
   // we get the image from ROS
 
   cv_bridge::CvImagePtr ptr=cv_bridge::toCvCopy(img, img->encoding);
-  boss_logger::ImageBLOB* imageBlob = new boss_logger::ImageBLOB();
+  boss_map::ImageBLOB* imageBlob = new boss_map::ImageBLOB();
   imageBlob->cvImage() = ptr->image.clone();
   imageBlob->adjustFormat();
-  boss_logger::PinholeImageData* imageData = new boss_logger::PinholeImageData(_sensor);
+  boss_map::PinholeImageData* imageData = new boss_map::PinholeImageData(_sensor);
   imageData->setTimestamp(img->header.stamp.toSec());
   imageData->setTopic(_sensor->topic());
   imageData->imageBlob().set(imageBlob);

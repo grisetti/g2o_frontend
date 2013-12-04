@@ -20,8 +20,8 @@ void RosLaserDataMessageHandler::subscribe() {
   cerr << "subscribing to topic: [" <<  _topicName << "]" << endl;
 }
 
-void RosLaserDataMessageHandler::setSensor(boss_logger::BaseSensor* sensor_) {
-  boss_logger::LaserSensor* laserSensor = dynamic_cast<boss_logger::LaserSensor*>(sensor_);
+void RosLaserDataMessageHandler::setSensor(boss_map::BaseSensor* sensor_) {
+  boss_map::LaserSensor* laserSensor = dynamic_cast<boss_map::LaserSensor*>(sensor_);
   if(!laserSensor) {
     cerr << "WARNING: tried to set a non laser sensor to a laser message handler, skipping" << endl;
     return;
@@ -29,13 +29,13 @@ void RosLaserDataMessageHandler::setSensor(boss_logger::BaseSensor* sensor_) {
   _sensor = laserSensor;
 }
 
-void RosLaserDataMessageHandler::publish(boss_logger::BaseSensorData* sdata) {
+void RosLaserDataMessageHandler::publish(boss_map::BaseSensorData* sdata) {
   if(!_sensor) {
     cerr << "WARNING: missing laser sensor, skipping" << endl;
     return;
   }
 
-  boss_logger::LaserData *laserData = dynamic_cast<boss_logger::LaserData*>(sdata);
+  boss_map::LaserData *laserData = dynamic_cast<boss_map::LaserData*>(sdata);
   if(!laserData) {
     cerr << "WARNING: trying to publish non laser data from a laser message handler, skipping" << endl;
     return;
@@ -70,12 +70,12 @@ void RosLaserDataMessageHandler::advertise() {
 
 void RosLaserDataMessageHandler::callback(const sensor_msgs::LaserScanConstPtr& scan) {
   if  (! _sensor) {
-    std::map<std::string, boss_logger::ReferenceFrame*>::iterator it = _context->frameMap().find(scan->header.frame_id);
+    std::map<std::string, boss_map::ReferenceFrame*>::iterator it = _context->frameMap().find(scan->header.frame_id);
     if (it == _context->frameMap().end()) {
       cerr << "missing transform for frame [" << scan->header.frame_id << "], skipping" << endl;
       return;
     }
-    _sensor = new boss_logger::LaserSensor;
+    _sensor = new boss_map::LaserSensor;
     _sensor->setTopic(_topicName);
     _sensor->setReferenceFrame(it->second);
     float fov = scan->angle_max-scan->angle_min;
@@ -91,11 +91,11 @@ void RosLaserDataMessageHandler::callback(const sensor_msgs::LaserScanConstPtr& 
   if (! _context->getOdomPose(robotTransform, scan->header.stamp.toSec()) ){
     return;
   } 
-  boss_logger::ReferenceFrame* newReferenceFrame = new boss_logger::ReferenceFrame("robotPose", robotTransform);
+  boss_map::ReferenceFrame* newReferenceFrame = new boss_map::ReferenceFrame("robotPose", robotTransform);
   //_context->messageQueue().push_back(newReferenceFrame);
   // we get the image from ROS
 
-  boss_logger::LaserData* laserData = new boss_logger::LaserData(_sensor);
+  boss_map::LaserData* laserData = new boss_map::LaserData(_sensor);
   laserData->setTimestamp(scan->header.stamp.toSec());
   laserData->setTopic(_sensor->topic());
   laserData->ranges().resize(scan->ranges.size());

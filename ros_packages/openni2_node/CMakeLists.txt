@@ -40,4 +40,4 @@ target_link_libraries(openni2_node ${OPENNI2_LIBRARY} ${ZLIB_LIBRARY} )
 
 link_directories(${G2O_FRONTEND}/lib)
 rosbuild_add_executable(openni2_client src/openni2_client.cpp )
-target_link_libraries(openni2_client ${ZLIB_LIBRARY} boss_logger g2o_frontend_boss)
+target_link_libraries(openni2_client ${ZLIB_LIBRARY} boss_map g2o_frontend_boss)

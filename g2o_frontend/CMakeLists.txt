@@ -5,7 +5,7 @@ ADD_SUBDIRECTORY(ransac)
 ADD_SUBDIRECTORY(boss)
 ADD_SUBDIRECTORY(boss_map)
 ADD_SUBDIRECTORY(boss_map_building)
-#ADD_SUBDIRECTORY(boss_logger)
+#ADD_SUBDIRECTORY(boss_map)
 #ADD_SUBDIRECTORY(boss_map)
 
 

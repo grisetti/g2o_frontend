@@ -12,7 +12,7 @@ RosMessageContext::RosMessageContext(ros::NodeHandle* nh_) {
   _baseReferenceFrameId = "/base_link";
 }
 
-RosMessageContext::RosMessageContext(ros::NodeHandle* nh_, boss_logger::RobotConfiguration* robotConfiguration) {
+RosMessageContext::RosMessageContext(ros::NodeHandle* nh_, boss_map::RobotConfiguration* robotConfiguration) {
   _nh = nh_;
   _transformHandler = new RosTransformMessageHandler(this);
   _tfListener = new tf::TransformListener(*_nh, ros::Duration(30.0));
@@ -138,8 +138,8 @@ void RosMessageContext::initPublishers(){
   }
 }
 
-void RosMessageContext::updateOdomReferenceFrame(boss_logger::ReferenceFrame* newOdomReRerenceFrame) {
-  boss_logger::ReferenceFrame* baseReferenceFrame = this->frameMap()[this->baseReferenceFrameId()];
+void RosMessageContext::updateOdomReferenceFrame(boss_map::ReferenceFrame* newOdomReRerenceFrame) {
+  boss_map::ReferenceFrame* baseReferenceFrame = this->frameMap()[this->baseReferenceFrameId()];
   if (baseReferenceFrame) {
     baseReferenceFrame->setTransform(newOdomReRerenceFrame->transform());
   }

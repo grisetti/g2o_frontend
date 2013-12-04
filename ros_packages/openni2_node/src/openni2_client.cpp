@@ -11,7 +11,7 @@
 #include "tf/transform_listener.h"
 #include "cv_bridge/cv_bridge.h"
 #include "g2o_frontend/boss/serializer.h"
-#include "g2o_frontend/boss_logger/bimagesensor.h"
+#include "g2o_frontend/boss_map/bimagesensor.h"
 
 using namespace std;
 using namespace boss;

@@ -10,15 +10,15 @@
 
 #include "g2o_frontend/boss/deserializer.h"
 #include "g2o_frontend/boss/serializer.h"
-#include "g2o_frontend/boss_logger/bimagesensor.h"
-#include "g2o_frontend/boss_logger/blasersensor.h"
-#include "g2o_frontend/boss_logger/bimusensor.h"
-#include "g2o_frontend/boss_logger/bsynchronizer.h"
+#include "g2o_frontend/boss_map/bimagesensor.h"
+#include "g2o_frontend/boss_map/blasersensor.h"
+#include "g2o_frontend/boss_map/bimusensor.h"
+#include "g2o_frontend/boss_map/bsynchronizer.h"
 using namespace std;
 
 
 const char* banner[]={
-  "boss_logger: listens to ros topics and generates a boss log",
+  "boss_map: listens to ros topics and generates a boss log",
   " Informations you need to tell the system:",
   " - the type and topic you want to save. The following types are supported",
   "   - Images, use the '-image:topic' option, e.g. '-image:/camera_array/camera_image';"
@@ -29,8 +29,8 @@ const char* banner[]={
   " - the base frame id, by using the '-baseReferenceFrame:frame' option e.g.: '-baseReferenceFrame:/base_link';",
   "   if unspecified it defaults to '/base_link'.", 
   "",
-  "call it with: boss_logger [arguments] <output filename>",
-  "example: rosrun boss_ros boss_logger -image:/kinect/depth_registered/image_raw -image:/kinect/rgb/image_color -imu:/imu/data -laser:/front_scan test.log",
+  "call it with: boss_map [arguments] <output filename>",
+  "example: rosrun boss_ros boss_map -image:/kinect/depth_registered/image_raw -image:/kinect/rgb/image_color -imu:/imu/data -laser:/front_scan test.log",
   0,
 };
 
@@ -134,7 +134,7 @@ int main(int argc, char** argv){
   ser.setFilePath(filename);
   ser.setBinaryPath(filename+".d/<classname>.<id>.<ext>");
   
-  ros::init(argc, argv, "boss_logger");
+  ros::init(argc, argv, "boss_map");
   ros::NodeHandle nh;
 
   cerr << "Started the logger on file [" << filename << "]"  << endl; 
@@ -148,7 +148,7 @@ int main(int argc, char** argv){
   processArgs(&context, parsedArgs);
   
   // cmd line:
-  // rosrun boss_ros boss_logger -image:/kinect/depth_registered/image_raw -image:/kinect/rgb/image_color -imu:/imu/data -laser:/front_scan
+  // rosrun boss_ros boss_map -image:/kinect/depth_registered/image_raw -image:/kinect/rgb/image_color -imu:/imu/data -laser:/front_scan
   // // register the necessary handlers
   // context.addHandler("laser","/front_scan");
   // context.addHandler("imu","/imu/data");
@@ -169,7 +169,7 @@ int main(int argc, char** argv){
     if (! confReady && isReady){
       cerr << endl << "CONF IS NOW READY!!!, STARTING WRITING" << endl;
       context.serializeInternals(ser);
-      boss_logger::RobotConfiguration conf = context;
+      boss_map::RobotConfiguration conf = context;
       //conf.serializeInternals(ser);
       ser.writeObject(conf);
       // for (boss::StringReferenceFrameMap::iterator it = context.frameMap().begin(); it!=context.frameMap().end(); it++)
@@ -180,13 +180,13 @@ int main(int argc, char** argv){
     }
     if (confReady){
       while (context.messageQueue().size()){
-	boss_logger::BaseSensorData* data = dynamic_cast<boss_logger::BaseSensorData*>(context.messageQueue().front());
+	boss_map::BaseSensorData* data = dynamic_cast<boss_map::BaseSensorData*>(context.messageQueue().front());
 	if (! data){
 	  cerr << "fatal error, inconsistent data" << endl; 
 	  return 0;
 	}
 	context.messageQueue().pop_front();
-	boss_logger::ReferenceFrame* f = data->robotReferenceFrame();
+	boss_map::ReferenceFrame* f = data->robotReferenceFrame();
 	if (f){
 	  ser.writeObject(*f);
 	}
