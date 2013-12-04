@@ -2,12 +2,12 @@
 #define _PWN_VIEWER_STATE_H_
 
 #include "g2o_frontend/basemath/bm_se3.h"
-#include "g2o_frontend/pwn2/frame.h"
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/informationmatrixcalculator.h"
-#include "g2o_frontend/pwn2/statscalculator.h"
-#include "g2o_frontend/pwn2/depthimageconverter.h"
-#include "g2o_frontend/pwn2/aligner.h"
+#include "g2o_frontend/pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/pinholepointprojector.h"
+#include "g2o_frontend/pwn_core/informationmatrixcalculator.h"
+#include "g2o_frontend/pwn_core/statscalculator.h"
+#include "g2o_frontend/pwn_core/depthimageconverter.h"
+#include "g2o_frontend/pwn_core/aligner.h"
 #include "pwn_gui_main_window.h"
 #include "drawable_frame.h"
 

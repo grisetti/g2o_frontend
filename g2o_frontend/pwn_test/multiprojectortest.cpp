@@ -3,10 +3,10 @@
 
 #include "g2o/stuff/command_args.h"
 
-#include "g2o_frontend/pwn2/depthimage.h"
-#include "g2o_frontend/pwn2/depthimageconverter.h"
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/multipointprojector.h"
+#include "g2o_frontend/pwn_core/depthimage.h"
+#include "g2o_frontend/pwn_core/depthimageconverter.h"
+#include "g2o_frontend/pwn_core/pinholepointprojector.h"
+#include "g2o_frontend/pwn_core/multipointprojector.h"
 
 using namespace std;
 using namespace Eigen;

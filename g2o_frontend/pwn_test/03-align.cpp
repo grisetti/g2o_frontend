@@ -1,10 +1,10 @@
 #include <g2o/stuff/command_args.h>
-#include <g2o_frontend/pwn2/depthimage.h>
-#include <g2o_frontend/pwn2/depthimageconverterintegralimage.h>
-#include <g2o_frontend/pwn2/pinholepointprojector.h>
-#include <g2o_frontend/pwn2/statscalculatorintegralimage.h>
-#include <g2o_frontend/pwn2/informationmatrixcalculator.h>
-#include <g2o_frontend/pwn2/aligner.h>
+#include <g2o_frontend/pwn_core/depthimage.h>
+#include <g2o_frontend/pwn_core/depthimageconverterintegralimage.h>
+#include <g2o_frontend/pwn_core/pinholepointprojector.h>
+#include <g2o_frontend/pwn_core/statscalculatorintegralimage.h>
+#include <g2o_frontend/pwn_core/informationmatrixcalculator.h>
+#include <g2o_frontend/pwn_core/aligner.h>
 #include <g2o_frontend/boss/serializer.h>
 #include <g2o_frontend/boss/deserializer.h>
 #include <string>

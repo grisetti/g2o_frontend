@@ -2,14 +2,14 @@
 #define _PWN_TRACKER_H_
 
 #include "g2o_frontend/boss_map/boss_map_manager.h"
-#include "g2o_frontend/boss_logger/bframe.h"
-#include "g2o_frontend/pwn2/frame.h"
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/depthimageconverterintegralimage.h"
-#include "g2o_frontend/pwn2/aligner.h"
+#include "g2o_frontend/boss_map/bframe.h"
+#include "g2o_frontend/pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/pinholepointprojector.h"
+#include "g2o_frontend/pwn_core/depthimageconverterintegralimage.h"
+#include "g2o_frontend/pwn_core/aligner.h"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
-#include "g2o_frontend/boss_logger/bimagesensor.h"
+#include "g2o_frontend/boss_map/bimagesensor.h"
 #include "opencv2/core/core.hpp"
 #include <fstream>
 #include <iostream>
@@ -18,7 +18,6 @@ namespace pwn_tracker{
 
 using namespace std;
 using namespace boss;
-using namespace boss_logger;
 using namespace boss_map;
 using namespace pwn;
 
@@ -33,10 +32,10 @@ using namespace pwn;
     virtual void deserialize(ObjectData& data, IdContext& context);
     int seq;
     pwn::Frame* cloud;
-    boss_logger::ImageBLOBReference depthImage;
+    boss_map::ImageBLOBReference depthImage;
     int imageRows, imageCols;
-    boss_logger::ImageBLOBReference normalThumbnail;
-    boss_logger::ImageBLOBReference depthThumbnail;
+    boss_map::ImageBLOBReference normalThumbnail;
+    boss_map::ImageBLOBReference depthThumbnail;
     Eigen::Isometry3f sensorOffset;
     Eigen::Matrix3f cameraMatrix;
     float scale;

@@ -17,7 +17,7 @@ class RosMessageHandler {
   
   virtual ~RosMessageHandler();
   virtual void subscribe() = 0;
-  virtual void publish(boss_logger::BaseSensorData* sdata) {}
+  virtual void publish(boss_map::BaseSensorData* sdata) {}
   virtual void publish(double timestamp) {}
   virtual void advertise() {}
   virtual bool configReady() const;

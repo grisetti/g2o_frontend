@@ -1,5 +1,6 @@
 #ifndef _BOSS_MAP_UTILS_H_
 #define _BOSS_MAP_UTILS_H_
+
 #include "boss_map_manager.h"
 #include "g2o_frontend/basemath/bm_se3.h"
 

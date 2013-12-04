@@ -5,34 +5,32 @@
 #include "g2o/stuff/command_args.h"
 #include "g2o/stuff/timeutil.h"
 
-#include "g2o_frontend/pwn2/frame.h"
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/depthimageconverter.h"
-#include "g2o_frontend/pwn2/aligner.h"
+#include "g2o_frontend/pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/pinholepointprojector.h"
+#include "g2o_frontend/pwn_core/depthimageconverter.h"
+#include "g2o_frontend/pwn_core/aligner.h"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 
-#include "g2o_frontend/boss_logger/bframe.h"
-#include "g2o_frontend/boss_logger/bframerelation.h"
-#include "g2o_frontend/boss_logger/bimagesensor.h"
-#include "g2o_frontend/boss_logger/blasersensor.h"
-#include "g2o_frontend/boss_logger/bimusensor.h"
-#include "g2o_frontend/boss_logger/brobot_configuration.h"
-
+#include "g2o_frontend/boss_map/bframe.h"
+#include "g2o_frontend/boss_map/bframerelation.h"
+#include "g2o_frontend/boss_map/bimagesensor.h"
+#include "g2o_frontend/boss_map/blasersensor.h"
+#include "g2o_frontend/boss_map/bimusensor.h"
+#include "g2o_frontend/boss_map/brobot_configuration.h"
 #include "g2o_frontend/boss_map/boss_map.h"
 #include "g2o_frontend/boss_map/sensing_frame_node.h"
 #include "g2o_frontend/boss_map/map_node_processor.h"
+
 #include "two_depthimage_aligner_node.h"
 
 using namespace std;
 using namespace g2o;
 using namespace Eigen;
-using namespace boss_map;
 using namespace boss;
+using namespace boss_map;
 using namespace pwn;
 using namespace pwn_boss;
-
-
 
 std::vector<Serializable*> readConfig(const std::string /* prefix*/, Aligner*& aligner, DepthImageConverter*& converter, const std::string& configFile){
   aligner = 0;

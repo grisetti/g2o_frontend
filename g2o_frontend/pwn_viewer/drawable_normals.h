@@ -1,7 +1,7 @@
 #ifndef DRAWABLE_NORMALS
 #define DRAWABLE_NORMALS
 
-#include "../pwn2/homogeneousvector4f.h"
+#include "../pwn_core/homogeneousvector4f.h"
 #include "gl_parameter_normals.h"
 #include "drawable.h"
 

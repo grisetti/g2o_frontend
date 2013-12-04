@@ -127,7 +127,7 @@ namespace pwn_tracker{
   }
 
   Frame* PwnCache::loadFrame(PwnTrackerFrame* trackerFrame){
-    boss_logger::ImageBLOB* depthBLOB = trackerFrame->depthImage.get();
+    boss_map::ImageBLOB* depthBLOB = trackerFrame->depthImage.get();
     PinholePointProjector* projector = (PinholePointProjector*)_converter->projector();
     projector->setImageSize(trackerFrame->imageRows, trackerFrame->imageCols);
     pwn::DepthImage depth;

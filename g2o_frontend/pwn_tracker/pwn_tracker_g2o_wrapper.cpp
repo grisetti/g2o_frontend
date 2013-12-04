@@ -1,8 +1,8 @@
-#include "g2o_frontend/boss_logger/bframe.h"
-#include "g2o_frontend/pwn2/frame.h"
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/depthimageconverter.h"
-#include "g2o_frontend/pwn2/aligner.h"
+#include "g2o_frontend/boss_map/bframe.h"
+#include "g2o_frontend/pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/pinholepointprojector.h"
+#include "g2o_frontend/pwn_core/depthimageconverter.h"
+#include "g2o_frontend/pwn_core/aligner.h"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 
@@ -23,7 +23,7 @@
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 
 #include "opencv2/highgui/highgui.hpp"
-#include "g2o_frontend/boss_map/boss_map_g2o_reflector.h"
+#include "g2o_frontend/boss_map_building/boss_map_g2o_reflector.h"
 #include <fstream>
 #include <iostream>
 #include <queue>
@@ -33,6 +33,7 @@
 #include "pwn_tracker_g2o_wrapper.h"
 
 namespace pwn_tracker {
+  using namespace boss_map_building;
 
   G2oWrapper::G2oWrapper(MapManager* manager){
     this->manager = manager;

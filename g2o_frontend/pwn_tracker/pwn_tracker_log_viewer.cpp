@@ -19,7 +19,7 @@
 #include "g2o_frontend/basemath/bm_se3.h"
 #include "g2o_frontend/pwn_utils/pwn_utils.h"
 
-#include "g2o_frontend/pwn2/frame.h"
+#include "g2o_frontend/pwn_core/frame.h"
 
 #include "pwn_tracker.h"
 
@@ -148,7 +148,7 @@ int main (int argc, char** argv) {
 	}
 	if(pointClouds[i] == 0) {
 	  pointClouds[i] = new Frame();
-	  boss_logger::ImageBLOB* fromDepthBlob = trackerFrames[i]->depthImage.get();
+	  boss_map::ImageBLOB* fromDepthBlob = trackerFrames[i]->depthImage.get();
 	  DepthImage depthImage;
 	  depthImage.fromCvMat(fromDepthBlob->cvImage());
 	  DepthImage::scale(scaledDepthImage, depthImage, scale);

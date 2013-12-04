@@ -1,6 +1,6 @@
 #ifndef _CU_ALIGNER_
 #define _CU_ALIGNER_
-#include "g2o_frontend/pwn2/aligner.h"
+#include "g2o_frontend/pwn_core/aligner.h"
 
 namespace pwn {
  

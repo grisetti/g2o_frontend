@@ -3,11 +3,10 @@
 
 #include "boss_map_manager.h"
 #include "sensing_frame_node.h"
-#include "g2o_frontend/boss_logger/bimusensor.h"
-#include "g2o_frontend/boss_logger/brobot_configuration.h"
+#include "bimusensor.h"
+#include "brobot_configuration.h"
 
-
-namespace boss_map{
+namespace boss_map {
   using namespace boss;
   using namespace std;
 

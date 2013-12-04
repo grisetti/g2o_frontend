@@ -1,6 +1,7 @@
 #include "sensing_frame_node.h"
 #include "boss_map_manager.h"
 #include <stdexcept>
+
 namespace boss_map {
   using namespace boss;
   /***************************************** SensingFrame *****************************************/

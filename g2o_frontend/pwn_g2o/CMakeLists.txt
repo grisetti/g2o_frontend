@@ -11,7 +11,7 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${QGLVIEWER_INCLUDE_DIR} ${QT_INCLUDES}
 ADD_EXECUTABLE(pwn_g2o pwn_g2o.cpp)
 SET_TARGET_PROPERTIES(pwn_g2o PROPERTIES OUTPUT_NAME pwn_g2o)
 TARGET_LINK_LIBRARIES(pwn_g2o  
-  pwn2_library
+  pwn_core
   sensor_data_library
   ${G2O_CORE_LIBRARY}
   ${G2O_OPENGL_HELPER_LIBRARY}
@@ -34,7 +34,7 @@ ENDIF(CUDA_FOUND)
 ADD_EXECUTABLE(pwn_g2o_viewer pwn_g2o_viewer.cpp)
 SET_TARGET_PROPERTIES(pwn_g2o_viewer PROPERTIES OUTPUT_NAME pwn_g2o_viewer)
 TARGET_LINK_LIBRARIES(pwn_g2o_viewer  
-  pwn2_library pwn_viewer_library
+  pwn_core pwn_viewer_library
   pwn_mapper_library
   sensor_data_library
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
@@ -55,7 +55,7 @@ TARGET_LINK_LIBRARIES(pwn_g2o_viewer
 ADD_EXECUTABLE(pwn_g2o_mapper_viewer pwn_g2o_mapper_viewer.cpp)
 SET_TARGET_PROPERTIES(pwn_g2o_mapper_viewer PROPERTIES OUTPUT_NAME pwn_g2o_mapper_viewer)
 TARGET_LINK_LIBRARIES(pwn_g2o_mapper_viewer  
-  pwn2_library pwn_viewer_library
+  pwn_core pwn_viewer_library
   pwn_mapper_library
   sensor_data_library
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
@@ -76,7 +76,7 @@ TARGET_LINK_LIBRARIES(pwn_g2o_mapper_viewer
 ADD_EXECUTABLE(pwn_g2o_loop_closer pwn_g2o_loop_closer.cpp)
 SET_TARGET_PROPERTIES(pwn_g2o_loop_closer PROPERTIES OUTPUT_NAME pwn_g2o_loop_closer)
 TARGET_LINK_LIBRARIES(pwn_g2o_loop_closer  
-  pwn2_library pwn_viewer_library
+  pwn_core pwn_viewer_library
   pwn_mapper_library
   sensor_data_library
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
@@ -97,7 +97,7 @@ TARGET_LINK_LIBRARIES(pwn_g2o_loop_closer
 ADD_EXECUTABLE(pwn_g2o_follower pwn_g2o_follower.cpp)
 SET_TARGET_PROPERTIES(pwn_g2o_follower PROPERTIES OUTPUT_NAME pwn_g2o_follower)
 TARGET_LINK_LIBRARIES(pwn_g2o_follower  
-  pwn2_library pwn_viewer_library
+  pwn_core pwn_viewer_library
   pwn_mapper_library
   sensor_data_library
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 

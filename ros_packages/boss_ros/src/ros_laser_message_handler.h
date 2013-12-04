@@ -1,6 +1,6 @@
 #pragma once
 
-#include "g2o_frontend/boss_logger/blasersensor.h"
+#include "g2o_frontend/boss_map/blasersensor.h"
 
 #include "ros_message_handler.h"
 
@@ -12,21 +12,21 @@ class RosLaserDataMessageHandler : public RosMessageHandler {
   virtual ~RosLaserDataMessageHandler();
   
   virtual void subscribe();
-  virtual void publish(boss_logger::BaseSensorData* sdata = 0);
+  virtual void publish(boss_map::BaseSensorData* sdata = 0);
   virtual void advertise();
   virtual bool configReady() const;
   
   void callback(const sensor_msgs::LaserScanConstPtr& scan);
-  inline boss_logger::LaserSensor* sensor() {return _sensor;}
+  inline boss_map::LaserSensor* sensor() {return _sensor;}
   inline int pubQueueSize() { return _pubQueueSize; }
 
   inline void setPubQueueSize(int pubQueueSize_) { _pubQueueSize = pubQueueSize_; }
-  void setSensor(boss_logger::BaseSensor* sensor_);
+  void setSensor(boss_map::BaseSensor* sensor_);
 
  protected:
   int _pubQueueSize;
   std::string _topicName;
   ros::Subscriber _sub;
   ros::Publisher _pub;
-  boss_logger::LaserSensor* _sensor;
+  boss_map::LaserSensor* _sensor;
 };

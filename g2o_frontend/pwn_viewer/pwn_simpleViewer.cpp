@@ -20,7 +20,7 @@
 #include "g2o/stuff/command_args.h"
 #include "g2o_frontend/basemath/bm_se3.h"
 
-#include "../pwn2/frame.h"
+#include "../pwn_core/frame.h"
 
 using namespace Eigen;
 using namespace g2o;

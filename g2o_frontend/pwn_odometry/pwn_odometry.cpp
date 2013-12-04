@@ -4,7 +4,7 @@
 
 #include "g2o/stuff/command_args.h"
 
-#include "g2o_frontend/pwn2/frame.h"
+#include "g2o_frontend/pwn_core/frame.h"
 
 #include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
 #include "g2o_frontend/pwn_viewer/drawable_frame.h"

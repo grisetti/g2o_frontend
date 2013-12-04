@@ -19,7 +19,7 @@
 #include "g2o_frontend/basemath/bm_se3.h"
 #include "g2o_frontend/pwn_utils/pwn_utils.h"
 
-#include "g2o_frontend/pwn2/frame.h"
+#include "g2o_frontend/pwn_core/frame.h"
 
 #include "pwn_tracker.h"
 #include "g2o_frontend/boss_map/boss_map_manager.h"
@@ -119,7 +119,7 @@ int main (int argc, char** argv) {
     for (int i = 0; i < listWidget->count() && mainWindow->isVisible(); i++) {
       PwnTrackerFrame *pwnTrackerFrame = trackerFrames[i];
       Frame *frame = new Frame();
-      boss_logger::ImageBLOB *fromDepthBlob = pwnTrackerFrame->depthImage.get();
+      boss_map::ImageBLOB *fromDepthBlob = pwnTrackerFrame->depthImage.get();
       DepthImage depthImage;
       depthImage.fromCvMat(fromDepthBlob->cvImage());
       DepthImage::scale(scaledDepthImage, depthImage, scale);

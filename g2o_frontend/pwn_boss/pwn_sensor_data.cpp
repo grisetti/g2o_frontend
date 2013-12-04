@@ -1,9 +1,9 @@
 #include "pwn_sensor_data.h"
-namespace pwn_boss{
+
+namespace pwn_boss {
   using namespace boss;
   using namespace pwn;
-  using namespace boss_logger;
-
+  using namespace boss_map;
 
   PWNSensorData::PWNSensorData(int id, IdContext* context): BaseSensorData(id,context){}
     

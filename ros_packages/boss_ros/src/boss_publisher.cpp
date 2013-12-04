@@ -12,7 +12,7 @@
 
 using namespace std;
 using namespace boss;
-using namespace boss_logger;
+using namespace boss_map;
 
 inline double get_time() {
   struct timeval ts;
@@ -20,7 +20,7 @@ inline double get_time() {
   return ts.tv_sec + ts.tv_usec * 1e-6;
 }
 
-bool baseSensorDataComparator(boss_logger::BaseSensorData* lhs, boss_logger::BaseSensorData* rhs) {
+bool baseSensorDataComparator(boss_map::BaseSensorData* lhs, boss_map::BaseSensorData* rhs) {
   return lhs->timestamp() < rhs->timestamp();
 }
 
@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
     ros::spinOnce();
     
     ts = get_time();
-    boss_logger::BaseSensorData* data = sensorDatas[i];
+    boss_map::BaseSensorData* data = sensorDatas[i];
     context->updateOdomReferenceFrame(data->robotReferenceFrame());
     rosTransformMessageHandler->publish(data->timestamp());
     RosMessageHandler* messageHandler = context->handler(data->topic());
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
     usleep(timeToWait >= 0.0 ? (unsigned long)(timeToWait*1e6) : 0);
   }
   // Publish last data
-  boss_logger::BaseSensorData* data = sensorDatas[sensorDatas.size()-1];
+  boss_map::BaseSensorData* data = sensorDatas[sensorDatas.size()-1];
   context->updateOdomReferenceFrame(data->robotReferenceFrame());
   rosTransformMessageHandler->publish(data->timestamp());
   RosMessageHandler* messageHandler = context->handler(data->topic());

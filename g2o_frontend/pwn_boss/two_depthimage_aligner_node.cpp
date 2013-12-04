@@ -1,14 +1,10 @@
 #include "two_depthimage_aligner_node.h"
 
-
 namespace pwn_boss {
   using namespace pwn;
   using namespace boss;
   using namespace boss_map;
-  using namespace boss_logger;
-
-
-
+  
   template <typename T1, typename T2>
   void convertScalar(T1& dest, const T2& src){
     for (int i=0; i<src.matrix().cols(); i++)
@@ -16,7 +12,6 @@ namespace pwn_boss {
 	dest.matrix()(j,i) = src.matrix()(j,i);
 
   }
-
 
   TwoDepthImageAlignerNode::Relation::Relation(Aligner* aligner_,
 					       DepthImageConverter* converter_,

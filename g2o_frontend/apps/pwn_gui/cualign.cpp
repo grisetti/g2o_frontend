@@ -12,13 +12,13 @@
 #include <pthread.h>
 
 #include "g2o/stuff/command_args.h"
-#include "g2o_frontend/pwn2/depthimage.h"
-#include "g2o_frontend/pwn2/depthimageconverter.h"
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
+#include "g2o_frontend/pwn_core/depthimage.h"
+#include "g2o_frontend/pwn_core/depthimageconverter.h"
+#include "g2o_frontend/pwn_core/pinholepointprojector.h"
 
-#include "g2o_frontend/pwn2/linearizer.h"
-#include "g2o_frontend/pwn2/correspondencefinder.h"
-#include "g2o_frontend/pwn2/aligner.h"
+#include "g2o_frontend/pwn_core/linearizer.h"
+#include "g2o_frontend/pwn_core/correspondencefinder.h"
+#include "g2o_frontend/pwn_core/aligner.h"
 
 #include <unistd.h>
 

@@ -1,9 +1,9 @@
 
-#include "g2o_frontend/boss_logger/bframe.h"
-#include "g2o_frontend/pwn2/frame.h"
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/depthimageconverter.h"
-#include "g2o_frontend/pwn2/aligner.h"
+#include "g2o_frontend/boss_map/bframe.h"
+#include "g2o_frontend/pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/pinholepointprojector.h"
+#include "g2o_frontend/pwn_core/depthimageconverter.h"
+#include "g2o_frontend/pwn_core/aligner.h"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 #include "g2o/types/slam3d/vertex_se3.h"
@@ -83,7 +83,7 @@ struct MatchingCandidate{
 };
 
 Frame* makeFrame(DepthImageConverter* converter, PwnTrackerFrame* trackerFrame, int scale = 8){
-  boss_logger::ImageBLOB* depthBLOB = trackerFrame->depthImage.get();
+  boss_map::ImageBLOB* depthBLOB = trackerFrame->depthImage.get();
   PinholePointProjector* projector = (PinholePointProjector*)converter->projector();
   projector->setImageSize(trackerFrame->imageRows, trackerFrame->imageCols);
   pwn::DepthImage depth;
@@ -179,7 +179,12 @@ struct FrameCluster{
     convertScalar(relationMean, aligner->T());
     PwnTrackerClosureRelation* rel = new PwnTrackerClosureRelation(manager);
     rel->setTransform(relationMean);
-    rel->setInformationMatrix(Eigen::Matrix<double, 6,6>::Identity());
+    Matrix6d omega;
+    convertScalar(omega, _aligner->omega());
+    rel->setInformationMatrix(omega);
+    
+    //rel->setInformationMatrix(Eigen::Matrix<double, 6,6>::Identity());
+
     rel->setTo(from);
     rel->setFrom(to);
     candidate.relation = rel;
@@ -446,8 +451,8 @@ void alignFrames(Aligner* aligner, DepthImageConverter* converter,
 
   //pwn::Frame* fromCloud = from->cloud.get();
   //pwn::Frame* toCloud = to->cloud.get();
-  boss_logger::ImageBLOB* fromDepthBlob = from->depthImage.get();
-  boss_logger::ImageBLOB* toDepthBlob = to->depthImage.get();
+  boss_map::ImageBLOB* fromDepthBlob = from->depthImage.get();
+  boss_map::ImageBLOB* toDepthBlob = to->depthImage.get();
   
   PinholePointProjector* projector = (PinholePointProjector*)converter->projector();
   pwn::DepthImage fromDepth, toDepth;
