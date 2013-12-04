@@ -437,13 +437,14 @@ namespace pwn_tracker {
     // cerr << "_fromCloud.points():" << fromCloud->points().size() << endl;
     // cerr << "_toCloud.points():" << toCloud->points().size() << endl;
     // cerr << "AlInliers: " << _aligner->inliers() << endl;
-    Matrix6d omega;
-    convertScalar(omega, _aligner->omega());
     rel->setFrom(from);
     rel->setTo(to);
     Eigen::Isometry3d relationMean;
     convertScalar(relationMean, _aligner->T());
     rel->setTransform(relationMean);
+
+    Matrix6d omega;
+    convertScalar(omega, _aligner->omega());
     omega.setIdentity(); //HACK
     omega*=100;
     rel->setInformationMatrix(omega);

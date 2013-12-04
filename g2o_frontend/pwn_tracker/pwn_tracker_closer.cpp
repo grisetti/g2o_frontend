@@ -179,7 +179,12 @@ struct FrameCluster{
     convertScalar(relationMean, aligner->T());
     PwnTrackerClosureRelation* rel = new PwnTrackerClosureRelation(manager);
     rel->setTransform(relationMean);
-    rel->setInformationMatrix(Eigen::Matrix<double, 6,6>::Identity());
+    Matrix6d omega;
+    convertScalar(omega, _aligner->omega());
+    rel->setInformationMatrix(omega);
+    
+    //rel->setInformationMatrix(Eigen::Matrix<double, 6,6>::Identity());
+
     rel->setTo(from);
     rel->setFrom(to);
     candidate.relation = rel;
