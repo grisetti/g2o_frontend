@@ -34,7 +34,7 @@ void printandwriteLaserData(){
 
     /// printing the laser data
     //to prevent possible later callbacks
-//    _mutex_meas.lock();
+    _mutex_meas.lock();
 //    for(unsigned int i = 0; i < _measurements.size(); i++) {
 //        ocular::ocular_rbe_obs_t meas = _measurements[i];
 //        cout << "azim: " << meas.azimuth << ",\telev: " << meas.elevation << ",\trange: " << meas.range << ",\tintensity: " << meas.intensity << endl;
@@ -68,13 +68,13 @@ void printandwriteLaserData(){
     plotting.flush();
     plotting.close();
 
-//    _mutex_meas.unlock();
+    _mutex_meas.unlock();
 }
 
 void quit(){
 
   /// stopping laser callback
-  cout << "stopping laser" << endl;
+  cout << endl << "stopping laser" << endl;
   int attempts = 0;
   ocular::ocular_error_t err_ = laserone->StopLaser();
   while(err_ != 0 && attempts < 10){
@@ -82,7 +82,7 @@ void quit(){
     attempts++;
   }
   if(err_ != 0){
-    cout << "got an error: " << laserone->GetErrorString(err_) << endl;
+    cout << "got an error(StopLaser): " << laserone->GetErrorString(err_) << endl;
     exit(1);
   }
 
@@ -95,7 +95,7 @@ void quit(){
     attempts++;
   }
   if(err_ != 0){
-    cout << "got an error: " << laserone->GetErrorString(err_) << endl;
+    cout << "got an error(Stop): " << laserone->GetErrorString(err_) << endl;
     exit(1);
   }
 
@@ -112,22 +112,22 @@ void quit(){
 //    exit(1);
 //  }
 
-  printandwriteLaserData();
-
   /// setting a desired final position
   cout << "setting a desired final position" << endl;
   attempts = 0;
-  err_ = laserone->SetApertureAngles(0.0f, 35.0f, 1, &_notif_callback); // look down
-//    err_ = laserone->Home(); //home position should be az=0, el=0;
+//  err_ = laserone->SetApertureAngles(0.0f, -35.0f, 1, &_notif_callback); // look down
+    err_ = laserone->Home(); //home position should be az=0, el=0;
   while(err_ != 0 && attempts < 10){
-    err_ = laserone->SetApertureAngles(0.0f, 35.0f, 1, &_notif_callback);
-//      err_ = laserone->Home();
+//    err_ = laserone->SetApertureAngles(0.0f, -35.0f, 1, &_notif_callback);
+      err_ = laserone->Home();
     attempts++;
   }
   if(err_ != 0){
-    std::cout << "got an error: " << laserone->GetErrorString(err_) << std::endl;
+    std::cout << "got an error(setting home): " << laserone->GetErrorString(err_) << std::endl;
     exit(1);
   }
+
+  printandwriteLaserData();
 
   cout << endl;
   cout << "=== END ===" << endl;
@@ -140,12 +140,12 @@ void init_parameters(int argc, char ** argv){
     // initialize parameters
     _sensor_IP = "169.254.111.100";
     g2o::CommandArgs arg;
-    arg.param("t", _seconds, 10, "choose for how many seconds you want to exec this routine");
+    arg.param("t", _seconds, 15, "choose for how many seconds you want to exec this routine");
     arg.param("az_rate", _az_rate, 10, "set the number of rounds per second [max:15(5400 degrees/sec)]");
     arg.param("nlines", _N_lines, 100, "set the number of horizontal lines (vertical resolution) [min:_az_rate]");
-    arg.param("avg", _averaging, 5, "set the 'averaging' value range:[1,5]");
+    arg.param("avg", _averaging, 1, "set the 'averaging' value range:[1,5]");
     arg.param("lfreq", _laser_freq, 10000, "set the measurement frequency [range:[1, 30000]]");
-    arg.param("intensity", _intensity, 0, "enable the streaming of intensity values [can be 'on' only if lfreq <= 10000]");
+    arg.param("intensity", _intensity, 0, "enable the streaming of intensity values [can be 'on' only if lfreq <= 10000] default off");
     arg.param("o", outfilename, "Eyebot_pcd.pcd", "output filename of a pcd format file");
 
     arg.parseArgs(argc, argv);
@@ -208,27 +208,33 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    /// homing the RobotEye, Home() is blocking
-    laserone->Home();
-
+    /// homing the RobotEye, no need to call a sleep(), because Home() is blocking
+    ocular::ocular_error_t err0 = laserone->Home();
+    if(err0 != 0) {
+        cout << "home error err: " << laserone->GetErrorString(err0) << endl;
+        exit(1);
+    }
     double azimuth, elevation;
-    ocular::ocular_error_t err0 = laserone->GetApertureAngles(azimuth, elevation);
+    err0 = laserone->GetApertureAngles(azimuth, elevation);
     cout << "the initial home position is:\tazimuth = " << azimuth << ",\televation = " << elevation << ", err: " << laserone->GetErrorString(err0) << endl;
 
     /// start a Full Field Scan
-    laserone->StartFullFieldScan(_az_rate, _N_lines); // e.g. 3600 degrees/sec (10 revolution/sec) with NLines_min = 3600/360
-
-    ocular::ocular_error_t err1 = laserone->StartLaser(_laser_freq, _averaging, _intensity, &_laser_callback);
-    cout << "...starting streaming laser measurements" << endl;
-    if(err1 != 0) {
-        cout << "err: " << laserone->GetErrorString(err1) << endl;
+    err0 = laserone->StartFullFieldScan(_az_rate, _N_lines); // e.g. 3600 degrees/sec (10 revolution/sec) with NLines_min = 3600/360
+    if(err0 != 0) {
+        cout << "Start FullField scan err: " << laserone->GetErrorString(err0) << endl;
         exit(1);
     }
-    ocular::ocular_error_t err2 = laserone->StreamApertureAngles(5, &_angle_callback);
-    cout << "...streaming aperture position" << ", err: " << laserone->GetErrorString(err2) << std::endl;
+    err0 = laserone->StartLaser(_laser_freq, _averaging, _intensity, &_laser_callback);
+    cout << "...starting streaming laser measurements" << endl;
+    if(err0 != 0) {
+        cout << "Start laser err: " << laserone->GetErrorString(err0) << endl;
+        exit(1);
+    }
+//    ocular::ocular_error_t err2 = laserone->StreamApertureAngles(5, &_angle_callback);
+//    cout << "...streaming aperture position" << ", err: " << laserone->GetErrorString(err2) << std::endl;
 
-    cout << "going to sleep for " << _seconds << "seconds." << endl;
-    sleep(10);
+    cout << "going to sleep for " << _seconds << " seconds." << endl;
+    sleep(_seconds);
 
     quit();
 //    cout << "stopping laser" << endl;
