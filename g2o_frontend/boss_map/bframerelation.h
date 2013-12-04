@@ -1,8 +1,9 @@
 #ifndef _BOSS_FRAME_RELATION_H_
 #define _BOSS_FRAME_RELATION_H_
+
 #include "bframe.h"
 
-namespace boss_logger {
+namespace boss_map {
   using namespace boss;
   //! a frame relation is a transform (eventually with covariance), that specifies the relative transformation
   //! between two frames

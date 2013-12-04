@@ -1,11 +1,12 @@
 #ifndef _BOSS_LOCAL_MAP_H_
 #define _BOSS_LOCAL_MAP_H_
+
 #include "bsensor.h"
 #include "g2o_frontend/boss/blob.h"
 #include <Eigen/Core>
 #include "opencv2/highgui/highgui.hpp"
-namespace boss {
-  
+
+namespace boss_map {  
 
   class LocalMapData : public BaseSensorData {
   public:

@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <iostream>
 
-namespace boss_logger {
+namespace boss_map {
   using namespace std;
 
   RobotConfiguration::RobotConfiguration::RobotConfiguration(const std::string& name_) {

@@ -1,19 +1,16 @@
 #ifndef _BOSS_MAP_H_
 #define _BOSS_MAP_H_
 
-#include "g2o_frontend/boss_logger/bframe.h"
-#include "g2o_frontend/boss_logger/bframerelation.h"
-#include "g2o_frontend/boss_logger/bsensor.h"
-
-
+#include "bframe.h"
+#include "bframerelation.h"
+#include "bsensor.h"
 
 namespace boss_map {
   using namespace boss;
   class MapManager;
-  class MapNodeRelation
-;
+  class MapNodeRelation;
 
-  /***************************************** MapNode *****************************************/
+  /***************************************** MapNode *****************************************/  
   
   /**
      This is a generic map node. Can be a sensor measurement, a sensing frame or a collection of sensing frames.
@@ -164,7 +161,6 @@ namespace boss_map {
     Eigen::Isometry3d _transform;
   };
  
-
 }
 
 #endif

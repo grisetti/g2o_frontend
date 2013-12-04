@@ -1,13 +1,11 @@
 #include "map_node_processor.h"
 
-namespace boss_map{
+namespace boss_map {
   using namespace boss;
     MapNodeProcessor::MapNodeProcessor(MapManager* manager_,   RobotConfiguration* config_) {
       _manager = manager_;
       _config = config_;
     }
-
-
 
   ImuRelationAdder::ImuRelationAdder(MapManager* manager_,   RobotConfiguration* config_): 
     MapNodeProcessor(manager_,config_){}

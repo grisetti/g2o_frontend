@@ -2,7 +2,7 @@
 #include "g2o_frontend/boss/object_data.h"
 #include <stdexcept>
 
-namespace boss_logger {
+namespace boss_map {
   using namespace boss;
   //! a frame relation is a transform (eventually with covariance), that specifies the relative transformation
   //! between two frames

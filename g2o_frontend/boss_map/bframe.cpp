@@ -1,7 +1,8 @@
 #include "bframe.h"
 #include "g2o_frontend/boss/object_data.h"
 #include <stdexcept>
-namespace boss_logger {
+
+namespace boss_map {
   using namespace std;
   using namespace boss;
 
@@ -33,7 +34,6 @@ namespace boss_logger {
 
   ReferenceFrame::~ReferenceFrame(){
   }
-
 
   Eigen::Isometry3d ReferenceFrame::transformTo(const ReferenceFrame* base) const {
     // find the transform to the root;
@@ -81,7 +81,6 @@ return ret;
       return false;
     return true;
   }
-
 
   BOSS_REGISTER_CLASS(ReferenceFrame);
 

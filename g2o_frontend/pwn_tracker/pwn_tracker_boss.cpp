@@ -1,12 +1,12 @@
 #include "set"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
-#include "g2o_frontend/boss_logger/bframe.h"
-#include "g2o_frontend/boss_logger/bframerelation.h"
-#include "g2o_frontend/boss_logger/bimagesensor.h"
-#include "g2o_frontend/boss_logger/blasersensor.h"
-#include "g2o_frontend/boss_logger/bimusensor.h"
-#include "g2o_frontend/boss_logger/brobot_configuration.h"
+#include "g2o_frontend/boss_map/bframe.h"
+#include "g2o_frontend/boss_map/bframerelation.h"
+#include "g2o_frontend/boss_map/bimagesensor.h"
+#include "g2o_frontend/boss_map/blasersensor.h"
+#include "g2o_frontend/boss_map/bimusensor.h"
+#include "g2o_frontend/boss_map/brobot_configuration.h"
 #include "g2o_frontend/boss/bidirectional_serializer.h"
 
 #include "opencv2/imgproc/imgproc.hpp"
@@ -23,7 +23,7 @@
 
 using namespace pwn;
 using namespace pwn_tracker;
-using namespace boss_logger;
+using namespace boss_map;
 using namespace boss;
 using namespace std;
 

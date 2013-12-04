@@ -293,13 +293,13 @@ namespace pwn_tracker{
       //currentTrackerFrame->cloud.set(cloud);
       currentTrackerFrame->cloud=cloud;
 
-      boss_logger::ImageBLOB* depthBLOB=new boss_logger::ImageBLOB();
+      boss_map::ImageBLOB* depthBLOB=new boss_map::ImageBLOB();
       depthImage.toCvMat(depthBLOB->cvImage());
       depthBLOB->adjustFormat();
       currentTrackerFrame->depthImage.set(depthBLOB);
       
-      boss_logger::ImageBLOB* normalThumbnailBLOB=new boss_logger::ImageBLOB();
-      boss_logger::ImageBLOB* depthThumbnailBLOB=new boss_logger::ImageBLOB();
+      boss_map::ImageBLOB* normalThumbnailBLOB=new boss_map::ImageBLOB();
+      boss_map::ImageBLOB* depthThumbnailBLOB=new boss_map::ImageBLOB();
       makeThumbnails(depthThumbnailBLOB->cvImage(), normalThumbnailBLOB->cvImage(), cloud, 
 		    depthImage.rows(), 
 		    depthImage.cols(),

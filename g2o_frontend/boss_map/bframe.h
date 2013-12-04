@@ -1,5 +1,6 @@
 #ifndef _BOSS_FRAME_H_
 #define _BOSS_FRAME_H_
+
 #include "blinked_tree.h"
 #include "g2o_frontend/boss/identifiable.h"
 #include "g2o_frontend/boss/serializable.h"
@@ -11,7 +12,7 @@
 #include <Eigen/Geometry>
 #include <set>
 
-namespace boss_logger {
+namespace boss_map {
   using namespace boss;
 
   class BaseReferenceFrame: public Identifiable{

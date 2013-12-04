@@ -1,8 +1,7 @@
 #include "bsynchronizer.h"
 #include <stdexcept>
-namespace boss_logger {
-  
-  
+
+namespace boss_map {  
   using namespace std;
   using namespace boss;
 

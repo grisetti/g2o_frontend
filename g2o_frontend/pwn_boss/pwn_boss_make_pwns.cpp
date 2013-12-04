@@ -12,12 +12,12 @@
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 
-#include "g2o_frontend/boss_logger/bframe.h"
-#include "g2o_frontend/boss_logger/bframerelation.h"
-#include "g2o_frontend/boss_logger/bimagesensor.h"
-#include "g2o_frontend/boss_logger/blasersensor.h"
-#include "g2o_frontend/boss_logger/bimusensor.h"
-#include "g2o_frontend/boss_logger/brobot_configuration.h"
+#include "g2o_frontend/boss_map/bframe.h"
+#include "g2o_frontend/boss_map/bframerelation.h"
+#include "g2o_frontend/boss_map/bimagesensor.h"
+#include "g2o_frontend/boss_map/blasersensor.h"
+#include "g2o_frontend/boss_map/bimusensor.h"
+#include "g2o_frontend/boss_map/brobot_configuration.h"
 #include "pwn_sensor_data.h"
 
 using namespace std;

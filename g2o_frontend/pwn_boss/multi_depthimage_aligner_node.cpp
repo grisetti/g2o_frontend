@@ -1,13 +1,9 @@
 #include "two_depthimage_aligner_node.h"
 
-
 namespace pwn_boss {
   using namespace pwn;
   using namespace boss;
   using namespace boss_map;
-  using namespace boss_logger;
-
-
 
   template <typename T1, typename T2>
   void convertScalar(T1& dest, const T2& src){

@@ -119,7 +119,7 @@ int main (int argc, char** argv) {
     for (int i = 0; i < listWidget->count() && mainWindow->isVisible(); i++) {
       PwnTrackerFrame *pwnTrackerFrame = trackerFrames[i];
       Frame *frame = new Frame();
-      boss_logger::ImageBLOB *fromDepthBlob = pwnTrackerFrame->depthImage.get();
+      boss_map::ImageBLOB *fromDepthBlob = pwnTrackerFrame->depthImage.get();
       DepthImage depthImage;
       depthImage.fromCvMat(fromDepthBlob->cvImage());
       DepthImage::scale(scaledDepthImage, depthImage, scale);

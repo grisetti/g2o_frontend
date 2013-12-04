@@ -10,7 +10,7 @@
 #include "blasersensor.h"
 #include "bimusensor.h"
 
-namespace boss_logger {
+namespace boss_map {
   using namespace boss;
 
   struct SyncTopicInstance;
@@ -29,13 +29,11 @@ namespace boss_logger {
     std::set<SyncCondition*> syncConditions;
   };
 
-
   struct SyncTimeCondition : public SyncCondition{
     SyncTimeCondition(SyncTopicInstance* m1, SyncTopicInstance*m2, double dt);
     virtual bool eval();
     double dt;
   };
-
 
   struct Synchronizer{
     struct OutputHandler{
@@ -73,6 +71,7 @@ namespace boss_logger {
     bool addSensorData(BaseSensorData* data);
     void addOutputHandler(OutputHandler* handler);
     SyncTopicInstance*  syncTopic(std::string topic);
+  
   protected:
     void computeDependancies(std::set<SyncCondition*> & conditions, 
 			     std::set<SyncTopicInstance*>& dependancies,
@@ -88,8 +87,6 @@ namespace boss_logger {
     std::vector<OutputHandler*> outputHandlers;
   };
 
-
-  
 }
 #endif
 

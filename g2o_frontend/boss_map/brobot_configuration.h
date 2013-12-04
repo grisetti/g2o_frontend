@@ -1,14 +1,16 @@
 #ifndef _BOSS_ROBOT_CONFIGURATION_H_
 #define _BOSS_ROBOT_CONFIGURATION_H_
+
 #include "bframe.h"
 #include "bsensor.h"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 #include <string>
 
-namespace boss_logger {
+namespace boss_map {
   using namespace boss;
- class RobotConfiguration: public Serializable {
+  
+  class RobotConfiguration: public Serializable {
   public:
    RobotConfiguration(const std::string& name_="");
    const StringSensorMap& sensorMap() const {return _sensorMap;}

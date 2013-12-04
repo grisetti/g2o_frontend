@@ -1,11 +1,13 @@
 #ifndef _BOSS_LINKED_TREE_H_
 #define _BOSS_LINKED_TREE_H_
+
 #include "g2o_frontend/boss/identifiable.h"
 #include "g2o_frontend/boss/serializable.h"
 #include "g2o_frontend/boss/object_data.h"
 #include <set>
 
-namespace boss {
+namespace boss_map {
+  using namespace boss;
 
 //! generic tree like linked structure of strings
   template <class T>

@@ -1,13 +1,15 @@
 #ifndef _BOSS_SENSOR_H_
 #define _BOSS_SENSOR_H_
+
 #include "bframe.h"
 #include "g2o_frontend/boss/identifiable.h"
 #include "g2o_frontend/boss/serializable.h"
 #include <string>
 #include <deque>
 
-namespace boss_logger {
+namespace boss_map {
   using namespace boss;
+  
   class BaseSensor: public Identifiable{
   public:
     BaseSensor(int id=-1, IdContext* context = 0);
@@ -54,7 +56,6 @@ namespace boss_logger {
     ReferenceFrame* _robotReferenceFrame; // the frame where the  robot was when acquired the data
   };
 
-
   template <typename SensorType>
   class SensorData: public BaseSensorData{
   public:
@@ -74,15 +75,14 @@ namespace boss_logger {
     inline void setSensor(Sensor* sensor_) {_sensor = sensor_;}
     virtual BaseSensor* baseSensor() {return sensor();}
     virtual const BaseSensor* baseSensor() const {return sensor();}
+  
   protected:
     Sensor* _sensor;
   };
   
-
   typedef std::map<std::string, ReferenceFrame*> StringReferenceFrameMap;
   typedef std::map<std::string, BaseSensor*> StringSensorMap;
   typedef std::deque<boss::Serializable*> SerializableQueue;
-
 
   struct TSCompare {
     inline bool operator()(const BaseSensorData* a, const BaseSensorData*b){

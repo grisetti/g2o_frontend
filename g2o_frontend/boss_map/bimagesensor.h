@@ -1,11 +1,14 @@
 #ifndef _BOSS_IMAGE_SENSOR_H_
 #define _BOSS_IMAGE_SENSOR_H_
+
 #include "bsensor.h"
 #include "g2o_frontend/boss/blob.h"
 #include <Eigen/Core>
 #include "opencv2/highgui/highgui.hpp"
-namespace boss_logger {
+
+namespace boss_map {
   using namespace boss;
+  
   class ImageBLOB: public BLOB {
   public:
     enum Format {mono8=0x0, mono16=0x1, rgb8=0x2};
@@ -26,7 +29,6 @@ namespace boss_logger {
   };
 
   typedef BLOBReference<ImageBLOB> ImageBLOBReference;
-
 
   class ImageData : public BaseSensorData {
   public:

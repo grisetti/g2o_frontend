@@ -1,13 +1,13 @@
 #ifndef _BOSS_MAP_G2O_REFLECTOR_H_
 #define _BOSS_MAP_G2O_REFLECTOR_H_
-#include "boss_map_manager.h"
 
+#include "g2o_frontend/boss_map/boss_map_manager.h"
 #include "g2o/core/optimizable_graph.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 
-namespace boss_map {
+namespace boss_map_building {
   using namespace boss;
-
+  using namespace boss_map;
 
   class MapG2OReflector: public MapManagerActionHandler {
   public:
@@ -26,6 +26,7 @@ namespace boss_map {
     MapNodeRelation* relation(g2o::EdgeSE3* r);
     g2o::VertexSE3* node(MapNode* n);
     g2o::EdgeSE3* relation(MapNodeRelation* r);
+
   protected:
     g2o::OptimizableGraph* _graph;
     std::map<g2o::VertexSE3*, MapNode*> _ng2m;

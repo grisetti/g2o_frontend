@@ -1,7 +1,7 @@
 #ifndef _PWN_CACHE_H_
 #define _PWN_CACHE_H_
 
-#include "g2o_frontend/boss_logger/bframe.h"
+#include "g2o_frontend/boss_map/bframe.h"
 #include "g2o_frontend/pwn2/frame.h"
 #include "g2o_frontend/pwn2/pinholepointprojector.h"
 #include "g2o_frontend/pwn2/depthimageconverter.h"

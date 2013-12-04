@@ -1,7 +1,7 @@
 #include "bsensor.h"
 #include "g2o_frontend/boss/object_data.h"
 
-namespace boss_logger {
+namespace boss_map {
   using namespace boss;
 
   BaseSensorData::BaseSensorData(int id, IdContext* context): Identifiable(id,context){
@@ -30,6 +30,4 @@ namespace boss_logger {
   void BaseSensor::deserializeComplete() {
   }
 
-
-  
 }

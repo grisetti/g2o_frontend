@@ -5,7 +5,7 @@
 
 #define BUF_BLOCK (4096*4)
 
-namespace boss_logger {
+namespace boss_map {
   
   using namespace std;
   using namespace boss;

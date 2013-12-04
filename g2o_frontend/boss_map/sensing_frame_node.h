@@ -1,11 +1,11 @@
 #ifndef _BOSS_SENSING_FRAME_NODE_H_
 #define _BOSS_SENSING_FRAME_NODE_H_
+
 #include "boss_map.h"
-#include "g2o_frontend/boss_logger/brobot_configuration.h"
+#include "brobot_configuration.h"
 
 namespace boss_map {
   using namespace boss;
-  using namespace boss_logger;
 
   class MapManager;
   class MapNodeCollection;
@@ -49,7 +49,6 @@ namespace boss_map {
     RobotConfiguration* _config;
     SensingFrameNode* _currentSensingFrameNode;
     BaseSensorData* _previousData;
-
   };
 
 }

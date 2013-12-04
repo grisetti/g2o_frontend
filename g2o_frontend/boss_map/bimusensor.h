@@ -1,8 +1,10 @@
 #ifndef _BOSS_IMU_SENSOR_H_
 #define _BOSS_IMU_SENSOR_H_
+
 #include "bsensor.h"
 #include <Eigen/Core>
-namespace boss_logger {
+
+namespace boss_map {
   using namespace boss;
 
   class IMUSensor : public BaseSensor {

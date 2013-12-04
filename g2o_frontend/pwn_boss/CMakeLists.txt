@@ -14,21 +14,19 @@ ADD_LIBRARY(pwn_boss
   )
 
 SET_TARGET_PROPERTIES(pwn_boss PROPERTIES OUTPUT_NAME pwn_boss)
-
-TARGET_LINK_LIBRARIES(pwn_boss pwn_boss pwn2_library boss_map boss_logger  boss ${G2O_STUFF_LIBRARY})
-
+TARGET_LINK_LIBRARIES(pwn_boss pwn2_library boss boss_map ${G2O_STUFF_LIBRARY})
 
 ADD_EXECUTABLE(pwn_boss_make_pwns pwn_boss_make_pwns.cpp)
-TARGET_LINK_LIBRARIES(pwn_boss_make_pwns  pwn_boss pwn2_library boss_map boss_logger  boss ${G2O_STUFF_LIBRARY})
+TARGET_LINK_LIBRARIES(pwn_boss_make_pwns pwn_boss pwn2_library boss_map boss ${G2O_STUFF_LIBRARY})
 
 ADD_EXECUTABLE(pwn_boss_align_two_images pwn_boss_align_two_images.cpp)
-TARGET_LINK_LIBRARIES(pwn_boss_align_two_images  pwn_boss pwn2_library boss_map boss_logger  boss ${G2O_STUFF_LIBRARY})
+TARGET_LINK_LIBRARIES(pwn_boss_align_two_images pwn_boss pwn2_library boss_map boss ${G2O_STUFF_LIBRARY})
 
 ADD_EXECUTABLE(pwn_boss_process_dir pwn_boss_process_dir.cpp)
-TARGET_LINK_LIBRARIES(pwn_boss_process_dir  pwn2_library boss_map boss_logger  boss  ${G2O_STUFF_LIBRARY})
+TARGET_LINK_LIBRARIES(pwn_boss_process_dir pwn2_library boss_map boss ${G2O_STUFF_LIBRARY})
 
 # ADD_EXECUTABLE(pwn_boss_process_log pwn_boss_process_log.cpp)
-# TARGET_LINK_LIBRARIES(pwn_boss_process_log  pwn2_library boss_map boss_logger  boss ${G2O_STUFF_LIBRARY})
+# TARGET_LINK_LIBRARIES(pwn_boss_process_log  pwn2_library boss_map boss ${G2O_STUFF_LIBRARY})
 
 
 

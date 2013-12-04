@@ -1,6 +1,6 @@
 #include "boss_map_g2o_reflector.h"
 
-namespace boss_map {
+namespace boss_map_building {
   using namespace std;
   using namespace boss;
 
@@ -21,7 +21,6 @@ namespace boss_map {
       relationAdded(*it);
     }
   }
-
   
   void MapG2OReflector::copyEstimatesToG2O() {
     for (std::map<MapNode*, g2o::VertexSE3*>::iterator it=_nm2g.begin();
@@ -53,7 +52,7 @@ namespace boss_map {
     g2o::VertexSE3 * gn=_nm2g[n];
     _nm2g.erase(n);
     _ng2m.erase(gn);
-      _graph->removeVertex(gn);
+    _graph->removeVertex(gn);
   }
 
   void MapG2OReflector::relationAdded(MapNodeRelation* _r) {

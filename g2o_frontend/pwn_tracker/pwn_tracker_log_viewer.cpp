@@ -148,7 +148,7 @@ int main (int argc, char** argv) {
 	}
 	if(pointClouds[i] == 0) {
 	  pointClouds[i] = new Frame();
-	  boss_logger::ImageBLOB* fromDepthBlob = trackerFrames[i]->depthImage.get();
+	  boss_map::ImageBLOB* fromDepthBlob = trackerFrames[i]->depthImage.get();
 	  DepthImage depthImage;
 	  depthImage.fromCvMat(fromDepthBlob->cvImage());
 	  DepthImage::scale(scaledDepthImage, depthImage, scale);

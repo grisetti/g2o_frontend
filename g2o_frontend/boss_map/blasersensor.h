@@ -1,9 +1,12 @@
 #ifndef _BOSS_LASER_SENSOR_H_
 #define _BOSS_LASER_SENSOR_H_
+
 #include "bsensor.h"
 #include <Eigen/Core>
-namespace boss_logger {
+
+namespace boss_map {
   using namespace boss;
+  
   class LaserSensor : public BaseSensor {
   public:
     LaserSensor(int id=-1, IdContext* context = 0);
@@ -53,7 +56,6 @@ namespace boss_logger {
     std::vector<float> _remissions;
   };
 
-  
 }
 
 #endif

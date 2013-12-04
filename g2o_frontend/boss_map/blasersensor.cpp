@@ -1,6 +1,7 @@
 #include "blasersensor.h"
 #include <stdexcept>
-namespace boss_logger {
+
+namespace boss_map {
   using namespace boss;
 
   LaserSensor::LaserSensor(int id, IdContext* context): BaseSensor(id,context){
@@ -80,6 +81,5 @@ namespace boss_logger {
 
   BOSS_REGISTER_CLASS(LaserSensor);
   BOSS_REGISTER_CLASS(LaserData);
-
-
+  
 }
