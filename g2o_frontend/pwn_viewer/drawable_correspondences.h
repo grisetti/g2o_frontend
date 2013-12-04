@@ -1,7 +1,7 @@
 #ifndef DRAWABLE_CORRESPONDENCES
 #define DRAWABLE_CORRESPONDENCES
 
-#include "g2o_frontend/pwn2/correspondencefinder.h"
+#include "g2o_frontend/pwn_core/correspondencefinder.h"
 #include "drawable.h"
 #include "gl_parameter_correspondences.h"
 

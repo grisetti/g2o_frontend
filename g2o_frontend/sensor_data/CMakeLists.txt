@@ -36,7 +36,7 @@ IF(CMAKE_BUILD_TYPE MATCHES Release)
     ${OpenCV_LIBS}
     ${OPENGL_gl_LIBRARY}
     pthread
-    pwn2_library
+    pwn_core
   )
 ENDIF(CMAKE_BUILD_TYPE MATCHES Release)
 
@@ -50,7 +50,7 @@ IF(CMAKE_BUILD_TYPE MATCHES Debug)
     ${OpenCV_LIBS}
     ${OPENGL_gl_LIBRARY}
     pthread
-    pwn2_library
+    pwn_core
   )
 ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
 

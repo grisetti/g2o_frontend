@@ -1,9 +1,9 @@
-#include "g2o_frontend/pwn2/pointintegralimage.h"
-#include "g2o_frontend/pwn2/informationmatrixfinder.h"
-#include "g2o_frontend/pwn2/correspondencefinder.h"
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/statsfinder.h"
-#include "g2o_frontend/pwn2/aligner.h"
+#include "g2o_frontend/pwn_core/pointintegralimage.h"
+#include "g2o_frontend/pwn_core/informationmatrixfinder.h"
+#include "g2o_frontend/pwn_core/correspondencefinder.h"
+#include "g2o_frontend/pwn_core/pinholepointprojector.h"
+#include "g2o_frontend/pwn_core/statsfinder.h"
+#include "g2o_frontend/pwn_core/aligner.h"
 
 #include <qapplication.h>
 #include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"

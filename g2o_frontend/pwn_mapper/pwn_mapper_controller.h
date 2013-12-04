@@ -9,14 +9,14 @@
 
 #include "g2o_frontend/basemath/bm_se3.h"
 
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/multipointprojector.h"
-#include "g2o_frontend/pwn2/informationmatrixcalculator.h"
-#include "g2o_frontend/pwn2/statscalculatorintegralimage.h"
-#include "g2o_frontend/pwn2/depthimageconverterintegralimage.h"
-#include "g2o_frontend/pwn2/aligner.h"
-#include "g2o_frontend/pwn2/merger.h"
-#include "g2o_frontend/pwn2/voxelcalculator.h"
+#include "g2o_frontend/pwn_core/pinholepointprojector.h"
+#include "g2o_frontend/pwn_core/multipointprojector.h"
+#include "g2o_frontend/pwn_core/informationmatrixcalculator.h"
+#include "g2o_frontend/pwn_core/statscalculatorintegralimage.h"
+#include "g2o_frontend/pwn_core/depthimageconverterintegralimage.h"
+#include "g2o_frontend/pwn_core/aligner.h"
+#include "g2o_frontend/pwn_core/merger.h"
+#include "g2o_frontend/pwn_core/voxelcalculator.h"
 
 #include "g2o_frontend/sensor_data/laser_robot_data.h"
 #include "g2o_frontend/sensor_data/rgbd_data.h"

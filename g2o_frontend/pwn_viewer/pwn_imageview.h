@@ -1,7 +1,7 @@
 #ifndef PWN_IMAGEVIEW_H_
 #define PWN_IMAGEVIEW_H_
 
-#include "g2o_frontend/pwn2/depthimage.h"
+#include "g2o_frontend/pwn_core/depthimage.h"
 #include <qimage.h>
 #include <qlabel.h>
 

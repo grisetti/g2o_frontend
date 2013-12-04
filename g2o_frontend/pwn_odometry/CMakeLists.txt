@@ -15,7 +15,7 @@ ADD_EXECUTABLE(pwn_odometry pwn_odometry.cpp
 )
 SET_TARGET_PROPERTIES(pwn_odometry PROPERTIES OUTPUT_NAME pwn_odometry)
 TARGET_LINK_LIBRARIES(pwn_odometry
-  pwn2_library pwn2_utils pwn_viewer_library
+  pwn_core pwn_utils pwn_viewer_library
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
   ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
@@ -27,7 +27,7 @@ ADD_EXECUTABLE(pwn_odometry_sequential pwn_odometry_sequential.cpp
 )
 SET_TARGET_PROPERTIES(pwn_odometry_sequential PROPERTIES OUTPUT_NAME pwn_odometry_sequential)
 TARGET_LINK_LIBRARIES(pwn_odometry_sequential
-  pwn2_library pwn2_utils pwn_viewer_library
+  pwn_core pwn_utils pwn_viewer_library
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
   ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
@@ -38,7 +38,7 @@ ADD_EXECUTABLE(gicp_odometry gicp_odometry.cpp
   gicp_odometry_controller.cpp gicp_odometry_controller.h)
 SET_TARGET_PROPERTIES(gicp_odometry PROPERTIES OUTPUT_NAME gicp_odometry)
 TARGET_LINK_LIBRARIES(gicp_odometry
-	pwn2_library pwn2_utils pwn_viewer_library
+	pwn_core pwn_utils pwn_viewer_library
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
   ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}

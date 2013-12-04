@@ -7,8 +7,8 @@
 
 #include <vector>
 
-#include "blob.h"
-#include "serializer.h"
+#include "g2o_frontend/boss/blob.h"
+#include "g2o_frontend/boss/serializer.h"
 
 using namespace std;
 using namespace boss;

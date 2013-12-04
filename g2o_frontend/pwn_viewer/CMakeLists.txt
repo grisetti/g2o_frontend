@@ -39,7 +39,7 @@ SET_TARGET_PROPERTIES(pwn_viewer_library PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pw
 LINK_DIRECTORIES(${G2O_ROOT/lib})
 
 TARGET_LINK_LIBRARIES(pwn_viewer_library
-  pwn2_library
+  pwn_core
   #traverse_library
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
@@ -49,7 +49,7 @@ TARGET_LINK_LIBRARIES(pwn_viewer_library
 
 
 ADD_EXECUTABLE(pwn_simpleViewer pwn_simpleViewer.cpp )
-TARGET_LINK_LIBRARIES(pwn_simpleViewer  pwn_viewer_library pwn2_library boss #traverse_library 
+TARGET_LINK_LIBRARIES(pwn_simpleViewer  pwn_viewer_library pwn_core boss #traverse_library 
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
   ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY})

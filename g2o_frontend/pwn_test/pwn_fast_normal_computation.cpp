@@ -3,14 +3,14 @@
 #include "g2o/stuff/command_args.h"
 #include "g2o/stuff/timeutil.h"
 
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/pointprojector.h"
-#include "g2o_frontend/pwn2/statscalculatorcrossproduct.h"
-#include "g2o_frontend/pwn2/statscalculatorintegralimage.h"
-#include "g2o_frontend/pwn2/informationmatrixcalculator.h"
-#include "g2o_frontend/pwn2/frame.h"
-#include "g2o_frontend/pwn2/depthimageconvertercrossproduct.h"
-#include "g2o_frontend/pwn2/depthimageconverterintegralimage.h"
+#include "g2o_frontend/pwn_core/pinholepointprojector.h"
+#include "g2o_frontend/pwn_core/pointprojector.h"
+#include "g2o_frontend/pwn_core/statscalculatorcrossproduct.h"
+#include "g2o_frontend/pwn_core/statscalculatorintegralimage.h"
+#include "g2o_frontend/pwn_core/informationmatrixcalculator.h"
+#include "g2o_frontend/pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/depthimageconvertercrossproduct.h"
+#include "g2o_frontend/pwn_core/depthimageconverterintegralimage.h"
 
 using namespace std;
 using namespace Eigen;

@@ -6,7 +6,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
-#include "g2o_frontend/pwn2/frame.h"
+#include "g2o_frontend/pwn_core/frame.h"
 #include "g2o_frontend/basemath/bm_se3.h"
 
 using namespace std;

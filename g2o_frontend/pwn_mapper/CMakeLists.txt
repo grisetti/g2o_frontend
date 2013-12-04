@@ -22,7 +22,7 @@ SET_TARGET_PROPERTIES(pwn_mapper_library PROPERTIES OUTPUT_NAME pwn_mapper)
 
 
 TARGET_LINK_LIBRARIES(pwn_mapper_library
-  pwn2_library
+  pwn_core
   sensor_data_library
   ${G2O_TYPES_DATA}
   ${G2O_TYPES_SLAM2D}
@@ -51,7 +51,7 @@ endif(TRAVERSABILITY_FOUND)
 #TARGET_LINK_LIBRARIES(
 #  pwn_mapper_test
 #  pwn_mapper_library
-#  pwn2_library
+#  pwn_core
 #  sensor_data_library
 #  ${G2O_TYPES_DATA}
 #  ${G2O_TYPES_SLAM2D}

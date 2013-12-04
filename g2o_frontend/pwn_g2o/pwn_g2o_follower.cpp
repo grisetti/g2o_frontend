@@ -18,10 +18,10 @@
 #include "g2o_frontend/pwn_viewer/gl_parameter_frame.h"
 #include "g2o_frontend/pwn_viewer/drawable_trajectory.h"
 #include "g2o_frontend/pwn_viewer/gl_parameter_trajectory.h"
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/statscalculatorintegralimage.h"
-#include "g2o_frontend/pwn2/informationmatrixcalculator.h"
-#include "g2o_frontend/pwn2/depthimageconverterintegralimage.h"
+#include "g2o_frontend/pwn_core/pinholepointprojector.h"
+#include "g2o_frontend/pwn_core/statscalculatorintegralimage.h"
+#include "g2o_frontend/pwn_core/informationmatrixcalculator.h"
+#include "g2o_frontend/pwn_core/depthimageconverterintegralimage.h"
 
 #include "g2o_frontend/pwn_utils/pwn_utils.h"
 

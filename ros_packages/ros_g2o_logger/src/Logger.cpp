@@ -16,13 +16,13 @@
 #include <g2o/types/slam3d/isometry3d_mappings.h>
 #include <g2o_frontend/sensor_data/sensor_data.h>
 
-#include <g2o_frontend/pwn2/depthimage.h>
-#include <g2o_frontend/pwn2/depthimageconverter.h>
-#include <g2o_frontend/pwn2/pinholepointprojector.h>
-#include <g2o_frontend/pwn2/correspondencefinder.h>
-#include <g2o_frontend/pwn2/statscalculator.h>
-#include <g2o_frontend/pwn2/aligner.h>
-#include <g2o_frontend/pwn2/linearizer.h>
+#include <g2o_frontend/pwn_core/depthimage.h>
+#include <g2o_frontend/pwn_core/depthimageconverter.h>
+#include <g2o_frontend/pwn_core/pinholepointprojector.h>
+#include <g2o_frontend/pwn_core/correspondencefinder.h>
+#include <g2o_frontend/pwn_core/statscalculator.h>
+#include <g2o_frontend/pwn_core/aligner.h>
+#include <g2o_frontend/pwn_core/linearizer.h>
 #include "g2o_frontend/pwn_mapper/pwn_mapper_controller.h"
 #include "g2o_frontend/pwn_viewer/drawable_frame.h"
 

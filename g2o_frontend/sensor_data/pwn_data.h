@@ -4,7 +4,7 @@
 #include "g2o/core/hyper_graph.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 
-#include "g2o_frontend/pwn2/frame.h"
+#include "g2o_frontend/pwn_core/frame.h"
 
 using namespace std;
 using namespace g2o;

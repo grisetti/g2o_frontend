@@ -19,7 +19,7 @@
 #include "g2o_frontend/basemath/bm_se3.h"
 #include "g2o_frontend/pwn_utils/pwn_utils.h"
 
-#include "g2o_frontend/pwn2/frame.h"
+#include "g2o_frontend/pwn_core/frame.h"
 
 #include "pwn_tracker.h"
 #include "g2o_frontend/boss_map/boss_map_manager.h"

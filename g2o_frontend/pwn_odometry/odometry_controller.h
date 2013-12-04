@@ -1,6 +1,6 @@
 #pragma once
 
-#include "g2o_frontend/pwn2/frame.h"
+#include "g2o_frontend/pwn_core/frame.h"
 
 #include "g2o_frontend/basemath/bm_se3.h"
 

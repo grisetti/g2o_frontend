@@ -1,7 +1,7 @@
 #ifndef DRAWABLE_POINTS
 #define DRAWABLE_POINTS
 
-#include "../pwn2/homogeneousvector4f.h"
+#include "../pwn_core/homogeneousvector4f.h"
 #include "drawable.h"
 #include "gl_parameter_points.h"
 

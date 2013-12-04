@@ -1,12 +1,12 @@
-#include "g2o_frontend/pwn2/informationmatrixcalculator.h"
-#include "g2o_frontend/pwn2/statscalculator.h"
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/aligner.h"
-#include "g2o_frontend/pwn2/merger.h"
+#include "g2o_frontend/pwn_core/informationmatrixcalculator.h"
+#include "g2o_frontend/pwn_core/statscalculator.h"
+#include "g2o_frontend/pwn_core/pinholepointprojector.h"
+#include "g2o_frontend/pwn_core/aligner.h"
+#include "g2o_frontend/pwn_core/merger.h"
 
 #include "g2o_frontend/basemath/bm_se3.h"
 
-#include "g2o_frontend/pwn2/depthimageconverter.h"
+#include "g2o_frontend/pwn_core/depthimageconverter.h"
 #include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
 #include "g2o_frontend/pwn_viewer/pwn_imageview.h"
 #include "g2o_frontend/pwn_viewer/drawable_points.h"
@@ -44,7 +44,7 @@ using namespace g2o;
 using namespace std;
 using namespace pwn;
 
-#include "g2o_frontend/pwn2/gaussian3.h"
+#include "g2o_frontend/pwn_core/gaussian3.h"
 
 // Variables for the input parameters.
 int ng_minImageRadius;

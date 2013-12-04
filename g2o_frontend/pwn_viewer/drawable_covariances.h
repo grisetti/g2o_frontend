@@ -1,7 +1,7 @@
 #ifndef DRAWABLE_COVARIANCES
 #define DRAWABLE_COVARIANCES
 
-#include "../pwn2/stats.h"
+#include "../pwn_core/stats.h"
 #include "gl_parameter_covariances.h"
 #include "drawable.h"
 

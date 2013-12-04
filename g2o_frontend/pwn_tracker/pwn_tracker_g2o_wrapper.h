@@ -2,10 +2,10 @@
 #define _PWN_TRACKER_G2O_WRAPPER_H_
 
 #include "g2o_frontend/boss_map/bframe.h"
-#include "g2o_frontend/pwn2/frame.h"
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
-#include "g2o_frontend/pwn2/depthimageconverter.h"
-#include "g2o_frontend/pwn2/aligner.h"
+#include "g2o_frontend/pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/pinholepointprojector.h"
+#include "g2o_frontend/pwn_core/depthimageconverter.h"
+#include "g2o_frontend/pwn_core/aligner.h"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 

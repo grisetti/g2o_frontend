@@ -2,7 +2,7 @@
 #include <iostream>
 #include "cudaaligner.h"
 #include <sys/time.h>
-#include "g2o_frontend/pwn2/pinholepointprojector.h"
+#include "g2o_frontend/pwn_core/pinholepointprojector.h"
 
 namespace pwn {
   using namespace std;
