@@ -15,8 +15,9 @@
 
 using namespace std;
 using namespace boss;
+using namespace boss_map;
 
-ImageSensor* imageSensor=0;
+PinholeImageSensor* imageSensor=0;
 Serializer serializer;
 tf::TransformListener* listener=0;
 /*
@@ -91,16 +92,20 @@ void colorCameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg){
 void colorImageCallback(const sensor_msgs::Image::ConstPtr& msg){
   RosImageBLOB* imageBlob = new RosImageBLOB();
   imageBlob->fromRosImage(msg);
-  Image img;
+  PinholeImageData img;
   img.setSensor(imageSensor);
   img.imageBlob().set(imageBlob);
+  Eigen::Matrix3d cameraMatrix;
   size_t k=0;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
-      img._cameraMatrix(i,j)=colorCameraInfo.K[k++];
-  img._distortionParameters.resize(1,colorCameraInfo.D.size());
+      cameraMatrix(i,j)=colorCameraInfo.K[k++];
+  img.setCameraMatrix(cameraMatrix);
+  Eigen::VectorXd distortionParameters;
+  distortionParameters.resize(1,colorCameraInfo.D.size());
   for (k=0; k<colorCameraInfo.D.size(); k++)
-    img._distortionParameters(0,k)=colorCameraInfo.D[k];
+    distortionParameters(0,k)=colorCameraInfo.D[k];
+  img.setDistortionParameters(distortionParameters);
   std::string madre("xtion_00_color");
   serializer.write(madre,img);
   delete imageBlob;
@@ -113,16 +118,20 @@ void depthCameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg){
 void depthImageCallback(const sensor_msgs::Image::ConstPtr& msg){
   RosImageBLOB* imageBlob = new RosImageBLOB();
   imageBlob->fromRosImage(msg);
-  Image img;
+  PinholeImageData img;
   img.setSensor(imageSensor);
   img.imageBlob().set(imageBlob);
+  Eigen::Matrix3d cameraMatrix;  
   size_t k=0;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
-      img._cameraMatrix(i,j)=depthCameraInfo.K[k++];
-  img._distortionParameters.resize(1,depthCameraInfo.D.size());
+      cameraMatrix(i,j)=colorCameraInfo.K[k++];
+  img.setCameraMatrix(cameraMatrix);
+  Eigen::VectorXd distortionParameters;
+  distortionParameters.resize(1,colorCameraInfo.D.size());
   for (k=0; k<depthCameraInfo.D.size(); k++)
-    img._distortionParameters(0,k)=depthCameraInfo.D[k];
+    distortionParameters(0,k)=colorCameraInfo.D[k];
+  img.setDistortionParameters(distortionParameters);
   std::string madre("xtion_00_depth");
   serializer.write(madre,img);
   delete imageBlob;
@@ -136,7 +145,7 @@ int main(int argc, char **argv)
   std::string base_topic ="xtion_00"; 
   serializer.setFilePath("./fava.log");
   serializer.setBinaryPath("fava<id>.<ext>");
-  imageSensor= new ImageSensor();
+  imageSensor= new PinholeImageSensor();
   imageSensor->setTopic(base_topic);
   serializer.write(base_topic, *imageSensor);
  

@@ -87,7 +87,7 @@ target_link_libraries(logger
   ${CSPARSE_LIBRARY}
   SensorHandlers 
   g2o_frontend_sensor_data 
-  g2o_frontend_pwn_core_library 
+  g2o_frontend_pwn_core 
   g2o_frontend_pwn_viewer 
   #g2o_frontend_traverse_library 
   pwn_mapper

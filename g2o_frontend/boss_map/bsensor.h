@@ -48,12 +48,14 @@ namespace boss_map {
     inline ReferenceFrame* robotReferenceFrame() {return _robotReferenceFrame;}
     inline const ReferenceFrame* robotReferenceFrame() const {return _robotReferenceFrame;}
     inline void setRobotReferenceFrame(ReferenceFrame* frame_) {_robotReferenceFrame=frame_;}
-    virtual BaseSensor* baseSensor() {return 0;}
-    virtual const BaseSensor* baseSensor() const {return 0;}
+    virtual void setSensor(BaseSensor *sensor_) { _sensor = sensor_; }
+    virtual BaseSensor* baseSensor() { return _sensor; }
+    virtual const BaseSensor* baseSensor() const { return _sensor; }
   protected:
     std::string _topic;
     double _timestamp;
     ReferenceFrame* _robotReferenceFrame; // the frame where the  robot was when acquired the data
+    BaseSensor *_sensor;
   };
 
   template <typename SensorType>

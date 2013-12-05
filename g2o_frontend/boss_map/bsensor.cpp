@@ -7,6 +7,7 @@ namespace boss_map {
   BaseSensorData::BaseSensorData(int id, IdContext* context): Identifiable(id,context){
     _topic = "";
     _robotReferenceFrame = 0;
+    _sensor = 0;
   }
 
   BaseSensor::BaseSensor(int id, IdContext* context): Identifiable(id,context) {
