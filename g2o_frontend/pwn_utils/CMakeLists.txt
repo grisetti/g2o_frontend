@@ -18,4 +18,4 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${QGLVIEWER_INCLUDE_DIR} ${QT_INCLUDES}
 
 ADD_EXECUTABLE(pwn_calibration pwn_calibration.cpp)
 SET_TARGET_PROPERTIES(pwn_calibration PROPERTIES OUTPUT_NAME pwn_calibration)
-TARGET_LINK_LIBRARIES(pwn_calibration pwn_viewer_library pwn_core ${OpenCV_LIBS} ${G2O_STUFF_LIBRARY})
+TARGET_LINK_LIBRARIES(pwn_calibration pwn_viewer pwn_core ${OpenCV_LIBS} ${G2O_STUFF_LIBRARY})

@@ -34,4 +34,4 @@ TARGET_LINK_LIBRARIES(03-align pwn_core ${G2O_STUFF_LIBRARY})
 
 ADD_EXECUTABLE(pwn_dtcovariance_test pwn_dtcovariance_test.cpp)
 SET_TARGET_PROPERTIES(pwn_dtcovariance_test PROPERTIES OUTPUT_NAME pwn_dtcovariance_test)
-TARGET_LINK_LIBRARIES(pwn_dtcovariance_test pwn_viewer_library pwn_core ${G2O_STUFF_LIBRARY})
+TARGET_LINK_LIBRARIES(pwn_dtcovariance_test pwn_viewer pwn_core ${G2O_STUFF_LIBRARY})

@@ -11,11 +11,11 @@
 #include <QVBoxLayout>
 #include <QListWidget>
 
-#include "pwn_qglviewer.h"
-#include "drawable_points.h"
-#include "gl_parameter_points.h"
-#include "drawable_normals.h"
-#include "gl_parameter_normals.h"
+#include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
+#include "g2o_frontend/pwn_viewer/drawable_points.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_points.h"
+#include "g2o_frontend/pwn_viewer/drawable_normals.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_normals.h"
 
 #include "g2o/stuff/command_args.h"
 #include "g2o_frontend/basemath/bm_se3.h"
