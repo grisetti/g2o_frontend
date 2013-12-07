@@ -97,6 +97,8 @@ namespace cache_ns {
     _maxSlots = maxSlots;
     _minSlots = minSlots;
     _lastAccess=0;
+    _hits = 0;
+    _misses = 0;
   }
 
   template <typename EntryType_>
@@ -125,6 +127,10 @@ namespace cache_ns {
     // cerr << "seeking entry for frame: " << k << endl;
     typename Cache<EntryType_>::EntryType* e = findEntry(k);
     _activeEntries.insert(e);
+    if (e->_instance)
+      _hits++;
+    else
+      _misses++;
     typename Cache<EntryType_>::HandleType h = e->get(_lastAccess++);
     // cerr << "e->_instance: " << e->_instance << " e->_locks:" << e->_numLocks << endl; 
     garbageCollect();

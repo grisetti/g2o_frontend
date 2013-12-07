@@ -78,6 +78,8 @@ namespace cache_ns {
 
     virtual EntryType* makeEntry( KeyType* k, DataType* d) = 0;
     virtual ~Cache() {}
+    int hits() const {return _hits;}
+    int misses() const {return _misses;}
   protected:
     typedef std::map< KeyType*,  EntryType* > KeyEntryMapType;
     typedef std::set< EntryType* > EntrySetType;
@@ -88,7 +90,8 @@ namespace cache_ns {
     KeyEntryMapType _entriesMap;
     EntrySetType _activeEntries;
     size_t _lastAccess;
-
+    int _hits;
+    int _misses;
     struct TimeSorter{
       inline bool operator()(const EntryType* e1, const EntryType* e2){
 	size_t t1 = (e1->_numLocks) ? 0 : e1->_lastAccess ;

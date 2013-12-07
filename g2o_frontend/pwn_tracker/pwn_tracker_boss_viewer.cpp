@@ -432,10 +432,12 @@ int main(int argc, char** argv) {
     ser.writeObject(**it);
     cerr << ".";
   }
-
+  cerr << "hits:  " << cache->hits() << " misses: " << cache->misses() << " hits/misses" <<
+    float(cache->hits())/float(cache->hits()+cache->misses()) << endl;
   viewer->updateGL();
   while(viewer->isVisible()){
     app.processEvents();
   }
   cerr << endl;
+ 
 }
