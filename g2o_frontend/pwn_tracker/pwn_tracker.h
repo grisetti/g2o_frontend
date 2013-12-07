@@ -11,6 +11,7 @@
 #include "g2o_frontend/boss/deserializer.h"
 #include "g2o_frontend/boss_map/bimagesensor.h"
 #include "opencv2/core/core.hpp"
+#include "pwn_tracker_cache.h"
 #include <fstream>
 #include <iostream>
 
@@ -21,7 +22,6 @@ using namespace boss;
 using namespace boss_map;
 using namespace pwn;
 
-  class PwnCache;
 
   struct PwnTrackerFrame: public boss_map::MapNode {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -101,6 +101,8 @@ using namespace pwn;
     float _newFrameInliersFraction;
     MapManager* _manager;
     PwnCache* _cache;
+    PwnCache::HandleType _previousCloudHandle;
+    PwnCache::HandleType _currentCloudHandle;
     int _seq;
   };
 

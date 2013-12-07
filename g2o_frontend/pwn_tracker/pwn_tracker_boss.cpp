@@ -16,7 +16,6 @@
 // just to make the linker happy
 #include "pwn_tracker.h"
 #include "g2o_frontend/boss_map/boss_map_utils.h"
-#include "cache.h"
 #include "pwn_tracker_g2o_wrapper.h"
 #include "pwn_closer.h"
 
@@ -168,7 +167,7 @@ int main(int argc, char** argv) {
 
   int scale = 4;
   // create a cache for the frames
-  PwnCache* cache  = new PwnCache(converter, scale, 100);
+  PwnCache* cache  = new PwnCache(converter, scale, 100, 110);
   PwnCacheHandler* cacheHandler = new PwnCacheHandler(manager, cache);
   manager->actionHandlers().push_back(cacheHandler);
   cacheHandler->init();

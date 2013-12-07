@@ -1,5 +1,4 @@
 #include "pwn_tracker.h"
-#include "cache.h"
 
 namespace pwn_tracker{
 
@@ -251,8 +250,10 @@ namespace pwn_tracker{
 	_numKeyframes ++;
 	if (!_cache) 
 	  delete _previousCloud;
-	else
-	  _cache->unlock(_previousTrackerFrame);
+	else{
+	  _previousCloudHandle.release();
+	}
+	//_cache->unlock(_previousTrackerFrame);
 	_aligner->setReferenceSensorOffset(sensorOffset);
 	_aligner->setReferenceFrame(cloud);
 	_previousCloud = cloud;
@@ -320,8 +321,12 @@ namespace pwn_tracker{
       convertScalar(currentTrackerFrame->sensorOffset, sensorOffset);
       currentTrackerFrame->seq = _seq++;
       _manager->addNode(currentTrackerFrame);
+      cerr << "AAAA" << endl;
+
       if (_cache)
-	_cache->lock(currentTrackerFrame);
+	_currentCloudHandle=_cache->get(currentTrackerFrame);
+      cerr << "BBBB" << endl;
+      //_cache->lock(currentTrackerFrame);
       newFrameCallback(currentTrackerFrame);
       currentTrackerFrame->depthThumbnail.set(0);
       currentTrackerFrame->normalThumbnail.set(0);

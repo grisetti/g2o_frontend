@@ -29,7 +29,6 @@
 #include <queue>
 #include "pwn_tracker.h"
 #include "g2o_frontend/boss_map/boss_map_utils.h"
-#include "cache.h"
 #include "pwn_tracker_g2o_wrapper.h"
 
 namespace pwn_tracker {

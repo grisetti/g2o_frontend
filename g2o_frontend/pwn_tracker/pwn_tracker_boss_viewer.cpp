@@ -18,7 +18,6 @@
 #include "pwn_tracker.h"
 #include "g2o_frontend/boss_map/boss_map_utils.h"
 #include "g2o/stuff/opengl_primitives.h"
-#include "cache.h"
 #include "pwn_tracker_g2o_wrapper.h"
 #include "pwn_closer.h"
 #include <QApplication>
@@ -261,7 +260,8 @@ public:
     ser->writeObject(*frame);
     closer->addFrame(frame);
     lastFrameAdded=frame;
-    VisCloud* visCloud = new VisCloud(_cache->get(frame));
+    PwnCache::HandleType h=_cache->get(frame);
+    VisCloud* visCloud = new VisCloud(h.get());
     visState->cloudMap.insert(make_pair(frame, visCloud));
   }
   virtual void newRelationCallback(PwnTrackerRelation* relation) {
@@ -366,7 +366,7 @@ int main(int argc, char** argv) {
 
   int scale = 4;
   // create a cache for the frames
-  PwnCache* cache  = new PwnCache(converter, scale, 300);
+  PwnCache* cache  = new PwnCache(converter, scale, 250, 300);
   PwnCacheHandler* cacheHandler = new PwnCacheHandler(manager, cache);
   manager->actionHandlers().push_back(cacheHandler);
   cacheHandler->init();

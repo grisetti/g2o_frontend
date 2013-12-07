@@ -1,0 +1,43 @@
+boss
+
+boss_logger + boss_map -> map
+- depends on
+  - EIGEN, Opencv, boss
+- how: merge map and isolate reflector
+ 
+boss_map/g2o_reflector -> map_building
+- depends on
+  - EIGEN, Opencv, boss, map
+  - g2o
+- how: 
+  - create an abstract class for an optimization algorithm
+  - extract the partitioning and validation facilities from pwn_tracker
+  - specialize it for g2o (and get the map_g2o reflector)
+  
+pwn2 -> pwn_core as a standalone package
+depends on
+- EIGEN, Opencv, boss 
+
+cache
+- implement an abstract cache mechanism
+
+pwn_viewer -> CLEAN
+depends on
+  - EIGEN, Opencv, pwn_core, boss
+
+pwn2/boss -> pwn_map
+depends on
+  - EIGEN, Opencv, boss, map, pwn_core
+  
+pwn_utils -> pwn_addons
+depends on
+  - PCL, EIGEN, Opencv, boss, map, pwn_core
+
+pwn_tracker
+depends on
+  - PCL, EIGEN, Opencv, boss, map, pwn_core
+
+pwn_tracker_viewer
+depends on
+  - PCL, EIGEN, Opencv, boss, map, pwn_core, pwn_viewer
+

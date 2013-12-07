@@ -170,8 +170,8 @@ namespace pwn_tracker {
     currentDepthThumbnail=currentDepthThumbnail*(1./255);
     
     Eigen::Isometry3d iT=current->transform().inverse();
-    pwn::Frame* f=_cache->get(current);
-    _cache->lock(current);
+    PwnCache::HandleType f_handle=_cache->get(current);
+    pwn::Frame* f=f_handle.get();
     //cerr << "FRAME: " << current->seq << endl; 
     for (std::set <MapNode*>::iterator it=otherPartition.begin(); it!=otherPartition.end(); it++){
       PwnTrackerFrame* other = dynamic_cast<PwnTrackerFrame*>(*it);
@@ -195,7 +195,8 @@ namespace pwn_tracker {
       
       float _normalTuhmbnailThreshold = 1e3;
       if (nc<_normalTuhmbnailThreshold) {
-	pwn::Frame* f2=_cache->get(other);
+	PwnCache::HandleType f2_handle=_cache->get(other);
+	pwn::Frame* f2=f2_handle.get();
 	
 	Eigen::Isometry3d ig=iT*other->transform();
 	PwnCloserRelation* rel = matchFrames(current, other, f, f2, ig);
@@ -213,7 +214,6 @@ namespace pwn_tracker {
       delete otherDepthThumbnailBLOB;
       delete otherNormalThumbnailBLOB;
     }
-    _cache->unlock(current);
     cerr << endl;
     //delete currentDepthBLOB;
     delete currentDepthThumbnailBLOB;
