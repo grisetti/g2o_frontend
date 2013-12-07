@@ -3,56 +3,50 @@
 #include <set>
 #include <vector>
 
-namespace pwn_tracker{
-  class PwnTrackerFrame;
-}
-
-namespace pwn{
-  class Frame;
-}
 
 namespace cache_ns {
   using namespace std;
+  template <typename EntryType_>
   class Cache;
+
+  template <typename EntryType_>
   class CacheEntryHandle;
 
   
-  struct CacheEntry{
+  template <typename KeyType_, typename DataType_>
+  class CacheEntry{
   public:
-    typedef pwn_tracker::PwnTrackerFrame KeyType;
-    typedef pwn::Frame DataType;
-    typedef Cache CacheType;
-    typedef CacheEntryHandle HandleType;
+    typedef KeyType_ KeyType;
+    typedef  DataType_ DataType;
+    typedef CacheEntryHandle< CacheEntry<KeyType_, DataType_> > HandleType;
 
-    friend class CacheEntryHandle;
-    friend class Cache;
-    CacheEntry(CacheType* c, KeyType* k, DataType* d=0);
+    friend class Cache< CacheEntry<KeyType_, DataType_> >;
+    friend class CacheEntryHandle< CacheEntry<KeyType_, DataType_> >;
+    CacheEntry(KeyType* k, DataType* d=0);
     ~CacheEntry();
 
   
-  protected:
+    //protected:
     int _numLocks;
     bool _tainted;
     size_t _lastAccess;
     KeyType* _key;
     DataType* _instance;
-    CacheType* _cache;
 
 
     HandleType get(size_t lastAccess_);
     void release();
-    virtual DataType* fetch(KeyType* k);
-    virtual bool writeBack(KeyType* k, DataType* d);
+    virtual DataType* fetch( KeyType* k);
+    virtual bool writeBack(  KeyType* k, DataType* d);
   };
 
 
+  template <typename EntryType_>
   class CacheEntryHandle{
   public:
-    typedef CacheEntry EntryType;
-    typedef CacheEntry::KeyType KeyType;
-    typedef CacheEntry::DataType DataType;
-    typedef CacheEntry::CacheType CacheType;
-    friend class CacheEntry;
+    typedef EntryType_ EntryType;
+    typedef typename EntryType_::KeyType KeyType;
+    typedef typename EntryType_::DataType DataType;
 
     CacheEntryHandle(const CacheEntryHandle& h) : _entry(h._entry){ _entry-> _numLocks++; }
     ~CacheEntryHandle() {if (_entry) _entry->_numLocks--;}
@@ -61,19 +55,20 @@ namespace cache_ns {
     void taint();
     inline void release(){_entry = 0;}
     CacheEntryHandle() : _entry(0){}
-  protected:
     CacheEntryHandle(EntryType* entry_) : _entry(entry_){ _entry -> _numLocks++; }
+  protected:
 
     mutable EntryType* _entry;
   };
 
 
+  template <typename EntryType_>
   class Cache {
   public:
-    typedef CacheEntry EntryType;
-    typedef EntryType::KeyType KeyType;
-    typedef EntryType::DataType DataType;
-    typedef EntryType::HandleType HandleType;
+    typedef EntryType_ EntryType;
+    typedef typename EntryType_::KeyType KeyType;
+    typedef typename EntryType_::DataType DataType;
+    typedef typename EntryType_::HandleType HandleType;
     
     Cache(size_t minSlots, size_t maxSlots);
     
@@ -81,12 +76,13 @@ namespace cache_ns {
     void removeEntry(KeyType* k);
     HandleType get(KeyType* k);
 
-    virtual CacheEntry* makeEntry(KeyType* k, DataType* d) = 0;
+    virtual EntryType* makeEntry( KeyType* k, DataType* d) = 0;
+    virtual ~Cache() {}
   protected:
-    typedef std::map< KeyType*, EntryType* > KeyEntryMapType;
+    typedef std::map< KeyType*,  EntryType* > KeyEntryMapType;
     typedef std::set< EntryType* > EntrySetType;
     
-    EntryType* findEntry(KeyType* k);
+    EntryType* findEntry( KeyType* k);
     void garbageCollect();
     size_t _maxSlots, _minSlots;
     KeyEntryMapType _entriesMap;
@@ -104,3 +100,5 @@ namespace cache_ns {
 
 
 }
+
+#include "cache.hpp"

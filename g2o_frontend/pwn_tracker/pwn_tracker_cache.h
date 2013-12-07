@@ -5,7 +5,7 @@
 #include "g2o_frontend/boss_map/boss_map_manager.h"
 #include "g2o_frontend/pwn_core/pinholepointprojector.h"
 #include "g2o_frontend/pwn_core/depthimageconverter.h"
-#include "cache2.h"
+#include "cache.h"
 
 namespace pwn_tracker {
   using namespace cache_ns;
@@ -13,16 +13,17 @@ namespace pwn_tracker {
   using namespace boss_map;
 
   class PwnCache;
+  class PwnTrackerFrame;
 
-  class PwnCacheEntry: public CacheEntry{
+  class PwnCacheEntry: public CacheEntry<PwnTrackerFrame, pwn::Frame>{
   public:
     PwnCacheEntry(PwnCache* cache, PwnTrackerFrame* k, pwn::Frame* d=0);
   protected:
-    virtual cache_ns::CacheEntry::DataType* fetch(cache_ns::CacheEntry::KeyType* k);
+    virtual DataType* fetch(KeyType* k);
     PwnCache* _pwnCache;
   };
 
-  class PwnCache: public Cache{
+  class PwnCache: public Cache<PwnCacheEntry>{
   public:
     PwnCache(DepthImageConverter* converter_, int scale_, int minSlots_, int _maxSlots_);
 
@@ -34,7 +35,7 @@ namespace pwn_tracker {
     pwn::Frame* loadFrame(PwnTrackerFrame* trackerFrame);
 
   protected:
-    virtual CacheEntry* makeEntry(KeyType* k, DataType* d);
+    virtual Cache<PwnCacheEntry>::EntryType* makeEntry(KeyType* k, DataType* d);
     DepthImageConverter* _converter;
     int _scale;
   };

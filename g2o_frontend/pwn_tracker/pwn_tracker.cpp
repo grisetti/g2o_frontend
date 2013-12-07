@@ -321,11 +321,11 @@ namespace pwn_tracker{
       convertScalar(currentTrackerFrame->sensorOffset, sensorOffset);
       currentTrackerFrame->seq = _seq++;
       _manager->addNode(currentTrackerFrame);
-      cerr << "AAAA" << endl;
+      //cerr << "AAAA" << endl;
 
       if (_cache)
 	_currentCloudHandle=_cache->get(currentTrackerFrame);
-      cerr << "BBBB" << endl;
+      //cerr << "BBBB" << endl;
       //_cache->lock(currentTrackerFrame);
       newFrameCallback(currentTrackerFrame);
       currentTrackerFrame->depthThumbnail.set(0);

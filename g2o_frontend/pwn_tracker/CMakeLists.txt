@@ -1,7 +1,7 @@
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${QGLVIEWER_INCLUDE_DIR} ${QT_INCLUDES})
 
 ADD_LIBRARY(pwn_tracker_library 
-  cache2.cpp cache2.h
+  cache.h cache.hpp
   pwn_tracker_cache.h pwn_tracker_cache.cpp
   #cache.cpp cache.h 
   pwn_tracker.cpp pwn_tracker.h

@@ -4,7 +4,7 @@
 namespace pwn_tracker{
   using namespace cache_ns;
   PwnCacheEntry::PwnCacheEntry(PwnCache* c, PwnTrackerFrame* k, pwn::Frame* d):
-    CacheEntry(c,k,d){
+    CacheEntry<PwnTrackerFrame,pwn::Frame>(k,d){
     _pwnCache=c;
   }
 
@@ -13,7 +13,7 @@ namespace pwn_tracker{
   }
 
   PwnCache::PwnCache(DepthImageConverter* converter_, int scale_, int minSlots_, int maxSlots_):
-    Cache(minSlots_, maxSlots_), _converter(converter_), _scale(scale_){
+    Cache<PwnCacheEntry>(minSlots_, maxSlots_), _converter(converter_), _scale(scale_){
   }
 
 
@@ -39,7 +39,7 @@ namespace pwn_tracker{
     return cloud;
   }
 
-  CacheEntry* PwnCache::makeEntry(KeyType* k, DataType*) {
+  Cache<PwnCacheEntry>::EntryType* PwnCache::makeEntry(KeyType* k, DataType*) {
     return new PwnCacheEntry(this, k,k->cloud);
   }
 
