@@ -366,7 +366,7 @@ int main(int argc, char** argv) {
 
   int scale = 4;
   // create a cache for the frames
-  PwnCache* cache  = new PwnCache(converter, scale, 250, 300);
+  PwnCache* cache  = new PwnCache(converter, scale, 200, 210);
   PwnCacheHandler* cacheHandler = new PwnCacheHandler(manager, cache);
   manager->actionHandlers().push_back(cacheHandler);
   cacheHandler->init();

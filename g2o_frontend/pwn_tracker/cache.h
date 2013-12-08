@@ -94,9 +94,9 @@ namespace cache_ns {
     int _misses;
     struct TimeSorter{
       inline bool operator()(const EntryType* e1, const EntryType* e2){
-	size_t t1 = (e1->_numLocks) ? 0 : e1->_lastAccess ;
-	size_t t2 = (e2->_numLocks) ? 0 : e2->_lastAccess ;
-	return t1 > t2;
+	size_t t1 = (e1->_numLocks) ? std::numeric_limits<size_t>::max() : e1->_lastAccess ;
+	size_t t2 = (e2->_numLocks) ? std::numeric_limits<size_t>::max() : e2->_lastAccess ;
+	return t1 < t2;
       }
     };
   };

@@ -96,6 +96,9 @@ namespace cache_ns {
   Cache<EntryType_>::Cache(size_t minSlots, size_t maxSlots) {
     _maxSlots = maxSlots;
     _minSlots = minSlots;
+    if (_minSlots >= _maxSlots){
+      throw std::runtime_error("minSlots can't be larget than maxSlots");
+    }
     _lastAccess=0;
     _hits = 0;
     _misses = 0;
@@ -167,10 +170,14 @@ namespace cache_ns {
     int toKill= v.size()-_minSlots;
     for (size_t i=0; i<v.size() && toKill; i++){
       typename Cache<EntryType_>::EntryType* e=v[i];
+      if (e->_numLocks)
+	break;
+      //cerr << "(" << e->_numLocks << "," << e->_lastAccess << ") ";
       e->release();
       _activeEntries.erase(e);
       toKill--;
     }
+    //cerr << endl;
     if (_activeEntries.size()>_maxSlots) {
       throw std::runtime_error("Cache is too small");
     }
