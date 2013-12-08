@@ -32,7 +32,7 @@ namespace pwn {
   
     virtual void project(IntImage &indexImage, 
 			 DepthImage &depthImage, 
-			 const PointVector &points);
+			 const PointVector &points) const;
     virtual void unProject(PointVector &points,
 			   IntImage &indexImage, 
 			   const DepthImage &depthImage) const;

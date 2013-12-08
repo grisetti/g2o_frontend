@@ -31,7 +31,7 @@ namespace pwn {
 
     virtual void project(IntImage &indexImage, 
 			 DepthImage &depthImage, 
-			 const PointVector& points);
+			 const PointVector& points) const;
     virtual void unProject(PointVector &points, 
 			   IntImage &indexImage, 
 			   const DepthImage &depthImage) const;
@@ -72,7 +72,6 @@ namespace pwn {
     inline int _projectInterval(const int, const int, const float d, const float worldRadius) const {
       if (d < _minDistance || d > _maxDistance)
 	return -1;
-      Eigen::Matrix<float, 3, 2> range;
       Eigen::Vector3f p = _cameraMatrix * Eigen::Vector3f(worldRadius, worldRadius, 0);
       p *= (1.0f / d);
       if(p.coeff(0) > p.coeff(1))

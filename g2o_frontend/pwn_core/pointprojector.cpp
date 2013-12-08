@@ -5,7 +5,8 @@ namespace pwn {
 
   PointProjector::PointProjector() {
     _transform.setIdentity();
-    _minDistance = 0.01;
+    _transform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+    _minDistance = 0.01f;
     _maxDistance = 6.0f;
     _imageRows = 0;
     _imageCols = 0;
@@ -15,10 +16,10 @@ namespace pwn {
 
   void PointProjector::project(IntImage &indexImage, 
 			       DepthImage &depthImage, 
-			       const PointVector &points) {
+			       const PointVector &points) const {
     assert(indexImage.rows > 0 && indexImage.cols > 0 && "PointProjector: Index image has zero dimensions");
     depthImage.create(indexImage.rows, indexImage.cols);
-    depthImage.setTo(std::numeric_limits<float>::max());
+    depthImage.setTo(0.0f);
     indexImage.setTo(cv::Scalar(-1));
     const Point *point = &points[0];
     for(size_t i = 0; i < points.size(); i++, point++) {
@@ -30,7 +31,7 @@ namespace pwn {
 	continue;
       float &otherDistance = depthImage(x, y);
       int &otherIndex = indexImage(x, y);
-      if(otherDistance > d) {
+      if(!otherDistance || otherDistance > d) {
 	otherDistance = d;
 	otherIndex = i;
       }

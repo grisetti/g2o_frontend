@@ -32,11 +32,11 @@ namespace pwn {
 
   void PinholePointProjector::project(IntImage &indexImage,
 				      DepthImage &depthImage, 
-				      const PointVector &points) {
+				      const PointVector &points) const {
     assert(_imageRows && _imageCols && "PinholePointProjector: _imageRows and _imageCols are zero");
     indexImage.create(_imageRows, _imageCols);
     depthImage.create(indexImage.rows, indexImage.cols);
-    depthImage.setTo(cv::Scalar(std::numeric_limits<float>::max()));
+    depthImage.setTo(cv::Scalar(0.0f));
     indexImage.setTo(cv::Scalar(-1));
     const Point *point = &points[0];
     for(size_t i = 0; i < points.size(); i++, point++) {
@@ -44,12 +44,12 @@ namespace pwn {
       float d;
       if(!_project(x, y, d, *point) ||
 	 d < _minDistance || d > _maxDistance ||
-	 x < 0 || x >= indexImage.rows ||
-	 y < 0 || y >= indexImage.cols)
+	 x < 0 || x >= indexImage.cols ||
+	 y < 0 || y >= indexImage.rows)
 	continue;
-      float &otherDistance = depthImage(x, y);
-      int &otherIndex = indexImage(x, y);
-      if(otherDistance > d) {
+      float &otherDistance = depthImage(y, x);
+      int &otherIndex = indexImage(y, x);
+      if(!otherDistance || otherDistance > d) {
 	otherDistance = d;
 	otherIndex = i;
       }
@@ -68,7 +68,7 @@ namespace pwn {
       const float *f = &depthImage(r, 0);
       int *i = &indexImage(r, 0);
       for(int c = 0; c < depthImage.cols; c++, f++, i++) {
-	if(!_unProject(*point, r, c, *f)) {
+	if(!_unProject(*point, c, r, *f)) {
 	  *i = -1;
 	  continue;
 	}
@@ -98,7 +98,7 @@ namespace pwn {
       const float *f = &depthImage(r, 0);
       int *i = &indexImage(r, 0);
       for(int c = 0; c < depthImage.cols; c++, f++, i++) {      
-	if(!_unProject(*point, r, c, *f)) {
+	if(!_unProject(*point, c, r, *f)) {
 	  *i = -1;
 	  continue;
 	}
