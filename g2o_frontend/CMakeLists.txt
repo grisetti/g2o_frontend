@@ -2,10 +2,10 @@
 
 ADD_SUBDIRECTORY(basemath)
 # ADD_SUBDIRECTORY(ransac)
-# ADD_SUBDIRECTORY(boss)
+ADD_SUBDIRECTORY(boss)
 # ADD_SUBDIRECTORY(boss_apps)
-# ADD_SUBDIRECTORY(boss_map)
-# ADD_SUBDIRECTORY(boss_map_building)
+ADD_SUBDIRECTORY(boss_map)
+ADD_SUBDIRECTORY(boss_map_building)
 
 if(BUILD_OLD_SENSOR_DATA)
   # ADD_SUBDIRECTORY(pwn)
@@ -29,7 +29,7 @@ if(BUILD_PWN)
   # ADD_SUBDIRECTORY(pwn_odometry)
   # ADD_SUBDIRECTORY(pwn_tracker)
   if(PCL_FOUND)
-  # ADD_SUBDIRECTORY(pwn_utils)
+  ADD_SUBDIRECTORY(pwn_utils)
   endif(PCL_FOUND)
 endif(BUILD_PWN)
 
@@ -48,7 +48,7 @@ if(BUILD_PLANE_SLAM AND PCL_FOUND)
   #ADD_SUBDIRECTORY(planeAlignerJustTwo)
   #ADD_SUBDIRECTORY(planeAlignerTest)
   #ADD_SUBDIRECTORY(planeAlignerMultiTest)
-    #ADD_SUBDIRECTORY(planeDatasetGenerator)
+  #ADD_SUBDIRECTORY(planeDatasetGenerator)
 endif(BUILD_PLANE_SLAM AND PCL_FOUND)
 
 if(BUILD_VORONOI_SLAM)
@@ -56,11 +56,9 @@ if(BUILD_VORONOI_SLAM)
   # ADD_SUBDIRECTORY(mapper)
 endif(BUILD_VORONOI_SLAM)
 
-
 IF(TRAVERSABILITY_FOUND)
   # ADD_SUBDIRECTORY(traversability)
 endif(TRAVERSABILITY_FOUND)
-
 
 IF(BUILD_ROBOTEYE_LOGGER AND RobotEye_FOUND)
   # ADD_SUBDIRECTORY(robot_eye_logger)

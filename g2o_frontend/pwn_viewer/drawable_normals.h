@@ -11,7 +11,7 @@ namespace pwn {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
     DrawableNormals();
-    DrawableNormals(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, PointVector *points_, NormalVector *normals_);
+    DrawableNormals(const Eigen::Isometry3f &transformation_, GLParameter *parameter_, PointVector *points_, NormalVector *normals_);
     virtual ~DrawableNormals() { glDeleteLists(_normalDrawList, 1); }
 
     virtual GLParameter* parameter() { return _parameter; };

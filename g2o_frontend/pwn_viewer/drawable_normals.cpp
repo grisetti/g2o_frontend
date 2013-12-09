@@ -11,7 +11,7 @@ namespace pwn {
     updateNormalDrawList();
   }
 
-  DrawableNormals::DrawableNormals(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, PointVector *points_, 
+  DrawableNormals::DrawableNormals(const Eigen::Isometry3f &transformation_, GLParameter *parameter_, PointVector *points_, 
 				   NormalVector *normals_) : Drawable(transformation_) {
     setParameter(parameter_);
     _points = points_;
@@ -32,16 +32,16 @@ namespace pwn {
 
   void DrawableNormals::draw() {
     GLParameterNormals *normalsParameter = dynamic_cast<GLParameterNormals*>(_parameter);
-  if(normalsParameter &&
-     normalsParameter->show() && 
-     normalsParameter->normalLength() > 0.0f) {
-    glPushMatrix();
-    glMultMatrixf(_transformation.data());
-    normalsParameter->applyGLParameter();
-    glLineWidth(1.0);
-    glCallList(_normalDrawList);
-    glPopMatrix();
-  }
+    if(normalsParameter &&
+       normalsParameter->show() && 
+       normalsParameter->normalLength() > 0.0f) {
+      glPushMatrix();
+      glMultMatrixf(_transformation.data());
+      normalsParameter->applyGLParameter();
+      glLineWidth(1.0);
+      glCallList(_normalDrawList);
+      glPopMatrix();
+    }
   }
 
   void DrawableNormals::updateNormalDrawList() {

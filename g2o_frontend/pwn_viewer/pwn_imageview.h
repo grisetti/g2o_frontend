@@ -1,27 +1,27 @@
-#ifndef PWN_IMAGEVIEW_H_
-#define PWN_IMAGEVIEW_H_
+#pragma once
 
-#include "g2o_frontend/pwn_core/depthimage.h"
 #include <qimage.h>
 #include <qlabel.h>
 
+#include "g2o_frontend/pwn_core/pwn_typedefs.h"
+
 namespace pwn {
 
-struct DepthImageView {
-  DepthImageView();
-  ~DepthImageView() {}
+  struct DepthImageView {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-  void computeColorMap(int cmin, int cmax, unsigned char alpha);
+    DepthImageView();
+    ~DepthImageView() {}
+
+    void computeColorMap(int cmin, int cmax, unsigned char alpha);
   
-  inline unsigned int color(unsigned short idx) const { return _colorMap[idx]; }
+    inline unsigned int color(unsigned short idx) const { return _colorMap[idx]; }
   
-  void convertToQImage(QImage &img, const MatrixXus &m) const;
-  void convertToQImage(QImage &img, const Eigen::MatrixXf &m) const;
+    void convertToQImage(QImage &img, const RawDepthImage &m) const;
+    void convertToQImage(QImage &img, const DepthImage &m) const;
   
-protected:
-  unsigned int _colorMap[0xffff];
-};
+  protected:
+    unsigned int _colorMap[0xffff];
+  };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef GL_PARAMETER_TRAJECTORY
-#define GL_PARAMETER_TRAJECTORY
+#pragma once
 
 #include <Eigen/Geometry>
 #include <GL/gl.h>
@@ -7,25 +6,25 @@
 
 namespace pwn {
 
-class GLParameterTrajectory : public GLParameter {
- public:
-  GLParameterTrajectory();
-  GLParameterTrajectory(float pyramidScale_, const Eigen::Vector4f& color_);
-  virtual ~GLParameterTrajectory() {}
+  class GLParameterTrajectory : public GLParameter {
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-  virtual void applyGLParameter() { glColor4f(_color[0], _color[1], _color[2], _color[3]); }
+    GLParameterTrajectory();
+    GLParameterTrajectory(float pyramidScale_, const Eigen::Vector4f color_);
+    virtual ~GLParameterTrajectory() {}
 
-  float pyramidScale() { return _pyramidScale; }
-  Eigen::Vector4f color() { return _color; }
+    virtual void applyGLParameter() { glColor4f(_color[0], _color[1], _color[2], _color[3]); }
 
-  void setPyramidScale(float pyramidScale_) { _pyramidScale = pyramidScale_; }
-  void setColor(Eigen::Vector4f color_) { _color = color_; }
+    float pyramidScale() { return _pyramidScale; }
+    void setPyramidScale(float pyramidScale_) { _pyramidScale = pyramidScale_; }
 
- protected:
-  float _pyramidScale;
-  Eigen::Vector4f _color;
-};
+    Eigen::Vector4f color() { return _color; }
+    void setColor(Eigen::Vector4f color_) { _color = color_; }
+
+  protected:
+    float _pyramidScale;
+    Eigen::Vector4f _color;
+  };
 
 }
-
-#endif

@@ -14,5 +14,4 @@ namespace pwn {
 
   void GLParameterTransformCovariance::applyGLParameter() {}
 
-
 }

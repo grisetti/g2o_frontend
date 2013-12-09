@@ -2,9 +2,9 @@
 
 namespace pwn {
 
-GLParameter::GLParameter() {
-  _step = 1;
-  _show = true;
-}
+  GLParameter::GLParameter() {
+    _step = 1;
+    _show = true;
+  }
 
 }
