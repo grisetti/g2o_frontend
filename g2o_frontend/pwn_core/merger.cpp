@@ -1,4 +1,5 @@
 #include "merger.h"
+#include <opencv2/highgui/highgui.hpp>
 
 namespace pwn {
 
@@ -22,7 +23,7 @@ namespace pwn {
     pointProjector->project(_indexImage, 
 			    _depthImage, 
 			    frame->points());
-  
+      
     // Scan all the points, 
     // if they fall in a cell not with -1, 
     //   skip
@@ -46,7 +47,7 @@ namespace pwn {
     
       int r = -1, c = -1;
       float depth = 0.0f;
-      pointProjector->project(r, c, depth, currentPoint);
+      pointProjector->project(c, r, depth, currentPoint);
       if(depth < 0 || depth > _maxPointDepth || 
 	 r < 0 || r >= _depthImage.rows || 
 	 c < 0 || c >= _depthImage.cols) {
