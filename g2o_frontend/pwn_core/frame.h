@@ -1,8 +1,4 @@
-#ifndef _PWN_FRAME_H_
-#define _PWN_FRAME_H_
-
-#include "g2o_frontend/boss_map/eigen_boss_plugin.h" 
-#include "g2o_frontend/boss/blob.h"
+#pragma once
 
 #include "stats.h"
 #include "informationmatrix.h"
@@ -10,40 +6,44 @@
 
 namespace pwn {
 
-  class Frame: public boss::BLOB {
+  class Frame {
   public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
     Frame() {}
     virtual ~Frame() {}
 
     inline const PointVector& points() const { return _points; }
-    inline const NormalVector& normals() const { return _normals; }
-    inline const StatsVector& stats() const { return _stats; }
-    inline const InformationMatrixVector& pointInformationMatrix() const { return _pointInformationMatrix; }
-    inline const InformationMatrixVector& normalInformationMatrix() const { return _normalInformationMatrix; }
-    inline const std::vector<int>& traversabilityVector() const { return _traversabilityVector; }
-    inline const Gaussian3fVector& gaussians() const { return _gaussians; }
-
     inline PointVector& points() { return _points; }
+    
+    inline const NormalVector& normals() const { return _normals; }
     inline NormalVector& normals() { return _normals; }
+    
+    inline const StatsVector& stats() const { return _stats; }
     inline StatsVector& stats() { return _stats; }
+    
+    inline const InformationMatrixVector& pointInformationMatrix() const { return _pointInformationMatrix; }
     inline InformationMatrixVector& pointInformationMatrix() { return _pointInformationMatrix; }
+
+    inline const InformationMatrixVector& normalInformationMatrix() const { return _normalInformationMatrix; }
     inline InformationMatrixVector& normalInformationMatrix() { return _normalInformationMatrix; }
+    
+    inline const std::vector<int>& traversabilityVector() const { return _traversabilityVector; }
     inline std::vector<int>& traversabilityVector() { return _traversabilityVector; }
+    
+    inline const Gaussian3fVector& gaussians() const { return _gaussians; }
     inline Gaussian3fVector& gaussians() { return _gaussians; }
 
     bool load(Eigen::Isometry3f &T, const char *filename);
+    bool save(const char *filename, Eigen::Isometry3f T = Eigen::Isometry3f::Identity(), int step = 1, bool binary = true);
+
     bool load(Eigen::Isometry3f &T, std::istream &is);
-    bool save(const char *filename, int step = 1, bool binary = false, Eigen::Isometry3f T = Eigen::Isometry3f::Identity());
-    bool save(std::ostream &os, int step = 1, bool binary = false, Eigen::Isometry3f T = Eigen::Isometry3f::Identity());
+    bool save(std::ostream &os, Eigen::Isometry3f T = Eigen::Isometry3f::Identity(), int step = 1, bool binary = true);
+    
     void clear();
     void add(Frame frame, const Eigen::Isometry3f &T = Eigen::Isometry3f::Identity());
+    
     void transformInPlace(const Eigen::Isometry3f& T);
-
-    // boss interface
-    virtual const std::string& extension();
-    virtual bool read(std::istream& is);
-    virtual void write(std::ostream& os);
 
   protected:
     PointVector _points;
@@ -55,8 +55,4 @@ namespace pwn {
     Gaussian3fVector _gaussians;
   };
 
-  typedef boss::BLOBReference<Frame> FrameBLOBReference;
-
 }
-
-#endif

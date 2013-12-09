@@ -9,9 +9,10 @@ namespace pwn {
   
   class Gaussian3fVector : public TransformableVector<Gaussian3f> {
   public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
     Gaussian3fVector(size_t s = 0, const Gaussian3f &p = Gaussian3f());
+    virtual ~Gaussian3fVector() {}
 
     void fromDepthImage(const DepthImage &depthImage, 
 			const PinholePointProjector &pointProjector, 

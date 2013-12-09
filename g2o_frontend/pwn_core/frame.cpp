@@ -1,4 +1,5 @@
 #include "frame.h"
+
 #include <fstream>
 
 #include "g2o_frontend/basemath/bm_se3.h"
@@ -6,13 +7,19 @@
 using namespace std;
 
 namespace pwn {
-  using namespace boss;
 
   bool Frame::load(Eigen::Isometry3f &T, const char *filename) {
     ifstream is(filename);
-    if (!is)
+    if(!is)
       return false;
     return load(T, is);
+  }
+  
+  bool Frame::save(const char *filename, Eigen::Isometry3f T, int step, bool binary) {
+    ofstream os(filename);
+    if(!os)
+      return false;
+    return save(os, T, step, binary);  
   }
 
   bool Frame::load(Eigen::Isometry3f &T, istream &is) {
@@ -25,42 +32,44 @@ namespace pwn {
     size_t numPoints;
     bool binary;
     ls >> tag;
-    if (tag!="POINTWITHNORMALVECTOR")
+    if(tag != "PWNFRAME")
       return false;
     ls >> numPoints >> binary;
     _points.resize(numPoints);
     _normals.resize(numPoints);
     _stats.resize(numPoints);
-    cerr << "reading " << numPoints << " points, binary :" << binary << endl;
+    cerr << "Reading " << numPoints << " points, binary : " << binary << endl;
     is.getline(buf, 1024);
     istringstream lst(buf);
     Vector6f transform;
-    lst >> transform[0] >> transform[1] >> transform[2] >> transform[3] >> transform[4] >> transform[5];
+    lst >> transform[0] >> transform[1] >> transform[2] 
+	>> transform[3] >> transform[4] >> transform[5];
     T = v2t(transform);
     size_t k = 0;
-    while (k < _points.size() && is.good()) {
+    while(k < _points.size() && is.good()) {
       Point& point = _points[k];
       Normal& normal = _normals[k];
       Stats& stats = _stats[k];
-      if (!binary) {
+      if(!binary) {
 	is.getline(buf, 1024);
 	istringstream ls(buf);
 	string s;
 	ls >> s;
-	if (s!="POINTWITHNORMAL")
+	if (s != "POINTWITHSTATS")
 	  continue;
-	for (int i=0; i<3 && ls; i++) {
+	for(int i = 0; i < 3 && ls; i++) {
 	  ls >> point[i];
 	}
-	for (int i=0; i<3 && ls; i++) {
+	for(int i = 0; i < 3 && ls; i++) {
 	  ls >> normal[i];
 	}
-	for (int r=0; r<4 && ls; r++) {
-	  for (int c=0; c<4 && ls; c++) {
+	for(int r = 0; r < 4 && ls; r++) {
+	  for(int c = 0; c < 4 && ls; c++) {
 	    ls >> stats(r, c);
 	  }
 	}
-      } else {
+      } 
+      else {
 	is.read((char*) &point, sizeof(Point));
 	is.read((char*) &normal, sizeof(Normal));
 	is.read((char*) &stats, sizeof(Stats));
@@ -70,32 +79,20 @@ namespace pwn {
     return is.good();
   }
 
-  bool Frame::save(const char *filename, int step, bool binary, Eigen::Isometry3f T) {
-    ofstream os(filename);
-    if (!os)
-      return false;
-    return save(os, step, binary, T);  
-  }
-
-  bool Frame::save(ostream &os, int step, bool binary, Eigen::Isometry3f T) {
-    os << "POINTWITHNORMALVECTOR " << _points.size()/step << " " << binary << endl; 
+  bool Frame::save(ostream &os, Eigen::Isometry3f T, int step, bool binary) {
+    os << "PWNFRAME " << _points.size() / step << " " << binary << endl; 
     Vector6f transform = t2v(T);
-    os << transform[0] << " " 
-       << transform[1] << " " 
-       << transform[2] << " " 
-       << transform[3] << " " 
-       << transform[4] << " " 
-       << transform[5] << " " 
-       << endl;
-    for(size_t i = 0; i < _points.size(); i+=step) {
+    os << transform[0] << " " << transform[1] << " " << transform[2] << " " 
+       << transform[3] << " " << transform[4] << " " << transform[5] << " " << endl;
+    for(size_t i = 0; i < _points.size(); i += step) {
       const Point &point = _points[i];
       const Normal &normal = _normals[i];
       const Stats &stats = _stats[i];
-      if (! binary) {
-	os << "POINTWITHNORMAL ";
-	for (int k=0; k<3; k++)
+      if(!binary) {
+	os << "POINTWITHSTATS ";
+	for (int k = 0; k < 3; k++)
 	  os << point[k] << " ";
-	for (int k=0; k<3; k++) {
+	for (int k = 0; k < 3; k++) {
 	  if(_normals.size() == _points.size())
 	    os << normal[k] << " ";
 	  else {
@@ -103,8 +100,8 @@ namespace pwn {
 	    os << zero << " ";
 	  }
 	}
-	for (int r=0; r<4; r++) {
-	  for (int c=0; c<4; c++) {
+	for (int r = 0; r < 4; r++) {
+	  for (int c = 0; c < 4; c++) {
 	    if(_stats.size() == _points.size())
 	      os << stats(r, c) << " ";
 	    else {
@@ -114,7 +111,8 @@ namespace pwn {
 	  }
 	}
 	os << endl;
-      } else {
+      } 
+      else {
 	os.write((const char*) &point, sizeof(Point));
 	if(_normals.size() == _points.size())
 	  os.write((const char*) &normal, sizeof(Normal));
@@ -153,7 +151,7 @@ namespace pwn {
     _pointInformationMatrix.resize(k + frame.pointInformationMatrix().size());
     _normalInformationMatrix.resize(k + frame.normalInformationMatrix().size());
     _gaussians.resize(k + frame.gaussians().size());
-    //_traversabilityVector.resize(k + frame.traversabilityVector().size())
+    _traversabilityVector.resize(k + frame.traversabilityVector().size());
     for(int i = 0; k < _points.size(); k++, i++) {
       _points[k] = frame.points()[i];
       _normals[k] = frame.normals()[i];
@@ -165,7 +163,9 @@ namespace pwn {
       if(frame.gaussians().size() != 0) {
 	_gaussians[k] = frame.gaussians()[i];
       }
-      //_traversabilityVector[k] = frame.traversabilityVector()[i];
+      if(frame.gaussians().size() != 0) {
+	_traversabilityVector[k] = frame.traversabilityVector()[i];
+      }
     }
   }
 
@@ -184,19 +184,4 @@ namespace pwn {
     }
   }
 
-  static const std::string _pwnString = "pwn";
-  const std::string& Frame::extension() { 
-    return _pwnString;
-  }
-
-  bool Frame::read(std::istream& is){
-    Eigen::Isometry3f t;
-    return this->load(t, is);
-  }
-
-  void Frame::write(std::ostream& os) {
-    save(os, 1, true);
-  }
-
-  BOSS_REGISTER_BLOB(Frame);
 }

@@ -14,6 +14,7 @@ namespace pwn {
       _curvatureComputed = false;
       _curvature = 1.0f;	
     }
+    virtual ~Stats() {}
 
     inline int n() { return _n; }
     inline void setN(const int n_) { _n = n_; }

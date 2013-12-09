@@ -15,13 +15,13 @@ namespace pwn {
     static const float wCoordinate = wCoordinate_;
 
     inline HomogeneousVector4f() : Eigen::Vector4f() { this->data()[3] = wCoordinate; }
-
     inline HomogeneousVector4f(const Eigen::Vector3f &other) {
       this->data()[0] = other.data()[0];
       this->data()[1] = other.data()[1];
       this->data()[2] = other.data()[2];
       this->data()[3] = wCoordinate;
     }
+    virtual ~HomogeneousVector4f() {}
 
     template<typename OtherDerived>
       inline HomogeneousVector4f(const Eigen::MatrixBase<OtherDerived> &other) : Eigen::Vector4f(other) { this->data()[3] = wCoordinate; }

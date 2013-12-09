@@ -1,8 +1,8 @@
 #include <GL/gl.h>
-#include "pwn_qglviewer.h"
-#include "g2o/stuff/opengl_primitives.h"
 
-#include <iostream>
+#include "pwn_qglviewer.h"
+
+#include "g2o/stuff/opengl_primitives.h"
 
 using namespace std;
 using namespace Eigen;
@@ -115,8 +115,9 @@ void PWNQGLViewer::draw() {
 
   // Draw the vector of drawable objects.
   for(size_t i = 0; i < _drawableList.size(); i++) {
-    if(_drawableList[i])
+    if(_drawableList[i]) {
       _drawableList[i]->draw();
+    }
   }
 }
 

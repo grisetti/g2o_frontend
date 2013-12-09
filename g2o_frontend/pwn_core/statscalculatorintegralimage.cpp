@@ -2,29 +2,25 @@
 
 #include <Eigen/Eigenvalues> 
 
-using namespace boss;
-
 namespace pwn {
-  StatsCalculatorIntegralImage::StatsCalculatorIntegralImage(int id, 
-							     IdContext *context) : StatsCalculator(id, context) {
+  StatsCalculatorIntegralImage::StatsCalculatorIntegralImage() : StatsCalculator() {
     _worldRadius = 0.1f;
     _maxImageRadius = 30;
     _minImageRadius = 10;
     _minPoints = 50;
-    _curvatureThreshold = 0.2f;
+    _curvatureThreshold = 0.02f;
   }
 
-  void StatsCalculatorIntegralImage::compute(NormalVector& normals,
-					     StatsVector& statsVector,
-					     const PointVector& points,
-					     const IntImage& indexImage) {
-    assert(indexImage.rows() > 0 && "StatsCalculatorIntegralImage: indexImage has zero rows");
-    assert(indexImage.cols() > 0 && "StatsCalculatorIntegralImage: indexImage has zero columns");
-    assert(_intervalImage.rows() > 0 && "StatsCalculatorIntegralImage: _intervalImage has zero rows");
-    assert(_intervalImage.cols() > 0 && "StatsCalculatorIntegralImage: _intervalImage has zero columns");
+  void StatsCalculatorIntegralImage::compute(NormalVector &normals,
+					     StatsVector &statsVector,
+					     const PointVector &points,
+					     const IntImage &indexImage) {
+    assert(points.size() > 0 && "StatsCalculatorIntegralImage: points has zero size");
+    assert(indexImage.rows > 0 && indexImage.cols > 0 && "StatsCalculatorIntegralImage: indexImage has zero size");    
+    assert(_intervalImage.rows > 0 && _intervalImage.cols > 0 && "StatsCalculatorIntegralImage: _intervalImage has zero size");
 
-    if(indexImage.rows() != _intervalImage.rows() || indexImage.cols() == _intervalImage.cols()) {
-      _integralImage.resize(indexImage.rows(), indexImage.cols());
+    if(indexImage.rows != _intervalImage.rows || indexImage.cols != _intervalImage.cols) {
+      _integralImage.resize(indexImage.rows, indexImage.cols);
     }
 
     if(statsVector.size() != points.size())
@@ -33,32 +29,34 @@ namespace pwn {
       normals.resize(points.size());
     Normal dummyNormal = Normal::Zero();
     std::fill(normals.begin(), normals.end(), dummyNormal);
-    //std::fill(statsVector.begin(), statsVector.end(), Stats());
+    std::fill(statsVector.begin(), statsVector.end(), Stats());
     
     // Computing the integral image
     _integralImage.compute(indexImage, points);    
 
 #pragma omp parallel for
-    for(int c = 0; c < indexImage.cols(); ++c) {
-      const int *index = &indexImage.coeffRef(0, c);
-      const int *interval = &_intervalImage.coeffRef(0, c);
-      for(int r = 0; r < indexImage.rows(); ++r, ++index, ++interval) {
-     
+    for(int r = 0; r < indexImage.rows; ++r) {
+      const int *index = &indexImage(r, 0);
+      const int *interval = &_intervalImage(r, 0);
+      for(int c = 0; c < indexImage.cols; ++c, ++index, ++interval) {
 	// is the point valid, is its range valid?
-	if(*index<0 || *interval<0)
+	if(*index < 0 || *interval < 0) {
 	  continue;
-      
-	assert(*index<(int)statsVector.size());
+	}
+
+	assert(*index < (int)statsVector.size() && "StatsCalculatorIntegralImage: index value greater than statsVector size");
 	int imageRadius = *interval;
 	if(imageRadius < _minImageRadius)
 	  imageRadius = _minImageRadius;
 	if(imageRadius > _maxImageRadius)
 	  imageRadius = _maxImageRadius;
 
-	const PointAccumulator acc = _integralImage.getRegion(r - imageRadius, r + imageRadius,
-							      c - imageRadius, c + imageRadius);
-	if(acc.n() < _minPoints)
+	const PointAccumulator &acc = _integralImage.getRegion(r - imageRadius, r + imageRadius,
+							       c - imageRadius, c + imageRadius);
+	if(acc.n() < _minPoints) {
 	  continue;
+	}
+
 	Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigenSolver;
 	eigenSolver.computeDirect(acc.covariance().block<3, 3>(0, 0), Eigen::ComputeEigenvectors);
 
@@ -78,31 +76,13 @@ namespace pwn {
 	if(stats.curvature() < _curvatureThreshold) {
 	  if(normal.dot(point) > 0)
 	    normal = -normal;
-	} else
-	  normal.setZero();      
+	} 
+	else {
+	  normal.setZero();      	
+	}
       }
     }
+
   }
 
-  void StatsCalculatorIntegralImage::serialize(boss::ObjectData &data, boss::IdContext &context) {
-    StatsCalculator::serialize(data, context);
-    Identifiable::serialize(data, context);
-    data.setFloat("worldRadius", worldRadius());
-    data.setInt("imageMaxRadius", maxImageRadius());
-    data.setInt("imageMinRadius", minImageRadius());
-    data.setInt("minPoints", minPoints());
-    data.setFloat("curvatureThreshold", curvatureThreshold());
-  }
-
-  void StatsCalculatorIntegralImage::deserialize(boss::ObjectData &data, boss::IdContext &context){
-    StatsCalculator::deserialize(data, context);
-    Identifiable::deserialize(data, context);
-    setWorldRadius(data.getFloat("worldRadius"));
-    setMaxImageRadius(data.getInt("imageMaxRadius"));
-    setMinImageRadius(data.getInt("imageMinRadius"));
-    setMinPoints(data.getInt("minPoints"));
-    setCurvatureThreshold(data.getFloat("curvatureThreshold"));
-  }
-
-  BOSS_REGISTER_CLASS(StatsCalculatorIntegralImage);
 }

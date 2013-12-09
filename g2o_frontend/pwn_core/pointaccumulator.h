@@ -10,6 +10,7 @@ namespace pwn {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   
     inline PointAccumulator() { clear(); }
+    virtual ~PointAccumulator() {}
   
     inline void clear() {
       _sum.setZero();

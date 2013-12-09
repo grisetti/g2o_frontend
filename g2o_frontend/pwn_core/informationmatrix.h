@@ -8,6 +8,7 @@ namespace pwn {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
     inline InformationMatrix() : Eigen::Matrix4f() { setZero(); }
+    virtual ~InformationMatrix() {}
 
     inline InformationMatrix(const Eigen::Matrix4f &other) : Eigen::Matrix4f(other) {
       block<1, 4>(3, 0).setZero();
@@ -46,8 +47,12 @@ namespace pwn {
   };
 
   class InformationMatrixVector : public TransformableVector<InformationMatrix> {
-
   public: 
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
+    inline InformationMatrixVector() : TransformableVector<InformationMatrix>() {}
+    virtual ~InformationMatrixVector() {}
+
     template<typename OtherDerived>
       inline void transformInPlace(const OtherDerived &m) {
       Eigen::Matrix4f T = m;

@@ -12,22 +12,20 @@ ADD_LIBRARY(pwn_core
   # aligner.cpp aligner.h
   # correspondencefinder.cpp correspondencefinder.h
   # cylindricalpointprojector.cpp cylindricalpointprojector.h
-  # depthimageconverter.cpp depthimageconverter.h
-  # depthimageconvertercrossproduct.cpp depthimageconvertercrossproduct.h
-  # depthimageconverterintegralimage.cpp depthimageconverterintegralimage.h
-  # frame.cpp frame.h
+  depthimageconverter.cpp depthimageconverter.h
+  depthimageconverterintegralimage.cpp depthimageconverterintegralimage.h
+  frame.cpp frame.h
   gaussian3.cpp gaussian3.h
-  # informationmatrixcalculator.h informationmatrixcalculator.cpp
+  informationmatrixcalculator.h informationmatrixcalculator.cpp
   # linearizer.cpp linearizer.h
   # merger.cpp merger.h
   # multipointprojector.cpp multipointprojector.h 
   pinholepointprojector.cpp pinholepointprojector.h
-  # pointintegralimage.cpp pointintegralimage.h
+  pointintegralimage.cpp pointintegralimage.h
   pointprojector.cpp pointprojector.h
   # se3_prior.cpp se3_prior.h
-  # statscalculator.cpp statscalculator.h
-  # statscalculatorcrossproduct.cpp statscalculatorcrossproduct.h
-  # statscalculatorintegralimage.cpp statscalculatorintegralimage.h
+  statscalculator.cpp statscalculator.h
+  statscalculatorintegralimage.cpp statscalculatorintegralimage.h
   # voxelcalculator.cpp voxelcalculator.h
 )
 
