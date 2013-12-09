@@ -163,7 +163,7 @@ namespace pwn {
       if(frame.gaussians().size() != 0) {
 	_gaussians[k] = frame.gaussians()[i];
       }
-      if(frame.gaussians().size() != 0) {
+      if(frame.traversabilityVector().size() != 0) {
 	_traversabilityVector[k] = frame.traversabilityVector()[i];
       }
     }

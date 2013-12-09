@@ -104,11 +104,5 @@ namespace pwn {
       }
     }
   }
-   
-  inline bool PointProjector::project(int &, int &, float &, const Point &) const { return false; }
-  
-  inline bool PointProjector::unProject(Point &, const int, const int, const float) const { return false; }
-  
-  inline int PointProjector::projectInterval(const int, const int, const float, const float) const { return 0; }
-  
- }
+ 
+}

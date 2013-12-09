@@ -59,7 +59,7 @@ namespace pwn {
   void PinholePointProjector::unProject(PointVector &points, 
 					IntImage &indexImage,
 					const DepthImage &depthImage) const {
-    assert(depthImage.rows > 0 && depthImage.cols > 0 && "PointProjector: Depth image has zero dimensions");
+    assert(depthImage.rows > 0 && depthImage.cols > 0 && "PinholePointProjector: Depth image has zero dimensions");
     points.resize(depthImage.rows * depthImage.cols);
     int count = 0;
     indexImage.create(depthImage.rows, depthImage.cols);
@@ -85,7 +85,7 @@ namespace pwn {
 					Gaussian3fVector &gaussians,
 					IntImage &indexImage,
 					const DepthImage &depthImage) const {
-    assert(depthImage.rows > 0 && depthImage.cols > 0 && "PointProjector: Depth image has zero dimensions");
+    assert(depthImage.rows > 0 && depthImage.cols > 0 && "PinholePointProjector: Depth image has zero dimensions");
     points.resize(depthImage.rows * depthImage.cols);
     gaussians.resize(depthImage.rows * depthImage.cols);
     indexImage.create(depthImage.rows, depthImage.cols);
@@ -127,7 +127,7 @@ namespace pwn {
 					       const DepthImage &depthImage, 
 					       const float worldRadius,
 					       const bool blackBorders) const {
-    assert(depthImage.rows > 0 && depthImage.cols > 0 && "PointProjector: Depth image has zero dimensions");
+    assert(depthImage.rows > 0 && depthImage.cols > 0 && "PinholePointProjector: Depth image has zero dimensions");
     intervalImage.create(depthImage.rows, depthImage.cols);
     for(int r = 0; r < depthImage.rows; r++) {
       const float *f = &depthImage(r, 0);

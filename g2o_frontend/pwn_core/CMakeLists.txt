@@ -11,15 +11,15 @@ LINK_DIRECTORIES(${OpenCV_LIBRARY_DIRS})
 ADD_LIBRARY(pwn_core
   aligner.cpp aligner.h
   correspondencefinder.cpp correspondencefinder.h
-  # cylindricalpointprojector.cpp cylindricalpointprojector.h
+  cylindricalpointprojector.cpp cylindricalpointprojector.h
   depthimageconverter.cpp depthimageconverter.h
   depthimageconverterintegralimage.cpp depthimageconverterintegralimage.h
   frame.cpp frame.h
   gaussian3.cpp gaussian3.h
   informationmatrixcalculator.h informationmatrixcalculator.cpp
   linearizer.cpp linearizer.h
-  # merger.cpp merger.h
-  # multipointprojector.cpp multipointprojector.h 
+  merger.cpp merger.h
+  multipointprojector.cpp multipointprojector.h 
   pinholepointprojector.cpp pinholepointprojector.h
   pointintegralimage.cpp pointintegralimage.h
   pointprojector.cpp pointprojector.h

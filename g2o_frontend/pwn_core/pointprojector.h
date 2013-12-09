@@ -45,9 +45,9 @@ namespace pwn {
 				  const float worldRadius,
 				  const bool blackBorders = false) const;
 
-    virtual inline bool project(int &x, int &y, float &f, const Point &p) const;
-    virtual inline bool unProject(Point& p, const int x, const int y, const float d) const;
-    virtual inline int projectInterval(const int x, const int y, const float d, const float worldRadius) const;
+    virtual inline bool project(int &, int &, float &, const Point &) const { return false; }
+    virtual inline bool unProject(Point&, const int, const int, const float) const { return false; }
+    virtual inline int projectInterval(const int, const int, const float, const float) const { return 0; }
 
     virtual void scale(float scalingFactor) = 0;
     
