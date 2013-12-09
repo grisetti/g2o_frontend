@@ -62,33 +62,23 @@ namespace pwn {
        pointsParameter && 
        pointsParameter->show() && 
        pointsParameter->pointSize() > 0.0f) {
-      Point baricenter = Point(Eigen::Vector3f(0.0f, 0.0f, 0.0f));
       glBegin(GL_POINTS);
       for(size_t i = 0; i < _points->size(); i += pointsParameter->step()) {
-	const Point &p = _points->at(i);
-	const Normal &n = _normals->at(i);
-	if(_traversabilityVector && _traversabilityVector->size() > 0) {
-	  if(_traversabilityVector->at(i) > 0)
-	    glColor4f(0.0f, 1.0f, 0.0f, 1.0f);
-	  else if (_traversabilityVector->at(i) < 0)
-	    glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
-	  else
-	    glColor4f(1.0f, 1.0f, 0.0f, 1.0f);
-	}
-	//glColor4f(n[0] + 0.5f, n[1] + 0.5f, n[2] + 0.5f, 1.0f);
-	glNormal3f(n[0], n[1], n[2]);
-	glVertex3f(p[0], p[1], p[2]);
-
-	baricenter = baricenter + p;
+      	const Point &p = _points->at(i);
+      	const Normal &n = _normals->at(i);
+      	if(_traversabilityVector && _traversabilityVector->size() > 0) {
+      	  if(_traversabilityVector->at(i) > 0)
+      	    glColor4f(0.0f, 1.0f, 0.0f, 1.0f);
+      	  else if (_traversabilityVector->at(i) < 0)
+      	    glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
+      	  else
+      	    glColor4f(1.0f, 1.0f, 0.0f, 1.0f);
+      	}
+      	// glColor4f(n[0] + 0.5f, n[1] + 0.5f, n[2] + 0.5f, 1.0f);
+      	glNormal3f(n[0], n[1], n[2]);
+      	glVertex3f(p[0], p[1], p[2]);
       }    
       glEnd();
-    
-      // baricenter = baricenter / _points->size();
-      // glPointSize(15.0f);
-      // glBegin(GL_POINTS);
-      // glColor4f(1.0f, 0.25f, 0.0f, 1.0f);
-      // glVertex3f(baricenter[0], baricenter[1], baricenter[2]);
-      // glEnd();
     }
     glEndList();
   }

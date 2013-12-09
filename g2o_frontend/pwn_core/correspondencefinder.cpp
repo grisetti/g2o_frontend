@@ -1,12 +1,12 @@
 #include "correspondencefinder.h"
+
 #include <omp.h>
 
 using namespace std;
 
 namespace pwn {
-  using namespace boss;
 
-  CorrespondenceFinder::CorrespondenceFinder(int id, boss::IdContext* context): Identifiable(id,context) {
+  CorrespondenceFinder::CorrespondenceFinder() {
     _inlierDistanceThreshold = 0.5f;  
     _squaredThreshold = _inlierDistanceThreshold * _inlierDistanceThreshold;
     _inlierNormalAngularThreshold = cos(M_PI/6);
@@ -18,36 +18,41 @@ namespace pwn {
   }
 
   void CorrespondenceFinder::compute(const Frame &referenceScene, const Frame &currentScene, Eigen::Isometry3f T) {
-    T.matrix().block<1,4>(3, 0) << 0, 0, 0, 1;
+    assert(_referenceIndexImage.rows > 0 && _referenceIndexImage.cols > 0 && "CorrespondenceFinder: _referenceIndexImage has zero size");
+    assert(_currentIndexImage.rows > 0 && _currentIndexImage.cols > 0 && "CorrespondenceFinder: _currentIndexImage has zero size");
+    assert(_referenceDeptImage.rows > 0 && _referenceDepthImage.cols > 0 && "CorrespondenceFinder: _referenceDepthImage has zero size");
+    assert(_currentDepthImage.rows > 0 && _currentDepthImage.cols > 0 && "CorrespondenceFinder: _currentDepthImage has zero size");
+    
+    T.matrix().block<1, 4>(3, 0) << 0.0f, 0.0f, 0.0f, 1.0f;
     _numCorrespondences = 0;
-    if((int)_correspondences.size() != _referenceIndexImage.rows() * _referenceIndexImage.cols())
-      _correspondences.resize(_referenceIndexImage.rows() * _referenceIndexImage.cols());
+    if((int)_correspondences.size() != _referenceIndexImage.rows * _referenceIndexImage.cols)
+      _correspondences.resize(_referenceIndexImage.rows * _referenceIndexImage.cols);
 
-    float minCurvatureRatio = 1./_inlierCurvatureRatioThreshold;
+    float minCurvatureRatio = 1.0f / _inlierCurvatureRatioThreshold;
     float maxCurvatureRatio = _inlierCurvatureRatioThreshold;
 
-    // construct an array of counters;
+    // Construct an array of counters;
     int numThreads = omp_get_max_threads();
     int localCorrespondenceIndex[numThreads];
     int localOffset[numThreads];
-    int columnsPerThread = _referenceIndexImage.cols()/numThreads;
-    int iterationsPerThread = (_referenceIndexImage.rows() * _referenceIndexImage.cols())/numThreads;
-    for (int i=0; i<numThreads; i++){
+    int columnsPerThread = _referenceIndexImage.cols / numThreads;
+    int iterationsPerThread = (_referenceIndexImage.rows * _referenceIndexImage.cols) / numThreads;
+    for(int i = 0; i < numThreads; i++) {
       localOffset[i] = i * iterationsPerThread;
       localCorrespondenceIndex[i] = localOffset[i];
     }
 
-    #pragma omp parallel 
+#pragma omp parallel 
     {
       int threadId = omp_get_thread_num();
       int cMin = threadId * columnsPerThread;
       int cMax = cMin + columnsPerThread;
-      if(cMax > _referenceIndexImage.cols())
-	cMax = _referenceIndexImage.cols();
+      if(cMax > _referenceIndexImage.cols)
+	cMax = _referenceIndexImage.cols;
 
       int &correspondenceIndex = localCorrespondenceIndex[threadId];
-      for (int c = cMin;  c < cMax; c++) {
-	for (int r = 0; r < _referenceIndexImage.rows(); r++) {
+      for(int c = cMin;  c < cMax; c++) {
+	for(int r = 0; r < _referenceIndexImage.rows; r++) {
 	  const int referenceIndex = _referenceIndexImage(r, c);
 	  const int currentIndex = _currentIndexImage(r, c);
 	  if (referenceIndex < 0 || currentIndex < 0) {
@@ -63,36 +68,31 @@ namespace pwn {
 	    continue;
 	  }
 
-	  // remappings
+	  // Remappings
 	  Point referencePoint = T * _referencePoint;
 	  Normal referenceNormal = T * _referenceNormal;
 	
-	  // if (referenceNormal.squaredNorm()>1) {
-	  //   cerr << "q(o)" << endl;
-	  //   cerr << _referenceNormal.transpose() << " " << referenceNormal.transpose() << endl;
-	  // } 
-
-	  // this condition captures the angluar offset, and is moved to the end of the loop
-	  if (currentNormal.dot(referenceNormal) < _inlierNormalAngularThreshold) {
+	  // This condition captures the angluar offset, and is moved to the end of the loop
+	  if(currentNormal.dot(referenceNormal) < _inlierNormalAngularThreshold) {
 	    continue;
 	  }
 
 	  Eigen::Vector4f pointsDistance = currentPoint - referencePoint;
-	  // the condition below has moved to the increment, fill the pipeline, baby
-	  if (pointsDistance.squaredNorm() > _squaredThreshold) {
+	  // The condition below has moved to the increment, fill the pipeline, baby
+	  if(pointsDistance.squaredNorm() > _squaredThreshold) {
 	    continue;     	
           }
 	  float referenceCurvature = referenceScene.stats()[referenceIndex].curvature();
 	  float currentCurvature = currentScene.stats()[currentIndex].curvature();
-	  if (referenceCurvature < _flatCurvatureThreshold)
+	  if(referenceCurvature < _flatCurvatureThreshold)
 	    referenceCurvature = _flatCurvatureThreshold;
 
-	  if (currentCurvature < _flatCurvatureThreshold)
+	  if(currentCurvature < _flatCurvatureThreshold)
 	    currentCurvature = _flatCurvatureThreshold;
 
-	  // the condition below has moved to the increment, fill the pipeline, baby
-	  float curvatureRatio = (referenceCurvature + 1e-5)/(currentCurvature + 1e-5);
-	  if (curvatureRatio < minCurvatureRatio || curvatureRatio > maxCurvatureRatio) {
+	  // The condition below has moved to the increment, fill the pipeline, baby
+	  float curvatureRatio = (referenceCurvature + 1e-5) / (currentCurvature + 1e-5);
+	  if(curvatureRatio < minCurvatureRatio || curvatureRatio > maxCurvatureRatio) {
 	    continue;
 	  }
 
@@ -103,41 +103,16 @@ namespace pwn {
       }
     }
 
-    // assemble the solution
-    int k=0;
-    for (int t=0; t<numThreads; t++){
+    // Assemble the solution
+    int k = 0;
+    for(int t = 0; t < numThreads; t++) {
       for (int i=localOffset[t]; i < localCorrespondenceIndex[t]; i++)
 	_correspondences[k++] = _correspondences[i];
     }
     _numCorrespondences = k;
 
-    for (size_t i = _numCorrespondences; i < _correspondences.size(); i++)
+    for(size_t i = _numCorrespondences; i < _correspondences.size(); i++)
       _correspondences[i] = Correspondence();
   }
-
-  void CorrespondenceFinder::serialize(boss::ObjectData& data, boss::IdContext& context){
-    Identifiable::serialize(data,context);
-    data.setFloat("inlierDistanceThreshold", inlierDistanceThreshold());
-    data.setFloat("flatCurvatureThreshold", flatCurvatureThreshold());
-    data.setFloat("inlierCurvatureRatioThreshold", inlierCurvatureRatioThreshold());
-    data.setFloat("inlierNormalAngularThreshold", inlierNormalAngularThreshold());
-    data.setInt("rows", imageRows());
-    data.setInt("cols", imageCols());
-  }
-
-  void CorrespondenceFinder::deserialize(boss::ObjectData& data, boss::IdContext& context){
-    Identifiable::deserialize(data,context);
-    setInlierDistanceThreshold(data.getFloat("inlierDistanceThreshold"));
-    setFlatCurvatureThreshold(data.getFloat("flatCurvatureThreshold"));
-    setInlierCurvatureRatioThreshold(data.getFloat("inlierCurvatureRatioThreshold"));
-    setInlierNormalAngularThreshold(data.getFloat("inlierNormalAngularThreshold"));
-    int r = data.getInt("rows");
-    int c = data.getInt("cols");
-    setImageSize(r,c);
-  }
-
-
-
-  BOSS_REGISTER_CLASS(CorrespondenceFinder);
 
 }

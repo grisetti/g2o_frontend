@@ -1,5 +1,4 @@
-#ifndef PWN_QGLVIEWER
-#define PWN_QGLVIEWER
+#pragma once
 
 #include <QGLViewer/qglviewer.h>
 #include <vector>
@@ -43,5 +42,3 @@ namespace pwn {
   };
 
 }
-
-#endif

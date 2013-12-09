@@ -1,9 +1,4 @@
-#ifndef _PWN_LINEARIZER_H_
-#define _PWN_LINEARIZER_H_
-
-#include "g2o_frontend/boss_map/eigen_boss_plugin.h" 
-#include "g2o_frontend/boss/object_data.h"
-#include "g2o_frontend/boss/identifiable.h"
+#pragma once
 
 #include "homogeneousvector4f.h"
 #include "informationmatrix.h"
@@ -15,29 +10,34 @@ namespace pwn {
 
   class Aligner;
 
-  class Linearizer : public boss::Identifiable{
+  class Linearizer {
   public:
-    Linearizer(int id=-1, boss::IdContext* context=0);
-    inline void setAligner(Aligner * const aligner_) { _aligner = aligner_; }
-    inline void setT(const Isometry3f T_) { _T = T_; _T.matrix().block<1, 4>(3, 0) << 0, 0, 0, 1; }
-    inline void setInlierMaxChi2(const float inlierMaxChi2_) { _inlierMaxChi2 = inlierMaxChi2_; }
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
+    Linearizer();
+    virtual ~Linearizer() {}
 
     inline Aligner *aligner() const { return _aligner; }  
+    inline void setAligner(Aligner * const aligner_) { _aligner = aligner_; }
+
     inline Isometry3f T() const { return _T; }  
+    inline void setT(const Isometry3f T_) { 
+      _T = T_; 
+      _T.matrix().block<1, 4>(3, 0) << 0.0f, 0.0f, 0.0f, 1.0f; 
+    }
+
     inline float inlierMaxChi2() const { return _inlierMaxChi2; }
+    inline void setInlierMaxChi2(const float inlierMaxChi2_) { _inlierMaxChi2 = inlierMaxChi2_; }
+
+    inline bool robustKernel() const { return _robustKernel; }
+    inline void setRobustKernel(bool robustKernel_) { _robustKernel=robustKernel_; }
+    
     inline Matrix6f H() const { return _H; }  
     inline Vector6f b() const { return _b; }  
-    inline float error() const { return _error;}
-    inline int inliers() const { return _inliers;}
-    inline bool robustKernel() const {return _robustKernel;}
-    inline void setRobustKernel(bool robustKernel_) {_robustKernel=robustKernel_;}
+    inline float error() const { return _error; }
+    inline int inliers() const { return _inliers; }
+    
     void update();
-
-    float computeChi2WithoutNormalsInfo();
-
-    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
-    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
-    virtual void deserializeComplete();
 
   protected:
     Aligner *_aligner;
@@ -53,5 +53,3 @@ namespace pwn {
   };
 
 }
-
-#endif
