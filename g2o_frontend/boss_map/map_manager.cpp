@@ -1,4 +1,4 @@
-#include "boss_map_manager.h"
+#include "map_manager.h"
 #include <stdexcept>
 #include <iostream>
 

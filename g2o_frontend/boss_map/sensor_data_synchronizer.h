@@ -4,11 +4,11 @@
 #include "set"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
-#include "bframe.h"
-#include "bframerelation.h"
-#include "bimagesensor.h"
-#include "blasersensor.h"
-#include "bimusensor.h"
+#include "reference_frame.h"
+#include "reference_frame_relation.h"
+#include "image_sensor.h"
+#include "laser_sensor.h"
+#include "imu_sensor.h"
 
 namespace boss_map {
   using namespace boss;

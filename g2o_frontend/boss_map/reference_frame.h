@@ -1,7 +1,7 @@
 #ifndef _BOSS_FRAME_H_
 #define _BOSS_FRAME_H_
 
-#include "blinked_tree.h"
+#include "linked_tree.h"
 #include "g2o_frontend/boss/identifiable.h"
 #include "g2o_frontend/boss/serializable.h"
 #include "g2o_frontend/boss/object_data.h"

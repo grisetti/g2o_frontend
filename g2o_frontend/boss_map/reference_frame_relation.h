@@ -1,7 +1,7 @@
 #ifndef _BOSS_FRAME_RELATION_H_
 #define _BOSS_FRAME_RELATION_H_
 
-#include "bframe.h"
+#include "reference_frame.h"
 
 namespace boss_map {
   using namespace boss;

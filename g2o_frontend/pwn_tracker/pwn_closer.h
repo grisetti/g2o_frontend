@@ -2,15 +2,14 @@
 #define _PWN_CLOSER_H_
 
 #include "opencv2/highgui/highgui.hpp"
-#include "g2o_frontend/boss_map/bframe.h"
+#include "g2o_frontend/boss_map/reference_frame.h"
 #include "g2o_frontend/pwn_core/frame.h"
 #include "g2o_frontend/pwn_core/pinholepointprojector.h"
 #include "g2o_frontend/pwn_core/depthimageconverter.h"
 #include "g2o_frontend/pwn_core/aligner.h"
 #include "g2o_frontend/boss_map_building/boss_map_g2o_reflector.h"
-#include "g2o_frontend/boss_map/boss_map_utils.h"
+#include "g2o_frontend/boss_map/map_utils.h"
 #include "pwn_tracker.h"
-#include "cache.h"
 
 
 namespace pwn_tracker {

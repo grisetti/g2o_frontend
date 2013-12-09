@@ -1,9 +1,7 @@
 #pragma once
 
-#include "g2o_frontend/boss_map/bimagesensor.h"
-
+#include "g2o_frontend/boss_map/image_sensor.h"
 #include "ros_message_handler.h"
-
 #include "sensor_msgs/CameraInfo.h"
 #include "sensor_msgs/Image.h"
 #include <image_transport/image_transport.h>

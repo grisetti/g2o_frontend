@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ros/ros.h"
-#include "g2o_frontend/boss_map/bsensor.h"
-#include "g2o_frontend/boss_map/brobot_configuration.h"
+#include "g2o_frontend/boss_map/sensor.h"
+#include "g2o_frontend/boss_map/robot_configuration.h"
 #include "tf/transform_listener.h"
 
 using namespace std;

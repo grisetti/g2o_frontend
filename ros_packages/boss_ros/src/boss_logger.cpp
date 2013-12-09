@@ -10,10 +10,10 @@
 
 #include "g2o_frontend/boss/deserializer.h"
 #include "g2o_frontend/boss/serializer.h"
-#include "g2o_frontend/boss_map/bimagesensor.h"
-#include "g2o_frontend/boss_map/blasersensor.h"
-#include "g2o_frontend/boss_map/bimusensor.h"
-#include "g2o_frontend/boss_map/bsynchronizer.h"
+#include "g2o_frontend/boss_map/image_sensor.h"
+#include "g2o_frontend/boss_map/laser_sensor.h"
+#include "g2o_frontend/boss_map/imu_sensor.h"
+#include "g2o_frontend/boss_map/sensor_data_synchronizer.h"
 using namespace std;
 
 

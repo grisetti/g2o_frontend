@@ -1,7 +1,7 @@
 #ifndef _BOSS_IMU_SENSOR_H_
 #define _BOSS_IMU_SENSOR_H_
 
-#include "bsensor.h"
+#include "sensor.h"
 #include <Eigen/Core>
 
 namespace boss_map {

@@ -1,4 +1,4 @@
-#include "blasersensor.h"
+#include "laser_sensor.h"
 #include <stdexcept>
 
 namespace boss_map {

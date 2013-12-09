@@ -1,9 +1,9 @@
 #ifndef _BOSS_MAP_H_
 #define _BOSS_MAP_H_
 
-#include "bframe.h"
-#include "bframerelation.h"
-#include "bsensor.h"
+#include "reference_frame.h"
+#include "reference_frame_relation.h"
+#include "sensor.h"
 
 namespace boss_map {
   using namespace boss;

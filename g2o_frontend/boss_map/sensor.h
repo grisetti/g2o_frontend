@@ -1,7 +1,7 @@
 #ifndef _BOSS_SENSOR_H_
 #define _BOSS_SENSOR_H_
 
-#include "bframe.h"
+#include "reference_frame.h"
 #include "g2o_frontend/boss/identifiable.h"
 #include "g2o_frontend/boss/serializable.h"
 #include <string>

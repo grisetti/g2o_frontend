@@ -1,12 +1,12 @@
 #include "set"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
-#include "g2o_frontend/boss_map/bframe.h"
-#include "g2o_frontend/boss_map/bframerelation.h"
-#include "g2o_frontend/boss_map/bimagesensor.h"
-#include "g2o_frontend/boss_map/blasersensor.h"
-#include "g2o_frontend/boss_map/bimusensor.h"
-#include "g2o_frontend/boss_map/brobot_configuration.h"
+#include "g2o_frontend/boss_map/reference_frame.h"
+#include "g2o_frontend/boss_map/reference_frame_relation.h"
+#include "g2o_frontend/boss_map/image_sensor.h"
+#include "g2o_frontend/boss_map/laser_sensor.h"
+#include "g2o_frontend/boss_map/imu_sensor.h"
+#include "g2o_frontend/boss_map/robot_configuration.h"
 #include "g2o_frontend/boss/bidirectional_serializer.h"
 #include <QGLViewer/qglviewer.h>
 
@@ -16,9 +16,8 @@
 #include "GL/gl.h"
 // just to make the linker happy
 #include "pwn_tracker.h"
-#include "g2o_frontend/boss_map/boss_map_utils.h"
+#include "g2o_frontend/boss_map/map_utils.h"
 #include "g2o/stuff/opengl_primitives.h"
-#include "cache.h"
 #include "pwn_tracker_g2o_wrapper.h"
 #include "pwn_closer.h"
 #include <QApplication>
@@ -261,7 +260,8 @@ public:
     ser->writeObject(*frame);
     closer->addFrame(frame);
     lastFrameAdded=frame;
-    VisCloud* visCloud = new VisCloud(_cache->get(frame));
+    PwnCache::HandleType h=_cache->get(frame);
+    VisCloud* visCloud = new VisCloud(h.get());
     visState->cloudMap.insert(make_pair(frame, visCloud));
   }
   virtual void newRelationCallback(PwnTrackerRelation* relation) {
@@ -366,7 +366,7 @@ int main(int argc, char** argv) {
 
   int scale = 4;
   // create a cache for the frames
-  PwnCache* cache  = new PwnCache(converter, scale, 300);
+  PwnCache* cache  = new PwnCache(converter, scale, 200, 210);
   PwnCacheHandler* cacheHandler = new PwnCacheHandler(manager, cache);
   manager->actionHandlers().push_back(cacheHandler);
   cacheHandler->init();
@@ -432,10 +432,12 @@ int main(int argc, char** argv) {
     ser.writeObject(**it);
     cerr << ".";
   }
-
+  cerr << "hits:  " << cache->hits() << " misses: " << cache->misses() << " hits/misses" <<
+    float(cache->hits())/float(cache->hits()+cache->misses()) << endl;
   viewer->updateGL();
   while(viewer->isVisible()){
     app.processEvents();
   }
   cerr << endl;
+ 
 }

@@ -1,100 +1,107 @@
-#ifndef _PWN_CACHE_H_
-#define _PWN_CACHE_H_
-
-#include "g2o_frontend/boss_map/bframe.h"
-#include "g2o_frontend/pwn_core/frame.h"
-#include "g2o_frontend/pwn_core/pinholepointprojector.h"
-#include "g2o_frontend/pwn_core/depthimageconverter.h"
-#include "pwn_tracker.h"
-
-namespace pwn_tracker {
-  using namespace pwn;
-
-  class PwnCache;
-  class PwnFrameCacheEntry {
-  public:
-    friend class PwnCache;
-    PwnFrameCacheEntry(PwnCache* cache_, PwnTrackerFrame* frame_);
-
-    pwn::Frame* get(size_t access);
-
-    inline bool isLoaded() const {return _frame->cloud;}
-
-    bool release();
-
-    inline bool isLocked() { return _frame->cloud && _numLocks>0; }
-
-    inline int  numLocks() { return _numLocks; }
-
-    inline void lock() { _numLocks += ( _frame->cloud ? 1 : 0); }
-
-    inline void unlock() { _numLocks --; }
-
-    inline int lastAccess() const {return _lastAccess;}
-
-  protected:
-    PwnTrackerFrame* _frame;
-    PwnCache* _cache;
-    int _numLocks;
-    size_t _lastAccess;
-  };
-
-  class PwnCache{
-  public:
-    friend class PwnFrameCacheEntry;
-    PwnCache(DepthImageConverter* converter_, int scale_, int maxActiveEntries);
-    
-    void addEntry(PwnTrackerFrame* frame);
-
-    void removeEntry(PwnTrackerFrame* frame);
-
-    pwn::Frame* get(PwnTrackerFrame* frame);
-
-    inline DepthImageConverter* converter() {return _converter;}
-    inline void setConverter(DepthImageConverter* converter_) {_converter = converter_;}
-
-    inline int scale() const {return _scale;}
-    inline void setScale(int scale_)  {_scale=scale_;}
-
-    inline int hits() const { return _hits; }
-    inline int misses() const { return _misses; }
-
-    bool makeRoom();
-
-    void lock(PwnTrackerFrame* frame);
-
-    void unlock(PwnTrackerFrame* frame);
-
-    
-  protected:
-    Frame* loadFrame(PwnTrackerFrame* trackerFrame);
-    std::map<PwnTrackerFrame*, PwnFrameCacheEntry*> _entries;
-    std::set<PwnFrameCacheEntry*> _active;
-    DepthImageConverter* _converter;
-    int _scale;
-    size_t _maxElements;
-    size_t _lastAccess;
-    size_t _hits;
-    size_t _misses;
-  };
+#pragma once
+#include <map>
+#include <set>
+#include <vector>
 
 
-  class PwnCacheHandler: public MapManagerActionHandler {
-  public:
-    PwnCacheHandler(MapManager* _manager, PwnCache* cache);
-    inline PwnCache* cache() {return _cache;}
-    virtual ~PwnCacheHandler();
-    void init();
+namespace cache_ns {
+  using namespace std;
+  template <typename EntryType_>
+  class Cache;
 
-    virtual void nodeAdded(MapNode* n);
-    virtual void nodeRemoved(MapNode* n);
-    virtual void relationAdded(MapNodeRelation* _r);
-    virtual void relationRemoved(MapNodeRelation* r);
-  protected:
-    PwnCache* _cache;
-  };
+  template <typename EntryType_>
+  class CacheEntryHandle;
 
   
+  template <typename KeyType_, typename DataType_>
+  class CacheEntry{
+  public:
+    typedef KeyType_ KeyType;
+    typedef  DataType_ DataType;
+    typedef CacheEntryHandle< CacheEntry<KeyType_, DataType_> > HandleType;
+
+    friend class Cache< CacheEntry<KeyType_, DataType_> >;
+    friend class CacheEntryHandle< CacheEntry<KeyType_, DataType_> >;
+    CacheEntry(KeyType* k, DataType* d=0);
+    ~CacheEntry();
+
+  
+    //protected:
+    int _numLocks;
+    bool _tainted;
+    size_t _lastAccess;
+    KeyType* _key;
+    DataType* _instance;
+
+
+    HandleType get(size_t lastAccess_);
+    void release();
+    virtual DataType* fetch( KeyType* k);
+    virtual bool writeBack(  KeyType* k, DataType* d);
+  };
+
+
+  template <typename EntryType_>
+  class CacheEntryHandle{
+  public:
+    typedef EntryType_ EntryType;
+    typedef typename EntryType_::KeyType KeyType;
+    typedef typename EntryType_::DataType DataType;
+
+    CacheEntryHandle(const CacheEntryHandle& h) : _entry(h._entry){ _entry-> _numLocks++; }
+    ~CacheEntryHandle() {if (_entry) _entry->_numLocks--;}
+    CacheEntryHandle& operator = (const CacheEntryHandle&);
+    DataType* get();
+    void taint();
+    inline void release(){_entry = 0;}
+    CacheEntryHandle() : _entry(0){}
+    CacheEntryHandle(EntryType* entry_) : _entry(entry_){ _entry -> _numLocks++; }
+  protected:
+
+    mutable EntryType* _entry;
+  };
+
+
+  template <typename EntryType_>
+  class Cache {
+  public:
+    typedef EntryType_ EntryType;
+    typedef typename EntryType_::KeyType KeyType;
+    typedef typename EntryType_::DataType DataType;
+    typedef typename EntryType_::HandleType HandleType;
+    
+    Cache(size_t minSlots, size_t maxSlots);
+    
+    void addEntry(KeyType* k, DataType* d=0);
+    void removeEntry(KeyType* k);
+    HandleType get(KeyType* k);
+
+    virtual EntryType* makeEntry( KeyType* k, DataType* d) = 0;
+    virtual ~Cache() {}
+    int hits() const {return _hits;}
+    int misses() const {return _misses;}
+  protected:
+    typedef std::map< KeyType*,  EntryType* > KeyEntryMapType;
+    typedef std::set< EntryType* > EntrySetType;
+    
+    EntryType* findEntry( KeyType* k);
+    void garbageCollect();
+    size_t _maxSlots, _minSlots;
+    KeyEntryMapType _entriesMap;
+    EntrySetType _activeEntries;
+    size_t _lastAccess;
+    int _hits;
+    int _misses;
+    struct TimeSorter{
+      inline bool operator()(const EntryType* e1, const EntryType* e2){
+	size_t t1 = (e1->_numLocks) ? std::numeric_limits<size_t>::max() : e1->_lastAccess ;
+	size_t t2 = (e2->_numLocks) ? std::numeric_limits<size_t>::max() : e2->_lastAccess ;
+	return t1 < t2;
+      }
+    };
+  };
+
+
 }
 
-#endif
+#include "cache.hpp"

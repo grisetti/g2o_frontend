@@ -1,4 +1,4 @@
-#include "bsensor.h"
+#include "sensor.h"
 #include "g2o_frontend/boss/object_data.h"
 
 namespace boss_map {
