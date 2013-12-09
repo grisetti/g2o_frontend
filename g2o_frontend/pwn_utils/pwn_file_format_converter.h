@@ -1,7 +1,4 @@
-#ifndef _PWN_FILE_FORMAT_CONVERTER_H_
-#define _PWN_FILE_FORMAT_CONVERTER_H_
-
-#include <iostream>
+#pragma once
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
@@ -118,5 +115,3 @@ void pwnToPclPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr pclPointCloud, Frame
     point.z = p.z();
   }
 }
-
-#endif
