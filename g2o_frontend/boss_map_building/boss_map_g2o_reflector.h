@@ -1,7 +1,7 @@
 #ifndef _BOSS_MAP_G2O_REFLECTOR_H_
 #define _BOSS_MAP_G2O_REFLECTOR_H_
 
-#include "g2o_frontend/boss_map/boss_map_manager.h"
+#include "g2o_frontend/boss_map/map_manager.h"
 #include "g2o/core/optimizable_graph.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 

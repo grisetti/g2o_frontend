@@ -1,4 +1,4 @@
-#include "bsynchronizer.h"
+#include "sensor_data_synchronizer.h"
 #include <stdexcept>
 
 namespace boss_map {  

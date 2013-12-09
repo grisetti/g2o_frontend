@@ -2,20 +2,20 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 LINK_DIRECTORIES(${OpenCV_LIBRARY_DIRS})
 
 ADD_LIBRARY(boss_map
-  bframe.cpp bframe.h
-  bframerelation.cpp  bframerelation.h
-  bimagesensor.cpp  bimagesensor.h
-  bimusensor.cpp bimusensor.h
-  blasersensor.cpp blasersensor.h
-  blinked_tree.cpp blinked_tree.h
-  blocalmap.cpp blocalmap.h
-  boss_map.cpp boss_map.h
-  boss_map_manager.cpp boss_map_manager.h
-  boss_map_utils.cpp boss_map_utils.h
-  brobot_configuration.cpp brobot_configuration.h
-  bsensor.cpp bsensor.h
-  bsynchronizer.cpp bsynchronizer.h
-  btree.cpp btree.h
+  linked_tree.cpp linked_tree.h
+  reference_frame.cpp reference_frame.h
+  reference_frame_relation.cpp  reference_frame_relation.h
+  sensor.cpp sensor.h
+  laser_sensor.cpp laser_sensor.h
+  imu_sensor.cpp imu_sensor.h
+  image_sensor.cpp  image_sensor.h
+  robot_configuration.cpp robot_configuration.h
+  sensor_data_synchronizer.cpp   sensor_data_synchronizer.h
+  map_core.cpp map_core.h
+  map_manager.cpp map_manager.h
+  local_map.cpp local_map.h
+  map_utils.cpp map_utils.h
+  #btree.cpp btree.h
   map_node_processor.cpp map_node_processor.h
   sensing_frame_node.cpp sensing_frame_node.h
 )

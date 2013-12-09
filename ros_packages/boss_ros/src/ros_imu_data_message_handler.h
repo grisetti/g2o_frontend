@@ -1,9 +1,7 @@
 #pragma once
 
-#include "g2o_frontend/boss_map/bimusensor.h"
-
+#include "g2o_frontend/boss_map/imu_sensor.h"
 #include "ros_message_handler.h"
-
 #include "sensor_msgs/Imu.h"
 
 class RosIMUDataMessageHandler : public RosMessageHandler {

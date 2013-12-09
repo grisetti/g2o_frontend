@@ -1,7 +1,7 @@
 #ifndef _BOSS_IMAGE_SENSOR_H_
 #define _BOSS_IMAGE_SENSOR_H_
 
-#include "bsensor.h"
+#include "sensor.h"
 #include "g2o_frontend/boss/blob.h"
 #include <Eigen/Core>
 #include "opencv2/highgui/highgui.hpp"

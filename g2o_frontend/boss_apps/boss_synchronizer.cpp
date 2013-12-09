@@ -2,13 +2,13 @@
 #include <set>
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
-#include "g2o_frontend/boss_map/bframe.h"
-#include "g2o_frontend/boss_map/bframerelation.h"
-#include "g2o_frontend/boss_map/bimagesensor.h"
-#include "g2o_frontend/boss_map/blasersensor.h"
-#include "g2o_frontend/boss_map/bimusensor.h"
-#include "g2o_frontend/boss_map/bsynchronizer.h"
-#include "g2o_frontend/boss_map/brobot_configuration.h"
+#include "g2o_frontend/boss_map/reference_frame.h"
+#include "g2o_frontend/boss_map/reference_frame_relation.h"
+#include "g2o_frontend/boss_map/image_sensor.h"
+#include "g2o_frontend/boss_map/laser_sensor.h"
+#include "g2o_frontend/boss_map/imu_sensor.h"
+#include "g2o_frontend/boss_map/sensor_data_synchronizer.h"
+#include "g2o_frontend/boss_map/robot_configuration.h"
 #include "g2o_frontend/pwn_boss/pwn_sensor_data.h"
 
 using namespace boss_map;

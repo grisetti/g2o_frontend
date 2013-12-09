@@ -1,8 +1,8 @@
 #ifndef _BOSS_ROBOT_CONFIGURATION_H_
 #define _BOSS_ROBOT_CONFIGURATION_H_
 
-#include "bframe.h"
-#include "bsensor.h"
+#include "reference_frame.h"
+#include "sensor.h"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 #include <string>

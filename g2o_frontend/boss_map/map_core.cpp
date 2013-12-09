@@ -1,5 +1,5 @@
-#include "boss_map.h"
-#include "boss_map_manager.h"
+#include "map_core.h"
+#include "map_manager.h"
 #include <stdexcept>
 #include <iostream>
 

@@ -1,15 +1,15 @@
 #ifndef _PWN_TRACKER_H_
 #define _PWN_TRACKER_H_
 
-#include "g2o_frontend/boss_map/boss_map_manager.h"
-#include "g2o_frontend/boss_map/bframe.h"
+#include "g2o_frontend/boss_map/map_manager.h"
+#include "g2o_frontend/boss_map/reference_frame.h"
 #include "g2o_frontend/pwn_core/frame.h"
 #include "g2o_frontend/pwn_core/pinholepointprojector.h"
 #include "g2o_frontend/pwn_core/depthimageconverterintegralimage.h"
 #include "g2o_frontend/pwn_core/aligner.h"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
-#include "g2o_frontend/boss_map/bimagesensor.h"
+#include "g2o_frontend/boss_map/image_sensor.h"
 #include "opencv2/core/core.hpp"
 #include "pwn_tracker_cache.h"
 #include <fstream>

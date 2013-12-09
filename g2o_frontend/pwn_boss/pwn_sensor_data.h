@@ -8,9 +8,9 @@
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 
-#include "g2o_frontend/boss_map/bframe.h"
-#include "g2o_frontend/boss_map/bframerelation.h"
-#include "g2o_frontend/boss_map/bimagesensor.h"
+#include "g2o_frontend/boss_map/reference_frame.h"
+#include "g2o_frontend/boss_map/reference_frame_relation.h"
+#include "g2o_frontend/boss_map/image_sensor.h"
 
 namespace pwn_boss {
   using namespace boss;

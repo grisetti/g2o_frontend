@@ -1,7 +1,7 @@
 #ifndef _BOSS_MAP_MANAGER_H_
 #define _BOSS_MAP_MANAGER_H_
 
-#include "boss_map.h"
+#include "map_core.h"
 
 namespace boss_map {
   using namespace boss;

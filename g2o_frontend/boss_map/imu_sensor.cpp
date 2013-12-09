@@ -1,4 +1,4 @@
-#include "bimusensor.h"
+#include "imu_sensor.h"
 
 namespace boss_map {
   using namespace boss;

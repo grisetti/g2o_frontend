@@ -1,10 +1,10 @@
 #ifndef _BOSS_MAP_NODE_PROCESSOR_H_
 #define _BOSS_MAP_NODE_PROCESSOR_H_
 
-#include "boss_map_manager.h"
+#include "map_manager.h"
 #include "sensing_frame_node.h"
-#include "bimusensor.h"
-#include "brobot_configuration.h"
+#include "imu_sensor.h"
+#include "robot_configuration.h"
 
 namespace boss_map {
   using namespace boss;

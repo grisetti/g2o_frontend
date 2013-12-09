@@ -1,4 +1,4 @@
-#include "bimagesensor.h"
+#include "image_sensor.h"
 #include "opencv2/core/core.hpp"
 #include "g2o_frontend/boss/object_data.h"
 #include <stdexcept>

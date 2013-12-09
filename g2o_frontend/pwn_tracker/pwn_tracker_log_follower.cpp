@@ -22,7 +22,7 @@
 #include "g2o_frontend/pwn_core/frame.h"
 
 #include "pwn_tracker.h"
-#include "g2o_frontend/boss_map/boss_map_manager.h"
+#include "g2o_frontend/boss_map/map_manager.h"
 
 using namespace Eigen;
 using namespace g2o;

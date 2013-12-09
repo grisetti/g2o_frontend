@@ -1,8 +1,8 @@
 #ifndef _BOSS_SENSING_FRAME_NODE_H_
 #define _BOSS_SENSING_FRAME_NODE_H_
 
-#include "boss_map.h"
-#include "brobot_configuration.h"
+#include "map_core.h"
+#include "robot_configuration.h"
 
 namespace boss_map {
   using namespace boss;

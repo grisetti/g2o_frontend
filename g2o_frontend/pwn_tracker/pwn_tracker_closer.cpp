@@ -1,5 +1,5 @@
 
-#include "g2o_frontend/boss_map/bframe.h"
+#include "g2o_frontend/boss_map/reference_frame.h"
 #include "g2o_frontend/pwn_core/frame.h"
 #include "g2o_frontend/pwn_core/pinholepointprojector.h"
 #include "g2o_frontend/pwn_core/depthimageconverter.h"
