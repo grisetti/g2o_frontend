@@ -1,5 +1,4 @@
-#ifndef _PWN_VOXEL_CALCULATOR_H_
-#define _PWN_VOXEL_CALCULATOR_H_
+#pragma once
 
 #include "g2o_frontend/boss_map/eigen_boss_plugin.h" 
 #include "g2o_frontend/boss/object_data.h"
@@ -14,14 +13,12 @@ using namespace Eigen;
 namespace pwn {
 
   class VoxelCalculator : public boss::Identifiable {
-
     struct VoxelAccumulator {
       Point accumulator;
       int numPoints;
       // HAKKE
       int index;
-      
-	
+      	
       VoxelAccumulator() {
 	accumulator[0] = accumulator[1] = accumulator[2] = 0.0f;
 	numPoints = 0;
@@ -52,25 +49,21 @@ namespace pwn {
     };
       
     typedef map<IndexComparator, VoxelAccumulator> AccumulatorMap;
-
-    float _resolution;
+    
   public: 
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	
-    // Constructor and destructor
-    VoxelCalculator(int id=-1, boss::IdContext* context=0);
-    virtual ~VoxelCalculator();
-    inline float resolution() const {return _resolution;}
-    inline void setResolution(float resolution_) {_resolution = resolution_;}
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+      
+    VoxelCalculator() { _resolution = 0.01f; }
+    virtual ~VoxelCalculator() {}
+    
+    inline float resolution() const { return _resolution; }
+    inline void setResolution(float resolution_) { _resolution = resolution_; }
     
     void compute(Frame &frame, float resolution);
     void compute(Frame &frame);
 
-    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
-    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
-
+  protected:
+    float _resolution;
   };
 
 }
-
-#endif

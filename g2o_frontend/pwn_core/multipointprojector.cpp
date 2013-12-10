@@ -1,32 +1,15 @@
 #include "multipointprojector.h"
-#include "g2o_frontend/basemath/bm_se3.h"
-#include "g2o_frontend/boss/serializable.h"
 
-using namespace std;
+#include "g2o_frontend/basemath/bm_se3.h"
 
 namespace pwn {
-  using namespace boss;
-
-  void MultiPointProjector::ChildProjectorInfo::serialize(ObjectData& data, IdContext& /*context*/) {
-    data.setPointer("projector",pointProjector);
-    t2v(sensorOffset).toBOSS(data,"sensorOffset");
-  }
-  void MultiPointProjector::ChildProjectorInfo::deserialize(ObjectData& data, IdContext& context){
-    data.getReference("projector").bind(pointProjector);
-    Vector6f v;
-    v.fromBOSS(data,"sensorOffset");
-    sensorOffset=v2t(v);
-  }
-
-  void MultiPointProjector::ChildProjectorInfo::deserializeComplete(){
-  }
 
   void MultiPointProjector::computeImageSize(int &rows, int &cols) const {
     // Compute total image size
     rows = 0;
     cols = 0;
     for(size_t i = 0; i < _pointProjectors.size(); i++) {
-      if(_pointProjectors[i].pointProjector->imageRows() > rows){
+      if(_pointProjectors[i].pointProjector->imageRows() > rows) {
 	rows = _pointProjectors[i].pointProjector->imageRows();
       }
       cols += _pointProjectors[i].pointProjector->imageCols();
@@ -34,52 +17,40 @@ namespace pwn {
   }
 
   void MultiPointProjector::project(IntImage &indexImage, 
-				    Eigen::MatrixXf &depthImage, 
+				    DepthImage &depthImage, 
 				    const PointVector &points) {
 
-    if (!_imageRows || ! _imageCols)
-      throw std::runtime_error("projector image not set");
+    assert(_imageRows && _imageCols && "MultiPointProjector: _imageRows and _imageCols are zero");
 
     // Compute total image size
     int maxWidth = 0;
     int totalHeight = 0;
     computeImageSize(maxWidth, totalHeight);
     setImageSize(maxWidth, totalHeight);
-    // for(size_t i = 0; i < _pointProjectors.size(); i++) {
-    //   if(_pointProjectors[i].width > maxWidth)
-    // 	maxWidth = _pointProjectors[i].width;
-    //   totalHeight += _pointProjectors[i].height;
-    // }
   
     // Resize the output images
-    indexImage.resize(maxWidth, totalHeight);
-    depthImage.resize(maxWidth, totalHeight);
-    depthImage.fill(std::numeric_limits<float>::max());
-    indexImage.fill(-1);
+    indexImage.create(maxWidth, totalHeight);
+    depthImage.create(maxWidth, totalHeight);
+    depthImage.setTo(0.0f);
+    indexImage.setTo(-1);
   
     int columnOffset = 0;
     for(size_t i = 0; i < _pointProjectors.size(); i++) {
-      ChildProjectorInfo& childInfo = _pointProjectors[i];
-      //const int currentWidth = childInfo.width;
+      ChildProjectorInfo &childInfo = _pointProjectors[i];
       const int currentHeight = childInfo.pointProjector->imageCols();
       PointProjector *currentPointProjector = childInfo.pointProjector;
-      IntImage& currentIndexImage = childInfo.indexImage;
-      Eigen::MatrixXf& currentDepthImage = childInfo.depthImage;
+      IntImage &currentIndexImage = childInfo.indexImage;
+      DepthImage &currentDepthImage = childInfo.depthImage;
       if(currentPointProjector != 0) {
-	//currentPointProjector->setTransform(transform() * _pointProjectors[i].sensorOffset);
 	currentPointProjector->project(currentIndexImage, currentDepthImage, points);      
       
-	for (int c=0; c<currentIndexImage.cols(); c++) {
-	  for (int r=0; r<currentIndexImage.rows(); r++){
-	    int i = currentIndexImage(r,c);
-	    indexImage(r,c+columnOffset)=i;
-	    depthImage(r,c+columnOffset)=currentDepthImage(r,c);
-	  
+	for(int c = 0; c < currentIndexImage.cols; c++) {
+	  for(int r = 0; r < currentIndexImage.rows; r++) {
+	    int i = currentIndexImage(r, c);
+	    indexImage(r, c + columnOffset) = i;
+	    depthImage(r, c + columnOffset) = currentDepthImage(r, c);	  
 	  }
 	}
-
-	//indexImage.block(0, columnOffset, currentWidth, currentHeight) = currentIndexImage;
-	//depthImage.block(0, columnOffset, currentWidth, currentHeight) = currentDepthImage;
       }
       columnOffset += currentHeight;
     }
@@ -87,9 +58,11 @@ namespace pwn {
 
   void MultiPointProjector::unProject(PointVector &points,
 				      IntImage &indexImage, 
-				      const Eigen::MatrixXf &depthImage) const {
-    indexImage.resize(depthImage.rows(), depthImage.cols());
-    indexImage.fill(-1);
+				      const DepthImage &depthImage) const {
+    assert(depthImage.rows > 0 && depthImage.cols > 0 && "MultiPointProjector: Depth image has zero dimensions");
+
+    indexImage.create(depthImage.rows, depthImage.cols);
+    indexImage.setTo(-1);
     points.clear();
     PointVector currentPoints;
     int columnOffset = 0;
@@ -99,24 +72,19 @@ namespace pwn {
 
       PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
       if(currentPointProjector != 0) {
-	//currentPointProjector->setTransform(transform() * _pointProjectors[i].sensorOffset);
-	_pointProjectors[i].depthImage = depthImage.block(0, columnOffset, width, height);
+	_pointProjectors[i].depthImage = depthImage(cv::Rect(0, columnOffset, width, height));
 	currentPointProjector->unProject(currentPoints,
 					 _pointProjectors[i].indexImage, 
 					 _pointProjectors[i].depthImage);
-      
-
-	for(int r = 0; r < _pointProjectors[i].indexImage.rows(); r++) {
-	  for(int c = 0; c < _pointProjectors[i].indexImage.cols(); c++) {
+	for(int r = 0; r < _pointProjectors[i].indexImage.rows; r++) {
+	  for(int c = 0; c < _pointProjectors[i].indexImage.cols; c++) {
 	    if(_pointProjectors[i].indexImage(r, c) != -1)
 	      _pointProjectors[i].indexImage(r, c) += points.size();
 	  }
 	}
-
-	indexImage.block(0, columnOffset, width, height) = _pointProjectors[i].indexImage;
+	indexImage(cv::Rect(0, columnOffset, width, height)) = _pointProjectors[i].indexImage;
 	points.insert(points.end(), currentPoints.begin(), currentPoints.end());
       }
-
       columnOffset += height;
     }
   }
@@ -124,9 +92,11 @@ namespace pwn {
   void MultiPointProjector::unProject(PointVector &points,
 				      Gaussian3fVector &gaussians,
 				      IntImage &indexImage,
-				      const Eigen::MatrixXf &depthImage) const {
-    indexImage.resize(depthImage.rows(), depthImage.cols());
-    indexImage.fill(-1);
+				      const DepthImage &depthImage) const {
+    assert(depthImage.rows > 0 && depthImage.cols > 0 && "MultiPointProjector: Depth image has zero dimensions");
+
+    indexImage.create(depthImage.rows, depthImage.cols);
+    indexImage.setTo(-1);
     points.clear();
     gaussians.clear();
     PointVector currentPoints;
@@ -138,52 +108,49 @@ namespace pwn {
 
       PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
       if(currentPointProjector != 0) {
-	//currentPointProjector->setTransform(transform() * _pointProjectors[i].sensorOffset);
-	_pointProjectors[i].depthImage = depthImage.block(0, columnOffset, width, height);
+	_pointProjectors[i].depthImage = depthImage(cv::Rect(0, columnOffset, width, height));
 	currentPointProjector->unProject(currentPoints,
 					 currentGaussians,
 					 _pointProjectors[i].indexImage, 
 					 _pointProjectors[i].depthImage);
-
-	for(int r = 0; r < _pointProjectors[i].indexImage.rows(); r++) {
-	  for(int c = 0; c < _pointProjectors[i].indexImage.cols(); c++) {
+	for(int r = 0; r < _pointProjectors[i].indexImage.rows; r++) {
+	  for(int c = 0; c < _pointProjectors[i].indexImage.cols; c++) {
 	    if(_pointProjectors[i].indexImage(r, c) != -1)
 	      _pointProjectors[i].indexImage(r, c) += points.size();
 	  }
 	}
-
-	indexImage.block(0, columnOffset, width, height) = _pointProjectors[i].indexImage;
+	indexImage(cv::Rect(0, columnOffset, width, height)) = _pointProjectors[i].indexImage;
 	points.insert(points.end(), currentPoints.begin(), currentPoints.end());
 	gaussians.insert(gaussians.end(), currentGaussians.begin(), currentGaussians.end());
       }
-
       columnOffset += height;
     }
   }
 
-  void MultiPointProjector::projectIntervals(IntImage& intervalImage, 
-					     const Eigen::MatrixXf& depthImage, 
+  void MultiPointProjector::projectIntervals(IntImage &intervalImage, 
+					     const DepthImage &depthImage, 
 					     const float worldRadius,
 					     const bool blackBorders) const {
-    intervalImage.resize(depthImage.rows(), depthImage.cols());
+    assert(depthImage.rows > 0 && depthImage.cols > 0 && "MultiPointProjector: Depth image has zero dimensions");
+
+    intervalImage.create(depthImage.rows, depthImage.cols);
     IntImage currentIntervalImage;
     int columnOffset = 0;
     for(size_t i = 0; i < _pointProjectors.size(); i++) {
       const int width = _pointProjectors[i].pointProjector->imageRows();
       const int height = _pointProjectors[i].pointProjector->imageCols();
 
-      if(currentIntervalImage.rows() != width || currentIntervalImage.cols() != height)
-	currentIntervalImage.resize(width, height);
+      if(currentIntervalImage.rows != width || currentIntervalImage.cols != height)
+	currentIntervalImage.create(width, height);
 
       PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
       if(currentPointProjector != 0) {
-	//currentPointProjector->setTransform(transform() * _pointProjectors[i].sensorOffset);
-	_pointProjectors[i].depthImage = depthImage.block(0, columnOffset, width, height);
+	_pointProjectors[i].depthImage = depthImage(cv::Rect(0, columnOffset, width, height));
 	currentPointProjector->projectIntervals(currentIntervalImage,
 						_pointProjectors[i].depthImage,
 						worldRadius,
 						blackBorders);
-	intervalImage.block(0, columnOffset, width, height) = currentIntervalImage;
+	intervalImage(cv::Rect(0, columnOffset, width, height)) = currentIntervalImage;
       }
       columnOffset += height;
     }
@@ -208,7 +175,6 @@ namespace pwn {
     
       PointProjector *currentPointProjector = _pointProjectors[i].pointProjector;
       if(currentPointProjector != 0) {
-	//currentPointProjector->setTransform(transform() * _pointProjectors[i].sensorOffset);
 	if(currentPointProjector->project(currentX, currentY, currentF, p)) {
 	  if(currentF < 0.0f || 
 	     currentX < 0 || currentX >= width || 
@@ -268,28 +234,5 @@ namespace pwn {
     computeImageSize(r,c);
     setImageSize(r,c);
   }
-
-
-  void MultiPointProjector::serialize(boss::ObjectData& data, boss::IdContext& context){
-    PointProjector::serialize(data,context);
-    ArrayData* arr=new ArrayData;
-    for(size_t i=0; i<_pointProjectors.size(); i++){
-      arr->add(&_pointProjectors[i]);
-    }
-    data.setField("childProjectors",arr);
-  }
-  
-  void MultiPointProjector::deserialize(boss::ObjectData& data, boss::IdContext& context){
-    PointProjector::deserialize(data,context);
-    ArrayData* arr=dynamic_cast<ArrayData*>(data.getField("childProjectors"));
-    clearProjectors();
-    for(size_t i=0; i<arr->size(); i++){
-      ChildProjectorInfo& pp=dynamic_cast<ChildProjectorInfo&>((*arr)[i]);
-      _pointProjectors.push_back(pp);
-    }
-    delete arr;
-  }
-
-  BOSS_REGISTER_CLASS(MultiPointProjector);
 
 }

@@ -1,14 +1,10 @@
+#include <Eigen/Eigenvalues> 
+
 #include "drawable_transform_covariance.h"
 #include "gl_parameter_covariances.h"
 #include "pwn_qglviewer.h"
 
 #include "g2o/stuff/opengl_primitives.h"
-
-#include <Eigen/Eigenvalues> 
-
-#include <iostream>
-
-using namespace std; 
 
 namespace pwn {
 
@@ -83,9 +79,6 @@ namespace pwn {
       float sy = sqrt(lambda[1]) * scale;
       float sz = sqrt(lambda[2]) * scale;
       
-      //std::cerr << "lambda: " << lambda[0] << " --- " << lambda[1] << " --- " << lambda[2] << std::endl;
-      //std::cerr << "scales: " << sx << " --- " << sy << " --- " << sz << std::endl;
-
       glPushMatrix();
       glMultMatrixf(I.data());
       glColor4f(color[0], color[1], color[2], color[3]);

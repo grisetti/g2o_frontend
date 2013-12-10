@@ -4,13 +4,9 @@ using namespace std;
 using namespace Eigen;
 
 namespace pwn {
-  using namespace boss;
-
-  VoxelCalculator::VoxelCalculator(int id, boss::IdContext* context): Identifiable(id, context) {_resolution = 0.01;}
-  VoxelCalculator::~VoxelCalculator() {}
 
   void VoxelCalculator::compute(Frame &frame, float res) {
-    float oldRes=resolution();
+    float oldRes = resolution();
     setResolution(res);
     compute(frame);
     setResolution(oldRes);
@@ -20,7 +16,6 @@ namespace pwn {
     AccumulatorMap accumulatorMap;
     float inverseResolution = 1.0f / _resolution;
 
-    std::cerr << "Size: " << frame.points().size() << std::endl;
     for(size_t i = 0; i < frame.points().size(); i++) {
       const Point &point = frame.points()[i];
 
@@ -44,7 +39,7 @@ namespace pwn {
       }
     }
 
-    cerr << "Voxelization resized the cloud from " << frame.points().size() << " to ";
+    std::cout << "Voxelization resized the cloud from " << frame.points().size() << " to ";
     // HAKKE
     // frame.clear();
     Frame tmpFrame;
@@ -74,18 +69,6 @@ namespace pwn {
     frame.clear();
     frame = tmpFrame;
 
-    cerr << frame.points().size() << " points" << endl;
+    std::cout << frame.points().size() << " points" << std::endl;
   }
-
-  void VoxelCalculator::serialize(boss::ObjectData& data, boss::IdContext& context) {
-    Identifiable::serialize(data,context);
-    data.setFloat("resolution", resolution());
-  }
-  void VoxelCalculator::deserialize(boss::ObjectData& data, boss::IdContext& context){
-    Identifiable::deserialize(data,context);
-    setResolution(data.getFloat("resolution"));
-  }
-
-  BOSS_REGISTER_CLASS(VoxelCalculator);
-
 }

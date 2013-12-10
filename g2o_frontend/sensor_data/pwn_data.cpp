@@ -62,7 +62,7 @@ bool PWNData::write(std::ostream &os) const {
 
 void PWNData::writeOut() const {
   if(_frameModified && _frame) {
-    _frame->save(_filename.c_str(), 1, true, _originPose);
+    _frame->save(_filename.c_str(), _originPose, 1, true);
     _frameModified = false;
   }
 }

@@ -1,7 +1,5 @@
-#ifndef _PWN_UTILS_H_
-#define _PWN_UTILS_H_
+#pragma once
 
-#include <iostream>
 #include <Eigen/Core>
 
 using namespace std;
@@ -29,5 +27,3 @@ inline void xyzToQuat(Quaternionf &quaternion, float x, float y, float z) {
   float w = sqrtf(1.0f - x * x - y * y - z * z);
   quaternion = Quaternionf(w, x, y, z);
 }
-
-#endif

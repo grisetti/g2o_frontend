@@ -1,51 +1,53 @@
-#ifndef DRAWABLE_NORMALS
-#define DRAWABLE_NORMALS
+#pragma once
 
-#include "../pwn_core/homogeneousvector4f.h"
+#include "g2o_frontend/pwn_core/homogeneousvector4f.h"
 #include "gl_parameter_normals.h"
 #include "drawable.h"
 
 namespace pwn {
 
-class DrawableNormals : public Drawable {
- public:
-  DrawableNormals();
-  DrawableNormals(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, PointVector *points_, NormalVector *normals_);
-  virtual ~DrawableNormals() { glDeleteLists(_normalDrawList, 1); }
+  class DrawableNormals : public Drawable {
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-  virtual GLParameter* parameter() { return _parameter; };
-  virtual PointVector* points() { return _points; }
-  virtual NormalVector* normals() { return _normals; }
-  inline GLuint normalDrawList() { return _normalDrawList; }
+    DrawableNormals();
+    DrawableNormals(const Eigen::Isometry3f &transformation_, GLParameter *parameter_, PointVector *points_, NormalVector *normals_);
+    virtual ~DrawableNormals() { glDeleteLists(_normalDrawList, 1); }
 
-  virtual bool setParameter(GLParameter *parameter_);
-  virtual void setPoints(PointVector *points_) { 
-    _points = points_; 
-    updateNormalDrawList();
-  }
-  virtual void setNormals(NormalVector *normals_) { 
-    _normals = normals_; 
-    updateNormalDrawList();
-  }
-  void setStep(int step_) {
-    _parameter->setStep(step_);
-    updateNormalDrawList();
-  }
-  void setNormalLength(float normalLength_) {
-    _parameter->setNormalLength(normalLength_);
-    updateNormalDrawList();
-  }
- 
-  virtual void draw();
-  void updateNormalDrawList();
+    virtual GLParameter* parameter() { return _parameter; };
+    virtual bool setParameter(GLParameter *parameter_);
 
- protected:
-  GLParameterNormals *_parameter;
-  PointVector *_points;
-  NormalVector *_normals;
-  GLuint _normalDrawList; 
-};  
+    virtual PointVector* points() { return _points; }
+    virtual void setPoints(PointVector *points_) { 
+      _points = points_; 
+      updateNormalDrawList();
+    }
+
+    virtual NormalVector* normals() { return _normals; }    
+    virtual void setNormals(NormalVector *normals_) { 
+      _normals = normals_; 
+      updateNormalDrawList();
+    }
+
+    void setStep(int step_) {
+      _parameter->setStep(step_);
+      updateNormalDrawList();
+    }
+    void setNormalLength(float normalLength_) {
+      _parameter->setNormalLength(normalLength_);
+      updateNormalDrawList();
+    }
+
+    inline GLuint normalDrawList() { return _normalDrawList; }
+
+    virtual void draw();
+    void updateNormalDrawList();
+
+  protected:
+    GLParameterNormals *_parameter;
+    PointVector *_points;
+    NormalVector *_normals;
+    GLuint _normalDrawList; 
+  };  
 
 }
-
-#endif

@@ -1,12 +1,6 @@
-#ifndef _PWN_SE3_PRIOR_H_
-#define _PWN_SE3_PRIOR_H_
-
-#include "g2o_frontend/boss_map/eigen_boss_plugin.h" 
-#include "g2o_frontend/boss/object_data.h"
-#include "g2o_frontend/boss/identifiable.h"
+#pragma once
 
 #include "g2o_frontend/basemath/bm_se3.h"
-
 
 /**
    Base class that implements a simple prior on te transformation to be used in SE2 pose.
@@ -29,80 +23,87 @@
    3) get the error and the jacobian to compute H and b;
 */
 
-class SE3Prior {
-public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-  SE3Prior(const Eigen::Isometry3f& priorMean=Eigen::Isometry3f::Identity(), 
-	   const Matrix6f& information=Matrix6f::Zero());
-  inline void setMean(const Eigen::Isometry3f& priorMean_) {_priorMean = priorMean_;}
-  inline void setInformation(const Matrix6f& priorInformation_) {_priorInformation = priorInformation_;}
-  inline const Eigen::Isometry3f& mean() const {return _priorMean;}
-  inline const Matrix6f& information() const {return _priorInformation;}
+namespace pwn {
 
-  //! computes the error of the prior at the inverse transform
-  virtual Vector6f error(const Eigen::Isometry3f& invT) const = 0;
-
-  //! computes the jacobian of the error 
-  Matrix6f jacobian(const Eigen::Isometry3f& invT) const;
-
-  //! projects the information matrix of the prior in the error space
-  Matrix6f errorInformation(const Eigen::Isometry3f& invT) const;
-
-protected:
-  //! computes the jacobian of the error w.r.t. the priorMean
-  //! used internally to project the information matrix in the measurement space
-  Matrix6f jacobianZ(const Eigen::Isometry3f& invT) const;
+  class SE3Prior {
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   
-  mutable Eigen::Isometry3f  _priorMean;
-  Matrix6f    _priorInformation;
-};
+    SE3Prior(const Eigen::Isometry3f &priorMean = Eigen::Isometry3f::Identity(), 
+	     const Matrix6f &information = Matrix6f::Zero());
+    virtual ~SE3Prior() {}
+
+    inline void setMean(const Eigen::Isometry3f &priorMean_) { _priorMean = priorMean_; }
+    inline const Eigen::Isometry3f& mean() const { return _priorMean; }
+
+    inline void setInformation(const Matrix6f &priorInformation_) { _priorInformation = priorInformation_; }
+    inline const Matrix6f& information() const { return _priorInformation; }
+
+    //! Computes the error of the prior at the inverse transform
+    virtual Vector6f error(const Eigen::Isometry3f &invT) const = 0;
+
+    //! Computes the jacobian of the error 
+    Matrix6f jacobian(const Eigen::Isometry3f &invT) const;
+
+    //! Projects the information matrix of the prior in the error space
+    Matrix6f errorInformation(const Eigen::Isometry3f &invT) const;
+
+  protected:
+    //! Computes the jacobian of the error w.r.t. the priorMean
+    //! Used internally to project the information matrix in the measurement space
+    Matrix6f jacobianZ(const Eigen::Isometry3f &invT) const;
+  
+    mutable Eigen::Isometry3f  _priorMean;
+    Matrix6f _priorInformation;
+  };
+
+  /**
+     The error induced by the prior is defined as 
+     t2v(invT * priorMean),
+     where invT s the *inverse* of the transformation we are looking for.
+  */
+
+  class SE3RelativePrior: public SE3Prior{
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
+    SE3RelativePrior(const Eigen::Isometry3f &priorMean = Eigen::Isometry3f::Identity(), 
+		     const Matrix6f &information = Matrix6f::Zero());
+    virtual ~SE3RelativePrior() {}
+
+    //! Computes the error of the prior at the inverse transform
+    virtual Vector6f error(const Eigen::Isometry3f &invT) const;
+  };
 
 
-
-/**
+  /**
    
-   The error induced by the prior is defined as 
-   t2v(invT * priorMean),
-   where invT s the *inverse* of the transformation we are looking for.
-*/
+     The error induced by the prior is defined as 
+     t2v(invT * _referenceTransform.inverse()*priorMean),
+     where invT s the *inverse* of the transformation we are looking for.
+  */
 
-class SE3RelativePrior: public SE3Prior{
-public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-  SE3RelativePrior(const Eigen::Isometry3f& priorMean=Eigen::Isometry3f::Identity(), 
-	   const Matrix6f& information=Matrix6f::Zero());
+  class SE3AbsolutePrior : public SE3Prior{
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    
+    SE3AbsolutePrior(const Eigen::Isometry3f &referenceTransform_ = Eigen::Isometry3f::Identity(), 
+		     const Eigen::Isometry3f &priorMean = Eigen::Isometry3f::Identity(), 
+		     const Matrix6f &information = Matrix6f::Zero());
+    virtual ~SE3AbsolutePrior() {}
 
-  //! computes the error of the prior at the inverse transform
-  virtual Vector6f error(const Eigen::Isometry3f& invT) const;
-};
+    //! Computes the error of the prior at the inverse transform
+    virtual Vector6f error(const Eigen::Isometry3f &invT) const;
 
+    inline const Eigen::Isometry3f& referenceTransform() const { return _referenceTransform; }
+    inline void setReferenceTransform(const Eigen::Isometry3f &referenceTransform_)  {
+      _referenceTransform = referenceTransform_;
+      _inverseReferenceTransform = referenceTransform_.inverse();
+    }
 
-/**
-   
-   The error induced by the prior is defined as 
-   t2v(invT * _referenceTransform.inverse()*priorMean),
-   where invT s the *inverse* of the transformation we are looking for.
-*/
+  protected:
+    Eigen::Isometry3f _referenceTransform;
+    Eigen::Isometry3f _inverseReferenceTransform;
+  };
 
-class SE3AbsolutePrior: public SE3Prior{
-public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-  SE3AbsolutePrior(const Eigen::Isometry3f& referenceTransform_=Eigen::Isometry3f::Identity(), 
-		   const Eigen::Isometry3f& priorMean=Eigen::Isometry3f::Identity(), 
-		   const Matrix6f& information=Matrix6f::Zero());
-
-  //! computes the error of the prior at the inverse transform
-  virtual Vector6f error(const Eigen::Isometry3f& invT) const;
-
-  inline const Eigen::Isometry3f& referenceTransform() const {return _referenceTransform;}
-  inline void setReferenceTransform(const Eigen::Isometry3f& referenceTransform_)  {
-    _referenceTransform = referenceTransform_;
-    _inverseReferenceTransform = referenceTransform_.inverse();
-  }
-
-protected:
-  Eigen::Isometry3f _referenceTransform;
-  Eigen::Isometry3f _inverseReferenceTransform;
-};
-
-#endif
+}

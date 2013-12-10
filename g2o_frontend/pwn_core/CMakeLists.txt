@@ -12,9 +12,7 @@ ADD_LIBRARY(pwn_core
   aligner.cpp aligner.h
   correspondencefinder.cpp correspondencefinder.h
   cylindricalpointprojector.cpp cylindricalpointprojector.h
-  depthimage.cpp depthimage.h
   depthimageconverter.cpp depthimageconverter.h
-  depthimageconvertercrossproduct.cpp depthimageconvertercrossproduct.h
   depthimageconverterintegralimage.cpp depthimageconverterintegralimage.h
   frame.cpp frame.h
   gaussian3.cpp gaussian3.h
@@ -27,10 +25,9 @@ ADD_LIBRARY(pwn_core
   pointprojector.cpp pointprojector.h
   se3_prior.cpp se3_prior.h
   statscalculator.cpp statscalculator.h
-  statscalculatorcrossproduct.cpp statscalculatorcrossproduct.h
   statscalculatorintegralimage.cpp statscalculatorintegralimage.h
   voxelcalculator.cpp voxelcalculator.h
 )
 
 SET_TARGET_PROPERTIES(pwn_core PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn_core)
-TARGET_LINK_LIBRARIES(pwn_core boss ${OpenCV_LIBS})
+TARGET_LINK_LIBRARIES(pwn_core ${OpenCV_LIBS})

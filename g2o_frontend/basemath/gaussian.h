@@ -1,5 +1,4 @@
-#ifndef _GAUSSIAN_H_
-#define _GAUSSIAN_H_
+#pragma once
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -95,6 +94,3 @@ protected:
   mutable bool _momentsUpdated;
   mutable bool _infoUpdated;
 };
-
-
-#endif
