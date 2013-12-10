@@ -1,4 +1,5 @@
 #include "pwn_closer.h"
+#include "pwn_tracker_g2o_wrapper.h"
 
 namespace pwn_tracker {
   PwnCloserRelation::PwnCloserRelation(MapManager* manager, int id, IdContext* context):
@@ -525,6 +526,45 @@ namespace pwn_tracker {
       cerr << "  inliers              : " << rel->inliers<< endl;
       cerr << "  reprojectionDistance : " << rel->reprojectionDistance << endl;
       cerr << "  nonZeros             : " << rel->nonZeros << endl;
+    }
+  }
+
+// closure actions
+
+  NewFrameCloserAdder::NewFrameCloserAdder(PwnCloser* closer, PwnTracker* tracker):
+    PwnTracker::NewFrameAction(tracker){
+    _closer = closer;
+  }
+  void NewFrameCloserAdder::compute (PwnTrackerFrame* frame) {
+    _closer->addFrame(frame);
+  }
+
+
+  CloserRelationAdder::CloserRelationAdder(std::list<Serializable*>& objects_,
+		      PwnCloser* closer, 
+		      G2oWrapper* optimizer_, 
+		      PwnTracker* tracker):
+    PwnTracker::NewRelationAction(tracker),
+    _objects(objects_) {
+    _closer = closer;
+    _optimizer = optimizer_;
+  }
+
+  void CloserRelationAdder::compute (PwnTrackerRelation* relation) {
+    _closer->addRelation(relation);
+    cerr << "CLOSER PARTITIONS: " << _closer->partitions().size() << endl;
+    int cr=0;
+    for(std::list<PwnCloserRelation*>::iterator it=_closer->committedRelations().begin();
+	it!=_closer->committedRelations().end(); it++){
+      _objects.push_back(*it);
+      cr++;
+    }
+    if (cr){
+      cerr << "COMMITTED RELATIONS: " << cr << endl;
+      _optimizer->optimize();
+      // char fname[100];
+      // sprintf(fname, "out-%05d.g2o", lastFrameAdded->seq);
+      // optimizer->save(fname);
     }
   }
 

@@ -12,6 +12,7 @@
 #include "pwn_tracker.h"
 
 
+
 namespace pwn_tracker {
   using namespace std;
   using namespace pwn;
@@ -20,6 +21,7 @@ namespace pwn_tracker {
   using namespace boss_map_building;
   using namespace pwn_tracker;
 
+  class G2oWrapper;
 
   struct PwnCloserRelation: public PwnTrackerRelation {
     PwnCloserRelation(MapManager* manager=0, int id=-1, IdContext* context = 0);
@@ -109,6 +111,29 @@ namespace pwn_tracker {
   private:
     void scoreMatch(PwnCloserRelation* rel);
   };
+
+// closure actions
+
+struct NewFrameCloserAdder: public PwnTracker::NewFrameAction {
+  NewFrameCloserAdder(PwnCloser* closer, PwnTracker* tracker);
+  void compute (PwnTrackerFrame* frame);
+  PwnCloser* _closer;
+};
+
+
+  struct CloserRelationAdder: public PwnTracker::NewRelationAction {
+    CloserRelationAdder(std::list<Serializable*>& objects_,
+			PwnCloser* closer, 
+			G2oWrapper* optimizer_, 
+			PwnTracker* tracker);
+    void compute (PwnTrackerRelation* relation);
+  protected:
+    PwnCloser* _closer;
+    G2oWrapper* _optimizer;
+    std::list<Serializable*>& _objects;
+  };
+
+
 }
 
 #endif
