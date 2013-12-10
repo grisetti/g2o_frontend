@@ -1,5 +1,4 @@
-#ifndef _PWN_TRACKER_G2O_WRAPPER_H_
-#define _PWN_TRACKER_G2O_WRAPPER_H_
+#pragma once
 
 #include "g2o_frontend/boss_map/reference_frame.h"
 #include "g2o_frontend/pwn_core/frame.h"
@@ -14,16 +13,15 @@
 #include "g2o/types/slam3d/edge_se3.h"
 #include "g2o_frontend/boss_map_building/boss_map_g2o_reflector.h"
 #include "g2o_frontend/boss_map/map_utils.h"
-#include "pwn_tracker.h"
-#include "pwn_closer.h"
+//#include "pwn_tracker.h"
+//#include "pwn_closer.h"
 
-namespace pwn_tracker {
+namespace boss_map {
   using namespace pwn;
   using namespace boss;
   using namespace g2o;
   using namespace boss_map;
   using namespace boss_map_building;
-  using namespace pwn_tracker;
 
   class G2oWrapper{
   public:
@@ -31,7 +29,7 @@ namespace pwn_tracker {
     void optimize();
     SparseOptimizer * g2oInit();
     void save(const std::string& filename);
-  
+    MapRelationSelector* _selector;
   protected:
     MapManager* manager;
     MapG2OReflector * reflector;
@@ -39,5 +37,3 @@ namespace pwn_tracker {
   };
 
 }
-
-#endif 

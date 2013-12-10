@@ -19,7 +19,7 @@
 #include "g2o_frontend/boss_map/map_utils.h"
 #include "pwn_tracker_viewer.h"
 #include "pwn_closer.h"
-#include "pwn_tracker_g2o_wrapper.h"
+#include "map_g2o_wrapper.h"
 
 #include <QApplication>
 
@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
     return 0;
   }
 
-  bool makeVis=false;
+  bool makeVis=true;
 
   pwn::Aligner* aligner;  pwn::DepthImageConverter* converter;
   std::vector<Serializable*> instances = readConfig(aligner, converter, argv[1]);
@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
 
   // install the optimization wrapper
   G2oWrapper* wrapper = new G2oWrapper(manager);
-
+  wrapper->_selector=new PwnCloserActiveRelationSelector(manager);
   int scale = 4;
   // create a cache for the frames
   PwnCache* cache  = new PwnCache(converter, scale, 200, 210);

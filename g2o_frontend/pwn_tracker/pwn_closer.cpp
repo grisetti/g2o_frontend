@@ -1,5 +1,5 @@
 #include "pwn_closer.h"
-#include "pwn_tracker_g2o_wrapper.h"
+#include "map_g2o_wrapper.h"
 
 namespace pwn_tracker {
   PwnCloserRelation::PwnCloserRelation(MapManager* manager, int id, IdContext* context):
@@ -71,22 +71,20 @@ namespace pwn_tracker {
     setScale(4);
   }
 
-  
-  class MyRelationSelector: public MapRelationSelector {
-  public:
-    MyRelationSelector(boss_map::MapManager* manager): MapRelationSelector(manager){}
-    virtual bool accept(MapNodeRelation* r) {
-      if (!r)
-	return false;
-      {
-	PwnCloserRelation* _r = dynamic_cast<PwnCloserRelation*>(r);
-	if (_r){
-	  return _r->accepted;
-	}
+
+  PwnCloserActiveRelationSelector::PwnCloserActiveRelationSelector(boss_map::MapManager* manager): MapRelationSelector(manager){}
+
+  bool PwnCloserActiveRelationSelector::accept(MapNodeRelation* r) {
+    if (!r)
+      return false;
+    {
+      PwnCloserRelation* _r = dynamic_cast<PwnCloserRelation*>(r);
+      if (_r){
+	return _r->accepted;
       }
-      return dynamic_cast<PwnTrackerRelation*>(r);
     }
-  };
+    return dynamic_cast<PwnTrackerRelation*>(r);
+  }
 
   void PwnCloser::addFrame(PwnTrackerFrame* f) {
     _trackerFrames.insert(make_pair(f->seq,f));
@@ -126,7 +124,7 @@ namespace pwn_tracker {
     _criterion->setReferencePose(_pendingTrackerFrame->transform());
     selectNodes(selectedNodes,_criterion);
     _partitions.clear();
-    MyRelationSelector selector(_manager);
+    PwnCloserActiveRelationSelector selector(_manager);
     makePartitions(_partitions, selectedNodes, &selector);
     cerr << "node: " << _pendingTrackerFrame->seq 
 	 << ", neighbors: " << selectedNodes.size() 

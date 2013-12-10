@@ -10,7 +10,7 @@
 #include "g2o_frontend/boss_map_building/boss_map_g2o_reflector.h"
 #include "g2o_frontend/boss_map/map_utils.h"
 #include "pwn_tracker.h"
-
+#include "map_g2o_wrapper.h"
 
 
 namespace pwn_tracker {
@@ -20,9 +20,7 @@ namespace pwn_tracker {
   using namespace boss_map;
   using namespace boss_map_building;
   using namespace pwn_tracker;
-
-  class G2oWrapper;
-
+  
   struct PwnCloserRelation: public PwnTrackerRelation {
     PwnCloserRelation(MapManager* manager=0, int id=-1, IdContext* context = 0);
     virtual void serialize(ObjectData& data, IdContext& context);
@@ -110,6 +108,12 @@ namespace pwn_tracker {
     std::list<PwnCloserRelation*> _candidateRelations;
   private:
     void scoreMatch(PwnCloserRelation* rel);
+  };
+
+  class PwnCloserActiveRelationSelector: public MapRelationSelector {
+  public:
+    PwnCloserActiveRelationSelector(boss_map::MapManager* manager);
+    virtual bool accept(MapNodeRelation* r);
   };
 
 // closure actions
