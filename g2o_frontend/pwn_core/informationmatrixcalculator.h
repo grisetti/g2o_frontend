@@ -37,7 +37,7 @@ namespace pwn {
     InformationMatrix _nonFlatInformationMatrix;
   };
 
-  class PointInformationMatrixCalculator : public InformationMatrixCalculator {
+  class PointInformationMatrixCalculator : virtual public InformationMatrixCalculator {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -53,7 +53,7 @@ namespace pwn {
 			 const NormalVector &imageNormals);
   };
 
-  class NormalInformationMatrixCalculator : public InformationMatrixCalculator {
+  class NormalInformationMatrixCalculator : virtual public InformationMatrixCalculator {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 

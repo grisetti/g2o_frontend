@@ -4,7 +4,7 @@
 
 namespace pwn {
 
-  class CylindricalPointProjector : public PointProjector {
+  class CylindricalPointProjector : virtual public PointProjector {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -55,9 +55,9 @@ namespace pwn {
 			  const float worldRadius,
 			  const bool blackBorders = false) const;  
   
-    virtual inline bool project(int &x, int &y, float &f, const Point &p) const; 
-    virtual inline bool unProject(Point &p, const int x, const int y, const float d) const;
-    virtual inline int projectInterval(const int x, const int y, const float d, const float worldRadius) const;
+    virtual inline bool project(int &x, int &y, float &f, const Point &p) const { return _project(x, y, f, p); }
+    virtual inline bool unProject(Point &p, const int x, const int y, const float d) const { return _unProject(p, x, y, d); }
+    virtual inline int projectInterval(const int x, const int y, const float d, const float worldRadius) const { return _projectInterval(x, y, d, worldRadius); }
  
     inline bool _project(int &x, int &y, float &d, const Point &p) const {
       // Point in camera coordinates;

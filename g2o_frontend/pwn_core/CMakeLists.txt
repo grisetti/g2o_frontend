@@ -16,18 +16,22 @@ ADD_LIBRARY(pwn_core
   depthimageconverterintegralimage.cpp depthimageconverterintegralimage.h
   frame.cpp frame.h
   gaussian3.cpp gaussian3.h
+  homogeneousvector4f.h
+  informationmatrix.h
   informationmatrixcalculator.h informationmatrixcalculator.cpp
   linearizer.cpp linearizer.h
   merger.cpp merger.h
   multipointprojector.cpp multipointprojector.h 
   pinholepointprojector.cpp pinholepointprojector.h
+  pointaccumulator.h
   pointintegralimage.cpp pointintegralimage.h
   pointprojector.cpp pointprojector.h
+  pwn_typedefs.h
   se3_prior.cpp se3_prior.h
+  stats.h
   statscalculator.cpp statscalculator.h
   statscalculatorintegralimage.cpp statscalculatorintegralimage.h
   voxelcalculator.cpp voxelcalculator.h
 )
-
 SET_TARGET_PROPERTIES(pwn_core PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn_core)
 TARGET_LINK_LIBRARIES(pwn_core ${OpenCV_LIBS})

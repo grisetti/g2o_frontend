@@ -4,7 +4,7 @@
 
 namespace pwn {
 
-  class DepthImageConverterIntegralImage : public DepthImageConverter {
+  class DepthImageConverterIntegralImage : virtual public DepthImageConverter {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     

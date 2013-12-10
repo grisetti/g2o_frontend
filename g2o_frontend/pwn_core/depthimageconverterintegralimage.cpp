@@ -6,7 +6,11 @@ namespace pwn {
   DepthImageConverterIntegralImage::DepthImageConverterIntegralImage(PointProjector *projector_,
 								     StatsCalculator *statsCalculator_,
 								     PointInformationMatrixCalculator *pointInformationMatrixCalculator_,
-								     NormalInformationMatrixCalculator *normalInformationMatrixCalculator_) : DepthImageConverter(projector_, statsCalculator_, pointInformationMatrixCalculator_, normalInformationMatrixCalculator_) {}
+								     NormalInformationMatrixCalculator *normalInformationMatrixCalculator_) : 
+    DepthImageConverter(projector_, 
+			statsCalculator_, 
+			pointInformationMatrixCalculator_, 
+			normalInformationMatrixCalculator_) {}
   
   void DepthImageConverterIntegralImage::compute(Frame &frame,
 						 const DepthImage &depthImage, 

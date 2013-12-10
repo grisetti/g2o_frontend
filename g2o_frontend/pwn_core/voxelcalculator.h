@@ -1,8 +1,5 @@
 #pragma once
 
-#include "g2o_frontend/boss_map/eigen_boss_plugin.h" 
-#include "g2o_frontend/boss/object_data.h"
-#include "g2o_frontend/boss/identifiable.h"
 #include "frame.h"
 
 #include <map>
@@ -12,7 +9,7 @@ using namespace Eigen;
 
 namespace pwn {
 
-  class VoxelCalculator : public boss::Identifiable {
+  class VoxelCalculator {
     struct VoxelAccumulator {
       Point accumulator;
       int numPoints;

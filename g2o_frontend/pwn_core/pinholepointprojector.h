@@ -4,7 +4,7 @@
 
 namespace pwn {
 
-  class PinholePointProjector : public PointProjector {
+  class PinholePointProjector : virtual public PointProjector {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 

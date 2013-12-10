@@ -31,18 +31,6 @@ namespace pwn {
     _imageCols *= scalingFactor;
   }
 
-  inline bool CylindricalPointProjector::project(int &x, int &y, float &f, const Point &p) const {
-    return _project(x, y, f, p);
-  }
-
-  inline bool CylindricalPointProjector::unProject(Point &p, const int x, const int y, const float d) const {
-    return _unProject(p, x, y, d);
-  }
-
-  inline int CylindricalPointProjector::projectInterval(const int x, const int y, const float d, const float worldRadius) const {
-    return _projectInterval(x, y, d, worldRadius);
-  }
-
   void CylindricalPointProjector::project(IntImage &indexImage,
 					  DepthImage &depthImage, 
 					  const PointVector &points)  {
