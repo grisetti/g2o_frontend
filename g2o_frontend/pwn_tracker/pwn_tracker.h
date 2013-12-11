@@ -16,6 +16,9 @@
 #include <iostream>
 #include <list>
 
+#include "g2o_frontend/pwn_boss/aligner.h"
+#include "g2o_frontend/pwn_boss/depthimageconverter.h"
+
 namespace pwn_tracker{
 
 using namespace std;
@@ -174,7 +177,7 @@ using namespace pwn;
 
   }
 
-  std::vector<Serializable*> readConfig(Aligner*& aligner, DepthImageConverter*& converter, const std::string& configFile);
+  std::vector<Serializable*> readConfig(pwn_boss::Aligner*& aligner, pwn_boss::DepthImageConverter*& converter, const std::string& configFile);
 }// end namespace
 
 

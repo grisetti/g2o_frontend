@@ -39,6 +39,12 @@ namespace pwn {
     depthImage.create(indexImage.rows, indexImage.cols);
     depthImage.setTo(cv::Scalar(0.0f));
     indexImage.setTo(cv::Scalar(-1));
+    float *drowPtrs[_imageRows];
+    int *irowPtrs[_imageRows];
+    for (int i = 0; i<_imageRows; i++){
+      drowPtrs[i]= & depthImage(i, 0);
+      irowPtrs[i]= & indexImage(i, 0);
+    }
     const Point *point = &points[0];
     for(size_t i = 0; i < points.size(); i++, point++) {
       int x, y;
@@ -48,8 +54,8 @@ namespace pwn {
 	 x < 0 || x >= indexImage.cols ||
 	 y < 0 || y >= indexImage.rows)
 	continue;
-      float &otherDistance = depthImage(y, x);
-      int &otherIndex = indexImage(y, x);
+      float &otherDistance = drowPtrs[y][x];
+      int &otherIndex = irowPtrs[y][x];
       if(!otherDistance || otherDistance > d) {
 	otherDistance = d;
 	otherIndex = i;

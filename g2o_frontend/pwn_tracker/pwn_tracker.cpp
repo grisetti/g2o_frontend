@@ -374,7 +374,7 @@ namespace pwn_tracker{
   }  
 
 
-  std::vector<Serializable*> readConfig(Aligner*& aligner, DepthImageConverter*& converter, const std::string& configFile){
+  std::vector<Serializable*> readConfig(pwn_boss::Aligner*& aligner, pwn_boss::DepthImageConverter*& converter, const std::string& configFile){
     aligner = 0;
     converter = 0;
     Deserializer des;
@@ -384,12 +384,12 @@ namespace pwn_tracker{
     cerr << "Reading" << endl;
     while ((s=des.readObject())){
       instances.push_back(s);
-      Aligner* al=dynamic_cast<Aligner*>(s);
+      pwn_boss::Aligner* al=dynamic_cast<pwn_boss::Aligner*>(s);
       if (al) {
 	cerr << "got aligner" << endl;
 	aligner = al;
       }
-      DepthImageConverter* conv=dynamic_cast<DepthImageConverter*>(s);
+      pwn_boss::DepthImageConverter* conv=dynamic_cast<pwn_boss::DepthImageConverter*>(s);
       if  (conv) {      
 	cerr << "got converter" << endl;
 	converter = conv;

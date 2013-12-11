@@ -16,6 +16,7 @@ using namespace std;
 
 void processSequentialData(SensingFrameNode* previous, SensingFrameNode* current, const std::string& topic){
   cerr << "got pair of frames, processing" << endl;
+  return;
   PinholeImageData* pImage = 0;
   PinholeImageData* cImage = 0;
   for (size_t i = 0 ;  i< previous->sensorDatas().size(); i++){

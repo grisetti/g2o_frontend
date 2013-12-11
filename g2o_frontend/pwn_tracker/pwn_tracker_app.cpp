@@ -21,6 +21,8 @@
 #include "pwn_closer.h"
 #include "g2o_frontend/boss_map_building/map_g2o_wrapper.h"
 #include "g2o_frontend/pwn_core/pwn_static.h"
+#include "g2o_frontend/pwn_boss/aligner.h"
+#include "g2o_frontend/pwn_boss/depthimageconverter.h"
 
 #include <QApplication>
 
@@ -65,14 +67,26 @@ int main(int argc, char** argv) {
     return 0;
   }
 
-  bool makeVis=true;
+  //bool makeVis=true; 
+  bool makeVis=false;
+  if (argc > 4)
+    makeVis = true;
 
-  pwn::Aligner* aligner;  pwn::DepthImageConverter* converter;
+  pwn_boss::Aligner* aligner;  
+  pwn_boss::DepthImageConverter* converter;
   std::vector<Serializable*> instances = readConfig(aligner, converter, argv[1]);
   cerr << "config loaded" << endl;
   cerr << " aligner:" << aligner << endl;
   cerr << " converter:" << converter << endl;
     
+  Serializer confSer;
+  confSer.setFilePath("confout.conf");
+  for (size_t i=0; i<instances.size(); i++) {
+      confSer.writeObject(*instances[i]);
+    }
+  if (! aligner || ! converter) {
+    throw std::runtime_error("AAAAAA");
+  }
   des.setFilePath(argv[2]);
   std::vector<BaseSensorData*> sensorDatas;
   RobotConfiguration* conf = readLog(sensorDatas, des);
@@ -119,7 +133,7 @@ int main(int argc, char** argv) {
   wrapper->_selector=new PwnCloserActiveRelationSelector(manager);
   int scale = 4;
   // create a cache for the frames
-  PwnCache* cache  = new PwnCache(converter, scale, 200, 210);
+  PwnCache* cache  = new PwnCache(converter, scale, 400, 410);
   PwnCacheHandler* cacheHandler = new PwnCacheHandler(manager, cache);
   manager->actionHandlers().push_back(cacheHandler);
   cacheHandler->init();
@@ -226,7 +240,7 @@ int main(int argc, char** argv) {
   }
   cerr << "hits:  " << cache->hits() << " misses: " << cache->misses() << " hits/misses" <<
     float(cache->hits())/float(cache->hits()+cache->misses()) << endl;
-  return 0;
+
   if (makeVis) {
     viewer->updateGL();
     while(viewer->isVisible()){
