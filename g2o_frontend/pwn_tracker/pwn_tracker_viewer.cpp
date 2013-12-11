@@ -164,7 +164,7 @@ namespace pwn_tracker  {
 
   void CloserRelationVisualizer::compute (PwnTrackerRelation* /*relation*/) {
     int nr=_closer->candidateRelations().size();
-    _visState->candidateRelations=_closer->candidateRelations();
+    //_visState->candidateRelations=_closer->candidateRelations();
     _visState->partitions = _closer->partitions();
     for (size_t i =0; i<_closer->partitions().size(); i++){
       if (&_closer->partitions()[i]==_closer->currentPartition()){
