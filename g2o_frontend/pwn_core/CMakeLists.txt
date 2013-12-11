@@ -26,6 +26,7 @@ ADD_LIBRARY(pwn_core
   pointaccumulator.h
   pointintegralimage.cpp pointintegralimage.h
   pointprojector.cpp pointprojector.h
+  pwn_static.cpp pwn_static.h
   pwn_typedefs.h
   se3_prior.cpp se3_prior.h
   stats.h
