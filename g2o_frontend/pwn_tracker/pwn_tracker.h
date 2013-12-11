@@ -14,6 +14,7 @@
 #include "pwn_tracker_cache.h"
 #include <fstream>
 #include <iostream>
+#include <list>
 
 namespace pwn_tracker{
 
@@ -30,7 +31,6 @@ using namespace pwn;
     virtual void serialize(ObjectData& data, IdContext& context);
     //! boss deserialization
     virtual void deserialize(ObjectData& data, IdContext& context);
-    int seq;
     pwn::Frame* cloud;
     boss_map::ImageBLOBReference depthImage;
     int imageRows, imageCols;
@@ -58,6 +58,31 @@ using namespace pwn;
   };
 
   struct PwnTracker{
+    struct PwnTrackerAction{
+      PwnTrackerAction(PwnTracker* tracker_);
+      virtual ~PwnTrackerAction() {};
+    protected:
+      PwnTracker* _tracker;
+    };
+    struct NewFrameAction: public PwnTrackerAction{
+      NewFrameAction(PwnTracker* tracker_);
+      virtual void compute(PwnTrackerFrame* frame) = 0;
+    };
+    struct AlignmentAction: public PwnTrackerAction{
+      AlignmentAction(PwnTracker* tracker_);
+      virtual void compute(const Eigen::Isometry3f& globalT, 
+			   const Eigen::Isometry3f& localT, 
+			   int inliers, float error ) = 0;
+    };
+    struct NewRelationAction: public PwnTrackerAction{
+      NewRelationAction(PwnTracker* tracker_);
+      virtual void compute(PwnTrackerRelation* rel)=0;
+    };
+    struct InitAction: public PwnTrackerAction{
+      InitAction(PwnTracker* tracker_);
+      virtual void compute()=0;
+    };
+
     PwnTracker(pwn::Aligner* aligner, pwn::DepthImageConverter* converter, boss_map::MapManager* manager, PwnCache* cache=0);
 
     void makeThumbnails(cv::Mat& depthThumbnail, cv::Mat& normalThumbnail, 
@@ -79,15 +104,30 @@ using namespace pwn;
 			      const Eigen::Isometry3f& initialGuess=Eigen::Isometry3f::Identity());
 
     virtual ~PwnTracker();  
-  
-    virtual void newFrameCallback(PwnTrackerFrame* /*frame*/) {}
-    virtual void newAlignmentCallback(const Eigen::Isometry3f& /*globalT*/, 
-				      const Eigen::Isometry3f& /*localT*/, 
-				      int /*inliers*/, float /*error*/ ) {}
-    virtual void newRelationCallback(PwnTrackerRelation* /*relation*/) {}
-    virtual void initCallback() {}
-    
     void init();
+    inline int scale() const {return _scale;}
+    inline void setScale (int scale_) {_scale = scale_;}
+    inline float newFrameInliersFraction() const {return _newFrameInliersFraction;}
+    inline void setNewFrameInliersFraction(float nf) {_newFrameInliersFraction = nf;}
+    std::list<InitAction*>& initActions() {return _initActions;}
+    std::list<AlignmentAction*>& alignmentActions() {return _alignmentActions;}
+    std::list<NewRelationAction*>& newRelationActions() { return _newRelationActions;}
+    std::list<NewFrameAction*>& newFrameActions() {return _newFrameActions;}
+
+    PwnCache* cache() const {return _cache;}
+  protected:  
+    virtual void newFrameCallbacks(PwnTrackerFrame* frame);
+    virtual void newAlignmentCallbacks(const Eigen::Isometry3f& globalT, 
+				      const Eigen::Isometry3f& localT, 
+				       int inliers, float error );
+    virtual void newRelationCallbacks(PwnTrackerRelation* relation); 
+    virtual void initCallbacks();
+
+    std::list<InitAction*> _initActions;
+    std::list<AlignmentAction*> _alignmentActions;
+    std::list<NewRelationAction*> _newRelationActions;
+    std::list<NewFrameAction*> _newFrameActions;
+
 
     Aligner* _aligner;
     DepthImageConverter* _converter;
@@ -105,6 +145,25 @@ using namespace pwn;
     PwnCache::HandleType _currentCloudHandle;
     int _seq;
   };
+
+  struct NewFrameWriteAction: public PwnTracker::NewFrameAction {
+    NewFrameWriteAction(std::list<Serializable*>& objects_, boss::Serializer* ser_, PwnTracker* tracker);
+    void compute (PwnTrackerFrame* frame);
+  protected:
+    std::list<Serializable*>& _objects;
+    boss::Serializer* _ser;
+  };
+
+
+  struct NewRelationWriteAction: public PwnTracker::NewRelationAction {
+    NewRelationWriteAction(std::list<Serializable*>& objects_, boss::Serializer* ser_, PwnTracker* tracker);
+    void compute (PwnTrackerRelation* relation);
+  protected:
+    std::list<Serializable*>& _objects;
+    boss::Serializer* _ser;
+  };
+
+
 
 
   template <typename T1, typename T2>

@@ -1,0 +1,17 @@
+<package>
+  <description brief="robot_eye_driver">
+
+     robot_eye_driver
+
+  </description>
+  <author>giorgio</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/robot_eye_driver</url>
+  <depend package="tf"/>
+  <depend package="sensor_msgs"/>
+  <depend package="pcl"/>
+
+</package>
+
+

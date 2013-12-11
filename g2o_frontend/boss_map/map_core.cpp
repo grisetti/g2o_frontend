@@ -11,11 +11,13 @@ namespace boss_map {
   MapNode::MapNode (MapManager* manager_,int id, IdContext* context) : Identifiable(id, context) {
     _manager = manager_;
     _level = 0;
+    _seq = 0;
   }
   
   //! boss serialization
   void MapNode::serialize(ObjectData& data, IdContext& context){
     Identifiable::serialize(data,context);
+    data.setInt("seq", _seq);
     data.setPointer("manager", _manager);
     data.setInt("level", _level);
     Eigen::Quaterniond q(_transform.rotation());
@@ -26,6 +28,7 @@ namespace boss_map {
   //! boss deserialization
   void MapNode::deserialize(ObjectData& data, IdContext& context){
     Identifiable::deserialize(data,context);
+    _seq = data.getInt("seq");
     data.getReference("manager").bind(_manager);
     _level = data.getInt("level");
     Eigen::Quaterniond q;

@@ -27,11 +27,10 @@
 #include <fstream>
 #include <iostream>
 #include <queue>
-#include "pwn_tracker.h"
 #include "g2o_frontend/boss_map/map_utils.h"
-#include "pwn_tracker_g2o_wrapper.h"
+#include "map_g2o_wrapper.h"
 
-namespace pwn_tracker {
+namespace boss_map {
   using namespace boss_map_building;
 
   G2oWrapper::G2oWrapper(MapManager* manager){
@@ -51,8 +50,7 @@ namespace pwn_tracker {
       g2o::EdgeSE3* e=reflector->relation(*it);
       if (!e)
 	continue;
-      PwnCloserRelation* rel=dynamic_cast<PwnCloserRelation*>(*it);
-      if (! rel || (rel && rel->accepted)){
+      if (_selector->accept(*it)){
 	eset.insert(e);
       } 
     }

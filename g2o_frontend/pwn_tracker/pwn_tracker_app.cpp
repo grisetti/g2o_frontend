@@ -8,17 +8,20 @@
 #include "g2o_frontend/boss_map/imu_sensor.h"
 #include "g2o_frontend/boss_map/robot_configuration.h"
 #include "g2o_frontend/boss/bidirectional_serializer.h"
+#include <QGLViewer/qglviewer.h>
 
 #include "opencv2/imgproc/imgproc.hpp"
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-
+#include "GL/gl.h"
 // just to make the linker happy
 #include "pwn_tracker.h"
 #include "g2o_frontend/boss_map/map_utils.h"
-#include "pwn_tracker_g2o_wrapper.h"
+#include "pwn_tracker_viewer.h"
 #include "pwn_closer.h"
+#include "map_g2o_wrapper.h"
 
+#include <QApplication>
 
 using namespace pwn;
 using namespace pwn_tracker;
@@ -53,60 +56,6 @@ std::string removeExtension(const std::string& filename) {
 }
 
 
-class MyTracker: public PwnTracker{
-public:
-  MyTracker(pwn::Aligner* aligner, 
-	    pwn::DepthImageConverter* converter, 
-	    boss_map::MapManager* manager,
-	    PwnCache* cache,
-	    PwnCloser* closer,
-	    G2oWrapper* optimizer,
-	    boss::Serializer* ser):
-    PwnTracker(aligner, converter, manager, cache){
-    objects.push_back(manager);
-    this->ser = ser;
-    this->closer = closer;
-    this->optimizer = optimizer;
-    committedRelations = 0;
-    lastFrameAdded = 0;
-  }
-  
-  virtual void newFrameCallback(PwnTrackerFrame* frame) {
-    objects.push_back(frame);
-    ser->writeObject(*frame);
-    if (closer)
-      closer->addFrame(frame);
-    lastFrameAdded=frame;
-  }
-  virtual void newRelationCallback(PwnTrackerRelation* relation) {
-    objects.push_back(relation);
-    ser->writeObject(*relation);
-    if (closer) {
-      closer->addRelation(relation);
-      int cr = 0;
-      for(std::list<PwnCloserRelation*>::iterator it=closer->committedRelations().begin();
-	  it!=closer->committedRelations().end(); it++){
-	objects.push_back(*it);
-	cr++;
-      }
-      if (cr>committedRelations){
-	char fname[100];
-	optimizer->optimize();
-	sprintf(fname, "out-%05d.g2o", lastFrameAdded->seq);
-	optimizer->save(fname);
-      }
-      cr=committedRelations;
-    }
-  }
-std::list<Serializable*> objects;
-protected:
-  boss::Serializer* ser;
-  PwnCloser* closer;
-  G2oWrapper* optimizer;
-  PwnTrackerFrame* lastFrameAdded;
-  int committedRelations;
-};
-
 int main(int argc, char** argv) {
   Deserializer des;
   
@@ -114,6 +63,8 @@ int main(int argc, char** argv) {
     printBanner();
     return 0;
   }
+
+  bool makeVis=true;
 
   pwn::Aligner* aligner;  pwn::DepthImageConverter* converter;
   std::vector<Serializable*> instances = readConfig(aligner, converter, argv[1]);
@@ -135,9 +86,10 @@ int main(int argc, char** argv) {
   cerr << "base reference frame id: " << odom_frame_id << endl;
   
   std::string depth_topic = "/camera/depth_registered/image_rect_raw";
+  //std::string depth_topic = "/camera/depth_registered/image_raw";
   cerr << "depth topic: " << depth_topic << endl;
   
-  
+
   string outBaseFile;
   if (argc==3){
     outBaseFile = removeExtension(argv[2]);
@@ -155,7 +107,6 @@ int main(int argc, char** argv) {
   cerr << "closer output : [" << outCloserFile << "]" << endl;
   cerr << "binary dir    : [" << outBinaryDir << "]" << endl;
 
-
   Serializer ser;
   ser.setFilePath(outTrackerFile);
   ser.setBinaryPath(outBinaryDir);
@@ -164,10 +115,10 @@ int main(int argc, char** argv) {
 
   // install the optimization wrapper
   G2oWrapper* wrapper = new G2oWrapper(manager);
-
+  wrapper->_selector=new PwnCloserActiveRelationSelector(manager);
   int scale = 4;
   // create a cache for the frames
-  PwnCache* cache  = new PwnCache(converter, scale, 100, 110);
+  PwnCache* cache  = new PwnCache(converter, scale, 200, 210);
   PwnCacheHandler* cacheHandler = new PwnCacheHandler(manager, cache);
   manager->actionHandlers().push_back(cacheHandler);
   cacheHandler->init();
@@ -182,18 +133,56 @@ int main(int argc, char** argv) {
   criterion.setRotationalDistance(M_PI/4);
   criterion.setTranslationalDistance(1);
   closer->setCriterion(&criterion);
+  closer->_debug = false;
+  
+  // MyTracker* tracker=new MyTracker(aligner, converter, manager, cache, closer, wrapper, &ser);
+  // tracker->setScale(scale);
+  // tracker->setNewFrameInliersFraction(0.4);
+  // tracker->init();
 
-  //MyTracker* tracker=new MyTracker(aligner, converter, manager, cache, closer, wrapper, &ser);
-  MyTracker* tracker=new MyTracker(aligner, converter, manager, cache, 0, wrapper, &ser);
-  tracker->_scale = scale;
+  std::list<Serializable*> objects;
+  PwnTracker* tracker=new PwnTracker(aligner, converter, manager, cache);
+  tracker->setScale(scale);
+  tracker->setNewFrameInliersFraction(0.4);
   tracker->init();
 
+  NewFrameWriteAction* frameWriter = new NewFrameWriteAction(objects,&ser,tracker);
+  tracker->newFrameActions().push_back(frameWriter);
+
+
+  NewFrameCloserAdder* closerFrameAdder = new NewFrameCloserAdder(closer, tracker);
+  tracker->newFrameActions().push_back(closerFrameAdder);
+
+  NewRelationWriteAction* relationWriter = new NewRelationWriteAction(objects,&ser,tracker);
+  tracker->newRelationActions().push_back(relationWriter);
+  
+  CloserRelationAdder* closerRelationAction = new CloserRelationAdder(objects, closer, wrapper, tracker);
+  tracker->newRelationActions().push_back(closerRelationAction);
+
+  
+  VisState* visState=0;
+  MyTrackerViewer *viewer = 0;
+  QApplication* app =0;
+  if (makeVis) {
+    visState = new VisState(manager);
+    NewFrameVisualizerCreator* frameVis = new NewFrameVisualizerCreator(visState, tracker);
+    tracker->newFrameActions().push_back(frameVis);
+    
+    CloserRelationVisualizer* closerVisualizer = new CloserRelationVisualizer(closer, visState, tracker);
+    tracker->newRelationActions().push_back(closerVisualizer);
+
+    app = new QApplication(argc,argv);
+    viewer = new MyTrackerViewer(visState);
+    viewer->show();
+
+  }
+
+  
   PinholeImageData* previousImage = 0;
   Eigen::Isometry3d previousPose;
   for (size_t i=0; i<sensorDatas.size(); i++){
     PinholeImageData* imageData = dynamic_cast<PinholeImageData*>(sensorDatas[i]);
     if (imageData && imageData->topic() == depth_topic) {
-      cerr << "********************* NEW FRAME *********************" << endl;
       Eigen::Isometry3d pose=imageData->robotReferenceFrame()->transform();
       Eigen::Isometry3d sensorOffset_ = conf->sensorOffset(imageData->sensor());
       Eigen::Isometry3d initialGuess_ = previousPose.inverse()*pose;
@@ -218,14 +207,28 @@ int main(int argc, char** argv) {
       previousPose = pose;
       // delete previousImage
       previousImage = imageData;
+      if (makeVis)
+	viewer->updateGL();
     }
+    if (makeVis)
+      app->processEvents();
   }
-
+  if (makeVis)
+    visState->final=true;
   cerr << "done, writing out" << endl;
   ser.setFilePath(outCloserFile);
-  for (std::list<Serializable*>::iterator it=tracker->objects.begin(); it!=tracker->objects.end(); it++){
+  ser.writeObject(*manager);
+  for (std::list<Serializable*>::iterator it=objects.begin(); it!=objects.end(); it++){
     ser.writeObject(**it);
     cerr << ".";
   }
-  cerr << endl;
+  cerr << "hits:  " << cache->hits() << " misses: " << cache->misses() << " hits/misses" <<
+    float(cache->hits())/float(cache->hits()+cache->misses()) << endl;
+  return 0;
+  if (makeVis) {
+    viewer->updateGL();
+    while(viewer->isVisible()){
+      app->processEvents();
+    }
+  } 
 }

@@ -17,13 +17,11 @@ namespace pwn_tracker{
     MapNode ( manager, id, context) {
     sensorOffset.setIdentity();
     scale=1;
-    seq=0;
     cloud=0;
   }
   
   void PwnTrackerFrame::serialize(ObjectData& data, IdContext& context) {
     MapNode::serialize(data,context);
-    data.setInt("seq", seq);
     sensorOffset.matrix().toBOSS(data, "sensorOffset");
     cameraMatrix.toBOSS(data, "cameraMatrix");
     data.setInt("imageRows", imageRows);
@@ -49,7 +47,6 @@ namespace pwn_tracker{
 
   
   void PwnTrackerFrame::deserialize(ObjectData& data, IdContext& context) {
-    seq=data.getInt("seq");
     MapNode::deserialize(data,context);
     sensorOffset.matrix().fromBOSS(data,"sensorOffset");
     cameraMatrix.fromBOSS(data, "cameraMatrix");
@@ -91,6 +88,19 @@ namespace pwn_tracker{
   }
     //! called when all links are resolved, adjusts the bookkeeping of the parents
 
+  PwnTracker::PwnTrackerAction::PwnTrackerAction(PwnTracker* tracker_) {
+    _tracker = tracker_;
+  }
+  
+  PwnTracker::NewFrameAction::NewFrameAction(PwnTracker* tracker_): PwnTrackerAction(tracker_) {}
+
+  PwnTracker::AlignmentAction::AlignmentAction(PwnTracker* tracker_): PwnTrackerAction(tracker_) {}
+
+  PwnTracker::NewRelationAction::NewRelationAction(PwnTracker* tracker_): PwnTrackerAction(tracker_) {}
+
+  PwnTracker::InitAction::InitAction(PwnTracker* tracker_): PwnTrackerAction(tracker_) {}
+
+
 
   PwnTracker::PwnTracker(pwn::Aligner* aligner, 
 			 pwn::DepthImageConverter* converter, 
@@ -120,7 +130,7 @@ namespace pwn_tracker{
     _counter = 0;
     _numKeyframes = 0;
     _seq = 0;
-    initCallback();
+    initCallbacks();
   }
   void PwnTracker::makeThumbnails(cv::Mat& depthThumbnail, cv::Mat& normalThumbnail, 
 				  Frame* f, int r, int c, 
@@ -234,7 +244,7 @@ namespace pwn_tracker{
       }
       _globalT.matrix().row(3) << 0,0,0,1;
  
-      newAlignmentCallback(_globalT, _aligner->T(), _aligner->inliers(), _aligner->error());
+      newAlignmentCallbacks(_globalT, _aligner->T(), _aligner->inliers(), _aligner->error());
 			   
       int maxInliers = r*c;
       float inliersFraction = (float) _aligner->inliers()/(float) maxInliers;
@@ -319,7 +329,7 @@ namespace pwn_tracker{
       convertScalar(_iso, _globalT);
       currentTrackerFrame->setTransform(_iso);
       convertScalar(currentTrackerFrame->sensorOffset, sensorOffset);
-      currentTrackerFrame->seq = _seq++;
+      currentTrackerFrame->setSeq(_seq++);
       _manager->addNode(currentTrackerFrame);
       //cerr << "AAAA" << endl;
 
@@ -327,7 +337,7 @@ namespace pwn_tracker{
 	_currentCloudHandle=_cache->get(currentTrackerFrame);
       //cerr << "BBBB" << endl;
       //_cache->lock(currentTrackerFrame);
-      newFrameCallback(currentTrackerFrame);
+      newFrameCallbacks(currentTrackerFrame);
       currentTrackerFrame->depthThumbnail.set(0);
       currentTrackerFrame->normalThumbnail.set(0);
       currentTrackerFrame->depthImage.set(0);
@@ -345,7 +355,7 @@ namespace pwn_tracker{
       rel->setFrom(_previousTrackerFrame);
       //cerr << "saved relation" << _previousTrackerFrame << " " << currentTrackerFrame << endl;
       _manager->addRelation(rel);
-      newRelationCallback(rel);
+      newRelationCallbacks(rel);
       //ser.writeObject(*rel);
     }
 
@@ -390,6 +400,59 @@ namespace pwn_tracker{
 
     return instances;
   }
+
+  void PwnTracker::newFrameCallbacks(PwnTrackerFrame* frame) {
+    for (std::list<NewFrameAction*>::iterator it = _newFrameActions.begin(); it!=_newFrameActions.end(); it++){
+      NewFrameAction* a = *it;
+      a->compute(frame);
+    }
+  }
+
+  void PwnTracker::newAlignmentCallbacks(const Eigen::Isometry3f& globalT, 
+					 const Eigen::Isometry3f& localT, 
+					 int inliers, float error ) {
+    for (std::list<AlignmentAction*>::iterator it = _alignmentActions.begin(); it!=_alignmentActions.end(); it++){
+      AlignmentAction* a = *it;
+      a->compute(globalT, localT, inliers, error);
+    }
+
+  }
+  void PwnTracker::newRelationCallbacks(PwnTrackerRelation* relation) {
+    for (std::list<NewRelationAction*>::iterator it = _newRelationActions.begin(); it!=_newRelationActions.end(); it++){
+      NewRelationAction* a = *it;
+      a->compute(relation);
+    }
+
+  }
+  void PwnTracker::initCallbacks() {
+    for (std::list<InitAction*>::iterator it = _initActions.begin(); it!=_initActions.end(); it++){
+      InitAction* a = *it;
+      a->compute();
+    }
+  }
+
+  NewFrameWriteAction::NewFrameWriteAction(std::list<Serializable*>& objects_, boss::Serializer* ser_, PwnTracker* tracker):
+    PwnTracker::NewFrameAction(tracker), _objects(objects_){
+    _ser = ser_;
+  }
+
+  void NewFrameWriteAction::compute (PwnTrackerFrame* frame) {
+    cerr << "********************* NEW FRAME *********************" << endl;
+    _objects.push_back(frame);
+    _ser->writeObject(*frame);
+  }
+
+
+  NewRelationWriteAction::NewRelationWriteAction(std::list<Serializable*>& objects_, boss::Serializer* ser_, PwnTracker* tracker):
+    PwnTracker::NewRelationAction(tracker), _objects(objects_){
+    _ser = ser_;
+  }
+  
+  void NewRelationWriteAction::compute (PwnTrackerRelation* relation) {
+    _objects.push_back(relation);
+    _ser->writeObject(*relation);
+  }
+
 
   BOSS_REGISTER_CLASS(PwnTrackerFrame);
   BOSS_REGISTER_CLASS(PwnTrackerRelation);

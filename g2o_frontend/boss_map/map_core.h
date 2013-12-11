@@ -33,6 +33,11 @@ namespace boss_map {
     virtual const Eigen::Isometry3d& transform() const {return _transform;}
     //! sets the isometry
     virtual void setTransform(const Eigen::Isometry3d& transform_) {_transform = transform_;}
+
+    //! a useful sequence number
+    inline int seq() const { return _seq; };
+    inline void setSeq( int seq_) { _seq = seq_; };
+
     //! gets level of hierarchy of this node
     inline int level() const { return _level;}
     //! sets the level of this node
@@ -55,6 +60,7 @@ namespace boss_map {
   protected:
     MapManager* _manager;
     int _level;
+    int _seq;
     Eigen::Isometry3d _transform;
   };
 
