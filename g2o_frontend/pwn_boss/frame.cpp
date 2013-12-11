@@ -1,6 +1,7 @@
 #include "frame.h"
 
 namespace pwn_boss {
+  using namespace boss;
 
   Frame::Frame() : 
     pwn::Frame() {}
@@ -19,6 +20,7 @@ namespace pwn_boss {
     save(os, Eigen::Isometry3f::Identity(), 1, true);
   }
 
+  
   BOSS_REGISTER_BLOB(Frame);
 
 }

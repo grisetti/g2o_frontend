@@ -117,8 +117,7 @@ namespace pwn {
 
     void CylindricalPointProjector::projectIntervals(IntImage &intervalImage, 
 						     const DepthImage &depthImage, 
-						     const float worldRadius,
-						     const bool) const {
+						     const float worldRadius) const {
       assert(depthImage.rows > 0 && depthImage.cols > 0 && "CylindricalPointProjector: Depth image has zero dimensions");
 
       intervalImage.create(depthImage.rows, depthImage.cols);

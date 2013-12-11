@@ -125,8 +125,7 @@ namespace pwn {
 
   void PinholePointProjector::projectIntervals(IntImage &intervalImage, 
 					       const DepthImage &depthImage, 
-					       const float worldRadius,
-					       const bool blackBorders) const {
+					       const float worldRadius) const {
     assert(depthImage.rows > 0 && depthImage.cols > 0 && "PinholePointProjector: Depth image has zero dimensions");
     intervalImage.create(depthImage.rows, depthImage.cols);
     for(int r = 0; r < depthImage.rows; r++) {
@@ -134,8 +133,7 @@ namespace pwn {
       int *i = &intervalImage(r, 0);
       for(int c = 0; c < depthImage.cols; c++, f++, i++) {
 	*i = _projectInterval(r, c, *f, worldRadius);
-	if(blackBorders &&
-	   ((r < *i) || (c < *i) || (depthImage.rows - r < *i) || (depthImage.cols - c < *i)))
+	if((r < *i) || (c < *i) || (depthImage.rows - r < *i) || (depthImage.cols - c < *i))
 	  *i = -1;
       }
     }

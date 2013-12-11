@@ -19,6 +19,6 @@ namespace pwn_boss {
     virtual void write(std::ostream &os);
   };
 
-  //typedef boss::BLOBReference<Frame> FrameBLOBReference;
+  typedef boss::BLOBReference<Frame> FrameBLOBReference;
 
 }

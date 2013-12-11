@@ -45,8 +45,7 @@ namespace pwn {
   
     virtual void projectIntervals(IntImage& intervalImage, 
 				  const DepthImage &depthImage, 
-				  const float worldRadius,
-				  const bool blackBorders = false) const;
+				  const float worldRadius) const;
 
     //virtual inline int projectInterval(const int x, const int y, const float d, const float worldRadius) const;
 

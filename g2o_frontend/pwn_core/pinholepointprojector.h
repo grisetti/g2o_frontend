@@ -41,8 +41,7 @@ namespace pwn {
 			   const DepthImage &depthImage) const;
     void projectIntervals(IntImage &intervalImage, 
 			  const DepthImage &depthImage, 
-			  const float worldRadius,
-			  const bool blackBorders = false) const;
+			  const float worldRadius) const;
 
     virtual inline bool project(int &x, int &y, float &f, const Point &p) const { return _project(x, y, f, p); }
     virtual inline bool unProject(Point &p, const int x, const int y, const float d) const { return _unProject(p, x, y, d); }
