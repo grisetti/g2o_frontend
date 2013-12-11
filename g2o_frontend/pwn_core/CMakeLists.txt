@@ -9,6 +9,8 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 LINK_DIRECTORIES(${OpenCV_LIBRARY_DIRS})
 
 ADD_LIBRARY(pwn_core
+  pwn_typedefs.h
+  pwn_static.cpp pwn_static.h
   aligner.cpp aligner.h
   correspondencefinder.cpp correspondencefinder.h
   cylindricalpointprojector.cpp cylindricalpointprojector.h
@@ -26,8 +28,6 @@ ADD_LIBRARY(pwn_core
   pointaccumulator.h
   pointintegralimage.cpp pointintegralimage.h
   pointprojector.cpp pointprojector.h
-  pwn_static.cpp pwn_static.h
-  pwn_typedefs.h
   se3_prior.cpp se3_prior.h
   stats.h
   statscalculator.cpp statscalculator.h

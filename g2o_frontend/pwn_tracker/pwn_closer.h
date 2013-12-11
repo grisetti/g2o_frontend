@@ -10,7 +10,7 @@
 #include "g2o_frontend/boss_map_building/map_closer.h"
 #include "g2o_frontend/boss_map/map_utils.h"
 #include "pwn_tracker.h"
-#include "map_g2o_wrapper.h"
+#include "g2o_frontend/boss_map_building/map_g2o_wrapper.h"
 
 namespace pwn_tracker {
   using namespace std;

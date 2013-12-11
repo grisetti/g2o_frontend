@@ -1,4 +1,5 @@
 #include "pwn_tracker.h"
+#include "g2o_frontend/pwn_core/pwn_static.h"
 
 namespace pwn_tracker{
 
@@ -148,10 +149,12 @@ namespace pwn_tracker{
     proj.project(indices, depthBuffer, f->points());
     normalThumbnail = cv::Mat(proj.imageCols(), proj.imageRows(), CV_8UC3);
     depthThumbnail = cv::Mat(proj.imageCols(), proj.imageRows(), CV_16UC1);
-    depthBuffer.toCvMat(depthThumbnail);
-    for (int i = 0; i<indices.cols(); i++)
-      for (int j = 0; j<indices.rows(); j++){
-    	cv::Vec3b& pixel = normalThumbnail.at<cv::Vec3b>(i,j);
+    
+    DepthImage_convert_32FC1_to_16UC1(depthThumbnail, depthBuffer); 
+    //depthBuffer.toCvMat(depthThumbnail);
+    for (int j = 0; j<indices.rows; j++) {
+      for (int i = 0; i<indices.cols; i++){
+      	cv::Vec3b& pixel = normalThumbnail.at<cv::Vec3b>(i,j);
     	int idx = indices(j,i);
     	pixel[0] = 0;
     	pixel[1] = 0;
@@ -165,6 +168,7 @@ namespace pwn_tracker{
     	pixel[1] = 127*(n.y()-0.5);
     	pixel[2] = 127*(n.z()-0.5);
       }
+    }
   }
 
   pwn::Frame* PwnTracker::makeCloud(int& r, int& c, Eigen::Matrix3f& cameraMatrix,
@@ -176,12 +180,12 @@ namespace pwn_tracker{
     scaledCameraMatrix(2, 2) = 1.0f;
 
     projector->setCameraMatrix(scaledCameraMatrix);
-    int scaledImageRows = depthImage.rows() / _scale;
-    int scaledImageCols = depthImage.cols() / _scale;
+    int scaledImageRows = depthImage.rows / _scale;
+    int scaledImageCols = depthImage.cols / _scale;
     projector->setImageSize(scaledImageRows, scaledImageCols);
 
     DepthImage scaledImage;
-    DepthImage::scale(scaledImage,depthImage,_scale);
+    DepthImage_scale(scaledImage,depthImage,_scale);
 
     cameraMatrix = projector->cameraMatrix();
     r = projector->imageRows();
@@ -210,7 +214,7 @@ namespace pwn_tracker{
       _aligner->setCurrentSensorOffset(sensorOffset);
       _aligner->setCurrentFrame(cloud);
       _aligner->correspondenceFinder()->setImageSize(r,c);
-      PinholePointProjector* alprojector=(PinholePointProjector*)(_aligner->projector());
+      PinholePointProjector* alprojector=dynamic_cast<PinholePointProjector*>(_aligner->projector());
       alprojector->setCameraMatrix(scaledCameraMatrix);
       alprojector->setImageSize(r,c);
 
@@ -305,15 +309,16 @@ namespace pwn_tracker{
       currentTrackerFrame->cloud=cloud;
 
       boss_map::ImageBLOB* depthBLOB=new boss_map::ImageBLOB();
-      depthImage.toCvMat(depthBLOB->cvImage());
+      DepthImage_convert_32FC1_to_16UC1(depthBLOB->cvImage(),depthImage);
+      //depthImage.toCvMat(depthBLOB->cvImage());
       depthBLOB->adjustFormat();
       currentTrackerFrame->depthImage.set(depthBLOB);
       
       boss_map::ImageBLOB* normalThumbnailBLOB=new boss_map::ImageBLOB();
       boss_map::ImageBLOB* depthThumbnailBLOB=new boss_map::ImageBLOB();
       makeThumbnails(depthThumbnailBLOB->cvImage(), normalThumbnailBLOB->cvImage(), cloud, 
-		    depthImage.rows(), 
-		    depthImage.cols(),
+		    depthImage.rows, 
+		    depthImage.cols,
 		    sensorOffset,
 		    cameraMatrix, 
 		    0.1);
@@ -323,8 +328,8 @@ namespace pwn_tracker{
       currentTrackerFrame->depthThumbnail.set(depthThumbnailBLOB);
       currentTrackerFrame->normalThumbnail.set(normalThumbnailBLOB);
       currentTrackerFrame->cameraMatrix = cameraMatrix;
-      currentTrackerFrame->imageRows = depthImage.rows();
-      currentTrackerFrame->imageCols = depthImage.cols();
+      currentTrackerFrame->imageRows = depthImage.rows;
+      currentTrackerFrame->imageCols = depthImage.cols;
       Eigen::Isometry3d _iso;
       convertScalar(_iso, _globalT);
       currentTrackerFrame->setTransform(_iso);

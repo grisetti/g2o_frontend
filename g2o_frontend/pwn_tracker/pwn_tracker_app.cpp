@@ -19,7 +19,8 @@
 #include "g2o_frontend/boss_map/map_utils.h"
 #include "pwn_tracker_viewer.h"
 #include "pwn_closer.h"
-#include "map_g2o_wrapper.h"
+#include "g2o_frontend/boss_map_building/map_g2o_wrapper.h"
+#include "g2o_frontend/pwn_core/pwn_static.h"
 
 #include <QApplication>
 
@@ -201,7 +202,8 @@ int main(int argc, char** argv) {
       
       pwn::DepthImage depthImage;
       ImageBLOB* blob = imageData->imageBlob().get();
-      depthImage.fromCvMat(blob->cvImage());
+      //depthImage.fromCvMat(blob->cvImage());
+      DepthImage_convert_16UC1_to_32FC1(depthImage, blob->cvImage());
       tracker->processFrame(depthImage, sensorOffset, cameraMatrix, initialGuess);
       delete blob;
       previousPose = pose;

@@ -1,5 +1,5 @@
 #include "pwn_closer.h"
-#include "map_g2o_wrapper.h"
+#include "g2o_frontend/pwn_core/pwn_static.h"
 
 namespace pwn_tracker {
 
@@ -164,7 +164,7 @@ namespace pwn_tracker {
     convertScalar(toOffset, to->sensorOffset);
     convertScalar(toCameraMatrix, to->cameraMatrix);
     
-    PinholePointProjector* projector = (PinholePointProjector*)_aligner->projector();
+    PinholePointProjector* projector = dynamic_cast<PinholePointProjector*>(_aligner->projector());
     int r, c;
     
     PwnCloserRelation* rel = new PwnCloserRelation(_manager);
@@ -190,7 +190,7 @@ namespace pwn_tracker {
     _aligner->setReferenceFrame(fromCloud);
     _aligner->setCurrentFrame(toCloud);
     _aligner->align();
-    _aligner->debugPrefix()="";
+    //_aligner->debugPrefix()=""; FICSMI
 
     // cerr << "_fromCloud.points():" << fromCloud->points().size() << endl;
     // cerr << "_toCloud.points():" << toCloud->points().size() << endl;
@@ -252,8 +252,12 @@ namespace pwn_tracker {
       currentDepthThumb = _aligner->correspondenceFinder()->currentDepthImage(),
       referenceDepthThumb = _aligner->correspondenceFinder()->referenceDepthImage();
     cv::Mat currentRect, referenceRect;
-    currentDepthThumb.toCvMat(currentRect);
-    referenceDepthThumb.toCvMat(referenceRect);
+    DepthImage_convert_32FC1_to_16UC1(currentRect,currentDepthThumb); 
+    //currentDepthThumb.toCvMat(currentRect);
+    
+    DepthImage_convert_32FC1_to_16UC1(referenceRect,referenceDepthThumb); 
+    //referenceDepthThumb.toCvMat(referenceRect);
+
     cv::Mat mask = (currentRect>0) & (referenceRect>0);
     currentRect.convertTo(currentRect, CV_32FC1);
     referenceRect.convertTo(referenceRect, CV_32FC1);

@@ -1,5 +1,6 @@
 #include "pwn_tracker_cache.h"
 #include "pwn_tracker.h"
+#include "g2o_frontend/pwn_core/pwn_static.h"
 
 namespace pwn_tracker{
   using namespace cache_ns;
@@ -19,19 +20,20 @@ namespace pwn_tracker{
 
   Frame* PwnCache::loadFrame(PwnTrackerFrame* trackerFrame){
     boss_map::ImageBLOB* depthBLOB = trackerFrame->depthImage.get();
-    PinholePointProjector* projector = (PinholePointProjector*)_converter->projector();
+    PinholePointProjector* projector = dynamic_cast<PinholePointProjector*>(_converter->projector());
     projector->setImageSize(trackerFrame->imageRows, trackerFrame->imageCols);
     pwn::DepthImage depth;
     pwn::Frame* cloud=new pwn::Frame;
     Eigen::Matrix3f cameraMatrix;
     Eigen::Isometry3f offset;
-    depth.fromCvMat(depthBLOB->cvImage());
+    DepthImage_convert_16UC1_to_32FC1(depth, depthBLOB->cvImage()); 
+    //depth.fromCvMat(depthBLOB->cvImage());
     convertScalar(offset, trackerFrame->sensorOffset);
     convertScalar(cameraMatrix, trackerFrame->cameraMatrix);
     cameraMatrix(2,2)=1;
     projector->setCameraMatrix(cameraMatrix);
     pwn::DepthImage scaledDepth;
-    DepthImage::scale(scaledDepth, depth, _scale);
+    DepthImage_scale(scaledDepth, depth, _scale);
     projector->scale (1./_scale);
     _converter->compute(*cloud, scaledDepth, offset);
     trackerFrame->depthImage.set(0);
