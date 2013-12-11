@@ -21,6 +21,8 @@ namespace boss_map_building {
     _consensusMinTimesCheckedThreshold = 5;
     _debug = false;
     _currentPartition = 0;
+    _pendingTrackerFrame = 0;
+    _lastTrackerFrame = 0;
   }
 
   void MapCloser::addFrame(MapNode* f) {
