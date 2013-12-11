@@ -7,6 +7,7 @@ namespace pwn_boss {
     PointProjector(id, context) {}
 
   void PinholePointProjector::serialize(boss::ObjectData &data, boss::IdContext &context) {
+    PointProjector::serialize(data, context);
     boss::Identifiable::serialize(data, context);
     _cameraMatrix.toBOSS(data, "cameraMatrix");
     data.setFloat("baseline", baseline());
@@ -14,6 +15,7 @@ namespace pwn_boss {
   }
 
   void PinholePointProjector::deserialize(boss::ObjectData &data, boss::IdContext &context) {
+    PointProjector::deserialize(data, context);
     boss::Identifiable::deserialize(data, context);
     _cameraMatrix.fromBOSS(data, "cameraMatrix");
     setBaseline(data.getFloat("baseline"));

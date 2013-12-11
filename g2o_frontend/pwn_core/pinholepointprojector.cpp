@@ -34,6 +34,7 @@ namespace pwn {
 				      DepthImage &depthImage, 
 				      const PointVector &points) const {
     assert(_imageRows && _imageCols && "PinholePointProjector: _imageRows and _imageCols are zero");
+
     indexImage.create(_imageRows, _imageCols);
     depthImage.create(indexImage.rows, indexImage.cols);
     depthImage.setTo(cv::Scalar(0.0f));

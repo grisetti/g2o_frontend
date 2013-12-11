@@ -7,6 +7,7 @@ namespace pwn_boss {
     PointProjector(id, context) {}
 
   void CylindricalPointProjector::serialize(boss::ObjectData &data, boss::IdContext &context) {
+    PointProjector::serialize(data, context);
     boss::Identifiable::serialize(data, context);
     PointProjector::serialize(data,context);
     data.setFloat("angularFov", angularFov());
@@ -16,6 +17,7 @@ namespace pwn_boss {
   }
 
   void CylindricalPointProjector::deserialize(boss::ObjectData &data, boss::IdContext &context) {
+    PointProjector::deserialize(data, context);
     boss::Identifiable::deserialize(data, context);
     setAngularFov(data.getFloat("angularFov"));
     setAngularResolution(data.getFloat("angularResolution"));

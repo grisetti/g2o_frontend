@@ -19,7 +19,7 @@ namespace pwn_boss {
 
   void PointProjector::deserialize(boss::ObjectData &data, boss::IdContext &context) {
     boss::Identifiable::deserialize(data, context);
-    Identifiable::deserialize(data,context);
+    Identifiable::deserialize(data, context);
     Vector6f t;
     t.fromBOSS(data, "transform"); 
     setTransform(v2t(t));

@@ -18,6 +18,7 @@ namespace pwn {
 			       DepthImage &depthImage, 
 			       const PointVector &points) const {
     assert(indexImage.rows > 0 && indexImage.cols > 0 && "PointProjector: Index image has zero dimensions");
+
     depthImage.create(indexImage.rows, indexImage.cols);
     depthImage.setTo(0.0f);
     indexImage.setTo(cv::Scalar(-1));

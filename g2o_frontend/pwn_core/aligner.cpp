@@ -64,8 +64,7 @@ namespace pwn {
 			_correspondenceFinder->currentDepthImage(),
 			_currentFrame->points());
     _T = _initialGuess;
-
-    
+        
     for(int i = 0; i < _outerIterations; i++) {
       /************************************************************************
        *                         Correspondence Computation                   *
