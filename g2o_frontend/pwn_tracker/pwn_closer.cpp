@@ -2,13 +2,9 @@
 #include "map_g2o_wrapper.h"
 
 namespace pwn_tracker {
+
   PwnCloserRelation::PwnCloserRelation(MapManager* manager, int id, IdContext* context):
     PwnTrackerRelation(manager, id, context){
-    accepted = false;
-
-    consensusCumInlier = 0;
-    consensusCumOutlierTimes = 0;
-    consensusTimeChecked = 0;
 
     normalDifference = 0;
     depthDifference = 0;
@@ -87,7 +83,7 @@ namespace pwn_tracker {
   }
 
   void PwnCloser::addFrame(PwnTrackerFrame* f) {
-    _trackerFrames.insert(make_pair(f->seq,f));
+    _trackerFrames.insert(make_pair(f->seq(),f));
     _lastTrackerFrame = _pendingTrackerFrame;
     _pendingTrackerFrame = f;
     
@@ -126,7 +122,7 @@ namespace pwn_tracker {
     _partitions.clear();
     PwnCloserActiveRelationSelector selector(_manager);
     makePartitions(_partitions, selectedNodes, &selector);
-    cerr << "node: " << _pendingTrackerFrame->seq 
+    cerr << "node: " << _pendingTrackerFrame->seq() 
 	 << ", neighbors: " << selectedNodes.size() 
 	 << "partitions: " << _partitions.size() << endl;
 
@@ -303,13 +299,13 @@ namespace pwn_tracker {
 	cerr << "      current: ";
 	for (std::set<MapNode*>::iterator it=current.begin(); it!=current.end(); it++){
 	  PwnTrackerFrame* n=(PwnTrackerFrame*)(*it);
-	  cerr << n->seq << " ";
+	  cerr << n->seq() << " ";
 	}
 	cerr<< endl;
 	cerr << "      other: ";
 	for (std::set<MapNode*>::iterator it=other.begin(); it!=other.end(); it++){
 	  PwnTrackerFrame* n=(PwnTrackerFrame*)(*it);
-	  cerr << n->seq << " ";
+	  cerr << n->seq() << " ";
 	}
 	cerr<< endl;
       }
@@ -363,7 +359,7 @@ namespace pwn_tracker {
 	PwnTrackerFrame* n2=(PwnTrackerFrame*)(r->nodes()[1]);
 	if (_debug) {
 	  cerr << "r" << r << "(" 
-	       << n1->seq << "," << n2->seq << "): nChecks= " << r->consensusTimeChecked << " inliers="
+	       << n1->seq() << "," << n2->seq() << "): nChecks= " << r->consensusTimeChecked << " inliers="
 	       << r->consensusCumInlier << " outliers=" << r->consensusCumOutlierTimes;
 	}
 	if(r->consensusTimeChecked<_consensusMinTimesCheckedThreshold) {

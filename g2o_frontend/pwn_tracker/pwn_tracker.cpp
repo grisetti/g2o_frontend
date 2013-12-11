@@ -17,13 +17,11 @@ namespace pwn_tracker{
     MapNode ( manager, id, context) {
     sensorOffset.setIdentity();
     scale=1;
-    seq=0;
     cloud=0;
   }
   
   void PwnTrackerFrame::serialize(ObjectData& data, IdContext& context) {
     MapNode::serialize(data,context);
-    data.setInt("seq", seq);
     sensorOffset.matrix().toBOSS(data, "sensorOffset");
     cameraMatrix.toBOSS(data, "cameraMatrix");
     data.setInt("imageRows", imageRows);
@@ -49,7 +47,6 @@ namespace pwn_tracker{
 
   
   void PwnTrackerFrame::deserialize(ObjectData& data, IdContext& context) {
-    seq=data.getInt("seq");
     MapNode::deserialize(data,context);
     sensorOffset.matrix().fromBOSS(data,"sensorOffset");
     cameraMatrix.fromBOSS(data, "cameraMatrix");
@@ -332,7 +329,7 @@ namespace pwn_tracker{
       convertScalar(_iso, _globalT);
       currentTrackerFrame->setTransform(_iso);
       convertScalar(currentTrackerFrame->sensorOffset, sensorOffset);
-      currentTrackerFrame->seq = _seq++;
+      currentTrackerFrame->setSeq(_seq++);
       _manager->addNode(currentTrackerFrame);
       //cerr << "AAAA" << endl;
 

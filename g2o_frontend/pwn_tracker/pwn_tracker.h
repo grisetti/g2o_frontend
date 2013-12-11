@@ -31,7 +31,6 @@ using namespace pwn;
     virtual void serialize(ObjectData& data, IdContext& context);
     //! boss deserialization
     virtual void deserialize(ObjectData& data, IdContext& context);
-    int seq;
     pwn::Frame* cloud;
     boss_map::ImageBLOBReference depthImage;
     int imageRows, imageCols;

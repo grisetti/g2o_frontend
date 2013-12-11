@@ -1,5 +1,4 @@
-#ifndef _PWN_CLOSER_H_
-#define _PWN_CLOSER_H_
+#pragma once
 
 #include "opencv2/highgui/highgui.hpp"
 #include "g2o_frontend/boss_map/reference_frame.h"
@@ -11,7 +10,7 @@
 #include "g2o_frontend/boss_map/map_utils.h"
 #include "pwn_tracker.h"
 #include "map_g2o_wrapper.h"
-
+#include "map_closer.h"
 
 namespace pwn_tracker {
   using namespace std;
@@ -21,16 +20,11 @@ namespace pwn_tracker {
   using namespace boss_map_building;
   using namespace pwn_tracker;
   
-  struct PwnCloserRelation: public PwnTrackerRelation {
+  struct PwnCloserRelation: public PwnTrackerRelation, ClosureInfo {
     PwnCloserRelation(MapManager* manager=0, int id=-1, IdContext* context = 0);
     virtual void serialize(ObjectData& data, IdContext& context);
     virtual void deserialize(ObjectData& data, IdContext& context);
 
-    // status
-    bool accepted;
-    int consensusCumInlier;
-    int consensusCumOutlierTimes;
-    int consensusTimeChecked;
 
     // matching result parameters
     float normalDifference;
@@ -136,8 +130,4 @@ struct NewFrameCloserAdder: public PwnTracker::NewFrameAction {
     G2oWrapper* _optimizer;
     std::list<Serializable*>& _objects;
   };
-
-
 }
-
-#endif
