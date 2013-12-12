@@ -84,7 +84,6 @@ namespace pwn_tracker {
     PwnTrackerFrame* current = dynamic_cast<PwnTrackerFrame*>(current_);
     if (otherPartition.count(current)>0)
       return;
-    /*
     cv::Mat currentNormalThumbnail;
     ImageBLOB* currentNormalThumbnailBLOB = current->normalThumbnail.get();
     currentNormalThumbnailBLOB->cvImage().convertTo(currentNormalThumbnail, CV_32FC3);
@@ -97,7 +96,7 @@ namespace pwn_tracker {
     currentDepthThumbnailBLOB->cvImage().convertTo(currentDepthThumbnail, CV_32FC3);
     currentDepthThumbnail=currentDepthThumbnail-127.0f;
     currentDepthThumbnail=currentDepthThumbnail*(1./255);
-    */
+    
     Eigen::Isometry3d iT=current->transform().inverse();
     PwnCache::HandleType f_handle=_cache->get(current);
     pwn::Frame* f=f_handle.get();
@@ -106,7 +105,6 @@ namespace pwn_tracker {
       PwnTrackerFrame* other = dynamic_cast<PwnTrackerFrame*>(*it);
       if (other==current)
 	continue;
-      /*
       cv::Mat otherNormalThumbnail;
       ImageBLOB* otherNormalThumbnailBLOB = other->normalThumbnail.get();
 
@@ -122,10 +120,9 @@ namespace pwn_tracker {
 
       float dc = compareNormals(currentNormalThumbnail, otherNormalThumbnail);
       float nc = compareDepths(currentDepthThumbnail, otherDepthThumbnail);
+      
       float _normalTuhmbnailThreshold = 1e3;
-      */
-
-      if (1 /*nc<_normalTuhmbnailThreshold*/) {
+      if (nc<_normalTuhmbnailThreshold) {
 	PwnCache::HandleType f2_handle=_cache->get(other);
 	pwn::Frame* f2=f2_handle.get();
 	
@@ -133,11 +130,8 @@ namespace pwn_tracker {
 	PwnCloserRelation* rel = matchFrames(current, other, f, f2, ig);
 	//cerr << "  framesMatched: " << rel << " dc:"  << dc << " nc:" << nc << endl;
 	if (rel) {
-	  rel->depthDifference = 0;
-	  rel->normalDifference = 0;
-	  //rel->depthDifference = dc;
-	  //rel->normalDifference = nc;
-
+	  rel->depthDifference = dc;
+	  rel->normalDifference = nc;
 	  cerr << "o";
 	  // _results.push_back(rel);
 	  // _manager->addRelation(rel);
@@ -145,13 +139,13 @@ namespace pwn_tracker {
       	} else 
 	  cerr << ".";
       }
-      //delete otherDepthThumbnailBLOB;
-      //delete otherNormalThumbnailBLOB;
+      delete otherDepthThumbnailBLOB;
+      delete otherNormalThumbnailBLOB;
     }
     cerr << endl;
     //delete currentDepthBLOB;
-    //delete currentDepthThumbnailBLOB;
-    //delete currentNormalThumbnailBLOB;
+    delete currentDepthThumbnailBLOB;
+    delete currentNormalThumbnailBLOB;
   }
 
 

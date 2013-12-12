@@ -10,7 +10,9 @@ ADD_LIBRARY(pwn_tracker_library
   #cache.cpp cache.h 
   pwn_tracker.cpp pwn_tracker.h
   pwn_tracker_actions.cpp pwn_tracker_actions.h
-  pwn_closer.cpp pwn_closer.h
+  pwn_closer.cpp 
+  #pwn_closer_imagecheck.cpp
+  pwn_closer.h
   pwn_tracker_viewer.cpp pwn_tracker_viewer.h
 )
 
