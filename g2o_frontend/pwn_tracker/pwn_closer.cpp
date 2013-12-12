@@ -78,7 +78,9 @@ namespace pwn_tracker {
   
 
 
-  void PwnCloser::processPartition(std::set<MapNode*>& otherPartition, MapNode* current_){
+  void PwnCloser::processPartition(std::list<MapNodeBinaryRelation*>& newRelations, 
+				   std::set<MapNode*>& otherPartition, 
+				   MapNode* current_){
     PwnTrackerFrame* current = dynamic_cast<PwnTrackerFrame*>(current_);
     if (otherPartition.count(current)>0)
       return;
@@ -131,9 +133,9 @@ namespace pwn_tracker {
 	  rel->depthDifference = dc;
 	  rel->normalDifference = nc;
 	  cerr << "o";
-	  _results.push_back(rel);
-	  _manager->addRelation(rel);
-	  _candidateRelations.push_back(rel);
+	  // _results.push_back(rel);
+	  // _manager->addRelation(rel);
+	  newRelations.push_back(rel);
       	} else 
 	  cerr << ".";
       }

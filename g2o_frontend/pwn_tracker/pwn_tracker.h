@@ -1,6 +1,7 @@
-#ifndef _PWN_TRACKER_H_
-#define _PWN_TRACKER_H_
-
+#pragma once
+#include "pwn_tracker_frame.h"
+#include "pwn_tracker_relation.h"
+#include "pwn_tracker_cache.h"
 #include "g2o_frontend/boss_map/map_manager.h"
 #include "g2o_frontend/boss_map/reference_frame.h"
 #include "g2o_frontend/pwn_core/frame.h"
@@ -9,15 +10,10 @@
 #include "g2o_frontend/pwn_core/aligner.h"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
-#include "g2o_frontend/boss_map/image_sensor.h"
 #include "opencv2/core/core.hpp"
-#include "pwn_tracker_cache.h"
 #include <fstream>
 #include <iostream>
 #include <list>
-
-#include "g2o_frontend/pwn_boss/aligner.h"
-#include "g2o_frontend/pwn_boss/depthimageconverter.h"
 
 namespace pwn_tracker{
 
@@ -25,40 +21,6 @@ using namespace std;
 using namespace boss;
 using namespace boss_map;
 using namespace pwn;
-
-
-  struct PwnTrackerFrame: public boss_map::MapNode {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    PwnTrackerFrame (MapManager* manager=0, int id=-1, IdContext* context = 0);
-    //! boss serialization
-    virtual void serialize(ObjectData& data, IdContext& context);
-    //! boss deserialization
-    virtual void deserialize(ObjectData& data, IdContext& context);
-    pwn::Frame* cloud;
-    boss_map::ImageBLOBReference depthImage;
-    int imageRows, imageCols;
-    boss_map::ImageBLOBReference normalThumbnail;
-    boss_map::ImageBLOBReference depthThumbnail;
-    Eigen::Isometry3f sensorOffset;
-    Eigen::Matrix3f cameraMatrix;
-    float scale;
-  };
-
-
-  struct PwnTrackerRelation: public MapNodeBinaryRelation{
-    PwnTrackerRelation(MapManager* manager=0, int id=-1, IdContext* context = 0);
-    //! boss serialization
-    virtual void serialize(ObjectData& data, IdContext& context);
-    //! boss deserialization
-    virtual void deserialize(ObjectData& data, IdContext& context);
-    //! called when all links are resolved, adjusts the bookkeeping of the parents
-    inline PwnTrackerFrame* from() { return static_cast<PwnTrackerFrame*>(_nodes[0]); }
-    inline PwnTrackerFrame* to()   { return static_cast<PwnTrackerFrame*>(_nodes[1]); }
-    void setFrom(PwnTrackerFrame* from_) {_nodes[0] = from_; }
-    void setTo(PwnTrackerFrame* to_) {_nodes[1] = to_; }
-    int inliers;
-    float error;
-  };
 
   struct PwnTracker{
     struct PwnTrackerAction{
@@ -149,25 +111,6 @@ using namespace pwn;
     int _seq;
   };
 
-  struct NewFrameWriteAction: public PwnTracker::NewFrameAction {
-    NewFrameWriteAction(std::list<Serializable*>& objects_, boss::Serializer* ser_, PwnTracker* tracker);
-    void compute (PwnTrackerFrame* frame);
-  protected:
-    std::list<Serializable*>& _objects;
-    boss::Serializer* _ser;
-  };
-
-
-  struct NewRelationWriteAction: public PwnTracker::NewRelationAction {
-    NewRelationWriteAction(std::list<Serializable*>& objects_, boss::Serializer* ser_, PwnTracker* tracker);
-    void compute (PwnTrackerRelation* relation);
-  protected:
-    std::list<Serializable*>& _objects;
-    boss::Serializer* _ser;
-  };
-
-
-
 
   template <typename T1, typename T2>
   void convertScalar(T1& dest, const T2& src){
@@ -177,8 +120,5 @@ using namespace pwn;
 
   }
 
-  std::vector<Serializable*> readConfig(pwn_boss::Aligner*& aligner, pwn_boss::DepthImageConverter*& converter, const std::string& configFile);
 }// end namespace
 
-
-#endif

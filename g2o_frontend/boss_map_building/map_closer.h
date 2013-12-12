@@ -25,7 +25,9 @@ namespace boss_map_building {
     void addFrame(MapNode* f);
     void addRelation(MapNodeBinaryRelation* r);
     void process();
-    virtual void processPartition(std::set<MapNode*> & otherPartition, MapNode* current_)=0;
+    virtual void processPartition(std::list<MapNodeBinaryRelation*>& newRelations, 
+				  std::set<MapNode*> & otherPartition, 
+				  MapNode* current_)=0;
     std::list<MapNodeBinaryRelation*>& results() {return _results;}
     std::vector<MapNodeBinaryRelation*> _trackerRelations;
     std::map<int, MapNode*> _trackerFrames;
