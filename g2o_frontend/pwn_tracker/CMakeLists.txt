@@ -4,9 +4,12 @@ ADD_LIBRARY(pwn_tracker_library
   cache.h cache.hpp
   #map_g2o_wrapper.cpp map_g2o_wrapper.h
   #map_closer.cpp map_closer.h
+  pwn_tracker_frame.h pwn_tracker_frame.cpp
+  pwn_tracker_relation.h pwn_tracker_relation.cpp
   pwn_tracker_cache.h pwn_tracker_cache.cpp
   #cache.cpp cache.h 
   pwn_tracker.cpp pwn_tracker.h
+  pwn_tracker_actions.cpp pwn_tracker_actions.h
   pwn_closer.cpp pwn_closer.h
   pwn_tracker_viewer.cpp pwn_tracker_viewer.h
 )

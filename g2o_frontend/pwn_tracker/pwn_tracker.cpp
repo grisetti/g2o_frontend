@@ -14,81 +14,8 @@ namespace pwn_tracker{
     return ts.tv_sec + ts.tv_usec*1e-6;
   }
 
-  PwnTrackerFrame::PwnTrackerFrame(MapManager* manager, int id, IdContext* context):
-    MapNode ( manager, id, context) {
-    sensorOffset.setIdentity();
-    scale=1;
-    cloud=0;
-  }
-  
-  void PwnTrackerFrame::serialize(ObjectData& data, IdContext& context) {
-    MapNode::serialize(data,context);
-    sensorOffset.matrix().toBOSS(data, "sensorOffset");
-    cameraMatrix.toBOSS(data, "cameraMatrix");
-    data.setInt("imageRows", imageRows);
-    data.setInt("imageCols", imageCols);
-
-    ObjectData* depthImageData=new ObjectData();
-    data.setField("depthImage", depthImageData);
-    depthImage.serialize(*depthImageData,context);
-
-    ObjectData* depthThumbnailData=new ObjectData();
-    data.setField("depthThumbnail", depthThumbnailData);
-    depthThumbnail.serialize(*depthThumbnailData,context);
-
-
-    ObjectData* normalThumbnailData=new ObjectData();
-    data.setField("normalThumbnail", normalThumbnailData);
-    normalThumbnail.serialize(*normalThumbnailData,context);
-
-    // ObjectData* cloudData=new ObjectData();
-    // data.setField("cloud", cloudData);
-    // cloud.serialize(*cloudData,context);
-  }
 
   
-  void PwnTrackerFrame::deserialize(ObjectData& data, IdContext& context) {
-    MapNode::deserialize(data,context);
-    sensorOffset.matrix().fromBOSS(data,"sensorOffset");
-    cameraMatrix.fromBOSS(data, "cameraMatrix");
-    cameraMatrix(2,2)=1;
-    imageRows = data.getInt("imageRows");
-    imageCols = data.getInt("imageCols");
-
-    ObjectData* depthImageData = static_cast<ObjectData*>(data.getField("depthImage"));
-    depthImage.deserialize(*depthImageData, context);
-
-    
-    ObjectData* normalThumbnailData = static_cast<ObjectData*>(data.getField("normalThumbnail"));
-    normalThumbnail.deserialize(*normalThumbnailData,context);
-
-    ObjectData* depthThumbnailData = static_cast<ObjectData*>(data.getField("depthThumbnail"));
-    depthThumbnail.deserialize(*depthThumbnailData,context);
-
-    // ObjectData* cloudData = static_cast<ObjectData*>(data.getField("cloud"));
-    // cloud.deserialize(*cloudData,context);
-  }
-
-  PwnTrackerRelation::PwnTrackerRelation(MapManager* manager, int id, IdContext* context):
-    MapNodeBinaryRelation(manager, id, context){
-    _nodes.resize(2);
-    inliers = 0;
-    error = 0;
-  }
-  
-  void PwnTrackerRelation::serialize(ObjectData& data, IdContext& context){
-    MapNodeBinaryRelation::serialize(data,context);
-    data.setInt("inliers", inliers);
-    data.setFloat("error", error);
-  }
-    //! boss deserialization
-  void PwnTrackerRelation::deserialize(ObjectData& data, IdContext& context){
-    MapNodeBinaryRelation::deserialize(data,context);
-    inliers = data.getInt("inliers");
-    error = data.getFloat("error");
-  }
-    //! called when all links are resolved, adjusts the bookkeeping of the parents
-
   PwnTracker::PwnTrackerAction::PwnTrackerAction(PwnTracker* tracker_) {
     _tracker = tracker_;
   }
@@ -374,37 +301,6 @@ namespace pwn_tracker{
   }  
 
 
-  std::vector<Serializable*> readConfig(Aligner*& aligner, DepthImageConverter*& converter, const std::string& configFile){
-    aligner = 0;
-    converter = 0;
-    Deserializer des;
-    des.setFilePath(configFile);
-    Serializable* s;
-    std::vector<Serializable*> instances;
-    cerr << "Reading" << endl;
-    while ((s=des.readObject())){
-      instances.push_back(s);
-      Aligner* al=dynamic_cast<Aligner*>(s);
-      if (al) {
-	cerr << "got aligner" << endl;
-	aligner = al;
-      }
-      DepthImageConverter* conv=dynamic_cast<DepthImageConverter*>(s);
-      if  (conv) {      
-	cerr << "got converter" << endl;
-	converter = conv;
-      }
-    }
-    if (aligner) {
-      cerr << "alpp: " << aligner->projector() << endl;
-      cerr << "allz: " << aligner->linearizer() << endl;
-      if (aligner->linearizer())
-	cerr << "lzal: " << aligner->linearizer()->aligner() << endl;
-    
-    }
-
-    return instances;
-  }
 
   void PwnTracker::newFrameCallbacks(PwnTrackerFrame* frame) {
     for (std::list<NewFrameAction*>::iterator it = _newFrameActions.begin(); it!=_newFrameActions.end(); it++){
@@ -434,28 +330,6 @@ namespace pwn_tracker{
       InitAction* a = *it;
       a->compute();
     }
-  }
-
-  NewFrameWriteAction::NewFrameWriteAction(std::list<Serializable*>& objects_, boss::Serializer* ser_, PwnTracker* tracker):
-    PwnTracker::NewFrameAction(tracker), _objects(objects_){
-    _ser = ser_;
-  }
-
-  void NewFrameWriteAction::compute (PwnTrackerFrame* frame) {
-    cerr << "********************* NEW FRAME *********************" << endl;
-    _objects.push_back(frame);
-    _ser->writeObject(*frame);
-  }
-
-
-  NewRelationWriteAction::NewRelationWriteAction(std::list<Serializable*>& objects_, boss::Serializer* ser_, PwnTracker* tracker):
-    PwnTracker::NewRelationAction(tracker), _objects(objects_){
-    _ser = ser_;
-  }
-  
-  void NewRelationWriteAction::compute (PwnTrackerRelation* relation) {
-    _objects.push_back(relation);
-    _ser->writeObject(*relation);
   }
 
 

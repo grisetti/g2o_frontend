@@ -37,8 +37,9 @@ namespace pwn {
 
   void DepthImage_convert_16UC1_to_32FC1(cv::Mat &dest, const cv::Mat &src, float scale) {
     assert(type2str(src.type()) != "16UC1" && "DepthImage_convert_16UC1_to_32FC1: source image of different type from 16UC1");
-    cv::Mat m = src * scale;
-    m.convertTo(dest, CV_32FC1);
+    cv::Mat m;
+    src.convertTo(m, CV_32FC1);
+    dest = m*scale;
   }
   
 }

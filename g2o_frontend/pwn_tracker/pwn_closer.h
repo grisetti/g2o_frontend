@@ -57,7 +57,7 @@ namespace pwn_tracker {
     inline void setScale(int scale_) {_scale = scale_; updateCache();}
     inline PwnCache* cache() {return _cache;}
 
-    virtual void processPartition(std::set<MapNode*> & otherPartition, MapNode* current_);
+    virtual void processPartition(std::list<MapNodeBinaryRelation*>& newRelations, std::set<MapNode*> & otherPartition, MapNode* current_);
     PwnCloserRelation* matchFrames(PwnTrackerFrame* from, PwnTrackerFrame* to, 
 				    pwn::Frame* fromCloud, pwn::Frame* toCloud,
 				    const Eigen::Isometry3d& initialGuess);

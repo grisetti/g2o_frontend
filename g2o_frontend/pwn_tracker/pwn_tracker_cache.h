@@ -23,7 +23,7 @@ namespace pwn_tracker {
     PwnCache* _pwnCache;
   };
 
-  class PwnCache: public Cache<PwnCacheEntry>{
+  class PwnCache: public cache_ns::Cache<PwnCacheEntry>{
   public:
     PwnCache(DepthImageConverter* converter_, int scale_, int minSlots_, int _maxSlots_);
 

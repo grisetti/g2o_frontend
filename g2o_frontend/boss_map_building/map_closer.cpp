@@ -85,7 +85,15 @@ namespace boss_map_building {
       if (_currentPartition == otherPartition)
 	continue;
       cerr << "  " << i << "(" << otherPartition->size() << "): ";
-      processPartition(*otherPartition, _pendingTrackerFrame);
+      std::list<MapNodeBinaryRelation*> newRelations;
+      processPartition(newRelations, *otherPartition, _pendingTrackerFrame);
+      // add all new relations to the pool
+      for(std::list<MapNodeBinaryRelation*>::iterator it = newRelations.begin(); 
+	  it!=newRelations.end(); it++){
+	_candidateRelations.push_back(*it);
+	_results.push_back(*it);
+	_manager->addRelation(*it);
+      }
       validatePartitions(*otherPartition, *_currentPartition);
     }
   }

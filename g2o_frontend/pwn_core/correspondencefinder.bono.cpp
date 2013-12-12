@@ -35,7 +35,7 @@ namespace pwn {
     int numThreads = omp_get_max_threads();
     int localCorrespondenceIndex[numThreads];
     int localOffset[numThreads];
-    int rowsPerThread = _referenceIndexImage.rows / numThreads;
+    int columnsPerThread = _referenceIndexImage.cols / numThreads;
     int iterationsPerThread = (_referenceIndexImage.rows * _referenceIndexImage.cols) / numThreads;
     for(int i = 0; i < numThreads; i++) {
       localOffset[i] = i * iterationsPerThread;
@@ -45,18 +45,16 @@ namespace pwn {
 #pragma omp parallel 
     {
       int threadId = omp_get_thread_num();
-      int rMin = threadId * rowsPerThread;
-      int rMax = rMin + rowsPerThread;
-      if(rMax > _referenceIndexImage.rows)
-	rMax = _referenceIndexImage.rows;
+      int cMin = threadId * columnsPerThread;
+      int cMax = cMin + columnsPerThread;
+      if(cMax > _referenceIndexImage.cols)
+	cMax = _referenceIndexImage.cols;
 
       int &correspondenceIndex = localCorrespondenceIndex[threadId];
-      for(int r = rMin;  r < rMax; r++) {
-	const int* referenceRowBase = &_referenceIndexImage(r, 0);
-	const int* currentRowBase = &_currentIndexImage(r, 0);
-	for(int c = 0; c < _referenceIndexImage.cols; c++) {
-	  const int referenceIndex = *(referenceRowBase + c);
-	  const int currentIndex = *(currentRowBase + c);
+      for(int c = cMin;  c < cMax; c++) {
+	for(int r = 0; r < _referenceIndexImage.rows; r++) {
+	  const int referenceIndex = _referenceIndexImage(r, c);
+	  const int currentIndex = _currentIndexImage(r, c);
 	  if (referenceIndex < 0 || currentIndex < 0) {
 	    continue;
 	  }

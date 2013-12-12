@@ -24,6 +24,7 @@ ADD_LIBRARY(pwn_boss
   statscalculator.cpp statscalculator.h
   statscalculatorintegralimage.cpp statscalculatorintegralimage.h
   voxelcalculator.cpp voxelcalculator.h
+  pwn_io.cpp pwn_io.h
 )
 SET_TARGET_PROPERTIES(pwn_boss PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn_boss)
 TARGET_LINK_LIBRARIES(pwn_boss ${OpenCV_LIBS} pwn_core boss)
