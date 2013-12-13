@@ -153,8 +153,8 @@ int main(int argc, char** argv) {
   std::list<Serializable*> objects;
   PwnTracker* tracker=new PwnTracker(aligner, converter, manager, cache);
   tracker->setScale(scale);
-  tracker->setNewFrameInliersFraction(0.4);
   tracker->init();
+  tracker->setNewFrameInliersFraction(0.4);
 
   NewFrameWriteAction* frameWriter = new NewFrameWriteAction(&ser,tracker);
   tracker->newFrameActions().push_back(frameWriter);
@@ -202,12 +202,14 @@ int main(int argc, char** argv) {
       Eigen::Isometry3d initialGuess_ = previousPose.inverse()*pose;
       Eigen::Matrix3d cameraMatrix_ = imageData->cameraMatrix();
 
+      
       Eigen::Isometry3f sensorOffset;
       convertScalar(sensorOffset, sensorOffset_);
       Eigen::Isometry3f initialGuess;
       convertScalar(initialGuess, initialGuess_);
       Eigen::Matrix3f cameraMatrix;
       convertScalar(cameraMatrix, cameraMatrix_);
+      
 
       if (! previousImage){
 	initialGuess.setIdentity();
@@ -239,6 +241,11 @@ int main(int argc, char** argv) {
   }
   cerr << "hits:  " << cache->hits() << " misses: " << cache->misses() << " hits/misses" <<
     float(cache->hits())/float(cache->hits()+cache->misses()) << endl;
+
+  cerr << "cache: calls:  " << cache->numCalls << " time: " << cache->cumTime << 
+    " t/calls: " << cache->cumTime/cache->numCalls << endl;
+  cerr << "tracker: calls:  " << tracker->numCalls << " time: " << tracker->cumTime << 
+    " t/calls: " << tracker->cumTime/tracker->numCalls << endl;
 
   if (makeVis) {
     viewer->updateGL();

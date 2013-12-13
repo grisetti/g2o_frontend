@@ -25,8 +25,9 @@ namespace pwn_boss {
     setTransform(v2t(t));
     setMinDistance(data.getFloat("minDistance"));
     setMaxDistance(data.getFloat("maxDistance"));
-    _imageRows = data.getInt("imageRows");
-    _imageCols = data.getInt("imageCols");
+    int ir = data.getInt("imageRows");
+    int ic = data.getInt("imageCols");
+    setImageSize(ir, ic);
   }
 
 }

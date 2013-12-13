@@ -48,17 +48,18 @@ namespace pwn_tracker {
   PwnCloser::PwnCloser(pwn::Aligner* aligner_, 
 		       pwn::DepthImageConverter* converter_,
 		       MapManager* manager_,
-		       PwnCache* cache_) : MapCloser(manager_){
-    _aligner = aligner_;
-    _converter = converter_;
+		       PwnCache* cache_) : MapCloser(manager_), PwnMatcherBase(aligner_, converter_){
+    //_aligner = aligner_;
+    //_converter = converter_;
     _cache = cache_;
-    _frameInlierDepthThreshold = 50;
+    //_frameInlierDepthThreshold = 50;
     _frameMinNonZeroThreshold = 3000;// was 3000
     _frameMaxOutliersThreshold = 100;
     _frameMinInliersThreshold = 1000; // was 1000
     _debug = false;
     _selector = new PwnCloserActiveRelationSelector(_manager);
     setScale(4);
+    updateCache();
   }
 
 
@@ -84,83 +85,71 @@ namespace pwn_tracker {
     PwnTrackerFrame* current = dynamic_cast<PwnTrackerFrame*>(current_);
     if (otherPartition.count(current)>0)
       return;
-    /*
-    cv::Mat currentNormalThumbnail;
-    ImageBLOB* currentNormalThumbnailBLOB = current->normalThumbnail.get();
-    currentNormalThumbnailBLOB->cvImage().convertTo(currentNormalThumbnail, CV_32FC3);
-    currentNormalThumbnail=currentNormalThumbnail-127.0f;
-    currentNormalThumbnail=currentNormalThumbnail*(1./255);
-    
-    
-    cv::Mat currentDepthThumbnail;
-    ImageBLOB* currentDepthThumbnailBLOB = current->depthThumbnail.get();
-    currentDepthThumbnailBLOB->cvImage().convertTo(currentDepthThumbnail, CV_32FC3);
-    currentDepthThumbnail=currentDepthThumbnail-127.0f;
-    currentDepthThumbnail=currentDepthThumbnail*(1./255);
-    */
     Eigen::Isometry3d iT=current->transform().inverse();
     PwnCache::HandleType f_handle=_cache->get(current);
-    pwn::Frame* f=f_handle.get();
+    current->cloud=f_handle.get();
     //cerr << "FRAME: " << current->seq << endl; 
     for (std::set <MapNode*>::iterator it=otherPartition.begin(); it!=otherPartition.end(); it++){
       PwnTrackerFrame* other = dynamic_cast<PwnTrackerFrame*>(*it);
       if (other==current)
 	continue;
-      /*
-      cv::Mat otherNormalThumbnail;
-      ImageBLOB* otherNormalThumbnailBLOB = other->normalThumbnail.get();
 
-      otherNormalThumbnailBLOB->cvImage().convertTo(otherNormalThumbnail, CV_32FC3);
-      otherNormalThumbnail=otherNormalThumbnail-127.0f;
-      otherNormalThumbnail=otherNormalThumbnail*(1./255);
-      
-      cv::Mat otherDepthThumbnail;
-      ImageBLOB* otherDepthThumbnailBLOB = other->depthThumbnail.get();
-      otherDepthThumbnailBLOB->cvImage().convertTo(otherDepthThumbnail, CV_32FC1);
-      otherDepthThumbnail=otherDepthThumbnail-127.0f;
-      otherDepthThumbnail=otherDepthThumbnail*(1./255);
-
-      float dc = compareNormals(currentNormalThumbnail, otherNormalThumbnail);
-      float nc = compareDepths(currentDepthThumbnail, otherDepthThumbnail);
-      float _normalTuhmbnailThreshold = 1e3;
-      */
-
-      if (1 /*nc<_normalTuhmbnailThreshold*/) {
-	PwnCache::HandleType f2_handle=_cache->get(other);
-	pwn::Frame* f2=f2_handle.get();
+      PwnCache::HandleType f2_handle=_cache->get(other);
+      other->cloud=f2_handle.get();
 	
-	Eigen::Isometry3d ig=iT*other->transform();
-	PwnCloserRelation* rel = matchFrames(current, other, f, f2, ig);
-	//cerr << "  framesMatched: " << rel << " dc:"  << dc << " nc:" << nc << endl;
-	if (rel) {
-	  rel->depthDifference = 0;
-	  rel->normalDifference = 0;
-	  //rel->depthDifference = dc;
-	  //rel->normalDifference = nc;
+      Eigen::Isometry3d ig=iT*other->transform();
+      PwnCloserRelation* rel = matchFrames(current, other, ig);
+      //cerr << "  framesMatched: " << rel << " dc:"  << dc << " nc:" << nc << endl;
+      if (rel) {
+	rel->depthDifference = 0;
+	rel->normalDifference = 0;
 
-	  cerr << "o";
-	  // _results.push_back(rel);
-	  // _manager->addRelation(rel);
-	  newRelations.push_back(rel);
-      	} else 
-	  cerr << ".";
-      }
-      //delete otherDepthThumbnailBLOB;
-      //delete otherNormalThumbnailBLOB;
+	cerr << "o";
+	newRelations.push_back(rel);
+      } else 
+	cerr << ".";
     }
     cerr << endl;
-    //delete currentDepthBLOB;
-    //delete currentDepthThumbnailBLOB;
-    //delete currentNormalThumbnailBLOB;
   }
 
-
+  
+  
   PwnCloserRelation* PwnCloser::matchFrames(PwnTrackerFrame* from, PwnTrackerFrame* to, 
-				 pwn::Frame* fromCloud, pwn::Frame* toCloud,
-				 const Eigen::Isometry3d& initialGuess){
+					    const Eigen::Isometry3d& initialGuess){
     if (from == to)
       return 0; 
+    MatcherResult result;			
+    // Eigen::Isometry3d fromOffset, toOffset;
+    // convertScalar(fromOffset, from->sensorOffset);
+    // convertScalar(toOffset, to->sensorOffset);
     
+    // Eigen::Matrix3d fromCamera, toCamera;
+    // convertScalar(fromCamera, from->cameraMatrix);
+    // convertScalar(toCamera, to->cameraMatrix);
+
+
+    matchClouds(result, 
+		from->cloud, to->cloud, 
+		from->sensorOffset, to->sensorOffset, 
+		to->cameraMatrix,
+		to->imageRows,to->imageCols,
+		initialGuess);
+    if(result.image_nonZeros < _frameMinNonZeroThreshold ||
+       result.image_outliers > _frameMaxOutliersThreshold || 
+       result.image_inliers  < _frameMinInliersThreshold)
+      return 0;
+
+    PwnCloserRelation* rel = new PwnCloserRelation(_manager);
+    rel->setFrom(from);
+    rel->setTo(to);
+    rel->setTransform(result.transform);
+    rel->setInformationMatrix(result.informationMatrix);
+    rel->nonZeros = result.image_nonZeros;
+    rel->outliers = result.image_outliers;
+    rel->inliers  = result.image_inliers;
+    return rel;
+    /*
+
     //cerr <<  "  matching  frames: " << from->seq << " " << to->seq << endl;
     
   
@@ -224,6 +213,7 @@ namespace pwn_tracker {
       return 0;
     }
     return rel;
+    */
   }
 
   void PwnCloser::updateCache(){
@@ -253,49 +243,6 @@ namespace pwn_tracker {
 
     diff.convertTo(diff, CV_32FC1);
     return norm(diff);
-  }
-
-  void PwnCloser::scoreMatch(PwnCloserRelation* rel){
-    DepthImage 
-      currentDepthThumb = _aligner->correspondenceFinder()->currentDepthImage(),
-      referenceDepthThumb = _aligner->correspondenceFinder()->referenceDepthImage();
-    cv::Mat currentRect, referenceRect;
-    DepthImage_convert_32FC1_to_16UC1(currentRect,currentDepthThumb); 
-    //currentDepthThumb.toCvMat(currentRect);
-    
-    DepthImage_convert_32FC1_to_16UC1(referenceRect,referenceDepthThumb); 
-    //referenceDepthThumb.toCvMat(referenceRect);
-
-    cv::Mat mask = (currentRect>0) & (referenceRect>0);
-    currentRect.convertTo(currentRect, CV_32FC1);
-    referenceRect.convertTo(referenceRect, CV_32FC1);
-    mask.convertTo(mask, currentRect.type());
-    cv::Mat diff = abs(currentRect-referenceRect)&mask;
-    int nonZeros = countNonZero(mask);
-    float sum=0;
-    int inliers = 0;
-    for (int i = 0; i<diff.rows; i++)
-      for (int j = 0; j<diff.cols; j++){
-	float d = diff.at<float>(i,j);
-	if (mask.at<float>(i,j) && d < _frameInlierDepthThreshold)
-	  inliers ++;
-	sum +=d;
-      }
-    //int imSize = diff.rows*diff.cols;
-    rel->reprojectionDistance = sum/nonZeros;
-    rel->nonZeros = nonZeros;
-    if ( 0 && _debug) 
-      rel->diffRegistered = diff.clone();
-
-    rel->outliers = nonZeros-inliers;
-    rel->inliers = inliers;
-    
-    if (_debug) {
-      cerr << "  transform            : " << t2v(rel->transform()).transpose() << endl;
-      cerr << "  inliers              : " << rel->inliers<< endl;
-      cerr << "  reprojectionDistance : " << rel->reprojectionDistance << endl;
-      cerr << "  nonZeros             : " << rel->nonZeros << endl;
-    }
   }
 
 // closure actions
@@ -339,3 +286,5 @@ namespace pwn_tracker {
 
   BOSS_REGISTER_CLASS(PwnCloserRelation);
 }
+
+

@@ -5,6 +5,7 @@
 #include "g2o_frontend/boss_map/map_manager.h"
 #include "g2o_frontend/pwn_core/pinholepointprojector.h"
 #include "g2o_frontend/pwn_core/depthimageconverter.h"
+#include "pwn_tracker_frame.h"
 #include "cache.h"
 
 namespace pwn_tracker {
@@ -33,7 +34,8 @@ namespace pwn_tracker {
     inline int scale() const {return _scale;}
     inline void setScale(int scale_)  {_scale=scale_;}
     pwn::Frame* loadFrame(PwnTrackerFrame* trackerFrame);
-
+    double cumTime;
+    int numCalls;
   protected:
     virtual Cache<PwnCacheEntry>::EntryType* makeEntry(KeyType* k, DataType* d);
     DepthImageConverter* _converter;

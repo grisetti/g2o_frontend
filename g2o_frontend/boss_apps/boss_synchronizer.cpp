@@ -9,13 +9,13 @@
 #include "g2o_frontend/boss_map/imu_sensor.h"
 #include "g2o_frontend/boss_map/sensor_data_synchronizer.h"
 #include "g2o_frontend/boss_map/robot_configuration.h"
-#include "g2o_frontend/pwn_boss/pwn_sensor_data.h"
+/*#include "g2o_frontend/pwn_boss/pwn_sensor_data.h"*/
 
 using namespace boss_map;
 using namespace boss;
 using namespace std;
 
-pwn_boss::PWNSensorData data;
+//pwn_boss::PWNSensorData data;
 
 const char* banner[]={
   "boss_synchronizer: takes a raw boss log and aggregates messages into single frames",

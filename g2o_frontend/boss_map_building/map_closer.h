@@ -46,7 +46,6 @@ namespace boss_map_building {
     float _consensusInlierTranslationalThreshold;
     float _consensusInlierRotationalThreshold;
     int    _consensusMinTimesCheckedThreshold;
-    int _scale;
     MapNode* _pendingTrackerFrame, *_lastTrackerFrame;
     boss_map::MapManager* _manager;
     PoseAcceptanceCriterion* _criterion;

@@ -1,7 +1,5 @@
 #include "pwn_static.h"
-
 namespace pwn {
-  
   void DepthImage_scale(DepthImage &dest, const DepthImage &src, int step) {
     int rows = src.rows / step;
     int cols = src.cols / step;

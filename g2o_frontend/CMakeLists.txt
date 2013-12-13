@@ -3,7 +3,7 @@
 ADD_SUBDIRECTORY(basemath)
 ADD_SUBDIRECTORY(ransac)
 ADD_SUBDIRECTORY(boss)
-# ADD_SUBDIRECTORY(boss_apps)
+ADD_SUBDIRECTORY(boss_apps)
 ADD_SUBDIRECTORY(boss_map)
 ADD_SUBDIRECTORY(boss_map_building)
 
