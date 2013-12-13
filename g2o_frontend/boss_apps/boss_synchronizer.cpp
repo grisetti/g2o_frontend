@@ -162,7 +162,6 @@ int main(int argc, char** argv) {
 
   conf->serializeInternals(ser);
   ser.writeObject(*conf);
-
   TSCompare comp;
   std::sort(sensorDatas.begin(), sensorDatas.end(), comp);
 

@@ -11,12 +11,26 @@ namespace boss_map {
   class MapNodeRelation;
 
   /***************************************** MapNode *****************************************/  
-  
+  /**An item of the map (can be either a relation or a node)*/
+  class MapItem: public Identifiable {
+  public:
+    MapItem (MapManager* manager=0, int id=-1, IdContext* context = 0);
+    //! returns the manager object
+    inline MapManager* manager() const {return _manager;}
+    //! boss serialization
+    virtual void serialize(ObjectData& data, IdContext& context);
+    //! boss deserialization
+    virtual void deserialize(ObjectData& data, IdContext& context);
+  protected:
+    MapManager * _manager;
+  };
+
+  /***************************************** MapNode *****************************************/  
   /**
      This is a generic map node. Can be a sensor measurement, a sensing frame or a collection of sensing frames.
      It is associated with a map_manager that is in charge of the bookkeeping between elements.
    */
-  class MapNode : public Identifiable {
+  class MapNode : public MapItem {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     friend class MapManager;
@@ -27,8 +41,6 @@ namespace boss_map {
     virtual void deserialize(ObjectData& data, IdContext& context);
     //! called when all links are resolved, adjusts the bookkeeping of the parents
     virtual void deserializeComplete();
-    //! returns the manager object
-    inline MapManager* manager() const {return _manager;}
     //! isometry to which the map node is referred to
     virtual const Eigen::Isometry3d& transform() const {return _transform;}
     //! sets the isometry
@@ -95,10 +107,9 @@ namespace boss_map {
      In either case, this class should be specialized to retain the information
      about the specific result (e.g. number of inliers and so on).
    */
-  struct MapNodeRelation: public Identifiable{
+  struct MapNodeRelation: public MapItem{
     //! ctor
     MapNodeRelation (MapManager* manager=0, int id=-1, IdContext* context = 0);
-    inline MapManager* manager() {return _manager;}
     inline std::vector<MapNode*>& nodes() {return _nodes;}
     virtual void serialize(ObjectData& data, IdContext& context);
     virtual void deserialize(ObjectData& data, IdContext& context);
@@ -108,9 +119,7 @@ namespace boss_map {
     //! gets level of hierarchy of this relation
     MapNode* owner() { return _owner; }
     void setOwner(MapNode* owner_) { _owner = owner_; }
-
   protected:
-    MapManager* _manager;
     MapNode* _owner;
     std::vector<MapNode*> _nodes;
     Identifiable* _generator;
