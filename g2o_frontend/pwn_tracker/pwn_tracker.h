@@ -79,21 +79,25 @@ using namespace pwn;
     std::list<NewFrameAction*> _newFrameActions;
 
     pwn::Frame* _previousCloud;
-    pwn::Frame* _currentCloud;
+    PwnCache::HandleType _previousCloudHandle;
     PwnTrackerFrame* _previousTrackerFrame;
     Eigen::Isometry3f _previousCloudTransform;
     Eigen::Isometry3f _previousCloudOffset;
+
+    pwn::Frame* _currentCloud;
+    PwnCache::HandleType _currentCloudHandle;
+    PwnTrackerFrame* _currentTrackerFrame;
+    Eigen::Matrix3f  _currentCameraMatrix;
+    Eigen::Isometry3f _currentCloudTransform;
+    Eigen::Isometry3f _currentCloudOffset;
+    pwn::DepthImage _currentDepthImage;
+
     Eigen::Isometry3f _globalT;
     int _counter;
     int _numKeyframes;
     float _newFrameInliersFraction;
     MapManager* _manager;
     PwnCache* _cache;
-    DepthImage _currentDepthImage;
-    Eigen::Isometry3f _currentSensorOffset;
-    Eigen::Matrix3f  _currentCameraMatrix;
-    PwnCache::HandleType _previousCloudHandle;
-    PwnCache::HandleType _currentCloudHandle;
     int _seq;
   };
 

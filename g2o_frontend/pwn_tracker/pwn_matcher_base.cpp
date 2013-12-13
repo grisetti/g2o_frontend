@@ -102,6 +102,7 @@ namespace pwn_tracker {
     convertScalar(toOffset, toOffset_);
     convertScalar(toCameraMatrix, toCameraMatrix_);
     */
+    
 
     PinholePointProjector* projector = dynamic_cast<PinholePointProjector*>(_aligner->projector());
     int r, c;
@@ -112,13 +113,18 @@ namespace pwn_tracker {
     convertScalar(ig, initialGuess);
     ig.translation().z() = 0;
     _aligner->setInitialGuess(ig);
-    //cerr << "initialGuess: " << t2v(ig).transpose() << endl;
+  //cerr << "initialGuess: " << t2v(ig).transpose() << endl;
     projector->setCameraMatrix(toCameraMatrix);
     projector->setImageSize(toRows,toCols);
     projector->scale(1./_scale);
     
-    // cerr << "cameraMatrix: " << endl;
-    // cerr << projector->cameraMatrix() << endl;
+  //cerr << "cameraMatrix: " << endl;
+  //cerr << projector->cameraMatrix() << endl;
+  //cerr << "fromOffset: " << endl;
+  //cerr << fromOffset.matrix()<< endl;
+  //cerr << "toOffset: " << endl;
+  //cerr << toOffset.matrix()<< endl;
+  
     r = projector->imageRows();
     c = projector->imageCols();
     // char dbgName[1024];
@@ -130,8 +136,8 @@ namespace pwn_tracker {
     _aligner->align();
     //_aligner->debugPrefix()=""; FICSMI
 
-    // cerr << "_fromCloud.points():" << fromCloud->points().size() << endl;
-    // cerr << "_toCloud.points():" << toCloud->points().size() << endl;
+    //cerr << "_fromCloud.points():" << fromCloud->points().size() << endl;
+    //cerr << "_toCloud.points():" << toCloud->points().size() << endl;
     //cerr << "AlInliers: " << _aligner->inliers() << endl;
     Eigen::Isometry3d relationMean;
     convertScalar(result.transform, _aligner->T());

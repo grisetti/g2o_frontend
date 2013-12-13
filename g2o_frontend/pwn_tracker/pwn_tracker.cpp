@@ -53,6 +53,7 @@ namespace pwn_tracker{
     _seq = 0;
     initCallbacks();
   }
+
   /*
   PwnTrackerFrame* PwnTracker::makeFrame() {
     PwnTrackerFrame* currentTrackerFrame = new PwnTrackerFrame(_manager);
@@ -101,21 +102,27 @@ namespace pwn_tracker{
   }
   */
 
-  void PwnTracker::processFrame(const DepthImage& depthImage, 
-				const Eigen::Isometry3f& sensorOffset, 
-				const Eigen::Matrix3f& cameraMatrix,
+  void PwnTracker::processFrame(const DepthImage& depthImage_, 
+				const Eigen::Isometry3f& sensorOffset_, 
+				const Eigen::Matrix3f& cameraMatrix_,
 				const Eigen::Isometry3f& initialGuess){
     int r,c;
-    Eigen::Matrix3f scaledCameraMatrix = cameraMatrix;
-    _currentCloud = makeCloud(r,c,scaledCameraMatrix,sensorOffset,depthImage);
+    Eigen::Matrix3f scaledCameraMatrix = cameraMatrix_;
+    _currentCloudOffset = sensorOffset_;
+    _currentCameraMatrix = cameraMatrix_;
+    _currentDepthImage = depthImage_;
+    _currentCloud = makeCloud(r,c,scaledCameraMatrix,_currentCloudOffset,_currentDepthImage);
     
     bool newFrame = false;
     bool newRelation = false;
     PwnTrackerFrame* currentTrackerFrame=0;
     Eigen::Isometry3d relationMean;
     if (_previousCloud){
-      _aligner->setCurrentSensorOffset(sensorOffset);
+      _aligner->setCurrentSensorOffset(_currentCloudOffset);
       _aligner->setCurrentFrame(_currentCloud);
+      _aligner->setReferenceSensorOffset(_previousCloudOffset);
+      _aligner->setReferenceFrame(_previousCloud);
+
       _aligner->correspondenceFinder()->setImageSize(r,c);
       PinholePointProjector* alprojector=dynamic_cast<PinholePointProjector*>(_aligner->projector());
       alprojector->setCameraMatrix(scaledCameraMatrix);
@@ -171,8 +178,8 @@ namespace pwn_tracker{
 	  _previousCloudHandle.release();
 	}
 	//_cache->unlock(_previousTrackerFrame);
-	_aligner->setReferenceSensorOffset(sensorOffset);
-	_aligner->setReferenceFrame(_currentCloud);
+	// _aligner->setReferenceSensorOffset(_currentCloudOffset);
+	// _aligner->setReferenceFrame(_currentCloud);
 	_previousCloud = _currentCloud;
 	_previousCloudTransform = _globalT;
 	// cerr << "new frame added (" << _numKeyframes <<  ")" << endl;
@@ -190,11 +197,11 @@ namespace pwn_tracker{
     } else { // first frame
       //ser.writeObject(*manager);
       newFrame = true;
-      _aligner->setReferenceSensorOffset(sensorOffset);
-      _aligner->setReferenceFrame(_currentCloud);
+      // _aligner->setReferenceSensorOffset(_currentCloudOffset);
+      // _aligner->setReferenceFrame(_currentCloud);
       _previousCloud = _currentCloud;
       _previousCloudTransform = _globalT;
-      _previousCloudOffset = sensorOffset;
+      _previousCloudOffset = _currentCloudOffset;
       _numKeyframes ++;
       /*Eigen::Isometry3f t = _globalT;
 	geometry_msgs::Point p;
@@ -211,9 +218,9 @@ namespace pwn_tracker{
       currentTrackerFrame = new PwnTrackerFrame(_manager);
       //currentTrackerFrame->cloud.set(cloud);
       currentTrackerFrame->cloud=_currentCloud;
-
+      currentTrackerFrame->sensorOffset = _currentCloudOffset;
       boss_map::ImageBLOB* depthBLOB=new boss_map::ImageBLOB();
-      DepthImage_convert_32FC1_to_16UC1(depthBLOB->cvImage(),depthImage);
+      DepthImage_convert_32FC1_to_16UC1(depthBLOB->cvImage(),_currentDepthImage);
       //depthImage.toCvMat(depthBLOB->cvImage());
       depthBLOB->adjustFormat();
       currentTrackerFrame->depthImage.set(depthBLOB);
@@ -221,23 +228,23 @@ namespace pwn_tracker{
       boss_map::ImageBLOB* normalThumbnailBLOB=new boss_map::ImageBLOB();
       boss_map::ImageBLOB* depthThumbnailBLOB=new boss_map::ImageBLOB();
       makeThumbnails(depthThumbnailBLOB->cvImage(), normalThumbnailBLOB->cvImage(), _currentCloud, 
-		    depthImage.rows, 
-		    depthImage.cols,
-		    sensorOffset,
-		    cameraMatrix, 
+		    _currentDepthImage.rows, 
+		    _currentDepthImage.cols,
+		    _currentCloudOffset,
+		    _currentCameraMatrix, 
 		    0.1);
       normalThumbnailBLOB->adjustFormat();
       depthThumbnailBLOB->adjustFormat();
       
       currentTrackerFrame->depthThumbnail.set(depthThumbnailBLOB);
       currentTrackerFrame->normalThumbnail.set(normalThumbnailBLOB);
-      currentTrackerFrame->cameraMatrix = cameraMatrix;
-      currentTrackerFrame->imageRows = depthImage.rows;
-      currentTrackerFrame->imageCols = depthImage.cols;
+      currentTrackerFrame->cameraMatrix = _currentCameraMatrix;
+      currentTrackerFrame->imageRows = _currentDepthImage.rows;
+      currentTrackerFrame->imageCols = _currentDepthImage.cols;
       Eigen::Isometry3d _iso;
       convertScalar(_iso, _globalT);
       currentTrackerFrame->setTransform(_iso);
-      convertScalar(currentTrackerFrame->sensorOffset, sensorOffset);
+      convertScalar(currentTrackerFrame->sensorOffset, _currentCloudOffset);
       currentTrackerFrame->setSeq(_seq++);
       _manager->addNode(currentTrackerFrame);
       //cerr << "AAAA" << endl;

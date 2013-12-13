@@ -191,7 +191,7 @@ namespace pwn_tracker {
 
     // cerr << "_fromCloud.points():" << fromCloud->points().size() << endl;
     // cerr << "_toCloud.points():" << toCloud->points().size() << endl;
-    // cerr << "AlInliers: " << _aligner->inliers() << endl;
+    cerr << "AlInliers: " << _aligner->inliers() << endl;
     rel->setFrom(from);
     rel->setTo(to);
     Eigen::Isometry3d relationMean;
