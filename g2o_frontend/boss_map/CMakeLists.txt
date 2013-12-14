@@ -2,6 +2,7 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 LINK_DIRECTORIES(${OpenCV_LIBRARY_DIRS})
 
 ADD_LIBRARY(boss_map
+  stream_processor.cpp stream_processor.h
   linked_tree.cpp linked_tree.h
   reference_frame.cpp reference_frame.h
   reference_frame_relation.cpp  reference_frame_relation.h

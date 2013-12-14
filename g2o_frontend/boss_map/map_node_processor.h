@@ -5,12 +5,13 @@
 #include "sensing_frame_node.h"
 #include "imu_sensor.h"
 #include "robot_configuration.h"
+#include "stream_processor.h"
 
 namespace boss_map {
   using namespace boss;
   using namespace std;
 
-  class MapNodeProcessor{
+  class MapNodeProcessor: public StreamProcessor{
   public:
     MapNodeProcessor(MapManager* manager_,   RobotConfiguration* config_);
     template <class T>
@@ -34,8 +35,9 @@ namespace boss_map {
       }
       return 0;
     }
-    virtual void processNode(MapNode* node) = 0;
+    virtual void process(Serializable* s);
   protected:
+    virtual void processNode(MapNode* node) = 0;
     MapManager* _manager;
     RobotConfiguration* _config;
   };
@@ -45,14 +47,19 @@ namespace boss_map {
   public:
     ImuRelationAdder(MapManager* manager_,   RobotConfiguration* config_);
     virtual void processNode(MapNode* node_);
+    inline MapNodeUnaryRelation* lastImu() { return _lastIMU; }
+  protected:
+    MapNodeUnaryRelation* _lastIMU;
   };
 
   struct OdometryRelationAdder : public MapNodeProcessor{
   public:
     OdometryRelationAdder(MapManager* manager_,   RobotConfiguration* config_);
     virtual void processNode(MapNode* node_);
+    inline MapNodeBinaryRelation* lastOdometry() { return _lastOdometry; }
   protected:
     MapNode* _previousNode;
+    MapNodeBinaryRelation* _lastOdometry;
   };
 
 }

@@ -17,3 +17,7 @@ TARGET_LINK_LIBRARIES(boss_path_generator pwn_core pwn_boss boss_map boss)
 
 ADD_executable(boss_sensing_frame_test boss_sensing_frame_test.cpp)
 TARGET_LINK_LIBRARIES(boss_sensing_frame_test boss_map boss_map  boss ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY})
+
+
+ADD_executable(boss_synchronizer_framegen boss_synchronizer_framegen.cpp)
+TARGET_LINK_LIBRARIES(boss_synchronizer_framegen boss_map boss_map  boss ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY})

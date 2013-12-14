@@ -9,7 +9,12 @@
 #include "g2o_frontend/boss_map/imu_sensor.h"
 #include "g2o_frontend/boss_map/sensor_data_synchronizer.h"
 #include "g2o_frontend/boss_map/robot_configuration.h"
+#include "g2o_frontend/boss_map/map_manager.h"
 #include "g2o_frontend/boss_map/sensing_frame_node.h"
+#include "g2o_frontend/boss_map/map_node_processor.h"
+
+
+/*#include "g2o_frontend/pwn_boss/pwn_sensor_data.h"*/
 
 using namespace boss_map;
 using namespace boss;
@@ -109,7 +114,6 @@ void handleParsedArgs(Synchronizer* sync, std::list<CommandArg> args){
   }
  
 }
-
 int main(int argc, char** argv) {
   std::list<CommandArg> parsedArgs;
   if (argc == 1) {
@@ -142,20 +146,6 @@ int main(int argc, char** argv) {
   
   cerr <<  "running logger with arguments: filein[" << filein << "] fileout: [" << fileout << "]" << endl;
 
-  // create a reframer object, that once all messages have been put together sets them to a unique frame
-  // Synchronizer::Reframer reframer;
-  // sync.addOutputHandler(&reframer);
-
-  // // create a writer object that dumps on the disk each block of synchronized objects
-  // Synchronizer::Writer writer(&ser);
-  // sync.addOutputHandler(&writer);
-
-  // // create a deleter object that polishes the memory after writing
-  // Synchronizer::Deleter deleter;
-  // sync.addOutputHandler(&deleter);
-  
-  StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(&sync, &ser);
-
   std::vector<BaseSensorData*> sensorDatas;
   RobotConfiguration* conf = readLog(sensorDatas, des);
   cerr << "# frames: " << conf->frameMap().size() << endl;
@@ -166,10 +156,47 @@ int main(int argc, char** argv) {
   ser.writeObject(*conf);
   TSCompare comp;
   std::sort(sensorDatas.begin(), sensorDatas.end(), comp);
+  
+  sync.addSyncTopic("/camera/depth_registered/image_rect_raw");
+
+  MapManager* manager = new MapManager();
+  ser.writeObject(*manager);
+
+  SensingFrameNodeMaker* nodeMaker = new SensingFrameNodeMaker();
+  nodeMaker->init(manager,conf);
+
+  OdometryRelationAdder* odometryAdder = new OdometryRelationAdder(manager,conf);
+
+  StreamProcessor::PropagatorOutputHandler* sync2nm=new StreamProcessor::PropagatorOutputHandler(&sync, nodeMaker);
+  StreamProcessor::PropagatorOutputHandler* no2odom=new StreamProcessor::PropagatorOutputHandler(nodeMaker, odometryAdder);
+
+  StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(odometryAdder, &ser);
+
+  //OdometryRelationAdder* odometryAdder = new OdometryRelationAdder(manager, conf);
 
   for (size_t i = 0; i< sensorDatas.size(); i++){
     BaseSensorData* data = sensorDatas[i];
     sync.process(data);
+    /*
+    while(! outputObjects.empty()){
+      Serializable* s = outputObjects.front();
+      BaseSensorData* sdata = dynamic_cast<BaseSensorData*>(s);
+      ser.writeObject(*s);
+      SensingFrameNode* snode = 0;
+      if (sdata){
+	snode = nodeMaker->processData(sdata);
+      }
+      if(snode) {
+	ser.writeObject(*snode);
+	odometryAdder->processNode(snode);
+	MapNodeBinaryRelation* odom=odometryAdder->lastOdometry();
+	if (odom)
+	  ser.writeObject(*odom);
+      }
+      outputObjects.pop_front();
+    }
+    */
+
   }
 
 }

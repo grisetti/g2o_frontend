@@ -10,7 +10,7 @@ namespace boss_map {
   class MapManager;
   class MapNodeRelation;
 
-  /***************************************** MapNode *****************************************/  
+  /***************************************** MapItem *****************************************/  
   /**An item of the map (can be either a relation or a node)*/
   class MapItem: public Identifiable {
   public:

@@ -61,13 +61,7 @@ namespace boss_map {
   bool Synchronizer::addSensorData(BaseSensorData* data){
     SyncTopicInstance* st = syncTopic(data->topic());
     if (! st) {
-      // the data is not synchronized, we just pass it through;
-      for (size_t i =0; i<outputHandlers.size(); i++){
-	outputHandlers[i]->put(data);
-      }
-      for (size_t i =0; i<outputHandlers.size(); i++){
-	outputHandlers[i]->syncDone();
-      }
+      _syncDatas.push_back(data);
       return true;
     }
 
@@ -99,28 +93,17 @@ namespace boss_map {
     if (allSatisfied) {
       cerr << 'F';
       for (std::set<SyncTopicInstance*>::iterator it = dependancies.begin(); it!=dependancies.end(); it++) {
-	for (size_t i =0; i<outputHandlers.size(); i++){
-	  BaseSensorData* other = (*it)->sensorData;
-	    outputHandlers[i]->put(other);
-	}
+	_syncDatas.push_back((*it)->sensorData);
       }
-      for (size_t i =0; i<outputHandlers.size(); i++){
-	outputHandlers[i]->syncDone();
-      }
+      syncDone();
       for (std::set<SyncTopicInstance*>::iterator it = dependancies.begin(); it!=dependancies.end(); it++) {
 	(*it)->sensorData=0;
       }	
       return true;
     }
-    
     return false;
-      
   }
 
-  void Synchronizer::addOutputHandler(OutputHandler* handler){
-    outputHandlers.push_back(handler);
-    handler->setSynchronizer(this);
-  }
 
   SyncTopicInstance* Synchronizer::addSyncTopic(const std::string& topic){
     std::map<std::string, SyncTopicInstance*>::iterator it  = syncTopics.find(topic);
@@ -140,6 +123,13 @@ namespace boss_map {
     return cond;
   }
 
+  void Synchronizer::process(Serializable*s){
+    BaseSensorData* sdata = dynamic_cast<BaseSensorData*>(s);
+    if (! sdata)
+      put(s);
+    else
+      addSensorData(sdata);
+  }
   void Synchronizer::computeDependancies(std::set<SyncCondition*> & conditions, 
 					 std::set<SyncTopicInstance*>& dependancies,
 					 SyncTopicInstance* instance){
@@ -185,68 +175,33 @@ namespace boss_map {
 
   }
 
-
-  
-  Synchronizer::OutputHandler::OutputHandler() {
-    synchronizer = 0;
-  }
-
-  void Synchronizer::OutputHandler::put(BaseSensorData* s) {
-    _syncDatas.push_back(s);
-  }
-
-  void Synchronizer::OutputHandler::syncDone() {
-    syncDoneImpl();
-    _syncDatas.clear();
-  }
-
-  void Synchronizer::Reframer::syncDoneImpl(){
+  void Synchronizer::syncDone(){
     if (_syncDatas.empty())
       return;
     ReferenceFrame * f=_syncDatas.front()->robotReferenceFrame();
+    put(f);
     while (! _syncDatas.empty()){
       BaseSensorData* data = _syncDatas.front();
       _syncDatas.pop_front();
       if(data->robotReferenceFrame() != f){
-	if (synchronizer->framePolcy == Synchronizer::DeleteReferenceFrame)
+	if (framePolcy == Synchronizer::DeleteReferenceFrame) {
 	  delete data->robotReferenceFrame();
+	  data->setRobotReferenceFrame(0);
+	}
 	data->setRobotReferenceFrame(f);
       }
+      put (data);
     }
   }
 
-  Synchronizer::Writer::Writer(Serializer* ser) {
-    this->ser = ser;
-  }
-  void Synchronizer::Writer::syncDoneImpl(){
-    if (_syncDatas.empty())
-      return;
-    std::set<ReferenceFrame*> frames;
-    while (! _syncDatas.empty()){
-      BaseSensorData* data = _syncDatas.front();
-      ReferenceFrame * f=data->robotReferenceFrame();
-      if (frames.find(f)==frames.end()){
-	ser->writeObject(*f);
-	frames.insert(f);
-      }
-      _syncDatas.pop_front();
-      ser->writeObject(*data);
+  Synchronizer::~Synchronizer(){
+    for (std::map<std::string, SyncTopicInstance*>::iterator it = syncTopics.begin(); it!=syncTopics.end(); it++){
+      delete it->second;
     }
-  }
+    for (std::set<SyncCondition*>::iterator it=syncConditions.begin(); it!=syncConditions.end(); it++){
+      delete *it;
+    }
 
-  void Synchronizer::Deleter::syncDoneImpl(){
-    std::set<ReferenceFrame*> frames;
-    while (! _syncDatas.empty()){
-      BaseSensorData* data = _syncDatas.front();
-      frames.insert(data->robotReferenceFrame());
-      _syncDatas.pop_front();
-      delete data;
-    }
-    for (std::set<ReferenceFrame*>::iterator it =  frames.begin(); it!= frames.end(); it++){
-      ReferenceFrame* f = *it;
-      delete f;
-    }
-      
   }
 
 }

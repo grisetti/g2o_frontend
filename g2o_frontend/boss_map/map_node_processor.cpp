@@ -2,18 +2,32 @@
 
 namespace boss_map {
   using namespace boss;
+  
+  void MapNodeProcessor::process(Serializable* s){
+    MapNode* n = dynamic_cast<MapNode*>(s);
+      if (n)
+	processNode(n);
+      else
+	put(s);
+  }
+
+
     MapNodeProcessor::MapNodeProcessor(MapManager* manager_,   RobotConfiguration* config_) {
       _manager = manager_;
       _config = config_;
     }
 
   ImuRelationAdder::ImuRelationAdder(MapManager* manager_,   RobotConfiguration* config_): 
-    MapNodeProcessor(manager_,config_){}
+    MapNodeProcessor(manager_,config_){
+    _lastIMU  = 0;
+  }
     
   void ImuRelationAdder::processNode(MapNode* node_){
+    _lastIMU = 0;
     SensingFrameNode* f = dynamic_cast<SensingFrameNode*>(node_);
     if (!f)
       return;
+    put(f);
     for (size_t i = 0; i<f->sensorDatas().size(); i++){
       BaseSensorData* s = f->sensorDatas()[i];
       IMUData* imu = dynamic_cast<IMUData*>(s);
@@ -34,16 +48,21 @@ namespace boss_map {
       iso.linear()  = imu->orientation().matrix();
       iso.translation().setZero();
       rel->setTransform(iso);
-      cerr << "Imu added (" << f << ")" << endl;
+      //cerr << "Imu added (" << f << ")" << endl;
       _manager->addRelation(rel);
+      put(rel);
+      _lastIMU = rel;
     }
   }
 
   OdometryRelationAdder::OdometryRelationAdder(MapManager* manager_,   RobotConfiguration* config_): MapNodeProcessor(manager_,config_){
     _previousNode = 0;
+    _lastOdometry = 0;
   }
   
   void OdometryRelationAdder::processNode(MapNode* node_){
+    _lastOdometry = 0;
+    put(node_);
     if (_previousNode){
       MapNodeBinaryRelation* rel = new MapNodeBinaryRelation(_manager);
       rel->nodes()[0]=_previousNode;
@@ -56,8 +75,9 @@ namespace boss_map {
 
       rel->setInformationMatrix(Eigen::Matrix<double,6,6>::Identity());
       _manager->addRelation(rel);
-      cerr << "Odom added (" << _previousNode << ", " << node_ << ")" << endl;
-      
+      put(rel);
+      //cerr << "Odom added (" << _previousNode << ", " << node_ << ")" << endl;
+      _lastOdometry = rel;
     }
     _previousNode = node_;
   }
