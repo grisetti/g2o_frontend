@@ -25,8 +25,10 @@ namespace boss_map {
   void ImuRelationAdder::processNode(MapNode* node_){
     _lastIMU = 0;
     SensingFrameNode* f = dynamic_cast<SensingFrameNode*>(node_);
-    if (!f)
+    if (!f) {
+      throw std::runtime_error("!f");
       return;
+    }
     put(f);
     for (size_t i = 0; i<f->sensorDatas().size(); i++){
       BaseSensorData* s = f->sensorDatas()[i];

@@ -13,6 +13,7 @@
 #include "g2o_frontend/boss_map/sensing_frame_node.h"
 #include "g2o_frontend/boss_map/map_node_processor.h"
 
+#define MARKUSED(X)  X=X
 
 /*#include "g2o_frontend/pwn_boss/pwn_sensor_data.h"*/
 
@@ -135,11 +136,10 @@ int main(int argc, char** argv) {
   handleParsedArgs(&sync, parsedArgs);
   std::string filein = argv[c];
   std::string fileout = argv[c+1];
-
-
-
   Deserializer des;
   des.setFilePath(filein.c_str());
+
+  sync.addSyncTopic("/camera/depth_registered/image_rect_raw");
 
   Serializer ser;
   ser.setFilePath(fileout.c_str());
@@ -156,47 +156,32 @@ int main(int argc, char** argv) {
   ser.writeObject(*conf);
   TSCompare comp;
   std::sort(sensorDatas.begin(), sensorDatas.end(), comp);
-  
-  sync.addSyncTopic("/camera/depth_registered/image_rect_raw");
 
   MapManager* manager = new MapManager();
   ser.writeObject(*manager);
 
+  
   SensingFrameNodeMaker* nodeMaker = new SensingFrameNodeMaker();
   nodeMaker->init(manager,conf);
+  StreamProcessor::PropagatorOutputHandler* sync2nm=new StreamProcessor::PropagatorOutputHandler(&sync, nodeMaker);
 
   OdometryRelationAdder* odometryAdder = new OdometryRelationAdder(manager,conf);
+  StreamProcessor::PropagatorOutputHandler* nm2odom=new StreamProcessor::PropagatorOutputHandler(nodeMaker, odometryAdder);
+  
+  ImuRelationAdder* imuAdder = new ImuRelationAdder(manager,conf);
+  StreamProcessor::PropagatorOutputHandler* odom2imu=new StreamProcessor::PropagatorOutputHandler(odometryAdder, imuAdder);
 
-  StreamProcessor::PropagatorOutputHandler* sync2nm=new StreamProcessor::PropagatorOutputHandler(&sync, nodeMaker);
-  StreamProcessor::PropagatorOutputHandler* no2odom=new StreamProcessor::PropagatorOutputHandler(nodeMaker, odometryAdder);
-
-  StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(odometryAdder, &ser);
+  StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(imuAdder, &ser);
 
   //OdometryRelationAdder* odometryAdder = new OdometryRelationAdder(manager, conf);
+  MARKUSED(sync2nm);
+  MARKUSED(nm2odom);
+  MARKUSED(odom2imu);
+  MARKUSED(writer);
 
   for (size_t i = 0; i< sensorDatas.size(); i++){
     BaseSensorData* data = sensorDatas[i];
     sync.process(data);
-    /*
-    while(! outputObjects.empty()){
-      Serializable* s = outputObjects.front();
-      BaseSensorData* sdata = dynamic_cast<BaseSensorData*>(s);
-      ser.writeObject(*s);
-      SensingFrameNode* snode = 0;
-      if (sdata){
-	snode = nodeMaker->processData(sdata);
-      }
-      if(snode) {
-	ser.writeObject(*snode);
-	odometryAdder->processNode(snode);
-	MapNodeBinaryRelation* odom=odometryAdder->lastOdometry();
-	if (odom)
-	  ser.writeObject(*odom);
-      }
-      outputObjects.pop_front();
-    }
-    */
-
   }
 
 }
