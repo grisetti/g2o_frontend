@@ -15,8 +15,9 @@ namespace pwn {
     // Fill the accumulators with the points
 #pragma omp parallel for
     for(int c = 0; c < cols(); c++) {
+      const int* rowptr =  &indices(c,0);
       for(int r = 0; r < rows(); r++) {
-	const int &index = indices(c, r); 
+	const int &index = rowptr[r]; 
 	PointAccumulator &acc = coeffRef(r, c);
 	if(index < 0)
 	  continue;

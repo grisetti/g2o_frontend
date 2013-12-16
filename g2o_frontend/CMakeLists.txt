@@ -16,7 +16,7 @@ endif (BUILD_OLD_SENSOR_DATA)
 
 if(BUILD_PWN)
   ADD_SUBDIRECTORY(pwn_core)
-  ADD_SUBDIRECTORY(pwn_core_test)
+  #ADD_SUBDIRECTORY(pwn_core_test)
   if(CUDA_FOUND)
   # ADD_SUBDIRECTORY(pwn_cuda)
   endif(CUDA_FOUND)
