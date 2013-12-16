@@ -1,5 +1,6 @@
 #include "depthimageconverterintegralimage.h"
 #include "statscalculatorintegralimage.h"
+#include <fstream>
 
 namespace pwn {
 
@@ -40,6 +41,19 @@ namespace pwn {
 
     // Computing the intervals
     _projector->projectIntervals(statsCalculator->intervalImage(), depthImage, _normalWorldRadius);
+
+    std::ofstream os("new.txt");
+    if(!os) {
+      std::cout << "Impossible to open file" << std::endl;
+      return;
+    }
+    std::cout << "Size: " << statsCalculator->intervalImage().rows << " --- " << statsCalculator->intervalImage().cols << std::endl;
+    for(int i = 0; i < statsCalculator->intervalImage().rows; i++) {
+      for(int j = 0; j < statsCalculator->intervalImage().cols; j++) {
+	os << statsCalculator->intervalImage()(i, j) << " "; 
+      }
+      os << std::endl;
+    }
 
     // Compute stats
     statsCalculator->compute(frame.normals(),

@@ -52,11 +52,11 @@ TARGET_LINK_LIBRARIES(pwn_tracker_library
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
 )
 
-
-
 ADD_EXECUTABLE(pwn_tracker_app pwn_tracker_app.cpp)
-
-TARGET_LINK_LIBRARIES(pwn_tracker_app pwn_tracker_library pwn_viewer pwn_core boss_map boss_map_building boss
+SET_TARGET_PROPERTIES(pwn_tracker_app PROPERTIES OUTPUT_NAME pwn_tracker_app${EXE_POSTFIX})
+TARGET_LINK_LIBRARIES(pwn_tracker_app 
+  pwn_tracker_library
+  pwn_viewer
   pwn_boss
   pwn_core
   boss_map_building 
@@ -71,4 +71,3 @@ TARGET_LINK_LIBRARIES(pwn_tracker_app pwn_tracker_library pwn_viewer pwn_core bo
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
   )
-
