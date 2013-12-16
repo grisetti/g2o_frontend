@@ -1,26 +1,26 @@
-#include "frame.h"
+#include "cloud.h"
 
 namespace pwn_boss {
   using namespace boss;
 
-  Frame::Frame() : 
-    pwn::Frame() {}
+  Cloud::Cloud() : 
+    pwn::Cloud() {}
 
   static const std::string _pwnString = "pwn";
-  const std::string &Frame::extension() { 
+  const std::string &Cloud::extension() { 
     return _pwnString;
   }
 
-  bool Frame::read(std::istream& is){
+  bool Cloud::read(std::istream &is){
     Eigen::Isometry3f t;
     return this->load(t, is);
   }
 
-  void Frame::write(std::ostream& os) {
+  void Cloud::write(std::ostream &os) {
     save(os, Eigen::Isometry3f::Identity(), 1, true);
   }
 
   
-  BOSS_REGISTER_BLOB(Frame);
+  BOSS_REGISTER_BLOB(Cloud);
 
 }

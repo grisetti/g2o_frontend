@@ -20,8 +20,8 @@ namespace pwn {
     // Variables initialization.
     _b = Vector6f::Zero();
     _H = Matrix6f::Zero();
-    const InformationMatrixVector &pointOmegas = _aligner->currentFrame()->pointInformationMatrix();
-    const InformationMatrixVector &normalOmegas = _aligner->currentFrame()->normalInformationMatrix();
+    const InformationMatrixVector &pointOmegas = _aligner->currentCloud()->pointInformationMatrix();
+    const InformationMatrixVector &normalOmegas = _aligner->currentCloud()->normalInformationMatrix();
 
     // Allocate the variables for the sum reduction;
     int numThreads = omp_get_max_threads();
@@ -55,10 +55,10 @@ namespace pwn {
       inliers = 0;
       for(int i = imin; i < imax; i++) {
 	const Correspondence &correspondence = _aligner->correspondenceFinder()->correspondences()[i];
-	const Point referencePoint = _T * _aligner->referenceFrame()->points()[correspondence.referenceIndex];
-	const Normal referenceNormal = _T * _aligner->referenceFrame()->normals()[correspondence.referenceIndex];
-	const Point &currentPoint = _aligner->currentFrame()->points()[correspondence.currentIndex];
-	const Normal &currentNormal = _aligner->currentFrame()->normals()[correspondence.currentIndex];
+	const Point referencePoint = _T * _aligner->referenceCloud()->points()[correspondence.referenceIndex];
+	const Normal referenceNormal = _T * _aligner->referenceCloud()->normals()[correspondence.referenceIndex];
+	const Point &currentPoint = _aligner->currentCloud()->points()[correspondence.currentIndex];
+	const Normal &currentNormal = _aligner->currentCloud()->normals()[correspondence.currentIndex];
 	const InformationMatrix &omegaP = pointOmegas[correspondence.currentIndex];
 	const InformationMatrix &omegaN = normalOmegas[correspondence.currentIndex];
       

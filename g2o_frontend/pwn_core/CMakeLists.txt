@@ -16,7 +16,7 @@ ADD_LIBRARY(pwn_core
   cylindricalpointprojector.cpp cylindricalpointprojector.h
   depthimageconverter.cpp depthimageconverter.h
   depthimageconverterintegralimage.cpp depthimageconverterintegralimage.h
-  frame.cpp frame.h
+  cloud.cpp cloud.h
   gaussian3.cpp gaussian3.h
   homogeneousvector4f.h
   informationmatrix.h

@@ -20,7 +20,7 @@ namespace pwn {
     _normalInformationMatrixCalculator = normalInformationMatrixCalculator_;
   }
 
-  void DepthImageConverter::compute(Frame &frame,
+  void DepthImageConverter::compute(Cloud &cloud,
 				    const DepthImage &depthImage, 
 				    const Eigen::Isometry3f &sensorOffset) {
     assert(_projector && "DepthImageConverter: missing _projector");
@@ -29,7 +29,7 @@ namespace pwn {
     assert(_normalInformationMatrixCalculator && "DepthImageConverter: missing _normalInformationMatrixCalculator");
     assert(depthImage.rows > 0 && depthImage.cols > 0 && "DepthImageConverter: depthImage has zero size");
 
-    frame.clear();
+    cloud.clear();
     _projector->setImageSize(depthImage.rows, depthImage.cols);
         
     // Resizing the temporaries
@@ -39,17 +39,17 @@ namespace pwn {
 
     // Unprojecting
     _projector->setTransform(Eigen::Isometry3f::Identity());
-    _projector->unProject(frame.points(), frame.gaussians(), _indexImage, depthImage);
+    _projector->unProject(cloud.points(), cloud.gaussians(), _indexImage, depthImage);
     
-    _statsCalculator->compute(frame.normals(),
-			      frame.stats(),
-			      frame.points(),
+    _statsCalculator->compute(cloud.normals(),
+			      cloud.stats(),
+			      cloud.points(),
 			      _indexImage);
 
-    _pointInformationMatrixCalculator->compute(frame.pointInformationMatrix(), frame.stats(), frame.normals());
-    _normalInformationMatrixCalculator->compute(frame.normalInformationMatrix(), frame.stats(), frame.normals());
+    _pointInformationMatrixCalculator->compute(cloud.pointInformationMatrix(), cloud.stats(), cloud.normals());
+    _normalInformationMatrixCalculator->compute(cloud.normalInformationMatrix(), cloud.stats(), cloud.normals());
 
-    frame.transformInPlace(sensorOffset);
+    cloud.transformInPlace(sensorOffset);
   }
 
 }

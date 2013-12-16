@@ -2,7 +2,7 @@
 
 #include "linearizer.h"
 #include "pointprojector.h"
-#include "frame.h"
+#include "cloud.h"
 #include "correspondencefinder.h"
 #include "se3_prior.h"
 
@@ -18,11 +18,17 @@ namespace pwn {
     inline PointProjector* projector() { return _projector; }
     inline void setProjector(PointProjector *projector_) { _projector = projector_; }
     
-    inline const Frame* referenceFrame() const { return _referenceFrame; }
-    inline void setReferenceFrame(Frame *referenceFrame_) { _referenceFrame = referenceFrame_; clearPriors();}
+    inline const Cloud* referenceCloud() const { return _referenceCloud; }
+    inline void setReferenceCloud(Cloud *referenceCloud_) { 
+      _referenceCloud = referenceCloud_; 
+      clearPriors();
+    }
     
-    inline const Frame* currentFrame() const { return _currentFrame; }
-    inline void setCurrentFrame(Frame*currentFrame_) { _currentFrame = currentFrame_; clearPriors();}
+    inline const Cloud* currentCloud() const { return _currentCloud; }
+    inline void setCurrentCloud(Cloud *currentCloud_) { 
+      _currentCloud = currentCloud_; 
+      clearPriors();
+    }
 
     inline int outerIterations() const { return _outerIterations; }
     inline void setOuterIterations(const int outerIterations_) { _outerIterations = outerIterations_; }
@@ -100,8 +106,8 @@ namespace pwn {
     Linearizer *_linearizer;
     CorrespondenceFinder *_correspondenceFinder;
 
-    Frame *_referenceFrame;
-    Frame *_currentFrame;
+    Cloud *_referenceCloud;
+    Cloud *_currentCloud;
   
     bool _debug;
     int _outerIterations, _innerIterations, _minInliers;

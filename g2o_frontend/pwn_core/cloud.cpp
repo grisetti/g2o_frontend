@@ -1,4 +1,4 @@
-#include "frame.h"
+#include "cloud.h"
 
 #include <fstream>
 
@@ -8,21 +8,21 @@ using namespace std;
 
 namespace pwn {
 
-  bool Frame::load(Eigen::Isometry3f &T, const char *filename) {
+  bool Cloud::load(Eigen::Isometry3f &T, const char *filename) {
     ifstream is(filename);
     if(!is)
       return false;
     return load(T, is);
   }
   
-  bool Frame::save(const char *filename, Eigen::Isometry3f T, int step, bool binary) {
+  bool Cloud::save(const char *filename, Eigen::Isometry3f T, int step, bool binary) {
     ofstream os(filename);
     if(!os)
       return false;
     return save(os, T, step, binary);  
   }
 
-  bool Frame::load(Eigen::Isometry3f &T, istream &is) {
+  bool Cloud::load(Eigen::Isometry3f &T, istream &is) {
     _points.clear();
     _normals.clear();
     char buf[1024];
@@ -32,7 +32,7 @@ namespace pwn {
     size_t numPoints;
     bool binary;
     ls >> tag;
-    if(tag != "PWNFRAME")
+    if(tag != "PWNCLOUD")
       return false;
     ls >> numPoints >> binary;
     _points.resize(numPoints);
@@ -79,8 +79,8 @@ namespace pwn {
     return is.good();
   }
 
-  bool Frame::save(ostream &os, Eigen::Isometry3f T, int step, bool binary) {
-    os << "PWNFRAME " << _points.size() / step << " " << binary << endl; 
+  bool Cloud::save(ostream &os, Eigen::Isometry3f T, int step, bool binary) {
+    os << "PWNCLOUD " << _points.size() / step << " " << binary << endl; 
     Vector6f transform = t2v(T);
     os << transform[0] << " " << transform[1] << " " << transform[2] << " " 
        << transform[3] << " " << transform[4] << " " << transform[5] << " " << endl;
@@ -132,7 +132,7 @@ namespace pwn {
     return os.good();
   }
 
-  void Frame::clear(){
+  void Cloud::clear(){
     _points.clear();
     _normals.clear(); 
     _stats.clear();
@@ -142,34 +142,34 @@ namespace pwn {
     _traversabilityVector.clear();
   }
 
-  void Frame::add(Frame frame, const Eigen::Isometry3f &T) {
-    frame.transformInPlace(T);
+  void Cloud::add(Cloud cloud, const Eigen::Isometry3f &T) {
+    cloud.transformInPlace(T);
     size_t k = _points.size(); 
-    _points.resize(k + frame.points().size());
-    _normals.resize(k + frame.normals().size());
-    _stats.resize(k + frame.stats().size());
-    _pointInformationMatrix.resize(k + frame.pointInformationMatrix().size());
-    _normalInformationMatrix.resize(k + frame.normalInformationMatrix().size());
-    _gaussians.resize(k + frame.gaussians().size());
-    _traversabilityVector.resize(k + frame.traversabilityVector().size());
+    _points.resize(k + cloud.points().size());
+    _normals.resize(k + cloud.normals().size());
+    _stats.resize(k + cloud.stats().size());
+    _pointInformationMatrix.resize(k + cloud.pointInformationMatrix().size());
+    _normalInformationMatrix.resize(k + cloud.normalInformationMatrix().size());
+    _gaussians.resize(k + cloud.gaussians().size());
+    _traversabilityVector.resize(k + cloud.traversabilityVector().size());
     for(int i = 0; k < _points.size(); k++, i++) {
-      _points[k] = frame.points()[i];
-      _normals[k] = frame.normals()[i];
-      _stats[k] = frame.stats()[i];
-      if(frame.pointInformationMatrix().size() != 0) {
-	_pointInformationMatrix[k] = frame.pointInformationMatrix()[i];
-	_normalInformationMatrix[k] = frame.normalInformationMatrix()[i];
+      _points[k] = cloud.points()[i];
+      _normals[k] = cloud.normals()[i];
+      _stats[k] = cloud.stats()[i];
+      if(cloud.pointInformationMatrix().size() != 0) {
+	_pointInformationMatrix[k] = cloud.pointInformationMatrix()[i];
+	_normalInformationMatrix[k] = cloud.normalInformationMatrix()[i];
       }
-      if(frame.gaussians().size() != 0) {
-	_gaussians[k] = frame.gaussians()[i];
+      if(cloud.gaussians().size() != 0) {
+	_gaussians[k] = cloud.gaussians()[i];
       }
-      if(frame.traversabilityVector().size() != 0) {
-	_traversabilityVector[k] = frame.traversabilityVector()[i];
+      if(cloud.traversabilityVector().size() != 0) {
+	_traversabilityVector[k] = cloud.traversabilityVector()[i];
       }
     }
   }
 
-  void Frame::transformInPlace(const Eigen::Isometry3f& T){
+  void Cloud::transformInPlace(const Eigen::Isometry3f& T){
     Eigen::Matrix4f m = T.matrix();
     m.row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     if(m != Eigen::Matrix4f::Identity()) {

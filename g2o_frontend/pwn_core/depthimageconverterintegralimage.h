@@ -14,7 +14,7 @@ namespace pwn {
 				     NormalInformationMatrixCalculator *_normalInformationMatrixCalculator = 0);
     virtual ~DepthImageConverterIntegralImage() {}
     
-    virtual void compute(Frame &frame,
+    virtual void compute(Cloud &cloud,
 			 const DepthImage &depthImage, 
 			 const Eigen::Isometry3f &sensorOffset = Eigen::Isometry3f::Identity());
   };

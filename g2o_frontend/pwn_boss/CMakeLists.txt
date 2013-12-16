@@ -14,7 +14,7 @@ ADD_LIBRARY(pwn_boss
   cylindricalpointprojector.cpp cylindricalpointprojector.h
   depthimageconverter.cpp depthimageconverter.h
   depthimageconverterintegralimage.cpp depthimageconverterintegralimage.h
-  frame.cpp frame.h
+  cloud.cpp cloud.h
   informationmatrixcalculator.h informationmatrixcalculator.cpp
   linearizer.cpp linearizer.h
   merger.cpp merger.h

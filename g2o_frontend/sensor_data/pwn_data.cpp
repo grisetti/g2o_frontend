@@ -23,18 +23,18 @@ using namespace std;
 using namespace g2o;
 using namespace pwn;
 
-PWNData::PWNData(Frame *frame_) {
+PWNData::PWNData(Cloud *cloud_) {
   _filename = "";
-  _frame = frame_;
+  _cloud = cloud_;
   _originPose = Eigen::Isometry3f::Identity();
   _originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   _dataContainer = 0;
-  _frameModified = _frame;
+  _cloudModified = _cloud;
 }
 
 PWNData::~PWNData() {
-  if(_frame)		
-    delete _frame;
+  if(_cloud)		
+    delete _cloud;
 }
 
 //! read the data from a stream
@@ -42,8 +42,8 @@ bool PWNData::read(std::istream &is) {
   // Read filename
   is >> _filename;
 
-  // Update frame
-  _frame = 0;
+  // Update cloud
+  _cloud = 0;
   //update();
 
   return true;
@@ -54,32 +54,32 @@ bool PWNData::write(std::ostream &os) const {
   // Write filename
   os <<  _filename << " ";
 
-  // Write frame
+  // Write cloud
   writeOut();
 
   return true;
 }
 
 void PWNData::writeOut() const {
-  if(_frameModified && _frame) {
-    _frame->save(_filename.c_str(), _originPose, 1, true);
-    _frameModified = false;
+  if(_cloudModified && _cloud) {
+    _cloud->save(_filename.c_str(), _originPose, 1, true);
+    _cloudModified = false;
   }
 }
 
 void PWNData::update() {
-  if(!_frame) {
-    _frame = new Frame();
-    _frame->load(_originPose, _filename.c_str());
+  if(!_cloud) {
+    _cloud = new Cloud();
+    _cloud->load(_originPose, _filename.c_str());
     _originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-    _frameModified = false;
+    _cloudModified = false;
   }
 }
 
 void PWNData::release() {
-  if(_frame) {
-    delete _frame;
-    _frame = 0;
+  if(_cloud) {
+    delete _cloud;
+    _cloud = 0;
   }
 }
 
@@ -110,7 +110,7 @@ HyperGraphElementAction* PWNDataDrawAction::operator()(HyperGraph::HyperGraphEle
     return this;
   
   PWNData *that = static_cast<PWNData*>(element);
-  if(!that->frame())
+  if(!that->cloud())
     return this;
 
   glPushMatrix();
@@ -127,9 +127,9 @@ HyperGraphElementAction* PWNDataDrawAction::operator()(HyperGraph::HyperGraphEle
 
   glBegin(GL_POINTS);
   
-  for(size_t i = 0; i < that->frame()->points().size(); i += step)  {
-    Point point = that->frame()->points()[i];
-    Normal normal = that->frame()->normals()[i];
+  for(size_t i = 0; i < that->cloud()->points().size(); i += step)  {
+    Point point = that->cloud()->points()[i];
+    Normal normal = that->cloud()->normals()[i];
     glNormal3f(-normal.x(), -normal.y(), -normal.z());
     glVertex3f(point.x(), point.y(), point.z());
   }

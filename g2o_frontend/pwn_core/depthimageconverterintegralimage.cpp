@@ -12,7 +12,7 @@ namespace pwn {
 			pointInformationMatrixCalculator_, 
 			normalInformationMatrixCalculator_) {}
   
-  void DepthImageConverterIntegralImage::compute(Frame &frame,
+  void DepthImageConverterIntegralImage::compute(Cloud &cloud,
 						 const DepthImage &depthImage, 
 						 const Eigen::Isometry3f &sensorOffset) {    
     assert(_projector && "DepthImageConverterIntegralImage: missing _projector");
@@ -26,7 +26,7 @@ namespace pwn {
     assert(statsCalculator && "DepthImageConverterIntegralImage: _statsCalculator of non type StatsCalculatorIntegralImage");
 
     const float _normalWorldRadius = statsCalculator->worldRadius();
-    frame.clear();
+    cloud.clear();
     _projector->setImageSize(depthImage.rows, depthImage.cols);
     
     // Resizing the temporaries    
@@ -36,22 +36,22 @@ namespace pwn {
 
     // Unprojecting
     _projector->setTransform(Eigen::Isometry3f::Identity());
-    _projector->unProject(frame.points(), frame.gaussians(), _indexImage, depthImage);
+    _projector->unProject(cloud.points(), cloud.gaussians(), _indexImage, depthImage);
 
     // Computing the intervals
     _projector->projectIntervals(statsCalculator->intervalImage(), depthImage, _normalWorldRadius);
 
     // Compute stats
-    statsCalculator->compute(frame.normals(),
-			     frame.stats(),
-			     frame.points(),
+    statsCalculator->compute(cloud.normals(),
+			     cloud.stats(),
+			     cloud.points(),
 			     _indexImage);
 
     // Compute information matrices
-    _pointInformationMatrixCalculator->compute(frame.pointInformationMatrix(), frame.stats(), frame.normals());
-    _normalInformationMatrixCalculator->compute(frame.normalInformationMatrix(), frame.stats(), frame.normals());
+    _pointInformationMatrixCalculator->compute(cloud.pointInformationMatrix(), cloud.stats(), cloud.normals());
+    _normalInformationMatrixCalculator->compute(cloud.normalInformationMatrix(), cloud.stats(), cloud.normals());
 
-    frame.transformInPlace(sensorOffset);
+    cloud.transformInPlace(sensorOffset);
   }
 
 }
