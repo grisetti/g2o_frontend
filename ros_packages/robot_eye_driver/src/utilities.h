@@ -12,7 +12,7 @@ double deg2rad(double deg){
 Eigen::Vector4d polar2euclidean(ocular::ocular_rbe_obs_t obs){
 
   // az : rotation around z-axis (on this sensor it's considered positive in clockwise way)
-  // el : rotation around y-axis (a negative rotation means to look down (positive in counter-clockwise way))
+  // el : rotation around y-axis (a negative rotation means to look down (positive in counterclockwise way))
 
   double az = deg2rad(-obs.azimuth);
   double el = deg2rad(-obs.elevation);
