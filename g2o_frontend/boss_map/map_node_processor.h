@@ -1,5 +1,4 @@
-#ifndef _BOSS_MAP_NODE_PROCESSOR_H_
-#define _BOSS_MAP_NODE_PROCESSOR_H_
+#pragma once
 
 #include "map_manager.h"
 #include "sensing_frame_node.h"
@@ -37,7 +36,7 @@ namespace boss_map {
     }
     virtual void process(Serializable* s);
   protected:
-    virtual void processNode(MapNode* node) = 0;
+    virtual void processNode(MapNode* node);
     MapManager* _manager;
     RobotConfiguration* _config;
   };
@@ -60,7 +59,7 @@ namespace boss_map {
   protected:
     MapNode* _previousNode;
     MapNodeBinaryRelation* _lastOdometry;
+    Eigen::Isometry3d _previousNodeTransform;
   };
 
 }
-#endif

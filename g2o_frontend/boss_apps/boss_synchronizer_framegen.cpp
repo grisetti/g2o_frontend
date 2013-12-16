@@ -159,7 +159,6 @@ int main(int argc, char** argv) {
 
   MapManager* manager = new MapManager();
   ser.writeObject(*manager);
-
   
   SensingFrameNodeMaker* nodeMaker = new SensingFrameNodeMaker();
   nodeMaker->init(manager,conf);

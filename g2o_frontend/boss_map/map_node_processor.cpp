@@ -1,4 +1,5 @@
 #include "map_node_processor.h"
+#include "g2o_frontend/basemath/bm_se3.h"
 
 namespace boss_map {
   using namespace boss;
@@ -15,6 +16,10 @@ namespace boss_map {
     MapNodeProcessor::MapNodeProcessor(MapManager* manager_,   RobotConfiguration* config_) {
       _manager = manager_;
       _config = config_;
+    }
+
+    void MapNodeProcessor::processNode(MapNode* n) {
+      put(n);
     }
 
   ImuRelationAdder::ImuRelationAdder(MapManager* manager_,   RobotConfiguration* config_): 
@@ -69,19 +74,21 @@ namespace boss_map {
       MapNodeBinaryRelation* rel = new MapNodeBinaryRelation(_manager);
       rel->nodes()[0]=_previousNode;
       rel->nodes()[1]=node_;
-      rel->setTransform(_previousNode->transform().inverse()*node_->transform());
+      rel->setTransform(_previousNodeTransform.inverse()*node_->transform());
       Eigen::Matrix<double,6,6> info;
       info.setIdentity();
       info.block<3,3>(0,0)*=100;
       info.block<3,3>(3,3)*=1000;
 
       rel->setInformationMatrix(Eigen::Matrix<double,6,6>::Identity());
+      cerr << "gOdom: " << rel << " transform:" << t2v(rel->transform()).transpose() << endl;
       _manager->addRelation(rel);
       put(rel);
       //cerr << "Odom added (" << _previousNode << ", " << node_ << ")" << endl;
       _lastOdometry = rel;
     }
     _previousNode = node_;
+    _previousNodeTransform = node_->transform();
   }
 
 }

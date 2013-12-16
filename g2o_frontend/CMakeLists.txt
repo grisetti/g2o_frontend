@@ -31,6 +31,7 @@ if(BUILD_PWN)
   if(PCL_FOUND)
     ADD_SUBDIRECTORY(pwn_utils)
   endif(PCL_FOUND)
+  ADD_SUBDIRECTORY(pwn_tracker2)
 endif(BUILD_PWN)
 
 if(BUILD_LINE_SLAM)
