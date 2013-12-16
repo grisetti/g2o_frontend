@@ -31,7 +31,7 @@ namespace pwn {
     // Resize the output images
     indexImage.create(maxWidth, totalHeight);
     depthImage.create(maxWidth, totalHeight);
-    depthImage.setTo(0.0f);
+    depthImage.setTo(std::numeric_limits<float>::max());
     indexImage.setTo(-1);
   
     int columnOffset = 0;

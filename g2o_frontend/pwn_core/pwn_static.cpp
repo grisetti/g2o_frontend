@@ -51,7 +51,7 @@ namespace pwn {
     int size = src.rows * src.cols;
     const unsigned short* send = sptr + size;
     dest.create(src.rows,src.cols, CV_32FC1);
-    dest.setTo(cv::Scalar(std::numeric_limits<float>::max()));
+    dest.setTo(cv::Scalar(0.0f));
     float* dptr = (float*) dest.data;
     while (sptr<send){
       if (*sptr)
