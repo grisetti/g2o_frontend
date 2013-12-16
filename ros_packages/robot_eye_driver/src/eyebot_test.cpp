@@ -34,7 +34,7 @@ void printandwriteLaserData(){
 
     /// printing the laser data
     //to prevent possible later callbacks
-    _mutex_meas.lock();
+//    _mutex_meas.lock();
 //    for(unsigned int i = 0; i < _measurements.size(); i++) {
 //        ocular::ocular_rbe_obs_t meas = _measurements[i];
 //        cout << "azim: " << meas.azimuth << ",\telev: " << meas.elevation << ",\trange: " << meas.range << ",\tintensity: " << meas.intensity << endl;
@@ -63,12 +63,12 @@ void printandwriteLaserData(){
     }
 
     cout << "Saving " << cloud.points.size() << " data points to outfilename.c_str()." << endl;
-    pcl::io::savePCDFileASCII(/*"Eyebot_pcd.pcd"*/outfilename.c_str(), cloud);
+    pcl::io::savePCDFileASCII(outfilename.c_str(), cloud);
 
     plotting.flush();
     plotting.close();
 
-    _mutex_meas.unlock();
+//    _mutex_meas.unlock();
 }
 
 void quit(){
