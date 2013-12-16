@@ -38,7 +38,7 @@ namespace pwn {
 
     indexImage.create(_imageRows, _imageCols);
     depthImage.create(indexImage.rows, indexImage.cols);
-    depthImage.setTo(cv::Scalar(0.0f));
+    depthImage.setTo(std::numeric_limits<float>::max());
     indexImage.setTo(-1);
     const Point *point = &points[0];
     for (size_t i = 0; i < points.size(); i++, point++) {
