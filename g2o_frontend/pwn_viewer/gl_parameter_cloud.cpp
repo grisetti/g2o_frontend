@@ -1,8 +1,8 @@
-#include "gl_parameter_frame.h"
+#include "gl_parameter_cloud.h"
 
 namespace pwn {
 
-  GLParameterFrame::GLParameterFrame(int step) : GLParameter() {
+  GLParameterCloud::GLParameterCloud(int step) : GLParameter() {
     _parameterPoints = new GLParameterPoints(1.0f, Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
     _parameterNormals = new GLParameterNormals(1.0f, Eigen::Vector4f(0.0f, 0.0f, 1.0f, 1.0f), 0.0f);
     _parameterCovariances = new GLParameterCovariances(1.0f, 
@@ -16,7 +16,7 @@ namespace pwn {
     _parameterCorrespondences->setStep(step);  
   };
 
-  GLParameterFrame::~GLParameterFrame() {
+  GLParameterCloud::~GLParameterCloud() {
     delete _parameterPoints;
     delete _parameterNormals;
     delete _parameterCovariances;    

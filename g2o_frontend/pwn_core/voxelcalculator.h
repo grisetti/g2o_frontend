@@ -1,6 +1,6 @@
 #pragma once
 
-#include "frame.h"
+#include "cloud.h"
 
 #include <map>
 
@@ -56,8 +56,8 @@ namespace pwn {
     inline float resolution() const { return _resolution; }
     inline void setResolution(float resolution_) { _resolution = resolution_; }
     
-    void compute(Frame &frame, float resolution);
-    void compute(Frame &frame);
+    void compute(Cloud &cloud, float resolution);
+    void compute(Cloud &cloud);
 
   protected:
     float _resolution;

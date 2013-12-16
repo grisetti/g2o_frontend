@@ -8,12 +8,12 @@
 
 namespace pwn {
 
-  class GLParameterFrame : public GLParameter {
+  class GLParameterCloud : public GLParameter {
   public: 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   
-    GLParameterFrame(int step = 1);
-    virtual ~GLParameterFrame();
+    GLParameterCloud(int step = 1);
+    virtual ~GLParameterCloud();
   
     virtual void applyGLParameter() {}
 

@@ -9,7 +9,7 @@ ADD_LIBRARY(pwn_viewer
   drawable.cpp drawable.h
   drawable_correspondences.cpp drawable_correspondences.h
   drawable_covariances.cpp drawable_covariances.h
-  drawable_frame.cpp drawable_frame.h
+  drawable_cloud.cpp drawable_cloud.h
   drawable_normals.cpp drawable_normals.h
   drawable_points.cpp drawable_points.h
   drawable_trajectory.cpp drawable_trajectory.h
@@ -17,7 +17,7 @@ ADD_LIBRARY(pwn_viewer
   gl_parameter.cpp gl_parameter.h
   gl_parameter_correspondences.cpp gl_parameter_correspondences.h
   gl_parameter_covariances.cpp gl_parameter_covariances.h
-  gl_parameter_frame.cpp gl_parameter_frame.h 
+  gl_parameter_cloud.cpp gl_parameter_cloud.h 
   gl_parameter_normals.cpp gl_parameter_normals.h
   gl_parameter_points.cpp gl_parameter_points.h
   gl_parameter_trajectory.cpp gl_parameter_trajectory.h 

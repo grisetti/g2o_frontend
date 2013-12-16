@@ -1,6 +1,6 @@
 #pragma once
 
-#include "frame.h"
+#include "cloud.h"
 #include "pointprojector.h"
 #include "statscalculator.h"
 #include "informationmatrixcalculator.h"
@@ -17,7 +17,7 @@ namespace pwn {
 			NormalInformationMatrixCalculator *_normalInformationMatrixCalculator = 0);
     virtual ~DepthImageConverter() {}
 
-    virtual void compute(Frame &frame,
+    virtual void compute(Cloud &cloud,
 			 const DepthImage &depthImage, 
 			 const Eigen::Isometry3f &sensorOffset = Eigen::Isometry3f::Identity());
 

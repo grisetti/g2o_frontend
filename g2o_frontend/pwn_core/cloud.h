@@ -6,12 +6,12 @@
 
 namespace pwn {
 
-  class Frame {
+  class Cloud {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-    Frame() {}
-    virtual ~Frame() {}
+    Cloud() {}
+    virtual ~Cloud() {}
 
     inline const PointVector& points() const { return _points; }
     inline PointVector& points() { return _points; }
@@ -41,7 +41,7 @@ namespace pwn {
     bool save(std::ostream &os, Eigen::Isometry3f T = Eigen::Isometry3f::Identity(), int step = 1, bool binary = true);
     
     void clear();
-    void add(Frame frame, const Eigen::Isometry3f &T = Eigen::Isometry3f::Identity());
+    void add(Cloud cloud, const Eigen::Isometry3f &T = Eigen::Isometry3f::Identity());
     
     void transformInPlace(const Eigen::Isometry3f& T);
 

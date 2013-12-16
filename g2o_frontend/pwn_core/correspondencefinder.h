@@ -1,6 +1,6 @@
 #pragma once
 
-#include "frame.h"
+#include "cloud.h"
 
 namespace pwn {
 
@@ -61,7 +61,7 @@ namespace pwn {
       }
     }
 
-    void compute(const Frame &referenceScene, const Frame &currentScene, Eigen::Isometry3f T);
+    void compute(const Cloud &referenceScene, const Cloud &currentScene, Eigen::Isometry3f T);
 
   protected:
     float _squaredThreshold;
