@@ -4,30 +4,11 @@
 
 namespace pwn {
 
-  class MultiPointProjector : public PointProjector {
-    struct ChildProjectorInfo {
-      EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-      PointProjector *pointProjector;
-      Eigen::Isometry3f sensorOffset;
-      DepthImage depthImage;
-      IntImage indexImage;
-
-      ChildProjectorInfo(PointProjector *pointProjector_,
-			 Eigen::Isometry3f sensorOffset_ = Eigen::Isometry3f::Identity(),
-			 int width_ = 0, int height_ = 0) {
-	pointProjector = pointProjector_;
-	sensorOffset = sensorOffset_;
-	pointProjector->setImageSize(width_, height_);
-	if(indexImage.rows != width_ || indexImage.cols != height_)
-	  indexImage.create(width_, height_);    
-      }
-      virtual ~ChildProjectorInfo() {}
-    };  
-
+  class MultiPointProjector : virtual public PointProjector {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-  MultiPointProjector() : PointProjector() {}
+    MultiPointProjector() : PointProjector() {}
     virtual ~MultiPointProjector() {}
 
     void addPointProjector(PointProjector *pointProjector_, 
@@ -64,8 +45,7 @@ namespace pwn {
   
     virtual void projectIntervals(IntImage& intervalImage, 
 				  const DepthImage &depthImage, 
-				  const float worldRadius,
-				  const bool blackBorders = false) const;
+				  const float worldRadius) const;
 
     //virtual inline int projectInterval(const int x, const int y, const float d, const float worldRadius) const;
 
@@ -78,6 +58,25 @@ namespace pwn {
     virtual void scale(float scalingFactor);
 
   protected:
+    struct ChildProjectorInfo {
+      EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+      PointProjector *pointProjector;
+      Eigen::Isometry3f sensorOffset;
+      DepthImage depthImage;
+      IntImage indexImage;
+
+      ChildProjectorInfo(PointProjector *pointProjector_,
+			 Eigen::Isometry3f sensorOffset_ = Eigen::Isometry3f::Identity(),
+			 int width_ = 0, int height_ = 0) {
+	pointProjector = pointProjector_;
+	sensorOffset = sensorOffset_;
+	pointProjector->setImageSize(width_, height_);
+	if(indexImage.rows != width_ || indexImage.cols != height_)
+	  indexImage.create(width_, height_);    
+      }
+      virtual ~ChildProjectorInfo() {}
+    };  
+
     mutable std::vector<ChildProjectorInfo> _pointProjectors;
   };
 

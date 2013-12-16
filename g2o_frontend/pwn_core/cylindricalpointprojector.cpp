@@ -31,18 +31,6 @@ namespace pwn {
     _imageCols *= scalingFactor;
   }
 
-  inline bool CylindricalPointProjector::project(int &x, int &y, float &f, const Point &p) const {
-    return _project(x, y, f, p);
-  }
-
-  inline bool CylindricalPointProjector::unProject(Point &p, const int x, const int y, const float d) const {
-    return _unProject(p, x, y, d);
-  }
-
-  inline int CylindricalPointProjector::projectInterval(const int x, const int y, const float d, const float worldRadius) const {
-    return _projectInterval(x, y, d, worldRadius);
-  }
-
   void CylindricalPointProjector::project(IntImage &indexImage,
 					  DepthImage &depthImage, 
 					  const PointVector &points)  {
@@ -50,7 +38,7 @@ namespace pwn {
 
     indexImage.create(_imageRows, _imageCols);
     depthImage.create(indexImage.rows, indexImage.cols);
-    depthImage.setTo(cv::Scalar(0.0f));
+    depthImage.setTo(std::numeric_limits<float>::max());
     indexImage.setTo(-1);
     const Point *point = &points[0];
     for (size_t i = 0; i < points.size(); i++, point++) {
@@ -129,8 +117,7 @@ namespace pwn {
 
     void CylindricalPointProjector::projectIntervals(IntImage &intervalImage, 
 						     const DepthImage &depthImage, 
-						     const float worldRadius,
-						     const bool) const {
+						     const float worldRadius) const {
       assert(depthImage.rows > 0 && depthImage.cols > 0 && "CylindricalPointProjector: Depth image has zero dimensions");
 
       intervalImage.create(depthImage.rows, depthImage.cols);

@@ -15,8 +15,8 @@ namespace pwn {
     _projector = 0;
     _linearizer = 0;
     _correspondenceFinder = 0;
-    _referenceFrame = 0;
-    _currentFrame = 0;
+    _referenceCloud = 0;
+    _currentCloud = 0;
     _outerIterations = 10;
     _innerIterations = 1;
     _T = Eigen::Isometry3f::Identity();
@@ -52,8 +52,8 @@ namespace pwn {
     assert(_projector && "Aligner: missing _projector");
     assert(_linearizer && "Aligner: missing _linearizer");
     assert(_correspondenceFinder && "Aligner: missing _correspondenceFinder");
-    assert(_referenceFrame && "Aligner: missing _referenceFrame");
-    assert(_currentFrame && "Aligner: missing _currentFrame");
+    assert(_referenceCloud && "Aligner: missing _referenceCloud");
+    assert(_currentCloud && "Aligner: missing _currentCloud");
 
     struct timeval tvStart, tvEnd;
     gettimeofday(&tvStart, 0);
@@ -62,10 +62,9 @@ namespace pwn {
     _projector->setTransform(_currentSensorOffset);
     _projector->project(_correspondenceFinder->currentIndexImage(),
 			_correspondenceFinder->currentDepthImage(),
-			_currentFrame->points());
+			_currentCloud->points());
     _T = _initialGuess;
-
-    
+        
     for(int i = 0; i < _outerIterations; i++) {
       /************************************************************************
        *                         Correspondence Computation                   *
@@ -76,10 +75,10 @@ namespace pwn {
       _projector->setTransform(_T * _referenceSensorOffset);
       _projector->project(_correspondenceFinder->referenceIndexImage(),
 			  _correspondenceFinder->referenceDepthImage(),
-			  _referenceFrame->points());
+			  _referenceCloud->points());
     
       // Correspondences computation.  
-      _correspondenceFinder->compute(*_referenceFrame, *_currentFrame, _T.inverse());
+      _correspondenceFinder->compute(*_referenceCloud, *_currentCloud, _T.inverse());
  
       /************************************************************************
        *                            Alignment                                 *

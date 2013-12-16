@@ -1,5 +1,4 @@
 #include "merger.h"
-#include <opencv2/highgui/highgui.hpp>
 
 namespace pwn {
 
@@ -13,7 +12,7 @@ namespace pwn {
     _collapsedIndices.resize(0);
   }
 
-  void Merger::merge(Frame *frame, Eigen::Isometry3f transform) {
+  void Merger::merge(Cloud *cloud, Eigen::Isometry3f transform) {
     assert(_indexImage.rows > 0 && _indexImage.cols > 0 && "Merger: _indexImage has zero size");  
     assert(_depthImageConverter  && "Merger: missing _depthImageConverter");  
     assert(_depthImageConverter->projector()  && "Merger: missing projector in _depthImageConverter");  
@@ -22,7 +21,7 @@ namespace pwn {
     pointProjector->setTransform(transform);
     pointProjector->project(_indexImage, 
 			    _depthImage, 
-			    frame->points());
+			    cloud->points());
       
     // Scan all the points, 
     // if they fall in a cell not with -1, 
@@ -36,14 +35,14 @@ namespace pwn {
     // set the target accumulator to i;
     int target = 0;
     int distance = 0;
-    _collapsedIndices.resize(frame->points().size());
+    _collapsedIndices.resize(cloud->points().size());
     std::fill(_collapsedIndices.begin(), _collapsedIndices.end(), -1);
     
     int killed = 0;
     int currentIndex = 0;
-    for(size_t i = 0; i < frame->points().size(); currentIndex++ ,i++) {
-      const Point currentPoint = frame->points()[i];
-      const Normal currentNormal = frame->normals()[i];
+    for(size_t i = 0; i < cloud->points().size(); currentIndex++ ,i++) {
+      const Point currentPoint = cloud->points()[i];
+      const Normal currentNormal = cloud->normals()[i];
     
       int r = -1, c = -1;
       float depth = 0.0f;
@@ -61,14 +60,14 @@ namespace pwn {
 	target++;
 	continue;
       }
-      const Normal &targetNormal = frame->normals().at(targetIndex);
+      const Normal &targetNormal = cloud->normals().at(targetIndex);
 
       if(targetIndex == currentIndex) {
 	_collapsedIndices[currentIndex] = currentIndex;
       } 
       else if(fabs(depth - targetZ) < _distanceThreshold && currentNormal.dot(targetNormal) > _normalThreshold) {
-	Gaussian3f &targetGaussian = frame->gaussians()[targetIndex];
-	Gaussian3f &currentGaussian = frame->gaussians()[currentIndex];
+	Gaussian3f &targetGaussian = cloud->gaussians()[targetIndex];
+	Gaussian3f &currentGaussian = cloud->gaussians()[currentIndex];
 	targetGaussian.addInformation(currentGaussian);
 	_collapsedIndices[currentIndex] = targetIndex;
 	killed++;
@@ -88,35 +87,35 @@ namespace pwn {
     for(size_t i = 0; i < _collapsedIndices.size(); i++) {
       int collapsedIndex = _collapsedIndices[i];
       if(collapsedIndex == (int)i) {
-	frame->points()[i].head<3>() = frame->gaussians()[i].mean();
+	cloud->points()[i].head<3>() = cloud->gaussians()[i].mean();
       }
       if(collapsedIndex < 0 || collapsedIndex == (int)i) {
-	frame->points()[k] = frame->points()[i];
-	frame->normals()[k] = frame->normals()[i];
-	frame->stats()[k] = frame->stats()[i];
-	frame->pointInformationMatrix()[k] = frame->pointInformationMatrix()[i];
-	frame->normalInformationMatrix()[k] = frame->normalInformationMatrix()[i];
-	frame->gaussians()[k] = frame->gaussians()[i];
+	cloud->points()[k] = cloud->points()[i];
+	cloud->normals()[k] = cloud->normals()[i];
+	cloud->stats()[k] = cloud->stats()[i];
+	cloud->pointInformationMatrix()[k] = cloud->pointInformationMatrix()[i];
+	cloud->normalInformationMatrix()[k] = cloud->normalInformationMatrix()[i];
+	cloud->gaussians()[k] = cloud->gaussians()[i];
 	k++;
       } 
       else {
 	murdered ++;
       }
     }    
-    int originalSize = frame->points().size();
+    int originalSize = cloud->points().size();
     
     // Kill the leftover points
-    frame->points().resize(k);
-    frame->normals().resize(k);
-    frame->stats().resize(k);
-    frame->pointInformationMatrix().resize(k);
-    frame->normalInformationMatrix().resize(k);
+    cloud->points().resize(k);
+    cloud->normals().resize(k);
+    cloud->stats().resize(k);
+    cloud->pointInformationMatrix().resize(k);
+    cloud->normalInformationMatrix().resize(k);
     std::cerr << "Number of suppressed points: " << murdered  << std::endl;
     std::cerr << "Resized cloud from: " << originalSize << " to " << k << " points" <<std::endl;
     
     // Recompute the normals
-    // pointProjector->project(_indexImage, _depthImage, frame->points());
-    // _depthImageConverter->compute(*frame, _depthImage, transform);
+    // pointProjector->project(_indexImage, _depthImage, cloud->points());
+    // _depthImageConverter->compute(*cloud, _depthImage, transform);
   }
 
 }

@@ -9,25 +9,30 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 LINK_DIRECTORIES(${OpenCV_LIBRARY_DIRS})
 
 ADD_LIBRARY(pwn_core
+  pwn_typedefs.h
+  pwn_static.cpp pwn_static.h
   aligner.cpp aligner.h
   correspondencefinder.cpp correspondencefinder.h
   cylindricalpointprojector.cpp cylindricalpointprojector.h
   depthimageconverter.cpp depthimageconverter.h
   depthimageconverterintegralimage.cpp depthimageconverterintegralimage.h
-  frame.cpp frame.h
+  cloud.cpp cloud.h
   gaussian3.cpp gaussian3.h
+  homogeneousvector4f.h
+  informationmatrix.h
   informationmatrixcalculator.h informationmatrixcalculator.cpp
   linearizer.cpp linearizer.h
   merger.cpp merger.h
   multipointprojector.cpp multipointprojector.h 
   pinholepointprojector.cpp pinholepointprojector.h
+  pointaccumulator.h
   pointintegralimage.cpp pointintegralimage.h
   pointprojector.cpp pointprojector.h
   se3_prior.cpp se3_prior.h
+  stats.h
   statscalculator.cpp statscalculator.h
   statscalculatorintegralimage.cpp statscalculatorintegralimage.h
   voxelcalculator.cpp voxelcalculator.h
 )
-
 SET_TARGET_PROPERTIES(pwn_core PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn_core)
 TARGET_LINK_LIBRARIES(pwn_core ${OpenCV_LIBS})

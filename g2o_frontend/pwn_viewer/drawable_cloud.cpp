@@ -1,34 +1,34 @@
-#include "drawable_frame.h"
+#include "drawable_cloud.h"
 #include "g2o/stuff/opengl_primitives.h"
 
 using namespace g2o;
 
 namespace pwn {
 
-  DrawableFrame::DrawableFrame(const Eigen::Isometry3f &transformation_, GLParameter *parameter_, 
-			       Frame *frame_) : Drawable(transformation_) {
+  DrawableCloud::DrawableCloud(const Eigen::Isometry3f &transformation_, GLParameter *parameter_, 
+			       Cloud *cloud_) : Drawable(transformation_) {
     setParameter(parameter_);
-    _frame = frame_;
+    _cloud = cloud_;
     _drawablePoints = 0;
     _drawableCorrespondences = 0;
     _drawableCovariances = 0;
     _drawableCorrespondences = 0;
-    _previousDrawableFrame = 0;
+    _previousDrawableCloud = 0;
     constructDrawableObjects();
   }
 
-  bool DrawableFrame::setParameter(GLParameter *parameter_) {
-    GLParameterFrame *frameParameter = (GLParameterFrame*)parameter_;
-    if(frameParameter == 0) {
+  bool DrawableCloud::setParameter(GLParameter *parameter_) {
+    GLParameterCloud *cloudParameter = (GLParameterCloud*)parameter_;
+    if(cloudParameter == 0) {
       _parameter = 0;
       return false;
     }
-    _parameter = frameParameter;
+    _parameter = cloudParameter;
     return true;
   }
 
-  void DrawableFrame::clearDrawableObjects() {
-    if (! _frame)
+  void DrawableCloud::clearDrawableObjects() {
+    if (! _cloud)
       return;
     if(_drawablePoints)
       delete _drawablePoints;
@@ -44,29 +44,29 @@ namespace pwn {
     _drawableCorrespondences = 0;
   }
 
-  void DrawableFrame::constructDrawableObjects(){
-    if(_frame) {
+  void DrawableCloud::constructDrawableObjects(){
+    if(_cloud) {
       _drawablePoints = new DrawablePoints(Isometry3f::Identity(), 
-					   (GLParameter*)_parameter->parameterPoints(), &_frame->points(), &_frame->normals(), &_frame->traversabilityVector());
+					   (GLParameter*)_parameter->parameterPoints(), &_cloud->points(), &_cloud->normals(), &_cloud->traversabilityVector());
       _drawableNormals = new DrawableNormals(Isometry3f::Identity(), 
-					     (GLParameter*)_parameter->parameterNormals(), &_frame->points(), &_frame->normals());
+					     (GLParameter*)_parameter->parameterNormals(), &_cloud->points(), &_cloud->normals());
       _drawableCovariances = new DrawableCovariances(Isometry3f::Identity(), 
-						     (GLParameter*)_parameter->parameterCovariances(), &_frame->stats());
+						     (GLParameter*)_parameter->parameterCovariances(), &_cloud->stats());
       _drawableCorrespondences = new DrawableCorrespondences();
       _drawableCorrespondences->setParameter((GLParameter*)_parameter->parameterCorrespondences());
     }
   }
 
-  void DrawableFrame::setFrame(Frame *f) {
-    if(f && f != _frame) {
+  void DrawableCloud::setCloud(Cloud *f) {
+    if(f && f != _cloud) {
       clearDrawableObjects();
-      _frame = f;
+      _cloud = f;
       constructDrawableObjects();
     }
   }
 
-  void DrawableFrame::draw() {
-    if(_parameter->show() && _frame) {
+  void DrawableCloud::draw() {
+    if(_parameter->show() && _cloud) {
       glPushMatrix();
       glMultMatrixf(_transformation.data());
       if(_drawablePoints)

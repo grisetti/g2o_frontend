@@ -3,6 +3,7 @@
 
 #include "map_core.h"
 #include "robot_configuration.h"
+#include "stream_processor.h"
 
 namespace boss_map {
   using namespace boss;
@@ -38,17 +39,18 @@ namespace boss_map {
     std::vector<BaseSensorData*> _sensorDatas;
   };
 
-  class SensingFrameNodeMaker {
+  class SensingFrameNodeMaker: public StreamProcessor {
   public:
     SensingFrameNodeMaker();
     void init(MapManager* manager_, RobotConfiguration* config_);
-    SensingFrameNode* processData(BaseSensorData* data);
-
+    virtual void process(Serializable* s);
   protected:
+    SensingFrameNode* processData(BaseSensorData* data);
     MapManager* _mapManager;
     RobotConfiguration* _config;
     SensingFrameNode* _currentSensingFrameNode;
     BaseSensorData* _previousData;
+    int _seq;
   };
 
 }

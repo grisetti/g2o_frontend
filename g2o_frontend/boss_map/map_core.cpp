@@ -7,16 +7,32 @@ namespace boss_map {
   using namespace boss;
   using namespace std;
 
-  /***************************************** MapNode *****************************************/
-  MapNode::MapNode (MapManager* manager_,int id, IdContext* context) : Identifiable(id, context) {
+  MapItem::MapItem(MapManager* manager_, int id, IdContext* context): Identifiable(id, context){
     _manager = manager_;
+  }
+  
+
+  void MapItem::serialize(ObjectData& data, IdContext& context){
+    Identifiable::serialize(data,context);
+    data.setPointer("manager", _manager);
+  }
+  
+  void MapItem::deserialize(ObjectData& data, IdContext& context){
+    Identifiable::deserialize(data,context);
+    data.getReference("manager").bind(_manager);
+  }
+
+
+  /***************************************** MapNode *****************************************/
+  MapNode::MapNode (MapManager* manager_,int id, IdContext* context) : MapItem(manager_, id, context) {
     _level = 0;
+    _seq = 0;
   }
   
   //! boss serialization
   void MapNode::serialize(ObjectData& data, IdContext& context){
-    Identifiable::serialize(data,context);
-    data.setPointer("manager", _manager);
+    MapItem::serialize(data,context);
+    data.setInt("seq", _seq);
     data.setInt("level", _level);
     Eigen::Quaterniond q(_transform.rotation());
     q.coeffs().toBOSS(data,"rotation");
@@ -25,7 +41,8 @@ namespace boss_map {
   
   //! boss deserialization
   void MapNode::deserialize(ObjectData& data, IdContext& context){
-    Identifiable::deserialize(data,context);
+    MapItem::deserialize(data,context);
+    _seq = data.getInt("seq");
     data.getReference("manager").bind(_manager);
     _level = data.getInt("level");
     Eigen::Quaterniond q;
@@ -136,15 +153,13 @@ namespace boss_map {
      In either case, this class should be specialized to retain the information
      about the specific result (e.g. number of inliers and so on).
    */
-  MapNodeRelation::MapNodeRelation (MapManager* manager_, int id, IdContext* context): Identifiable(id,context){
-    _manager=manager_;
+  MapNodeRelation::MapNodeRelation (MapManager* manager_, int id, IdContext* context): MapItem(manager_, id,context){
     _generator = 0;
     _owner = 0;
   }
   
   void MapNodeRelation::serialize(ObjectData& data, IdContext& context) {
-    Identifiable::serialize(data,context);
-    data.setPointer("manager", _manager);
+    MapItem::serialize(data,context);
     data.setPointer("owner", _owner);
     data.setPointer("generator", _generator);
     ArrayData* adata = new ArrayData;
@@ -156,8 +171,7 @@ namespace boss_map {
   
   void MapNodeRelation::deserialize(ObjectData& data, IdContext& context){
     //cerr << __PRETTY_FUNCTION__ << endl;
-    Identifiable::deserialize(data,context);
-    data.getReference("manager").bind(_manager);
+    MapItem::deserialize(data,context);
     data.getReference("owner").bind(_owner);
     data.getReference("generator").bind(_generator);
     // cerr << "manager: " << _manager << endl;

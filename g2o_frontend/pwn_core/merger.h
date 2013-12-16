@@ -2,7 +2,7 @@
 
 #include "pinholepointprojector.h"
 #include "depthimageconverter.h"
-#include "frame.h"
+#include "cloud.h"
 
 namespace pwn {
 
@@ -31,7 +31,7 @@ namespace pwn {
       _depthImage.create(r, c);
     }
 
-    void merge(Frame *frame, Eigen::Isometry3f transform = Eigen::Isometry3f::Identity());
+    void merge(Cloud *cloud, Eigen::Isometry3f transform = Eigen::Isometry3f::Identity());
     
   protected:
     float _distanceThreshold;

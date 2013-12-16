@@ -4,7 +4,7 @@
 
 namespace pwn {
 
-  class DepthImageConverterIntegralImage : public DepthImageConverter {
+  class DepthImageConverterIntegralImage : virtual public DepthImageConverter {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     
@@ -14,7 +14,7 @@ namespace pwn {
 				     NormalInformationMatrixCalculator *_normalInformationMatrixCalculator = 0);
     virtual ~DepthImageConverterIntegralImage() {}
     
-    virtual void compute(Frame &frame,
+    virtual void compute(Cloud &cloud,
 			 const DepthImage &depthImage, 
 			 const Eigen::Isometry3f &sensorOffset = Eigen::Isometry3f::Identity());
   };

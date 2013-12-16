@@ -1,8 +1,10 @@
 #include "sensing_frame_node.h"
 #include "map_manager.h"
 #include <stdexcept>
+#include <iostream>
 
 namespace boss_map {
+  using namespace std;
   using namespace boss;
   /***************************************** SensingFrame *****************************************/
 
@@ -39,6 +41,7 @@ namespace boss_map {
     _mapManager = 0;
     _config = 0;
     _currentSensingFrameNode = 0;
+    _seq = 0;
   }
 
   void SensingFrameNodeMaker::init(MapManager* manager_, RobotConfiguration* config_){
@@ -48,12 +51,23 @@ namespace boss_map {
     _previousData = 0;
   }
 
+  void SensingFrameNodeMaker::process(Serializable* s){
+    put(s);
+    BaseSensorData* sdata = dynamic_cast<BaseSensorData*>(s);
+    if (sdata) {
+      SensingFrameNode* n = processData(sdata);
+      if (n)
+	put(n);
+    }
+  }
+
   SensingFrameNode* SensingFrameNodeMaker::processData(BaseSensorData* data){
     SensingFrameNode * returned = 0;
     if (!_previousData || _previousData->robotReferenceFrame() != data->robotReferenceFrame()){
       // new buddy, push the old one
       returned = _currentSensingFrameNode;
       _currentSensingFrameNode = new SensingFrameNode(_mapManager);
+      _currentSensingFrameNode->setSeq(_seq++);
       _currentSensingFrameNode->setTransform(data->robotReferenceFrame()->transform());
       _mapManager->addNode(_currentSensingFrameNode);
       //cerr << "New Frame created" << _currentSensingFrameNode << endl;

@@ -1,5 +1,4 @@
-#ifndef _PWN_CLOSER_H_
-#define _PWN_CLOSER_H_
+#pragma once
 
 #include "opencv2/highgui/highgui.hpp"
 #include "g2o_frontend/boss_map/reference_frame.h"
@@ -8,10 +7,10 @@
 #include "g2o_frontend/pwn_core/depthimageconverter.h"
 #include "g2o_frontend/pwn_core/aligner.h"
 #include "g2o_frontend/boss_map_building/boss_map_g2o_reflector.h"
+#include "g2o_frontend/boss_map_building/map_closer.h"
 #include "g2o_frontend/boss_map/map_utils.h"
 #include "pwn_tracker.h"
-#include "map_g2o_wrapper.h"
-
+#include "g2o_frontend/boss_map_building/map_g2o_wrapper.h"
 
 namespace pwn_tracker {
   using namespace std;
@@ -21,16 +20,11 @@ namespace pwn_tracker {
   using namespace boss_map_building;
   using namespace pwn_tracker;
   
-  struct PwnCloserRelation: public PwnTrackerRelation {
+  struct PwnCloserRelation: public PwnTrackerRelation, ClosureInfo {
     PwnCloserRelation(MapManager* manager=0, int id=-1, IdContext* context = 0);
     virtual void serialize(ObjectData& data, IdContext& context);
     virtual void deserialize(ObjectData& data, IdContext& context);
 
-    // status
-    bool accepted;
-    int consensusCumInlier;
-    int consensusCumOutlierTimes;
-    int consensusTimeChecked;
 
     // matching result parameters
     float normalDifference;
@@ -42,7 +36,7 @@ namespace pwn_tracker {
     cv::Mat  diffRegistered;
   };
 
-  class PwnCloser{
+  class PwnCloser: public boss_map_building::MapCloser, public PwnMatcherBase {
   public:
 
     PwnCloser(pwn::Aligner* aligner_, 
@@ -50,64 +44,38 @@ namespace pwn_tracker {
 	      MapManager* manager_,
 	      PwnCache* cache_);
     
-    inline pwn::Aligner* aligner() { return _aligner;}
+    /*inline pwn::Aligner* aligner() { return _aligner;}
     inline void setAligner(pwn::Aligner* aligner_) { _aligner=aligner_;}
 
     inline pwn::DepthImageConverter* converter() { return _converter;}
     inline void setConverter(pwn::DepthImageConverter* converter_) { _converter=converter_; updateCache();}
-
+    */
     inline boss_map::PoseAcceptanceCriterion* criterion() {return _criterion;}
     void setCriterion(boss_map::PoseAcceptanceCriterion* criterion_) { _criterion= criterion_;}
 
-    inline int scale() const {return _scale;}
-    inline void setScale(int scale_) {_scale = scale_; updateCache();}
-    inline PwnCache* cache() {return _cache;}
-    void addFrame(PwnTrackerFrame* f);
-    void addRelation(PwnTrackerRelation* r);
-    void process();
-    void processPartition(std::set<MapNode*> & otherPartition, MapNode* current_);
-    PwnCloserRelation* matchFrames(PwnTrackerFrame* from, PwnTrackerFrame* to, 
-				    pwn::Frame* fromCloud, pwn::Frame* toCloud,
-				    const Eigen::Isometry3d& initialGuess);
-    std::list<PwnCloserRelation*>& results() {return _results;}
-    std::vector<PwnTrackerRelation*> _trackerRelations;
-    std::map<int, PwnTrackerFrame*> _trackerFrames;
+    void setScale(int scale_) {PwnMatcherBase::setScale(scale_); updateCache();}
 
-    std::list<PwnCloserRelation*>& committedRelations() {return _committedRelations;}
-    std::list<PwnCloserRelation*>& candidateRelations() {return _candidateRelations;}
-    std::vector<std::set<MapNode*> >& partitions() {return _partitions;}
-    std::set<MapNode*>* currentPartition() {return _currentPartition;}
-    bool _debug;
+    inline PwnCache* cache() {return _cache;}
+
+    virtual void processPartition(std::list<MapNodeBinaryRelation*>& newRelations, std::set<MapNode*> & otherPartition, MapNode* current_);
+    PwnCloserRelation* matchFrames(PwnTrackerFrame* from, PwnTrackerFrame* to,
+				    const Eigen::Isometry3d& initialGuess);
   protected:
     void updateCache();
     static float compareNormals(cv::Mat& m1, cv::Mat& m2);
     static float compareDepths(cv::Mat& m1, cv::Mat& m2);
-    void validatePartitions(std::set<MapNode*>& other, 
-			    std::set<MapNode*>& current);
 
-    std::vector<std::set<MapNode*> > _partitions;
-    std::set<MapNode*>* _currentPartition;
-
-    float _consensusInlierTranslationalThreshold;
-    float _consensusInlierRotationalThreshold;
-    int    _consensusMinTimesCheckedThreshold;
-
+    /*
     int _scale;
-    PwnTrackerFrame* _pendingTrackerFrame, *_lastTrackerFrame;
-    boss_map::MapManager* _manager;
     pwn::DepthImageConverter* _converter;
     pwn::Aligner* _aligner;
+    */
     PwnCache* _cache;
-    PoseAcceptanceCriterion* _criterion;
-    std::list<PwnCloserRelation*> _results;
-    float _frameInlierDepthThreshold;
+
+    //float _frameInlierDepthThreshold;
     int _frameMinNonZeroThreshold;
     int _frameMaxOutliersThreshold;
     int _frameMinInliersThreshold;
-    std::list<PwnCloserRelation*> _committedRelations;
-    std::list<PwnCloserRelation*> _candidateRelations;
-  private:
-    void scoreMatch(PwnCloserRelation* rel);
   };
 
   class PwnCloserActiveRelationSelector: public MapRelationSelector {
@@ -136,8 +104,4 @@ struct NewFrameCloserAdder: public PwnTracker::NewFrameAction {
     G2oWrapper* _optimizer;
     std::list<Serializable*>& _objects;
   };
-
-
 }
-
-#endif

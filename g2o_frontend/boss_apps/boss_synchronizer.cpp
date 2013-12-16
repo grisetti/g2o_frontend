@@ -9,13 +9,13 @@
 #include "g2o_frontend/boss_map/imu_sensor.h"
 #include "g2o_frontend/boss_map/sensor_data_synchronizer.h"
 #include "g2o_frontend/boss_map/robot_configuration.h"
-#include "g2o_frontend/pwn_boss/pwn_sensor_data.h"
+#include "g2o_frontend/boss_map/sensing_frame_node.h"
 
 using namespace boss_map;
 using namespace boss;
 using namespace std;
 
-pwn_boss::PWNSensorData data;
+//pwn_boss::PWNSensorData data;
 
 const char* banner[]={
   "boss_synchronizer: takes a raw boss log and aggregates messages into single frames",
@@ -143,16 +143,18 @@ int main(int argc, char** argv) {
   cerr <<  "running logger with arguments: filein[" << filein << "] fileout: [" << fileout << "]" << endl;
 
   // create a reframer object, that once all messages have been put together sets them to a unique frame
-  Synchronizer::Reframer reframer;
-  sync.addOutputHandler(&reframer);
+  // Synchronizer::Reframer reframer;
+  // sync.addOutputHandler(&reframer);
 
-  // create a writer object that dumps on the disk each block of synchronized objects
-  Synchronizer::Writer writer(&ser);
-  sync.addOutputHandler(&writer);
+  // // create a writer object that dumps on the disk each block of synchronized objects
+  // Synchronizer::Writer writer(&ser);
+  // sync.addOutputHandler(&writer);
 
-  // create a deleter object that polishes the memory after writing
-  Synchronizer::Deleter deleter;
-  sync.addOutputHandler(&deleter);
+  // // create a deleter object that polishes the memory after writing
+  // Synchronizer::Deleter deleter;
+  // sync.addOutputHandler(&deleter);
+  
+  StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(&sync, &ser);
 
   std::vector<BaseSensorData*> sensorDatas;
   RobotConfiguration* conf = readLog(sensorDatas, des);
@@ -162,13 +164,12 @@ int main(int argc, char** argv) {
 
   conf->serializeInternals(ser);
   ser.writeObject(*conf);
-
   TSCompare comp;
   std::sort(sensorDatas.begin(), sensorDatas.end(), comp);
 
   for (size_t i = 0; i< sensorDatas.size(); i++){
     BaseSensorData* data = sensorDatas[i];
-    sync.addSensorData(data);
+    sync.process(data);
   }
 
 }

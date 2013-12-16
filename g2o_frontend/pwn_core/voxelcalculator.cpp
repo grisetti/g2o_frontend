@@ -5,19 +5,19 @@ using namespace Eigen;
 
 namespace pwn {
 
-  void VoxelCalculator::compute(Frame &frame, float res) {
+  void VoxelCalculator::compute(Cloud &cloud, float res) {
     float oldRes = resolution();
     setResolution(res);
-    compute(frame);
+    compute(cloud);
     setResolution(oldRes);
   }
 
-  void VoxelCalculator::compute(Frame &frame) {
+  void VoxelCalculator::compute(Cloud &cloud) {
     AccumulatorMap accumulatorMap;
     float inverseResolution = 1.0f / _resolution;
 
-    for(size_t i = 0; i < frame.points().size(); i++) {
-      const Point &point = frame.points()[i];
+    for(size_t i = 0; i < cloud.points().size(); i++) {
+      const Point &point = cloud.points()[i];
 
       IndexComparator s;
       s.indeces[0] = (int) (point[0] * inverseResolution);
@@ -39,36 +39,36 @@ namespace pwn {
       }
     }
 
-    std::cout << "Voxelization resized the cloud from " << frame.points().size() << " to ";
+    std::cout << "Voxelization resized the cloud from " << cloud.points().size() << " to ";
     // HAKKE
-    // frame.clear();
-    Frame tmpFrame;
-    tmpFrame.clear();
+    // cloud.clear();
+    Cloud tmpCloud;
+    tmpCloud.clear();
     for(AccumulatorMap::iterator it = accumulatorMap.begin(); it != accumulatorMap.end(); it++) {
       VoxelAccumulator &voxelAccumulator = it->second;
       // HAKKE
       // Point average = voxelAccumulator.average();
-      // frame.points().push_back(average);
-      tmpFrame.points().push_back(frame.points()[voxelAccumulator.index]);
-      tmpFrame.normals().push_back(frame.normals()[voxelAccumulator.index]);
-      tmpFrame.stats().push_back(frame.stats()[voxelAccumulator.index]);
-      if(frame.pointInformationMatrix().size() == frame.points().size() &&
-	 frame.normalInformationMatrix().size() == frame.points().size()) {
-	tmpFrame.pointInformationMatrix().push_back(frame.pointInformationMatrix()[voxelAccumulator.index]);
-	tmpFrame.normalInformationMatrix().push_back(frame.normalInformationMatrix()[voxelAccumulator.index]);
+      // cloud.points().push_back(average);
+      tmpCloud.points().push_back(cloud.points()[voxelAccumulator.index]);
+      tmpCloud.normals().push_back(cloud.normals()[voxelAccumulator.index]);
+      tmpCloud.stats().push_back(cloud.stats()[voxelAccumulator.index]);
+      if(cloud.pointInformationMatrix().size() == cloud.points().size() &&
+	 cloud.normalInformationMatrix().size() == cloud.points().size()) {
+	tmpCloud.pointInformationMatrix().push_back(cloud.pointInformationMatrix()[voxelAccumulator.index]);
+	tmpCloud.normalInformationMatrix().push_back(cloud.normalInformationMatrix()[voxelAccumulator.index]);
       }
-      if(frame.traversabilityVector().size() == frame.points().size()) {
-	tmpFrame.traversabilityVector().push_back(frame.traversabilityVector()[voxelAccumulator.index]);
+      if(cloud.traversabilityVector().size() == cloud.points().size()) {
+	tmpCloud.traversabilityVector().push_back(cloud.traversabilityVector()[voxelAccumulator.index]);
       }
-      if(frame.gaussians().size() == frame.points().size()) {
-	tmpFrame.gaussians().push_back(frame.gaussians()[voxelAccumulator.index]);
+      if(cloud.gaussians().size() == cloud.points().size()) {
+	tmpCloud.gaussians().push_back(cloud.gaussians()[voxelAccumulator.index]);
       }
     }
 
     // HAKKE
-    frame.clear();
-    frame = tmpFrame;
+    cloud.clear();
+    cloud = tmpCloud;
 
-    std::cout << frame.points().size() << " points" << std::endl;
+    std::cout << cloud.points().size() << " points" << std::endl;
   }
 }

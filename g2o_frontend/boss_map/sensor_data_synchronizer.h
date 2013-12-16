@@ -1,14 +1,14 @@
 #ifndef _BOSS_SYNCHRONIZER_H_
 #define _BOSS_SYNCHRONIZER_H_
 
-#include "set"
+#include <set>
+#include <list>
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 #include "reference_frame.h"
 #include "reference_frame_relation.h"
-#include "image_sensor.h"
-#include "laser_sensor.h"
-#include "imu_sensor.h"
+#include "sensor.h"
+#include "stream_processor.h"
 
 namespace boss_map {
   using namespace boss;
@@ -35,32 +35,7 @@ namespace boss_map {
     double dt;
   };
 
-  struct Synchronizer{
-    struct OutputHandler{
-      friend struct Synchronizer;
-      OutputHandler();
-      void put(BaseSensorData* s);
-      virtual void syncDoneImpl()=0;
-      void syncDone();
-    protected:
-      inline void setSynchronizer(Synchronizer* sync) {synchronizer = sync;}
-      Synchronizer* synchronizer;
-      std::deque<BaseSensorData*> _syncDatas;
-    };
-
-    struct Reframer: public OutputHandler{
-      virtual void syncDoneImpl();
-    };
-
-    struct Writer: public OutputHandler{
-      Writer(Serializer* ser);
-      virtual void syncDoneImpl();
-      Serializer* ser;
-    };
-
-    struct Deleter: public OutputHandler{
-      virtual void syncDoneImpl();
-    };
+  struct Synchronizer: public StreamProcessor{
 
     enum DroppedDataPolicy {KeepData,DeleteData};
     enum DroppedReferenceFramePolicy {KeepReferenceFrame,DeleteReferenceFrame};
@@ -68,9 +43,10 @@ namespace boss_map {
     Synchronizer();
     SyncTopicInstance* addSyncTopic(const std::string& topic);
     SyncTimeCondition* addSyncTimeCondition(const std::string& topic1, const std::string& topic2, double time);
-    bool addSensorData(BaseSensorData* data);
-    void addOutputHandler(OutputHandler* handler);
+    virtual void process(Serializable* s);
     SyncTopicInstance*  syncTopic(std::string topic);
+    void syncDone();
+    ~Synchronizer();
   
   protected:
     void computeDependancies(std::set<SyncCondition*> & conditions, 
@@ -78,15 +54,17 @@ namespace boss_map {
 			     SyncTopicInstance* instance);
     bool addSyncTopic(SyncTopicInstance* st);
     bool addSyncCondition(SyncCondition* cond);  
+    bool addSensorData(BaseSensorData* data);
 
 
     std::map<std::string, SyncTopicInstance*> syncTopics;
     std::set<SyncCondition*> syncConditions;
     DroppedReferenceFramePolicy framePolcy;
     DroppedDataPolicy  dataPolicy;
-    std::vector<OutputHandler*> outputHandlers;
+    std::deque<BaseSensorData*> _syncDatas;
   };
 
+  
 }
 #endif
 

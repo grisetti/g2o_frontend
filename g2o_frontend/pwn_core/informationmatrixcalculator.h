@@ -14,7 +14,7 @@ namespace pwn {
       _nonFlatInformationMatrix.setZero();
       _flatInformationMatrix.diagonal() = Normal(Eigen::Vector3f(1.0f, 1.0f, 1.0f));
       _nonFlatInformationMatrix.diagonal() = Normal(Eigen::Vector3f(1.0f, 1.0f, 1.0f));
-      _curvatureThreshold = 1.0f;
+      _curvatureThreshold = 0.0f;
     }
     virtual ~InformationMatrixCalculator() {}
 
@@ -37,7 +37,7 @@ namespace pwn {
     InformationMatrix _nonFlatInformationMatrix;
   };
 
-  class PointInformationMatrixCalculator : public InformationMatrixCalculator {
+  class PointInformationMatrixCalculator : virtual public InformationMatrixCalculator {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -53,7 +53,7 @@ namespace pwn {
 			 const NormalVector &imageNormals);
   };
 
-  class NormalInformationMatrixCalculator : public InformationMatrixCalculator {
+  class NormalInformationMatrixCalculator : virtual public InformationMatrixCalculator {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 

@@ -1,4 +1,6 @@
 #include "pwn_tracker.h"
+#include "g2o_frontend/pwn_core/pwn_static.h"
+#include "g2o/stuff/timeutil.h"
 
 namespace pwn_tracker{
 
@@ -6,91 +8,9 @@ namespace pwn_tracker{
   using namespace pwn;
   using namespace boss;
 
-  inline double get_time() 
-  {
-    struct timeval ts;
-    gettimeofday(&ts,0);
-    return ts.tv_sec + ts.tv_usec*1e-6;
-  }
-
-  PwnTrackerFrame::PwnTrackerFrame(MapManager* manager, int id, IdContext* context):
-    MapNode ( manager, id, context) {
-    sensorOffset.setIdentity();
-    scale=1;
-    seq=0;
-    cloud=0;
-  }
   
-  void PwnTrackerFrame::serialize(ObjectData& data, IdContext& context) {
-    MapNode::serialize(data,context);
-    data.setInt("seq", seq);
-    sensorOffset.matrix().toBOSS(data, "sensorOffset");
-    cameraMatrix.toBOSS(data, "cameraMatrix");
-    data.setInt("imageRows", imageRows);
-    data.setInt("imageCols", imageCols);
-
-    ObjectData* depthImageData=new ObjectData();
-    data.setField("depthImage", depthImageData);
-    depthImage.serialize(*depthImageData,context);
-
-    ObjectData* depthThumbnailData=new ObjectData();
-    data.setField("depthThumbnail", depthThumbnailData);
-    depthThumbnail.serialize(*depthThumbnailData,context);
-
-
-    ObjectData* normalThumbnailData=new ObjectData();
-    data.setField("normalThumbnail", normalThumbnailData);
-    normalThumbnail.serialize(*normalThumbnailData,context);
-
-    // ObjectData* cloudData=new ObjectData();
-    // data.setField("cloud", cloudData);
-    // cloud.serialize(*cloudData,context);
-  }
 
   
-  void PwnTrackerFrame::deserialize(ObjectData& data, IdContext& context) {
-    seq=data.getInt("seq");
-    MapNode::deserialize(data,context);
-    sensorOffset.matrix().fromBOSS(data,"sensorOffset");
-    cameraMatrix.fromBOSS(data, "cameraMatrix");
-    cameraMatrix(2,2)=1;
-    imageRows = data.getInt("imageRows");
-    imageCols = data.getInt("imageCols");
-
-    ObjectData* depthImageData = static_cast<ObjectData*>(data.getField("depthImage"));
-    depthImage.deserialize(*depthImageData, context);
-
-    
-    ObjectData* normalThumbnailData = static_cast<ObjectData*>(data.getField("normalThumbnail"));
-    normalThumbnail.deserialize(*normalThumbnailData,context);
-
-    ObjectData* depthThumbnailData = static_cast<ObjectData*>(data.getField("depthThumbnail"));
-    depthThumbnail.deserialize(*depthThumbnailData,context);
-
-    // ObjectData* cloudData = static_cast<ObjectData*>(data.getField("cloud"));
-    // cloud.deserialize(*cloudData,context);
-  }
-
-  PwnTrackerRelation::PwnTrackerRelation(MapManager* manager, int id, IdContext* context):
-    MapNodeBinaryRelation(manager, id, context){
-    _nodes.resize(2);
-    inliers = 0;
-    error = 0;
-  }
-  
-  void PwnTrackerRelation::serialize(ObjectData& data, IdContext& context){
-    MapNodeBinaryRelation::serialize(data,context);
-    data.setInt("inliers", inliers);
-    data.setFloat("error", error);
-  }
-    //! boss deserialization
-  void PwnTrackerRelation::deserialize(ObjectData& data, IdContext& context){
-    MapNodeBinaryRelation::deserialize(data,context);
-    inliers = data.getInt("inliers");
-    error = data.getFloat("error");
-  }
-    //! called when all links are resolved, adjusts the bookkeeping of the parents
-
   PwnTracker::PwnTrackerAction::PwnTrackerAction(PwnTracker* tracker_) {
     _tracker = tracker_;
   }
@@ -108,18 +28,16 @@ namespace pwn_tracker{
   PwnTracker::PwnTracker(pwn::Aligner* aligner, 
 			 pwn::DepthImageConverter* converter, 
 			 boss_map::MapManager* manager,
-			 PwnCache* cache_) {
+			 PwnCache* cache_): PwnMatcherBase(aligner, converter) {
     _previousCloud = 0;
     _globalT.setIdentity();
     _previousCloudTransform.setIdentity();
-    _scale = 2;
     _counter = 0;
     _numKeyframes = 0;
     _newFrameInliersFraction = 0.4;
-    this->_aligner = aligner;
-    this->_converter = converter;
     this->_manager = manager;
     _cache=cache_;
+    cumTime = 0;
   }
 
   void PwnTracker::init(){
@@ -135,95 +53,88 @@ namespace pwn_tracker{
     _seq = 0;
     initCallbacks();
   }
-  void PwnTracker::makeThumbnails(cv::Mat& depthThumbnail, cv::Mat& normalThumbnail, 
-				  Frame* f, int r, int c, 
-				  const Eigen::Isometry3f& offset, 
-				  const Eigen::Matrix3f& cameraMatrix,
-				  float scale){
 
-    PinholePointProjector proj;
-    proj.setImageSize(r,c);
-    proj.setCameraMatrix(cameraMatrix);
-    proj.scale(scale);
-    pwn::IntImage indices(proj.imageRows(), proj.imageCols());
-    pwn::DepthImage depthBuffer(proj.imageRows(), proj.imageCols());
-    proj.setTransform(offset);
-    proj.project(indices, depthBuffer, f->points());
-    normalThumbnail = cv::Mat(proj.imageCols(), proj.imageRows(), CV_8UC3);
-    depthThumbnail = cv::Mat(proj.imageCols(), proj.imageRows(), CV_16UC1);
-    depthBuffer.toCvMat(depthThumbnail);
-    for (int i = 0; i<indices.cols(); i++)
-      for (int j = 0; j<indices.rows(); j++){
-    	cv::Vec3b& pixel = normalThumbnail.at<cv::Vec3b>(i,j);
-    	int idx = indices(j,i);
-    	pixel[0] = 0;
-    	pixel[1] = 0;
-    	pixel[2] = 0;
-    	if (idx==0)
-    	  continue;
-    	const pwn::Normal& n = f->normals()[idx];
-    	if (n.squaredNorm()<0.1)
-    	  continue;
-    	pixel[0] = 127*(n.x()-0.5);
-    	pixel[1] = 127*(n.y()-0.5);
-    	pixel[2] = 127*(n.z()-0.5);
-      }
+  /*
+  PwnTrackerFrame* PwnTracker::makeFrame() {
+    PwnTrackerFrame* currentTrackerFrame = new PwnTrackerFrame(_manager);
+    //currentTrackerFrame->cloud.set(cloud);
+    currentTrackerFrame->cloud=_currentCloud;
+    
+    boss_map::ImageBLOB* depthBLOB=new boss_map::ImageBLOB();
+    DepthImage_convert_32FC1_to_16UC1(depthBLOB->cvImage(),depthImage);
+    //depthImage.toCvMat(depthBLOB->cvImage());
+    depthBLOB->adjustFormat();
+    currentTrackerFrame->depthImage.set(depthBLOB);
+    
+    boss_map::ImageBLOB* normalThumbnailBLOB=new boss_map::ImageBLOB();
+    boss_map::ImageBLOB* depthThumbnailBLOB=new boss_map::ImageBLOB();
+    makeThumbnails(depthThumbnailBLOB->cvImage(), normalThumbnailBLOB->cvImage(), cloud, 
+		   depthImage.rows, 
+		   depthImage.cols,
+		   sensorOffset,
+		   cameraMatrix, 
+		   0.1);
+    normalThumbnailBLOB->adjustFormat();
+    depthThumbnailBLOB->adjustFormat();
+    
+    currentTrackerFrame->depthThumbnail.set(depthThumbnailBLOB);
+    currentTrackerFrame->normalThumbnail.set(normalThumbnailBLOB);
+    currentTrackerFrame->cameraMatrix = cameraMatrix;
+    currentTrackerFrame->imageRows = depthImage.rows;
+    currentTrackerFrame->imageCols = depthImage.cols;
+    Eigen::Isometry3d _iso;
+    convertScalar(_iso, _globalT);
+    currentTrackerFrame->setTransform(_iso);
+    convertScalar(currentTrackerFrame->sensorOffset, sensorOffset);
+    currentTrackerFrame->setSeq(_seq++);
+    _manager->addNode(currentTrackerFrame);
+    //cerr << "AAAA" << endl;
+    
+    if (_cache)
+      _currentCloudHandle=_cache->get(currentTrackerFrame);
+    //cerr << "BBBB" << endl;
+    //_cache->lock(currentTrackerFrame);
+    newFrameCallbacks(currentTrackerFrame);
+    currentTrackerFrame->depthThumbnail.set(0);
+    currentTrackerFrame->normalThumbnail.set(0);
+    currentTrackerFrame->depthImage.set(0);
+    return currentTrackerFrame;
   }
+  */
 
-  pwn::Frame* PwnTracker::makeCloud(int& r, int& c, Eigen::Matrix3f& cameraMatrix,
-				    const Eigen::Isometry3f& sensorOffset,  const DepthImage& depthImage) {
-    PinholePointProjector* projector=dynamic_cast<PinholePointProjector*>(_converter->projector());
-
-    float invScale = 1.0f / _scale;
-    Matrix3f scaledCameraMatrix = cameraMatrix * invScale;
-    scaledCameraMatrix(2, 2) = 1.0f;
-
-    projector->setCameraMatrix(scaledCameraMatrix);
-    int scaledImageRows = depthImage.rows() / _scale;
-    int scaledImageCols = depthImage.cols() / _scale;
-    projector->setImageSize(scaledImageRows, scaledImageCols);
-
-    DepthImage scaledImage;
-    DepthImage::scale(scaledImage,depthImage,_scale);
-
-    cameraMatrix = projector->cameraMatrix();
-    r = projector->imageRows();
-    c = projector->imageCols();
-    pwn::Frame* cloud = new pwn::Frame;
-    //cout << "NUMS: " << r << " --- " << c << " --- " << cameraMatrix << endl;
-    _converter->compute(*cloud, scaledImage, sensorOffset);
-    // cloud->save("temp.pwn", 1, true);
-    // scale image and camera matrix
-    return cloud;
-  }
-
-  void PwnTracker::processFrame(const DepthImage& depthImage, 
-				const Eigen::Isometry3f& sensorOffset, 
-				const Eigen::Matrix3f& cameraMatrix,
+  void PwnTracker::processFrame(const DepthImage& depthImage_, 
+				const Eigen::Isometry3f& sensorOffset_, 
+				const Eigen::Matrix3f& cameraMatrix_,
 				const Eigen::Isometry3f& initialGuess){
     int r,c;
-    Eigen::Matrix3f scaledCameraMatrix = cameraMatrix;
-    pwn::Frame* cloud = makeCloud(r,c,scaledCameraMatrix,sensorOffset,depthImage);
-
+    Eigen::Matrix3f scaledCameraMatrix = cameraMatrix_;
+    _currentCloudOffset = sensorOffset_;
+    _currentCameraMatrix = cameraMatrix_;
+    _currentDepthImage = depthImage_;
+    _currentCloud = makeCloud(r,c,scaledCameraMatrix,_currentCloudOffset,_currentDepthImage);
+    
     bool newFrame = false;
     bool newRelation = false;
     PwnTrackerFrame* currentTrackerFrame=0;
     Eigen::Isometry3d relationMean;
     if (_previousCloud){
-      _aligner->setCurrentSensorOffset(sensorOffset);
-      _aligner->setCurrentFrame(cloud);
+      _aligner->setCurrentSensorOffset(_currentCloudOffset);
+      _aligner->setCurrentFrame(_currentCloud);
+      _aligner->setReferenceSensorOffset(_previousCloudOffset);
+      _aligner->setReferenceFrame(_previousCloud);
+
       _aligner->correspondenceFinder()->setImageSize(r,c);
-      PinholePointProjector* alprojector=(PinholePointProjector*)(_aligner->projector());
+      PinholePointProjector* alprojector=dynamic_cast<PinholePointProjector*>(_aligner->projector());
       alprojector->setCameraMatrix(scaledCameraMatrix);
       alprojector->setImageSize(r,c);
 
       Eigen::Isometry3f guess=_previousCloudTransform.inverse()*_globalT*initialGuess;
       _aligner->setInitialGuess(guess);
       double t0, t1;
-      t0 = get_time();
+      t0 = g2o::get_time();
       _aligner->align();
 
-      t1 = get_time();
+      t1 = g2o::get_time();
       std::cout << "Time: " << t1 - t0 << " seconds " << std::endl;
  
       cerr << "inliers: " << _aligner->inliers() << endl;
@@ -267,9 +178,9 @@ namespace pwn_tracker{
 	  _previousCloudHandle.release();
 	}
 	//_cache->unlock(_previousTrackerFrame);
-	_aligner->setReferenceSensorOffset(sensorOffset);
-	_aligner->setReferenceFrame(cloud);
-	_previousCloud = cloud;
+	// _aligner->setReferenceSensorOffset(_currentCloudOffset);
+	// _aligner->setReferenceFrame(_currentCloud);
+	_previousCloud = _currentCloud;
 	_previousCloudTransform = _globalT;
 	// cerr << "new frame added (" << _numKeyframes <<  ")" << endl;
 	// cerr << "inliers: " << _aligner->inliers() << endl;
@@ -280,16 +191,17 @@ namespace pwn_tracker{
 	// cerr << "transform   : " << t2v(_aligner->T()).transpose() << endl;
 	// cerr << "globalTransform   : " << t2v(_globalT).transpose() << endl;
       } else { // previous frame but offset is small
-	delete cloud;
+	delete _currentCloud;
+	_currentCloud = 0;
       }
     } else { // first frame
       //ser.writeObject(*manager);
       newFrame = true;
-      _aligner->setReferenceSensorOffset(sensorOffset);
-      _aligner->setReferenceFrame(cloud);
-      _previousCloud = cloud;
+      // _aligner->setReferenceSensorOffset(_currentCloudOffset);
+      // _aligner->setReferenceFrame(_currentCloud);
+      _previousCloud = _currentCloud;
       _previousCloudTransform = _globalT;
-
+      _previousCloudOffset = _currentCloudOffset;
       _numKeyframes ++;
       /*Eigen::Isometry3f t = _globalT;
 	geometry_msgs::Point p;
@@ -305,34 +217,35 @@ namespace pwn_tracker{
       //cerr << "maing new frame, previous: " << _previousTrackerFrame << endl;
       currentTrackerFrame = new PwnTrackerFrame(_manager);
       //currentTrackerFrame->cloud.set(cloud);
-      currentTrackerFrame->cloud=cloud;
-
+      currentTrackerFrame->cloud=_currentCloud;
+      currentTrackerFrame->sensorOffset = _currentCloudOffset;
       boss_map::ImageBLOB* depthBLOB=new boss_map::ImageBLOB();
-      depthImage.toCvMat(depthBLOB->cvImage());
+      DepthImage_convert_32FC1_to_16UC1(depthBLOB->cvImage(),_currentDepthImage);
+      //depthImage.toCvMat(depthBLOB->cvImage());
       depthBLOB->adjustFormat();
       currentTrackerFrame->depthImage.set(depthBLOB);
       
       boss_map::ImageBLOB* normalThumbnailBLOB=new boss_map::ImageBLOB();
       boss_map::ImageBLOB* depthThumbnailBLOB=new boss_map::ImageBLOB();
-      makeThumbnails(depthThumbnailBLOB->cvImage(), normalThumbnailBLOB->cvImage(), cloud, 
-		    depthImage.rows(), 
-		    depthImage.cols(),
-		    sensorOffset,
-		    cameraMatrix, 
+      makeThumbnails(depthThumbnailBLOB->cvImage(), normalThumbnailBLOB->cvImage(), _currentCloud, 
+		    _currentDepthImage.rows, 
+		    _currentDepthImage.cols,
+		    _currentCloudOffset,
+		    _currentCameraMatrix, 
 		    0.1);
       normalThumbnailBLOB->adjustFormat();
       depthThumbnailBLOB->adjustFormat();
       
       currentTrackerFrame->depthThumbnail.set(depthThumbnailBLOB);
       currentTrackerFrame->normalThumbnail.set(normalThumbnailBLOB);
-      currentTrackerFrame->cameraMatrix = cameraMatrix;
-      currentTrackerFrame->imageRows = depthImage.rows();
-      currentTrackerFrame->imageCols = depthImage.cols();
+      currentTrackerFrame->cameraMatrix = _currentCameraMatrix;
+      currentTrackerFrame->imageRows = _currentDepthImage.rows;
+      currentTrackerFrame->imageCols = _currentDepthImage.cols;
       Eigen::Isometry3d _iso;
       convertScalar(_iso, _globalT);
       currentTrackerFrame->setTransform(_iso);
-      convertScalar(currentTrackerFrame->sensorOffset, sensorOffset);
-      currentTrackerFrame->seq = _seq++;
+      convertScalar(currentTrackerFrame->sensorOffset, _currentCloudOffset);
+      currentTrackerFrame->setSeq(_seq++);
       _manager->addNode(currentTrackerFrame);
       //cerr << "AAAA" << endl;
 
@@ -372,37 +285,6 @@ namespace pwn_tracker{
   }  
 
 
-  std::vector<Serializable*> readConfig(Aligner*& aligner, DepthImageConverter*& converter, const std::string& configFile){
-    aligner = 0;
-    converter = 0;
-    Deserializer des;
-    des.setFilePath(configFile);
-    Serializable* s;
-    std::vector<Serializable*> instances;
-    cerr << "Reading" << endl;
-    while ((s=des.readObject())){
-      instances.push_back(s);
-      Aligner* al=dynamic_cast<Aligner*>(s);
-      if (al) {
-	cerr << "got aligner" << endl;
-	aligner = al;
-      }
-      DepthImageConverter* conv=dynamic_cast<DepthImageConverter*>(s);
-      if  (conv) {      
-	cerr << "got converter" << endl;
-	converter = conv;
-      }
-    }
-    if (aligner) {
-      cerr << "alpp: " << aligner->projector() << endl;
-      cerr << "allz: " << aligner->linearizer() << endl;
-      if (aligner->linearizer())
-	cerr << "lzal: " << aligner->linearizer()->aligner() << endl;
-    
-    }
-
-    return instances;
-  }
 
   void PwnTracker::newFrameCallbacks(PwnTrackerFrame* frame) {
     for (std::list<NewFrameAction*>::iterator it = _newFrameActions.begin(); it!=_newFrameActions.end(); it++){
@@ -432,28 +314,6 @@ namespace pwn_tracker{
       InitAction* a = *it;
       a->compute();
     }
-  }
-
-  NewFrameWriteAction::NewFrameWriteAction(std::list<Serializable*>& objects_, boss::Serializer* ser_, PwnTracker* tracker):
-    PwnTracker::NewFrameAction(tracker), _objects(objects_){
-    _ser = ser_;
-  }
-
-  void NewFrameWriteAction::compute (PwnTrackerFrame* frame) {
-    cerr << "********************* NEW FRAME *********************" << endl;
-    _objects.push_back(frame);
-    _ser->writeObject(*frame);
-  }
-
-
-  NewRelationWriteAction::NewRelationWriteAction(std::list<Serializable*>& objects_, boss::Serializer* ser_, PwnTracker* tracker):
-    PwnTracker::NewRelationAction(tracker), _objects(objects_){
-    _ser = ser_;
-  }
-  
-  void NewRelationWriteAction::compute (PwnTrackerRelation* relation) {
-    _objects.push_back(relation);
-    _ser->writeObject(*relation);
   }
 
 

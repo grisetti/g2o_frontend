@@ -4,7 +4,7 @@
 #include "g2o/core/hyper_graph.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 
-#include "g2o_frontend/pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/cloud.h"
 
 using namespace std;
 using namespace g2o;
@@ -12,7 +12,7 @@ using namespace pwn;
 
 class PWNData : public HyperGraph::Data {
  public:  
-  PWNData(Frame *frame = 0);
+  PWNData(Cloud *cloud = 0);
   virtual ~PWNData();
 
   //! read the data from a stream
@@ -26,25 +26,25 @@ class PWNData : public HyperGraph::Data {
   void release();
 
   inline const std::string& filename() const { return _filename; };
-  inline const Frame* frame() const { return _frame; }
+  inline const Cloud* cloud() const { return _cloud; }
   inline const Eigen::Isometry3f& originPose() const { return _originPose; }
   
   inline void setFilename(const std::string filename_) { _filename = filename_; };  
-  void setFrame(Frame *frame_) {
-    if (_frame) 
-      delete _frame;
-    _frame = frame_;
-    _frameModified = true;
+  void setCloud(Cloud *cloud_) {
+    if (_cloud) 
+      delete _cloud;
+    _cloud = cloud_;
+    _cloudModified = true;
   }
   inline void setOriginPose(const Eigen::Isometry3f originPose_) { _originPose = originPose_; }  
 
  protected:
   std::string _filename;
-  Frame *_frame;
+  Cloud *_cloud;
   Eigen::Isometry3f _originPose;
 
  private:
-  mutable bool _frameModified;
+  mutable bool _cloudModified;
 };
 
 #ifdef G2O_HAVE_OPENGL

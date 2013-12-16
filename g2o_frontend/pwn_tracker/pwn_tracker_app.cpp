@@ -1,4 +1,10 @@
-#include "set"
+#include <set>
+#include <QGLViewer/qglviewer.h>
+#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <GL/gl.h>
+
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 #include "g2o_frontend/boss_map/reference_frame.h"
@@ -8,18 +14,15 @@
 #include "g2o_frontend/boss_map/imu_sensor.h"
 #include "g2o_frontend/boss_map/robot_configuration.h"
 #include "g2o_frontend/boss/bidirectional_serializer.h"
-#include <QGLViewer/qglviewer.h>
-
-#include "opencv2/imgproc/imgproc.hpp"
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include "GL/gl.h"
+#include "g2o_frontend/boss_map_building/map_g2o_wrapper.h"
+#include "g2o_frontend/pwn_core/pwn_static.h"
+#include "g2o_frontend/pwn_boss/pwn_io.h"
 // just to make the linker happy
 #include "pwn_tracker.h"
+#include "pwn_tracker_actions.h"
 #include "g2o_frontend/boss_map/map_utils.h"
 #include "pwn_tracker_viewer.h"
 #include "pwn_closer.h"
-#include "map_g2o_wrapper.h"
 
 #include <QApplication>
 
@@ -64,14 +67,26 @@ int main(int argc, char** argv) {
     return 0;
   }
 
-  bool makeVis=true;
+  //bool makeVis=true; 
+  bool makeVis=false;
+  if (argc > 4)
+    makeVis = true;
 
-  pwn::Aligner* aligner;  pwn::DepthImageConverter* converter;
+  pwn_boss::Aligner* aligner;  
+  pwn_boss::DepthImageConverter* converter;
   std::vector<Serializable*> instances = readConfig(aligner, converter, argv[1]);
   cerr << "config loaded" << endl;
   cerr << " aligner:" << aligner << endl;
   cerr << " converter:" << converter << endl;
     
+  Serializer confSer;
+  confSer.setFilePath("confout.conf");
+  for (size_t i=0; i<instances.size(); i++) {
+      confSer.writeObject(*instances[i]);
+    }
+  if (! aligner || ! converter) {
+    throw std::runtime_error("AAAAAA");
+  }
   des.setFilePath(argv[2]);
   std::vector<BaseSensorData*> sensorDatas;
   RobotConfiguration* conf = readLog(sensorDatas, des);
@@ -118,7 +133,7 @@ int main(int argc, char** argv) {
   wrapper->_selector=new PwnCloserActiveRelationSelector(manager);
   int scale = 4;
   // create a cache for the frames
-  PwnCache* cache  = new PwnCache(converter, scale, 200, 210);
+  PwnCache* cache  = new PwnCache(converter, scale, 400, 410);
   PwnCacheHandler* cacheHandler = new PwnCacheHandler(manager, cache);
   manager->actionHandlers().push_back(cacheHandler);
   cacheHandler->init();
@@ -135,30 +150,29 @@ int main(int argc, char** argv) {
   closer->setCriterion(&criterion);
   closer->_debug = false;
   
-  // MyTracker* tracker=new MyTracker(aligner, converter, manager, cache, closer, wrapper, &ser);
-  // tracker->setScale(scale);
-  // tracker->setNewFrameInliersFraction(0.4);
-  // tracker->init();
-
   std::list<Serializable*> objects;
   PwnTracker* tracker=new PwnTracker(aligner, converter, manager, cache);
   tracker->setScale(scale);
-  tracker->setNewFrameInliersFraction(0.4);
   tracker->init();
+  tracker->setNewFrameInliersFraction(0.4);
 
-  NewFrameWriteAction* frameWriter = new NewFrameWriteAction(objects,&ser,tracker);
+  NewFrameWriteAction* frameWriter = new NewFrameWriteAction(&ser,tracker);
   tracker->newFrameActions().push_back(frameWriter);
 
+  NewRelationWriteAction* relationWriter = new NewRelationWriteAction(&ser,tracker);
+  tracker->newRelationActions().push_back(relationWriter);
+
+  NewFrameEnqueueAction* frameEnqueuer = new NewFrameEnqueueAction(objects,tracker);
+  tracker->newFrameActions().push_back(frameEnqueuer);
+
+  NewRelationEnqueueAction* relationEnqueuer = new NewRelationEnqueueAction(objects,tracker);
+  tracker->newRelationActions().push_back(relationEnqueuer);
 
   NewFrameCloserAdder* closerFrameAdder = new NewFrameCloserAdder(closer, tracker);
   tracker->newFrameActions().push_back(closerFrameAdder);
-
-  NewRelationWriteAction* relationWriter = new NewRelationWriteAction(objects,&ser,tracker);
-  tracker->newRelationActions().push_back(relationWriter);
   
   CloserRelationAdder* closerRelationAction = new CloserRelationAdder(objects, closer, wrapper, tracker);
   tracker->newRelationActions().push_back(closerRelationAction);
-
   
   VisState* visState=0;
   MyTrackerViewer *viewer = 0;
@@ -188,12 +202,14 @@ int main(int argc, char** argv) {
       Eigen::Isometry3d initialGuess_ = previousPose.inverse()*pose;
       Eigen::Matrix3d cameraMatrix_ = imageData->cameraMatrix();
 
+      
       Eigen::Isometry3f sensorOffset;
       convertScalar(sensorOffset, sensorOffset_);
       Eigen::Isometry3f initialGuess;
       convertScalar(initialGuess, initialGuess_);
       Eigen::Matrix3f cameraMatrix;
       convertScalar(cameraMatrix, cameraMatrix_);
+      
 
       if (! previousImage){
 	initialGuess.setIdentity();
@@ -201,7 +217,8 @@ int main(int argc, char** argv) {
       
       pwn::DepthImage depthImage;
       ImageBLOB* blob = imageData->imageBlob().get();
-      depthImage.fromCvMat(blob->cvImage());
+      //depthImage.fromCvMat(blob->cvImage());
+      DepthImage_convert_16UC1_to_32FC1(depthImage, blob->cvImage());
       tracker->processFrame(depthImage, sensorOffset, cameraMatrix, initialGuess);
       delete blob;
       previousPose = pose;
@@ -224,7 +241,12 @@ int main(int argc, char** argv) {
   }
   cerr << "hits:  " << cache->hits() << " misses: " << cache->misses() << " hits/misses" <<
     float(cache->hits())/float(cache->hits()+cache->misses()) << endl;
-  return 0;
+
+  cerr << "cache: calls:  " << cache->numCalls << " time: " << cache->cumTime << 
+    " t/calls: " << cache->cumTime/cache->numCalls << endl;
+  cerr << "tracker: calls:  " << tracker->numCalls << " time: " << tracker->cumTime << 
+    " t/calls: " << tracker->cumTime/tracker->numCalls << endl;
+
   if (makeVis) {
     viewer->updateGL();
     while(viewer->isVisible()){

@@ -1,0 +1,4 @@
+INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
+
+ADD_executable(boss_pwn_tracker_test boss_pwn_tracker_test.cpp)
+TARGET_LINK_LIBRARIES(boss_pwn_tracker_test boss_map boss_map)

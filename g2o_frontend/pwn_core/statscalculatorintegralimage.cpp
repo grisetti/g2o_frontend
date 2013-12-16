@@ -19,10 +19,6 @@ namespace pwn {
     assert(indexImage.rows > 0 && indexImage.cols > 0 && "StatsCalculatorIntegralImage: indexImage has zero size");    
     assert(_intervalImage.rows > 0 && _intervalImage.cols > 0 && "StatsCalculatorIntegralImage: _intervalImage has zero size");
 
-    if(indexImage.rows != _intervalImage.rows || indexImage.cols != _intervalImage.cols) {
-      _integralImage.resize(indexImage.rows, indexImage.cols);
-    }
-
     if(statsVector.size() != points.size())
       statsVector.resize(points.size());
     if(normals.size() != points.size())
@@ -51,8 +47,8 @@ namespace pwn {
 	if(imageRadius > _maxImageRadius)
 	  imageRadius = _maxImageRadius;
 
-	const PointAccumulator &acc = _integralImage.getRegion(r - imageRadius, r + imageRadius,
-							       c - imageRadius, c + imageRadius);
+	const PointAccumulator &acc = _integralImage.getRegion(c - imageRadius, c + imageRadius,
+							       r - imageRadius, r + imageRadius);
 	if(acc.n() < _minPoints) {
 	  continue;
 	}

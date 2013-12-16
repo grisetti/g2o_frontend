@@ -9,14 +9,15 @@ namespace pwn {
     assert(indices.rows > 0 && indices.cols > 0 && "PointIntegralImage: indices has zero size");
     
     if(cols() != indices.cols || rows() != indices.rows)
-      resize(indices.rows, indices.cols);
+      resize(indices.cols, indices.rows);
     clear();
 
     // Fill the accumulators with the points
 #pragma omp parallel for
     for(int c = 0; c < cols(); c++) {
+      const int* rowptr =  &indices(c,0);
       for(int r = 0; r < rows(); r++) {
-	const int &index = indices(r, c); 
+	const int &index = rowptr[r]; 
 	PointAccumulator &acc = coeffRef(r, c);
 	if(index < 0)
 	  continue;

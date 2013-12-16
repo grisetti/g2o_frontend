@@ -1,9 +1,6 @@
 #pragma once
 
-#include "g2o_frontend/boss_map/eigen_boss_plugin.h" 
-#include "g2o_frontend/boss/object_data.h"
-#include "g2o_frontend/boss/identifiable.h"
-#include "frame.h"
+#include "cloud.h"
 
 #include <map>
 
@@ -12,7 +9,7 @@ using namespace Eigen;
 
 namespace pwn {
 
-  class VoxelCalculator : public boss::Identifiable {
+  class VoxelCalculator {
     struct VoxelAccumulator {
       Point accumulator;
       int numPoints;
@@ -59,8 +56,8 @@ namespace pwn {
     inline float resolution() const { return _resolution; }
     inline void setResolution(float resolution_) { _resolution = resolution_; }
     
-    void compute(Frame &frame, float resolution);
-    void compute(Frame &frame);
+    void compute(Cloud &cloud, float resolution);
+    void compute(Cloud &cloud);
 
   protected:
     float _resolution;

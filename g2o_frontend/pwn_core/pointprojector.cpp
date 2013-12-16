@@ -18,6 +18,7 @@ namespace pwn {
 			       DepthImage &depthImage, 
 			       const PointVector &points) const {
     assert(indexImage.rows > 0 && indexImage.cols > 0 && "PointProjector: Index image has zero dimensions");
+
     depthImage.create(indexImage.rows, indexImage.cols);
     depthImage.setTo(0.0f);
     indexImage.setTo(cv::Scalar(-1));
@@ -92,8 +93,7 @@ namespace pwn {
   
   void PointProjector::projectIntervals(IntImage &intervalImage, 
 					const DepthImage &depthImage, 
-					const float worldRadius,
-					const bool /*blackBorders*/) const {
+					const float worldRadius) const {
     assert(depthImage.rows > 0 && depthImage.cols > 0 && "PointProjector: Depth image has zero dimensions");
     intervalImage.create(depthImage.rows, depthImage.cols);
     for(int r = 0; r < depthImage.rows; r++) {

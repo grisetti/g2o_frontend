@@ -1,7 +1,7 @@
 #pragma once
 
 #include "g2o_frontend/boss_map/reference_frame.h"
-#include "g2o_frontend/pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/cloud.h"
 #include "g2o_frontend/pwn_core/pinholepointprojector.h"
 #include "g2o_frontend/pwn_core/depthimageconverter.h"
 #include "g2o_frontend/pwn_core/aligner.h"
@@ -13,8 +13,6 @@
 #include "g2o/types/slam3d/edge_se3.h"
 #include "g2o_frontend/boss_map_building/boss_map_g2o_reflector.h"
 #include "g2o_frontend/boss_map/map_utils.h"
-//#include "pwn_tracker.h"
-//#include "pwn_closer.h"
 
 namespace boss_map {
   using namespace pwn;

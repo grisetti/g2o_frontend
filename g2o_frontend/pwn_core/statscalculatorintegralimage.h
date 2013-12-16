@@ -5,7 +5,7 @@
 
 namespace pwn {
 
-  class StatsCalculatorIntegralImage : public StatsCalculator {
+  class StatsCalculatorIntegralImage : virtual public StatsCalculator {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
   

@@ -17,10 +17,10 @@ namespace pwn {
     _cols = 0;
   }
 
-  void CorrespondenceFinder::compute(const Frame &referenceScene, const Frame &currentScene, Eigen::Isometry3f T) {
+  void CorrespondenceFinder::compute(const Cloud &referenceScene, const Cloud &currentScene, Eigen::Isometry3f T) {
     assert(_referenceIndexImage.rows > 0 && _referenceIndexImage.cols > 0 && "CorrespondenceFinder: _referenceIndexImage has zero size");
     assert(_currentIndexImage.rows > 0 && _currentIndexImage.cols > 0 && "CorrespondenceFinder: _currentIndexImage has zero size");
-    assert(_referenceDeptImage.rows > 0 && _referenceDepthImage.cols > 0 && "CorrespondenceFinder: _referenceDepthImage has zero size");
+    assert(_referenceDepthImage.rows > 0 && _referenceDepthImage.cols > 0 && "CorrespondenceFinder: _referenceDepthImage has zero size");
     assert(_currentDepthImage.rows > 0 && _currentDepthImage.cols > 0 && "CorrespondenceFinder: _currentDepthImage has zero size");
     
     T.matrix().block<1, 4>(3, 0) << 0.0f, 0.0f, 0.0f, 1.0f;
@@ -35,7 +35,7 @@ namespace pwn {
     int numThreads = omp_get_max_threads();
     int localCorrespondenceIndex[numThreads];
     int localOffset[numThreads];
-    int columnsPerThread = _referenceIndexImage.cols / numThreads;
+    int rowsPerThread = _referenceIndexImage.rows / numThreads;
     int iterationsPerThread = (_referenceIndexImage.rows * _referenceIndexImage.cols) / numThreads;
     for(int i = 0; i < numThreads; i++) {
       localOffset[i] = i * iterationsPerThread;
@@ -45,16 +45,18 @@ namespace pwn {
 #pragma omp parallel 
     {
       int threadId = omp_get_thread_num();
-      int cMin = threadId * columnsPerThread;
-      int cMax = cMin + columnsPerThread;
-      if(cMax > _referenceIndexImage.cols)
-	cMax = _referenceIndexImage.cols;
+      int rMin = threadId * rowsPerThread;
+      int rMax = rMin + rowsPerThread;
+      if(rMax > _referenceIndexImage.rows)
+	rMax = _referenceIndexImage.rows;
 
       int &correspondenceIndex = localCorrespondenceIndex[threadId];
-      for(int c = cMin;  c < cMax; c++) {
-	for(int r = 0; r < _referenceIndexImage.rows; r++) {
-	  const int referenceIndex = _referenceIndexImage(r, c);
-	  const int currentIndex = _currentIndexImage(r, c);
+      for(int r = rMin;  r < rMax; r++) {
+	const int* referenceRowBase = &_referenceIndexImage(r, 0);
+	const int* currentRowBase = &_currentIndexImage(r, 0);
+	for(int c = 0; c < _referenceIndexImage.cols; c++) {
+	  const int referenceIndex = *(referenceRowBase + c);
+	  const int currentIndex = *(currentRowBase + c);
 	  if (referenceIndex < 0 || currentIndex < 0) {
 	    continue;
 	  }
