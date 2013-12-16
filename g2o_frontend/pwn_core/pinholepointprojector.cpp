@@ -37,8 +37,8 @@ namespace pwn {
     
     indexImage.create(_imageRows, _imageCols);
     depthImage.create(_imageRows, _imageCols);
-    int* p=(int*)indexImage.data;
     /*
+    int* p=(int*)indexImage.data;
     const int *pend=p+_imageRows*_imageCols;
     while (p<pend) {*p++ = -1;}
 
@@ -47,7 +47,7 @@ namespace pwn {
     while (d<dend) {*d++ = 0;}
     */
     
-    depthImage.setTo(cv::Scalar(0.0f));
+    depthImage.setTo(cv::Scalar(std::numeric_limits<float>::max()));
     indexImage.setTo(cv::Scalar(-1));
     
 

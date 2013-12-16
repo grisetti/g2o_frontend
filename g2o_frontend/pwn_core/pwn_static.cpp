@@ -28,16 +28,32 @@ namespace pwn {
 
 
   void DepthImage_convert_32FC1_to_16UC1(cv::Mat &dest, const cv::Mat &src, float scale) {
- assert(type2str(src.type()) != "32FC1" && "DepthImage_convert_32FC1_to_16UC1: source image of different type from 32FC1");
-    cv::Mat m = src * scale;
-    m.convertTo(dest, CV_16UC1);
+    assert(type2str(src.type()) != "32FC1" && "DepthImage_convert_32FC1_to_16UC1: source image of different type from 32FC1");
+    unsigned short* dptr = (unsigned short*) dest.data;
+    const float* sptr = (const float*) src.data;
+    int size = src.rows * src.cols;
+    const float* send = sptr + size;
+    dest.create(src.rows,src.cols, 0);
+    while (sptr<send){
+      if (*sptr < std::numeric_limits<float>::max())
+	*dptr = scale * (*sptr);
+      dptr ++;
+      sptr ++;
+    }
   }
 
   void DepthImage_convert_16UC1_to_32FC1(cv::Mat &dest, const cv::Mat &src, float scale) {
     assert(type2str(src.type()) != "16UC1" && "DepthImage_convert_16UC1_to_32FC1: source image of different type from 16UC1");
-    cv::Mat m;
-    src.convertTo(m, CV_32FC1);
-    dest = m*scale;
-  }
-  
+    float* dptr = (float*) dest.data;
+    const unsigned short* sptr = (const unsigned short*) src.data;
+    int size = src.rows * src.cols;
+    const unsigned short* send = sptr + size;
+    dest.create(src.rows,src.cols, std::numeric_limits<float>::max());
+    while (sptr<send){
+      if (*sptr)
+	*dptr = scale * (*sptr);
+      dptr ++;
+      sptr ++;
+    }
+  }  
 }
