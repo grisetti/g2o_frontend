@@ -34,11 +34,23 @@ namespace pwn {
 				      DepthImage &depthImage, 
 				      const PointVector &points) const {
     assert(_imageRows && _imageCols && "PinholePointProjector: _imageRows and _imageCols are zero");
-
+    
     indexImage.create(_imageRows, _imageCols);
-    depthImage.create(indexImage.rows, indexImage.cols);
-    depthImage.setTo(cv::Scalar(0.0f));
+    depthImage.create(_imageRows, _imageCols);
+    /*
+    int* p=(int*)indexImage.data;
+    const int *pend=p+_imageRows*_imageCols;
+    while (p<pend) {*p++ = -1;}
+
+    float *d=(float*)depthImage.data;
+    const float *dend=d+_imageRows*_imageCols;
+    while (d<dend) {*d++ = 0;}
+    */
+    
+    depthImage.setTo(cv::Scalar(std::numeric_limits<float>::max()));
     indexImage.setTo(cv::Scalar(-1));
+    
+
     float *drowPtrs[_imageRows];
     int *irowPtrs[_imageRows];
     for (int i = 0; i<_imageRows; i++){
@@ -140,8 +152,6 @@ namespace pwn {
       int *i = &intervalImage(r, 0);
       for(int c = 0; c < depthImage.cols; c++, f++, i++) {
 	*i = _projectInterval(r, c, *f, worldRadius);
-	if((r < *i) || (c < *i) || (depthImage.rows - r < *i) || (depthImage.cols - c < *i))
-	  *i = -1;
       }
     }
   }

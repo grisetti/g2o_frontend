@@ -13,9 +13,9 @@
 #include <opencv2/highgui/highgui.hpp>
 
 // just to make the linker happy
-#include "g2o_frontend/pwn_boss/pwn_sensor_data.h"
+// #include "g2o_frontend/pwn_boss/pwn_sensor_data.h"
 
-pwn_boss::PWNSensorData data;
+// pwn_boss::PWNSensorData data;
 
 using namespace boss_map;
 using namespace boss;
@@ -178,7 +178,7 @@ int main(int argc, char** argv) {
   cerr << "created visaualizers" << endl;
 
   ReferenceFrame* currentReferenceFrame = 0;
-  int i=0;
+  size_t i=0;
   while (1) {
     char c;
     c= cv::waitKey(0);

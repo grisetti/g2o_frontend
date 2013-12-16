@@ -28,4 +28,5 @@ using namespace pwn;
     Eigen::Matrix3f cameraMatrix;
     float scale;
   };
+
 }

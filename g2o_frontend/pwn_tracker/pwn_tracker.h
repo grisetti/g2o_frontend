@@ -4,12 +4,9 @@
 #include "pwn_tracker_cache.h"
 #include "g2o_frontend/boss_map/map_manager.h"
 #include "g2o_frontend/boss_map/reference_frame.h"
-#include "g2o_frontend/pwn_core/frame.h"
-#include "g2o_frontend/pwn_core/pinholepointprojector.h"
-#include "g2o_frontend/pwn_core/depthimageconverterintegralimage.h"
-#include "g2o_frontend/pwn_core/aligner.h"
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
+#include "pwn_matcher_base.h"
 #include "opencv2/core/core.hpp"
 #include <fstream>
 #include <iostream>
@@ -22,7 +19,8 @@ using namespace boss;
 using namespace boss_map;
 using namespace pwn;
 
-  struct PwnTracker{
+  struct PwnTracker:  public PwnMatcherBase{
+
     struct PwnTrackerAction{
       PwnTrackerAction(PwnTracker* tracker_);
       virtual ~PwnTrackerAction() {};
@@ -50,18 +48,6 @@ using namespace pwn;
 
     PwnTracker(pwn::Aligner* aligner, pwn::DepthImageConverter* converter, boss_map::MapManager* manager, PwnCache* cache=0);
 
-    void makeThumbnails(cv::Mat& depthThumbnail, cv::Mat& normalThumbnail, 
-			Frame* f, int r, int c, 
-			const Eigen::Isometry3f& offset, 
-			const Eigen::Matrix3f& cameraMatrix,
-			float scale);
-
-    float compareDepthThumbnails();
-    float compareNormalThumbnails();
-    pwn::Frame* makeCloud(int& r, int& c,
-			  Eigen::Matrix3f& cameraMatrix, 
-			  const Eigen::Isometry3f& sensorOffset, 
-			  const DepthImage& depthImage);
 
     virtual void processFrame(const pwn::DepthImage& depthImage, 
 			      const Eigen::Isometry3f& sensorOffset, 
@@ -70,8 +56,6 @@ using namespace pwn;
 
     virtual ~PwnTracker();  
     void init();
-    inline int scale() const {return _scale;}
-    inline void setScale (int scale_) {_scale = scale_;}
     inline float newFrameInliersFraction() const {return _newFrameInliersFraction;}
     inline void setNewFrameInliersFraction(float nf) {_newFrameInliersFraction = nf;}
     std::list<InitAction*>& initActions() {return _initActions;}
@@ -81,6 +65,7 @@ using namespace pwn;
 
     PwnCache* cache() const {return _cache;}
   protected:  
+    //PwnTrackerFrame* makeFrame();
     virtual void newFrameCallbacks(PwnTrackerFrame* frame);
     virtual void newAlignmentCallbacks(const Eigen::Isometry3f& globalT, 
 				      const Eigen::Isometry3f& localT, 
@@ -93,32 +78,28 @@ using namespace pwn;
     std::list<NewRelationAction*> _newRelationActions;
     std::list<NewFrameAction*> _newFrameActions;
 
-
-    Aligner* _aligner;
-    DepthImageConverter* _converter;
-    int _scale;
     pwn::Frame* _previousCloud;
+    PwnCache::HandleType _previousCloudHandle;
     PwnTrackerFrame* _previousTrackerFrame;
     Eigen::Isometry3f _previousCloudTransform;
+    Eigen::Isometry3f _previousCloudOffset;
+
+    pwn::Frame* _currentCloud;
+    PwnCache::HandleType _currentCloudHandle;
+    PwnTrackerFrame* _currentTrackerFrame;
+    Eigen::Matrix3f  _currentCameraMatrix;
+    Eigen::Isometry3f _currentCloudTransform;
+    Eigen::Isometry3f _currentCloudOffset;
+    pwn::DepthImage _currentDepthImage;
+
     Eigen::Isometry3f _globalT;
     int _counter;
     int _numKeyframes;
     float _newFrameInliersFraction;
     MapManager* _manager;
     PwnCache* _cache;
-    PwnCache::HandleType _previousCloudHandle;
-    PwnCache::HandleType _currentCloudHandle;
     int _seq;
   };
-
-
-  template <typename T1, typename T2>
-  void convertScalar(T1& dest, const T2& src){
-    for (int i=0; i<src.matrix().cols(); i++)
-      for (int j=0; j<src.matrix().rows(); j++)
-	dest.matrix()(j,i) = src.matrix()(j,i);
-
-  }
 
 }// end namespace
 

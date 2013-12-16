@@ -36,7 +36,7 @@ namespace pwn_tracker {
     cv::Mat  diffRegistered;
   };
 
-  class PwnCloser: public boss_map_building::MapCloser{
+  class PwnCloser: public boss_map_building::MapCloser, public PwnMatcherBase {
   public:
 
     PwnCloser(pwn::Aligner* aligner_, 
@@ -44,38 +44,38 @@ namespace pwn_tracker {
 	      MapManager* manager_,
 	      PwnCache* cache_);
     
-    inline pwn::Aligner* aligner() { return _aligner;}
+    /*inline pwn::Aligner* aligner() { return _aligner;}
     inline void setAligner(pwn::Aligner* aligner_) { _aligner=aligner_;}
 
     inline pwn::DepthImageConverter* converter() { return _converter;}
     inline void setConverter(pwn::DepthImageConverter* converter_) { _converter=converter_; updateCache();}
-
+    */
     inline boss_map::PoseAcceptanceCriterion* criterion() {return _criterion;}
     void setCriterion(boss_map::PoseAcceptanceCriterion* criterion_) { _criterion= criterion_;}
 
-    inline int scale() const {return _scale;}
-    inline void setScale(int scale_) {_scale = scale_; updateCache();}
+    void setScale(int scale_) {PwnMatcherBase::setScale(scale_); updateCache();}
+
     inline PwnCache* cache() {return _cache;}
 
     virtual void processPartition(std::list<MapNodeBinaryRelation*>& newRelations, std::set<MapNode*> & otherPartition, MapNode* current_);
-    PwnCloserRelation* matchFrames(PwnTrackerFrame* from, PwnTrackerFrame* to, 
-				    pwn::Frame* fromCloud, pwn::Frame* toCloud,
+    PwnCloserRelation* matchFrames(PwnTrackerFrame* from, PwnTrackerFrame* to,
 				    const Eigen::Isometry3d& initialGuess);
   protected:
     void updateCache();
     static float compareNormals(cv::Mat& m1, cv::Mat& m2);
     static float compareDepths(cv::Mat& m1, cv::Mat& m2);
 
+    /*
     int _scale;
     pwn::DepthImageConverter* _converter;
     pwn::Aligner* _aligner;
+    */
     PwnCache* _cache;
-    float _frameInlierDepthThreshold;
+
+    //float _frameInlierDepthThreshold;
     int _frameMinNonZeroThreshold;
     int _frameMaxOutliersThreshold;
     int _frameMinInliersThreshold;
-  private:
-    void scoreMatch(PwnCloserRelation* rel);
   };
 
   class PwnCloserActiveRelationSelector: public MapRelationSelector {

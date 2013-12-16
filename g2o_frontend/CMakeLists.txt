@@ -3,7 +3,7 @@
 ADD_SUBDIRECTORY(basemath)
 #ADD_SUBDIRECTORY(ransac)
 ADD_SUBDIRECTORY(boss)
-# ADD_SUBDIRECTORY(boss_apps)
+ADD_SUBDIRECTORY(boss_apps)
 ADD_SUBDIRECTORY(boss_map)
 ADD_SUBDIRECTORY(boss_map_building)
 
@@ -31,6 +31,7 @@ if(BUILD_PWN)
   if(PCL_FOUND)
     ADD_SUBDIRECTORY(pwn_utils)
   endif(PCL_FOUND)
+  # ADD_SUBDIRECTORY(pwn_tracker2)
 endif(BUILD_PWN)
 
 if(BUILD_LINE_SLAM)

@@ -14,7 +14,7 @@ namespace pwn {
       _nonFlatInformationMatrix.setZero();
       _flatInformationMatrix.diagonal() = Normal(Eigen::Vector3f(1.0f, 1.0f, 1.0f));
       _nonFlatInformationMatrix.diagonal() = Normal(Eigen::Vector3f(1.0f, 1.0f, 1.0f));
-      _curvatureThreshold = 0.02f;
+      _curvatureThreshold = 0.0f;
     }
     virtual ~InformationMatrixCalculator() {}
 

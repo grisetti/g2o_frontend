@@ -9,7 +9,13 @@
 #include "g2o_frontend/boss_map/imu_sensor.h"
 #include "g2o_frontend/boss_map/sensor_data_synchronizer.h"
 #include "g2o_frontend/boss_map/robot_configuration.h"
+#include "g2o_frontend/boss_map/map_manager.h"
 #include "g2o_frontend/boss_map/sensing_frame_node.h"
+#include "g2o_frontend/boss_map/map_node_processor.h"
+
+#define MARKUSED(X)  X=X
+
+/*#include "g2o_frontend/pwn_boss/pwn_sensor_data.h"*/
 
 using namespace boss_map;
 using namespace boss;
@@ -109,7 +115,6 @@ void handleParsedArgs(Synchronizer* sync, std::list<CommandArg> args){
   }
  
 }
-
 int main(int argc, char** argv) {
   std::list<CommandArg> parsedArgs;
   if (argc == 1) {
@@ -131,30 +136,15 @@ int main(int argc, char** argv) {
   handleParsedArgs(&sync, parsedArgs);
   std::string filein = argv[c];
   std::string fileout = argv[c+1];
-
-
-
   Deserializer des;
   des.setFilePath(filein.c_str());
+
+  sync.addSyncTopic("/camera/depth_registered/image_rect_raw");
 
   Serializer ser;
   ser.setFilePath(fileout.c_str());
   
   cerr <<  "running logger with arguments: filein[" << filein << "] fileout: [" << fileout << "]" << endl;
-
-  // create a reframer object, that once all messages have been put together sets them to a unique frame
-  // Synchronizer::Reframer reframer;
-  // sync.addOutputHandler(&reframer);
-
-  // // create a writer object that dumps on the disk each block of synchronized objects
-  // Synchronizer::Writer writer(&ser);
-  // sync.addOutputHandler(&writer);
-
-  // // create a deleter object that polishes the memory after writing
-  // Synchronizer::Deleter deleter;
-  // sync.addOutputHandler(&deleter);
-  
-  StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(&sync, &ser);
 
   std::vector<BaseSensorData*> sensorDatas;
   RobotConfiguration* conf = readLog(sensorDatas, des);
@@ -166,6 +156,27 @@ int main(int argc, char** argv) {
   ser.writeObject(*conf);
   TSCompare comp;
   std::sort(sensorDatas.begin(), sensorDatas.end(), comp);
+
+  MapManager* manager = new MapManager();
+  ser.writeObject(*manager);
+  
+  SensingFrameNodeMaker* nodeMaker = new SensingFrameNodeMaker();
+  nodeMaker->init(manager,conf);
+  StreamProcessor::PropagatorOutputHandler* sync2nm=new StreamProcessor::PropagatorOutputHandler(&sync, nodeMaker);
+
+  OdometryRelationAdder* odometryAdder = new OdometryRelationAdder(manager,conf);
+  StreamProcessor::PropagatorOutputHandler* nm2odom=new StreamProcessor::PropagatorOutputHandler(nodeMaker, odometryAdder);
+  
+  ImuRelationAdder* imuAdder = new ImuRelationAdder(manager,conf);
+  StreamProcessor::PropagatorOutputHandler* odom2imu=new StreamProcessor::PropagatorOutputHandler(odometryAdder, imuAdder);
+
+  StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(imuAdder, &ser);
+
+  //OdometryRelationAdder* odometryAdder = new OdometryRelationAdder(manager, conf);
+  MARKUSED(sync2nm);
+  MARKUSED(nm2odom);
+  MARKUSED(odom2imu);
+  MARKUSED(writer);
 
   for (size_t i = 0; i< sensorDatas.size(); i++){
     BaseSensorData* data = sensorDatas[i];

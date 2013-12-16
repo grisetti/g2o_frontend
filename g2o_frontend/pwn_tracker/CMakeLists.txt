@@ -2,6 +2,7 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${QGLVIEWER_INCLUDE_DIR} ${QT_INCLUDES}
 
 ADD_LIBRARY(pwn_tracker_library 
   cache.h cache.hpp
+  pwn_matcher_base.cpp pwn_matcher_base.h
   #map_g2o_wrapper.cpp map_g2o_wrapper.h
   #map_closer.cpp map_closer.h
   pwn_tracker_frame.h pwn_tracker_frame.cpp
@@ -10,7 +11,9 @@ ADD_LIBRARY(pwn_tracker_library
   #cache.cpp cache.h 
   pwn_tracker.cpp pwn_tracker.h
   pwn_tracker_actions.cpp pwn_tracker_actions.h
-  pwn_closer.cpp pwn_closer.h
+  pwn_closer.cpp 
+  #pwn_closer_imagecheck.cpp
+  pwn_closer.h
   pwn_tracker_viewer.cpp pwn_tracker_viewer.h
 )
 
