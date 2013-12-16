@@ -53,13 +53,11 @@ namespace pwn {
     dest.create(src.rows,src.cols, CV_32FC1);
     dest.setTo(cv::Scalar(std::numeric_limits<float>::max()));
     float* dptr = (float*) dest.data;
-    int i = 0;
     while (sptr<send){
       if (*sptr)
 	*dptr = scale * (*sptr);
       dptr ++;
       sptr ++;
-      i++;
     }
   }  
 }
