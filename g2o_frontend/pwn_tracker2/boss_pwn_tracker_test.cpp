@@ -118,6 +118,53 @@ void handleParsedArgs(Synchronizer* sync, std::list<CommandArg> args){
 }
 
 
+class SequentialMapNode: public boss_map::MapNodeAlias {
+public:
+  SequentialMapNode(MapNode* original_=0, MapManager* manager_=0, int id_=-1, IdContext* context_ = 0):
+    MapNodeAlias(original_, manager_, id_, context_){
+    _odometry = 0;
+    _imu = 0;
+    _previousNode = 0;
+  }
+  virtual void serialize(ObjectData& data, IdContext& context){
+    MapNodeAlias::serialize(data,context);
+    data.setPointer("imu",_imu);
+    data.setPointer("odometry", _odometry);
+    data.setPointer("previousNode", _previousNode);
+  }
+
+  //! boss deserialization
+  virtual void deserialize(ObjectData& data, IdContext& context) {
+    MapNodeAlias::deserialize(data, context);
+    data.getReference("imu").bind(_imu);
+    data.getReference("odometry").bind(_odometry);
+    data.getReference("previousNode").bind(_previousNode);
+  }
+
+  //! odometry getter
+  MapNodeBinaryRelation* odometry() const { return _odometry;}
+
+  //! odometry setter
+  void setOdometry(MapNodeBinaryRelation* odometry_)  { _odometry = odometry_;}
+
+    //! imu getter
+  MapNodeUnaryRelation* imu() const { return _imu;}
+
+  //! imu setter
+  void setImu(MapNodeUnaryRelation* imu_) { _imu = imu_;}
+
+  // !previous node getter
+  SequentialMapNode* previousNode() const {return _previousNode;}
+
+  // !previous node setter
+  void setPreviousNode(SequentialMapNode* previousNode_)  {_previousNode = previousNode_;}
+
+protected:
+  MapNodeBinaryRelation* _odometry;
+  MapNodeUnaryRelation* _imu;
+  SequentialMapNode* _previousNode;
+};
+
 
 class BaseTracker: public MapNodeProcessor {
 public:
