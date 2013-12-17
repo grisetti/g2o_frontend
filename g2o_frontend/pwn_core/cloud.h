@@ -35,9 +35,9 @@ namespace pwn {
     inline Gaussian3fVector& gaussians() { return _gaussians; }
 
     bool load(Eigen::Isometry3f &T, const char *filename);
-    bool save(const char *filename, Eigen::Isometry3f T = Eigen::Isometry3f::Identity(), int step = 1, bool binary = true);
-
     bool load(Eigen::Isometry3f &T, std::istream &is);
+
+    bool save(const char *filename, Eigen::Isometry3f T = Eigen::Isometry3f::Identity(), int step = 1, bool binary = true);
     bool save(std::ostream &os, Eigen::Isometry3f T = Eigen::Isometry3f::Identity(), int step = 1, bool binary = true);
     
     void clear();

@@ -20,7 +20,7 @@
 #include "g2o/stuff/command_args.h"
 #include "g2o_frontend/basemath/bm_se3.h"
 
-#include "../pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/cloud.h"
 
 using namespace Eigen;
 using namespace g2o;
@@ -34,6 +34,7 @@ int main (int argc, char** argv) {
   float normalStep;
   float alpha;
   int applyTransform;
+  int step;
 
   const int maxFiles = 1000;
   std::vector<string> filenames(maxFiles);
@@ -43,6 +44,7 @@ int main (int argc, char** argv) {
   arg.param("pointSize",pointSize,1.0f,"size of the points") ;
   arg.param("normalLenght",normalLenght,0,"lenght of the normals") ;
   arg.param("transform",applyTransform,1,"apply transform") ;
+  arg.param("step",step,1,"show one cloud each step cloud") ;
   arg.param("alpha",alpha,1.0f,"alpha channel for points") ;
   arg.param("pointStep",pointStep,1,"step of the points") ;
   arg.param("normalStep",normalStep,1,"step of the normals") ;
@@ -76,17 +78,17 @@ int main (int argc, char** argv) {
   mainWindow->show();
   viewer->show();
   listWidget->show();
-  pwn::Frame *frame = new pwn::Frame();
 
   viewer->setAxisIsDrawn(true);
   while (mainWindow->isVisible()) {
     if(viewer->drawableList().size() == 0) {
-      for(int i = 0; i < maxFiles; i++) {
+      for(int i = 0; i < maxFiles; i+=step) {
 	if(filenames[i] == "")
 	  break;
 
+	pwn::Cloud *cloud = new pwn::Cloud();
 	Isometry3f transform;
-	if(!frame->load(transform, filenames[i].c_str())) {
+	if(!cloud->load(transform, filenames[i].c_str())) {
 	  cerr << "unable to load points from file [" << filenames[i] << "]" << endl;
 	  return 0;
 	} else {
@@ -95,15 +97,15 @@ int main (int argc, char** argv) {
 	}
 	transform.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 	if(applyTransform)
-	  frame->transformInPlace(transform);
+	  cloud->transformInPlace(transform);
 
 	GLParameterPoints* pointsParams = new GLParameterPoints(pointSize, Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
 	pointsParams->setStep(pointStep);
-	DrawablePoints* drawablePoints = new DrawablePoints(T, pointsParams, &frame->points(), &frame->normals());
+	DrawablePoints* drawablePoints = new DrawablePoints(T, pointsParams, &cloud->points(), &cloud->normals());
 	viewer->addDrawable(drawablePoints);
 
 	GLParameterNormals* normalParams = new GLParameterNormals(pointSize, Eigen::Vector4f(0.0f,0.0f,1.0f,alpha), normalLenght);
-	DrawableNormals* drawableNormals = new DrawableNormals(T, normalParams, &frame->points(), &frame->normals());
+	DrawableNormals* drawableNormals = new DrawableNormals(T, normalParams, &cloud->points(), &cloud->normals());
 	normalParams->setStep(normalStep);
 	normalParams->setNormalLength(normalLenght);
 	viewer->addDrawable(drawableNormals);
