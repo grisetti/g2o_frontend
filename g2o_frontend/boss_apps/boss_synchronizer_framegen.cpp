@@ -163,19 +163,9 @@ int main(int argc, char** argv) {
   SensingFrameNodeMaker* nodeMaker = new SensingFrameNodeMaker();
   nodeMaker->init(manager,conf);
   StreamProcessor::PropagatorOutputHandler* sync2nm=new StreamProcessor::PropagatorOutputHandler(&sync, nodeMaker);
-
-  OdometryRelationAdder* odometryAdder = new OdometryRelationAdder(manager,conf);
-  StreamProcessor::PropagatorOutputHandler* nm2odom=new StreamProcessor::PropagatorOutputHandler(nodeMaker, odometryAdder);
-  
-  ImuRelationAdder* imuAdder = new ImuRelationAdder(manager,conf);
-  StreamProcessor::PropagatorOutputHandler* odom2imu=new StreamProcessor::PropagatorOutputHandler(odometryAdder, imuAdder);
-
-  StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(imuAdder, &ser);
+  StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(nodeMaker, &ser);
 
   //OdometryRelationAdder* odometryAdder = new OdometryRelationAdder(manager, conf);
-  MARKUSED(sync2nm);
-  MARKUSED(nm2odom);
-  MARKUSED(odom2imu);
   MARKUSED(writer);
 
   for (size_t i = 0; i< sensorDatas.size(); i++){

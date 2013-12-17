@@ -4,6 +4,7 @@
 #include "map_core.h"
 #include "robot_configuration.h"
 #include "stream_processor.h"
+#include "imu_sensor.h"
 
 namespace boss_map {
   using namespace boss;
@@ -35,8 +36,30 @@ namespace boss_map {
 
     //! access to the frame shared by the sensor data
     ReferenceFrame* robotFrame();
+
+    // !previous node getter
+    inline SensingFrameNode* previousNode() const {return _previousNode;}
+
+    // !previous node setter
+    inline void setPreviousNode(SensingFrameNode* previousNode_)  {_previousNode = previousNode_;}
+    
+    //! odometry getter
+    inline MapNodeBinaryRelation* odometry() const { return _odometry;}
+    
+    //! odometry setter
+    inline void setOdometry(MapNodeBinaryRelation* odometry_)  { _odometry = odometry_;}
+
+    //! imu getter
+    inline MapNodeUnaryRelation* imu() const { return _imu;}
+    
+    //! imu setter
+    inline void setImu(MapNodeUnaryRelation* imu_) { _imu = imu_;}
+
   protected:
     std::vector<BaseSensorData*> _sensorDatas;
+    MapNodeBinaryRelation* _odometry;
+    MapNodeUnaryRelation* _imu;
+    SensingFrameNode* _previousNode;
   };
 
   class SensingFrameNodeMaker: public StreamProcessor {
@@ -48,8 +71,10 @@ namespace boss_map {
     SensingFrameNode* processData(BaseSensorData* data);
     MapManager* _mapManager;
     RobotConfiguration* _config;
-    SensingFrameNode* _currentSensingFrameNode;
     BaseSensorData* _previousData;
+    SensingFrameNode* _currentNode, *_previousNode;
+    MapNodeUnaryRelation* _lastImu;
+    MapNodeBinaryRelation* _lastOdom;
     int _seq;
   };
 
