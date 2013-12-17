@@ -22,7 +22,3 @@ TARGET_LINK_LIBRARIES(pwn_simpleViewer pwn_viewer pwn_core
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
   ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
 )
-
-ADD_EXECUTABLE(pwn_visual_odometry pwn_visual_odometry.cpp )
-SET_TARGET_PROPERTIES(pwn_visual_odometry PROPERTIES OUTPUT_NAME pwn_visual_odometry)
-TARGET_LINK_LIBRARIES(pwn_visual_odometry pwn_core ${OpenCV_LIBS})

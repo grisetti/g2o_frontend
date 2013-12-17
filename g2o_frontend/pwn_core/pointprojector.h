@@ -30,7 +30,7 @@ namespace pwn {
     virtual ~PointProjector();
   
     /**
-     *  Virtual method that return the pose transform.
+     *  Virtual method that returns the pose transform.
      *  @return a constant reference to the pose transform.
      *  @see setTransform()
      */
@@ -46,7 +46,7 @@ namespace pwn {
     }
 
     /**
-     *  Method that return the minimum distance value.
+     *  Method that returns the minimum distance value.
      *  @return the minimum distance value.
      *  @see setMinDistance()
      */
@@ -59,7 +59,7 @@ namespace pwn {
     inline void setMinDistance(const float minDistance_) { _minDistance = minDistance_; }
 
     /**
-     *  Method that return the maximum distance value.
+     *  Method that returns the maximum distance value.
      *  @return the maximum distance value.
      *  @see setMaxDistance()
      */
@@ -72,14 +72,14 @@ namespace pwn {
     inline void setMaxDistance(const float maxDistance_) { _maxDistance = maxDistance_; }
 
     /**
-     *  Method that return the number of rows of the image where the points are projected.
+     *  Method that returns the number of rows of the image where the points are projected.
      *  @return the number of rows of the image where the points are projected.
      *  @see imageCols()
      *  @see setImageSize()
      */
     inline int imageRows() const { return _imageRows;}
     /**
-     *  Method that return the number of columns of the image where the points are projected.
+     *  Method that returns the number of columns of the image where the points are projected.
      *  @return the number of columns of the image where the points are projected.
      *  @see imageRows()
      *  @see setImageSize()
@@ -109,13 +109,13 @@ namespace pwn {
      *  of the projected points in meters.
      *  @param points is the input parameter which is a constant reference to a vector containing the set 
      *  of homogeneous points to project.
-     *  @see unProject(PointVector &points, IntImage &indexImage, const DepthImage &depthImage)
-     *  @see unProject(PointVector &points, Gaussian3fVector &gaussians, IntImage &indexImage, const DepthImage &depthImage)
+     *  @see unProject()
      *  @see projectIntervals()
      */
     virtual void project(IntImage &indexImage, 
 			 DepthImage &depthImage, 
 			 const PointVector &points) const;
+    
     /**
      *  Virtual method that unprojects to the 3D euclidean space the points contained in a depth image
      *  The unprojection operation is specific for the projection space defined by the class  
@@ -127,10 +127,15 @@ namespace pwn {
      *  Each element of this matrix contains the index of the corresponding point in the computed vector of points.
      *  @param depthImage is an output parameter which is a constant reference to an image containing the depth values 
      *  in meters.
-     */
+     *  @see project(IntImage &indexImage, DepthImage &depthImage, const PointVector &points)
+     *  @see unProject(PointVector &points, Gaussian3fVector &gaussians, IntImage &indexImage, const DepthImage &depthImage)
+     *  @see projectIntervals()
+     *  @see unProject()
+     */    
     virtual void unProject(PointVector &points,
 			   IntImage &indexImage, 
 			   const DepthImage &depthImage) const;
+    
     /**
      *  Virtual method that unprojects to the 3D euclidean space the points contained in a depth image
      *  The unprojection operation is specific for the projection space defined by the class  
@@ -145,27 +150,68 @@ namespace pwn {
      *  Each element of this matrix contains the index of the corresponding point in the computed vector of points.
      *  @param depthImage is an output parameter which is a constant reference to an image containing the depth values 
      *  in meters.
+     *  @see project()
+     *  @see projectIntervals()
      */
     virtual void unProject(PointVector &points,
 			   Gaussian3fVector &gaussians,
 			   IntImage &indexImage,
 			   const DepthImage &depthImage) const;
+    
     /**
      *  Virtual method that projects on the output image the size in pixels of a square regions
-     *  around the respective point in the depth image given in input.
+     *  around the respective point in the input depth image.
      *  @param intervalImage is the output parameter which is a reference to an image containing the size of the square 
      *  regions around the point in the depth image given in input.
      *  @param depthImage is an input parameter which is a constant reference to an image containing depth values in meters.
      *  @param worldRadius is an input parameter containing a float representing the radius of a sphere in the 3D euclidean 
      *  space used to determine the size of the square regions.
+     *  @see project()
+     *  @see projectInterval()
      */
     virtual void projectIntervals(IntImage &intervalImage, 
 				  const DepthImage &depthImage, 
 				  const float worldRadius) const;
 
-    virtual inline bool project(int &, int &, float &, const Point &) const { return false; }
-    virtual inline bool unProject(Point&, const int, const int, const float) const { return false; }
-    virtual inline int projectInterval(const int, const int, const float, const float) const { return 0; }
+    /**
+     *  Virtual method that projects a given point from the 3D euclidean space to 
+     *  a destination space defined by the user extending this class. This method stores the result
+     *  in three output parameters representing the image coordinates (row and column) and a depth value.
+     *  @param x is an output int value that will contain the raw coordinate of the projected input point in the depth image.
+     *  @param y is an output int value that will contain the column coordinate of the projected input point in the depth image.
+     *  @param f is an output parameter which is a reference to a float that will contain the depth values of the projected input point.
+     *  @param p is the input parameter which is a constant reference to an homogeneous point to project.
+     *  @return true if the projection is valid, false otherwise.
+     *  @see project() 
+     */
+    virtual inline bool project(int &/*x*/, int &/*y*/, float &/*f*/, const Point &/*p*/) const { return false; }
+
+    /**
+     *  Virtual method that unprojects to the 3D euclidean space the point given in input.
+     *  The unprojection operation is specific for the projection space defined by the class  
+     *  extending this one. This method stores the unprojected point in an output parameter as an homogeneous
+     *  point in the 3D euclidean space.
+     *  @param p is the output parameter which is a reference to a the unprojected homogenous point to the 3D euclidean space.
+     *  @param x is an input parameter representing the row coordinate of the input depth point.
+     *  @param y is an input parameter representing the column coordinate of the input depth point.
+     *  @param d is an input value containing the depth value of the depth point. 
+     *  @return true if the unprojection is valid, false otherwise.
+     *  @see unProject() 
+     */
+    virtual inline bool unProject(Point &/*p*/, const int/* x*/, const int/* y*/, const float/* d*/) const { return false; }
+    
+    /**
+     *  Virtual method that projects the size in pixels of a square regions around the point specified by the 
+     *  the input values.
+     *  @param x is an input int value representing the raw of the input point in the depth image.  
+     *  @param y is an input int value representing the column of the input point in the depth image.
+     *  @param d is an input value containing the depth value of the input point. 
+     *  @param worldRadius is an input parameter containing a float representing the radius of a sphere in the 3D euclidean 
+     *  space used to determine the size of the square regions.
+     *  @return an int value representing the size in pixels of the square region around the input point.
+     *  @see projectIntervals()
+     */
+    virtual inline int projectInterval(const int/* x*/, const int/* y*/, const float/* d*/, const float/* worldRadius*/) const { return 0; }
 
     /**
      *  Pure virtual method that updates the projector structures in order to handle different size of the
@@ -176,7 +222,7 @@ namespace pwn {
      *  @param scalingFactor is a float value used to update the projector structures.
      */
     virtual void scale(float scalingFactor) = 0;
-    
+   
   protected:
     Eigen::Isometry3f _transform; /**< Transform to apply to the pose in order to change the point of view from which the points are seen. */
   

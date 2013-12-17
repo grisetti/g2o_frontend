@@ -36,3 +36,7 @@ ADD_LIBRARY(pwn_core
 )
 SET_TARGET_PROPERTIES(pwn_core PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn_core)
 TARGET_LINK_LIBRARIES(pwn_core ${OpenCV_LIBS})
+
+ADD_EXECUTABLE(pwn_visual_odometry pwn_visual_odometry.cpp )
+SET_TARGET_PROPERTIES(pwn_visual_odometry PROPERTIES OUTPUT_NAME pwn_visual_odometry)
+TARGET_LINK_LIBRARIES(pwn_visual_odometry pwn_core ${OpenCV_LIBS})
