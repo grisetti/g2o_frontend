@@ -239,18 +239,19 @@ void setInputParameters(PinholePointProjector &pointProjector,
   if((it = inputParameters.find("minImageRadius")) != inputParameters.end()) statsCalculator.setMinImageRadius((*it).second);
   if((it = inputParameters.find("maxImageRadius")) != inputParameters.end()) statsCalculator.setMaxImageRadius((*it).second);
   if((it = inputParameters.find("minPoints")) != inputParameters.end()) statsCalculator.setMinPoints((*it).second);
-  if((it = inputParameters.find("curvatureThreshold")) != inputParameters.end()) {
-    statsCalculator.setCurvatureThreshold((*it).second);
+  if((it = inputParameters.find("curvatureThreshold")) != inputParameters.end()) statsCalculator.setCurvatureThreshold((*it).second);
+  if((it = inputParameters.find("worldRadius")) != inputParameters.end()) statsCalculator.setWorldRadius((*it).second);    
+  if((it = inputParameters.find("informationMatrixCurvatureThreshold")) != inputParameters.end()) {
     pointInformationMatrixCalculator.setCurvatureThreshold((*it).second);
     normalInformationMatrixCalculator.setCurvatureThreshold((*it).second);
-    correspondenceFinder.setFlatCurvatureThreshold((*it).second);
   }
-  if((it = inputParameters.find("worldRadius")) != inputParameters.end()) statsCalculator.setWorldRadius((*it).second);
 
+  // Correspondence finder
   if((it = inputParameters.find("inlierDistanceThreshold")) != inputParameters.end()) correspondenceFinder.setInlierDistanceThreshold((*it).second);
   if((it = inputParameters.find("inlierNormalAngularThreshold")) != inputParameters.end()) correspondenceFinder.setInlierNormalAngularThreshold((*it).second);
   if((it = inputParameters.find("inlierCurvatureRatioThreshold")) != inputParameters.end()) correspondenceFinder.setInlierCurvatureRatioThreshold((*it).second);
-  
+  if((it = inputParameters.find("flatCurvatureThreshold")) != inputParameters.end()) correspondenceFinder.setFlatCurvatureThreshold((*it).second);
+
   // Linearizer
   if((it = inputParameters.find("inlierMaxChi2")) != inputParameters.end()) linearizer.setInlierMaxChi2((*it).second);
   if((it = inputParameters.find("robustKernel")) != inputParameters.end()) linearizer.setRobustKernel((*it).second);    
