@@ -30,7 +30,6 @@ namespace pwn {
     _rotationalMinEigenRatio = 50;
     _translationalMinEigenRatio = 50;
     _debug = false;
-    _debugPrefix = "";
   };
 
   void Aligner::addRelativePrior(const Eigen::Isometry3f &mean, const Matrix6f &informationMatrix) {
