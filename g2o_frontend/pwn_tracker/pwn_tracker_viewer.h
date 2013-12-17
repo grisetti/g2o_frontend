@@ -13,7 +13,7 @@ namespace pwn_tracker {
 
   struct VisCloud{
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    VisCloud(pwn::Frame* cloud);
+    VisCloud(pwn::Cloud* cloud);
     void draw();
     GLuint drawList;
   };

@@ -37,7 +37,7 @@ namespace boss_map {
     this->manager = manager;
     graph=g2oInit();
     reflector = new MapG2OReflector(manager,graph);
-    manager->actionHandlers().push_back(reflector);
+    //manager->actionHandlers().push_back(reflector);
     reflector->init();
   }
 

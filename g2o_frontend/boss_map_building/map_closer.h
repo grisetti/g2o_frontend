@@ -1,6 +1,6 @@
 #pragma once
 
-#include "g2o_frontend/boss_map_building/boss_map_g2o_reflector.h"
+#include "g2o_frontend/boss_map_building/map_g2o_reflector.h"
 #include "g2o_frontend/boss_map/map_utils.h"
 
 namespace boss_map_building {

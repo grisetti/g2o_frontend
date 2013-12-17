@@ -78,13 +78,13 @@ using namespace pwn;
     std::list<NewRelationAction*> _newRelationActions;
     std::list<NewFrameAction*> _newFrameActions;
 
-    pwn::Frame* _previousCloud;
+    pwn::Cloud* _previousCloud;
     PwnCache::HandleType _previousCloudHandle;
     PwnTrackerFrame* _previousTrackerFrame;
     Eigen::Isometry3f _previousCloudTransform;
     Eigen::Isometry3f _previousCloudOffset;
 
-    pwn::Frame* _currentCloud;
+    pwn::Cloud* _currentCloud;
     PwnCache::HandleType _currentCloudHandle;
     PwnTrackerFrame* _currentTrackerFrame;
     Eigen::Matrix3f  _currentCameraMatrix;

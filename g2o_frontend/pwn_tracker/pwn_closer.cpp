@@ -258,7 +258,7 @@ namespace pwn_tracker {
 
   CloserRelationAdder::CloserRelationAdder(std::list<Serializable*>& objects_,
 		      PwnCloser* closer, 
-		      G2oWrapper* optimizer_, 
+		      MapG2OReflector* optimizer_, 
 		      PwnTracker* tracker):
     PwnTracker::NewRelationAction(tracker),
     _objects(objects_) {

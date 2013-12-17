@@ -1,13 +1,33 @@
-#include "boss_map_g2o_reflector.h"
+#include "map_g2o_reflector.h"
+#include "g2o/types/slam3d/vertex_se3.h"
+#include "g2o/types/slam3d/edge_se3.h"
+#include "g2o/stuff/macros.h"
+#include "g2o/stuff/color_macros.h"
+#include "g2o/stuff/command_args.h"
+#include "g2o/stuff/filesys_tools.h"
+#include "g2o/stuff/string_tools.h"
+#include "g2o/stuff/timeutil.h"
+
+#include "g2o/core/sparse_optimizer.h"
+#include "g2o/core/block_solver.h"
+#include "g2o/core/factory.h"
+#include "g2o/core/optimization_algorithm_gauss_newton.h"
+#include "g2o/core/optimization_algorithm_levenberg.h"
+#include "g2o/solvers/csparse/linear_solver_csparse.h"
 
 namespace boss_map_building {
   using namespace std;
   using namespace boss;
+  using namespace g2o;
 
-  MapG2OReflector::MapG2OReflector(MapManager* _manager, g2o::OptimizableGraph* graph_):
+  MapG2OReflector::MapG2OReflector(MapManager* _manager, g2o::SparseOptimizer* graph_):
     MapManagerActionHandler (_manager ){
-    _graph = graph_;
+    if (! graph_) {
+      _graph = g2oInit();
+    } else 
+      _graph = graph_;
     _lastUsedId = 0;
+    init();
   }
 
   MapG2OReflector::~MapG2OReflector() {};
@@ -108,6 +128,46 @@ namespace boss_map_building {
     if (it==_rm2g.end())
       return 0;
     return it->second;
+  }
+
+
+  void MapG2OReflector::optimize(){
+    cerr << "optimizing" << endl;
+    // scan for all edges that are of type PwnTrackerRelation that are not active and remove them from the optimization
+    g2o::OptimizableGraph::EdgeSet eset;
+    cerr << "total number of relations: " << _manager->relations().size() << endl;
+    for (std::set<MapNodeRelation*>::iterator it=_manager->relations().begin(); it!=_manager->relations().end(); it++){
+      g2o::EdgeSE3* e=relation(*it);
+      if (!e)
+	continue;
+      if (_selector->accept(*it)){
+	eset.insert(e);
+      } 
+    }
+    //cerr << "active ones: : " << eset.size() << endl;
+    g2o::OptimizableGraph::Vertex* gauge = _graph->findGauge();
+    gauge->setFixed(true);
+    _graph->initializeOptimization(eset);
+    
+    cerr << "GLOBAL OPT" << endl;
+    _graph->setVerbose(false);
+    _graph->optimize(10);
+    //cerr << "copying estimate" << endl;
+    copyEstimatesFromG2O();
+    //cerr << "done" << endl;
+  }
+
+  g2o::SparseOptimizer * MapG2OReflector::g2oInit(){
+    // graph construction
+    typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
+    typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
+    SlamLinearSolver* linearSolver = new SlamLinearSolver();
+    linearSolver->setBlockOrdering(false);
+    SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
+    OptimizationAlgorithmLevenberg* solverGauss   = new OptimizationAlgorithmLevenberg(blockSolver);
+    SparseOptimizer * graph = new SparseOptimizer();
+    graph->setAlgorithm(solverGauss);
+    return graph;
   }
 
 }

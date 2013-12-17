@@ -119,9 +119,9 @@ namespace pwn_tracker{
     Eigen::Isometry3d relationMean;
     if (_previousCloud){
       _aligner->setCurrentSensorOffset(_currentCloudOffset);
-      _aligner->setCurrentFrame(_currentCloud);
+      _aligner->setCurrentCloud(_currentCloud);
       _aligner->setReferenceSensorOffset(_previousCloudOffset);
-      _aligner->setReferenceFrame(_previousCloud);
+      _aligner->setReferenceCloud(_previousCloud);
 
       _aligner->correspondenceFinder()->setImageSize(r,c);
       PinholePointProjector* alprojector=dynamic_cast<PinholePointProjector*>(_aligner->projector());

@@ -14,7 +14,7 @@
 #include "g2o_frontend/boss_map/imu_sensor.h"
 #include "g2o_frontend/boss_map/robot_configuration.h"
 #include "g2o_frontend/boss/bidirectional_serializer.h"
-#include "g2o_frontend/boss_map_building/map_g2o_wrapper.h"
+#include "g2o_frontend/boss_map_building/map_g2o_reflector.h"
 #include "g2o_frontend/pwn_core/pwn_static.h"
 #include "g2o_frontend/pwn_boss/pwn_io.h"
 // just to make the linker happy
@@ -129,13 +129,13 @@ int main(int argc, char** argv) {
   ser.writeObject(*manager);
 
   // install the optimization wrapper
-  G2oWrapper* wrapper = new G2oWrapper(manager);
-  wrapper->_selector=new PwnCloserActiveRelationSelector(manager);
+  MapG2OReflector* wrapper = new MapG2OReflector(manager);
+  wrapper->setSelector(new PwnCloserActiveRelationSelector(manager));
   int scale = 4;
   // create a cache for the frames
   PwnCache* cache  = new PwnCache(converter, scale, 400, 410);
   PwnCacheHandler* cacheHandler = new PwnCacheHandler(manager, cache);
-  manager->actionHandlers().push_back(cacheHandler);
+  //manager->actionHandlers().push_back(cacheHandler);
   cacheHandler->init();
 
 

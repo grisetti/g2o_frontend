@@ -2,9 +2,9 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 LINK_DIRECTORIES(${OpenCV_LIBRARY_DIRS})
 
 ADD_LIBRARY(boss_map_building
-  boss_map_g2o_reflector.cpp boss_map_g2o_reflector.h
+  map_g2o_reflector.cpp map_g2o_reflector.h
   map_closer.cpp map_closer.h
-  map_g2o_wrapper.cpp map_g2o_wrapper.h
+  #map_g2o_wrapper.cpp map_g2o_wrapper.h
 )
 
 INCLUDE_DIRECTORIES(boss_map_building  ${CSPARSE_INCLUDE_DIR})

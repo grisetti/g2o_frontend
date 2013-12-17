@@ -5,12 +5,12 @@
 
 namespace pwn_tracker{
   using namespace cache_ns;
-  PwnCacheEntry::PwnCacheEntry(PwnCache* c, PwnTrackerFrame* k, pwn::Frame* d):
-    CacheEntry<PwnTrackerFrame,pwn::Frame>(k,d){
+  PwnCacheEntry::PwnCacheEntry(PwnCache* c, PwnTrackerFrame* k, pwn::Cloud* d):
+    CacheEntry<PwnTrackerFrame,pwn::Cloud>(k,d){
     _pwnCache=c;
   }
 
-  pwn::Frame* PwnCacheEntry::fetch(CacheEntry::KeyType* k){
+  pwn::Cloud* PwnCacheEntry::fetch(CacheEntry::KeyType* k){
     return _pwnCache->loadFrame(k);
   }
 
@@ -21,12 +21,12 @@ namespace pwn_tracker{
   }
 
 
-  Frame* PwnCache::loadFrame(PwnTrackerFrame* trackerFrame){
+  pwn::Cloud* PwnCache::loadFrame(PwnTrackerFrame* trackerFrame){
     boss_map::ImageBLOB* depthBLOB = trackerFrame->depthImage.get();
     PinholePointProjector* projector = dynamic_cast<PinholePointProjector*>(_converter->projector());
     projector->setImageSize(trackerFrame->imageRows, trackerFrame->imageCols);
     pwn::DepthImage depth;
-    pwn::Frame* cloud=new pwn::Frame;
+    pwn::Cloud* cloud=new pwn::Cloud;
     Eigen::Matrix3f cameraMatrix;
     Eigen::Isometry3f offset;
     DepthImage_convert_16UC1_to_32FC1(depth, depthBLOB->cvImage()); 

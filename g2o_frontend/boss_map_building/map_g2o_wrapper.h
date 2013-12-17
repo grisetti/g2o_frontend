@@ -25,7 +25,7 @@ namespace boss_map {
   public:
     G2oWrapper(MapManager* manager);
     void optimize();
-    SparseOptimizer * g2oInit();
+    virtual SparseOptimizer * g2oInit();
     void save(const std::string& filename);
     MapRelationSelector* _selector;
   protected:

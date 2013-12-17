@@ -104,9 +104,15 @@ namespace boss_map {
 
   MapManagerActionHandler::MapManagerActionHandler(MapManager* manager_){
     _manager = manager_;
+    _manager->actionHandlers().push_back(this);
   }
 
-  MapManagerActionHandler::~MapManagerActionHandler(){}
+  MapManagerActionHandler::~MapManagerActionHandler(){
+    size_t i;
+    for (i = 0;  i<_manager->actionHandlers().size() && _manager->actionHandlers()[i]!=this;  i++);
+    if (i<_manager->actionHandlers().size())
+      _manager->actionHandlers().erase(_manager->actionHandlers().begin()+i);
+  }
 
   BOSS_REGISTER_CLASS(MapManager);
 
