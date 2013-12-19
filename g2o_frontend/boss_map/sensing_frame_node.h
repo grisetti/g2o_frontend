@@ -64,6 +64,7 @@ namespace boss_map {
 
   class SensingFrameNodeMaker: public StreamProcessor {
   public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     SensingFrameNodeMaker();
     void init(MapManager* manager_, RobotConfiguration* config_);
     virtual void process(Serializable* s);
@@ -73,9 +74,12 @@ namespace boss_map {
     RobotConfiguration* _config;
     BaseSensorData* _previousData;
     SensingFrameNode* _currentNode, *_previousNode;
+    Eigen::Isometry3d _currentNodeTransform, _previousNodeTransform;
     MapNodeUnaryRelation* _lastImu;
     MapNodeBinaryRelation* _lastOdom;
     int _seq;
+    std::list<Serializable*> _outputQueue;
+    void flushQueue();
   };
 
 }

@@ -15,6 +15,7 @@
 #include "base_tracker.h"
 #include "pwn_tracker.h"
 #include "pwn_cloud_cache.h"
+#include "pwn_closer.h"
 #include "g2o_frontend/pwn_boss/pwn_io.h"
 
 #define MARKUSED(X)  X=X
@@ -80,9 +81,11 @@ int main(int argc, char** argv) {
   PwnCloudCacheHandler* cacheHandler = new PwnCloudCacheHandler(manager, cache);
   PwnMatcherBase* matcher = new PwnMatcherBase(aligner, converter);
   PwnTracker* tracker = new PwnTracker(matcher, cache, manager, conf);
+  PwnCloser* closer = new PwnCloser(tracker);
   tracker->setScale(scale);
 
-  
+
+  std::list<Serializable*> trackerOutput;
   SensingFrameNodeMaker* nodeMaker = new SensingFrameNodeMaker();
   nodeMaker->init(manager,conf);
   StreamProcessor::PropagatorOutputHandler* sync2nm=new StreamProcessor::PropagatorOutputHandler(&sync, nodeMaker);
@@ -92,6 +95,10 @@ int main(int argc, char** argv) {
   StreamProcessor::PropagatorOutputHandler* nm2t=new StreamProcessor::PropagatorOutputHandler(nodeMaker, tracker);
   MARKUSED(nm2t);
 
+  StreamProcessor::EnqueuerOutputHandler* nm2q=new StreamProcessor::EnqueuerOutputHandler(nodeMaker, trackerOutput);
+  MARKUSED(nm2q);
+
+  
   StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(tracker, &ser);
   tracker->init();
   

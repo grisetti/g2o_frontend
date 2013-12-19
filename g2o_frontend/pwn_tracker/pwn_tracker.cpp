@@ -29,7 +29,6 @@ namespace pwn_tracker{
 			 pwn::DepthImageConverter* converter, 
 			 boss_map::MapManager* manager,
 			 PwnCache* cache_): PwnMatcherBase(aligner, converter) {
-    _previousCloud = 0;
     _globalT.setIdentity();
     _previousCloudTransform.setIdentity();
     _counter = 0;
@@ -38,6 +37,8 @@ namespace pwn_tracker{
     this->_manager = manager;
     _cache=cache_;
     cumTime = 0;
+    _previousTrackerFrame = 0;
+    _previousCloud = 0;
   }
 
   void PwnTracker::init(){

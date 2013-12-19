@@ -76,27 +76,43 @@ namespace boss_map_building {
   }
 
   void MapG2OReflector::relationAdded(MapNodeRelation* _r) {
-    MapNodeBinaryRelation* r = dynamic_cast<MapNodeBinaryRelation*>(_r);
-    if (!r)
-      return;
-    
-    g2o::EdgeSE3* gr = new g2o::EdgeSE3;
-    MapNode* n0=r->nodes()[0];
-    MapNode* n1=r->nodes()[1];
-    gr->setVertex(0,_nm2g[n0]);
-    gr->setVertex(1,_nm2g[n1]);
-    gr->setMeasurement(r->transform());
-    gr->setInformation(r->informationMatrix());
-    _rm2g.insert(make_pair(r,gr));
-    _rg2m.insert(make_pair(gr,r));
-    _graph->addEdge(gr);
+    {
+      MapNodeBinaryRelation* r = dynamic_cast<MapNodeBinaryRelation*>(_r);
+      if  (r) {    
+	g2o::EdgeSE3* gr = new g2o::EdgeSE3;
+	MapNode* n0=r->nodes()[0];
+	MapNode* n1=r->nodes()[1];
+	gr->setVertex(0,_nm2g[n0]);
+	gr->setVertex(1,_nm2g[n1]);
+	gr->setMeasurement(r->transform());
+	gr->setInformation(r->informationMatrix());
+	_rm2g.insert(make_pair(r,gr));
+	_rg2m.insert(make_pair(gr,r));
+	_graph->addEdge(gr);
+	return;
+      }
+    }
+    {
+      MapNodeUnaryRelation* r = dynamic_cast<MapNodeUnaryRelation*>(_r);
+      if  (r) {    
+	EdgeSE3Prior* gr = new g2o::EdgeSE3Prior;
+	MapNode* n0=r->nodes()[0];
+	gr->setVertex(0,_nm2g[n0]);
+	gr->setMeasurement(r->transform());
+	gr->setInformation(r->informationMatrix());
+	_rm2g.insert(make_pair(r,gr));
+	_rg2m.insert(make_pair(gr,r));
+	_graph->addEdge(gr);
+	return;
+      }
+    }
   }
 
   void MapG2OReflector::relationRemoved(MapNodeRelation* _r) {
     MapNodeBinaryRelation* r = dynamic_cast<MapNodeBinaryRelation*>(_r);
     if (!r)
       return;
-    g2o::EdgeSE3* gr = _rm2g[r];
+    g2o::OptimizableGraph::Edge* gr = _rm2g[r];
     _rm2g.erase(r);
     _rg2m.erase(gr);
     _graph->removeEdge(gr);
@@ -109,8 +125,8 @@ namespace boss_map_building {
     return it->second;
   }
   
-  MapNodeRelation* MapG2OReflector::relation(g2o::EdgeSE3* r){
-    std::map<g2o::EdgeSE3*, MapNodeRelation*>::iterator it=_rg2m.find(r);
+  MapNodeRelation* MapG2OReflector::relation(g2o::OptimizableGraph::Edge* r){
+    std::map<g2o::OptimizableGraph::Edge*, MapNodeRelation*>::iterator it=_rg2m.find(r);
     if (it==_rg2m.end())
       return 0;
     return it->second;
@@ -123,8 +139,8 @@ namespace boss_map_building {
     return it->second;
   }
   
-  g2o::EdgeSE3* MapG2OReflector::relation(MapNodeRelation* r){
-    std::map<MapNodeRelation*, g2o::EdgeSE3*>::iterator it=_rm2g.find(r);
+  g2o::OptimizableGraph::Edge* MapG2OReflector::relation(MapNodeRelation* r){
+    std::map<MapNodeRelation*, g2o::OptimizableGraph::Edge*>::iterator it=_rm2g.find(r);
     if (it==_rm2g.end())
       return 0;
     return it->second;
@@ -137,10 +153,10 @@ namespace boss_map_building {
     g2o::OptimizableGraph::EdgeSet eset;
     cerr << "total number of relations: " << _manager->relations().size() << endl;
     for (std::set<MapNodeRelation*>::iterator it=_manager->relations().begin(); it!=_manager->relations().end(); it++){
-      g2o::EdgeSE3* e=relation(*it);
+      g2o::OptimizableGraph::Edge* e=relation(*it);
       if (!e)
 	continue;
-      if (_selector->accept(*it)){
+      if (! _selector || _selector->accept(*it)){
 	eset.insert(e);
       } 
     }

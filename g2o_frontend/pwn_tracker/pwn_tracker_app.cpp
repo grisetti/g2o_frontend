@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
       confSer.writeObject(*instances[i]);
     }
   if (! aligner || ! converter) {
-    throw std::runtime_error("AAAAAA");
+    throw std::runtime_error("unable to load aligner or converter");
   }
   des.setFilePath(argv[2]);
   std::vector<BaseSensorData*> sensorDatas;
@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
   cerr << "base reference frame id: " << odom_frame_id << endl;
   
   std::string depth_topic = "/camera/depth_registered/image_rect_raw";
-  //std::string depth_topic = "/camera/depth_registered/image_raw";
+  //std::string depth_topic = "/kinect/depth_registered/image_raw";
   cerr << "depth topic: " << depth_topic << endl;
   
 
@@ -156,6 +156,7 @@ int main(int argc, char** argv) {
   tracker->init();
   tracker->setNewFrameInliersFraction(0.4);
 
+
   NewFrameWriteAction* frameWriter = new NewFrameWriteAction(&ser,tracker);
   tracker->newFrameActions().push_back(frameWriter);
 
@@ -190,6 +191,8 @@ int main(int argc, char** argv) {
     viewer->show();
 
   }
+
+  cerr << "C" << endl;
 
   
   PinholeImageData* previousImage = 0;

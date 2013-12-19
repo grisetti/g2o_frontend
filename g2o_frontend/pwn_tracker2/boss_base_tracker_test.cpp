@@ -11,11 +11,16 @@
 #include "g2o_frontend/boss_map/robot_configuration.h"
 #include "g2o_frontend/boss_map/map_manager.h"
 #include "g2o_frontend/boss_map/sensing_frame_node.h"
+#include "g2o_frontend/boss_map_building/map_g2o_reflector.h"
+#include "base_tracker.h"
+#include "pwn_tracker.h"
+#inclide "g2o_frontend/pwn_boss/pwn_io.h"
 
 #define MARKUSED(X)  X=X
 
 /*#include "g2o_frontend/pwn_boss/pwn_sensor_data.h"*/
 
+using namespace boss_map_building;
 using namespace boss_map;
 using namespace boss;
 using namespace std;
@@ -158,14 +163,22 @@ int main(int argc, char** argv) {
 
   MapManager* manager = new MapManager();
   ser.writeObject(*manager);
+
+  MapG2OReflector* optimizer = new MapG2OReflector(manager);
   
   SensingFrameNodeMaker* nodeMaker = new SensingFrameNodeMaker();
   nodeMaker->init(manager,conf);
   StreamProcessor::PropagatorOutputHandler* sync2nm=new StreamProcessor::PropagatorOutputHandler(&sync, nodeMaker);
-  StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(nodeMaker, &ser);
-
-  //OdometryRelationAdder* odometryAdder = new OdometryRelationAdder(manager, conf);
   MARKUSED(sync2nm);
+
+  boss_map_building::BaseTracker* tracker = new boss_map_building::BaseTracker(manager, conf);
+  StreamProcessor::PropagatorOutputHandler* nm2t=new StreamProcessor::PropagatorOutputHandler(nodeMaker, tracker);
+  MARKUSED(nm2t);
+
+  StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(tracker, &ser);
+  tracker->init();
+  
+  //OdometryRelationAdder* odometryAdder = new OdometryRelationAdder(manager, conf);
   MARKUSED(writer);
 
   for (size_t i = 0; i< sensorDatas.size(); i++){
@@ -173,4 +186,5 @@ int main(int argc, char** argv) {
     sync.process(data);
   }
 
+  optimizer->graph()->save("out.g2o");
 }

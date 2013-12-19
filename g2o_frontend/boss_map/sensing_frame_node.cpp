@@ -2,6 +2,7 @@
 #include "map_manager.h"
 #include <stdexcept>
 #include <iostream>
+#include "g2o_frontend/basemath/bm_se3.h"
 
 namespace boss_map {
   using namespace std;
@@ -64,53 +65,82 @@ namespace boss_map {
   }
 
   void SensingFrameNodeMaker::process(Serializable* s){
-    put(s);
+    _outputQueue.push_back(s);
     BaseSensorData* data = dynamic_cast<BaseSensorData*>(s);
     if (data) {
       SensingFrameNode * returned = 0;
+      Eigen::Isometry3d returnedTransform;
       if (!_previousData || _previousData->robotReferenceFrame() != data->robotReferenceFrame()){
 	// new buddy, push the old one
 	returned = _currentNode;
+	returnedTransform = _currentNodeTransform;
 	_currentNode = new SensingFrameNode(_mapManager);
 	_currentNode->setSeq(_seq++);
 	_currentNode->setTransform(data->robotReferenceFrame()->transform());
+	_currentNodeTransform = _currentNode->transform();
 	_mapManager->addNode(_currentNode);
 	if (_lastImu) {
 	  _lastImu->nodes()[0] = returned;
 	}
-	if (returned) {
-	  returned->setOdometry(_lastOdom);
-	  put(returned);
-	  if (_lastImu) {
-	    put(_lastImu);
-	  }
-	  if (_previousNode) {
-	    MapNodeBinaryRelation* rel = new MapNodeBinaryRelation(_mapManager);
-	    rel->nodes()[0]=_previousNode;
-	    rel->nodes()[1]=returned;
-	    rel->setTransform(_previousNode->transform().inverse()*returned->transform());
-	    rel->setInformationMatrix(Eigen::Matrix<double, 6, 6>::Identity());
-	    _mapManager->addRelation(rel);
-	    put(rel);
-	    _lastOdom=rel;
-	  }
+      }
+      if (returned) {
+	returned->setOdometry(_lastOdom);
+	if (_lastImu) {
+	  returned->setImu(_lastImu);
+	}
+	_outputQueue.push_back(returned);
+	if (_previousNode) {
+	  //cerr << "pr: " << _previousNode << " "  << t2v(_previousNodeTransform).transpose() << endl;
+	  //cerr << "cr: " << _currentNode << " " << t2v(returnedTransform).transpose() << endl;
+	  MapNodeBinaryRelation* rel = new MapNodeBinaryRelation(_mapManager);
+	  rel->nodes()[0]=_previousNode;
+	  rel->nodes()[1]=returned;
+	  rel->setTransform(_previousNodeTransform.inverse()*returnedTransform);
+	  //cerr << "dr: " << t2v(rel->transform()).transpose() << endl;
+	  
+	  returned->setOdometry(rel);
+	  returned->setPreviousNode(_previousNode);
+	  rel->setInformationMatrix(Eigen::Matrix<double, 6, 6>::Identity());
+	  _mapManager->addRelation(rel);
+	  _outputQueue.push_back(rel);
+	  _lastOdom=rel;
 	}
 	_lastImu = 0;
 	//cerr << "New Frame created" << _currentNode << endl;
+	flushQueue();
+	_previousNodeTransform = returnedTransform;
 	_previousNode = returned;
       }
       //cerr << "Payload added" << data->className() << endl;
       IMUData* imuData = dynamic_cast<IMUData*>(data);
       if (imuData) {
 	MapNodeUnaryRelation * imu = new MapNodeUnaryRelation(_mapManager);
-	imu->setTransform(imu->transform());
-	imu->setInformationMatrix(Eigen::Matrix<double, 6, 6>::Identity());
+	Eigen::Isometry3d t;
+	t.setIdentity();
+	t.linear() = imuData->orientation().toRotationMatrix();
+	imu->setTransform(t);
+	Eigen::Matrix<double, 6, 6> info;
+	info.setZero();
+	info.block<3,3>(3,3) = imuData->orientationCovariance().inverse();
+	imu->setInformationMatrix(info);
 	_lastImu = imu;
       }
       _currentNode->sensorDatas().push_back(data);
       _previousData = data;
     }
     
+  }
+
+  void SensingFrameNodeMaker::flushQueue() {
+    if (! _previousNode)
+      return;
+    while (! _outputQueue.empty()){
+      Serializable* s = _outputQueue.front();
+      if (s == _previousNode)
+	return;
+      put(_outputQueue.front());
+      _outputQueue.pop_front();
+    }
   }
 
   SensingFrameNode* SensingFrameNodeMaker::processData(BaseSensorData* data){

@@ -27,9 +27,9 @@ namespace boss_map_building {
     virtual void relationAdded(MapNodeRelation* _r);
     virtual void relationRemoved(MapNodeRelation* r);
     MapNode* node(g2o::VertexSE3* n);
-    MapNodeRelation* relation(g2o::EdgeSE3* r);
+    MapNodeRelation* relation(g2o::OptimizableGraph::Edge* r);
     g2o::VertexSE3* node(MapNode* n);
-    g2o::EdgeSE3* relation(MapNodeRelation* r);
+    g2o::OptimizableGraph::Edge* relation(MapNodeRelation* r);
 
     MapRelationSelector* selector() {return _selector;}
     void setSelector(MapRelationSelector* selector_) {_selector = selector_;}
@@ -37,8 +37,8 @@ namespace boss_map_building {
     g2o::SparseOptimizer* _graph;
     std::map<g2o::VertexSE3*, MapNode*> _ng2m;
     std::map<MapNode*, g2o::VertexSE3*> _nm2g;
-    std::map<g2o::EdgeSE3*, MapNodeRelation*> _rg2m;
-    std::map<MapNodeRelation*, g2o::EdgeSE3*> _rm2g;
+    std::map<g2o::OptimizableGraph::Edge*, MapNodeRelation*> _rg2m;
+    std::map<MapNodeRelation*, g2o::OptimizableGraph::Edge*> _rm2g;
     int _lastUsedId;
     MapRelationSelector* _selector;
   };

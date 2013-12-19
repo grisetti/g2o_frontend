@@ -17,7 +17,7 @@ ADD_LIBRARY(boss_map
   local_map.cpp local_map.h
   map_utils.cpp map_utils.h
   #btree.cpp btree.h
-  map_node_processor.cpp map_node_processor.h
+  #map_node_processor.cpp map_node_processor.h
   sensing_frame_node.cpp sensing_frame_node.h
 )
 
