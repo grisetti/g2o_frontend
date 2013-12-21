@@ -24,16 +24,23 @@ namespace pwn_tracker {
   }
 
 
-  PwnCloser::PwnCloser(PwnTracker* tracker_) : MapCloser(_tracker->manager()){
+  PwnCloser::PwnCloser(PwnTracker* tracker_) : MapCloser(tracker_->manager()){
     _tracker=tracker_;
+    cerr << "tracker: " << _tracker << endl;
     _cache = _tracker->cache();
+    cerr << "cache: " << _cache << endl;
     _matcher = _tracker->matcher();
+    cerr << "topic: " << _cache->topic() << endl;
+    _matcher = _tracker->matcher();
+    cerr << "matcher: " << _matcher << endl;
     _robotConfiguration = _tracker->robotConfiguration();
+    cerr << "conf: " << _robotConfiguration << endl;
     _frameMinNonZeroThreshold = 3000;// was 3000
     _frameMaxOutliersThreshold = 100;
     _frameMinInliersThreshold = 1000; // was 1000
     _debug = false;
     _selector = new PwnCloserActiveRelationSelector(_manager);
+    cerr << "constructed" << endl;
   }
 
 
@@ -51,7 +58,6 @@ namespace pwn_tracker {
     return dynamic_cast<PwnTrackerRelation*>(r);
   }
   
-
 
   void PwnCloser::processPartition(std::list<MapNodeBinaryRelation*>& newRelations, 
 				   std::set<MapNode*>& otherPartition, 
@@ -92,7 +98,8 @@ namespace pwn_tracker {
     {
       BaseSensorData* sdata = keyNode->sensorData(_cache->topic());
       if (! sdata) {
-	throw std::runtime_error("unable to find the required topic");
+	std::cerr << "topic :[" << _cache->topic() << "]" << std::endl;
+	throw std::runtime_error("unable to find the required topic for FROM node");
       }
       PinholeImageData* imdata = dynamic_cast<PinholeImageData*>(sdata);
       if (! imdata) {
@@ -103,7 +110,8 @@ namespace pwn_tracker {
     {
       BaseSensorData* sdata = otherNode->sensorData(_cache->topic());
       if (! sdata) {
-	throw std::runtime_error("unable to find the required topic");
+	std::cerr << "topic :[" << _cache->topic() << "]" << std::endl;
+	throw std::runtime_error("unable to find the required topic for TO node");
       }
       PinholeImageData* imdata = dynamic_cast<PinholeImageData*>(sdata);
       if (! imdata) {

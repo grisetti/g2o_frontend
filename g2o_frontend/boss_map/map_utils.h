@@ -20,7 +20,7 @@ namespace boss_map {
   class PoseAcceptanceCriterion: public NodeAcceptanceCriterion {
   public:
     PoseAcceptanceCriterion(MapManager* manager_=0);
-    inline void setReferencePose(const Eigen::Isometry3d& pose_) {_pose = pose_; _invPose=_pose.inverse();}
+    virtual void setReferencePose(const Eigen::Isometry3d& pose_) {_pose = pose_; _invPose=_pose.inverse();}
     inline const Eigen::Isometry3d referencePose() const { return _pose;}
   protected:
     Eigen::Isometry3d _pose;

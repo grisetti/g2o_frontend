@@ -7,7 +7,7 @@
 #include "g2o_frontend/pwn_core/pinholepointprojector.h"
 #include "g2o_frontend/pwn_core/depthimageconverter.h"
 #include "g2o_frontend/boss_map/sensing_frame_node.h"
-#include "cache.h"
+#include "g2o_frontend/boss_map_building/cache.h"
 
 namespace pwn_tracker {
   using namespace cache_ns;

@@ -30,6 +30,10 @@ namespace pwn_tracker{
   pwn::Cloud* PwnCloudCache::loadCloud(SensingFrameNode* trackerNode){
     BaseSensorData* sdata = trackerNode->sensorData(_topic);
     if (! sdata) {
+      cerr << "topic: " << _topic << endl;
+      cerr << "size: " << trackerNode->sensorDatas().size() << endl;
+      for (size_t i=0; i<trackerNode->sensorDatas().size(); i++)
+	cerr << trackerNode->sensorDatas()[i] << endl;
       throw std::runtime_error("unable to find the required topic");
     }
     PinholeImageData* imdata = dynamic_cast<PinholeImageData*>(sdata);

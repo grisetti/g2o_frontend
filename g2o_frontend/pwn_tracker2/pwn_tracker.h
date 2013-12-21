@@ -1,5 +1,5 @@
 #pragma once
-#include "base_tracker.h"
+#include "g2o_frontend/boss_map_building/base_tracker.h"
 #include "pwn_matcher_base.h"
 #include "pwn_cloud_cache.h"
 
@@ -53,8 +53,10 @@ namespace pwn_tracker{
 
     //virtual void init();
 
-    virtual bool shouldChangeKeyframe(MapNodeBinaryRelation* r);
-    virtual MapNodeBinaryRelation* registerNodes(MapNode* keyNode, MapNode* otherNode);
+    virtual bool shouldChangeKeyNode(MapNodeBinaryRelation* r);
+    virtual MapNodeBinaryRelation* registerNodes(MapNode* keyNode, 
+						 MapNode* otherNode, 
+						 const Eigen::Isometry3d& guess = Eigen::Isometry3d::Identity());
 
     virtual ~PwnTracker();
   protected:
@@ -64,6 +66,7 @@ namespace pwn_tracker{
     float _newFrameCloudInliersFraction;
     int _imageRows, _imageCols, _imageSize;
     int _scaledImageRows, _scaledImageCols, _scaledImageSize;
+    int _minCloudInliers;
   };
 
 }

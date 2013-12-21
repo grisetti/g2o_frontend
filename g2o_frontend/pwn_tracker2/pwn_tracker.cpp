@@ -56,6 +56,7 @@ namespace pwn_tracker{
     _imageSize = _imageRows * _imageCols;
     setScale(4);
     _newFrameCloudInliersFraction = 0.4;
+    _minCloudInliers = 1000;
   }
 
   PwnTracker::~PwnTracker(){}
@@ -80,14 +81,14 @@ namespace pwn_tracker{
     _scaledImageSize = _scaledImageRows * _scaledImageCols;
   }
 
-  bool PwnTracker::shouldChangeKeyframe(MapNodeBinaryRelation* r_){
+  bool PwnTracker::shouldChangeKeyNode(MapNodeBinaryRelation* r_){
     PwnTrackerRelation* r=dynamic_cast<PwnTrackerRelation*>(r_);
     if (r->cloud_inliers > _newFrameCloudInliersFraction*_scaledImageSize)
       return false;
     return true;
   }
 
-  MapNodeBinaryRelation* PwnTracker::registerNodes(MapNode* keyNode_, MapNode* otherNode_) {
+  MapNodeBinaryRelation* PwnTracker::registerNodes(MapNode* keyNode_, MapNode* otherNode_, const Eigen::Isometry3d&  initialGuess_) {
     SensingFrameNode * keyNode = dynamic_cast<SensingFrameNode*>(keyNode_);
     SensingFrameNode * otherNode = dynamic_cast<SensingFrameNode*>(otherNode_);
     if (! (keyNode && otherNode))
@@ -101,11 +102,10 @@ namespace pwn_tracker{
 
     Eigen::Isometry3d keyOffset_, otherOffset_;
     Eigen::Matrix3d   otherCameraMatrix_;
-    Eigen::Isometry3d initialGuess_ = keyNode->transform().inverse()*otherNode->transform();
     {
       BaseSensorData* sdata = keyNode->sensorData(_topic);
       if (! sdata) {
-	throw std::runtime_error("unable to find the required topic");
+	throw std::runtime_error("unable to find the required topic for KEY node");
       }
       PinholeImageData* imdata = dynamic_cast<PinholeImageData*>(sdata);
       if (! imdata) {
@@ -116,7 +116,7 @@ namespace pwn_tracker{
     {
       BaseSensorData* sdata = otherNode->sensorData(_topic);
       if (! sdata) {
-	throw std::runtime_error("unable to find the required topic");
+	throw std::runtime_error("unable to find the required topic for OTHER node");
       }
       PinholeImageData* imdata = dynamic_cast<PinholeImageData*>(sdata);
       if (! imdata) {
@@ -140,14 +140,15 @@ namespace pwn_tracker{
 			  keyOffset, otherOffset,
 			  otherCameraMatrix, _imageRows, _imageCols, 
 			  initialGuess_);
-    cerr << " key:" << keyNode->seq() << " other: " << otherNode->seq();
-    cerr << " cloud inliers: " << result.cloud_inliers;
-    cerr << " image_inliers: " << result.image_inliers;
-    cerr << " guess: " << t2v(initialGuess_).transpose();
+    //cerr << " key:" << keyNode->seq() << " other: " << otherNode->seq();
+    //cerr << " cloud inliers: " << result.cloud_inliers;
+    //cerr << " image_inliers: " << result.image_inliers;
+    //cerr << " guess: " << t2v(initialGuess_).transpose();
 
-    cerr << endl;
+    //cerr << endl;
 
-    if (result.cloud_inliers>0){
+
+    if (result.cloud_inliers>_minCloudInliers){
       PwnTrackerRelation* r=new PwnTrackerRelation(_manager);
       r->nodes()[0]=keyNode;
       r->nodes()[1]=otherNode;
@@ -155,6 +156,7 @@ namespace pwn_tracker{
       return r;
     } 
     return 0;
+
   }
   
   BOSS_REGISTER_CLASS(PwnTrackerRelation);

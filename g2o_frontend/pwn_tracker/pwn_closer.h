@@ -49,8 +49,6 @@ namespace pwn_tracker {
     inline pwn::DepthImageConverter* converter() { return _converter;}
     inline void setConverter(pwn::DepthImageConverter* converter_) { _converter=converter_; updateCache();}
     */
-    inline boss_map::PoseAcceptanceCriterion* criterion() {return _criterion;}
-    void setCriterion(boss_map::PoseAcceptanceCriterion* criterion_) { _criterion= criterion_;}
 
     void setScale(int scale_) {PwnMatcherBase::setScale(scale_); updateCache();}
 

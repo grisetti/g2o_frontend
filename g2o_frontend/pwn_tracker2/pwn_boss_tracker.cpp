@@ -12,13 +12,11 @@
 #include "g2o_frontend/boss_map/map_manager.h"
 #include "g2o_frontend/boss_map/sensing_frame_node.h"
 #include "g2o_frontend/boss_map_building/map_g2o_reflector.h"
+#include "base_tracker.h"
 #include "pwn_tracker.h"
 #include "pwn_cloud_cache.h"
 #include "pwn_closer.h"
 #include "g2o_frontend/pwn_boss/pwn_io.h"
-#include "pwn_tracker_viewer.h"
-
-#include <QApplication>
 
 #define MARKUSED(X)  X=X
 
@@ -30,10 +28,30 @@ using namespace boss_map;
 using namespace boss;
 using namespace std;
 
+//pwn_boss::PWNSensorData data;
+
+/*
+class KeyNodeAcceptanceCriterion: public DistancePoseAcceptanceCriterion{
+public:
+  KeyNodeAcceptanceCriterion(MapCloser* closer_, MapManager* manager_) : DistancePoseAcceptanceCriterion(manager_){
+    _closer= closer_;
+  }
+  virtual bool accept(MapNode* n) {
+    if (_closer->_trackerFrames.find(n->seq())==_closer->_trackerFrames.end())
+      return false;
+    return DistancePoseAcceptanceCriterion::accept(n);
+  }
+protected:
+  MapCloser* _closer;
+};
+*/
+
 int main(int argc, char** argv) {
     
   
 
+  // create a synchronizer
+  Synchronizer sync;
 
   std::string fileconf = argv[1];
   std::string filein = argv[2];
@@ -52,104 +70,83 @@ int main(int argc, char** argv) {
   
   std::string topic = "/camera/depth_registered/image_rect_raw";
   int scale = 4;
+  sync.addSyncTopic(topic);
 
   Serializer ser;
   ser.setFilePath(fileout.c_str());
   
   cerr <<  "running logger with arguments: filein[" << filein << "] fileout: [" << fileout << "]" << endl;
 
-  // read the configuration file
-  RobotConfiguration* conf = 0;
-    std::list<Serializable*> objects;
-  Serializable* o;
-  while ( (o=des.readObject()) ){
-    objects.push_back(o);
-    RobotConfiguration * conf_ = dynamic_cast<RobotConfiguration*>(o);
-    if (conf_) {
-      conf = conf_;
-      break;
-    }
-  }
-  if (! conf) {
-    cerr << "unable to get conf " << endl;
-  }
+  std::vector<BaseSensorData*> sensorDatas;
+  RobotConfiguration* conf = readLog(sensorDatas, des);
+  cerr << "# frames: " << conf->frameMap().size() << endl;
+  cerr << "# sensors: " << conf->sensorMap().size() << endl;
+  cerr << "# sensorDatas: " << sensorDatas.size() << endl;
+
+  conf->serializeInternals(ser);
+  ser.writeObject(*conf);
+  TSCompare comp;
+  std::sort(sensorDatas.begin(), sensorDatas.end(), comp);
 
   MapManager* manager = new MapManager();
+  ser.writeObject(*manager);
   
-  // construct the synchronizer and its queue
-  Synchronizer* sync = new Synchronizer();
-  sync->addSyncTopic(topic);
-  std::list<Serializable*> syncOutput;
-  StreamProcessor::EnqueuerOutputHandler* sync2q=new StreamProcessor::EnqueuerOutputHandler(sync, &syncOutput);
-  MARKUSED(sync2q);
 
-  // construct the nodeMaker and its queue
-  SensingFrameNodeMaker* nodeMaker = new SensingFrameNodeMaker();
-  nodeMaker->init(manager,conf);
-  std::list<Serializable*> nodeMakerOutput;
-  StreamProcessor::EnqueuerOutputHandler* nm2q=new StreamProcessor::EnqueuerOutputHandler(nodeMaker, &nodeMakerOutput);
-  MARKUSED(nm2q);
- 
-  // construct the cloud cache
+  MapG2OReflector* optimizer = new MapG2OReflector(manager);
   PwnCloudCache* cache = new PwnCloudCache(converter, conf, topic, scale, 250, 260);
   PwnCloudCacheHandler* cacheHandler = new PwnCloudCacheHandler(manager, cache);
   cacheHandler->init();
-
-  // construct the optimizer bound to the map
-  MapG2OReflector* optimizer = new MapG2OReflector(manager);
-  
-  // construct the matcher object to be shared between the tracker and the closer
   PwnMatcherBase* matcher = new PwnMatcherBase(aligner, converter);
-  matcher->_frameInlierDepthThreshold = 50;
-
-  // construct the tracker object, and its queue
   PwnTracker* tracker = new PwnTracker(matcher, cache, manager, conf);
   tracker->setTopic(topic);
-  std::list<Serializable*> trackerOutput;
-  StreamProcessor::EnqueuerOutputHandler* t2q=new StreamProcessor::EnqueuerOutputHandler(tracker, &trackerOutput);
-  MARKUSED(t2q);
-
-  // construct the closer object and its queue
   PwnCloser* closer = new PwnCloser(tracker);
-  std::list<Serializable*> closerOutput;
-  StreamProcessor::EnqueuerOutputHandler* c2q=new StreamProcessor::EnqueuerOutputHandler(closer, &closerOutput);
-  MARKUSED(c2q);
-
   DistancePoseAcceptanceCriterion* distanceCriterion = new DistancePoseAcceptanceCriterion(manager);
   distanceCriterion->setRotationalDistance(M_PI/4);
   distanceCriterion->setTranslationalDistance(1);
   KeyNodeAcceptanceCriterion* criterion = new KeyNodeAcceptanceCriterion(closer,manager, distanceCriterion);
   closer->setCriterion(criterion);
-  MapCloserActiveRelationSelector* optSelector = new MapCloserActiveRelationSelector(closer, manager);
+
+  MapCloserActiveRelationSelector* optSelector = new MapCloserActiveRelationSelector(manager);
 
   optimizer->setSelector(optSelector);
   closer->setSelector(optSelector);
-  closer->autoProcess = false;
-
   tracker->init();
   tracker->setScale(scale);
-
-  Serializable* s;
-  objects.push_back(manager);
-  std::list<Serializable*> closerInput;
-
-
-  bool makeVis = false;
-  VisState* visState=0;
-  MyTrackerViewer *viewer = 0;
-  QApplication* app =0;
-  if (makeVis) {
-    visState = new VisState(manager);
-    visState->relationSelector = optSelector;
-    app = new QApplication(argc,argv);
-    viewer = new MyTrackerViewer(visState);
-    viewer->show();
-  }
-
   
-  while((s=des.readObject())) {
-    sync->process(s);
 
+
+
+  std::list<Serializable*> syncOutput;
+  std::list<Serializable*> nodeMakerOutput;
+  std::list<Serializable*> trackerOutput;
+  std::list<Serializable*> closerOutput;
+  SensingFrameNodeMaker* nodeMaker = new SensingFrameNodeMaker();
+  nodeMaker->init(manager,conf);
+
+  StreamProcessor::EnqueuerOutputHandler* sync2q=new StreamProcessor::EnqueuerOutputHandler(&sync, &syncOutput);
+  MARKUSED(sync2q);
+
+  StreamProcessor::EnqueuerOutputHandler* nm2q=new StreamProcessor::EnqueuerOutputHandler(nodeMaker, &nodeMakerOutput);
+  MARKUSED(nm2q);
+  
+  StreamProcessor::EnqueuerOutputHandler* t2q=new StreamProcessor::EnqueuerOutputHandler(tracker, &trackerOutput);
+  MARKUSED(t2q);
+
+  StreamProcessor::EnqueuerOutputHandler* c2q=new StreamProcessor::EnqueuerOutputHandler(closer, &closerOutput);
+  MARKUSED(c2q);
+  
+  //StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(tracker, &ser);
+  tracker->init();
+  
+  //OdometryRelationAdder* odometryAdder = new OdometryRelationAdder(manager, conf);
+  //MARKUSED(writer);
+  matcher->_frameInlierDepthThreshold = 50;
+  closer->autoProcess = false;
+
+  MapNode * _lastNodeAdded = 0;
+  for (size_t i = 0; i< sensorDatas.size(); i++){
+    BaseSensorData* data = sensorDatas[i];
+    sync.process(data);
     while(!syncOutput.empty()){
       Serializable* s= syncOutput.front();
       syncOutput.pop_front();
@@ -161,63 +158,51 @@ int main(int argc, char** argv) {
       nodeMakerOutput.pop_front();
       tracker->process(s);
     }
-    
-    while (!trackerOutput.empty()){
-      Serializable* s = trackerOutput.front();
+
+    //bool hasToProcess = false;
+    while(!trackerOutput.empty()){
+      Serializable* s= trackerOutput.front();
+      ser.writeObject(*s);
       trackerOutput.pop_front();
+      /*
       closer->process(s);
       NewKeyNodeMessage* km = dynamic_cast<NewKeyNodeMessage*>(s);
       if (km) {
-	if (makeVis) {
-	  PwnCloudCache::HandleType h=cache->get((SensingFrameNode*) km->keyNode);
-	  VisCloud* visCloud = new VisCloud(h.get());
-	  visState->cloudMap.insert(make_pair(km->keyNode, visCloud));
-	  
-	  visState->candidateRelations=closer->candidateRelations();
-	  visState->partitions = closer->partitions();
-	  for (size_t i =0; i<closer->partitions().size(); i++){
-	    if (&closer->partitions()[i]==closer->currentPartition()){
-	      visState->currentPartitionIndex = i;
-	    }
-	  }
-	}
-	if (makeVis)
-	  viewer->updateGL();
+	if (_lastNodeAdded)
+	  hasToProcess = true;
+	_lastNodeAdded = km->keyNode;
       }
+      */
     }
-
+    //if (hasToProcess)
+    //closer->process();
+    
+    /*    
     bool optimize = false;
     while(!closerOutput.empty()){
       Serializable* s= closerOutput.front();
       closerOutput.pop_front();
-      objects.push_back(s);
       PwnCloserRelation* rel = dynamic_cast<PwnCloserRelation*>(s);
       if (rel) {
 	optimize=true;
       }
     }
-
     if (optimize){
       cerr<< "OPTIMIZE" << endl;
       optimizer->optimize();
     }
-    if (makeVis)
-      app->processEvents();
-  }
-
-  cerr << "writing out " << objects.size() << " objects" << endl;
-  while (! objects.empty()){
-    ser.writeObject(*objects.front());
-    objects.pop_front();
-  }
-
-  optimizer->graph()->save("slam_out.g2o");
-  visState->final = true;
-  if (makeVis) {
-    viewer->updateGL();
-    while(viewer->isVisible()){
-      app->processEvents();
-    }
+    */
   }
   
+  std::list<MapNodeRelation*> outliers;
+  for(std::set<MapNodeRelation*>::iterator it=manager->relations().begin(); it!=manager->relations().end(); it++){
+    ClosureInfo* info = dynamic_cast<ClosureInfo*>(*it);
+    if (info && !info->accepted)
+      outliers.push_back(*it);
+  }
+  for (std::list<MapNodeRelation*>::iterator it = outliers.begin(); it!=outliers.end(); it++){
+    manager->removeRelation(*it);
+  }
+  cerr << "erasing " << outliers.size() << " outliers from the g2o output" << endl;
+  optimizer->graph()->save("out.g2o");
 }

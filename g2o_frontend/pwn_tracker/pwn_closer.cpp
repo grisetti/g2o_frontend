@@ -252,7 +252,7 @@ namespace pwn_tracker {
     _closer = closer;
   }
   void NewFrameCloserAdder::compute (PwnTrackerFrame* frame) {
-    _closer->addFrame(frame);
+    _closer->addKeyNode(frame);
   }
 
 

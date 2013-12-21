@@ -4,6 +4,8 @@ LINK_DIRECTORIES(${OpenCV_LIBRARY_DIRS})
 ADD_LIBRARY(boss_map_building
   map_g2o_reflector.cpp map_g2o_reflector.h
   map_closer.cpp map_closer.h
+  base_tracker.cpp base_tracker.h
+  cache.hpp cache.h
   #map_g2o_wrapper.cpp map_g2o_wrapper.h
 )
 

@@ -51,10 +51,11 @@ namespace pwn_tracker {
 			const Eigen::Matrix3f& cameraMatrix,
 			float scale);
 
+    float _frameInlierDepthThreshold;
+
     double cumTime;
     int numCalls;
   protected:
-    float _frameInlierDepthThreshold;
     Aligner* _aligner;
     DepthImageConverter* _converter;
     int _scale;

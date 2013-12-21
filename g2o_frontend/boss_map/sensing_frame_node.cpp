@@ -100,7 +100,11 @@ namespace boss_map {
 	  
 	  returned->setOdometry(rel);
 	  returned->setPreviousNode(_previousNode);
-	  rel->setInformationMatrix(Eigen::Matrix<double, 6, 6>::Identity());
+	  Eigen::Matrix<double, 6, 6> info;
+	  info.setIdentity();
+	  //info = info * 100;
+	  rel->setInformationMatrix(info);
+	  
 	  _mapManager->addRelation(rel);
 	  _outputQueue.push_back(rel);
 	  _lastOdom=rel;

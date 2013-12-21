@@ -51,7 +51,6 @@ namespace boss_map {
       MapNode* n = relation->nodes()[i];
       std::map<MapNode*, NodeInfo>::iterator it=_nodeInfos.find(n);
       if (it == _nodeInfos.end()) {
-	cerr << "node: " << n << endl;
 	throw std::runtime_error("no node for relation");
       }
       it->second.relations.insert(relation);

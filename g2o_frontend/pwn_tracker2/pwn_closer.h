@@ -25,19 +25,16 @@ namespace pwn_tracker {
 
     PwnCloser(PwnTracker* tracker);
 
-    inline boss_map::PoseAcceptanceCriterion* criterion() {return _criterion;}
-    void setCriterion(boss_map::PoseAcceptanceCriterion* criterion_) { _criterion= criterion_;}
-
     inline PwnCloudCache* cache() {return _cache;}
 
     virtual void processPartition(std::list<MapNodeBinaryRelation*>& newRelations, std::set<MapNode*> & otherPartition, MapNode* current_);
     PwnCloserRelation* registerNodes(SensingFrameNode* keyNode, SensingFrameNode* otherNode, const Eigen::Isometry3d& initialGuess);
   protected:
+
     PwnCloudCache* _cache;
     PwnTracker* _tracker;
     PwnMatcherBase* _matcher;
     RobotConfiguration* _robotConfiguration;
-    boss_map::PoseAcceptanceCriterion* _criterion;
     int _frameMinNonZeroThreshold;
     int _frameMaxOutliersThreshold;
     int _frameMinInliersThreshold;

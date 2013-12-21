@@ -51,16 +51,15 @@ namespace boss_map_building {
 
     //! flushes the queue, by doing repeated outputs
     void flushQueue();
-    //! declares a node is used and its temporary information cannot be removed from the cache
-    virtual void lock(MapNode* n);
-    //! declares a node is not used and it its temporaries may be removed if needed
-    virtual void unlock(MapNode* n);
-    //! true if the frames linked by the relation are different enough but they are still aligned
-    //! this involves the creation of a new keyframe and the reconstruction of the bookkeping
-    virtual bool shouldChangeKeyframe(MapNodeBinaryRelation* r);
+
+
+    virtual bool shouldChangeKeyNode(MapNodeBinaryRelation* rel);
+
     //! alignment function you have to implement
     //! @ paeam
-    virtual MapNodeBinaryRelation* registerNodes(MapNode* keyNode, MapNode* otherNode);
+    virtual MapNodeBinaryRelation* registerNodes(MapNode* keyNode, 
+						 MapNode* otherNode, 
+						 const Eigen::Isometry3d& guess = Eigen::Isometry3d::Identity());
   
     virtual ~BaseTracker();
   protected:
@@ -74,7 +73,7 @@ namespace boss_map_building {
     //! currentNode: the current node in the pool
     MapNode* _pendingNode, *_previousNode, *_keyNode, *_currentNode ;
     //! transforms of the nodes, when they are read from the input stream
-    Eigen::Isometry3d _keyNodeTrand_previousNodeTransform, _currentNodeTransform;
+    Eigen::Isometry3d _keyNodeTransform, _previousNodeTransform, _currentNodeTransform;
     //! global position of the tracker
     Eigen::Isometry3d _globalT;
     //! queue where to put the output before closing a frame

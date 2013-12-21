@@ -18,15 +18,11 @@
 
 #define MARKUSED(X)  X=X
 
-/*#include "g2o_frontend/pwn_boss/pwn_sensor_data.h"*/
-
 using namespace pwn_tracker;
 using namespace boss_map_building;
 using namespace boss_map;
 using namespace boss;
 using namespace std;
-
-//pwn_boss::PWNSensorData data;
 
 int main(int argc, char** argv) {
     
@@ -74,33 +70,51 @@ int main(int argc, char** argv) {
   ser.writeObject(*manager);
   
 
-  MapG2OReflector* optimizer = new MapG2OReflector(manager);
-  PwnCloudCache* cache = new PwnCloudCache(converter, conf, topic, scale, 250, 260);
+  PwnCloudCache* cache = new PwnCloudCache(converter, conf, topic, scale, 5, 10);
   PwnCloudCacheHandler* cacheHandler = new PwnCloudCacheHandler(manager, cache);
+  cacheHandler->init();
   PwnMatcherBase* matcher = new PwnMatcherBase(aligner, converter);
   PwnTracker* tracker = new PwnTracker(matcher, cache, manager, conf);
-  tracker->setScale(scale);
+  tracker->setTopic(topic);
 
-  
+  std::list<Serializable*> syncOutput;
+  std::list<Serializable*> nodeMakerOutput;
+  std::list<Serializable*> trackerOutput;
+  std::list<Serializable*> closerOutput;
   SensingFrameNodeMaker* nodeMaker = new SensingFrameNodeMaker();
   nodeMaker->init(manager,conf);
-  StreamProcessor::PropagatorOutputHandler* sync2nm=new StreamProcessor::PropagatorOutputHandler(&sync, nodeMaker);
-  MARKUSED(sync2nm);
 
-  //boss_map_building::BaseTracker* tracker = new boss_map_building::BaseTracker(manager, conf);
-  StreamProcessor::PropagatorOutputHandler* nm2t=new StreamProcessor::PropagatorOutputHandler(nodeMaker, tracker);
-  MARKUSED(nm2t);
+  StreamProcessor::EnqueuerOutputHandler* sync2q=new StreamProcessor::EnqueuerOutputHandler(&sync, &syncOutput);
+  MARKUSED(sync2q);
+
+  StreamProcessor::EnqueuerOutputHandler* nm2q=new StreamProcessor::EnqueuerOutputHandler(nodeMaker, &nodeMakerOutput);
+  MARKUSED(nm2q);
+  
+  StreamProcessor::EnqueuerOutputHandler* t2q=new StreamProcessor::EnqueuerOutputHandler(tracker, &trackerOutput);
+  MARKUSED(t2q);
 
   StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(tracker, &ser);
+  MARKUSED(t2q);
   tracker->init();
   
-  //OdometryRelationAdder* odometryAdder = new OdometryRelationAdder(manager, conf);
-  MARKUSED(writer);
+  matcher->_frameInlierDepthThreshold = 50;
+
+  MapG2OReflector * reflector = new MapG2OReflector(manager);
 
   for (size_t i = 0; i< sensorDatas.size(); i++){
     BaseSensorData* data = sensorDatas[i];
     sync.process(data);
-  }
+    while(!syncOutput.empty()){
+      Serializable* s= syncOutput.front();
+      syncOutput.pop_front();
+      nodeMaker->process(s);
+    }
 
-  optimizer->graph()->save("out.g2o");
+    while(!nodeMakerOutput.empty()){
+      Serializable* s= nodeMakerOutput.front();
+      nodeMakerOutput.pop_front();
+      tracker->process(s);
+    }
+  }
+  reflector->graph()->save("tracker_out.g2o");
 }

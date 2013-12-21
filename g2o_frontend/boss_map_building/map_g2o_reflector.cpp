@@ -160,7 +160,8 @@ namespace boss_map_building {
 	eset.insert(e);
       } 
     }
-    //cerr << "active ones: : " << eset.size() << endl;
+    
+    cerr << "active ones: : " << eset.size() << endl;
     g2o::OptimizableGraph::Vertex* gauge = _graph->findGauge();
     gauge->setFixed(true);
     _graph->initializeOptimization(eset);
@@ -168,8 +169,15 @@ namespace boss_map_building {
     cerr << "GLOBAL OPT" << endl;
     _graph->setVerbose(false);
     _graph->optimize(10);
+    for (size_t i = 0; i<_graph->activeVertices().size(); i++){
+      g2o::VertexSE3* v = dynamic_cast<g2o::VertexSE3*>(_graph->activeVertices()[i]);
+      if (!v)
+	continue;
+      MapNode* n = node(v);
+      n->setTransform(v->estimate());
+    }
     //cerr << "copying estimate" << endl;
-    copyEstimatesFromG2O();
+    //copyEstimatesFromG2O();
     //cerr << "done" << endl;
   }
 

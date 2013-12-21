@@ -1,4 +1,5 @@
 #include "map_closer.h"
+#include "base_tracker.h"
 
 
 namespace boss_map_building {
@@ -23,42 +24,48 @@ namespace boss_map_building {
     _currentPartition = 0;
     _pendingTrackerFrame = 0;
     _lastTrackerFrame = 0;
+    autoProcess = true;
   }
 
-  void MapCloser::addFrame(MapNode* f) {
-    _trackerFrames.insert(make_pair(f->seq(),f));
+  void MapCloser::addKeyNode(MapNode* f) {
+    _keyNodes.insert(make_pair(f->seq(),f));
     _lastTrackerFrame = _pendingTrackerFrame;
     _pendingTrackerFrame = f;
-    
   }
   
-  void MapCloser::addRelation(MapNodeBinaryRelation* r){
-    _trackerRelations.push_back(r);
-    Eigen::Isometry3d dt;
-    bool doSomething = false;
-    if ( r->nodes()[0]==_lastTrackerFrame && r->nodes()[1]==_pendingTrackerFrame) {
-      dt=r->transform();
-      doSomething = true;
-    } 
-    if ( r->nodes()[1]==_lastTrackerFrame && r->nodes()[0]==_pendingTrackerFrame) {
-      dt=r->transform().inverse();
-      doSomething = true;
-    }
+  void MapCloser::addRelation(MapNodeRelation* r_){
+    _relations.insert(r_);
+    if (autoProcess){
+      MapNodeBinaryRelation* r  =dynamic_cast<MapNodeBinaryRelation*>(r_);
+      if (! r)
+	return;
+      Eigen::Isometry3d dt;
+      bool doSomething = false;
+      if ( r->nodes()[0]==_lastTrackerFrame && r->nodes()[1]==_pendingTrackerFrame) {
+	dt=r->transform();
+	doSomething = true;
+      } 
+      if ( r->nodes()[1]==_lastTrackerFrame && r->nodes()[0]==_pendingTrackerFrame) {
+	dt=r->transform().inverse();
+	doSomething = true;
+      }
     
-    if (doSomething) {
-      _pendingTrackerFrame->setTransform(_lastTrackerFrame->transform()*dt);
-      process();
+      if (doSomething) {
+	_pendingTrackerFrame->setTransform(_lastTrackerFrame->transform()*dt);
+	process();
+      }
     }
-
   }
 
   void MapCloser::process(){
     _committedRelations.clear();
     _candidateRelations.clear();
-    if (! _criterion)
-      return;
-    if (! _selector)
-      return;
+    if (! _criterion) {
+      throw std::runtime_error("no node selection criterion set");
+    }
+    if (! _selector) {
+      throw std::runtime_error("no node selector set");
+    }
     if (!_pendingTrackerFrame)
       return;
     std::set<MapNode*> selectedNodes;
@@ -70,6 +77,12 @@ namespace boss_map_building {
 	 << ", neighbors: " << selectedNodes.size() 
 	 << "partitions: " << _partitions.size() << endl;
 
+    if (! _criterion->accept(_pendingTrackerFrame)){
+      cerr << "AAAA" << (_keyNodes.find(_pendingTrackerFrame->seq()) != _keyNodes.end()) << endl;
+      cerr << _pendingTrackerFrame->transform().matrix() << endl;
+      throw std::runtime_error("current frame is not accepted");
+      
+    }
     _currentPartition = 0;
     for (size_t i=0; i<_partitions.size(); i++){
       if (_partitions[i].count(_pendingTrackerFrame)){
@@ -93,12 +106,14 @@ namespace boss_map_building {
 	_candidateRelations.push_back(*it);
 	_results.push_back(*it);
 	_manager->addRelation(*it);
+	_relations.insert(*it);
       }
       validatePartitions(*otherPartition, *_currentPartition);
     }
   }
   
 
+  
 
   void validateRelation(float* translationalErrors,
 			float* rotationalErrors ,
@@ -155,7 +170,45 @@ namespace boss_map_building {
     }
   }
 
+  void MapCloser::flush(){
+    while (! _outputQueue.empty()){
+      Serializable* s = _outputQueue.front();
+      _outputQueue.pop_front();
+      put(s);
+    }
+  }
 
+  void MapCloser::process(Serializable*s){
+    _outputQueue.push_back(s);
+    NewKeyNodeMessage* km = dynamic_cast<NewKeyNodeMessage*>(s);
+    if (km){
+      addKeyNode(km->keyNode);
+    }
+    MapNodeRelation* rel = dynamic_cast<MapNodeBinaryRelation*>(s);
+    if (rel){
+      addRelation(rel);
+    }
+    if(km && _lastTrackerFrame)
+      process();
+    flush();
+  }
+
+  
+  /*
+  void MapCloser::process(Serializable*s){
+    _outputQueue.push_back(s);
+    MapNode* n = dynamic_cast<MapNode*>(s);
+    if (n && shouldAddNode(n)){
+      addFrame(n);
+    }
+    MapNodeBinaryRelation* r = dynamic_cast<MapNodeBinaryRelation*>(s);
+    if (r && shouldAddRelation(r)){
+      addRelation(r);
+    }
+    flush();
+  }
+  */
+  
   void MapCloser::validatePartitions(std::set<MapNode*>& other, 
 				     std::set<MapNode*>& current) {
     // scan for the pwn closure relations connecting a node in current and a node in others
@@ -259,6 +312,7 @@ namespace boss_map_building {
 	} 
 	if (c->consensusCumInlier>c->consensusCumOutlierTimes){
 	  c->accepted = true;
+	  _outputQueue.push_back(r);
 	  if (_debug) 
 	    cerr << "accept" << endl;
 	  _committedRelations.push_back(r);
@@ -271,5 +325,38 @@ namespace boss_map_building {
     }
   }
 
+  KeyNodeAcceptanceCriterion::KeyNodeAcceptanceCriterion(MapCloser* closer_, MapManager* manager_, PoseAcceptanceCriterion* otherCriterion) : PoseAcceptanceCriterion(manager_){
+    _closer= closer_;
+    _otherCriterion = otherCriterion;
+  }
+
+  void KeyNodeAcceptanceCriterion::setReferencePose(const Eigen::Isometry3d& pose_){
+    PoseAcceptanceCriterion::setReferencePose(pose_);
+    if(_otherCriterion)
+      _otherCriterion->setReferencePose(pose_);
+  }
+
+  bool KeyNodeAcceptanceCriterion::accept(MapNode* n) {
+    if (_closer->keyNodes().find(n->seq())==_closer->keyNodes().end())
+      return false;
+    if (_otherCriterion)
+      return _otherCriterion->accept(n);
+    return true;
+  }
+
+
+  MapCloserActiveRelationSelector::MapCloserActiveRelationSelector(MapCloser* closer_, boss_map::MapManager* manager): MapRelationSelector(manager){
+    _closer=closer_;
+  }
+
+  bool MapCloserActiveRelationSelector::accept(MapNodeRelation* r) {
+    if (_closer->relations().find(r) == _closer->relations().end())
+      return false;
+    ClosureInfo* cinfo = dynamic_cast<ClosureInfo*>(r);
+    if (cinfo){
+      return cinfo->accepted;
+    }
+    return true;
+  }
 
 }
