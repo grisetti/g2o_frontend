@@ -80,7 +80,7 @@ namespace boss_map {
   class SyncSensorDataNode: public SensorDataNode<SynchronizedSensorData> {
   public:
     SyncSensorDataNode(MapManager* manager=0, SynchronizedSensorData* data=0, int id=-1, IdContext* context = 0):
-      SensorDataNode<SynchronizedSensorData>(manager, data, id, context) {}
+      SensorDataNode<SynchronizedSensorData>(manager, data, id, context) { _imu = 0; }
     //! boss serialization
     virtual void serialize(ObjectData& data, IdContext& context);
     //! boss deserialization

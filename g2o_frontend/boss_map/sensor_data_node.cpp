@@ -70,11 +70,11 @@ namespace boss_map {
 	  currentNode->setOdometry(odom);
 	  currentNode->setPreviousNode(_previousNode);
       }
-      _previousNode = currentNode;
-      _previousNodeTransform = currentNodeTransform;
       put(currentNode);
       if (odom)
 	put(odom);
+      _previousNode = currentNode;
+      _previousNodeTransform = currentNodeTransform;
     }
   }
 
@@ -99,6 +99,8 @@ namespace boss_map {
     BaseSensorData* data = dynamic_cast<BaseSensorData*>(s);
     if (data && data->topic() == _topic) {
       SyncSensorDataNode* currentNode = (SyncSensorDataNode*) makeNode(_mapManager, data);
+      currentNode->setSeq(_seq);
+      _seq++;
       Eigen::Isometry3d currentNodeTransform = data->robotReferenceFrame()->transform();
       currentNode->setTransform(currentNodeTransform);
       _mapManager->addNode(currentNode);
@@ -116,8 +118,6 @@ namespace boss_map {
 	  currentNode->setOdometry(odom);
 	  currentNode->setPreviousNode(_previousNode);
       }
-      _previousNode = currentNode;
-      _previousNodeTransform = currentNodeTransform;
       put(currentNode);
       if (odom)
 	put(odom);
@@ -125,6 +125,8 @@ namespace boss_map {
 	_mapManager->addRelation(currentNode->imu());
 	put(currentNode->imu());
       }
+      _previousNode = currentNode;
+      _previousNodeTransform = currentNodeTransform;
     }
   }
 

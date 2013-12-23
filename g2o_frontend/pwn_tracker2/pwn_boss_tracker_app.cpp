@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
   
 
   // create a synchronizer
-  Synchronizer sync;
+  SensorDataSynchronizer sync;
 
   std::string fileconf = argv[1];
   std::string filein = argv[2];

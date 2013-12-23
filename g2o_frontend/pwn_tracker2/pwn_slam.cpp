@@ -10,7 +10,7 @@
 #include "g2o_frontend/boss_map/sensor_data_synchronizer.h"
 #include "g2o_frontend/boss_map/robot_configuration.h"
 #include "g2o_frontend/boss_map/map_manager.h"
-#include "g2o_frontend/boss_map/sensing_frame_node.h"
+#include "g2o_frontend/boss_map/sensor_data_node.h"
 #include "g2o_frontend/boss_map_building/map_g2o_reflector.h"
 #include "pwn_tracker.h"
 #include "pwn_cloud_cache.h"
@@ -77,15 +77,15 @@ int main(int argc, char** argv) {
   MapManager* manager = new MapManager();
   
   // construct the synchronizer and its queue
-  Synchronizer* sync = new Synchronizer();
+  SensorDataSynchronizer* sync = new SensorDataSynchronizer();
   sync->addSyncTopic(topic);
   std::list<Serializable*> syncOutput;
   StreamProcessor::EnqueuerOutputHandler* sync2q=new StreamProcessor::EnqueuerOutputHandler(sync, &syncOutput);
   MARKUSED(sync2q);
 
   // construct the nodeMaker and its queue
-  SensingFrameNodeMaker* nodeMaker = new SensingFrameNodeMaker();
-  nodeMaker->init(manager,conf);
+  SyncSensorDataNodeMaker* nodeMaker = new SyncSensorDataNodeMaker(manager,conf);
+  nodeMaker->setTopic(sync->topic());
   std::list<Serializable*> nodeMakerOutput;
   StreamProcessor::EnqueuerOutputHandler* nm2q=new StreamProcessor::EnqueuerOutputHandler(nodeMaker, &nodeMakerOutput);
   MARKUSED(nm2q);
@@ -169,7 +169,7 @@ int main(int argc, char** argv) {
       NewKeyNodeMessage* km = dynamic_cast<NewKeyNodeMessage*>(s);
       if (km) {
 	if (makeVis) {
-	  PwnCloudCache::HandleType h=cache->get((SensingFrameNode*) km->keyNode);
+	  PwnCloudCache::HandleType h=cache->get((SyncSensorDataNode*) km->keyNode);
 	  VisCloud* visCloud = new VisCloud(h.get());
 	  visState->cloudMap.insert(make_pair(km->keyNode, visCloud));
 	  

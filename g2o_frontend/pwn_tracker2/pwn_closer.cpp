@@ -47,14 +47,14 @@ namespace pwn_tracker {
   void PwnCloser::processPartition(std::list<MapNodeBinaryRelation*>& newRelations, 
 				   std::set<MapNode*>& otherPartition, 
 				   MapNode* current_){
-    SensingFrameNode* current = dynamic_cast<SensingFrameNode*>(current_);
+    SyncSensorDataNode* current = dynamic_cast<SyncSensorDataNode*>(current_);
     if (otherPartition.count(current)>0)
       return;
     Eigen::Isometry3d iT=current->transform().inverse();
     PwnCloudCache::HandleType f_handle=_cache->get(current);
     //cerr << "FRAME: " << current->seq << endl; 
     for (std::set <MapNode*>::iterator it=otherPartition.begin(); it!=otherPartition.end(); it++){
-      SensingFrameNode* other = dynamic_cast<SensingFrameNode*>(*it);
+      SyncSensorDataNode* other = dynamic_cast<SyncSensorDataNode*>(*it);
       if (other==current)
 	continue;
 
@@ -70,7 +70,7 @@ namespace pwn_tracker {
     cerr << endl;
   }
 
-  PwnCloserRelation* PwnCloser::registerNodes(SensingFrameNode* keyNode, SensingFrameNode* otherNode, const Eigen::Isometry3d& initialGuess_) {
+  PwnCloserRelation* PwnCloser::registerNodes(SyncSensorDataNode* keyNode, SyncSensorDataNode* otherNode, const Eigen::Isometry3d& initialGuess_) {
 
     // fetch the clouds from the cache
     PwnCloudCache::HandleType _keyCloudHandler = _cache->get(keyNode);
@@ -81,24 +81,14 @@ namespace pwn_tracker {
     Eigen::Isometry3d keyOffset_, otherOffset_;
     Eigen::Matrix3d   otherCameraMatrix_;
     {
-      BaseSensorData* sdata = keyNode->sensorData(_cache->topic());
-      if (! sdata) {
-	std::cerr << "topic :[" << _cache->topic() << "]" << std::endl;
-	throw std::runtime_error("unable to find the required topic for FROM node");
-      }
-      PinholeImageData* imdata = dynamic_cast<PinholeImageData*>(sdata);
+      PinholeImageData* imdata = keyNode->sensorData()->sensorData<PinholeImageData>(_cache->topic());
       if (! imdata) {
 	throw std::runtime_error("the required topic does not match the requested type");
       }
       keyOffset_ = _robotConfiguration->sensorOffset(imdata->sensor());
     }
     {
-      BaseSensorData* sdata = otherNode->sensorData(_cache->topic());
-      if (! sdata) {
-	std::cerr << "topic :[" << _cache->topic() << "]" << std::endl;
-	throw std::runtime_error("unable to find the required topic for TO node");
-      }
-      PinholeImageData* imdata = dynamic_cast<PinholeImageData*>(sdata);
+      PinholeImageData* imdata = otherNode->sensorData()->sensorData<PinholeImageData>(_cache->topic());
       if (! imdata) {
 	throw std::runtime_error("the required topic does not match the requested type");
       }

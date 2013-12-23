@@ -30,10 +30,6 @@ using namespace std;
 int main(int argc, char** argv) {
     
   
-
-  // create a synchronizer
-  Synchronizer sync;
-
   std::string fileconf = argv[1];
   std::string filein = argv[2];
   std::string fileout = argv[3];
@@ -51,7 +47,6 @@ int main(int argc, char** argv) {
   
   std::string topic = "/camera/depth_registered/image_rect_raw";
   int scale = 4;
-  sync.addSyncTopic(topic);
 
   Serializer ser;
   ser.setFilePath(fileout.c_str());
@@ -89,7 +84,7 @@ int main(int argc, char** argv) {
   
   PwnMatcherBase* matcher = new PwnMatcherBase(aligner, converter);
   PwnTracker* tracker = new PwnTracker(matcher, cache, manager, conf);
-  tracker->setTopic(topic);
+  tracker->setTopic("sync");
 
   PwnCloser* closer = new PwnCloser(tracker);
   DistancePoseAcceptanceCriterion* distanceCriterion = new DistancePoseAcceptanceCriterion(manager);

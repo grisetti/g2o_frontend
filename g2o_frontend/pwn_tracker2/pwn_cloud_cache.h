@@ -6,7 +6,7 @@
 #include "g2o_frontend/boss_map/robot_configuration.h"
 #include "g2o_frontend/pwn_core/pinholepointprojector.h"
 #include "g2o_frontend/pwn_core/depthimageconverter.h"
-#include "g2o_frontend/boss_map/sensing_frame_node.h"
+#include "g2o_frontend/boss_map/sensor_data_node.h"
 #include "g2o_frontend/boss_map_building/cache.h"
 
 namespace pwn_tracker {
@@ -16,9 +16,9 @@ namespace pwn_tracker {
 
   class PwnCloudCache;
 
-  class PwnCloudCacheEntry: public CacheEntry<SensingFrameNode, pwn::Cloud>{
+  class PwnCloudCacheEntry: public CacheEntry<SyncSensorDataNode, pwn::Cloud>{
   public:
-    PwnCloudCacheEntry(PwnCloudCache* cache, SensingFrameNode* k, pwn::Cloud* d=0);
+    PwnCloudCacheEntry(PwnCloudCache* cache, SyncSensorDataNode* k, pwn::Cloud* d=0);
   protected:
     virtual DataType* fetch(KeyType* k);
     PwnCloudCache* _pwnCache;
@@ -40,7 +40,7 @@ namespace pwn_tracker {
     inline int scale() const {return _scale;}
     inline void setScale(int scale_)  {_scale=scale_;}
 
-    pwn::Cloud* loadCloud(SensingFrameNode* trackerNode);
+    pwn::Cloud* loadCloud(SyncSensorDataNode* trackerNode);
     double cumTime;
     int numCalls;
   protected:

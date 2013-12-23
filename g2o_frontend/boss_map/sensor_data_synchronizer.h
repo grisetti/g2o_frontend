@@ -44,42 +44,17 @@ namespace boss_map {
     template <class SensorDataType> 
     SensorDataType* sensorData(const std::string& topic_){
       size_t i = 0;
-      for (; i<sensorDatas.size() && sensorDatas[i]->topic()==topic_; i++);
-      return i<sensorDatas.size() ? dynamic_cast<BaseSensorData>(sensorDatas[i]) : 0;
+      for (; i<sensorDatas.size() && sensorDatas[i]->topic()!=topic_; i++);
+      SensorDataType* s = 0;
+      if (i<sensorDatas.size())
+	s=dynamic_cast<SensorDataType*>(sensorDatas[i]);
+      if (! s ){
+	std::cerr << "type mismatch" << "topic: " << topic_ << "does not match the requested type" << std::endl;
+      }
+      return i<sensorDatas.size() ? dynamic_cast<SensorDataType*>(sensorDatas[i]) : 0;
     }
 
     std::vector<BaseSensorData*> sensorDatas;
-  };
-
-
-
-  struct Synchronizer: public StreamProcessor{
-
-    enum DroppedDataPolicy {KeepData,DeleteData};
-    enum DroppedReferenceFramePolicy {KeepReferenceFrame,DeleteReferenceFrame};
-
-    Synchronizer();
-    SyncTopicInstance* addSyncTopic(const std::string& topic);
-    SyncTimeCondition* addSyncTimeCondition(const std::string& topic1, const std::string& topic2, double time);
-    virtual void process(Serializable* s);
-    SyncTopicInstance*  syncTopic(std::string topic);
-    void syncDone();
-    ~Synchronizer();
-  
-  protected:
-    void computeDependancies(std::set<SyncCondition*> & conditions, 
-			     std::set<SyncTopicInstance*>& dependancies,
-			     SyncTopicInstance* instance);
-    bool addSyncTopic(SyncTopicInstance* st);
-    bool addSyncCondition(SyncCondition* cond);  
-    bool addSensorData(BaseSensorData* data);
-
-
-    std::map<std::string, SyncTopicInstance*> syncTopics;
-    std::set<SyncCondition*> syncConditions;
-    DroppedReferenceFramePolicy framePolcy;
-    DroppedDataPolicy  dataPolicy;
-    std::deque<BaseSensorData*> _syncDatas;
   };
 
   struct SensorDataSynchronizer: public StreamProcessor{

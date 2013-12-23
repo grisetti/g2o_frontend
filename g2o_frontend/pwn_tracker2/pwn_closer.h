@@ -28,7 +28,7 @@ namespace pwn_tracker {
     inline PwnCloudCache* cache() {return _cache;}
 
     virtual void processPartition(std::list<MapNodeBinaryRelation*>& newRelations, std::set<MapNode*> & otherPartition, MapNode* current_);
-    PwnCloserRelation* registerNodes(SensingFrameNode* keyNode, SensingFrameNode* otherNode, const Eigen::Isometry3d& initialGuess);
+    PwnCloserRelation* registerNodes(SyncSensorDataNode* keyNode, SyncSensorDataNode* otherNode, const Eigen::Isometry3d& initialGuess);
   protected:
 
     PwnCloudCache* _cache;

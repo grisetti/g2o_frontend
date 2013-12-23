@@ -10,7 +10,7 @@
 #include "g2o_frontend/boss_map/sensor_data_synchronizer.h"
 #include "g2o_frontend/boss_map/robot_configuration.h"
 #include "g2o_frontend/boss_map/map_manager.h"
-#include "g2o_frontend/boss_map/sensing_frame_node.h"
+#include "g2o_frontend/boss_map/sensor_data_node.h"
 #include "g2o_frontend/boss_map_building/map_g2o_reflector.h"
 #include "pwn_tracker.h"
 #include "pwn_cloud_cache.h"
@@ -33,8 +33,8 @@ int main(int argc, char** argv) {
   
 
   // create a synchronizer
-  Synchronizer sync;
-
+  SensorDataSynchronizer sync;
+  
   std::string fileconf = argv[1];
   std::string filein = argv[2];
   std::string fileout = argv[3];
@@ -82,6 +82,10 @@ int main(int argc, char** argv) {
 
   MapManager* manager = new MapManager();
   objects.push_back(manager);
+ 
+  SyncSensorDataNodeMaker* nodeMaker = new SyncSensorDataNodeMaker(manager,conf);
+  sync.setTopic("sync");
+  nodeMaker->setTopic("sync");
   
 
   PwnCloudCache* cache = new PwnCloudCache(converter, conf, topic, scale, 250, 260);
@@ -92,24 +96,18 @@ int main(int argc, char** argv) {
   tracker->setTopic(topic);
 
   
-  SensingFrameNodeMaker* nodeMaker = new SensingFrameNodeMaker();
-  nodeMaker->init(manager,conf);
   StreamProcessor::PropagatorOutputHandler* sync2nm=new StreamProcessor::PropagatorOutputHandler(&sync, nodeMaker);
   MARKUSED(sync2nm);
 
-  // //boss_map_building::BaseTracker* tracker = new boss_map_building::BaseTracker(manager, conf);
-  // StreamProcessor::PropagatorOutputHandler* nm2t=new StreamProcessor::PropagatorOutputHandler(nodeMaker, tracker);
-  // MARKUSED(nm2t);
+  StreamProcessor::PropagatorOutputHandler* nm2t=new StreamProcessor::PropagatorOutputHandler(nodeMaker, tracker);
+  MARKUSED(nm2t);
 
   //StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(tracker, &ser);
   tracker->init();
 
   
-  StreamProcessor::EnqueuerOutputHandler* enqueuer = new StreamProcessor::EnqueuerOutputHandler(&sync, &objects);
-  /*
-  //OdometryRelationAdder* odometryAdder = new OdometryRelationAdder(manager, conf);
-  MARKUSED(writer);
-  */
+  StreamProcessor::EnqueuerOutputHandler* enqueuer = new StreamProcessor::EnqueuerOutputHandler(tracker
+, &objects);
 							
   
 

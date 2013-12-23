@@ -1,5 +1,5 @@
 #include "pwn_tracker.h"
-
+#include "g2o_frontend/boss_map/sensor_data_node.h"
 namespace pwn_tracker{
   using namespace boss_map_building;
   using namespace boss_map;
@@ -93,8 +93,8 @@ namespace pwn_tracker{
   }
 
   MapNodeBinaryRelation* PwnTracker::registerNodes(MapNode* keyNode_, MapNode* otherNode_, const Eigen::Isometry3d&  initialGuess_) {
-    SensingFrameNode * keyNode = dynamic_cast<SensingFrameNode*>(keyNode_);
-    SensingFrameNode * otherNode = dynamic_cast<SensingFrameNode*>(otherNode_);
+    SyncSensorDataNode * keyNode = dynamic_cast<SyncSensorDataNode*>(keyNode_);
+    SyncSensorDataNode * otherNode = dynamic_cast<SyncSensorDataNode*>(otherNode_);
     if (! (keyNode && otherNode))
       return 0;
 
@@ -107,22 +107,14 @@ namespace pwn_tracker{
     Eigen::Isometry3d keyOffset_, otherOffset_;
     Eigen::Matrix3d   otherCameraMatrix_;
     {
-      BaseSensorData* sdata = keyNode->sensorData(_topic);
-      if (! sdata) {
-	throw std::runtime_error("unable to find the required topic for KEY node");
-      }
-      PinholeImageData* imdata = dynamic_cast<PinholeImageData*>(sdata);
+      PinholeImageData* imdata = keyNode->sensorData()->sensorData<PinholeImageData>(_topic);
       if (! imdata) {
 	throw std::runtime_error("the required topic does not match the requested type");
       }
       keyOffset_ = _robotConfiguration->sensorOffset(imdata->sensor());
     }
     {
-      BaseSensorData* sdata = otherNode->sensorData(_topic);
-      if (! sdata) {
-	throw std::runtime_error("unable to find the required topic for OTHER node");
-      }
-      PinholeImageData* imdata = dynamic_cast<PinholeImageData*>(sdata);
+      PinholeImageData* imdata = otherNode->sensorData()->sensorData<PinholeImageData>(_topic);
       if (! imdata) {
 	throw std::runtime_error("the required topic does not match the requested type");
       }
