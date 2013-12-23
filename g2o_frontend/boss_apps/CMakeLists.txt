@@ -12,6 +12,9 @@ TARGET_LINK_LIBRARIES(boss_playback pwn_boss pwn_core boss_map boss)
 ADD_EXECUTABLE(boss_synchronizer boss_synchronizer.cpp )
 TARGET_LINK_LIBRARIES(boss_synchronizer pwn_boss pwn_core boss_map boss)
 
+ADD_EXECUTABLE(boss_synchronizer2 boss_synchronizer2.cpp )
+TARGET_LINK_LIBRARIES(boss_synchronizer2 pwn_boss pwn_core boss_map boss)
+
 ADD_EXECUTABLE(boss_path_generator boss_path_generator.cpp )
 TARGET_LINK_LIBRARIES(boss_path_generator pwn_core pwn_boss boss_map boss)
 

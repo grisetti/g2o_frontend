@@ -40,8 +40,18 @@ namespace boss_map {
     SynchronizedSensorData(int id=-1, IdContext* context = 0);
     virtual void serialize(ObjectData& data, IdContext& context);
     virtual void deserialize(ObjectData& data, IdContext& context);
+
+    template <class SensorDataType> 
+    SensorDataType* sensorData(const std::string& topic_){
+      size_t i = 0;
+      for (; i<sensorDatas.size() && sensorDatas[i]->topic()==topic_; i++);
+      return i<sensorDatas.size() ? dynamic_cast<BaseSensorData>(sensorDatas[i]) : 0;
+    }
+
     std::vector<BaseSensorData*> sensorDatas;
   };
+
+
 
   struct Synchronizer: public StreamProcessor{
 
@@ -72,6 +82,29 @@ namespace boss_map {
     std::deque<BaseSensorData*> _syncDatas;
   };
 
+  struct SensorDataSynchronizer: public StreamProcessor{
+    SensorDataSynchronizer();
+    SyncTopicInstance* addSyncTopic(const std::string& topic);
+    SyncTimeCondition* addSyncTimeCondition(const std::string& topic1, const std::string& topic2, double time);
+    virtual void process(Serializable* s);
+    SyncTopicInstance*  syncTopic(std::string topic);
+    ~SensorDataSynchronizer();
+    inline const std::string& topic() const {return _topic;}
+    inline void setTopic (const std::string& topic_) {_topic = topic_;}
+    
+  protected:
+    std::string _topic;
+    void computeDependancies(std::set<SyncCondition*> & conditions, 
+			     std::set<SyncTopicInstance*>& dependancies,
+			     SyncTopicInstance* instance);
+    bool addSyncTopic(SyncTopicInstance* st);
+    bool addSyncCondition(SyncCondition* cond);  
+    bool addSensorData(BaseSensorData* data);
+
+
+    std::map<std::string, SyncTopicInstance*> syncTopics;
+    std::set<SyncCondition*> syncConditions;
+  };
   
 }
 #endif
