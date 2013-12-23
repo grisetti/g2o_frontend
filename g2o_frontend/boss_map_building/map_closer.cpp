@@ -193,22 +193,6 @@ namespace boss_map_building {
     flush();
   }
 
-  
-  /*
-  void MapCloser::process(Serializable*s){
-    _outputQueue.push_back(s);
-    MapNode* n = dynamic_cast<MapNode*>(s);
-    if (n && shouldAddNode(n)){
-      addFrame(n);
-    }
-    MapNodeBinaryRelation* r = dynamic_cast<MapNodeBinaryRelation*>(s);
-    if (r && shouldAddRelation(r)){
-      addRelation(r);
-    }
-    flush();
-  }
-  */
-  
   void MapCloser::validatePartitions(std::set<MapNode*>& other, 
 				     std::set<MapNode*>& current) {
     // scan for the pwn closure relations connecting a node in current and a node in others
@@ -351,7 +335,7 @@ namespace boss_map_building {
 
   bool MapCloserActiveRelationSelector::accept(MapNodeRelation* r) {
     if (_closer->relations().find(r) == _closer->relations().end())
-      return false;
+     return false;
     ClosureInfo* cinfo = dynamic_cast<ClosureInfo*>(r);
     if (cinfo){
       return cinfo->accepted;

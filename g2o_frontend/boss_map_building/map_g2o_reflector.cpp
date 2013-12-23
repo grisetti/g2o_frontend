@@ -148,6 +148,7 @@ namespace boss_map_building {
 
 
   void MapG2OReflector::optimize(){
+    copyEstimatesToG2O();
     cerr << "optimizing" << endl;
     // scan for all edges that are of type PwnTrackerRelation that are not active and remove them from the optimization
     g2o::OptimizableGraph::EdgeSet eset;
@@ -166,18 +167,26 @@ namespace boss_map_building {
     gauge->setFixed(true);
     _graph->initializeOptimization(eset);
     
-    cerr << "GLOBAL OPT" << endl;
-    _graph->setVerbose(false);
+    cerr << "GLOBAL OPT: " << gauge->id() << endl;
+    g2o::VertexSE3* vg = (g2o::VertexSE3*)gauge;
+    cerr << "T0: " << t2v(vg->estimate()).transpose() << endl;
+
+    //_graph->setVerbose(true);
     _graph->optimize(10);
+    /*
     for (size_t i = 0; i<_graph->activeVertices().size(); i++){
       g2o::VertexSE3* v = dynamic_cast<g2o::VertexSE3*>(_graph->activeVertices()[i]);
       if (!v)
 	continue;
       MapNode* n = node(v);
       n->setTransform(v->estimate());
+      if (v == gauge)
+	cerr << "T0_copied: " << t2v(n->transform()).transpose() << endl;
     }
+    */
+    gauge->setFixed(false);
     //cerr << "copying estimate" << endl;
-    //copyEstimatesFromG2O();
+    copyEstimatesFromG2O();
     //cerr << "done" << endl;
   }
 
@@ -188,7 +197,8 @@ namespace boss_map_building {
     SlamLinearSolver* linearSolver = new SlamLinearSolver();
     linearSolver->setBlockOrdering(false);
     SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
-    OptimizationAlgorithmLevenberg* solverGauss   = new OptimizationAlgorithmLevenberg(blockSolver);
+    //OptimizationAlgorithmLevenberg* solverGauss   = new OptimizationAlgorithmLevenberg(blockSolver);
+    OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
     SparseOptimizer * graph = new SparseOptimizer();
     graph->setAlgorithm(solverGauss);
     return graph;

@@ -14,7 +14,11 @@
 #include "g2o_frontend/boss_map_building/map_g2o_reflector.h"
 #include "pwn_tracker.h"
 #include "pwn_cloud_cache.h"
+#include "pwn_closer.h"
 #include "g2o_frontend/pwn_boss/pwn_io.h"
+#include "pwn_tracker_viewer.h"
+
+#include <QApplication>
 
 #define MARKUSED(X)  X=X
 
@@ -26,18 +30,13 @@ using namespace boss_map;
 using namespace boss;
 using namespace std;
 
-//pwn_boss::PWNSensorData data;
-
 int main(int argc, char** argv) {
     
   
 
-  // create a synchronizer
-  Synchronizer sync;
 
   std::string fileconf = argv[1];
   std::string filein = argv[2];
-  std::string fileout = argv[3];
   Deserializer des;
 
   des.setFilePath(fileconf);
@@ -50,78 +49,64 @@ int main(int argc, char** argv) {
 
   des.setFilePath(filein.c_str());
   
-  int scale = 4;
- 
-  //std::string topic = "/kinect/depth_registered/image_raw";
-  //sync.addSyncTimeCondition(topic,"/imu/data",0.05);
   std::string topic = "/camera/depth_registered/image_rect_raw";
-  sync.addSyncTopic(topic);
-
-  Serializer ser;
-  ser.setFilePath(fileout.c_str());
+  int scale = 4;
   
-  cerr <<  "running logger with arguments: filein[" << filein << "] fileout: [" << fileout << "]" << endl;
-
-
+  
   // read the configuration file
   RobotConfiguration* conf = 0;
-    std::list<Serializable*> objects;
+  MapManager* manager = 0;
+  std::list<Serializable*> objects;
   Serializable* o;
   while ( (o=des.readObject()) ){
     objects.push_back(o);
     RobotConfiguration * conf_ = dynamic_cast<RobotConfiguration*>(o);
-    if (conf_) {
+    if (conf_)
       conf = conf_;
-      break;
+    MapManager * manager_ = dynamic_cast<MapManager*>(o);
+    if (manager_){
+      manager = manager_;
     }
+    if (conf && manager)
+      break;
   }
-  if (! conf) {
-    cerr << "unable to get conf " << endl;
+  if (! conf || !manager) {
+    cerr << "unable to get conf or manager" << endl;
+    return false;
   }
 
-
-  MapManager* manager = new MapManager();
-  objects.push_back(manager);
-  
-
+  // construct the cloud cache
   PwnCloudCache* cache = new PwnCloudCache(converter, conf, topic, scale, 250, 260);
   PwnCloudCacheHandler* cacheHandler = new PwnCloudCacheHandler(manager, cache);
-  PwnMatcherBase* matcher = new PwnMatcherBase(aligner, converter);
-  PwnTracker* tracker = new PwnTracker(matcher, cache, manager, conf);
-  tracker->setScale(scale);
-  tracker->setTopic(topic);
+  cacheHandler->init();
 
+  VisState* visState=0;
+  MyTrackerViewer *viewer = 0;
+  QApplication* app =0;
   
-  SensingFrameNodeMaker* nodeMaker = new SensingFrameNodeMaker();
-  nodeMaker->init(manager,conf);
-  StreamProcessor::PropagatorOutputHandler* sync2nm=new StreamProcessor::PropagatorOutputHandler(&sync, nodeMaker);
-  MARKUSED(sync2nm);
-
-  // //boss_map_building::BaseTracker* tracker = new boss_map_building::BaseTracker(manager, conf);
-  // StreamProcessor::PropagatorOutputHandler* nm2t=new StreamProcessor::PropagatorOutputHandler(nodeMaker, tracker);
-  // MARKUSED(nm2t);
-
-  //StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(tracker, &ser);
-  tracker->init();
-
+  visState = new VisState(manager);
+  app = new QApplication(argc,argv);
+  viewer = new MyTrackerViewer(visState);
+  viewer->show();
   
-  StreamProcessor::EnqueuerOutputHandler* enqueuer = new StreamProcessor::EnqueuerOutputHandler(&sync, &objects);
-  /*
-  //OdometryRelationAdder* odometryAdder = new OdometryRelationAdder(manager, conf);
-  MARKUSED(writer);
-  */
-							
-  
-
   Serializable* s;
   while((s=des.readObject())) {
-    sync.process(s);
+    cerr << ".";
+    NewKeyNodeMessage* km = dynamic_cast<NewKeyNodeMessage*>(s);
+    if (km) {
+      PwnCloudCache::HandleType h=cache->get((SensingFrameNode*) km->keyNode);
+      VisCloud* visCloud = new VisCloud(h.get());
+      visState->cloudMap.insert(make_pair(km->keyNode, visCloud));
+      viewer->updateGL();
+    }
+    app->processEvents();
   }
 
-  while (! objects.empty()){
-    ser.writeObject(*objects.front());
-    objects.pop_front();
+  visState->final = true;
+  
+  viewer->updateGL();
+  while(viewer->isVisible()){
+    app->processEvents();
   }
-
-
+  
 }

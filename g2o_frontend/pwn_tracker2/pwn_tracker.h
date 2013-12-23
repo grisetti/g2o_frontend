@@ -67,6 +67,9 @@ namespace pwn_tracker{
     int _imageRows, _imageCols, _imageSize;
     int _scaledImageRows, _scaledImageCols, _scaledImageSize;
     int _minCloudInliers;
+    int _frameMinNonZeroThreshold;
+    int _frameMaxOutliersThreshold;
+    int _frameMinInliersThreshold;
   };
 
 }

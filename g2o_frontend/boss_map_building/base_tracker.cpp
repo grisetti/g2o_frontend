@@ -29,10 +29,9 @@ namespace boss_map_building {
 
   void BaseTracker::init(){
     _pendingNode = 0;
-    _previousNode = 0;
     _currentNode = 0;
     _keyNode = 0;
-    _globalT.setIdentity();
+    _localT.setIdentity();
   }
 
   Eigen::Isometry3d BaseTracker::computeInitialGuess(MapNode* n_){
@@ -45,9 +44,9 @@ namespace boss_map_building {
       if (n && n->odometry()) {
 	dt = n->odometry()->transform();
       }
+      _localT = _localT*dt;
+      t = _keyNode->transform()*_localT;
     }
-    if (_previousNode)
-      t = _previousNode->transform() * dt;
     //cerr << "dt: " << t2v(dt).transpose() << endl;
     
     if (n && n->imu())
@@ -66,7 +65,7 @@ namespace boss_map_building {
     _outputQueue.push_back(s);
   }
 
-  bool BaseTracker::shouldChangeKeyNode(MapNodeBinaryRelation* rel){
+  bool BaseTracker::shouldChangeKeyNode(MapNodeBinaryRelation* ){
     return true;
   }
 
@@ -77,34 +76,34 @@ namespace boss_map_building {
     //cerr << "*************** NEW NODE " << cnt++ <<  " *************** " << endl;
    
     Eigen::Isometry3d guess = computeInitialGuess(_currentNode);
-    _globalT = guess;
     //cerr << "globalT: " << t2v(_globalT).transpose() << endl;
     _currentNode->setTransform(guess);
     //cerr << "guess" << t2v(guess).transpose() << endl;
     if (_keyNode){
-      MapNodeBinaryRelation* r = registerNodes(_keyNode, _currentNode, _keyNode->transform().inverse()*guess);
+      MapNodeBinaryRelation* r = registerNodes(_keyNode, _currentNode, _localT);
       if (! r){ // matching failed
 	//cerr << "TRACK_INIT" << endl;
 	cerr << "X";
     	flushQueue();
     	_keyNode = _currentNode;
-    	_globalT = guess;
+	_localT.setIdentity();
 	_outputQueue.push_back(new NewKeyNodeMessage(_keyNode));
       } else { // matching ok
 	//cerr << "rel: "  << t2v(r->transform()).transpose() << endl;
 	//cerr << "knt: " << t2v(_keyNode->transform()).transpose() << endl;
-    	_globalT = (_keyNode->transform()*r->transform());
-	Eigen::Matrix3d R = _globalT.linear();
+	_localT = r->transform();
+	Eigen::Matrix3d R = _localT.linear();
 	Eigen::Matrix3d E = R.transpose() * R;
 	E.diagonal().array() -= 1;
-	_globalT.linear() -= 0.5 * R * E;
-	_currentNode->setTransform(_globalT);
+	_localT.linear() -= 0.5 * R * E;
+	_currentNode->setTransform(_keyNode->transform()*r->transform());
     	if (shouldChangeKeyNode(r)){
 	  cerr << "K";
     	  //cerr << "KF_CHANGE" << endl;
     	  _outputQueue.push_back(r);
 	  flushQueue();
     	  _keyNode = _currentNode;
+	  _localT.setIdentity();
 	  _outputQueue.push_back(new NewKeyNodeMessage(_keyNode));
    	  _manager->addRelation(r);
     	  //cerr << "knt: " << t2v(_keyNode->transform()).transpose() << endl;
@@ -118,9 +117,9 @@ namespace boss_map_building {
       //cerr << "KF_INIT" << endl;
       _keyNode = _currentNode;
       _outputQueue.push_back(new NewKeyNodeMessage(_keyNode));
+      _localT.setIdentity();
       //cerr << "knt: " << endl << _keyNode->transform().matrix() << endl;
     }
-    _previousNode = _currentNode;
   }
 
   void BaseTracker::flushQueue(){

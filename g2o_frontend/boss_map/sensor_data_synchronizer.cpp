@@ -5,6 +5,30 @@ namespace boss_map {
   using namespace std;
   using namespace boss;
 
+  SynchronizedSensorData::SynchronizedSensorData(int id, IdContext* context): BaseSensorData(id, context) {
+  }
+  
+  void SynchronizedSensorData::serialize(ObjectData& data, IdContext& context){
+    BaseSensorData::serialize(data,context);
+    ArrayData* dataArray = new ArrayData();
+    for (size_t i =0; i<sensorDatas.size(); i++){
+      BaseSensorData* s = sensorDatas[i];
+      dataArray->add(new PointerData(s));
+    }
+    data.setField("sensorDatas", dataArray);
+  }
+    
+  void SynchronizedSensorData::deserialize(ObjectData& data, IdContext& context){
+    BaseSensorData::deserialize(data,context);
+    ArrayData& dataArray = data.getField("sensorDatas")->getArray();
+    sensorDatas.resize(dataArray.size());
+    for (size_t i =0; i<dataArray.size(); i++){
+      Identifiable* id = dataArray[i].getPointer();
+      sensorDatas[i] = dynamic_cast<BaseSensorData*>(id);
+    }
+  }
+
+
   SyncCondition::SyncCondition(SyncTopicInstance* m1, SyncTopicInstance*m2){
     this->m1  = m1;
     this->m2  = m2;
@@ -204,4 +228,5 @@ namespace boss_map {
 
   }
 
+  BOSS_REGISTER_CLASS(SynchronizedSensorData);
 }

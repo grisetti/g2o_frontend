@@ -40,32 +40,4 @@ namespace pwn_tracker {
     int _frameMinInliersThreshold;
   };
 
-  class PwnCloserActiveRelationSelector: public MapRelationSelector {
-  public:
-    PwnCloserActiveRelationSelector(boss_map::MapManager* manager);
-    virtual bool accept(MapNodeRelation* r);
-  };
-
-// closure actions
-/*
-struct NewFrameCloserAdder: public PwnTracker::NewFrameAction {
-  NewFrameCloserAdder(PwnCloser* closer, PwnTracker* tracker);
-  void compute (SensingFrameNode* frame);
-  PwnCloser* _closer;
-};
-
-
-  struct CloserRelationAdder: public PwnTracker::NewRelationAction {
-    CloserRelationAdder(std::list<Serializable*>& objects_,
-			PwnCloser* closer, 
-			MapG2OReflector* optimizer_, 
-			PwnTracker* tracker);
-    void compute (PwnTrackerRelation* relation);
-  protected:
-    PwnCloser* _closer;
-    MapG2OReflector* _optimizer;
-    std::list<Serializable*>& _objects;
-  };
-}
-*/
 }

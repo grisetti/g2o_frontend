@@ -50,7 +50,9 @@ int main(int argc, char** argv) {
 
   des.setFilePath(filein.c_str());
   
-  std::string topic = "/camera/depth_registered/image_rect_raw";
+  //std::string topic = "/camera/depth_registered/image_rect_raw";
+  //std::string topic = "/kinect/depth_registered/image_raw";
+
   int scale = 4;
 
   Serializer ser;
@@ -76,20 +78,23 @@ int main(int argc, char** argv) {
 
   MapManager* manager = new MapManager();
   
-  // construct the synchronizer and its queue
+  // construct the synchronizer 
   Synchronizer* sync = new Synchronizer();
+ 
+  // standard
+  std::string topic = "/camera/depth_registered/image_rect_raw";
   sync->addSyncTopic(topic);
-  std::list<Serializable*> syncOutput;
-  StreamProcessor::EnqueuerOutputHandler* sync2q=new StreamProcessor::EnqueuerOutputHandler(sync, &syncOutput);
-  MARKUSED(sync2q);
 
-  // construct the nodeMaker and its queue
+  // catacombs
+  // std::string topic = "/kinect/depth_registered/image_raw";
+  // sync->addSyncTimeCondition(topic,"/imu/data",0.05);
+
+
+
+  // construct the nodeMaker 
   SensingFrameNodeMaker* nodeMaker = new SensingFrameNodeMaker();
   nodeMaker->init(manager,conf);
-  std::list<Serializable*> nodeMakerOutput;
-  StreamProcessor::EnqueuerOutputHandler* nm2q=new StreamProcessor::EnqueuerOutputHandler(nodeMaker, &nodeMakerOutput);
-  MARKUSED(nm2q);
- 
+
   // construct the cloud cache
   PwnCloudCache* cache = new PwnCloudCache(converter, conf, topic, scale, 250, 260);
   PwnCloudCacheHandler* cacheHandler = new PwnCloudCacheHandler(manager, cache);
@@ -102,12 +107,9 @@ int main(int argc, char** argv) {
   PwnMatcherBase* matcher = new PwnMatcherBase(aligner, converter);
   matcher->_frameInlierDepthThreshold = 50;
 
-  // construct the tracker object, and its queue
+  // construct the tracker object
   PwnTracker* tracker = new PwnTracker(matcher, cache, manager, conf);
   tracker->setTopic(topic);
-  std::list<Serializable*> trackerOutput;
-  StreamProcessor::EnqueuerOutputHandler* t2q=new StreamProcessor::EnqueuerOutputHandler(tracker, &trackerOutput);
-  MARKUSED(t2q);
 
   // construct the closer object and its queue
   PwnCloser* closer = new PwnCloser(tracker);
@@ -115,16 +117,19 @@ int main(int argc, char** argv) {
   StreamProcessor::EnqueuerOutputHandler* c2q=new StreamProcessor::EnqueuerOutputHandler(closer, &closerOutput);
   MARKUSED(c2q);
 
+  // configure the criterion when to seek for loop closures
   DistancePoseAcceptanceCriterion* distanceCriterion = new DistancePoseAcceptanceCriterion(manager);
   distanceCriterion->setRotationalDistance(M_PI/4);
-  distanceCriterion->setTranslationalDistance(1);
+  distanceCriterion->setTranslationalDistance(1.0);
   KeyNodeAcceptanceCriterion* criterion = new KeyNodeAcceptanceCriterion(closer,manager, distanceCriterion);
   closer->setCriterion(criterion);
   MapCloserActiveRelationSelector* optSelector = new MapCloserActiveRelationSelector(closer, manager);
 
+  //set the selector that tells which relations to  optimize when the closer kicks in
   optimizer->setSelector(optSelector);
   closer->setSelector(optSelector);
   closer->autoProcess = false;
+  closer->_consensusMinTimesCheckedThreshold = 5;
 
   tracker->init();
   tracker->setScale(scale);
@@ -134,7 +139,8 @@ int main(int argc, char** argv) {
   std::list<Serializable*> closerInput;
 
 
-  bool makeVis = false;
+  bool makeVis = true;
+  //bool makeVis = false;
   VisState* visState=0;
   MyTrackerViewer *viewer = 0;
   QApplication* app =0;
@@ -146,26 +152,30 @@ int main(int argc, char** argv) {
     viewer->show();
   }
 
+
+  // make the connections
+  StreamProcessor::PropagatorOutputHandler* sync2nm=new StreamProcessor::PropagatorOutputHandler(sync, nodeMaker);
+  MARKUSED(sync2nm);
+
+  StreamProcessor::PropagatorOutputHandler* nm2t=new StreamProcessor::PropagatorOutputHandler(nodeMaker, tracker);
+  MARKUSED(nm2t);
+
+  StreamProcessor::PropagatorOutputHandler* t2c=new StreamProcessor::PropagatorOutputHandler(tracker, closer);
+  MARKUSED(t2c);
+
   
   while((s=des.readObject())) {
     sync->process(s);
 
-    while(!syncOutput.empty()){
-      Serializable* s= syncOutput.front();
-      syncOutput.pop_front();
-      nodeMaker->process(s);
-    }
-  }
-
-  while(!nodeMakerOutput.empty()){
-    Serializable* s= nodeMakerOutput.front();
-    nodeMakerOutput.pop_front();
-    tracker->process(s);
-    
-    while (!trackerOutput.empty()){
-      Serializable* s = trackerOutput.front();
-      trackerOutput.pop_front();
-      closer->process(s);
+    bool optimize = false;
+    while(!closerOutput.empty()){
+      Serializable* s= closerOutput.front();
+      closerOutput.pop_front();
+      objects.push_back(s);
+      PwnCloserRelation* rel = dynamic_cast<PwnCloserRelation*>(s);
+      if (rel) {
+	optimize=true;
+      }
       NewKeyNodeMessage* km = dynamic_cast<NewKeyNodeMessage*>(s);
       if (km) {
 	if (makeVis) {
@@ -183,17 +193,6 @@ int main(int argc, char** argv) {
 	}
 	if (makeVis)
 	  viewer->updateGL();
-      }
-    }
-
-    bool optimize = false;
-    while(!closerOutput.empty()){
-      Serializable* s= closerOutput.front();
-      closerOutput.pop_front();
-      objects.push_back(s);
-      PwnCloserRelation* rel = dynamic_cast<PwnCloserRelation*>(s);
-      if (rel) {
-	optimize=true;
       }
     }
 

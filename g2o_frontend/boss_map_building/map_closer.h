@@ -47,19 +47,21 @@ namespace boss_map_building {
     std::list<MapNodeBinaryRelation*>& candidateRelations() {return _candidateRelations;}
     std::vector<std::set<MapNode*> >& partitions() {return _partitions;}
     std::set<MapNode*>* currentPartition() {return _currentPartition;}
-    bool _debug;
     virtual void process(Serializable* s);
     virtual void flush();
+
+    
+    float _consensusInlierTranslationalThreshold;
+    float _consensusInlierRotationalThreshold;
+    int    _consensusMinTimesCheckedThreshold;
     bool autoProcess;
+    bool _debug;
   protected:
     void validatePartitions(std::set<MapNode*>& other, 
 			    std::set<MapNode*>& current);
     std::vector<std::set<MapNode*> > _partitions;
     std::set<MapNode*>* _currentPartition;
 
-    float _consensusInlierTranslationalThreshold;
-    float _consensusInlierRotationalThreshold;
-    int    _consensusMinTimesCheckedThreshold;
     MapNode* _pendingTrackerFrame, *_lastTrackerFrame;
     boss_map::MapManager* _manager;
     PoseAcceptanceCriterion* _criterion;

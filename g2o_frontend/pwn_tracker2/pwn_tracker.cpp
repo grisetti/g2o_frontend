@@ -57,6 +57,10 @@ namespace pwn_tracker{
     setScale(4);
     _newFrameCloudInliersFraction = 0.4;
     _minCloudInliers = 1000;
+    _frameMinNonZeroThreshold = 3000;// was 3000
+    _frameMaxOutliersThreshold = 2000;
+    _frameMinInliersThreshold = 500; // was 1000
+
   }
 
   PwnTracker::~PwnTracker(){}
@@ -148,15 +152,17 @@ namespace pwn_tracker{
     //cerr << endl;
 
 
-    if (result.cloud_inliers>_minCloudInliers){
-      PwnTrackerRelation* r=new PwnTrackerRelation(_manager);
-      r->nodes()[0]=keyNode;
-      r->nodes()[1]=otherNode;
-      r->fromResult(result);
-      return r;
-    } 
-    return 0;
+    if(result.cloud_inliers < _minCloudInliers ||
+       result.image_nonZeros < _frameMinNonZeroThreshold ||
+       result.image_inliers  < _frameMinInliersThreshold ||
+       result.image_outliers > _frameMaxOutliersThreshold )
+      return 0;
 
+    PwnTrackerRelation* r=new PwnTrackerRelation(_manager);
+    r->nodes()[0]=keyNode;
+    r->nodes()[1]=otherNode;
+    r->fromResult(result);
+       return r;
   }
   
   BOSS_REGISTER_CLASS(PwnTrackerRelation);

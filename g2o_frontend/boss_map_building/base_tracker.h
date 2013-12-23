@@ -71,12 +71,11 @@ namespace boss_map_building {
     //! previousNode: the last node processed
     //! keyNode: the current keyframe
     //! currentNode: the current node in the pool
-    MapNode* _pendingNode, *_previousNode, *_keyNode, *_currentNode ;
-    //! transforms of the nodes, when they are read from the input stream
-    Eigen::Isometry3d _keyNodeTransform, _previousNodeTransform, _currentNodeTransform;
+    MapNode* _pendingNode, *_keyNode, *_currentNode ;
     //! global position of the tracker
-    Eigen::Isometry3d _globalT;
+    Eigen::Isometry3d _localT;
     //! queue where to put the output before closing a frame
     std::list<Serializable*> _outputQueue;
   };
+
 }

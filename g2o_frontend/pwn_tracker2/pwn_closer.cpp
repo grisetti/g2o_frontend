@@ -39,25 +39,10 @@ namespace pwn_tracker {
     _frameMaxOutliersThreshold = 100;
     _frameMinInliersThreshold = 1000; // was 1000
     _debug = false;
-    _selector = new PwnCloserActiveRelationSelector(_manager);
+    _selector = 0;
     cerr << "constructed" << endl;
   }
 
-
-  PwnCloserActiveRelationSelector::PwnCloserActiveRelationSelector(boss_map::MapManager* manager): MapRelationSelector(manager){}
-
-  bool PwnCloserActiveRelationSelector::accept(MapNodeRelation* r) {
-    if (!r)
-      return false;
-    {
-      PwnCloserRelation* _r = dynamic_cast<PwnCloserRelation*>(r);
-      if (_r){
-	return _r->accepted;
-      }
-    }
-    return dynamic_cast<PwnTrackerRelation*>(r);
-  }
-  
 
   void PwnCloser::processPartition(std::list<MapNodeBinaryRelation*>& newRelations, 
 				   std::set<MapNode*>& otherPartition, 
@@ -148,45 +133,6 @@ namespace pwn_tracker {
     return r;
   }
 
-
-// // closure actions
-
-//   NewFrameCloserAdder::NewFrameCloserAdder(PwnCloser* closer, PwnTracker* tracker):
-//     PwnTracker::NewFrameAction(tracker){
-//     _closer = closer;
-//   }
-//   void NewFrameCloserAdder::compute (PwnTrackerFrame* frame) {
-//     _closer->addFrame(frame);
-//   }
-
-
-//   CloserRelationAdder::CloserRelationAdder(std::list<Serializable*>& objects_,
-// 		      PwnCloser* closer, 
-// 		      MapG2OReflector* optimizer_, 
-// 		      PwnTracker* tracker):
-//     PwnTracker::NewRelationAction(tracker),
-//     _objects(objects_) {
-//     _closer = closer;
-//     _optimizer = optimizer_;
-//   }
-
-//   void CloserRelationAdder::compute (PwnTrackerRelation* relation) {
-//     _closer->addRelation(relation);
-//     cerr << "CLOSER PARTITIONS: " << _closer->partitions().size() << endl;
-//     int cr=0;
-//     for(std::list<MapNodeBinaryRelation*>::iterator it=_closer->committedRelations().begin();
-// 	it!=_closer->committedRelations().end(); it++){
-//       _objects.push_back(*it);
-//       cr++;
-//     }
-//     if (cr){
-//       cerr << "COMMITTED RELATIONS: " << cr << endl;
-//       _optimizer->optimize();
-//       // char fname[100];
-//       // sprintf(fname, "out-%05d.g2o", lastFrameAdded->seq);
-//       // optimizer->save(fname);
-//     }
-//   }
 
   BOSS_REGISTER_CLASS(PwnCloserRelation);
 }

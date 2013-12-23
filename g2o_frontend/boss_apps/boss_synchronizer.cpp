@@ -141,18 +141,6 @@ int main(int argc, char** argv) {
   ser.setFilePath(fileout.c_str());
   
   cerr <<  "running logger with arguments: filein[" << filein << "] fileout: [" << fileout << "]" << endl;
-
-  // create a reframer object, that once all messages have been put together sets them to a unique frame
-  // Synchronizer::Reframer reframer;
-  // sync.addOutputHandler(&reframer);
-
-  // // create a writer object that dumps on the disk each block of synchronized objects
-  // Synchronizer::Writer writer(&ser);
-  // sync.addOutputHandler(&writer);
-
-  // // create a deleter object that polishes the memory after writing
-  // Synchronizer::Deleter deleter;
-  // sync.addOutputHandler(&deleter);
   
   StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(&sync, &ser);
 

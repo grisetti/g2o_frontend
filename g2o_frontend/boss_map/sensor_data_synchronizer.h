@@ -35,6 +35,14 @@ namespace boss_map {
     double dt;
   };
 
+
+  struct SynchronizedSensorData: public BaseSensorData {
+    SynchronizedSensorData(int id=-1, IdContext* context = 0);
+    virtual void serialize(ObjectData& data, IdContext& context);
+    virtual void deserialize(ObjectData& data, IdContext& context);
+    std::vector<BaseSensorData*> sensorDatas;
+  };
+
   struct Synchronizer: public StreamProcessor{
 
     enum DroppedDataPolicy {KeepData,DeleteData};
