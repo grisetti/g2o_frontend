@@ -39,19 +39,32 @@ void printandwriteLaserData(){
     /// printing the laser data
     //to prevent possible later callbacks
     //    _mutex_meas.lock();
-    //    for(unsigned int i = 0; i < _measurements.size(); i++) {
-    //        ocular::ocular_rbe_obs_t meas = _measurements[i];
-    //        cout << "azim: " << meas.azimuth << ",\telev: " << meas.elevation << ",\trange: " << meas.range << ",\tintensity: " << meas.intensity << endl;
-    //    }
+
+    /// debug
+//    cerr << "output ALL" << endl;
+//    for(unsigned int i = 0; i < _meas_all.size(); i++) {
+//        ocular::ocular_rbe_obs_t meas = _meas_all[i];
+//        cerr << "azim: " << meas.azimuth << ",\telev: " << meas.elevation << ",\trange: " << meas.range << ",\tintensity: " << meas.intensity << endl;
+//    }
+//    cerr << "output VECTOR" << endl;
+//    for(unsigned int i = 0; i < _meas_all_vector.size(); i++) {
+//        PolarMeasurements _meas_all_callback = _meas_all_vector[i];
+
+//        for(unsigned int j = 0; j < _meas_all_callback.size(); j++) {
+//            ocular::ocular_rbe_obs_t meas = _meas_all_callback[j];
+//            cerr << "azim: " << meas.azimuth << ",\telev: " << meas.elevation << ",\trange: " << meas.range << ",\tintensity: " << meas.intensity << endl;
+//        }
+//    }
+
 
     cout << "writing Data for octave plotting and for PCD_viewer" << endl;
     ofstream plotting("plottami.txt");
     pcl::PointCloud<pcl::PointXYZI> cloud;
-    cloud.width = _xyz_meas.size();
+    cloud.width = _xyz_meas_all.size();
     cloud.height = 1;
 
-    for(unsigned int i = 0; i < _xyz_meas.size(); i++){
-        Eigen::Vector4d xyz_p = _xyz_meas[i];
+    for(unsigned int i = 0; i < _xyz_meas_all.size(); i++){
+        Eigen::Vector4d xyz_p = _xyz_meas_all[i];
 
         /// create file for octave plotting
         plotting << xyz_p[0] << " " << xyz_p[1] << " " << xyz_p[2] << " " << xyz_p[3];
@@ -198,15 +211,58 @@ void init_parameters(int argc, char ** argv){
 
 int main(int argc, char** argv){
 
+    cout << "=== LASERONE ===" << endl << endl;
+
     init_parameters(argc,argv);
+
+    //attention! one measurements one scan(to be modified)
+    try {
+        std::cout << "creating RE05Driver" << std::endl;
+        // connecting to RobotEye
+        laserone = new ocular::RE05Driver(_sensor_IP.c_str());
+    }
+    catch(std::exception  &e) {
+        std::cout << "Something went wrong, caught exception: " << e.what() << std::endl;
+        return 1;
+    }
+
+    /// homing the RobotEye, no need to call a sleep(), because Home() is blocking
+    ocular::ocular_error_t err0 = laserone->Home();
+    if(err0 != 0) {
+        cout << "home error err: " << laserone->GetErrorString(err0) << endl;
+        exit(1);
+    }
+    double azimuth, elevation;
+    err0 = laserone->GetApertureAngles(azimuth, elevation);
+    cout << "the initial home position is:\tazimuth = " << azimuth << ",\televation = " << elevation << ", err: " << laserone->GetErrorString(err0) << endl;
+
+    /// start a Full Field Scan
+    err0 = laserone->StartFullFieldScan(_az_rate, _N_lines); // e.g. 3600 degrees/sec (10 revolution/sec) with NLines_min = 3600/360
+    if(err0 != 0) {
+        cout << "Start FullField scan err: " << laserone->GetErrorString(err0) << endl;
+        exit(1);
+    }
+    err0 = laserone->StartLaser(_laser_freq, _averaging, _intensity, &_laser_callback);
+    cout << "...starting streaming laser measurements" << endl;
+    if(err0 != 0) {
+        cout << "Start laser err: " << laserone->GetErrorString(err0) << endl;
+        exit(1);
+    }
+//    ocular::ocular_error_t err2 = laserone->StreamApertureAngles(5, &_angle_callback);
+//    cout << "...streaming aperture position" << ", err: " << laserone->GetErrorString(err2) << std::endl;
+
+    cout << "going to sleep for " << _seconds << " seconds." << endl;
+    sleep(_seconds);
+
+    quit();
+
     ros::init(argc, argv, "roboteye_scan_publisher");
 
     ros::NodeHandle n;
     ros::Publisher scan_pub = n.advertise<robot_eye_driver::RobotEyeScan>("roboteye_scan", 50);
 
     /*.......to be modified from now on basing on laser_drivers/hokuyo_node/node/hokuyo_node.cpp and/or laser_scan_publisher_tutorial.......*/
-
-    unsigned int num_readings = _measurements.size();
+    unsigned int num_readings = _meas_all.size();
     double laser_frequency = _laser_freq;
     std::vector<Eigen::Vector3d> measurements[num_readings];
     double intensities[num_readings];
@@ -225,16 +281,16 @@ int main(int argc, char** argv){
         robot_eye_driver::RobotEyeScan scan;
 //        sensor_msgs::LaserScan scan;
         scan.header.stamp = scan_time;
-        scan.header.frame_id = "laser_frame";
+        scan.header.frame_id = "roboteye_frame";
         scan.azimuth_min = deg2rad(0);
         scan.azimuth_max = deg2rad(360);
-        scan.azimuth_increment = deg2rad(90) / num_readings; //to be checked
+        scan.azimuth_increment = deg2rad(0.01); //to be checked
         scan.elevation_min = deg2rad(-35);
         scan.elevation_max = deg2rad(35);
-        scan.elevation_increment = 3.14 / num_readings;
+        scan.elevation_increment = deg2rad(0.004);
         scan.time_increment = (1 / laser_frequency) / (num_readings);
-        scan.range_min = 0.0; //see the documentation
-        scan.range_max = 100.0; //see the documentation
+        scan.range_min = 0.5; //see the documentation
+        scan.range_max = 250.0; //see the documentation
 
         scan.measurements.resize(num_readings);
         scan.intensities.resize(num_readings);
