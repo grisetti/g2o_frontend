@@ -50,8 +50,15 @@ namespace boss_map_building {
     }
     
     SyncSensorDataNode* ssn=dynamic_cast<SyncSensorDataNode*>(n_);
-    if (ssn && ssn->imu())
+    if (ssn && ssn->imu()){
+      Eigen::Vector3d translation = t.translation();
       t.linear() = ssn->imu()->transform().linear();
+      t.translation()= translation;
+      if (_keyNode)
+	_localT =  _keyNode->transform().inverse()*t;
+      else
+	_localT.setIdentity();
+    }
     return t; 
   }
 	 

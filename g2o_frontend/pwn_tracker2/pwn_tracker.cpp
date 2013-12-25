@@ -60,7 +60,7 @@ namespace pwn_tracker{
     _frameMinNonZeroThreshold = 3000;// was 3000
     _frameMaxOutliersThreshold = 2000;
     _frameMinInliersThreshold = 500; // was 1000
-
+    _enabled = true;
   }
 
   PwnTracker::~PwnTracker(){}
@@ -130,6 +130,9 @@ namespace pwn_tracker{
     convertScalar(otherCameraMatrix, otherCameraMatrix_);
     otherCameraMatrix(2,2) = 1;
 
+    if (! _enabled)
+      return 0;
+
     PwnMatcherBase::MatcherResult result;
     _matcher->matchClouds(result, 
 			  keyCloud, otherCloud, 
@@ -142,6 +145,7 @@ namespace pwn_tracker{
     //cerr << " guess: " << t2v(initialGuess_).transpose();
 
     //cerr << endl;
+
 
 
     if(result.cloud_inliers < _minCloudInliers ||

@@ -40,9 +40,16 @@ namespace pwn_tracker {
     _frameMinInliersThreshold = 1000; // was 1000
     _debug = false;
     _selector = 0;
+    _enabled = true;
     cerr << "constructed" << endl;
   }
 
+  void PwnCloser::process(Serializable* s) {
+    if (_enabled)
+      MapCloser::process(s);
+    else
+      put(s);
+  }
 
   void PwnCloser::processPartition(std::list<MapNodeBinaryRelation*>& newRelations, 
 				   std::set<MapNode*>& otherPartition, 

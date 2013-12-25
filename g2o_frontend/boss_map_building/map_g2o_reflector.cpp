@@ -100,6 +100,7 @@ namespace boss_map_building {
 	gr->setVertex(0,_nm2g[n0]);
 	gr->setMeasurement(r->transform());
 	gr->setInformation(r->informationMatrix());
+	gr->setParameterId(0,0);
 	_rm2g.insert(make_pair(r,gr));
 	_rg2m.insert(make_pair(gr,r));
 	_graph->addEdge(gr);
@@ -197,10 +198,14 @@ namespace boss_map_building {
     SlamLinearSolver* linearSolver = new SlamLinearSolver();
     linearSolver->setBlockOrdering(false);
     SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
-    //OptimizationAlgorithmLevenberg* solverGauss   = new OptimizationAlgorithmLevenberg(blockSolver);
-    OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
+    OptimizationAlgorithmLevenberg* solverGauss   = new OptimizationAlgorithmLevenberg(blockSolver);
+    //OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
     SparseOptimizer * graph = new SparseOptimizer();
     graph->setAlgorithm(solverGauss);
+    g2o::ParameterSE3Offset* imuOffset = new ParameterSE3Offset();
+    imuOffset->setOffset(Eigen::Isometry3d::Identity());
+    imuOffset->setId(0);
+    graph->addParameter(imuOffset);
     return graph;
   }
 

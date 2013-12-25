@@ -45,6 +45,24 @@ namespace pwn_tracker{
 
     inline float newFrameCloudInliersFraction() const {return _newFrameCloudInliersFraction; }
     inline void  setNewFrameCloudInliersFraction(float v) { _newFrameCloudInliersFraction = v; }
+
+
+    inline int cloudMinInliersThreshold() const { return _minCloudInliers; }
+    inline void  setCloudMinInliersThreshold( int t)  { _minCloudInliers = t; }
+
+    inline int frameMinNonZeroThreshold() const { return _frameMinNonZeroThreshold; }
+    inline void  setFrameMinNonZeroThreshold( int t)  { _frameMinNonZeroThreshold = t; }
+
+    inline int frameMaxOutliersThreshold() const { return _frameMaxOutliersThreshold; }
+    inline void  setFrameMaxOutliersThreshold( int t) { _frameMaxOutliersThreshold = t; }
+
+    inline int frameMinInliersThreshold() const { return _frameMinInliersThreshold; }
+    inline void  setFrameMinInliersThreshold( int t)  { _frameMinInliersThreshold = t; }
+     
+
+    inline bool enabled() const { return _enabled; };
+    inline void setEnabled(bool e) { _enabled = e; }
+
     inline const std::string& topic() const { return _topic; }
     inline void setTopic(const std::string& topic_) { _topic = topic_; _cache-> setTopic(topic_);}
 
@@ -70,6 +88,7 @@ namespace pwn_tracker{
     int _frameMinNonZeroThreshold;
     int _frameMaxOutliersThreshold;
     int _frameMinInliersThreshold;
+    bool _enabled;
   };
 
 }

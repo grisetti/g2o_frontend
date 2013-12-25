@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
   des.setFilePath(filein.c_str());
   
   std::string topic = "/camera/depth_registered/image_rect_raw";
+  //std::string topic = "/kinect/depth_registered/image_raw";
   int scale = 4;
   
   

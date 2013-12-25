@@ -112,7 +112,7 @@ namespace boss_map {
 	  odom->setTransform(_previousNodeTransform.inverse()*currentNodeTransform);	
 	  Eigen::Matrix<double, 6, 6> info;
 	  info.setIdentity();
-	  info = info * 100;
+	  info = info * 10;
 	  odom->setInformationMatrix(info);
 	  _mapManager->addRelation(odom);
 	  currentNode->setOdometry(odom);
@@ -140,6 +140,14 @@ namespace boss_map {
       if (imu){
 	MapNodeUnaryRelation* imuRel = new MapNodeUnaryRelation(manager);
 	imuRel->nodes()[0] = snode;
+	Eigen::Isometry3d t;
+	t.setIdentity();
+	t.linear() = imu->orientation().toRotationMatrix();
+	Eigen::Matrix<double, 6, 6> info;
+	info.setZero();
+	info.block<3,3>(3,3) = imu->orientationCovariance().inverse();
+	imuRel->setTransform(t);
+	imuRel->setInformationMatrix(info);
 	snode->setImu(imuRel);
 	break;
       }

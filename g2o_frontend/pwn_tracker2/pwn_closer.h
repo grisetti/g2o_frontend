@@ -27,9 +27,23 @@ namespace pwn_tracker {
 
     inline PwnCloudCache* cache() {return _cache;}
 
+    inline int frameMinNonZeroThreshold() const { return _frameMinNonZeroThreshold; }
+    inline void  setFrameMinNonZeroThreshold( int t)  { _frameMinNonZeroThreshold = t; }
+
+    inline int frameMaxOutliersThreshold() const { return _frameMaxOutliersThreshold; }
+    inline void  setFrameMaxOutliersThreshold( int t) { _frameMaxOutliersThreshold = t; }
+
+
+    inline int frameMinInliersThreshold() const { return _frameMinInliersThreshold; }
+    inline void  setFrameMinInliersThreshold( int t)  { _frameMinInliersThreshold = t; }
+
+    inline bool enabled() const { return _enabled; };
+    inline void setEnabled(bool e) { _enabled = e; }
+
+    virtual void process(Serializable* s);
+  protected:
     virtual void processPartition(std::list<MapNodeBinaryRelation*>& newRelations, std::set<MapNode*> & otherPartition, MapNode* current_);
     PwnCloserRelation* registerNodes(SyncSensorDataNode* keyNode, SyncSensorDataNode* otherNode, const Eigen::Isometry3d& initialGuess);
-  protected:
 
     PwnCloudCache* _cache;
     PwnTracker* _tracker;
@@ -38,6 +52,7 @@ namespace pwn_tracker {
     int _frameMinNonZeroThreshold;
     int _frameMaxOutliersThreshold;
     int _frameMinInliersThreshold;
+    bool _enabled;
   };
 
 }
