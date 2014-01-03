@@ -16,16 +16,17 @@
 #include <QLabel>
 #include <QGraphicsView>
 
+#include <opencv2/highgui/highgui.hpp>
+
 #include "g2o/stuff/command_args.h"
 #include "g2o/stuff/timeutil.h"
 
+#include "g2o_frontend/pwn_core/pwn_static.h"
 #include "g2o_frontend/pwn_core/pinholepointprojector.h"
 #include "g2o_frontend/pwn_core/cylindricalpointprojector.h"
 #include "g2o_frontend/pwn_core/multipointprojector.h"
 #include "g2o_frontend/pwn_core/statscalculatorintegralimage.h"
-#include "g2o_frontend/pwn_core/statscalculatorcrossproduct.h"
 #include "g2o_frontend/pwn_core/depthimageconverterintegralimage.h"
-#include "g2o_frontend/pwn_core/depthimageconvertercrossproduct.h"
 #include "g2o_frontend/pwn_core/aligner.h"
 
 #include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
@@ -57,11 +58,10 @@ Isometry3f currentPose;
 
 // Stats calculator
 StatsCalculatorIntegralImage statsCalculator;
-StatsCalculatorCrossProduct crossStatsCalculator;
 
 // Depth image converter
 DepthImageConverterIntegralImage converter;
-DepthImageConverterCrossProduct crossConverter;
+RawDepthImage rawDepthImage;
 DepthImage depthImage, scaledDepthImage;
 MatrixXi indexImage, scaledIndexImage;
 
@@ -437,11 +437,11 @@ int main(int argc, char **argv) {
   QGraphicsScene *currentScene = new QGraphicsScene();
   referenceDepthView->setScene(referenceScene);
   currentDepthView->setScene(currentScene);
-  Frame *referenceFrame = 0, *currentFrame = 0;
+  Cloud *referenceCloud = 0, *currentCloud = 0;
   string referenceFilename, currentFilename;
-  GLParameterFrame *referenceParameterFrame = new GLParameterFrame(vz_step);
-  GLParameterFrame *currentParameterFrame = new GLParameterFrame(vz_step);
-  currentParameterFrame->parameterPoints()->setColor(Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
+  GLParameterCloud *referenceParameterCloud = new GLParameterCloud(vz_step);
+  GLParameterCloud *currentParameterCloud = new GLParameterCloud(vz_step);
+  currentParameterCloud->parameterPoints()->setColor(Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
   Isometry3f initialGuess = Isometry3f::Identity();
   initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   while(mainWindow->isVisible()) {
@@ -453,19 +453,19 @@ int main(int argc, char **argv) {
     // Apply possible new visualization settings
     for(size_t i = 0; i < viewer->drawableList().size(); i++) {
       Drawable *lastDrawable = viewer->drawableList()[i];
-      DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
-      GLParameter *parameter = lastDrawableFrame->parameter();
-      GLParameterFrame *parameterFrame = dynamic_cast<GLParameterFrame*>(parameter);
-      if(lastDrawableFrame && parameterFrame) {
-	lastDrawableFrame->drawablePoints()->setStep(stepSpinBox->value());
-	lastDrawableFrame->drawablePoints()->setStep(stepSpinBox->value());
-	lastDrawableFrame->drawableNormals()->setStep(stepSpinBox->value());
-	lastDrawableFrame->drawableCovariances()->setStep(stepSpinBox->value());
-	lastDrawableFrame->drawableCorrespondences()->setStep(stepSpinBox->value());
-	parameterFrame->parameterPoints()->setPointSize(pointsSpinBox->value());
-	parameterFrame->parameterNormals()->setNormalLength(normalsSpinBox->value());
-	parameterFrame->parameterCovariances()->setEllipsoidScale(covariancesSpinBox->value());
-	parameterFrame->parameterCorrespondences()->setLineWidth(correspondencesSpinBox->value());
+      DrawableCloud *lastDrawableCloud = dynamic_cast<DrawableCloud*>(lastDrawable);
+      GLParameter *parameter = lastDrawableCloud->parameter();
+      GLParameterCloud *parameterCloud = dynamic_cast<GLParameterCloud*>(parameter);
+      if(lastDrawableCloud && parameterCloud) {
+	lastDrawableCloud->drawablePoints()->setStep(stepSpinBox->value());
+	lastDrawableCloud->drawablePoints()->setStep(stepSpinBox->value());
+	lastDrawableCloud->drawableNormals()->setStep(stepSpinBox->value());
+	lastDrawableCloud->drawableCovariances()->setStep(stepSpinBox->value());
+	lastDrawableCloud->drawableCorrespondences()->setStep(stepSpinBox->value());
+	parameterCloud->parameterPoints()->setPointSize(pointsSpinBox->value());
+	parameterCloud->parameterNormals()->setNormalLength(normalsSpinBox->value());
+	parameterCloud->parameterCovariances()->setEllipsoidScale(covariancesSpinBox->value());
+	parameterCloud->parameterCorrespondences()->setLineWidth(correspondencesSpinBox->value());
       }
     }
 
@@ -477,14 +477,14 @@ int main(int argc, char **argv) {
 	QListWidgetItem* item = listWidget->item(k);
 	if(item) {
 	  if(item->isSelected()) {
-	    Frame *frame = 0;
-	    if(!referenceFrame) {
-	      referenceFrame = new Frame();
-	      frame = referenceFrame;
+	    Cloud *cloud = 0;
+	    if(!referenceCloud) {
+	      referenceCloud = new Cloud();
+	      cloud = referenceCloud;
 	    }
-	    else if(!currentFrame) {
-	      currentFrame = new Frame();
-	      frame = currentFrame;
+	    else if(!currentCloud) {
+	      currentCloud = new Cloud();
+	      cloud = currentCloud;
 	    }
 	    else {
 	      cerr << "WARNING: you are allowed to work with maximum two clouds at time!" << endl;
@@ -493,62 +493,64 @@ int main(int argc, char **argv) {
 
 	    string fname = item->text().toUtf8().constData();
 	    if (fname.substr(fname.size() - 3) == "pgm") {
-	      if (!depthImage.load(fname.c_str(), true, di_scaleFactor)) {
-		cerr << "WARNING: the depth image was not added in the viewer because of a problem while loading it!" << endl;
-		frame = 0;
-		if(referenceFrame) {
-		  delete referenceFrame;
-		  referenceFrame = 0;
-		}
-		else {
-		  delete currentFrame;
-		  currentFrame = 0;
-		}
-		continue;
-	      }
-	      DepthImage::scale(scaledDepthImage, depthImage, ng_scale);
-	      converter.compute(*frame, scaledDepthImage, sensorOffset);
-	      //crossConverter.compute(*frame, scaledDepthImage, sensorOffset);
+	      // if (!depthImage.load(fname.c_str(), true, di_scaleFactor)) {
+	      // 	cerr << "WARNING: the depth image was not added in the viewer because of a problem while loading it!" << endl;
+	      // 	cloud = 0;
+	      // 	if(referenceCloud) {
+	      // 	  delete referenceCloud;
+	      // 	  referenceCloud = 0;
+	      // 	}
+	      // 	else {
+	      // 	  delete currentCloud;
+	      // 	  currentCloud = 0;
+	      // 	}
+	      // 	continue;
+	      // }
+	      // DepthImage::scale(scaledDepthImage, depthImage, ng_scale);
+	      rawDepthImage = cv::imread(fname, CV_LOAD_IMAGE_UNCHANGED);
+	      DepthImage_convert_16UC1_to_32FC1(depthImage, rawDepthImage, di_scaleFactor);
+	      DepthImage_scale(scaledDepthImage, depthImage, ng_scale);	      
+	      converter.compute(*cloud, scaledDepthImage, sensorOffset);
 	    }
 
 	    Eigen::Isometry3f originPose = Eigen::Isometry3f::Identity();
 	    originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 	    if (fname.substr(fname.size() - 3) == "pwn") {
 	      // Load the cloud from the .pwn file
-	      if(!frame->load(originPose, fname.c_str())) {      
+	      if(!cloud->load(originPose, fname.c_str())) {      
 		cerr << "WARNING: the cloud was not added in the viewer because of a problem while loading it!" << endl;
-		frame = 0;
-		if(referenceFrame) {
-		  delete referenceFrame;
-		  referenceFrame = 0;
+		cloud = 0;
+		if(referenceCloud) {
+		  delete referenceCloud;
+		  referenceCloud = 0;
 		}
 		else {
-		  delete currentFrame;
-		  currentFrame = 0;
+		  delete currentCloud;
+		  currentCloud = 0;
 		}
 		continue;
 	      }
 	    }
 	    originPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 	    
-	    if (frame) {
+	    if (cloud) {
 	      // Computing information matrices
-	      frame->pointInformationMatrix().resize(frame->points().size());
-	      frame->normalInformationMatrix().resize(frame->points().size());
-	      pointInformationMatrixCalculator.compute(frame->pointInformationMatrix(), frame->stats(), frame->normals());
-	      normalInformationMatrixCalculator.compute(frame->normalInformationMatrix(), frame->stats(), frame->normals());
-	      if(currentFrame) {
+	      cloud->pointInformationMatrix().resize(cloud->points().size());
+	      cloud->normalInformationMatrix().resize(cloud->points().size());
+	      pointInformationMatrixCalculator.compute(cloud->pointInformationMatrix(), cloud->stats(), cloud->normals());
+	      normalInformationMatrixCalculator.compute(cloud->normalInformationMatrix(), cloud->stats(), cloud->normals());
+	      if(currentCloud) {
 		currentPose=originPose;
 		initialGuess = referencePose.inverse()*currentPose;
-		DrawableFrame *currentDrawableFrame = new DrawableFrame(initialGuess, currentParameterFrame, currentFrame);
-		//currentDrawableFrame->setTransformation(Isometry3f::Identity());
-		viewer->addDrawable(currentDrawableFrame);
+		DrawableCloud *currentDrawableCloud = new DrawableCloud(initialGuess, currentParameterCloud, currentCloud);
+		//currentDrawableCloud->setTransformation(Isometry3f::Identity());
+		viewer->addDrawable(currentDrawableCloud);
 		currentFilename = fname;
 	      }
 	      else {
-		DrawableFrame *referenceDrawableFrame = new DrawableFrame(Isometry3f::Identity(), referenceParameterFrame, referenceFrame);
-		//referenceDrawableFrame->setTransformation(Isometry3f::Identity());
-		viewer->addDrawable(referenceDrawableFrame);
+		DrawableCloud *referenceDrawableCloud = new DrawableCloud(Isometry3f::Identity(), referenceParameterCloud, referenceCloud);
+		//referenceDrawableCloud->setTransformation(Isometry3f::Identity());
+		viewer->addDrawable(referenceDrawableCloud);
 		referenceFilename = fname;
 		referencePose = originPose;
 	      }	      
@@ -569,13 +571,13 @@ int main(int argc, char **argv) {
 	viewer->popBack();
 	delete lastDrawable;
 	
-	if(currentFrame) {
-	  delete currentFrame;
-	  currentFrame = 0;
+	if(currentCloud) {
+	  delete currentCloud;
+	  currentCloud = 0;
 	}
 	else {
-	  delete referenceFrame;
-	  referenceFrame = 0;
+	  delete referenceCloud;
+	  referenceCloud = 0;
 	}	
       }
       else {
@@ -604,13 +606,13 @@ int main(int argc, char **argv) {
 	cerr << "WARNING: no cloud was removed since the list is empty!" << endl;
       }
 
-      if(currentFrame) {
-	delete currentFrame;
-	currentFrame = 0;
+      if(currentCloud) {
+	delete currentCloud;
+	currentCloud = 0;
       }
-      if(referenceFrame) {
-	delete referenceFrame;
-	referenceFrame = 0;
+      if(referenceCloud) {
+	delete referenceCloud;
+	referenceCloud = 0;
       }
       
       referenceScene->clear();
@@ -620,30 +622,30 @@ int main(int argc, char **argv) {
     }
 
     // Correspondences button pressed
-    if(correspondencesButton->isDown() && referenceFrame && currentFrame) {
+    if(correspondencesButton->isDown() && referenceCloud && currentCloud) {
       correspondencesButton->setEnabled(false);
       projector->setTransform(sensorOffset);
       projector->project(correspondenceFinder.currentIndexImage(),
 			 correspondenceFinder.currentDepthImage(),
-			 currentFrame->points());
+			 currentCloud->points());
         
       projector->setTransform(initialGuess * sensorOffset);
       projector->project(correspondenceFinder.referenceIndexImage(),
 			  correspondenceFinder.referenceDepthImage(),
-			  referenceFrame->points());
+			  referenceCloud->points());
 
-      correspondenceFinder.compute(*referenceFrame, *currentFrame, aligner.T().inverse());
+      correspondenceFinder.compute(*referenceCloud, *currentCloud, aligner.T().inverse());
 
       Drawable *lastDrawable = viewer->drawableList().back();
-      DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
-      if(lastDrawableFrame) {
-	lastDrawableFrame->clearDrawableObjects();
-	lastDrawableFrame->constructDrawableObjects();
-	DrawableCorrespondences *drawableCorrespondences = lastDrawableFrame->drawableCorrespondences();
+      DrawableCloud *lastDrawableCloud = dynamic_cast<DrawableCloud*>(lastDrawable);
+      if(lastDrawableCloud) {
+	lastDrawableCloud->clearDrawableObjects();
+	lastDrawableCloud->constructDrawableObjects();
+	DrawableCorrespondences *drawableCorrespondences = lastDrawableCloud->drawableCorrespondences();
 	drawableCorrespondences->setTransformation(Isometry3f::Identity());
 	drawableCorrespondences->setReferencePointsTransformation(initialGuess.inverse());
-	drawableCorrespondences->setReferencePoints(&referenceFrame->points());
-	drawableCorrespondences->setCurrentPoints(&currentFrame->points());
+	drawableCorrespondences->setReferencePoints(&referenceCloud->points());
+	drawableCorrespondences->setCurrentPoints(&currentCloud->points());
 	drawableCorrespondences->setNumCorrespondences(correspondenceFinder.numCorrespondences()); 
 	drawableCorrespondences->setCorrespondences(&correspondenceFinder.correspondences());
       }
@@ -668,7 +670,7 @@ int main(int argc, char **argv) {
     }
 
     // Optimize button pressed without step-by-step mode selected
-    if(optimizeButton->isDown() && referenceFrame && currentFrame && !stepByStepCheckBox->isChecked()) {
+    if(optimizeButton->isDown() && referenceCloud && currentCloud && !stepByStepCheckBox->isChecked()) {
       optimizeButton->setEnabled(false);
       
       // Setting aligner
@@ -678,8 +680,8 @@ int main(int argc, char **argv) {
       aligner.clearPriors();
       aligner.setOuterIterations(al_outerIterationsSpinBox->value());
       aligner.setInnerIterations(al_innerIterationsSpinBox->value());
-      aligner.setReferenceFrame(referenceFrame);
-      aligner.setCurrentFrame(currentFrame);
+      aligner.setReferenceCloud(referenceCloud);
+      aligner.setCurrentCloud(currentCloud);
       aligner.setInitialGuess(initialGuess);
       aligner.setSensorOffset(sensorOffset);
       
@@ -692,16 +694,16 @@ int main(int argc, char **argv) {
       cout << "T: " << endl << aligner.T().matrix() << endl;
       
       Drawable *lastDrawable = viewer->drawableList().back();
-      DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
-      if(lastDrawableFrame) {
-	lastDrawableFrame->setTransformation(aligner.T());
-	lastDrawableFrame->clearDrawableObjects();
-	lastDrawableFrame->constructDrawableObjects();	
-	lastDrawableFrame->drawableCorrespondences()->setReferencePointsTransformation(aligner.T().inverse());
-	lastDrawableFrame->drawableCorrespondences()->setReferencePoints(&referenceFrame->points());
-	lastDrawableFrame->drawableCorrespondences()->setCurrentPoints(&currentFrame->points());
-	lastDrawableFrame->drawableCorrespondences()->setCorrespondences(&correspondenceFinder.correspondences());
-	lastDrawableFrame->drawableCorrespondences()->setNumCorrespondences(correspondenceFinder.numCorrespondences());
+      DrawableCloud *lastDrawableCloud = dynamic_cast<DrawableCloud*>(lastDrawable);
+      if(lastDrawableCloud) {
+	lastDrawableCloud->setTransformation(aligner.T());
+	lastDrawableCloud->clearDrawableObjects();
+	lastDrawableCloud->constructDrawableObjects();	
+	lastDrawableCloud->drawableCorrespondences()->setReferencePointsTransformation(aligner.T().inverse());
+	lastDrawableCloud->drawableCorrespondences()->setReferencePoints(&referenceCloud->points());
+	lastDrawableCloud->drawableCorrespondences()->setCurrentPoints(&currentCloud->points());
+	lastDrawableCloud->drawableCorrespondences()->setCorrespondences(&correspondenceFinder.correspondences());
+	lastDrawableCloud->drawableCorrespondences()->setNumCorrespondences(correspondenceFinder.numCorrespondences());
       }
       cerr << "Error:   " << aligner.error() << endl;
       cerr << "Inliers: " << aligner.inliers() << endl;
@@ -733,15 +735,15 @@ int main(int argc, char **argv) {
     }
 
     // Optimize button pressed with step-by-step mode selected
-    if(optimizeButton->isDown() && referenceFrame && currentFrame && stepByStepCheckBox->isChecked()) {
+    if(optimizeButton->isDown() && referenceCloud && currentCloud && stepByStepCheckBox->isChecked()) {
       optimizeButton->setEnabled(false);
       
       // Setting aligner
       aligner.clearPriors();
       aligner.setOuterIterations(1);
       aligner.setInnerIterations(al_innerIterationsSpinBox->value());
-      aligner.setReferenceFrame(referenceFrame);
-      aligner.setCurrentFrame(currentFrame);
+      aligner.setReferenceCloud(referenceCloud);
+      aligner.setCurrentCloud(currentCloud);
       aligner.setInitialGuess(initialGuess);
       aligner.setSensorOffset(sensorOffset);
       
@@ -757,16 +759,16 @@ int main(int argc, char **argv) {
 	cerr << "NaN" << endl;
 
       Drawable *lastDrawable = viewer->drawableList().back();
-      DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
-      if(lastDrawableFrame) {
-	lastDrawableFrame->setTransformation(aligner.T());
-	lastDrawableFrame->clearDrawableObjects();
-	lastDrawableFrame->constructDrawableObjects();	
-	lastDrawableFrame->drawableCorrespondences()->setReferencePointsTransformation(aligner.T().inverse());
-	lastDrawableFrame->drawableCorrespondences()->setReferencePoints(&referenceFrame->points());
-	lastDrawableFrame->drawableCorrespondences()->setCurrentPoints(&currentFrame->points());
-	lastDrawableFrame->drawableCorrespondences()->setCorrespondences(&correspondenceFinder.correspondences());
-	lastDrawableFrame->drawableCorrespondences()->setNumCorrespondences(correspondenceFinder.numCorrespondences());
+      DrawableCloud *lastDrawableCloud = dynamic_cast<DrawableCloud*>(lastDrawable);
+      if(lastDrawableCloud) {
+	lastDrawableCloud->setTransformation(aligner.T());
+	lastDrawableCloud->clearDrawableObjects();
+	lastDrawableCloud->constructDrawableObjects();	
+	lastDrawableCloud->drawableCorrespondences()->setReferencePointsTransformation(aligner.T().inverse());
+	lastDrawableCloud->drawableCorrespondences()->setReferencePoints(&referenceCloud->points());
+	lastDrawableCloud->drawableCorrespondences()->setCurrentPoints(&currentCloud->points());
+	lastDrawableCloud->drawableCorrespondences()->setCorrespondences(&correspondenceFinder.correspondences());
+	lastDrawableCloud->drawableCorrespondences()->setNumCorrespondences(correspondenceFinder.numCorrespondences());
       }
 
       // Show zBuffers.
@@ -790,19 +792,19 @@ int main(int argc, char **argv) {
     }
 
     // Initial guess button pressed
-    if(initialGuessButton->isDown() && referenceFrame && currentFrame) {
+    if(initialGuessButton->isDown() && referenceCloud && currentCloud) {
       initialGuess = referencePose.inverse()*currentPose;
       Drawable *lastDrawable = viewer->drawableList().back();
-      DrawableFrame *lastDrawableFrame = dynamic_cast<DrawableFrame*>(lastDrawable);
-      if(lastDrawableFrame) {
-	lastDrawableFrame->clearDrawableObjects();
-	lastDrawableFrame->constructDrawableObjects();	
-	lastDrawableFrame->setTransformation(initialGuess);
-	lastDrawableFrame->drawableCorrespondences()->setReferencePointsTransformation(initialGuess.inverse());
-	lastDrawableFrame->drawableCorrespondences()->setReferencePoints(&referenceFrame->points());
-	lastDrawableFrame->drawableCorrespondences()->setCurrentPoints(&currentFrame->points());
-	lastDrawableFrame->drawableCorrespondences()->setCorrespondences(&correspondenceFinder.correspondences());
-	lastDrawableFrame->drawableCorrespondences()->setNumCorrespondences(correspondenceFinder.numCorrespondences());
+      DrawableCloud *lastDrawableCloud = dynamic_cast<DrawableCloud*>(lastDrawable);
+      if(lastDrawableCloud) {
+	lastDrawableCloud->clearDrawableObjects();
+	lastDrawableCloud->constructDrawableObjects();	
+	lastDrawableCloud->setTransformation(initialGuess);
+	lastDrawableCloud->drawableCorrespondences()->setReferencePointsTransformation(initialGuess.inverse());
+	lastDrawableCloud->drawableCorrespondences()->setReferencePoints(&referenceCloud->points());
+	lastDrawableCloud->drawableCorrespondences()->setCurrentPoints(&currentCloud->points());
+	lastDrawableCloud->drawableCorrespondences()->setCorrespondences(&correspondenceFinder.correspondences());
+	lastDrawableCloud->drawableCorrespondences()->setNumCorrespondences(correspondenceFinder.numCorrespondences());
       }
       initialGuessButton->setEnabled(true);
     }
@@ -879,9 +881,6 @@ void applySettings() {
   statsCalculator.setMinPoints(ng_minPointsSpinBox->value());
   statsCalculator.setWorldRadius(ng_worldRadiusSpinBox->value());
 
-  crossStatsCalculator.setMinPoints(12);
-  crossStatsCalculator.setImageRadius(fng_imageRadius);
-
   pointInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
   normalInformationMatrixCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
 
@@ -895,11 +894,6 @@ void applySettings() {
   converter.setStatsCalculator(&statsCalculator);
   converter.setPointInformationMatrixCalculator(&pointInformationMatrixCalculator);
   converter.setNormalInformationMatrixCalculator(&normalInformationMatrixCalculator);
-
-  crossConverter.setProjector(&pinholePointProjector);
-  crossConverter.setStatsCalculator(&crossStatsCalculator);
-  crossConverter.setPointInformationMatrixCalculator(&pointInformationMatrixCalculator);
-  crossConverter.setNormalInformationMatrixCalculator(&normalInformationMatrixCalculator);
 
   statsCalculator.setCurvatureThreshold(ng_curvatureThresholdSpinBox->value());
 

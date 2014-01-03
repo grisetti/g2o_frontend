@@ -38,6 +38,7 @@ namespace pwn {
 
     indexImage.create(_imageRows, _imageCols);
     depthImage.create(indexImage.rows, indexImage.cols);
+    std::cerr << "Size: " << indexImage.rows << " ... " << indexImage.cols << endl; 
     depthImage.setTo(std::numeric_limits<float>::max());
     indexImage.setTo(-1);
     const Point *point = &points[0];
@@ -49,14 +50,15 @@ namespace pwn {
 	 x < 0 || x >= indexImage.cols ||
 	 y < 0 || y >= indexImage.rows)
 	 continue;
-	 float &otherDistance = depthImage(y, x);
-	 int &otherIndex = indexImage(y, x);
-	 if(!otherDistance || otherDistance > d) {
-	   otherDistance = d;
-	   otherIndex = i;
-	 }
-	 }
+      std::cerr << "proj: " << x << " --- " << y << " --- " << d << std::endl;
+      float &otherDistance = depthImage(y, x);
+      int &otherIndex = indexImage(y, x);
+      if(!otherDistance || otherDistance > d) {
+	otherDistance = d;
+	otherIndex = i;
+      }
     }
+  }
 
     void CylindricalPointProjector::unProject(PointVector &points, 
 					      IntImage &indexImage,

@@ -4,6 +4,8 @@
 #include "informationmatrix.h"
 #include "gaussian3.h"
 
+using namespace std;
+
 namespace pwn {
 
   /** \class Cloud cloud.h "cloud.h"
@@ -21,9 +23,7 @@ namespace pwn {
 
     /**
      *  Empty constructor.
-     *  This constructor creates an Aligner with default values for all its attributes.
-     *  All the pointers to objects implementing an algorithm have to be setted since
-     *  this constructor sets them to zero.
+     *  This constructor creates a Cloud with default values for all its attributes.
      */
     Cloud() {}
 
@@ -132,7 +132,7 @@ namespace pwn {
      *  @return a bool value that is true if the cloud was loaded correctly, false otherwise.
      *  @see save()
      */
-    bool load(Eigen::Isometry3f &T, std::istream &is);
+    bool load(Eigen::Isometry3f &T, istream &is);
 
     /**
      *  Method that allows to save a cloud on file.
@@ -156,7 +156,7 @@ namespace pwn {
      *  @return a bool value that is true if the cloud was saved correctly, false otherwise.
      *  @see load()
      */
-    bool save(std::ostream &os, Eigen::Isometry3f T = Eigen::Isometry3f::Identity(), int step = 1, bool binary = true);
+    bool save(ostream &os, Eigen::Isometry3f T = Eigen::Isometry3f::Identity(), int step = 1, bool binary = true);
 
     /**
      *  Method that clears all the data vectors of the cloud erasing all the elements.

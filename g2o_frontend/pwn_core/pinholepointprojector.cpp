@@ -37,19 +37,9 @@ namespace pwn {
     
     indexImage.create(_imageRows, _imageCols);
     depthImage.create(_imageRows, _imageCols);
-    /*
-    int* p=(int*)indexImage.data;
-    const int *pend=p+_imageRows*_imageCols;
-    while (p<pend) {*p++ = -1;}
-
-    float *d=(float*)depthImage.data;
-    const float *dend=d+_imageRows*_imageCols;
-    while (d<dend) {*d++ = 0;}
-    */
-    
+ 
     depthImage.setTo(cv::Scalar(std::numeric_limits<float>::max()));
-    indexImage.setTo(cv::Scalar(-1));
-    
+    indexImage.setTo(cv::Scalar(-1));   
 
     float *drowPtrs[_imageRows];
     int *irowPtrs[_imageRows];

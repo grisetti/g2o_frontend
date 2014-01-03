@@ -24,6 +24,7 @@ namespace pwn {
      *  image rows and columns are setted to 0.
      */
     PointProjector();
+    
     /**
      *  Destructor.
      */
@@ -35,6 +36,7 @@ namespace pwn {
      *  @see setTransform()
      */
     virtual inline const Eigen::Isometry3f &transform() const { return _transform; };  
+    
     /**
      *  Virtual method that set the pose transform to the one given in input.
      *  @param transform_ is a constant reference to the isometry used to update the pose transform. 
@@ -49,8 +51,9 @@ namespace pwn {
      *  Method that returns the minimum distance value.
      *  @return the minimum distance value.
      *  @see setMinDistance()
-     */
+     */    
     inline float minDistance() const { return _minDistance; }
+    
     /**
      *  Method that set the minimum distance value to the one given in input.
      *  @param minDistance_ is a float value used to update the minimum distance variable. 
@@ -64,6 +67,7 @@ namespace pwn {
      *  @see setMaxDistance()
      */
     inline float maxDistance() const { return _maxDistance; }
+
     /**
      *  Method that set the maximum distance value to the one given in input.
      *  @param maxDistance_ is a float value used to update the maximum distance variable. 
@@ -78,6 +82,7 @@ namespace pwn {
      *  @see setImageSize()
      */
     inline int imageRows() const { return _imageRows;}
+
     /**
      *  Method that returns the number of columns of the image where the points are projected.
      *  @return the number of columns of the image where the points are projected.
@@ -85,6 +90,7 @@ namespace pwn {
      *  @see setImageSize()
      */
     inline int imageCols() const { return _imageCols;}
+
     /**
      *  Method that set the size (rows and columns) of the image where the points are projected.
      *  @param imageRows_ is a constant int value used to update the number of rows. 
@@ -127,10 +133,8 @@ namespace pwn {
      *  Each element of this matrix contains the index of the corresponding point in the computed vector of points.
      *  @param depthImage is an output parameter which is a constant reference to an image containing the depth values 
      *  in meters.
-     *  @see project(IntImage &indexImage, DepthImage &depthImage, const PointVector &points)
-     *  @see unProject(PointVector &points, Gaussian3fVector &gaussians, IntImage &indexImage, const DepthImage &depthImage)
+     *  @see project()
      *  @see projectIntervals()
-     *  @see unProject()
      */    
     virtual void unProject(PointVector &points,
 			   IntImage &indexImage, 
@@ -184,7 +188,16 @@ namespace pwn {
      *  @return true if the projection is valid, false otherwise.
      *  @see project() 
      */
-    virtual inline bool project(int &/*x*/, int &/*y*/, float &/*f*/, const Point &/*p*/) const { return false; }
+    virtual inline bool project(int &x, int &y, float &f, const Point &p) const { 
+      // Just to avoid warnings in the compilation and in doxygen
+      Point tmp = p;
+      tmp = tmp;
+      f = f;
+      y = y;
+      x = x;
+
+      return false; 
+    }
 
     /**
      *  Virtual method that unprojects to the 3D euclidean space the point given in input.
@@ -198,7 +211,18 @@ namespace pwn {
      *  @return true if the unprojection is valid, false otherwise.
      *  @see unProject() 
      */
-    virtual inline bool unProject(Point &/*p*/, const int/* x*/, const int/* y*/, const float/* d*/) const { return false; }
+    virtual inline bool unProject(Point &p, const int x, const int y, const float d) const { 
+      // Just to avoid warnings in the compilation and in doxygen
+      int tmpX = x;
+      tmpX = tmpX;
+      int tmpY = y;
+      tmpY = tmpY;
+      float tmpD = d;
+      tmpD = tmpD;
+      p = p;
+
+      return false; 
+    }
     
     /**
      *  Virtual method that projects the size in pixels of a square regions around the point specified by the 
@@ -211,7 +235,19 @@ namespace pwn {
      *  @return an int value representing the size in pixels of the square region around the input point.
      *  @see projectIntervals()
      */
-    virtual inline int projectInterval(const int/* x*/, const int/* y*/, const float/* d*/, const float/* worldRadius*/) const { return 0; }
+    virtual inline int projectInterval(const int x, const int y, const float d, const float worldRadius) const { 
+      // Just to avoid warnings in the compilation and in doxygen
+      int tmpX = x;
+      tmpX = tmpX;
+      int tmpY = y;
+      tmpY = tmpY;
+      float tmpD = d;
+      tmpD = tmpD;
+      float tmpWorldRadius = worldRadius;
+      tmpWorldRadius = tmpWorldRadius;
+
+      return 0; 
+    }
 
     /**
      *  Pure virtual method that updates the projector structures in order to handle different size of the
