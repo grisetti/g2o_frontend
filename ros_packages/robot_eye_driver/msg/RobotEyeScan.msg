@@ -28,7 +28,7 @@ float32 scan_time        # time between scans [seconds]
 float32 range_min        # minimum range value [m]
 float32 range_max        # maximum range value [m]
 
-float32[] ranges         # range data [m] (Note: values < range_min or > range_max should be discarded)
-float32[] intensities    # intensity data [device-specific units].  If your
-                         # device does not provide intensities, please leave
-                         # the array empty.
+geometry_msgs/Vector3[] measurements   # range data [m] with azimuth [deg] and elevation [deg] (Note: values < range_min/azimuth_min/elevation_min or > range_max/azimuth_max/elevation_max should be discarded)
+float32[] intensities                  # intensity data [device-specific units].  If your
+                                       # device does not provide intensities, please leave
+                                       # the array empty.
