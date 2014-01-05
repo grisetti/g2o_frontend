@@ -30,13 +30,16 @@ namespace boss_map_building {
   class BaseTracker: public StreamProcessor {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    BaseTracker(MapManager* manager_=0, RobotConfiguration* configuration_=0);
+    BaseTracker(MapManager* manager_=0, RobotConfiguration* configuration_=0, int id=-1, boss::IdContext* context=0);
     //! initializes the tracker
     virtual void init();
     //! returns the robot configuration
     inline RobotConfiguration* robotConfiguration() {return _robotConfiguration;}
     //! returns the map manager
     inline MapManager* manager() {return _manager;}
+    //! returns the map manager
+    inline void setManager(MapManager* m) {_manager = m;}
+
     //! computes the initial guess of a node, by taking into account the
     //! - global transform
     //! - the relative displacement from the initial positions of the previous and the current nodes

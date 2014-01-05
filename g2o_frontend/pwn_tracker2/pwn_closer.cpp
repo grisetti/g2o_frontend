@@ -24,25 +24,52 @@ namespace pwn_tracker {
   }
 
 
-  PwnCloser::PwnCloser(PwnTracker* tracker_) : MapCloser(tracker_->manager()){
+  PwnCloser::PwnCloser(PwnTracker* tracker_, int id, IdContext* context) : 
+    MapCloser(0,id, context){
+    if (tracker_)
+      setTracker(tracker_);
     _tracker=tracker_;
-    cerr << "tracker: " << _tracker << endl;
-    _cache = _tracker->cache();
-    cerr << "cache: " << _cache << endl;
-    _matcher = _tracker->matcher();
-    cerr << "topic: " << _cache->topic() << endl;
-    _matcher = _tracker->matcher();
-    cerr << "matcher: " << _matcher << endl;
-    _robotConfiguration = _tracker->robotConfiguration();
-    cerr << "conf: " << _robotConfiguration << endl;
     _frameMinNonZeroThreshold = 3000;// was 3000
     _frameMaxOutliersThreshold = 100;
     _frameMinInliersThreshold = 1000; // was 1000
     _debug = false;
     _selector = 0;
     _enabled = true;
-    cerr << "constructed" << endl;
   }
+
+  void PwnCloser::serialize(boss::ObjectData& data, boss::IdContext& context){
+    boss::Identifiable::serialize(data,context);
+    data.setFloat("consensusInlierTranslationalThreshold", _consensusInlierTranslationalThreshold);
+    data.setFloat("consensusInlierRotationalThreshold", _consensusInlierRotationalThreshold);
+    data.setInt("consensusMinTimesCheckedThreshold", _consensusMinTimesCheckedThreshold);
+    data.setPointer("tracker", _tracker);
+    data.setInt("frameMinNonZeroThreshold", _frameMinNonZeroThreshold);
+    data.setInt("frameMaxOutliersThreshold", _frameMaxOutliersThreshold);
+    data.setInt("frameMinInliersThreshold", _frameMinInliersThreshold);
+    data.setInt("imageRows", _imageRows);
+    data.setInt("imageCols", _imageCols);
+  }
+    
+  
+  void PwnCloser::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    boss::Identifiable::deserialize(data,context);
+    _consensusInlierTranslationalThreshold = data.getFloat("consensusInlierTranslationalThreshold");
+    _consensusInlierRotationalThreshold = data.getFloat("consensusInlierRotationalThreshold");
+    _consensusMinTimesCheckedThreshold = data.getInt("consensusMinTimesCheckedThreshold");
+    data.getReference("tracker").bind(_tracker);
+    _frameMinNonZeroThreshold = data.getInt("frameMinNonZeroThreshold");
+    _frameMaxOutliersThreshold = data.getInt("frameMaxOutliersThreshold");
+    _frameMinInliersThreshold = data.getInt("frameMinInliersThreshold");
+    _imageRows = data.getInt("imageRows");
+    _imageCols = data.getInt("imageCols");
+   }
+
+
+  void PwnCloser::deserializeComplete(){
+    boss::Identifiable::deserializeComplete();
+    if (_tracker)
+      setTracker(_tracker);
+ }
 
   void PwnCloser::process(Serializable* s) {
     if (_enabled)
@@ -81,9 +108,9 @@ namespace pwn_tracker {
 
     // fetch the clouds from the cache
     PwnCloudCache::HandleType _keyCloudHandler = _cache->get(keyNode);
-    pwn::Cloud* keyCloud = _keyCloudHandler.get();
+    CloudWithImageSize* keyCloud = _keyCloudHandler.get();
     PwnCloudCache::HandleType _otherCloudHandler = _cache->get(otherNode); 
-    pwn::Cloud* otherCloud = _otherCloudHandler.get();
+    CloudWithImageSize* otherCloud = _otherCloudHandler.get();
 
     Eigen::Isometry3d keyOffset_, otherOffset_;
     Eigen::Matrix3d   otherCameraMatrix_;
@@ -115,7 +142,7 @@ namespace pwn_tracker {
     _matcher->matchClouds(result, 
 			  keyCloud, otherCloud, 
 			  keyOffset, otherOffset,
-			  otherCameraMatrix, _tracker->imageRows(), _tracker->imageCols(), 
+			  otherCameraMatrix, otherCloud->imageRows, otherCloud->imageCols, 
 			  initialGuess_);
 
     if(result.image_nonZeros < _frameMinNonZeroThreshold ||
@@ -131,7 +158,29 @@ namespace pwn_tracker {
   }
 
 
+  int PwnCloser::scale() const { return _matcher->scale(); }
+
+  void PwnCloser::setScale (int scale_) {
+    if (_matcher)
+      _matcher->setScale(scale_);
+    if (_cache)
+      _cache->setScale(scale_);
+    _scaledImageCols = _imageCols/scale_;
+    _scaledImageRows = _imageRows/scale_;
+    _scaledImageSize = _scaledImageRows * _scaledImageCols;
+  }
+
+  void PwnCloser::setImageSize(int imageRows_, int imageCols_){
+    _imageRows = imageRows_;
+    _imageCols = imageCols_;
+    int s = scale();
+    _scaledImageCols = _imageCols/s;
+    _scaledImageRows = _imageRows/s;
+    _scaledImageSize = _scaledImageRows * _scaledImageCols;
+  }
+
   BOSS_REGISTER_CLASS(PwnCloserRelation);
+  BOSS_REGISTER_CLASS(PwnCloser);
 }
 
 

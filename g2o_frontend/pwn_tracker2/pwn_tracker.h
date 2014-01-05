@@ -31,10 +31,18 @@ namespace pwn_tracker{
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-    PwnTracker(PwnMatcherBase* matcher_,
-	       PwnCloudCache* cache_,
-	       MapManager* manager_,
-	       RobotConfiguration* configuration_);
+    PwnTracker(PwnMatcherBase* matcher_=0,
+	       PwnCloudCache* cache_=0,
+	       MapManager* manager_=0,
+	       RobotConfiguration* configuration_=0,
+	       int id=0, boss::IdContext* context=0);
+
+    //! boss serialization
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+    //! boss deserialization
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
+    //! boss deserialization
+    virtual void deserializeComplete();
 
     int scale() const;
     void setScale (int scale_);
@@ -64,7 +72,7 @@ namespace pwn_tracker{
     inline void setEnabled(bool e) { _enabled = e; }
 
     inline const std::string& topic() const { return _topic; }
-    inline void setTopic(const std::string& topic_) { _topic = topic_; _cache-> setTopic(topic_);}
+    inline void setTopic(const std::string& topic_) { _topic = topic_; if(_cache) _cache-> setTopic(topic_);}
 
     inline PwnCloudCache* cache() {return _cache;}
     inline PwnMatcherBase* matcher() {return _matcher;}
@@ -76,8 +84,12 @@ namespace pwn_tracker{
 						 MapNode* otherNode, 
 						 const Eigen::Isometry3d& guess = Eigen::Isometry3d::Identity());
 
+
+    inline void setRobotConfiguration(RobotConfiguration* conf) {_robotConfiguration = conf; _cache->_robotConfiguration = conf;} 
+    inline RobotConfiguration* robotConfiguration() const { return _robotConfiguration; }
     virtual ~PwnTracker();
   protected:
+    RobotConfiguration* _robotConfiguration;
     std::string _topic;
     PwnCloudCache* _cache;
     PwnMatcherBase* _matcher;

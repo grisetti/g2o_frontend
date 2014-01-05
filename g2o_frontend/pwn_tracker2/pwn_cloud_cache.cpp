@@ -6,12 +6,12 @@
 
 namespace pwn_tracker{
   using namespace cache_ns;
-  PwnCloudCacheEntry::PwnCloudCacheEntry(PwnCloudCache* c, SyncSensorDataNode* k, pwn::Cloud* d):
-    CacheEntry<SyncSensorDataNode,pwn::Cloud>(k,d){
+  PwnCloudCacheEntry::PwnCloudCacheEntry(PwnCloudCache* c, SyncSensorDataNode* k, CloudWithImageSize* d):
+    CacheEntry<SyncSensorDataNode,CloudWithImageSize>(k,d){
     _pwnCache=c;
   }
 
-  pwn::Cloud* PwnCloudCacheEntry::fetch(CacheEntry::KeyType* k){
+  CloudWithImageSize* PwnCloudCacheEntry::fetch(CacheEntry::KeyType* k){
     return _pwnCache->loadCloud(k);
   }
 
@@ -27,7 +27,7 @@ namespace pwn_tracker{
   }
 
 
-  pwn::Cloud* PwnCloudCache::loadCloud(SyncSensorDataNode* trackerNode){
+  CloudWithImageSize* PwnCloudCache::loadCloud(SyncSensorDataNode* trackerNode){
     PinholeImageData* imdata = trackerNode->sensorData()->sensorData<PinholeImageData>(_topic);
     if (! imdata) {
       throw std::runtime_error("the required topic does not match the requested type");
@@ -41,7 +41,9 @@ namespace pwn_tracker{
     PinholePointProjector* projector = dynamic_cast<PinholePointProjector*>(_converter->projector());
     projector->setImageSize(depthBLOB->cvImage().rows, depthBLOB->cvImage().cols);
     pwn::DepthImage depth;
-    pwn::Cloud* cloud=new pwn::Cloud;
+    CloudWithImageSize* cloud=new CloudWithImageSize;
+    cloud->imageRows = depthBLOB->cvImage().rows;
+    cloud->imageCols = depthBLOB->cvImage().cols;
     Eigen::Matrix3f cameraMatrix;
     Eigen::Isometry3f offset;
     DepthImage_convert_16UC1_to_32FC1(depth, depthBLOB->cvImage()); 

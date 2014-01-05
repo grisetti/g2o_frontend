@@ -15,7 +15,8 @@ namespace boss_map_building {
 
 
 
-  MapCloser::MapCloser(MapManager* manager_) {
+  MapCloser::MapCloser(MapManager* manager_, int id, boss::IdContext* context):
+    StreamProcessor(id,context){
     _manager = manager_;
     _consensusInlierTranslationalThreshold = 0.5*0.5;
     _consensusInlierRotationalThreshold = 15.0f*M_PI/180.0f;
@@ -27,6 +28,10 @@ namespace boss_map_building {
     autoProcess = true;
   }
 
+  void MapCloser::setManager(MapManager* m){
+    _manager = m;
+  }
+    
   void MapCloser::addKeyNode(MapNode* f) {
     _keyNodes.insert(make_pair(f->seq(),f));
     _lastTrackerFrame = _pendingTrackerFrame;

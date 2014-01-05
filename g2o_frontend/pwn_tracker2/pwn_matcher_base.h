@@ -4,12 +4,14 @@
 #include "g2o_frontend/pwn_core/pinholepointprojector.h"
 #include "g2o_frontend/pwn_core/depthimageconverterintegralimage.h"
 #include "g2o_frontend/pwn_core/aligner.h"
-
+#include "g2o_frontend/boss/identifiable.h"
+#include "g2o_frontend/pwn_boss/aligner.h"
+#include "g2o_frontend/pwn_boss/depthimageconverterintegralimage.h"
 
 namespace pwn_tracker {
   using namespace pwn;
 
-  struct PwnMatcherBase{
+  struct PwnMatcherBase : public boss::Identifiable {
     struct MatcherResult{
       EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
       Eigen::Isometry3d transform;
@@ -21,7 +23,8 @@ namespace pwn_tracker {
       float image_reprojectionDistance;
     };
 
-    PwnMatcherBase(pwn::Aligner* aligner_, pwn::DepthImageConverter* converter_);
+    PwnMatcherBase(pwn::Aligner* aligner_=0, pwn::DepthImageConverter* converter_=0,
+		   int id=-1, boss::IdContext* context = 0);
 
     inline int scale() const {return _scale;}
     inline void setScale (int scale_) {_scale = scale_;}
@@ -45,20 +48,28 @@ namespace pwn_tracker {
 		     int toRows, int toCols,
 		     const Eigen::Isometry3d& initialGuess=Eigen::Isometry3d::Identity());
 
-    void makeThumbnails(cv::Mat& depthThumbnail, cv::Mat& normalThumbnail, 
-			pwn::Cloud* f, int r, int c, 
-			const Eigen::Isometry3f& offset, 
-			const Eigen::Matrix3f& cameraMatrix,
-			float scale);
+    
+    //! boss serialization
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+    //! boss deserialization
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
+
+    //! boss deserialization
+    virtual void deserializeComplete();
+
+
 
     float _frameInlierDepthThreshold;
 
     double cumTime;
     int numCalls;
   protected:
-    Aligner* _aligner;
-    DepthImageConverter* _converter;
+    pwn::Aligner* _aligner;
+    pwn::DepthImageConverter* _converter;
     int _scale;
+  private:
+    pwn_boss::Aligner* _baligner;
+    pwn_boss::DepthImageConverter* _bconverter;
   };
 
 

@@ -22,7 +22,7 @@ namespace boss_map_building {
     data.getReference("keyNode").bind(keyNode);
   }
   
-  BaseTracker::BaseTracker(MapManager* manager_, RobotConfiguration* configuration_){
+  BaseTracker::BaseTracker(MapManager* manager_, RobotConfiguration* configuration_, int id, boss::IdContext* context): StreamProcessor(id,context){
     _manager = manager_;
     _robotConfiguration = configuration_;
     init();

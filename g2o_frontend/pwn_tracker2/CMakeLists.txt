@@ -24,9 +24,9 @@ TARGET_LINK_LIBRARIES(pwn_tracker2_library
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
   )
 
-ADD_executable(boss_pwn_tracker_test boss_pwn_tracker_test.cpp)
+ADD_executable(pwn_boss_tracker_app pwn_boss_tracker_app.cpp)
 
-TARGET_LINK_LIBRARIES(boss_pwn_tracker_test 
+TARGET_LINK_LIBRARIES(pwn_boss_tracker_app 
   pwn_tracker2_library
   pwn_boss
   pwn_core
@@ -62,9 +62,9 @@ TARGET_LINK_LIBRARIES(pwn_boss_closer_app
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
 )
 
-ADD_executable(pwn_slam2 pwn_slam2.cpp)
+ADD_executable(pwn_slam_app pwn_slam_app.cpp)
 
-TARGET_LINK_LIBRARIES(pwn_slam2 
+TARGET_LINK_LIBRARIES(pwn_slam_app
   pwn_tracker2_library
   pwn_boss
   pwn_core

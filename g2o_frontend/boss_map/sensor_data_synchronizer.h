@@ -15,14 +15,14 @@ namespace boss_map {
 
   struct SyncTopicInstance;
 
-  struct SyncCondition{
+  struct SyncCondition {
     SyncCondition(SyncTopicInstance* m1, SyncTopicInstance*m2);
     virtual bool eval() = 0;
     virtual bool canEval();
     SyncTopicInstance* m1, *m2;
   };
 
-  struct SyncTopicInstance{
+  struct SyncTopicInstance {
     SyncTopicInstance(std::string topic);
     std::string topic;
     BaseSensorData* sensorData;

@@ -21,7 +21,7 @@ namespace boss_map_building {
   class MapCloser: public boss_map::StreamProcessor {
   public:
 
-    MapCloser(MapManager* manager_);
+    MapCloser(MapManager* manager_=0, int id=-1, boss::IdContext* context=0);
     
     void addKeyNode(MapNode* f);
     void addRelation(MapNodeRelation* r);
@@ -49,8 +49,8 @@ namespace boss_map_building {
     std::set<MapNode*>* currentPartition() {return _currentPartition;}
     virtual void process(Serializable* s);
     virtual void flush();
-
-    
+    virtual void setManager(MapManager* manager);
+    inline MapManager* manager() const { return _manager;}
     float _consensusInlierTranslationalThreshold;
     float _consensusInlierRotationalThreshold;
     int    _consensusMinTimesCheckedThreshold;

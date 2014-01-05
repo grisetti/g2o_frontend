@@ -16,9 +16,13 @@ namespace pwn_tracker {
 
   class PwnCloudCache;
 
-  class PwnCloudCacheEntry: public CacheEntry<SyncSensorDataNode, pwn::Cloud>{
+  struct CloudWithImageSize: public pwn::Cloud{
+    int imageRows, imageCols;
+  };
+
+  class PwnCloudCacheEntry: public CacheEntry<SyncSensorDataNode, CloudWithImageSize>{
   public:
-    PwnCloudCacheEntry(PwnCloudCache* cache, SyncSensorDataNode* k, pwn::Cloud* d=0);
+    PwnCloudCacheEntry(PwnCloudCache* cache, SyncSensorDataNode* k, CloudWithImageSize* d=0);
   protected:
     virtual DataType* fetch(KeyType* k);
     PwnCloudCache* _pwnCache;
@@ -40,13 +44,13 @@ namespace pwn_tracker {
     inline int scale() const {return _scale;}
     inline void setScale(int scale_)  {_scale=scale_;}
 
-    pwn::Cloud* loadCloud(SyncSensorDataNode* trackerNode);
+    CloudWithImageSize* loadCloud(SyncSensorDataNode* trackerNode);
     double cumTime;
     int numCalls;
+    RobotConfiguration* _robotConfiguration;
   protected:
     virtual Cache<PwnCloudCacheEntry>::EntryType* makeEntry(KeyType* k, DataType* d);
     DepthImageConverter* _converter;
-    RobotConfiguration* _robotConfiguration;
     int _scale;
     std::string _topic;
   };

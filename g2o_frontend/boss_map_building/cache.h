@@ -80,13 +80,19 @@ namespace cache_ns {
     virtual ~Cache() {}
     int hits() const {return _hits;}
     int misses() const {return _misses;}
+
+    size_t minSlots() const {return _minSlots;}
+    size_t maxSlots() const {return _maxSlots;}
+    void setMinSlots(size_t minSlots_) {_minSlots = minSlots_;}
+    void setMaxSlots(size_t maxSlots_) {_maxSlots = maxSlots_;}
+    
   protected:
     typedef std::map< KeyType*,  EntryType* > KeyEntryMapType;
     typedef std::set< EntryType* > EntrySetType;
+    size_t _maxSlots, _minSlots;
     
     EntryType* findEntry( KeyType* k);
     void garbageCollect();
-    size_t _maxSlots, _minSlots;
     KeyEntryMapType _entriesMap;
     EntrySetType _activeEntries;
     size_t _lastAccess;

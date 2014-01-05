@@ -30,30 +30,43 @@ using namespace boss_map;
 using namespace boss;
 using namespace std;
 
+
 int main(int argc, char** argv) {
     
-  
-
-
   std::string fileconf = argv[1];
   std::string filein = argv[2];
   std::string fileout = argv[3];
+
+  PwnTracker* tracker = 0;
+  PwnCloser* closer = 0;
+  std::list<Serializable*> processingObjects;
+  Deserializer confDes;
+  confDes.setFilePath(fileconf);
+
+  Serializable* o;
+  while ( (o=confDes.readObject()) ){
+    processingObjects.push_back(o);
+    PwnTracker * t = dynamic_cast<PwnTracker*>(o);
+    PwnCloser * c = dynamic_cast<PwnCloser*>(o);
+    if (t)
+      tracker = t;
+    if (c)
+      closer = c;
+    if (tracker && closer)
+      break;
+  }
+ 
+  if (tracker && closer) {
+    cerr << "config loaded" << endl;
+    cerr << " tracker:" << tracker << endl;
+    cerr << " closer:" << closer << endl;
+  } else {
+    cerr << "no valid config found, aborting" << endl;
+    return -1;
+  }
+
   Deserializer des;
-
-  des.setFilePath(fileconf);
-  pwn_boss::Aligner* aligner;  
-  pwn_boss::DepthImageConverter* converter;
-  std::vector<Serializable*> instances = readConfig(aligner, converter, argv[1]);
-  cerr << "config loaded" << endl;
-  cerr << " aligner:" << aligner << endl;
-  cerr << " converter:" << converter << endl;
-
   des.setFilePath(filein.c_str());
-  
-  //std::string topic = "/camera/depth_registered/image_rect_raw";
-  //std::string topic = "/kinect/depth_registered/image_raw";
-
-  int scale = 4;
 
   Serializer ser;
   ser.setFilePath(fileout.c_str());
@@ -62,8 +75,7 @@ int main(int argc, char** argv) {
 
   // read the configuration file
   RobotConfiguration* conf = 0;
-    std::list<Serializable*> objects;
-  Serializable* o;
+  std::list<Serializable*> objects;
   while ( (o=des.readObject()) ){
     objects.push_back(o);
     RobotConfiguration * conf_ = dynamic_cast<RobotConfiguration*>(o);
@@ -73,17 +85,24 @@ int main(int argc, char** argv) {
     }
   }
   if (! conf) {
-    cerr << "unable to get conf " << endl;
+    cerr << "unable to get robot configuration, aborting " << endl;
+    return -1;
   }
 
+  tracker->setRobotConfiguration(conf);
+  closer->setRobotConfiguration(conf);
+
   MapManager* manager = new MapManager();
-  
+  closer->setManager(manager);
+  tracker->setManager(manager);
+
   // construct the synchronizer 
   SensorDataSynchronizer* sync = new SensorDataSynchronizer();
   sync->setTopic("sync");
   
   // standard
-  std::string topic = "/camera/depth_registered/image_rect_raw";
+  std::string topic = tracker->topic();
+  cerr << "topic: " << topic << endl;
   sync->addSyncTopic(topic);
 
   // catacombs
@@ -97,23 +116,15 @@ int main(int argc, char** argv) {
   nodeMaker->setTopic(sync->topic());
 
   // construct the cloud cache
-  PwnCloudCache* cache = new PwnCloudCache(converter, conf, topic, scale, 250, 260);
+  PwnCloudCache* cache = tracker->cache();
+  cache->setMinSlots(250);
+  cache->setMaxSlots(260);
   PwnCloudCacheHandler* cacheHandler = new PwnCloudCacheHandler(manager, cache);
   cacheHandler->init();
 
   // construct the optimizer bound to the map
   MapG2OReflector* optimizer = new MapG2OReflector(manager);
   
-  // construct the matcher object to be shared between the tracker and the closer
-  PwnMatcherBase* matcher = new PwnMatcherBase(aligner, converter);
-  matcher->_frameInlierDepthThreshold = 50;
-
-  // construct the tracker object
-  PwnTracker* tracker = new PwnTracker(matcher, cache, manager, conf);
-  tracker->setTopic(topic);
-
-  // construct the closer object and its queue
-  PwnCloser* closer = new PwnCloser(tracker);
   std::list<Serializable*> closerOutput;
   StreamProcessor::EnqueuerOutputHandler* c2q=new StreamProcessor::EnqueuerOutputHandler(closer, &closerOutput);
   MARKUSED(c2q);
@@ -130,10 +141,8 @@ int main(int argc, char** argv) {
   optimizer->setSelector(optSelector);
   closer->setSelector(optSelector);
   closer->autoProcess = false;
-  closer->_consensusMinTimesCheckedThreshold = 5;
 
   tracker->init();
-  tracker->setScale(scale);
 
   Serializable* s;
   objects.push_back(manager);
@@ -166,8 +175,6 @@ int main(int argc, char** argv) {
 
 
   tracker->setNewFrameCloudInliersFraction(0.4);
-  //tracker->setEnabled(false);
-  //closer->setEnabled(false);
 
   while((s=des.readObject())) {
     sync->process(s);
