@@ -20,9 +20,9 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${CSPARSE_INCLUDE_DIR} ${QT_INCLUDES})
 # SET_TARGET_PROPERTIES(fileconvertertest PROPERTIES OUTPUT_NAME fileconvertertest)
 # TARGET_LINK_LIBRARIES(fileconvertertest pwn_utils)
 
-ADD_EXECUTABLE(cylindricalprojector_test cylindricalprojector_test.cpp)
-SET_TARGET_PROPERTIES(cylindricalprojector_test PROPERTIES OUTPUT_NAME cylindricalprojector_test)
-TARGET_LINK_LIBRARIES(cylindricalprojector_test pwn_core ${G2O_STUFF_LIBRARY})
+# ADD_EXECUTABLE(cylindricalprojector_test cylindricalprojector_test.cpp)
+# SET_TARGET_PROPERTIES(cylindricalprojector_test PROPERTIES OUTPUT_NAME cylindricalprojector_test)
+# TARGET_LINK_LIBRARIES(cylindricalprojector_test pwn_core ${G2O_STUFF_LIBRARY})
 
 # ADD_EXECUTABLE(pwn_fast_normal_computation pwn_fast_normal_computation.cpp)
 # SET_TARGET_PROPERTIES(pwn_fast_normal_computation PROPERTIES OUTPUT_NAME pwn_fast_normal_computation)
