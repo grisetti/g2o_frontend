@@ -37,25 +37,15 @@ namespace pwn {
     
     indexImage.create(_imageRows, _imageCols);
     depthImage.create(_imageRows, _imageCols);
-    /*
-    int* p=(int*)indexImage.data;
-    const int *pend=p+_imageRows*_imageCols;
-    while (p<pend) {*p++ = -1;}
-
-    float *d=(float*)depthImage.data;
-    const float *dend=d+_imageRows*_imageCols;
-    while (d<dend) {*d++ = 0;}
-    */
-    
+ 
     depthImage.setTo(cv::Scalar(std::numeric_limits<float>::max()));
-    indexImage.setTo(cv::Scalar(-1));
-    
+    indexImage.setTo(cv::Scalar(-1));   
 
     float *drowPtrs[_imageRows];
     int *irowPtrs[_imageRows];
-    for (int i = 0; i<_imageRows; i++){
-      drowPtrs[i]= & depthImage(i, 0);
-      irowPtrs[i]= & indexImage(i, 0);
+    for(int i = 0; i < _imageRows; i++) {
+      drowPtrs[i] = &depthImage(i, 0);
+      irowPtrs[i] = &indexImage(i, 0);
     }
     const Point *point = &points[0];
     for(size_t i = 0; i < points.size(); i++, point++) {
@@ -160,6 +150,7 @@ namespace pwn {
     _cameraMatrix.block<2, 3>(0, 0) *= scalingFactor;
     _imageRows *= scalingFactor;
     _imageCols *= scalingFactor;
+    _updateMatrices();
   }
 
 }

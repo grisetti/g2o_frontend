@@ -21,7 +21,7 @@ namespace pwn {
     /**
      *  Empty constructor.
      *  This constructor creates an Aligner with default values for all its attributes.
-     *  All the pointers to objects implementing an algorithm have to be setted since
+     *  All the pointers to objects implementing an algorithm have to be set since
      *  this constructor sets them to zero.
      */
     Aligner();
@@ -32,21 +32,21 @@ namespace pwn {
     virtual ~Aligner() {}
 
     /**
-     *  Method that return a pointer to the point projector used by the aligner.
-     *  @return a pointer to the aligner's point projector.
+     *  Method that returns a pointer to the point projector used by the Aligner.
+     *  @return a pointer to the Aligner's point projector.
      *  @see setProjector()
      */
     inline PointProjector* projector() { return _projector; }
 
     /**
      *  Method that set the point projector used by the aligner to the one given in input.
-     *  @param projector_ is a pointer to the point projector used to update the aligner's point projector. 
+     *  @param projector_ is a pointer to the point projector used to update the Aligner's point projector. 
      *  @see projector()
      */
     inline void setProjector(PointProjector *projector_) { _projector = projector_; }
     
     /**
-     *  Method that return a pointer to the reference point cloud.
+     *  Method that returns a pointer to the reference point cloud.
      *  @return a pointer to the reference point cloud.
      *  @see setReferenceCloud()
      */
@@ -63,7 +63,7 @@ namespace pwn {
     }
     
     /**
-     *  Method that return a pointer to the point cloud to align.
+     *  Method that returns a pointer to the point cloud to align.
      *  @return a pointer to the point cloud to align.
      *  @see setCurrentCloud()
      */
@@ -80,42 +80,42 @@ namespace pwn {
     }
 
     /**
-     *  Method that return the number of linear iterations setted to the aligner.
-     *  @return the number of linear iterations set to the aligner.
+     *  Method that returns the number of linear iterations setted to the Aligner.
+     *  @return the number of linear iterations set to the Aligner.
      *  @see setOuterIterations()
      */
     inline int outerIterations() const { return _outerIterations; }
 
     /**
      *  Method that set the number of linear iterations the one given in input.
-     *  @param outerIterations_ is an int value used to update the number of linear iterations of the aligner. 
+     *  @param outerIterations_ is an int value used to update the number of linear iterations of the Aligner. 
      *  @see outerIterations()
      */    
     inline void setOuterIterations(const int outerIterations_) { _outerIterations = outerIterations_; }
 
     /**
-     *  Method that return the number of nonlinear iterations setted to the aligner.
-     *  @return the number of nonlinear iterations set to the aligner.
+     *  Method that returns the number of nonlinear iterations setted to the Aligner.
+     *  @return the number of nonlinear iterations set to the Aligner.
      *  @see setInnerIterations()
      */
     inline int innerIterations() const { return _innerIterations; }
     
     /**
      *  Method that set the number of nonlinear iterations the one given in input.
-     *  @param innerIterations_ is an int value used to update the number of nonlinear iterations of the aligner. 
+     *  @param innerIterations_ is an int value used to update the number of nonlinear iterations of the Aligner. 
      *  @see innerIterations()
      */    
     inline void setInnerIterations(const int innerIterations_) { _innerIterations = innerIterations_; }
 
     /**
-     *  Method that return the final transformation computed by the aligner that super pose the cloud to
+     *  Method that returns the final transformation computed by the aligner that super pose the cloud to
      *  align to the reference one.
      *  @return an isometry transformation representing the alignment between the two given point clouds.
      */
     inline const Eigen::Isometry3f& T() const { return _T; }
     
     /**
-     *  Method that return the initial guess transformation setted to the aligner between the cloud to
+     *  Method that returns the initial guess transformation setted to the aligner between the cloud to
      *  align and the reference one.
      *  @return an isometry transformation representing the initial guess between the two given point clouds.
      *  @see setInitialGuess()
@@ -124,7 +124,7 @@ namespace pwn {
     
     /**
      *  Method that set the initial guess transformation the one given in input.
-     *  @param initialGuess_ is an isometry transformation used to update the initial guess setted to the aligner. 
+     *  @param initialGuess_ is an isometry transformation used to update the initial guess setted to the Aligner. 
      *  @see initialGuess()
      */    
     inline void setInitialGuess(const Eigen::Isometry3f initialGuess_) { 
@@ -133,7 +133,7 @@ namespace pwn {
     }
 
     /**
-     *  Method that return the sensor offset applied to the input point clouds. Use this method if you
+     *  Method that returns the sensor offset applied to the input point clouds. Use this method if you
      *  setted the same sensor offset for both the point clouds.
      *  @return an isometry transformation representing the sensor offset setted for the two given point clouds.
      *  @see setSensorOffset()
@@ -152,7 +152,7 @@ namespace pwn {
     }
 
     /**
-     *  Method that return the sensor offset applied to the reference cloud. Use this method if you
+     *  Method that returns the sensor offset applied to the reference cloud. Use this method if you
      *  setted a different sensor offset for the two point clouds.
      *  @return an isometry transformation representing the sensor offset setted for the reference cloud.
      *  @see setReferenceSensorOffset()
@@ -171,7 +171,7 @@ namespace pwn {
     }
 
     /**
-     *  Method that return the sensor offset applied to the cloud to align. Use this method if you
+     *  Method that returns the sensor offset applied to the cloud to align. Use this method if you
      *  setted a different sensor offset for the two point clouds.
      *  @return an isometry transformation representing the sensor offset setted for the cloud to align.
      *  @see setCurrentSensorOffset()
@@ -190,15 +190,15 @@ namespace pwn {
     }
 
     /**
-     *  Method that return a pointer to the linearizer used by the aligner.
-     *  @return a pointer to the aligner's linearizer.
+     *  Method that returns a pointer to the Linearizer used by the Aligner.
+     *  @return a pointer to the Aligner's Linearizer.
      *  @see setLinearizer()
      */
     inline Linearizer* linearizer() { return _linearizer; }
 
     /**
-     *  Method that set the linearizer used by the aligner to the one given in input.
-     *  @param linearizer_ is a pointer to the linearizer used to update the aligner's linearizer. 
+     *  Method that set the Linearizer used by the Aligner to the one given in input.
+     *  @param linearizer_ is a pointer to the linearizer used to update the Aligner's linearizer. 
      *  @see linearizer()
      */
     inline void setLinearizer(Linearizer* linearizer_) { 
@@ -208,7 +208,7 @@ namespace pwn {
     }
 
     /**
-     *  Method that return the a bool value that if it's true means that the debug mode is active and so
+     *  Method that returns a bool value that if it's true means that the debug mode is active and so
      *  more information are printed on the terminal, otherwise the debug mode is disabled.
      *  @return a bool value representing the fact that the debug mode is enabled or disabled.
      *  @see setDebug()
@@ -223,7 +223,7 @@ namespace pwn {
     inline void setDebug(const bool debug_) { _debug = debug_; }
 
     /**
-     *  Method that return the minimum number of inliers to consider the computed final transformation valid.
+     *  Method that returns the minimum number of inliers to consider the computed final transformation valid.
      *  @return an int value representing the minimum number of inliers needed in order to consider the computed
      *  transformation valid.
      *  @see setMinInliers()
@@ -239,7 +239,7 @@ namespace pwn {
     inline void setMinInliers(const int minInliers_) { _minInliers = minInliers_; }
 
     /**
-     *  Method that return the minimum translational ratio for which if the translation ratio of the computed 
+     *  Method that returns the minimum translational ratio for which if the translation ratio of the computed 
      *  final transformation is above this value, the transformation is not considered valid.
      *  @return a float value representing the minimum allowed translation ratio.
      *  @see setTranslationalMinEigenRatio()
@@ -256,7 +256,7 @@ namespace pwn {
     inline void setTranslationalMinEigenRatio(const float translationalMinEigenRatio_) { _translationalMinEigenRatio = translationalMinEigenRatio_; }
     
     /**
-     *  Method that return the minimum rotational ratio for which if the rotational ratio of the computed 
+     *  Method that returns the minimum rotational ratio for which if the rotational ratio of the computed 
      *  final transformation is above this value, the transformation is not considered valid.
      *  @return a float value representing the minimum allowed rotational ratio.
      *  @see setRotationalMinEigenRatio()
@@ -273,7 +273,7 @@ namespace pwn {
     inline void setRotationalMinEigenRatio(const float rotationalMinEigenRatio_) { _rotationalMinEigenRatio = rotationalMinEigenRatio_; }
     
     /**
-     *  Method that return the translational ratio associated to the computed final transformation.
+     *  Method that returns the translational ratio associated to the computed final transformation.
      *  @return a float value representing the translational ratio associated to the computed final transformation.
      *  @see rotationalEigenRatio()
      */    
@@ -287,7 +287,7 @@ namespace pwn {
     inline float rotationalEigenRatio() { return _rotationalEigenRatio; }
 
     /**
-     *  Method that return a pointer to the correspondence finder used by the aligner.
+     *  Method that returns a pointer to the correspondence finder used by the Aligner.
      *  @return a pointer to the aligner's correspondence finder.
      *  @see setCorrespondenceFinder()
      */
@@ -308,25 +308,25 @@ namespace pwn {
     virtual void align();
     
     /**
-     *  Method that return the infomration matrix 6x6 associated to the computed final transformation.
+     *  Method that returns the infomration matrix 6x6 associated to the computed final transformation.
      *  @return a constant reference to the information matrix associated to the computed final transformation.
      */
     const Matrix6f& omega() const { return _omega; }
 
     /**
-     *  Method that return the error associated to the computed final transformation.
+     *  Method that returns the error associated to the computed final transformation.
      *  @return a float value representing the error associated to the computed final transformation.
      */
     inline float error() const { return _error; }
 
     /**
-     *  Method that return the number of inliers found with the computed final transformation.
+     *  Method that returns the number of inliers found with the computed final transformation.
      *  @return an int value containing the number of inliers found with the computed final transformation.
      */
     inline int inliers() const { return _inliers; }
 
     /**
-     *  Method that return the total time needed to compute the final transformation.
+     *  Method that returns the total time needed to compute the final transformation.
      *  @return a double value containing the total time needed to compute the final transformation.
      */
     inline double totalTime() const { return _totalTime; }
@@ -378,9 +378,9 @@ namespace pwn {
     void _computeStatistics(Vector6f &mean, Matrix6f &Omega, 
 			    float &translationalRatio, float &rotationalRatio) const;
 
-    PointProjector *_projector; /**< Pointer to the point projector used by the aligner to reproject points. */
-    Linearizer *_linearizer; /**< Pointer to the linearizer used by the aligner to linearize the error function. */
-    CorrespondenceFinder *_correspondenceFinder; /**< Pointer to the correspondence finder used by the aligner to find correspondences between the reprojected point clouds. */
+    PointProjector *_projector; /**< Pointer to the point projector used by the Aligner to reproject points. */
+    Linearizer *_linearizer; /**< Pointer to the linearizer used by the Aligner to linearize the error function. */
+    CorrespondenceFinder *_correspondenceFinder; /**< Pointer to the correspondence finder used by the Aligner to find correspondences between the reprojected point clouds. */
 
     Cloud *_referenceCloud; /**< Pointer to the reference point cloud. */
     Cloud *_currentCloud; /**< Pointer to the point cloud to align. */
