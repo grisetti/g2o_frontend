@@ -62,11 +62,13 @@ namespace pwn {
       // Point in camera coordinates;
       Eigen::Vector4f cp = _iT*p;
       d = sqrt(cp.x() * cp.x() + cp.z() * cp.z());
-      if(d > _maxDistance || d < _minDistance)
+      if(d > _maxDistance || d < _minDistance) {
 	return false;
+      }
       float theta = atan2(cp.x(), cp.z());
-      if(fabs(theta > _angularFov))
+      if(fabs(theta > _angularFov)) {
 	return false;
+      }
       x = (int)(_angularResolution * theta + _angularCenter);
       y = (int)(cp.y() * _verticalFocalLenght/d + _verticalCenter);
       return true;
@@ -87,7 +89,7 @@ namespace pwn {
   
     inline int _projectInterval(const int, const int, const float d, const float worldRadius) const {
       // Point in camera coordinates;
-      if (d > _maxDistance || d < _minDistance)
+      if(d > _maxDistance || d < _minDistance)
 	return -1;
       Eigen::Vector4f cp = Eigen::Vector4f(worldRadius, worldRadius, d, 1);
       float theta = atan2(cp.x(), cp.z());
@@ -100,7 +102,6 @@ namespace pwn {
     
     virtual void scale(float scalingFactor);
 
-  
   protected:
     float _angularFov; // Field of view
     float _angularCenter;

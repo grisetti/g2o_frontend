@@ -21,14 +21,13 @@ namespace pwn {
     _inverseVerticalFocalLenght = 1.0f / _verticalFocalLenght;
   }
 
-  void  CylindricalPointProjector::scale(float scalingFactor){
+  void  CylindricalPointProjector::scale(float scalingFactor) {
     _imageRows *= scalingFactor;
     _imageCols *= scalingFactor;
+    _verticalFocalLenght *= scalingFactor;
     _verticalCenter *= scalingFactor;
-    _verticalFocalLenght /=scalingFactor;
     _angularResolution *= scalingFactor;
-    _imageRows *= scalingFactor;
-    _imageCols *= scalingFactor;
+    _updateMatrices();
   }
 
   void CylindricalPointProjector::project(IntImage &indexImage,
@@ -38,19 +37,18 @@ namespace pwn {
 
     indexImage.create(_imageRows, _imageCols);
     depthImage.create(indexImage.rows, indexImage.cols);
-    std::cerr << "Size: " << indexImage.rows << " ... " << indexImage.cols << endl; 
     depthImage.setTo(std::numeric_limits<float>::max());
     indexImage.setTo(-1);
     const Point *point = &points[0];
-    for (size_t i = 0; i < points.size(); i++, point++) {
+    for(size_t i = 0; i < points.size(); i++, point++) {
       int x, y;
       float d;
       if(!_project(x, y, d, *point) ||
 	 d < _minDistance || d > _maxDistance ||
 	 x < 0 || x >= indexImage.cols ||
-	 y < 0 || y >= indexImage.rows)
-	 continue;
-      std::cerr << "proj: " << x << " --- " << y << " --- " << d << std::endl;
+	 y < 0 || y >= indexImage.rows) {
+	continue;
+      }
       float &otherDistance = depthImage(y, x);
       int &otherIndex = indexImage(y, x);
       if(!otherDistance || otherDistance > d) {
@@ -73,7 +71,7 @@ namespace pwn {
 	const float *f = &depthImage(r, 0);
 	int *i = &indexImage(r, 0);
 	for(int c = 0; c < depthImage.cols; c++, f++, i++) {
-	  if(!_unProject(*point, r, c, *f)) {
+	  if(!_unProject(*point, c, r, *f)) {
 	    *i = -1;
 	    continue;
 	  }
@@ -101,7 +99,7 @@ namespace pwn {
 	const float *f = &depthImage(r, 0);
 	int *i = &indexImage(r, 0);
 	for(int c = 0; c < depthImage.cols; c++, f++, i++) {      
-	  if(!_unProject(*point, r, c, *f)) {
+	  if(!_unProject(*point, c, r, *f)) {
 	    *i = -1;
 	    continue;
 	  }
