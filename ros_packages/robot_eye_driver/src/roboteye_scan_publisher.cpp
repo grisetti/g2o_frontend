@@ -8,7 +8,7 @@
 #include <pcl/point_types.h>
 #include <boost/thread/thread.hpp>
 #include <g2o/stuff/command_args.h>
-#include "myCallbacks.h"
+#include "roboteye.h"
 
 #include <ros/ros.h>
 #include <robot_eye_driver/RobotEyeScan.h>
@@ -17,6 +17,7 @@
 
 using namespace ocular;
 using namespace std;
+using namespace roboteye;
 
 // parameters
 string outfilename;
@@ -33,6 +34,16 @@ AngleCB _angle_callback;
 LaserCB _laser_callback;
 NotificationCB _notif_callback;
 ocular::RE05Driver* laserone;
+
+///inside a class??
+//diagnostic_updater::DiagnosedPublisher<robot_eye_driver::RobotEyeScan> _scan_pub;
+ros::Publisher _scan_pub;
+
+robot_eye_driver::RobotEyeScan _scan_msg;
+double _desired_freq;
+roboteye::RobotEyeScan _scan;
+roboteye::RobotEyeConfig _roboteye_config;
+
 
 void printandwriteLaserData(){
 
@@ -88,7 +99,7 @@ void printandwriteLaserData(){
     //    _mutex_meas.unlock();
 }
 
-void quit(){
+void stopandprint() {
 
     /// stopping laser callback
     cout << endl << "stopping laser" << endl;
@@ -146,9 +157,9 @@ void quit(){
 
     printandwriteLaserData();
 
-    cout << endl;
-    cout << "=== END ===" << endl;
-    exit(0);
+//    cout << endl;
+//    cout << "=== END ===" << endl;
+//    exit(0);
 }
 
 
@@ -209,7 +220,50 @@ void init_parameters(int argc, char ** argv){
 
 }
 
-int main(int argc, char** argv){
+int publishScan(const roboteye::RobotEyeScan &scan) {
+
+/// !!!!!TODO: MODIFY WITH THE roboteye _scan and _scan_config
+
+    unsigned int num_readings = _meas_all.size();
+
+    ros::Time scan_time = ros::Time::now();
+    //ros::Time().fromNSec((uint64_t)scan.system_time_stamp) + ros::Duration(driver_.config_.time_offset);
+
+    //populate the RobotEyeScan message
+    _scan_msg.header.stamp = scan_time;
+    _scan_msg.header.frame_id = "roboteye_frame";
+    _scan_msg.azimuth_min = deg2rad(0);
+    _scan_msg.azimuth_max = deg2rad(360);
+    _scan_msg.azimuth_increment = deg2rad(0.01); //to be checked
+    _scan_msg.elevation_min = deg2rad(-35);
+    _scan_msg.elevation_max = deg2rad(35);
+    _scan_msg.elevation_increment = deg2rad(0.004);
+    _scan_msg.time_increment = (1 / _laser_freq) / (num_readings);
+    _scan_msg.range_min = 0.5; //see the documentation
+    _scan_msg.range_max = 250.0; //see the documentation
+
+    _scan_msg.measurements.resize(num_readings);
+    _scan_msg.intensities.resize(num_readings);
+
+    for(unsigned int i = 0; i < num_readings; ++i){
+        geometry_msgs::Vector3 v_ranges;
+        v_ranges.x = scan.ranges[i].x();
+        v_ranges.y = scan.ranges[i].y();
+        v_ranges.z = scan.ranges[i].z();
+
+        _scan_msg.measurements[i] = v_ranges;
+        _scan_msg.intensities[i] = scan.intensities[i];
+    }
+
+    _desired_freq = (1. / scan.config.scan_time);
+    _scan_pub.publish(_scan_msg);
+
+    //ROS_DEBUG("publishScan done");
+
+    return(0);
+}
+
+int main(int argc, char** argv) {
 
     cout << "=== LASERONE ===" << endl << endl;
 
@@ -254,53 +308,28 @@ int main(int argc, char** argv){
     cout << "going to sleep for " << _seconds << " seconds." << endl;
     sleep(_seconds);
 
-    quit();
+    stopandprint();
 
     ros::init(argc, argv, "roboteye_scan_publisher");
-
     ros::NodeHandle n;
-    ros::Publisher scan_pub = n.advertise<robot_eye_driver::RobotEyeScan>("roboteye_scan", 50);
+    _scan_pub = n.advertise<robot_eye_driver::RobotEyeScan>("roboteye_scan", 100);
 
-    /*.......to be modified from now on basing on laser_drivers/hokuyo_node/node/hokuyo_node.cpp and/or laser_scan_publisher_tutorial.......*/
-    unsigned int num_readings = _meas_all.size();
-    double laser_frequency = _laser_freq;
-    std::vector<Eigen::Vector3d> measurements[num_readings];
-    double intensities[num_readings];
+    /*...to be modified from now on basing on
+      laser_drivers/hokuyo_node/node/hokuyo_node.cpp
+      and/or laser_scan_publisher_tutorial...*/
 
-    int count = 0;
+    /// TODO
+    //create the struct roboteye::RobotEyeScan _scan
+    //use threads --> change the sleep routine
+
     ros::Rate r(1.0);
     while(n.ok()){
-        //generate some fake data for our laser scan
-//        for(unsigned int i = 0; i < num_readings; ++i){
-//            measurements[i] = count;
-//            intensities[i] = 100 + count;
-//        }
-        ros::Time scan_time = ros::Time::now();
 
-        //populate the LaserScan message
-        robot_eye_driver::RobotEyeScan scan;
-//        sensor_msgs::LaserScan scan;
-        scan.header.stamp = scan_time;
-        scan.header.frame_id = "roboteye_frame";
-        scan.azimuth_min = deg2rad(0);
-        scan.azimuth_max = deg2rad(360);
-        scan.azimuth_increment = deg2rad(0.01); //to be checked
-        scan.elevation_min = deg2rad(-35);
-        scan.elevation_max = deg2rad(35);
-        scan.elevation_increment = deg2rad(0.004);
-        scan.time_increment = (1 / laser_frequency) / (num_readings);
-        scan.range_min = 0.5; //see the documentation
-        scan.range_max = 250.0; //see the documentation
-
-        scan.measurements.resize(num_readings);
-        scan.intensities.resize(num_readings);
-//        for(unsigned int i = 0; i < num_readings; ++i){
-//            scan.measurements[i] = measurements[i];
-//            scan.intensities[i] = intensities[i];
-//        }
-
-        scan_pub.publish(scan);
-        ++count;
+        publishScan(_scan);
         r.sleep();
     }
+
+    cout << endl;
+    cout << "=== END ===" << endl;
+    exit(0);
 }

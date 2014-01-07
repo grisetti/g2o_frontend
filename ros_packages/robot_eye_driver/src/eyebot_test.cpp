@@ -8,10 +8,11 @@
 #include "pcl/point_types.h"
 #include <boost/thread/thread.hpp>
 #include "g2o/stuff/command_args.h"
-#include "myCallbacks.h"
+#include "roboteye.h"
 
 using namespace ocular;
 using namespace std;
+using namespace roboteye;
 
 // parameters
 string outfilename;
