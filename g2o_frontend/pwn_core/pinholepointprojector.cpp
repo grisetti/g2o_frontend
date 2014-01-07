@@ -43,9 +43,9 @@ namespace pwn {
 
     float *drowPtrs[_imageRows];
     int *irowPtrs[_imageRows];
-    for (int i = 0; i<_imageRows; i++){
-      drowPtrs[i]= & depthImage(i, 0);
-      irowPtrs[i]= & indexImage(i, 0);
+    for(int i = 0; i < _imageRows; i++) {
+      drowPtrs[i] = &depthImage(i, 0);
+      irowPtrs[i] = &indexImage(i, 0);
     }
     const Point *point = &points[0];
     for(size_t i = 0; i < points.size(); i++, point++) {
@@ -150,6 +150,7 @@ namespace pwn {
     _cameraMatrix.block<2, 3>(0, 0) *= scalingFactor;
     _imageRows *= scalingFactor;
     _imageCols *= scalingFactor;
+    _updateMatrices();
   }
 
 }

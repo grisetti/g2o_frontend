@@ -190,11 +190,7 @@ namespace pwn {
      */
     virtual inline bool project(int &x, int &y, float &f, const Point &p) const { 
       // Just to avoid warnings in the compilation and in doxygen
-      Point tmp = p;
-      tmp = tmp;
-      f = f;
-      y = y;
-      x = x;
+      if(x || y || f || p.x()) {} 
 
       return false; 
     }
@@ -213,13 +209,7 @@ namespace pwn {
      */
     virtual inline bool unProject(Point &p, const int x, const int y, const float d) const { 
       // Just to avoid warnings in the compilation and in doxygen
-      int tmpX = x;
-      tmpX = tmpX;
-      int tmpY = y;
-      tmpY = tmpY;
-      float tmpD = d;
-      tmpD = tmpD;
-      p = p;
+      if(x || y || d || p.x()) {} 
 
       return false; 
     }
@@ -237,14 +227,7 @@ namespace pwn {
      */
     virtual inline int projectInterval(const int x, const int y, const float d, const float worldRadius) const { 
       // Just to avoid warnings in the compilation and in doxygen
-      int tmpX = x;
-      tmpX = tmpX;
-      int tmpY = y;
-      tmpY = tmpY;
-      float tmpD = d;
-      tmpD = tmpD;
-      float tmpWorldRadius = worldRadius;
-      tmpWorldRadius = tmpWorldRadius;
+      if(x || y || d || worldRadius) {} 
 
       return 0; 
     }
