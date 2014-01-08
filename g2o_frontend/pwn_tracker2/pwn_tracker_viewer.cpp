@@ -179,4 +179,62 @@ namespace pwn_tracker  {
       visState->draw();
   }
 
+
+  PwnSLAMVisualizerProcessor::PwnSLAMVisualizerProcessor(int id, boss::IdContext* context):
+    StreamProcessor(id,context){
+    _needRedraw = false;
+    _manager = 0;
+    _cache = 0;
+    _visState = 0;
+    _selector = 0;
+  }
+
+  void PwnSLAMVisualizerProcessor::init() {
+    if (! _visState){
+      _visState=new VisState(_manager);
+      _visState->relationSelector = _selector;
+    }
+  }
+
+  void PwnSLAMVisualizerProcessor::process(Serializable* s){
+    put(s);
+    NewKeyNodeMessage* km = dynamic_cast<NewKeyNodeMessage*>(s);
+    if (km) {
+      PwnCloudCache::HandleType h=_cache->get((SyncSensorDataNode*) km->keyNode);
+      VisCloud* visCloud = new VisCloud(h.get());
+      _visState->cloudMap.insert(make_pair(km->keyNode, visCloud));
+      cerr << "VisKeyframe" << endl;
+    }
+    ClosureScannedMessage* closureScanned = dynamic_cast<ClosureScannedMessage*> (s);
+    if (closureScanned) {
+      _visState->partitions=closureScanned->partitions;
+      _visState->currentPartitionIndex = closureScanned->currentPartitionIndex;
+      _needRedraw = true;
+      cerr << "numPartitions: " << closureScanned->partitions.size() << endl;
+      cerr << "VisClosureScanned" << endl;
+    }
+  }
+
+  void PwnSLAMVisualizerProcessor::serialize(ObjectData& data, IdContext& context){
+    StreamProcessor::serialize(data,context);
+    data.setPointer("manager", _manager);
+    data.setPointer("cache", _cache);
+    data.setPointer("selector", _selector);
+  }
+
+  void PwnSLAMVisualizerProcessor::deserialize(ObjectData& data, IdContext& context){
+    StreamProcessor::deserialize(data,context);
+    data.getReference("manager").bind(_manager);
+    data.getReference("cache").bind(_cache);
+    data.getReference("selector").bind(_selector);
+  }
+
+  void PwnSLAMVisualizerProcessor::deserializeComplete(){
+    if (_visState)
+      delete _visState;
+    _visState=0;
+    init();
+  }
+
+  BOSS_REGISTER_CLASS(PwnSLAMVisualizerProcessor);
 }

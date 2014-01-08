@@ -14,8 +14,8 @@ INCLUDE_DIRECTORIES(boss_map_building  ${CSPARSE_INCLUDE_DIR})
 SET_TARGET_PROPERTIES(boss_map_building PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_boss_map_building)
 
 TARGET_LINK_LIBRARIES(boss_map_building 
-  boss 
   boss_map 
+  boss 
   ${G2O_TYPES_SLAM3D} 
   ${G2O_CORE_LIBRARY} 
   ${G2O_STUFF_LIBRARY}

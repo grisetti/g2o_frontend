@@ -201,6 +201,50 @@ namespace boss_map {
 
   }
 
+  void SensorDataSynchronizer::serialize(ObjectData& data, IdContext& context) {
+    StreamProcessor::serialize(data,context);
+    data.setString("topic", _topic);
+    ArrayData* topicsArray = new ArrayData();
+    for  ( std::map<std::string, SyncTopicInstance*>::const_iterator it=syncTopics.begin(); it!=syncTopics.end(); it++) {
+      topicsArray->add(new StringData(it->first));
+    }
+    data.setField("syncTopics", topicsArray);
+
+    ArrayData* conditionsArray = new ArrayData();
+    for  ( std::set<SyncCondition*>::iterator it=syncConditions.begin(); it!=syncConditions.end(); it++) {
+      SyncTimeCondition* stc = dynamic_cast<SyncTimeCondition*>(*it);
+      if(stc) {
+	ObjectData* odata = new ObjectData;
+	odata->setString("topic1", stc->m1->topic);
+	odata->setString("topic2", stc->m2->topic);
+	odata->setDouble("dt", stc->dt);
+	conditionsArray->add(odata);
+      }
+    }
+    data.setField("syncConditions", conditionsArray);
+  }
+
+  void SensorDataSynchronizer::deserialize(ObjectData& data, IdContext& context){
+    StreamProcessor::deserialize(data,context);
+    _topic = data.getString("topic");
+    ArrayData& topicsArray = data.getField("syncTopics")->getArray();
+    for (size_t i =0; i<topicsArray.size(); i++){
+      std::string top = topicsArray[i].getString();
+      addSyncTopic(top);
+    }
+    ArrayData& conditionsArray = data.getField("syncConditions")->getArray();
+    for (size_t i =0; i<conditionsArray.size(); i++){
+      ObjectData& odata = conditionsArray[i].getObject();
+      std::string topic1 = odata.getString("topic1");
+      std::string topic2 = odata.getString("topic2");
+      double dt =  odata.getDouble("dt");
+      addSyncTimeCondition(topic1, topic2, dt);
+    }
+  }
+
+
 
   BOSS_REGISTER_CLASS(SynchronizedSensorData);
+  BOSS_REGISTER_CLASS(SensorDataSynchronizer);
+  
 }

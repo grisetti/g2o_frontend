@@ -137,6 +137,16 @@ namespace boss_map_building {
     }
   }
 
+
+  void BaseTracker::serialize(ObjectData& data, IdContext& context) {
+    StreamProcessor::serialize(data,context);
+    data.setPointer("manager", _manager);
+  }
+  void BaseTracker::deserialize(ObjectData& data, IdContext& context) {
+    StreamProcessor::deserialize(data,context);
+    data.getReference("manager").bind(_manager);
+  }
+
   BaseTracker::~BaseTracker(){}
 
   MapNodeBinaryRelation* BaseTracker::registerNodes(MapNode* keyNode, MapNode* otherNode, const Eigen::Isometry3d& guess) {

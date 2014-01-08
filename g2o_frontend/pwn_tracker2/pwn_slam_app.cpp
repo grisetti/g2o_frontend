@@ -22,60 +22,55 @@
 
 #define MARKUSED(X)  X=X
 
-/*#include "g2o_frontend/pwn_boss/pwn_sensor_data.h"*/
-
 using namespace pwn_tracker;
 using namespace boss_map_building;
 using namespace boss_map;
 using namespace boss;
 using namespace std;
 
-
 int main(int argc, char** argv) {
-    
   std::string fileconf = argv[1];
   std::string filein = argv[2];
   std::string fileout = argv[3];
 
-  PwnTracker* tracker = 0;
-  PwnCloser* closer = 0;
+  StreamProcessor* sp=0;
   std::list<Serializable*> processingObjects;
+  
+  
+  // read the configuration ans seek for a guy called "mySLAMPipeline".
   Deserializer confDes;
   confDes.setFilePath(fileconf);
+  sp=loadProcessor("mySLAMPipeline", confDes, processingObjects);
+  
 
-  Serializable* o;
-  while ( (o=confDes.readObject()) ){
-    processingObjects.push_back(o);
-    PwnTracker * t = dynamic_cast<PwnTracker*>(o);
-    PwnCloser * c = dynamic_cast<PwnCloser*>(o);
-    if (t)
-      tracker = t;
-    if (c)
-      closer = c;
-    if (tracker && closer)
-      break;
+  if (! sp){
+    cerr << "object not found, aborting";
+    return 0;
   }
- 
-  if (tracker && closer) {
-    cerr << "config loaded" << endl;
-    cerr << " tracker:" << tracker << endl;
-    cerr << " closer:" << closer << endl;
-  } else {
-    cerr << "no valid config found, aborting" << endl;
-    return -1;
+  
+  StreamProcessorGroup* group = dynamic_cast<StreamProcessorGroup*>(sp);
+  if (! group) {
+    cerr << "object is not a pipeline, aborting";
+    return 0;
+  }
+  
+  // retrieve the manager from the pipeline. You will have to copy it in the result
+  size_t pos = 0;
+  MapManager* manager = group->byType<MapManager>(pos);
+  if (! manager) {
+    cerr << "unable to find the manager" << endl;
+    return 0;
   }
 
   Deserializer des;
   des.setFilePath(filein.c_str());
-
-  Serializer ser;
-  ser.setFilePath(fileout.c_str());
   
-  cerr <<  "running logger with arguments: filein[" << filein << "] fileout: [" << fileout << "]" << endl;
+  cerr <<  "running the pipeline with arguments: filein[" << filein << "] fileout: [" << fileout << "]" << endl;
 
-  // read the configuration file
+  // read the log up to the configuration file
   RobotConfiguration* conf = 0;
   std::list<Serializable*> objects;
+  Serializable* o;
   while ( (o=des.readObject()) ){
     objects.push_back(o);
     RobotConfiguration * conf_ = dynamic_cast<RobotConfiguration*>(o);
@@ -88,144 +83,51 @@ int main(int argc, char** argv) {
     cerr << "unable to get robot configuration, aborting " << endl;
     return -1;
   }
-
-  tracker->setRobotConfiguration(conf);
-  closer->setRobotConfiguration(conf);
-
-  MapManager* manager = new MapManager();
-  closer->setManager(manager);
-  tracker->setManager(manager);
-
-  // construct the synchronizer 
-  SensorDataSynchronizer* sync = new SensorDataSynchronizer();
-  sync->setTopic("sync");
   
-  // standard
-  std::string topic = tracker->topic();
-  cerr << "topic: " << topic << endl;
-  sync->addSyncTopic(topic);
-
-  // catacombs
-  // std::string topic = "/kinect/depth_registered/image_raw";
-  // sync->addSyncTimeCondition(topic,"/imu/data",0.1);
-
-
-
-  // construct the nodeMaker 
-  SyncSensorDataNodeMaker* nodeMaker = new SyncSensorDataNodeMaker(manager,conf);
-  nodeMaker->setTopic(sync->topic());
-
-  // construct the cloud cache
-  PwnCloudCache* cache = tracker->cache();
-  cache->setMinSlots(250);
-  cache->setMaxSlots(260);
-  PwnCloudCacheHandler* cacheHandler = new PwnCloudCacheHandler(manager, cache);
-  cacheHandler->init();
-
-  // construct the optimizer bound to the map
-  MapG2OReflector* optimizer = new MapG2OReflector(manager);
-  
-  std::list<Serializable*> closerOutput;
-  StreamProcessor::EnqueuerOutputHandler* c2q=new StreamProcessor::EnqueuerOutputHandler(closer, &closerOutput);
-  MARKUSED(c2q);
-
-  // configure the criterion when to seek for loop closures
-  DistancePoseAcceptanceCriterion* distanceCriterion = new DistancePoseAcceptanceCriterion(manager);
-  distanceCriterion->setRotationalDistance(M_PI/4);
-  distanceCriterion->setTranslationalDistance(1);
-  KeyNodeAcceptanceCriterion* criterion = new KeyNodeAcceptanceCriterion(closer,manager, distanceCriterion);
-  closer->setCriterion(criterion);
-  MapCloserActiveRelationSelector* optSelector = new MapCloserActiveRelationSelector(closer, manager);
-
-  //set the selector that tells which relations to  optimize when the closer kicks in
-  optimizer->setSelector(optSelector);
-  closer->setSelector(optSelector);
-  closer->autoProcess = false;
-
-  tracker->init();
-
-  Serializable* s;
-  objects.push_back(manager);
-  std::list<Serializable*> closerInput;
- 
-
-  bool makeVis = true;
-  //bool makeVis = false;
-  VisState* visState=0; 
+  group->setRobotConfiguration(conf);
+  QApplication* app = 0;
   MyTrackerViewer *viewer = 0;
-  QApplication* app =0;
-  if (makeVis) {
-    visState = new VisState(manager);
-    visState->relationSelector = optSelector;
+
+  // check if we have a gui
+  PwnSLAMVisualizerProcessor* visProc = dynamic_cast<PwnSLAMVisualizerProcessor*>(group->byName("myVisState"));
+  if (visProc) {
     app = new QApplication(argc,argv);
-    viewer = new MyTrackerViewer(visState);
+    viewer = new MyTrackerViewer(visProc->_visState);
     viewer->show();
   }
 
+  // construct a queue handler to hold the elements that are output by the processing pipeline
+  StreamProcessor::EnqueuerOutputHandler* o2q = new StreamProcessor::EnqueuerOutputHandler(group->lastNode, &objects);
+  MARKUSED(o2q);
 
-  // make the connections
-  StreamProcessor::PropagatorOutputHandler* sync2nm=new StreamProcessor::PropagatorOutputHandler(sync, nodeMaker);
-  MARKUSED(sync2nm);
-
-  StreamProcessor::PropagatorOutputHandler* nm2t=new StreamProcessor::PropagatorOutputHandler(nodeMaker, tracker);
-  MARKUSED(nm2t);
-
-  StreamProcessor::PropagatorOutputHandler* t2c=new StreamProcessor::PropagatorOutputHandler(tracker, closer);
-  MARKUSED(t2c);
-
-
-  tracker->setNewFrameCloudInliersFraction(0.4);
-
+  // read the data once at a time, and see if you have to do some gui business
+  Serializable* s;
+  objects.push_back(manager);
   while((s=des.readObject())) {
-    sync->process(s);
-
-    bool optimize = false;
-    while(!closerOutput.empty()){
-      Serializable* s= closerOutput.front();
-      closerOutput.pop_front();
-      objects.push_back(s);
-      PwnCloserRelation* rel = dynamic_cast<PwnCloserRelation*>(s);
-      if (rel) {
-	optimize=true;
-      }
-      NewKeyNodeMessage* km = dynamic_cast<NewKeyNodeMessage*>(s);
-      if (km) {
-	if (makeVis) {
-	  PwnCloudCache::HandleType h=cache->get((SyncSensorDataNode*) km->keyNode);
-	  VisCloud* visCloud = new VisCloud(h.get());
-	  visState->cloudMap.insert(make_pair(km->keyNode, visCloud));
-	  
-	  visState->candidateRelations=closer->candidateRelations();
-	  visState->partitions = closer->partitions();
-	  for (size_t i =0; i<closer->partitions().size(); i++){
-	    if (&closer->partitions()[i]==closer->currentPartition()){
-	      visState->currentPartitionIndex = i;
-	    }
-	  }
-	}
-	if (makeVis)
-	  viewer->updateGL();
-      }
-    }
-
-    if (optimize){
-      cerr<< "OPTIMIZE" << endl;
-      optimizer->optimize();
-    }
-    if (makeVis)
+    group->process(s);
+    if (visProc && visProc->_needRedraw){
+      cerr << "updateGL" << endl;
+      viewer->updateGL();
+      visProc->_needRedraw = false;
       app->processEvents();
+    }
   }
 
-  cerr << "writing out " << objects.size() << " objects" << endl;
+  // write out all what the system has done
+  Serializer ser;
+  ser.setFilePath(fileout.c_str());
+  cerr << "writing out " << objects.size() << " objects... ";
   while (! objects.empty()){
     ser.writeObject(*objects.front());
     objects.pop_front();
   }
+  cerr << "done"  << endl;
 
-  optimizer->graph()->save("slam_out.g2o");
-  visState->final = true;
-
-  if (makeVis) {
+  // if we have the gui provide with a nice show
+  if (! visProc)
+    return 0;
+  else {
+    visProc->_visState->final = true;
     viewer->updateGL();
     while(viewer->isVisible()){
       app->processEvents();

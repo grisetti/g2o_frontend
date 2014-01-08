@@ -57,6 +57,7 @@ namespace boss_map {
     std::vector<BaseSensorData*> sensorDatas;
   };
 
+
   struct SensorDataSynchronizer: public StreamProcessor{
     SensorDataSynchronizer();
     SyncTopicInstance* addSyncTopic(const std::string& topic);
@@ -66,6 +67,9 @@ namespace boss_map {
     ~SensorDataSynchronizer();
     inline const std::string& topic() const {return _topic;}
     inline void setTopic (const std::string& topic_) {_topic = topic_;}
+
+    virtual void serialize(ObjectData& data, IdContext& context);
+    virtual void deserialize(ObjectData& data, IdContext& context);
     
   protected:
     std::string _topic;

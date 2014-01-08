@@ -37,7 +37,7 @@ namespace boss_map {
 
   SensorDataNodeMaker::SensorDataNodeMaker(MapManager* manager_, RobotConfiguration* config_){
     _mapManager = manager_;
-    _config = config_;
+    setRobotConfiguration(config_);
     _previousNode = 0;
     _seq = 0;
     _topic = "";
@@ -76,6 +76,19 @@ namespace boss_map {
       _previousNode = currentNode;
       _previousNodeTransform = currentNodeTransform;
     }
+  }
+
+
+  void SensorDataNodeMaker::serialize(ObjectData& data, IdContext& context) {
+    StreamProcessor::serialize(data,context);
+    data.setPointer("manager",_mapManager);
+    data.setString("topic", _topic);
+  }
+  
+  void SensorDataNodeMaker::deserialize(ObjectData& data, IdContext& context) { 
+    StreamProcessor::deserialize(data,context);
+    data.getReference("manager").bind(_mapManager);
+    _topic = data.getString("topic");
   }
 
 
@@ -156,5 +169,8 @@ namespace boss_map {
   }
   
   BOSS_REGISTER_CLASS(BaseSensorDataNode);
+  BOSS_REGISTER_CLASS(SensorDataNodeMaker);
   BOSS_REGISTER_CLASS(SyncSensorDataNode);
+  BOSS_REGISTER_CLASS(SyncSensorDataNodeMaker);
+
 }

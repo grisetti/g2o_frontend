@@ -31,8 +31,6 @@ using namespace boss;
 using namespace std;
 
 int main(int argc, char** argv) {
-    
-  
 
 
   std::string fileconf = argv[1];

@@ -2,6 +2,7 @@
 #include <list>
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/identifiable.h"
+#include "robot_configuration.h"
 
 namespace boss_map {
   typedef std::list<boss::Serializable*> SerializableList;
@@ -19,6 +20,7 @@ namespace boss_map {
       void setStreamProcessor(StreamProcessor* p);
       virtual void put(boss::Serializable* s)=0;
       virtual ~OutputHandler();
+
     protected:
       StreamProcessor* _processor;
     private:
@@ -69,11 +71,52 @@ namespace boss_map {
     virtual void put(boss::Serializable* s);
     void setName(const std::string& name_) {_name = name_;}
     const std::string& name() const {return _name;}
+
+    virtual RobotConfiguration* robotConfiguration();
+    virtual void setRobotConfiguration(RobotConfiguration* conf);
+
   protected:
+    RobotConfiguration* _robotConfiguration;
+
     std::string _name;
     bool addHandler(OutputHandler* handler_);
     bool removeHandler(OutputHandler* handler_);
     std::list<OutputHandler*>::iterator findHandler(OutputHandler* handler_);
     std::list<OutputHandler*> _handlers;
   };
+
+
+  class StreamProcessorGroup: public StreamProcessor {
+  public:
+    StreamProcessorGroup(int id=-1, boss::IdContext* context = 0);
+
+    virtual void setRobotConfiguration(RobotConfiguration* conf);
+
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
+  
+    virtual void process(Serializable* s);
+
+    StreamProcessor* byName(const std::string& n);
+
+    template <typename T>
+    T* byType(size_t& pos, size_t startPos = 0) {
+      for (pos = startPos; pos<objects.size(); pos++){
+	Identifiable* id = objects[pos];
+	T* t = dynamic_cast<T*>(id);
+	if (t)
+	  return t;
+      }
+      return 0;
+    }
+    
+    std::map<std::string, StreamProcessor*> streamProcessors;
+    std::vector<Identifiable*> objects;
+    StreamProcessor* firstNode;
+    StreamProcessor* lastNode;
+  };
+
+  StreamProcessor* loadProcessor(const std::string& name, boss::Deserializer& des, std::list<Serializable*>& objects);
+
 }

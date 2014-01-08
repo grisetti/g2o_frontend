@@ -13,6 +13,7 @@ namespace boss_map{
     setStreamProcessor(processor_);
   }
 
+
   void StreamProcessor::OutputHandler::serialize(ObjectData& data, IdContext& context){
     Identifiable::serialize(data, context);
     data.setPointer("source", _processor);
@@ -127,6 +128,7 @@ namespace boss_map{
   StreamProcessor::StreamProcessor(int id, boss::IdContext* context):
     Identifiable(id, context){
     _name = "unknown";
+    _robotConfiguration = 0;
   }
 
   
@@ -137,6 +139,15 @@ namespace boss_map{
       delete handler;
     }
   }
+
+  RobotConfiguration* StreamProcessor::robotConfiguration() {
+    return _robotConfiguration;
+  }
+  
+  void StreamProcessor::setRobotConfiguration(RobotConfiguration* conf){
+    _robotConfiguration = conf;
+  }
+
 
   void StreamProcessor::serialize(ObjectData& data, IdContext& context){
     Identifiable::serialize(data,context);
@@ -149,6 +160,73 @@ namespace boss_map{
   }
 
 
+
+
+  StreamProcessorGroup::StreamProcessorGroup(int id, boss::IdContext* context):
+    StreamProcessor(id,context){
+    firstNode = 0;
+    lastNode = 0;
+  }
+
+  void StreamProcessorGroup::setRobotConfiguration(RobotConfiguration* conf){
+    StreamProcessor::setRobotConfiguration(conf);
+    for (std::map<std::string, StreamProcessor*>::iterator it=streamProcessors.begin(); it!=streamProcessors.end(); it++)
+      it->second->setRobotConfiguration(conf);
+  }
+
+  void StreamProcessorGroup::serialize(boss::ObjectData& data, boss::IdContext& context){
+    StreamProcessor::serialize(data,context);
+    data.setPointer("firstNode", firstNode);
+    data.setPointer("lastNode", lastNode);
+    ArrayData* objectArray = new ArrayData();
+    for (size_t i =0; i<objects.size(); i++){
+      objectArray->add(new PointerData(objects[i]));
+    }
+    data.setField("objects", objectArray);
+  }
+
+  void StreamProcessorGroup::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    StreamProcessor::deserialize(data,context);
+    objects.clear();
+    streamProcessors.clear();
+    firstNode = 0;
+    lastNode = 0;
+    data.getReference("firstNode").bind(firstNode);
+    data.getReference("lastNode").bind(lastNode);
+    ArrayData& objectArray = data.getField("objects")->getArray();
+    for (size_t i =0; i<objectArray.size(); i++){
+      Identifiable* ident=objectArray[i].getPointer();
+      objects.push_back(ident);
+      StreamProcessor* proc=dynamic_cast<StreamProcessor*>(ident);
+      if (proc) {
+	streamProcessors.insert(make_pair(proc->name(), proc));
+      }
+    }
+  }
+  
+  void StreamProcessorGroup::process(Serializable* s) {
+    if (firstNode)
+      firstNode->process(s);
+  }
+
+  StreamProcessor* StreamProcessorGroup::byName(const std::string& n) {
+    std::map<std::string, StreamProcessor*>::iterator it = streamProcessors.find(n);
+    if (it!=streamProcessors.end())
+      return it->second;
+    return 0;
+  }
+
+  StreamProcessor* loadProcessor(const std::string& name, boss::Deserializer& des, std::list<Serializable*>& objects){
+    Serializable* o;
+    while( (o = des.readObject()) ) {
+      objects.push_back(o);
+      StreamProcessor* proc=dynamic_cast<StreamProcessor*>(o);
+      if (proc &&  proc->name() == name )
+	return proc;
+    }
+    return 0;
+  }
+
   typedef StreamProcessor::EnqueuerOutputHandler StreamProcessor_EnqueuerOutputHandler;
   typedef StreamProcessor::WriterOutputHandler StreamProcessor_WriterOutputHandler;
   typedef StreamProcessor::PropagatorOutputHandler StreamProcessor_PropagatorOutputHandler;
@@ -156,5 +234,6 @@ namespace boss_map{
   BOSS_REGISTER_CLASS(StreamProcessor_EnqueuerOutputHandler);
   BOSS_REGISTER_CLASS(StreamProcessor_WriterOutputHandler);
   BOSS_REGISTER_CLASS(StreamProcessor_PropagatorOutputHandler);
+  BOSS_REGISTER_CLASS(StreamProcessorGroup);
 
 }

@@ -18,19 +18,54 @@ namespace pwn_tracker{
   PwnCloudCache::PwnCloudCache(DepthImageConverter* converter_, 
 			       RobotConfiguration* robotConfiguration_,
 			       const std::string& topic_,
-			       int scale_, int minSlots_, int maxSlots_):
-    Cache<PwnCloudCacheEntry>(minSlots_, maxSlots_), _converter(converter_), _scale(scale_){
+			       int scale_, int minSlots_, int maxSlots_,
+			       int id, boss::IdContext* context):
+    Cache<PwnCloudCacheEntry>(minSlots_, maxSlots_), 
+    Identifiable(id, context), _converter(converter_), _scale(scale_){
+    cerr << "cache construct" << endl;
     numCalls = 0;
     cumTime = 0;
     _topic = topic_;
     _robotConfiguration = robotConfiguration_;
   }
 
+  void PwnCloudCache::serialize(boss::ObjectData& data, boss::IdContext& context){
+    Identifiable::serialize(data,context);
+    _tempConverter = 0;
+    if(_converter)
+      _tempConverter = dynamic_cast<pwn_boss::DepthImageConverter*>(_converter);
+    data.setPointer("converter", _tempConverter);
+    data.setInt("scale", _scale);
+    data.setString("topic", _topic);
+    data.setInt("minSlots", _minSlots);
+    data.setInt("maxSlots", _maxSlots);
+  }
+  
+  void PwnCloudCache::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    cerr << "deserializing cache" << endl;
+    Identifiable::deserialize(data,context);
+    _tempConverter = 0;
+    _converter = 0;
+    data.getReference("converter").bind(_tempConverter);
+    _scale = data.getInt("scale");
+    _topic = data.getString("topic");
+    _minSlots = data.getInt("minSlots");
+    _maxSlots = data.getInt("maxSlots");
+  }
 
+  void PwnCloudCache::deserializeComplete() {
+    _converter = _tempConverter;
+  }
+  
   CloudWithImageSize* PwnCloudCache::loadCloud(SyncSensorDataNode* trackerNode){
     PinholeImageData* imdata = trackerNode->sensorData()->sensorData<PinholeImageData>(_topic);
     if (! imdata) {
-      throw std::runtime_error("the required topic does not match the requested type");
+      for(size_t i =0; i<trackerNode->sensorData()->sensorDatas.size(); i++){
+	cerr << trackerNode->sensorData()->sensorDatas[i]->className() << " " <<  trackerNode->sensorData()->sensorDatas[i]->topic() << endl;
+      }
+      std::string err("the required topic does not match the requested type (should be PinholeImageData, it is");
+      err += trackerNode->sensorData()->className();
+      throw std::runtime_error(err.c_str());
     }
 
     boss_map::ImageBLOB* depthBLOB = imdata->imageBlob().get();
@@ -70,13 +105,15 @@ namespace pwn_tracker{
     return new PwnCloudCacheEntry(this, k);
   }
 
-  PwnCloudCacheHandler::PwnCloudCacheHandler(MapManager* manager_, PwnCloudCache* cache_):
-    MapManagerActionHandler(manager_){
+  PwnCloudCacheHandler::PwnCloudCacheHandler(MapManager* manager_, PwnCloudCache* cache_,
+					     int id, boss::IdContext* context):
+    MapManagerActionHandler(manager_, id, context){
     _cache = cache_;
   }
 
   PwnCloudCacheHandler::~PwnCloudCacheHandler() {}
   void PwnCloudCacheHandler::init(){
+    cerr << "Manager: " << _manager << endl;
     for (std::set<MapNode*>::iterator it = _manager->nodes().begin(); it!=_manager->nodes().end(); it++){
       nodeAdded(*it);
     }
@@ -97,5 +134,22 @@ namespace pwn_tracker{
   void PwnCloudCacheHandler::relationAdded(MapNodeRelation* ) {}
   void PwnCloudCacheHandler::relationRemoved(MapNodeRelation* ) {}
 
+  void PwnCloudCacheHandler::serialize(boss::ObjectData& data, boss::IdContext& context){
+    MapManagerActionHandler::serialize(data,context);
+    data.setPointer("cache", _cache);
+  }
+  
+  void PwnCloudCacheHandler::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    MapManagerActionHandler::deserialize(data,context);
+    data.getReference("cache").bind(_cache);
+  }
+
+  void PwnCloudCacheHandler::deserializeComplete() {
+    init();
+  }
+
+
+  BOSS_REGISTER_CLASS(PwnCloudCache);
+  BOSS_REGISTER_CLASS(PwnCloudCacheHandler);
 } // end namespace
 

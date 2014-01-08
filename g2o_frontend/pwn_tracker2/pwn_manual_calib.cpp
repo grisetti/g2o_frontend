@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
   MARKUSED(t2q);
 
   tracker->init();
-  tracker->setScale(scale);
+  //tracker->setScale(scale);
   tracker->setEnabled(false);
  
   

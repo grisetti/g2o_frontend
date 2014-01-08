@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
   PwnTracker* tracker = new PwnTracker(matcher, cache, manager, conf);
   tracker->setTopic("sync");
 
-  PwnCloser* closer = new PwnCloser(tracker);
+  PwnCloser* closer = new PwnCloser(matcher, cache, manager, conf);
   DistancePoseAcceptanceCriterion* distanceCriterion = new DistancePoseAcceptanceCriterion(manager);
   distanceCriterion->setRotationalDistance(M_PI/4);
   distanceCriterion->setTranslationalDistance(1);
@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
   optimizer->setSelector(optSelector);
   closer->setSelector(optSelector);
   tracker->init();
-  tracker->setScale(scale);
+  //tracker->setScale(scale);
   
 
   std::list<Serializable*> closerOutput;

@@ -23,10 +23,13 @@ namespace pwn_tracker {
   class PwnCloser: public boss_map_building::MapCloser {
   public:
 
-    PwnCloser(PwnTracker* tracker=0, int id=0, boss::IdContext* context=0);
+    PwnCloser(PwnMatcherBase* matcher_ = 0,
+	      PwnCloudCache* cache_ = 0,
+	      MapManager* manager_ = 0,
+	      RobotConfiguration* configuration_=0,
+	      int id=0, boss::IdContext* context=0);
 
-    inline PwnCloudCache* cache() {return _cache;}
-
+    
     inline int frameMinNonZeroThreshold() const { return _frameMinNonZeroThreshold; }
     inline void  setFrameMinNonZeroThreshold( int t)  { _frameMinNonZeroThreshold = t; }
 
@@ -46,39 +49,24 @@ namespace pwn_tracker {
     virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
     //! boss deserialization
     virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
-    //! boss deserialization
-    virtual void deserializeComplete();
 
-    inline PwnTracker* tracker() const { return _tracker; }
-    inline void setTracker(PwnTracker* tracker_) {
-      _tracker = tracker_; 
-      _cache = _tracker->cache();
-      _matcher = _tracker->matcher();
-      _robotConfiguration = _tracker->robotConfiguration();
-    }
+    inline PwnCloudCache* cache() {return _cache;}
+    inline void setCache(PwnCloudCache* cache_) {_cache=cache_;}
 
-    inline void setRobotConfiguration(RobotConfiguration* conf) {_robotConfiguration = conf;} 
-    inline RobotConfiguration* robotConfiguration() const { return _robotConfiguration; }
+    inline PwnMatcherBase* matcher() { return _matcher; }
+    inline void setMatcher(PwnMatcherBase* matcher_) { _matcher=matcher_; }
 
-    void setImageSize(int imageRows_, int imageCols_);
-    inline int imageRows() const {return _imageRows;}
-    inline int imageCols() const {return _imageCols;}
-
-    int scale() const;
-    void setScale (int scale_);
-
+    
   protected:
     virtual void processPartition(std::list<MapNodeBinaryRelation*>& newRelations, std::set<MapNode*> & otherPartition, MapNode* current_);
     PwnCloserRelation* registerNodes(SyncSensorDataNode* keyNode, SyncSensorDataNode* otherNode, const Eigen::Isometry3d& initialGuess);
-
-
+						
+    
   protected:
     PwnCloudCache* _cache;
-    PwnTracker* _tracker;
+    //PwnTracker* _tracker;
     PwnMatcherBase* _matcher;
-    RobotConfiguration* _robotConfiguration;
-    int _imageRows, _imageCols, _imageSize;
-    int _scaledImageRows, _scaledImageCols, _scaledImageSize;
+    mutable int _scaledImageSize;
     int _frameMinNonZeroThreshold;
     int _frameMaxOutliersThreshold;
     int _frameMinInliersThreshold;

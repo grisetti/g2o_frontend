@@ -18,6 +18,21 @@ namespace boss_map_building {
     int consensusTimeChecked;
   };
   
+  class ClosureFoundMessage: public Serializable {
+  public:
+    virtual void serialize(ObjectData& data, IdContext& context);
+    virtual void deserialize(ObjectData& data, IdContext& context);
+    std::list<MapNodeBinaryRelation*> closureRelations;
+  };
+
+  class ClosureScannedMessage: public Serializable {
+  public:
+    virtual void serialize(ObjectData& data, IdContext& context);
+    virtual void deserialize(ObjectData& data, IdContext& context);
+    std::vector<std::set<MapNode*> > partitions;
+    int currentPartitionIndex;
+  };
+
   class MapCloser: public boss_map::StreamProcessor {
   public:
 
@@ -34,13 +49,20 @@ namespace boss_map_building {
     inline boss_map::PoseAcceptanceCriterion* criterion() {return _criterion;}
     inline void setCriterion(boss_map::PoseAcceptanceCriterion* criterion_) { 
       _criterion= criterion_;
+      if (_criterion)
+	_criterion->setManager(_manager);
     }
 
     inline boss_map::MapRelationSelector* selector() {return _selector;}
     inline void setSelector(boss_map::MapRelationSelector* selector_) { 
       _selector= selector_;
+      if (_selector)
+	_selector->setManager(_manager);
     }
-
+    
+    void serialize(boss::ObjectData& data, boss::IdContext& context);
+    void deserialize(boss::ObjectData& data, boss::IdContext& context);
+    
     std::set<MapNodeRelation*>& relations() {return _relations;}
     std::map<int, MapNode*>& keyNodes() {return _keyNodes;}
     std::list<MapNodeBinaryRelation*>& committedRelations() {return _committedRelations;}
@@ -78,9 +100,19 @@ namespace boss_map_building {
 
   class KeyNodeAcceptanceCriterion: public PoseAcceptanceCriterion{
   public:
-    KeyNodeAcceptanceCriterion(MapCloser* closer_, MapManager* manager_, PoseAcceptanceCriterion* otherCriterion=0);
+    KeyNodeAcceptanceCriterion(MapCloser* closer_=0, 
+			       MapManager* manager_=0, 
+			       PoseAcceptanceCriterion* otherCriterion=0,
+			       int id = -1, boss::IdContext* context = 0);
     void setReferencePose(const Eigen::Isometry3d& pose_);
     virtual bool accept(MapNode* n);
+
+    MapCloser* closer() {return _closer;}
+    void setCloser(MapCloser* closer_) {_closer = closer_;}
+
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
+
   protected:
     MapCloser* _closer;
     PoseAcceptanceCriterion* _otherCriterion;
@@ -89,8 +121,16 @@ namespace boss_map_building {
 
   class MapCloserActiveRelationSelector: public MapRelationSelector {
   public:
-    MapCloserActiveRelationSelector(MapCloser* closer, MapManager* manager);
+    MapCloserActiveRelationSelector(MapCloser* closer=0, 
+				    MapManager* manager=0, 
+				    int id = -1, 
+				    boss::IdContext* context = 0);
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
+
     virtual bool accept(MapNodeRelation* r);
+    MapCloser* closer() {return _closer;}
+    void setCloser(MapCloser* closer_) {_closer = closer_;}
   protected:
     MapCloser* _closer;
   };

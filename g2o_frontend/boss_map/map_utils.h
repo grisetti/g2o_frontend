@@ -2,15 +2,18 @@
 #define _BOSS_MAP_UTILS_H_
 
 #include "map_manager.h"
+#include "g2o_frontend/boss/identifiable.h"
 #include "g2o_frontend/basemath/bm_se3.h"
 
 namespace boss_map {
 
-  class NodeAcceptanceCriterion{
+  class NodeAcceptanceCriterion: public boss::Identifiable{
   public:
-    NodeAcceptanceCriterion(MapManager* manager_=0);
+    NodeAcceptanceCriterion(MapManager* manager_=0, int id = -1, boss::IdContext* context = 0);
     virtual bool accept(MapNode* n) = 0;
     virtual ~NodeAcceptanceCriterion();
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
     inline MapManager* manager() {return _manager;}
     inline void setManager(MapManager* manager_) {_manager = manager_;}
   protected:
@@ -19,7 +22,7 @@ namespace boss_map {
 
   class PoseAcceptanceCriterion: public NodeAcceptanceCriterion {
   public:
-    PoseAcceptanceCriterion(MapManager* manager_=0);
+    PoseAcceptanceCriterion(MapManager* manager_=0, int id = -1, boss::IdContext* context = 0);
     virtual void setReferencePose(const Eigen::Isometry3d& pose_) {_pose = pose_; _invPose=_pose.inverse();}
     inline const Eigen::Isometry3d referencePose() const { return _pose;}
   protected:
@@ -30,7 +33,9 @@ namespace boss_map {
   class DistancePoseAcceptanceCriterion: public PoseAcceptanceCriterion{
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    DistancePoseAcceptanceCriterion(MapManager* manager_=0);
+    DistancePoseAcceptanceCriterion(MapManager* manager_=0, int id = -1, boss::IdContext* context = 0);
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
     virtual bool accept(MapNode* n);
     inline double translationalDistance() const { return _translationalDistance;}
     inline void setTranslationalDistance(double td)  { _translationalDistance = td; _td2=td*td;}
@@ -44,7 +49,9 @@ namespace boss_map {
   class MahalanobisPoseAcceptanceCriterion: public PoseAcceptanceCriterion{
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    MahalanobisPoseAcceptanceCriterion(MapManager* manager_=0);
+    MahalanobisPoseAcceptanceCriterion(MapManager* manager_=0, int id = -1, boss::IdContext* context = 0);
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
     virtual bool accept(MapNode* n);
     inline void setDistance(double d) {_distance = d;}
     inline double distance() const {return _distance;}
@@ -56,11 +63,13 @@ namespace boss_map {
   };
 
 
-  class MapRelationSelector{
+  class MapRelationSelector: public boss::Identifiable{
   public:
-    MapRelationSelector(MapManager* manager_=0);
+    MapRelationSelector(MapManager* manager_=0, int id = -1, boss::IdContext* context = 0);
     virtual bool accept(MapNodeRelation* r) = 0;
     virtual ~MapRelationSelector();
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
     inline MapManager* manager() {return _manager;}
     inline void setManager(MapManager* manager_) {_manager = manager_;}
   protected:

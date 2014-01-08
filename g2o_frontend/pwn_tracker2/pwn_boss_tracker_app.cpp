@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
   PwnCloudCacheHandler* cacheHandler = new PwnCloudCacheHandler(manager, cache);
   PwnMatcherBase* matcher = new PwnMatcherBase(aligner, converter);
   PwnTracker* tracker = new PwnTracker(matcher, cache, manager, conf);
-  tracker->setScale(scale);
+  //tracker->setScale(scale);
   tracker->setTopic(topic);
 
   

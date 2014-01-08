@@ -44,13 +44,6 @@ namespace pwn_tracker{
     //! boss deserialization
     virtual void deserializeComplete();
 
-    int scale() const;
-    void setScale (int scale_);
-
-    void setImageSize(int imageRows_, int imageCols_);
-    inline int imageRows() const {return _imageRows;}
-    inline int imageCols() const {return _imageCols;}
-
     inline float newFrameCloudInliersFraction() const {return _newFrameCloudInliersFraction; }
     inline void  setNewFrameCloudInliersFraction(float v) { _newFrameCloudInliersFraction = v; }
 
@@ -94,13 +87,12 @@ namespace pwn_tracker{
     PwnCloudCache* _cache;
     PwnMatcherBase* _matcher;
     float _newFrameCloudInliersFraction;
-    int _imageRows, _imageCols, _imageSize;
-    int _scaledImageRows, _scaledImageCols, _scaledImageSize;
     int _minCloudInliers;
     int _frameMinNonZeroThreshold;
     int _frameMaxOutliersThreshold;
     int _frameMinInliersThreshold;
     bool _enabled;
-  };
+    mutable int _scaledImageSize;
+ };
 
 }

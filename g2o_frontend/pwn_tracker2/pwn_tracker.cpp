@@ -53,16 +53,8 @@ namespace pwn_tracker{
     _matcher = matcher_;
     _robotConfiguration = configuration_;
     DepthImageConverter* conv = (_matcher) ? _matcher->converter() : 0;
-    if (! _cache) {
-      _cache = new PwnCloudCache(conv,  0, "", 4, 10, 15);
-    }
     cerr << "setting topic" << endl;
     setTopic("/camera/depth_registered/image_rect_raw");
-    _imageRows = 480;
-    _imageCols = 640;
-    _imageSize = _imageRows * _imageCols;
-    cerr << "setting scale" << endl;
-    setScale(4);
     _newFrameCloudInliersFraction = 0.4;
     _minCloudInliers = 1000;
     _frameMinNonZeroThreshold = 3000;// was 3000
@@ -76,9 +68,9 @@ namespace pwn_tracker{
   void PwnTracker::serialize(boss::ObjectData& data, boss::IdContext& context){
     BaseTracker::serialize(data,context);
     data.setPointer("matcher", _matcher);
-    data.setInt("imageRows", _imageRows);
-    data.setInt("imageCols", _imageCols);
+    data.setPointer("cache", _cache);
     data.setInt("minCloudInliers", _minCloudInliers);
+    data.setFloat("newFrameCloudInliersFraction", _newFrameCloudInliersFraction);
     data.setInt("frameMinNonZeroThreshold", _frameMinNonZeroThreshold);
     data.setInt("frameMaxOutliersThreshold", _frameMaxOutliersThreshold);
     data.setInt("frameMinInliersThreshold", _frameMinInliersThreshold);
@@ -88,48 +80,33 @@ namespace pwn_tracker{
   
   void PwnTracker::deserialize(boss::ObjectData& data, boss::IdContext& context){
     BaseTracker::deserialize(data,context);
+    cerr << "deserializing" << endl;
     data.getReference("matcher").bind(_matcher);
-     _imageRows = data.getInt("imageRows");
-    _imageCols = data.getInt("imageCols");
+    data.getReference("cache").bind(_cache);
+    cerr << "matcher:" << _matcher << endl;
+    cerr << "matcherScale:" << _matcher->scale()<<  endl;
     _minCloudInliers=data.getInt("minCloudInliers");
+    _newFrameCloudInliersFraction = data.getFloat("newFrameCloudInliersFraction");
     _frameMinNonZeroThreshold = data.getInt("frameMinNonZeroThreshold");
     _frameMaxOutliersThreshold = data.getInt("frameMaxOutliersThreshold");
     _frameMinInliersThreshold = data.getInt("frameMinInliersThreshold");
     _topic = data.getString("topic");
+    cerr << "deserialized" << endl;
    }
 
 
   void PwnTracker::deserializeComplete(){
     BaseTracker::deserializeComplete();
-    _cache->setConverter(_matcher->converter());
-    setImageSize(_imageRows, _imageCols);
+    //_cache->setConverter(_matcher->converter());
+    //setImageSize(_imageRows, _imageCols);
     setTopic(_topic);
-    setScale(_matcher->scale());
+    if (_cache)
+      _cache->setScale(_matcher->scale());
+    //setScale(_matcher->scale());
   }
 
   PwnTracker::~PwnTracker(){}
 
-  
-  int PwnTracker::scale() const { return _matcher->scale(); }
-
-  void PwnTracker::setScale (int scale_) {
-    if (_matcher)
-      _matcher->setScale(scale_);
-    if (_cache)
-      _cache->setScale(scale_);
-    _scaledImageCols = _imageCols/scale_;
-    _scaledImageRows = _imageRows/scale_;
-    _scaledImageSize = _scaledImageRows * _scaledImageCols;
-  }
-
-  void PwnTracker::setImageSize(int imageRows_, int imageCols_){
-    _imageRows = imageRows_;
-    _imageCols = imageCols_;
-    int s = scale();
-    _scaledImageCols = _imageCols/s;
-    _scaledImageRows = _imageRows/s;
-    _scaledImageSize = _scaledImageRows * _scaledImageCols;
-  }
 
   bool PwnTracker::shouldChangeKeyNode(MapNodeBinaryRelation* r_){
     PwnTrackerRelation* r=dynamic_cast<PwnTrackerRelation*>(r_);
@@ -149,7 +126,7 @@ namespace pwn_tracker{
     CloudWithImageSize* keyCloud = _keyCloudHandler.get();
     PwnCloudCache::HandleType _otherCloudHandler = _cache->get(otherNode); 
     CloudWithImageSize* otherCloud = _otherCloudHandler.get();
-
+    _scaledImageSize = otherCloud->imageRows*otherCloud->imageCols/(_matcher->scale()*_matcher->scale());
     Eigen::Isometry3d keyOffset_, otherOffset_;
     Eigen::Matrix3d   otherCameraMatrix_;
     {

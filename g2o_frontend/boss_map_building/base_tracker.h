@@ -33,8 +33,6 @@ namespace boss_map_building {
     BaseTracker(MapManager* manager_=0, RobotConfiguration* configuration_=0, int id=-1, boss::IdContext* context=0);
     //! initializes the tracker
     virtual void init();
-    //! returns the robot configuration
-    inline RobotConfiguration* robotConfiguration() {return _robotConfiguration;}
     //! returns the map manager
     inline MapManager* manager() {return _manager;}
     //! returns the map manager
@@ -63,14 +61,15 @@ namespace boss_map_building {
     virtual MapNodeBinaryRelation* registerNodes(MapNode* keyNode, 
 						 MapNode* otherNode, 
 						 const Eigen::Isometry3d& guess = Eigen::Isometry3d::Identity());
+
+    virtual void serialize(ObjectData& data, IdContext& context);
+    virtual void deserialize(ObjectData& data, IdContext& context);
   
     virtual ~BaseTracker();
   protected:
     void doStuff();
     //! the manager
     MapManager* _manager; 
-    //! the robot configuration
-    RobotConfiguration* _robotConfiguration;
     //! previousNode: the last node processed
     //! keyNode: the current keyframe
     //! currentNode: the current node in the pool
