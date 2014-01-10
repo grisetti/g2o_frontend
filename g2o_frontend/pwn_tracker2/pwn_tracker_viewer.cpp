@@ -38,22 +38,25 @@ namespace pwn_tracker  {
     drawList = 0;
     if (cloud && (drawList = glGenLists(1)) ) {
       glNewList(drawList,GL_COMPILE);
-      //g2o::opengl::drawPyramid(0.2, 0.2);
-      int k=0;
       glBegin(GL_POINTS);
       for (size_t i=0; i<cloud->points().size(); i++){
-	if (cloud->normals()[i].squaredNorm()>0.1f) {
-	  glNormal3f(cloud->normals()[i].x(),cloud->normals()[i].y(),cloud->normals()[i].z());
-	  glVertex3f(cloud->points()[i].x(),cloud->points()[i].y(),cloud->points()[i].z());
-	  k++;
+	pwn::Point& point = cloud->points()[i];
+	const pwn::Normal& normal = cloud->normals()[i];
+	if (normal.squaredNorm()>0.1f) {
+	  /*
+	  if (normal.z()>0.8) {
+	    glColor3f(.5,.5,.5);
+	  } else {
+	    glColor3f(1,0,0);
+	  }
+	  */
+	  glNormal3f(normal.x(), normal.y(),normal.z());
+	  glVertex3f(point.x(), point.y(), point.z());
 	}
       }
       glEnd();
       glEndList();
-      //cerr << "CLOUD: " << cloud << " POINTS: " << k << " DRAWLIST: " << drawList << endl;
-    } else {
-      //cerr << "CLOUD: " << cloud << " DRAWLIST: " << drawList << endl;
-    }
+    } 
   }
 
   void VisCloud::draw() {
