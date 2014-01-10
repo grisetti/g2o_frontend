@@ -24,37 +24,70 @@ namespace pwn_tracker {
   }
 
 
-  PwnCloser::PwnCloser(PwnTracker* tracker_) : MapCloser(tracker_->manager()){
-    _tracker=tracker_;
-    cerr << "tracker: " << _tracker << endl;
-    _cache = _tracker->cache();
-    cerr << "cache: " << _cache << endl;
-    _matcher = _tracker->matcher();
-    cerr << "topic: " << _cache->topic() << endl;
-    _matcher = _tracker->matcher();
-    cerr << "matcher: " << _matcher << endl;
-    _robotConfiguration = _tracker->robotConfiguration();
-    cerr << "conf: " << _robotConfiguration << endl;
+  PwnCloser::PwnCloser(PwnMatcherBase* matcher_,
+	      PwnCloudCache* cache_,
+	      MapManager* manager_,
+	      RobotConfiguration* configuration_,
+	      int id, boss::IdContext* context) : 
+    MapCloser(0,id, context){
     _frameMinNonZeroThreshold = 3000;// was 3000
     _frameMaxOutliersThreshold = 100;
     _frameMinInliersThreshold = 1000; // was 1000
     _debug = false;
     _selector = 0;
-    cerr << "constructed" << endl;
+    _enabled = true;
+    _cache = cache_;
+    setMatcher(matcher_);
+    setManager(manager_);
+    setRobotConfiguration(configuration_);
+    setCache(cache_);
   }
 
+  void PwnCloser::serialize(boss::ObjectData& data, boss::IdContext& context){
+    MapCloser::serialize(data,context);
+    data.setPointer("matcher", _matcher);
+    data.setPointer("cache", _cache);
+    data.setInt("frameMinNonZeroThreshold", _frameMinNonZeroThreshold);
+    data.setInt("frameMaxOutliersThreshold", _frameMaxOutliersThreshold);
+    data.setInt("frameMinInliersThreshold", _frameMinInliersThreshold);
+  }
+    
+  
+  void PwnCloser::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    MapCloser::deserialize(data,context);
+    data.getReference("matcher").bind(_matcher);
+    data.getReference("cache").bind(_cache);
+    _frameMinNonZeroThreshold = data.getInt("frameMinNonZeroThreshold");
+    _frameMaxOutliersThreshold = data.getInt("frameMaxOutliersThreshold");
+    _frameMinInliersThreshold = data.getInt("frameMinInliersThreshold");
+   }
+
+
+  /*
+  void PwnCloser::deserializeComplete(){
+    boss::Identifiable::deserializeComplete();
+    if (_tracker)
+      setTracker(_tracker);
+ }
+  */
+  void PwnCloser::process(Serializable* s) {
+    if (_enabled)
+      MapCloser::process(s);
+    else
+      put(s);
+  }
 
   void PwnCloser::processPartition(std::list<MapNodeBinaryRelation*>& newRelations, 
 				   std::set<MapNode*>& otherPartition, 
 				   MapNode* current_){
-    SensingFrameNode* current = dynamic_cast<SensingFrameNode*>(current_);
+    SyncSensorDataNode* current = dynamic_cast<SyncSensorDataNode*>(current_);
     if (otherPartition.count(current)>0)
       return;
     Eigen::Isometry3d iT=current->transform().inverse();
     PwnCloudCache::HandleType f_handle=_cache->get(current);
     //cerr << "FRAME: " << current->seq << endl; 
     for (std::set <MapNode*>::iterator it=otherPartition.begin(); it!=otherPartition.end(); it++){
-      SensingFrameNode* other = dynamic_cast<SensingFrameNode*>(*it);
+      SyncSensorDataNode* other = dynamic_cast<SyncSensorDataNode*>(*it);
       if (other==current)
 	continue;
 
@@ -70,35 +103,26 @@ namespace pwn_tracker {
     cerr << endl;
   }
 
-  PwnCloserRelation* PwnCloser::registerNodes(SensingFrameNode* keyNode, SensingFrameNode* otherNode, const Eigen::Isometry3d& initialGuess_) {
+  PwnCloserRelation* PwnCloser::registerNodes(SyncSensorDataNode* keyNode, SyncSensorDataNode* otherNode, const Eigen::Isometry3d& initialGuess_) {
 
     // fetch the clouds from the cache
     PwnCloudCache::HandleType _keyCloudHandler = _cache->get(keyNode);
-    pwn::Cloud* keyCloud = _keyCloudHandler.get();
+    CloudWithImageSize* keyCloud = _keyCloudHandler.get();
     PwnCloudCache::HandleType _otherCloudHandler = _cache->get(otherNode); 
-    pwn::Cloud* otherCloud = _otherCloudHandler.get();
-
+    CloudWithImageSize* otherCloud = _otherCloudHandler.get();
+    _scaledImageSize = otherCloud->imageRows*otherCloud->imageCols/(_matcher->scale()*_matcher->scale());
+   
     Eigen::Isometry3d keyOffset_, otherOffset_;
     Eigen::Matrix3d   otherCameraMatrix_;
     {
-      BaseSensorData* sdata = keyNode->sensorData(_cache->topic());
-      if (! sdata) {
-	std::cerr << "topic :[" << _cache->topic() << "]" << std::endl;
-	throw std::runtime_error("unable to find the required topic for FROM node");
-      }
-      PinholeImageData* imdata = dynamic_cast<PinholeImageData*>(sdata);
+      PinholeImageData* imdata = keyNode->sensorData()->sensorData<PinholeImageData>(_cache->topic());
       if (! imdata) {
 	throw std::runtime_error("the required topic does not match the requested type");
       }
       keyOffset_ = _robotConfiguration->sensorOffset(imdata->sensor());
     }
     {
-      BaseSensorData* sdata = otherNode->sensorData(_cache->topic());
-      if (! sdata) {
-	std::cerr << "topic :[" << _cache->topic() << "]" << std::endl;
-	throw std::runtime_error("unable to find the required topic for TO node");
-      }
-      PinholeImageData* imdata = dynamic_cast<PinholeImageData*>(sdata);
+      PinholeImageData* imdata = otherNode->sensorData()->sensorData<PinholeImageData>(_cache->topic());
       if (! imdata) {
 	throw std::runtime_error("the required topic does not match the requested type");
       }
@@ -118,13 +142,17 @@ namespace pwn_tracker {
     _matcher->matchClouds(result, 
 			  keyCloud, otherCloud, 
 			  keyOffset, otherOffset,
-			  otherCameraMatrix, _tracker->imageRows(), _tracker->imageCols(), 
+			  otherCameraMatrix, otherCloud->imageRows, otherCloud->imageCols, 
 			  initialGuess_);
 
     if(result.image_nonZeros < _frameMinNonZeroThreshold ||
        result.image_outliers > _frameMaxOutliersThreshold || 
-       result.image_inliers  < _frameMinInliersThreshold)
+       result.image_inliers  < _frameMinInliersThreshold) {
+      //cerr << "nz: " << result.image_nonZeros << endl;
+      //cerr << "out: " << result.image_outliers << endl;
+      //cerr << "inl: " << result.image_inliers << endl;
       return 0;
+    }
 
     PwnCloserRelation* r=new PwnCloserRelation(_manager);
     r->nodes()[0]=keyNode;
@@ -135,6 +163,7 @@ namespace pwn_tracker {
 
 
   BOSS_REGISTER_CLASS(PwnCloserRelation);
+  BOSS_REGISTER_CLASS(PwnCloser);
 }
 
 

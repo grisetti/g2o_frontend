@@ -4,6 +4,8 @@
 #include <QGLViewer/qglviewer.h>
 #include "GL/gl.h"
 #include "g2o_frontend/boss_map/map_utils.h"
+#include "g2o_frontend/boss_map/stream_processor.h"
+
 namespace pwn_tracker {
 
   using namespace pwn;
@@ -44,6 +46,22 @@ namespace pwn_tracker {
     virtual void init();
     virtual void draw();
     VisState* visState;
+  };
+
+  class PwnSLAMVisualizerProcessor: public StreamProcessor{
+  public:
+    PwnSLAMVisualizerProcessor(int id = -1, boss::IdContext* context = 0);
+    void init();
+    virtual void process(Serializable* s);
+    virtual void serialize(ObjectData& data, IdContext& context);
+    virtual void deserialize(ObjectData& data, IdContext& context);
+    virtual void deserializeComplete();
+
+    MapManager* _manager;
+    VisState* _visState;
+    PwnCloudCache* _cache;
+    MapRelationSelector* _selector;
+    volatile bool _needRedraw;
   };
 
 

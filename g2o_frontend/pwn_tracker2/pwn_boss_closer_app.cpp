@@ -10,7 +10,6 @@
 #include "g2o_frontend/boss_map/sensor_data_synchronizer.h"
 #include "g2o_frontend/boss_map/robot_configuration.h"
 #include "g2o_frontend/boss_map/map_manager.h"
-#include "g2o_frontend/boss_map/sensing_frame_node.h"
 #include "g2o_frontend/boss_map_building/map_g2o_reflector.h"
 #include "pwn_tracker.h"
 #include "pwn_cloud_cache.h"
@@ -30,10 +29,6 @@ using namespace std;
 int main(int argc, char** argv) {
     
   
-
-  // create a synchronizer
-  Synchronizer sync;
-
   std::string fileconf = argv[1];
   std::string filein = argv[2];
   std::string fileout = argv[3];
@@ -51,7 +46,6 @@ int main(int argc, char** argv) {
   
   std::string topic = "/camera/depth_registered/image_rect_raw";
   int scale = 4;
-  sync.addSyncTopic(topic);
 
   Serializer ser;
   ser.setFilePath(fileout.c_str());
@@ -89,9 +83,9 @@ int main(int argc, char** argv) {
   
   PwnMatcherBase* matcher = new PwnMatcherBase(aligner, converter);
   PwnTracker* tracker = new PwnTracker(matcher, cache, manager, conf);
-  tracker->setTopic(topic);
+  tracker->setTopic("sync");
 
-  PwnCloser* closer = new PwnCloser(tracker);
+  PwnCloser* closer = new PwnCloser(matcher, cache, manager, conf);
   DistancePoseAcceptanceCriterion* distanceCriterion = new DistancePoseAcceptanceCriterion(manager);
   distanceCriterion->setRotationalDistance(M_PI/4);
   distanceCriterion->setTranslationalDistance(1);
@@ -102,7 +96,7 @@ int main(int argc, char** argv) {
   optimizer->setSelector(optSelector);
   closer->setSelector(optSelector);
   tracker->init();
-  tracker->setScale(scale);
+  //tracker->setScale(scale);
   
 
   std::list<Serializable*> closerOutput;
@@ -128,7 +122,7 @@ int main(int argc, char** argv) {
       _lastNodeAdded = km->keyNode;
     }
     if (hasToProcess) {
-      closer->process();
+      closer->MapCloser::process();
       closer->flush();
       hasToProcess = false;
     }

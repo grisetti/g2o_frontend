@@ -1,9 +1,9 @@
 #include "pwn_tracker.h"
-
+#include "g2o_frontend/boss_map/sensor_data_node.h"
 namespace pwn_tracker{
   using namespace boss_map_building;
   using namespace boss_map;
-
+  
   PwnTrackerRelation::PwnTrackerRelation(MapManager* manager, int id, IdContext* context) :
     MapNodeBinaryRelation(manager, id, context){
     cloud_inliers = 0;
@@ -11,7 +11,7 @@ namespace pwn_tracker{
     image_outliers = 0;
     image_inliers = 0;
     image_reprojectionDistance = 0;
-}
+  }
   
   void PwnTrackerRelation::serialize(ObjectData& data, IdContext& context){
     MapNodeBinaryRelation::serialize(data,context);
@@ -46,44 +46,67 @@ namespace pwn_tracker{
   PwnTracker::PwnTracker(PwnMatcherBase* matcher_,
 			 PwnCloudCache* cache_,
 			 MapManager* manager_,
-			 RobotConfiguration* configuration_):
-    BaseTracker(manager_, configuration_){
+			 RobotConfiguration* configuration_,
+			 int id, boss::IdContext* context):
+    BaseTracker(manager_, configuration_, id, context){
     _cache = cache_;
     _matcher = matcher_;
+    _robotConfiguration = configuration_;
+    DepthImageConverter* conv = (_matcher) ? _matcher->converter() : 0;
+    cerr << "setting topic" << endl;
     setTopic("/camera/depth_registered/image_rect_raw");
-    _imageRows = 480;
-    _imageCols = 640;
-    _imageSize = _imageRows * _imageCols;
-    setScale(4);
     _newFrameCloudInliersFraction = 0.4;
     _minCloudInliers = 1000;
     _frameMinNonZeroThreshold = 3000;// was 3000
     _frameMaxOutliersThreshold = 2000;
     _frameMinInliersThreshold = 500; // was 1000
+    _enabled = true;
+    cerr << "tracker constructed" << endl;
+  }
 
+
+  void PwnTracker::serialize(boss::ObjectData& data, boss::IdContext& context){
+    BaseTracker::serialize(data,context);
+    data.setPointer("matcher", _matcher);
+    data.setPointer("cache", _cache);
+    data.setInt("minCloudInliers", _minCloudInliers);
+    data.setFloat("newFrameCloudInliersFraction", _newFrameCloudInliersFraction);
+    data.setInt("frameMinNonZeroThreshold", _frameMinNonZeroThreshold);
+    data.setInt("frameMaxOutliersThreshold", _frameMaxOutliersThreshold);
+    data.setInt("frameMinInliersThreshold", _frameMinInliersThreshold);
+    data.setString("topic", _topic);
+  }
+    
+  
+  void PwnTracker::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    BaseTracker::deserialize(data,context);
+    cerr << "deserializing" << endl;
+    data.getReference("matcher").bind(_matcher);
+    data.getReference("cache").bind(_cache);
+    cerr << "matcher:" << _matcher << endl;
+    cerr << "matcherScale:" << _matcher->scale()<<  endl;
+    _minCloudInliers=data.getInt("minCloudInliers");
+    _newFrameCloudInliersFraction = data.getFloat("newFrameCloudInliersFraction");
+    _frameMinNonZeroThreshold = data.getInt("frameMinNonZeroThreshold");
+    _frameMaxOutliersThreshold = data.getInt("frameMaxOutliersThreshold");
+    _frameMinInliersThreshold = data.getInt("frameMinInliersThreshold");
+    _topic = data.getString("topic");
+    cerr << "deserialized" << endl;
+   }
+
+
+  void PwnTracker::deserializeComplete(){
+    BaseTracker::deserializeComplete();
+    //_cache->setConverter(_matcher->converter());
+    //setImageSize(_imageRows, _imageCols);
+    setTopic(_topic);
+    if (_cache)
+      _cache->setScale(_matcher->scale());
+    //setScale(_matcher->scale());
   }
 
   PwnTracker::~PwnTracker(){}
 
-  
-  int PwnTracker::scale() const { return _matcher->scale(); }
-
-  void PwnTracker::setScale (int scale_) {
-    _matcher->setScale(scale_);
-    _cache->setScale(scale_);
-    _scaledImageCols = _imageCols/scale_;
-    _scaledImageRows = _imageRows/scale_;
-    _scaledImageSize = _scaledImageRows * _scaledImageCols;
-  }
-
-  void PwnTracker::setImageSize(int imageRows_, int imageCols_){
-    _imageRows = imageRows_;
-    _imageCols = imageCols_;
-    int s = scale();
-    _scaledImageCols = _imageCols/s;
-    _scaledImageRows = _imageRows/s;
-    _scaledImageSize = _scaledImageRows * _scaledImageCols;
-  }
 
   bool PwnTracker::shouldChangeKeyNode(MapNodeBinaryRelation* r_){
     PwnTrackerRelation* r=dynamic_cast<PwnTrackerRelation*>(r_);
@@ -93,36 +116,28 @@ namespace pwn_tracker{
   }
 
   MapNodeBinaryRelation* PwnTracker::registerNodes(MapNode* keyNode_, MapNode* otherNode_, const Eigen::Isometry3d&  initialGuess_) {
-    SensingFrameNode * keyNode = dynamic_cast<SensingFrameNode*>(keyNode_);
-    SensingFrameNode * otherNode = dynamic_cast<SensingFrameNode*>(otherNode_);
+    SyncSensorDataNode * keyNode = dynamic_cast<SyncSensorDataNode*>(keyNode_);
+    SyncSensorDataNode * otherNode = dynamic_cast<SyncSensorDataNode*>(otherNode_);
     if (! (keyNode && otherNode))
       return 0;
 
     // fetch the clouds from the cache
     PwnCloudCache::HandleType _keyCloudHandler = _cache->get(keyNode);
-    pwn::Cloud* keyCloud = _keyCloudHandler.get();
+    CloudWithImageSize* keyCloud = _keyCloudHandler.get();
     PwnCloudCache::HandleType _otherCloudHandler = _cache->get(otherNode); 
-    pwn::Cloud* otherCloud = _otherCloudHandler.get();
-
+    CloudWithImageSize* otherCloud = _otherCloudHandler.get();
+    _scaledImageSize = otherCloud->imageRows*otherCloud->imageCols/(_matcher->scale()*_matcher->scale());
     Eigen::Isometry3d keyOffset_, otherOffset_;
     Eigen::Matrix3d   otherCameraMatrix_;
     {
-      BaseSensorData* sdata = keyNode->sensorData(_topic);
-      if (! sdata) {
-	throw std::runtime_error("unable to find the required topic for KEY node");
-      }
-      PinholeImageData* imdata = dynamic_cast<PinholeImageData*>(sdata);
+      PinholeImageData* imdata = keyNode->sensorData()->sensorData<PinholeImageData>(_topic);
       if (! imdata) {
 	throw std::runtime_error("the required topic does not match the requested type");
       }
       keyOffset_ = _robotConfiguration->sensorOffset(imdata->sensor());
     }
     {
-      BaseSensorData* sdata = otherNode->sensorData(_topic);
-      if (! sdata) {
-	throw std::runtime_error("unable to find the required topic for OTHER node");
-      }
-      PinholeImageData* imdata = dynamic_cast<PinholeImageData*>(sdata);
+      PinholeImageData* imdata = otherNode->sensorData()->sensorData<PinholeImageData>(_topic);
       if (! imdata) {
 	throw std::runtime_error("the required topic does not match the requested type");
       }
@@ -138,11 +153,14 @@ namespace pwn_tracker{
     convertScalar(otherCameraMatrix, otherCameraMatrix_);
     otherCameraMatrix(2,2) = 1;
 
+    if (! _enabled)
+      return 0;
+
     PwnMatcherBase::MatcherResult result;
     _matcher->matchClouds(result, 
 			  keyCloud, otherCloud, 
 			  keyOffset, otherOffset,
-			  otherCameraMatrix, _imageRows, _imageCols, 
+			  otherCameraMatrix, otherCloud->imageRows, otherCloud->imageCols, 
 			  initialGuess_);
     //cerr << " key:" << keyNode->seq() << " other: " << otherNode->seq();
     //cerr << " cloud inliers: " << result.cloud_inliers;
@@ -150,6 +168,7 @@ namespace pwn_tracker{
     //cerr << " guess: " << t2v(initialGuess_).transpose();
 
     //cerr << endl;
+
 
 
     if(result.cloud_inliers < _minCloudInliers ||
@@ -166,5 +185,6 @@ namespace pwn_tracker{
   }
   
   BOSS_REGISTER_CLASS(PwnTrackerRelation);
+  BOSS_REGISTER_CLASS(PwnTracker);
 
 }

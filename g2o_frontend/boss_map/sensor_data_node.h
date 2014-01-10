@@ -62,15 +62,21 @@ namespace boss_map {
   class SensorDataNodeMaker: public StreamProcessor {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    SensorDataNodeMaker(MapManager* manager_, RobotConfiguration* config_);
+    SensorDataNodeMaker(MapManager* manager_=0, RobotConfiguration* config_=0);
+    inline void setManager(MapManager* manager_) {_mapManager = manager_;}
+    inline MapManager* manager() { return _mapManager; }
     virtual void process(Serializable* s);
     virtual BaseSensorDataNode* makeNode(MapManager* manager, BaseSensorData* data);
     const std::string topic() { return _topic; }
     void setTopic(const std::string& topic_) { _topic = topic_; }
+    //! boss serialization
+    virtual void serialize(ObjectData& data, IdContext& context);
+    //! boss deserialization
+    virtual void deserialize(ObjectData& data, IdContext& context);
+
   protected:
     std::string _topic;
     MapManager* _mapManager;
-    RobotConfiguration* _config;
     BaseSensorDataNode* _previousNode;
     Eigen::Isometry3d _previousNodeTransform;
     int _seq;
@@ -80,7 +86,7 @@ namespace boss_map {
   class SyncSensorDataNode: public SensorDataNode<SynchronizedSensorData> {
   public:
     SyncSensorDataNode(MapManager* manager=0, SynchronizedSensorData* data=0, int id=-1, IdContext* context = 0):
-      SensorDataNode<SynchronizedSensorData>(manager, data, id, context) {}
+      SensorDataNode<SynchronizedSensorData>(manager, data, id, context) { _imu = 0; }
     //! boss serialization
     virtual void serialize(ObjectData& data, IdContext& context);
     //! boss deserialization
@@ -98,7 +104,7 @@ namespace boss_map {
   class SyncSensorDataNodeMaker: public SensorDataNodeMaker {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    SyncSensorDataNodeMaker(MapManager* manager_, RobotConfiguration* config_);
+    SyncSensorDataNodeMaker(MapManager* manager_=0, RobotConfiguration* config_=0);
     virtual void process(Serializable* s);
     virtual BaseSensorDataNode* makeNode(MapManager* manager, BaseSensorData* data);
   };

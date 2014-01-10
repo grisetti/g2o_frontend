@@ -24,25 +24,6 @@ TARGET_LINK_LIBRARIES(pwn_tracker2_library
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
   )
 
-ADD_executable(boss_pwn_tracker_test boss_pwn_tracker_test.cpp)
-
-TARGET_LINK_LIBRARIES(boss_pwn_tracker_test 
-  pwn_tracker2_library
-  pwn_boss
-  pwn_core
-  boss_map_building 
-  boss_map 
-  boss
-  ${G2O_OPENGL_HELPER_LIBRARY}
-  ${G2O_SOLVER_CSPARSE_EXTENSION}
-  ${G2O_TYPES_SLAM3D} 
-  ${G2O_CORE_LIBRARY} 
-  ${G2O_STUFF_LIBRARY} 
-  ${CSPARSE_LIBRARY}
-  ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
-  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
-  )
-
 ADD_executable(pwn_boss_tracker_app pwn_boss_tracker_app.cpp)
 
 TARGET_LINK_LIBRARIES(pwn_boss_tracker_app 
@@ -60,7 +41,7 @@ TARGET_LINK_LIBRARIES(pwn_boss_tracker_app
   ${CSPARSE_LIBRARY}
   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
-)
+  )
 
 ADD_executable(pwn_boss_closer_app pwn_boss_closer_app.cpp)
 
@@ -81,28 +62,9 @@ TARGET_LINK_LIBRARIES(pwn_boss_closer_app
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
 )
 
-ADD_executable(pwn_slam pwn_slam.cpp)
+ADD_executable(pwn_slam_app pwn_slam_app.cpp)
 
-TARGET_LINK_LIBRARIES(pwn_slam 
-  pwn_tracker2_library
-  pwn_boss
-  pwn_core
-  boss_map_building 
-  boss_map 
-  boss
-  ${G2O_OPENGL_HELPER_LIBRARY}
-  ${G2O_SOLVER_CSPARSE_EXTENSION}
-  ${G2O_TYPES_SLAM3D} 
-  ${G2O_CORE_LIBRARY} 
-  ${G2O_STUFF_LIBRARY} 
-  ${CSPARSE_LIBRARY}
-  ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
-  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
-)
-
-ADD_executable(pwn_slam2 pwn_slam2.cpp)
-
-TARGET_LINK_LIBRARIES(pwn_slam2 
+TARGET_LINK_LIBRARIES(pwn_slam_app
   pwn_tracker2_library
   pwn_boss
   pwn_core
@@ -122,6 +84,26 @@ TARGET_LINK_LIBRARIES(pwn_slam2
 ADD_executable(pwn_slam_map_viewer pwn_slam_map_viewer.cpp)
 
 TARGET_LINK_LIBRARIES(pwn_slam_map_viewer 
+  pwn_tracker2_library
+  pwn_boss
+  pwn_core
+  boss_map_building 
+  boss_map 
+  boss
+  ${G2O_OPENGL_HELPER_LIBRARY}
+  ${G2O_SOLVER_CSPARSE_EXTENSION}
+  ${G2O_TYPES_SLAM3D} 
+  ${G2O_CORE_LIBRARY} 
+  ${G2O_STUFF_LIBRARY} 
+  ${CSPARSE_LIBRARY}
+  ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
+  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
+)
+
+
+ADD_executable(pwn_manual_calib pwn_manual_calib.cpp)
+
+TARGET_LINK_LIBRARIES(pwn_manual_calib 
   pwn_tracker2_library
   pwn_boss
   pwn_core

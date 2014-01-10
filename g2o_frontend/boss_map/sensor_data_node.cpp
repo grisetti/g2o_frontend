@@ -37,7 +37,7 @@ namespace boss_map {
 
   SensorDataNodeMaker::SensorDataNodeMaker(MapManager* manager_, RobotConfiguration* config_){
     _mapManager = manager_;
-    _config = config_;
+    setRobotConfiguration(config_);
     _previousNode = 0;
     _seq = 0;
     _topic = "";
@@ -70,12 +70,25 @@ namespace boss_map {
 	  currentNode->setOdometry(odom);
 	  currentNode->setPreviousNode(_previousNode);
       }
-      _previousNode = currentNode;
-      _previousNodeTransform = currentNodeTransform;
       put(currentNode);
       if (odom)
 	put(odom);
+      _previousNode = currentNode;
+      _previousNodeTransform = currentNodeTransform;
     }
+  }
+
+
+  void SensorDataNodeMaker::serialize(ObjectData& data, IdContext& context) {
+    StreamProcessor::serialize(data,context);
+    data.setPointer("manager",_mapManager);
+    data.setString("topic", _topic);
+  }
+  
+  void SensorDataNodeMaker::deserialize(ObjectData& data, IdContext& context) { 
+    StreamProcessor::deserialize(data,context);
+    data.getReference("manager").bind(_mapManager);
+    _topic = data.getString("topic");
   }
 
 
@@ -99,6 +112,8 @@ namespace boss_map {
     BaseSensorData* data = dynamic_cast<BaseSensorData*>(s);
     if (data && data->topic() == _topic) {
       SyncSensorDataNode* currentNode = (SyncSensorDataNode*) makeNode(_mapManager, data);
+      currentNode->setSeq(_seq);
+      _seq++;
       Eigen::Isometry3d currentNodeTransform = data->robotReferenceFrame()->transform();
       currentNode->setTransform(currentNodeTransform);
       _mapManager->addNode(currentNode);
@@ -110,14 +125,12 @@ namespace boss_map {
 	  odom->setTransform(_previousNodeTransform.inverse()*currentNodeTransform);	
 	  Eigen::Matrix<double, 6, 6> info;
 	  info.setIdentity();
-	  info = info * 100;
+	  info = info * 10;
 	  odom->setInformationMatrix(info);
 	  _mapManager->addRelation(odom);
 	  currentNode->setOdometry(odom);
 	  currentNode->setPreviousNode(_previousNode);
       }
-      _previousNode = currentNode;
-      _previousNodeTransform = currentNodeTransform;
       put(currentNode);
       if (odom)
 	put(odom);
@@ -125,6 +138,8 @@ namespace boss_map {
 	_mapManager->addRelation(currentNode->imu());
 	put(currentNode->imu());
       }
+      _previousNode = currentNode;
+      _previousNodeTransform = currentNodeTransform;
     }
   }
 
@@ -138,6 +153,14 @@ namespace boss_map {
       if (imu){
 	MapNodeUnaryRelation* imuRel = new MapNodeUnaryRelation(manager);
 	imuRel->nodes()[0] = snode;
+	Eigen::Isometry3d t;
+	t.setIdentity();
+	t.linear() = imu->orientation().toRotationMatrix();
+	Eigen::Matrix<double, 6, 6> info;
+	info.setZero();
+	info.block<3,3>(3,3) = imu->orientationCovariance().inverse();
+	imuRel->setTransform(t);
+	imuRel->setInformationMatrix(info);
 	snode->setImu(imuRel);
 	break;
       }
@@ -146,5 +169,8 @@ namespace boss_map {
   }
   
   BOSS_REGISTER_CLASS(BaseSensorDataNode);
+  BOSS_REGISTER_CLASS(SensorDataNodeMaker);
   BOSS_REGISTER_CLASS(SyncSensorDataNode);
+  BOSS_REGISTER_CLASS(SyncSensorDataNodeMaker);
+
 }

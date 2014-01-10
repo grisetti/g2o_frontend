@@ -6,10 +6,13 @@
 namespace boss_map {
   using namespace boss;
   
-  class MapManagerActionHandler{
+  class MapManagerActionHandler: public boss::Identifiable{
   public:
-    MapManagerActionHandler(MapManager* _manager);
+    MapManagerActionHandler(MapManager* _manager=0, int id=-1, IdContext* context = 0);
     virtual ~MapManagerActionHandler();
+    virtual void serialize(ObjectData& data, IdContext& context);
+    virtual void deserialize(ObjectData& data, IdContext& context);
+    void setManager(MapManager* manager);
     inline MapManager* mapManager() {return _manager;}
     virtual void nodeAdded(MapNode* n)=0;
     virtual void nodeRemoved(MapNode* n)=0;

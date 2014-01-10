@@ -6,7 +6,8 @@
 #include "g2o_frontend/boss_map/robot_configuration.h"
 #include "g2o_frontend/pwn_core/pinholepointprojector.h"
 #include "g2o_frontend/pwn_core/depthimageconverter.h"
-#include "g2o_frontend/boss_map/sensing_frame_node.h"
+#include "g2o_frontend/pwn_boss/depthimageconverter.h"
+#include "g2o_frontend/boss_map/sensor_data_node.h"
 #include "g2o_frontend/boss_map_building/cache.h"
 
 namespace pwn_tracker {
@@ -16,20 +17,25 @@ namespace pwn_tracker {
 
   class PwnCloudCache;
 
-  class PwnCloudCacheEntry: public CacheEntry<SensingFrameNode, pwn::Cloud>{
+  struct CloudWithImageSize: public pwn::Cloud{
+    int imageRows, imageCols;
+  };
+
+  class PwnCloudCacheEntry: public CacheEntry<SyncSensorDataNode, CloudWithImageSize>{
   public:
-    PwnCloudCacheEntry(PwnCloudCache* cache, SensingFrameNode* k, pwn::Cloud* d=0);
+    PwnCloudCacheEntry(PwnCloudCache* cache, SyncSensorDataNode* k, CloudWithImageSize* d=0);
   protected:
     virtual DataType* fetch(KeyType* k);
     PwnCloudCache* _pwnCache;
   };
 
-  class PwnCloudCache: public cache_ns::Cache<PwnCloudCacheEntry>{
+  class PwnCloudCache: public cache_ns::Cache<PwnCloudCacheEntry>, public boss::Identifiable{
   public:
-    PwnCloudCache(DepthImageConverter* converter_, 
-		  RobotConfiguration* robotConfiguration_,
-		  const std::string& topic_,
-		  int scale_, int minSlots_, int _maxSlots_);
+    PwnCloudCache(DepthImageConverter* converter_ = 0,
+		  RobotConfiguration* robotConfiguration_ = 0,
+		  const std::string& topic_ = "",
+		  int scale_ = 4, int minSlots_ = 100, int _maxSlots_=150, 
+		  int id = -1, boss::IdContext* context = 0);
 
     inline DepthImageConverter* converter() {return _converter;}
     inline void setConverter(DepthImageConverter* converter_) {_converter = converter_;}
@@ -40,24 +46,34 @@ namespace pwn_tracker {
     inline int scale() const {return _scale;}
     inline void setScale(int scale_)  {_scale=scale_;}
 
-    pwn::Cloud* loadCloud(SensingFrameNode* trackerNode);
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserializeComplete();
+
+
+    CloudWithImageSize* loadCloud(SyncSensorDataNode* trackerNode);
     double cumTime;
     int numCalls;
+    RobotConfiguration* _robotConfiguration;
   protected:
     virtual Cache<PwnCloudCacheEntry>::EntryType* makeEntry(KeyType* k, DataType* d);
     DepthImageConverter* _converter;
-    RobotConfiguration* _robotConfiguration;
     int _scale;
     std::string _topic;
+    pwn_boss::DepthImageConverter* _tempConverter;
   };
 
 
   class PwnCloudCacheHandler: public MapManagerActionHandler {
   public:
-    PwnCloudCacheHandler(MapManager* _manager, PwnCloudCache* cache);
+    PwnCloudCacheHandler(MapManager* _manager=0, PwnCloudCache* cache=0, int id=-1, boss::IdContext* context=0);
     inline PwnCloudCache* cache() {return _cache;}
     virtual ~PwnCloudCacheHandler();
     void init();
+
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserializeComplete();
 
     virtual void nodeAdded(MapNode* n);
     virtual void nodeRemoved(MapNode* n);

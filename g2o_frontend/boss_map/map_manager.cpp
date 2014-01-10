@@ -101,10 +101,38 @@ namespace boss_map {
     return true;
   }
 
-  MapManagerActionHandler::MapManagerActionHandler(MapManager* manager_){
-    _manager = manager_;
-    _manager->actionHandlers().push_back(this);
+
+  MapManagerActionHandler::MapManagerActionHandler(MapManager* manager_, int id, IdContext* context):
+    Identifiable(id, context){
+    _manager = 0;
+    setManager(manager_);
   }
+
+  void MapManagerActionHandler::setManager(MapManager* manager_){
+    if (_manager){
+      throw std::runtime_error("handler already assigned");
+    }
+      
+    _manager=manager_;
+    cerr << "manager: " << _manager << endl;
+    if(_manager){
+      _manager->actionHandlers().push_back(this);
+    }
+  }
+
+  void MapManagerActionHandler::serialize(ObjectData& data, IdContext& context){
+    Identifiable::serialize(data,context);
+    data.setPointer("manager",_manager);
+  }
+
+  void MapManagerActionHandler::deserialize(ObjectData& data, IdContext& context){
+    Identifiable::deserialize(data,context);
+    data.getReference("manager").bind(_manager);
+    if(_manager){
+      _manager->actionHandlers().push_back(this);
+    }
+  }
+
 
   MapManagerActionHandler::~MapManagerActionHandler(){
     size_t i;

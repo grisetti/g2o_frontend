@@ -45,19 +45,31 @@ namespace boss_map {
   }
 
 
-  Synchronizer::Synchronizer(){
-    dataPolicy = DeleteData;
-    framePolcy = DeleteReferenceFrame;
+  SyncTimeCondition::SyncTimeCondition(SyncTopicInstance* m1, SyncTopicInstance*m2, double dt): SyncCondition(m1, m2){
+    this->m1 = m1;
+    this->m2 = m2;
+    this->dt = dt;
+  }
+
+  bool SyncTimeCondition::eval() {
+    if (! canEval())
+      return true;
+    bool ret = fabs(m1->sensorData->timestamp()-m2->sensorData->timestamp())<dt;
+    return ret;
+
+  }
+
+  SensorDataSynchronizer::SensorDataSynchronizer(){
   }
   
-  SyncTopicInstance*  Synchronizer::syncTopic(std::string topic) {
+  SyncTopicInstance*  SensorDataSynchronizer::syncTopic(std::string topic) {
     std::map<std::string, SyncTopicInstance*>::iterator it  = syncTopics.find(topic);
     if (it == syncTopics.end())
       return 0;
     return it->second;
   }
 
-  bool Synchronizer::addSyncTopic(SyncTopicInstance* st) {
+  bool SensorDataSynchronizer::addSyncTopic(SyncTopicInstance* st) {
     SyncTopicInstance* previous = syncTopic(st->topic);
     if (! previous){
       syncTopics.insert(make_pair(st->topic, st));
@@ -67,7 +79,7 @@ namespace boss_map {
     return false;
   }
 
-  bool Synchronizer::addSyncCondition(SyncCondition* cond){
+  bool SensorDataSynchronizer::addSyncCondition(SyncCondition* cond){
     SyncTopicInstance* other1=syncTopic(cond->m1->topic);
     SyncTopicInstance* other2=syncTopic(cond->m2->topic);
     if (other1!=cond->m1 || other2!=cond->m2) {
@@ -82,20 +94,12 @@ namespace boss_map {
     return true;
   }
   
-  bool Synchronizer::addSensorData(BaseSensorData* data){
+  bool SensorDataSynchronizer::addSensorData(BaseSensorData* data){
     SyncTopicInstance* st = syncTopic(data->topic());
     if (! st) {
-      _syncDatas.push_back(data);
       return true;
     }
 
-    // replace the old copy of the data
-    if (st->sensorData){
-      if (st->sensorData->robotReferenceFrame() && framePolcy == DeleteReferenceFrame)
-	delete st->sensorData->robotReferenceFrame();
-      if (st->sensorData && dataPolicy == DeleteData)
-	delete st->sensorData;
-    }
     st->sensorData = data;
 
     // check if the dependancies are satisfied
@@ -116,20 +120,22 @@ namespace boss_map {
     }
     if (allSatisfied) {
       cerr << 'F';
+      SynchronizedSensorData* ssd = new SynchronizedSensorData();
+      ssd->setTopic(_topic);
       for (std::set<SyncTopicInstance*>::iterator it = dependancies.begin(); it!=dependancies.end(); it++) {
-	_syncDatas.push_back((*it)->sensorData);
+	ssd->sensorDatas.push_back((*it)->sensorData);
+	(*it)->sensorData = 0;
       }
-      syncDone();
-      for (std::set<SyncTopicInstance*>::iterator it = dependancies.begin(); it!=dependancies.end(); it++) {
-	(*it)->sensorData=0;
-      }	
+      ssd->setRobotReferenceFrame(data->robotReferenceFrame());
+      ssd->setTimestamp(data->timestamp());
+      put(ssd);
       return true;
     }
     return false;
   }
 
 
-  SyncTopicInstance* Synchronizer::addSyncTopic(const std::string& topic){
+  SyncTopicInstance* SensorDataSynchronizer::addSyncTopic(const std::string& topic){
     std::map<std::string, SyncTopicInstance*>::iterator it  = syncTopics.find(topic);
     if (it!=syncTopics.end())
       return it->second;
@@ -139,7 +145,7 @@ namespace boss_map {
     return instance;
   }
 
-  SyncTimeCondition* Synchronizer::addSyncTimeCondition(const std::string& topic1, const std::string& topic2, double time){
+  SyncTimeCondition* SensorDataSynchronizer::addSyncTimeCondition(const std::string& topic1, const std::string& topic2, double time){
     SyncTopicInstance* m1 = addSyncTopic(topic1);
     SyncTopicInstance* m2 = addSyncTopic(topic2);
     SyncTimeCondition* cond = new SyncTimeCondition(m1, m2, time);
@@ -147,14 +153,14 @@ namespace boss_map {
     return cond;
   }
 
-  void Synchronizer::process(Serializable*s){
+  void SensorDataSynchronizer::process(Serializable*s){
+    put(s);
     BaseSensorData* sdata = dynamic_cast<BaseSensorData*>(s);
-    if (! sdata)
-      put(s);
-    else
+    if (sdata)
       addSensorData(sdata);
   }
-  void Synchronizer::computeDependancies(std::set<SyncCondition*> & conditions, 
+
+  void SensorDataSynchronizer::computeDependancies(std::set<SyncCondition*> & conditions, 
 					 std::set<SyncTopicInstance*>& dependancies,
 					 SyncTopicInstance* instance){
     dependancies.clear();
@@ -185,40 +191,7 @@ namespace boss_map {
     }
   }
 
-  SyncTimeCondition::SyncTimeCondition(SyncTopicInstance* m1, SyncTopicInstance*m2, double dt): SyncCondition(m1, m2){
-    this->m1 = m1;
-    this->m2 = m2;
-    this->dt = dt;
-  }
-
-  bool SyncTimeCondition::eval() {
-    if (! canEval())
-      return true;
-    bool ret = fabs(m1->sensorData->timestamp()-m2->sensorData->timestamp())<dt;
-    return ret;
-
-  }
-
-  void Synchronizer::syncDone(){
-    if (_syncDatas.empty())
-      return;
-    ReferenceFrame * f=_syncDatas.front()->robotReferenceFrame();
-    put(f);
-    while (! _syncDatas.empty()){
-      BaseSensorData* data = _syncDatas.front();
-      _syncDatas.pop_front();
-      if(data->robotReferenceFrame() != f){
-	if (framePolcy == Synchronizer::DeleteReferenceFrame) {
-	  delete data->robotReferenceFrame();
-	  data->setRobotReferenceFrame(0);
-	}
-	data->setRobotReferenceFrame(f);
-      }
-      put (data);
-    }
-  }
-
-  Synchronizer::~Synchronizer(){
+  SensorDataSynchronizer::~SensorDataSynchronizer(){
     for (std::map<std::string, SyncTopicInstance*>::iterator it = syncTopics.begin(); it!=syncTopics.end(); it++){
       delete it->second;
     }
@@ -228,5 +201,50 @@ namespace boss_map {
 
   }
 
+  void SensorDataSynchronizer::serialize(ObjectData& data, IdContext& context) {
+    StreamProcessor::serialize(data,context);
+    data.setString("topic", _topic);
+    ArrayData* topicsArray = new ArrayData();
+    for  ( std::map<std::string, SyncTopicInstance*>::const_iterator it=syncTopics.begin(); it!=syncTopics.end(); it++) {
+      topicsArray->add(new StringData(it->first));
+    }
+    data.setField("syncTopics", topicsArray);
+
+    ArrayData* conditionsArray = new ArrayData();
+    for  ( std::set<SyncCondition*>::iterator it=syncConditions.begin(); it!=syncConditions.end(); it++) {
+      SyncTimeCondition* stc = dynamic_cast<SyncTimeCondition*>(*it);
+      if(stc) {
+	ObjectData* odata = new ObjectData;
+	odata->setString("topic1", stc->m1->topic);
+	odata->setString("topic2", stc->m2->topic);
+	odata->setDouble("dt", stc->dt);
+	conditionsArray->add(odata);
+      }
+    }
+    data.setField("syncConditions", conditionsArray);
+  }
+
+  void SensorDataSynchronizer::deserialize(ObjectData& data, IdContext& context){
+    StreamProcessor::deserialize(data,context);
+    _topic = data.getString("topic");
+    ArrayData& topicsArray = data.getField("syncTopics")->getArray();
+    for (size_t i =0; i<topicsArray.size(); i++){
+      std::string top = topicsArray[i].getString();
+      addSyncTopic(top);
+    }
+    ArrayData& conditionsArray = data.getField("syncConditions")->getArray();
+    for (size_t i =0; i<conditionsArray.size(); i++){
+      ObjectData& odata = conditionsArray[i].getObject();
+      std::string topic1 = odata.getString("topic1");
+      std::string topic2 = odata.getString("topic2");
+      double dt =  odata.getDouble("dt");
+      addSyncTimeCondition(topic1, topic2, dt);
+    }
+  }
+
+
+
   BOSS_REGISTER_CLASS(SynchronizedSensorData);
+  BOSS_REGISTER_CLASS(SensorDataSynchronizer);
+  
 }

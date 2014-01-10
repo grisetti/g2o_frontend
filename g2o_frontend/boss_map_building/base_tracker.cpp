@@ -1,5 +1,6 @@
 #include "base_tracker.h"
-#include "g2o_frontend/boss_map/sensing_frame_node.h"
+#include "g2o_frontend/boss_map/sensor_data_node.h"
+
 #include <iostream>
 #include "g2o_frontend/basemath/bm_se3.h"
 #include "g2o_frontend/boss/serializable.h"
@@ -21,7 +22,7 @@ namespace boss_map_building {
     data.getReference("keyNode").bind(keyNode);
   }
   
-  BaseTracker::BaseTracker(MapManager* manager_, RobotConfiguration* configuration_){
+  BaseTracker::BaseTracker(MapManager* manager_, RobotConfiguration* configuration_, int id, boss::IdContext* context): StreamProcessor(id,context){
     _manager = manager_;
     _robotConfiguration = configuration_;
     init();
@@ -38,19 +39,26 @@ namespace boss_map_building {
     Eigen::Isometry3d t,dt;
     t.setIdentity();
     dt.setIdentity();
-    SensingFrameNode *n = dynamic_cast<SensingFrameNode*>(n_);
+    BaseSensorDataNode *sn = dynamic_cast<BaseSensorDataNode*>(n_);
     
     if (_keyNode) {
-      if (n && n->odometry()) {
-	dt = n->odometry()->transform();
+      if (sn && sn->odometry()) {
+	dt = sn->odometry()->transform();
       }
       _localT = _localT*dt;
       t = _keyNode->transform()*_localT;
     }
-    //cerr << "dt: " << t2v(dt).transpose() << endl;
     
-    if (n && n->imu())
-      t.linear() = n->imu()->transform().linear();
+    SyncSensorDataNode* ssn=dynamic_cast<SyncSensorDataNode*>(n_);
+    if (ssn && ssn->imu()){
+      Eigen::Vector3d translation = t.translation();
+      t.linear() = ssn->imu()->transform().linear();
+      t.translation()= translation;
+      if (_keyNode)
+	_localT =  _keyNode->transform().inverse()*t;
+      else
+	_localT.setIdentity();
+    }
     return t; 
   }
 	 
@@ -127,6 +135,16 @@ namespace boss_map_building {
       put(_outputQueue.front());
       _outputQueue.pop_front();
     }
+  }
+
+
+  void BaseTracker::serialize(ObjectData& data, IdContext& context) {
+    StreamProcessor::serialize(data,context);
+    data.setPointer("manager", _manager);
+  }
+  void BaseTracker::deserialize(ObjectData& data, IdContext& context) {
+    StreamProcessor::deserialize(data,context);
+    data.getReference("manager").bind(_manager);
   }
 
   BaseTracker::~BaseTracker(){}

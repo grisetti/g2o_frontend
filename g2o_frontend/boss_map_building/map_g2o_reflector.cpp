@@ -14,14 +14,15 @@
 #include "g2o/core/optimization_algorithm_gauss_newton.h"
 #include "g2o/core/optimization_algorithm_levenberg.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
+#include "map_closer.h"
 
 namespace boss_map_building {
   using namespace std;
   using namespace boss;
   using namespace g2o;
 
-  MapG2OReflector::MapG2OReflector(MapManager* _manager, g2o::SparseOptimizer* graph_):
-    MapManagerActionHandler (_manager ){
+  MapG2OReflector::MapG2OReflector(MapManager* _manager, g2o::SparseOptimizer* graph_, int id, boss::IdContext* context):
+    MapManagerActionHandler (_manager, id, context ){
     if (! graph_) {
       _graph = g2oInit();
     } else 
@@ -31,9 +32,21 @@ namespace boss_map_building {
   }
 
   MapG2OReflector::~MapG2OReflector() {};
+
+  void MapG2OReflector::serialize(ObjectData& data, IdContext& context){
+    MapManagerActionHandler::serialize(data,context);
+    data.setPointer("selector",_selector);
+  }
+
+  void MapG2OReflector::deserialize(ObjectData& data, IdContext& context){
+    MapManagerActionHandler::deserialize(data,context);
+    data.getReference("selector").bind(_selector);
+  }
   
   void MapG2OReflector::init() {
     _graph->clear();
+    if (!_manager)
+      return;
     for (std::set<MapNode*>::iterator it=_manager->nodes().begin(); it!=_manager->nodes().end(); it++){
       nodeAdded(*it);
     }
@@ -100,6 +113,7 @@ namespace boss_map_building {
 	gr->setVertex(0,_nm2g[n0]);
 	gr->setMeasurement(r->transform());
 	gr->setInformation(r->informationMatrix());
+	gr->setParameterId(0,0);
 	_rm2g.insert(make_pair(r,gr));
 	_rg2m.insert(make_pair(gr,r));
 	_graph->addEdge(gr);
@@ -197,11 +211,45 @@ namespace boss_map_building {
     SlamLinearSolver* linearSolver = new SlamLinearSolver();
     linearSolver->setBlockOrdering(false);
     SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
-    //OptimizationAlgorithmLevenberg* solverGauss   = new OptimizationAlgorithmLevenberg(blockSolver);
-    OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
+    OptimizationAlgorithmLevenberg* solverGauss   = new OptimizationAlgorithmLevenberg(blockSolver);
+    //OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
     SparseOptimizer * graph = new SparseOptimizer();
     graph->setAlgorithm(solverGauss);
+    g2o::ParameterSE3Offset* imuOffset = new ParameterSE3Offset();
+    imuOffset->setOffset(Eigen::Isometry3d::Identity());
+    imuOffset->setId(0);
+    graph->addParameter(imuOffset);
     return graph;
   }
+
+
+  OptimizerProcessor::OptimizerProcessor(int id, boss::IdContext* context):
+    StreamProcessor(id, context){
+    _optimizer = 0;
+    _manager = 0;
+  }
+
+  void OptimizerProcessor::serialize(boss::ObjectData& data, boss::IdContext& context){
+    StreamProcessor::serialize(data,context);
+    data.setPointer("manager", _manager);
+    data.setPointer("optimizer", _optimizer);
+  }
+
+  void OptimizerProcessor::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    StreamProcessor::deserialize(data,context);
+    data.getReference("manager").bind(_manager);
+    data.getReference("optimizer").bind(_optimizer);
+  }
+
+  void OptimizerProcessor::process(Serializable* s){
+    ClosureFoundMessage* msg = dynamic_cast<ClosureFoundMessage*>(s);
+    if (msg){
+      _optimizer->optimize();
+    }
+    put(s);
+  }
+
+  BOSS_REGISTER_CLASS(MapG2OReflector);
+  BOSS_REGISTER_CLASS(OptimizerProcessor);
 
 }

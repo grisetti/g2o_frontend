@@ -2,20 +2,33 @@
 #include <queue>
 
 namespace boss_map {
+  using namespace boss;
 
-  NodeAcceptanceCriterion::NodeAcceptanceCriterion(MapManager* manager_){
+  NodeAcceptanceCriterion::NodeAcceptanceCriterion(MapManager* manager_, int id, boss::IdContext* context):
+    Identifiable(id, context){
     _manager = manager_;
   }
+
   NodeAcceptanceCriterion::~NodeAcceptanceCriterion(){}
 
 
+  void NodeAcceptanceCriterion::serialize(boss::ObjectData& data, boss::IdContext& context){
+    Identifiable::serialize(data,context);
+    data.setPointer("manager",_manager);
+  }
 
-  PoseAcceptanceCriterion::PoseAcceptanceCriterion(MapManager* manager_): NodeAcceptanceCriterion(manager_){
+  void NodeAcceptanceCriterion::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    Identifiable::deserialize(data,context);
+    data.getReference("manager").bind(_manager);
+  }
+    
+
+  PoseAcceptanceCriterion::PoseAcceptanceCriterion(MapManager* manager_, int id, boss::IdContext* context): NodeAcceptanceCriterion(manager_, id, context){
     setReferencePose(Eigen::Isometry3d::Identity());
   }
 
 
-  DistancePoseAcceptanceCriterion::DistancePoseAcceptanceCriterion(MapManager* manager_): PoseAcceptanceCriterion(manager_){
+  DistancePoseAcceptanceCriterion::DistancePoseAcceptanceCriterion(MapManager* manager_, int id, boss::IdContext* context): PoseAcceptanceCriterion(manager_, id, context){
     setTranslationalDistance(0.5);
     setRotationalDistance(0.5);
   }
@@ -29,16 +42,39 @@ namespace boss_map {
     return true;
   }
 
-  MahalanobisPoseAcceptanceCriterion::MahalanobisPoseAcceptanceCriterion(MapManager* manager_): PoseAcceptanceCriterion(manager_){
+  void DistancePoseAcceptanceCriterion::serialize(boss::ObjectData& data, boss::IdContext& context){
+    PoseAcceptanceCriterion::serialize(data,context);
+    data.setFloat("translationalDistance", _translationalDistance);
+    data.setFloat("rotationalDistance", _rotationalDistance);
+  }
+
+  void DistancePoseAcceptanceCriterion::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    PoseAcceptanceCriterion::serialize(data,context);
+    setTranslationalDistance(data.getFloat("translationalDistance"));
+    setRotationalDistance(data.getFloat("rotationalDistance"));
+  }
+
+  MahalanobisPoseAcceptanceCriterion::MahalanobisPoseAcceptanceCriterion(MapManager* manager_, int id, boss::IdContext* context): PoseAcceptanceCriterion(manager_, id, context){
     _info.setIdentity();
   }
+
+
+  void MahalanobisPoseAcceptanceCriterion::serialize(boss::ObjectData& data, boss::IdContext& context){
+    PoseAcceptanceCriterion::serialize(data,context);
+    data.setDouble("distance", _distance);
+  }
+
+  void MahalanobisPoseAcceptanceCriterion::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    PoseAcceptanceCriterion::serialize(data,context);
+    setDistance(data.getDouble("translationalDistance"));
+  }
+
   bool MahalanobisPoseAcceptanceCriterion::accept(MapNode* n) {
     Eigen::Isometry3d err=_invPose*n->transform();
     Vector6d v=t2v(err);
     double d=v.transpose()*_info*v;
     return d<_distance;
   }
-
 
 
   void selectNodes(std::set<MapNode*>& nodes, NodeAcceptanceCriterion* criterion){
@@ -73,8 +109,20 @@ namespace boss_map {
   }
 
 
-  MapRelationSelector::MapRelationSelector(MapManager* manager_) {_manager=manager_;}
+  MapRelationSelector::MapRelationSelector(MapManager* manager_, int id, boss::IdContext* context):
+    Identifiable(id, context) {_manager=manager_;}
+
   MapRelationSelector::~MapRelationSelector() {}
+
+  void MapRelationSelector::serialize(boss::ObjectData& data, boss::IdContext& context){
+    Identifiable::serialize(data,context);
+    data.setPointer("manager",_manager);
+  }
+
+  void MapRelationSelector::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    Identifiable::deserialize(data,context);
+    data.getReference("manager").bind(_manager);
+  }
 
 
   void makePartitions(std::vector<std::set<MapNode*> >& partitions,
@@ -110,4 +158,6 @@ namespace boss_map {
     }
   }
 
+  BOSS_REGISTER_CLASS(DistancePoseAcceptanceCriterion);
+  BOSS_REGISTER_CLASS(MahalanobisPoseAcceptanceCriterion);
 }

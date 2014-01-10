@@ -6,53 +6,42 @@ namespace pwn_tracker {
   using namespace std;
 
 
-  PwnMatcherBase::PwnMatcherBase(pwn::Aligner* aligner_, pwn::DepthImageConverter* converter_){
+  PwnMatcherBase::PwnMatcherBase(pwn::Aligner* aligner_, pwn::DepthImageConverter* converter_,
+				 int id, boss::IdContext* context):
+    Identifiable(id, context){
     _aligner = aligner_;
     _converter = converter_;
     _scale = 2;
     _frameInlierDepthThreshold = 50;
   }
 
-
-  void PwnMatcherBase::makeThumbnails(cv::Mat& depthThumbnail, cv::Mat& normalThumbnail, 
-				      pwn::Cloud* f, int r, int c, 
-				  const Eigen::Isometry3f& offset, 
-				  const Eigen::Matrix3f& cameraMatrix,
-				  float scale){
-
-
-
-    PinholePointProjector proj;
-    proj.setImageSize(r,c);
-    proj.setCameraMatrix(cameraMatrix);
-    proj.scale(scale);
-    pwn::IntImage indices(proj.imageRows(), proj.imageCols());
-    pwn::DepthImage depthBuffer(proj.imageRows(), proj.imageCols());
-    proj.setTransform(offset);
-    proj.project(indices, depthBuffer, f->points());
-    normalThumbnail = cv::Mat(proj.imageCols(), proj.imageRows(), CV_8UC3);
-    depthThumbnail = cv::Mat(proj.imageCols(), proj.imageRows(), CV_16UC1);
-    
-    DepthImage_convert_32FC1_to_16UC1(depthThumbnail, depthBuffer); 
-    //depthBuffer.toCvMat(depthThumbnail);
-    for (int j = 0; j<indices.rows; j++) {
-      for (int i = 0; i<indices.cols; i++){
-      	cv::Vec3b& pixel = normalThumbnail.at<cv::Vec3b>(i,j);
-    	int idx = indices(j,i);
-    	pixel[0] = 0;
-    	pixel[1] = 0;
-    	pixel[2] = 0;
-    	if (idx==0)
-    	  continue;
-    	const pwn::Normal& n = f->normals()[idx];
-    	if (n.squaredNorm()<0.1)
-    	  continue;
-    	pixel[0] = 127*(n.x()-0.5);
-    	pixel[1] = 127*(n.y()-0.5);
-    	pixel[2] = 127*(n.z()-0.5);
-      }
-    }
+  void PwnMatcherBase::serialize(boss::ObjectData& data, boss::IdContext& context){
+    boss::Identifiable::serialize(data,context);
+    _baligner=dynamic_cast<pwn_boss::Aligner*>(_aligner);
+    _bconverter=dynamic_cast<pwn_boss::DepthImageConverter*>(_converter);
+    data.setPointer("aligner", _baligner);
+    data.setPointer("converter", _bconverter);
+    data.setInt("scale", _scale);
+    data.setFloat("frameInlierDepthThreshold", _frameInlierDepthThreshold);
   }
+    
+  
+  void PwnMatcherBase::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    boss::Identifiable::deserialize(data,context);
+    data.getReference("aligner").bind(_baligner);
+    data.getReference("converter").bind(_bconverter);
+    int s = data.getInt("scale");
+    _frameInlierDepthThreshold = data.getFloat("frameInlierDepthThreshold");
+    setScale(s);
+  }
+
+
+  void PwnMatcherBase::deserializeComplete(){
+    boss::Identifiable::deserializeComplete();
+    _aligner = _baligner;
+    _converter = _bconverter;
+  }
+
 
   pwn::Cloud* PwnMatcherBase::makeCloud(int& r, int& c, Eigen::Matrix3f& cameraMatrix,
 				    const Eigen::Isometry3f& sensorOffset,  const DepthImage& depthImage) {
@@ -184,5 +173,6 @@ namespace pwn_tracker {
   }
 
 
+  BOSS_REGISTER_CLASS(PwnMatcherBase);
 
 }
