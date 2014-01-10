@@ -6,6 +6,7 @@ ADD_LIBRARY(pwn_tracker2_library
   pwn_tracker.cpp pwn_tracker.h
   pwn_closer.cpp pwn_closer.h
   pwn_tracker_viewer.cpp pwn_tracker_viewer.h
+  manifold_voronoi_extractor.cpp manifold_voronoi_extractor.h
 )
 
 TARGET_LINK_LIBRARIES(pwn_tracker2_library 
