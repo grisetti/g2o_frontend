@@ -2,7 +2,7 @@
 
 #include "g2o_frontend/basemath/bm_se3.h"
 
-/**
+/*
    Base class that implements a simple prior on te transformation to be used in SE2 pose.
    The prior is defined as a gaussian distribution centered in a certain value (priorMean),
    and having a certain information matrix;
@@ -39,25 +39,25 @@ namespace pwn {
     inline void setInformation(const Matrix6f &priorInformation_) { _priorInformation = priorInformation_; }
     inline const Matrix6f& information() const { return _priorInformation; }
 
-    //! Computes the error of the prior at the inverse transform
+    // Computes the error of the prior at the inverse transform
     virtual Vector6f error(const Eigen::Isometry3f &invT) const = 0;
 
-    //! Computes the jacobian of the error 
+    // Computes the jacobian of the error 
     Matrix6f jacobian(const Eigen::Isometry3f &invT) const;
 
-    //! Projects the information matrix of the prior in the error space
+    // Projects the information matrix of the prior in the error space
     Matrix6f errorInformation(const Eigen::Isometry3f &invT) const;
 
   protected:
-    //! Computes the jacobian of the error w.r.t. the priorMean
-    //! Used internally to project the information matrix in the measurement space
+    // Computes the jacobian of the error w.r.t. the priorMean
+    // Used internally to project the information matrix in the measurement space
     Matrix6f jacobianZ(const Eigen::Isometry3f &invT) const;
   
     mutable Eigen::Isometry3f  _priorMean;
     Matrix6f _priorInformation;
   };
 
-  /**
+  /*
      The error induced by the prior is defined as 
      t2v(invT * priorMean),
      where invT s the *inverse* of the transformation we are looking for.
@@ -71,12 +71,12 @@ namespace pwn {
 		     const Matrix6f &information = Matrix6f::Zero());
     virtual ~SE3RelativePrior() {}
 
-    //! Computes the error of the prior at the inverse transform
+    // Computes the error of the prior at the inverse transform
     virtual Vector6f error(const Eigen::Isometry3f &invT) const;
   };
 
 
-  /**
+  /*
    
      The error induced by the prior is defined as 
      t2v(invT * _referenceTransform.inverse()*priorMean),
@@ -92,7 +92,7 @@ namespace pwn {
 		     const Matrix6f &information = Matrix6f::Zero());
     virtual ~SE3AbsolutePrior() {}
 
-    //! Computes the error of the prior at the inverse transform
+    // Computes the error of the prior at the inverse transform
     virtual Vector6f error(const Eigen::Isometry3f &invT) const;
 
     inline const Eigen::Isometry3f& referenceTransform() const { return _referenceTransform; }

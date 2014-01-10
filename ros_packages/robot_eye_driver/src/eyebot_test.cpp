@@ -8,10 +8,11 @@
 #include "pcl/point_types.h"
 #include <boost/thread/thread.hpp>
 #include "g2o/stuff/command_args.h"
-#include "myCallbacks.h"
+#include "roboteye.h"
 
 using namespace ocular;
 using namespace std;
+using namespace roboteye;
 
 // parameters
 string outfilename;
@@ -35,19 +36,31 @@ void printandwriteLaserData(){
     /// printing the laser data
     //to prevent possible later callbacks
 //    _mutex_meas.lock();
-//    for(unsigned int i = 0; i < _measurements.size(); i++) {
-//        ocular::ocular_rbe_obs_t meas = _measurements[i];
-//        cout << "azim: " << meas.azimuth << ",\telev: " << meas.elevation << ",\trange: " << meas.range << ",\tintensity: " << meas.intensity << endl;
+
+    /// debug
+//    cerr << "output ALL" << endl;
+//    for(unsigned int i = 0; i < _meas_all.size(); i++) {
+//        ocular::ocular_rbe_obs_t meas = _meas_all[i];
+//        cerr << "azim: " << meas.azimuth << ",\telev: " << meas.elevation << ",\trange: " << meas.range << ",\tintensity: " << meas.intensity << endl;
+//    }
+//    cerr << "output VECTOR" << endl;
+//    for(unsigned int i = 0; i < _meas_all_vector.size(); i++) {
+//        PolarMeasurements _meas_all_callback = _meas_all_vector[i];
+
+//        for(unsigned int j = 0; j < _meas_all_callback.size(); j++) {
+//            ocular::ocular_rbe_obs_t meas = _meas_all_callback[j];
+//            cerr << "azim: " << meas.azimuth << ",\telev: " << meas.elevation << ",\trange: " << meas.range << ",\tintensity: " << meas.intensity << endl;
+//        }
 //    }
 
     cout << "writing Data for octave plotting and for PCD_viewer" << endl;
     ofstream plotting("plottami.txt");
     pcl::PointCloud<pcl::PointXYZI> cloud;
-    cloud.width = _xyz_meas.size();
+    cloud.width = _xyz_meas_all.size();
     cloud.height = 1;
 
-    for(unsigned int i = 0; i < _xyz_meas.size(); i++){
-      Eigen::Vector4d xyz_p = _xyz_meas[i];
+    for(unsigned int i = 0; i < _xyz_meas_all.size(); i++){
+      Eigen::Vector4d xyz_p = _xyz_meas_all[i];
 
       /// create file for octave plotting
       plotting << xyz_p[0] << " " << xyz_p[1] << " " << xyz_p[2] << " " << xyz_p[3];
@@ -252,8 +265,8 @@ int main(int argc, char** argv) {
 //    /// showing the laser data
 //    //to prevent possible later callbacks
 ////    _mutex_meas.lock();
-//    for(int i = 0; i <= _measurements.size(); i++) {
-//        ocular::ocular_rbe_obs_t meas = _measurements[i];
+//    for(int i = 0; i <= _meas_all.size(); i++) {
+//        ocular::ocular_rbe_obs_t meas = _meas_all[i];
 //        cout << "azim: " << meas.azimuth << ",\telev: " << meas.elevation << ",\trange: " << meas.range << ",\tintensity: " << meas.intensity << endl;
 //    }
 ////    _mutex_meas.unlock();
