@@ -40,7 +40,7 @@ namespace boss_map {
     inline double translationalDistance() const { return _translationalDistance;}
     inline void setTranslationalDistance(double td)  { _translationalDistance = td; _td2=td*td;}
     inline double rotationalDistance() const { return _rotationalDistance;}
-    inline void setRotationalDistance(double rd)  { _rotationalDistance = rd; _td2=rd*rd;}
+    inline void setRotationalDistance(double rd)  { _rotationalDistance = rd; }
   protected:
     double _translationalDistance, _rotationalDistance;
     double _td2; // squared distances

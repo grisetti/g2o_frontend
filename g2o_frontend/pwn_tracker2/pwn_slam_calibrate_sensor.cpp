@@ -65,7 +65,18 @@ int main(int argc, char** argv) {
     return 0;
   }
 
+  PwnTracker* tracker = dynamic_cast<PwnTracker*>(group->byName("myTracker"));
+  if (! tracker) {
+    cerr << "unable to find the tracker" << endl;
+    return 0;
+  }
+  
+						 
+
   cerr << "algo config loaded" << endl;
+
+
+
 
   RobotConfiguration* conf = 0;
   Serializable* s;
@@ -85,30 +96,46 @@ int main(int argc, char** argv) {
   }
   cerr << "robot config loaded" << endl;
 
-  group->setRobotConfiguration(conf);
+  // now retrieve the sensor attached to the topic;
+  std::string topic = tracker->topic();
+  cerr << "tracker topic: " << topic << endl;
+  BaseSensor* sensor = conf->sensor(topic);
+  cerr << "sensor: " << sensor << endl;
+  PinholeImageSensor* pinholeSensor = dynamic_cast<PinholeImageSensor*>(sensor);
+  Eigen::Isometry3d T =conf->sensorOffset(pinholeSensor);
+  Eigen::Isometry3d iT = T.inverse();
+  cerr << "sensor position on the robot:" << t2v(T).transpose() << endl;
 
-  VisState* visState = new VisState(manager);
-  QApplication* app = new QApplication(argc,argv);
-  MyTrackerViewer *viewer = new MyTrackerViewer(visState);
-  viewer->show();
+  group->setRobotConfiguration(conf);
+  ofstream os("calib.dat");
+  os << "# initial transform: " << t2v(T).transpose() << endl;
+  os << "# measurements, each line is: " << endl;
+  os << "# ox oy oz qox qoy qoz sx sy sz qsx qsy qsz " << endl;
   while((s=des.readObject())) {
     objects.push_back(s);
-    cerr << objects.size() << " ";
-    NewKeyNodeMessage* km = dynamic_cast<NewKeyNodeMessage*>(s);
-    if (km) {
-      PwnCloudCache::HandleType h=cache->get((SyncSensorDataNode*) km->keyNode);
-      VisCloud* visCloud = new VisCloud(h.get());
-      visState->cloudMap.insert(make_pair(km->keyNode, visCloud));
-      viewer->updateGL();
-    }
-    app->processEvents();
-  }
+    PwnTrackerRelation* rel = dynamic_cast<PwnTrackerRelation*>(s);
+    if (rel) {
+      Eigen::Isometry3d t1, t2;
+      {
+	SyncSensorDataNode* n1 = dynamic_cast<SyncSensorDataNode*>(rel->nodes()[0]);
+	SynchronizedSensorData* data = n1->sensorData();
+	PinholeImageData* bdata = data->sensorData<PinholeImageData>(topic);
+	ReferenceFrame* f = bdata->robotReferenceFrame();
+	t1=f->transform();
+      }
 
-  visState->final = true;
-  
-  viewer->updateGL();
-  while(viewer->isVisible()){
-    app->processEvents();
+      {
+	SyncSensorDataNode* n1 = dynamic_cast<SyncSensorDataNode*>(rel->nodes()[1]);
+	SynchronizedSensorData* data = n1->sensorData();
+	PinholeImageData* bdata = data->sensorData<PinholeImageData>(topic);
+	ReferenceFrame* f = bdata->robotReferenceFrame();
+	t2=f->transform();
+      }
+      
+      Eigen::Isometry3d zOdom = t1.inverse()*t2;
+      Eigen::Isometry3d zSensor = rel->transform();
+      os << t2v(zOdom).transpose() << " "
+	 << t2v(iT*zSensor*T).transpose() << endl;
+    }
   }
-  
 }

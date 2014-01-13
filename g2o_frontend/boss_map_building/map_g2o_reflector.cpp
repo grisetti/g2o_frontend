@@ -15,6 +15,7 @@
 #include "g2o/core/optimization_algorithm_levenberg.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 #include "map_closer.h"
+#include "base_tracker.h"
 
 namespace boss_map_building {
   using namespace std;
@@ -227,6 +228,9 @@ namespace boss_map_building {
     StreamProcessor(id, context){
     _optimizer = 0;
     _manager = 0;
+    _kfCount = 0;
+    _optimizeEachNKeyFrames = 1000000;
+    _previousNode = 0;
   }
 
   void OptimizerProcessor::serialize(boss::ObjectData& data, boss::IdContext& context){
@@ -242,9 +246,16 @@ namespace boss_map_building {
   }
 
   void OptimizerProcessor::process(Serializable* s){
+    NewKeyNodeMessage* km = dynamic_cast<NewKeyNodeMessage*>(s);
+    if (km) {
+      // optimizer->optimize();
+      _kfCount ++;
+    }
+
     ClosureFoundMessage* msg = dynamic_cast<ClosureFoundMessage*>(s);
-    if (msg){
+    if (msg || _kfCount > _optimizeEachNKeyFrames){
       _optimizer->optimize();
+      _kfCount = 0;
     }
     put(s);
   }

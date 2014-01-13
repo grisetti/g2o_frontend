@@ -96,6 +96,7 @@ namespace pwn_tracker {
     PinholePointProjector* projector = dynamic_cast<PinholePointProjector*>(_aligner->projector());
     int r, c;
     
+    _aligner->clearPriors();
     _aligner->setReferenceSensorOffset(fromOffset);
     _aligner->setCurrentSensorOffset(toOffset);
     Eigen::Isometry3f ig;

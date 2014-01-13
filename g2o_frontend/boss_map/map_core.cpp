@@ -49,12 +49,14 @@ namespace boss_map {
     q.coeffs().fromBOSS(data,"rotation");
     _transform.translation().fromBOSS(data,"translation");
     _transform.linear()=q.toRotationMatrix();
+    if (_manager)
+      _manager->addNode(this);
   }
 
   //! called when all links are resolved, adjusts the bookkeeping of the parents
   void MapNode::deserializeComplete(){
-    assert(_manager);
-    _manager->addNode(this);
+    //assert(_manager);
+    //_manager->addNode(this);
   }
 
   

@@ -126,8 +126,9 @@ namespace pwn_tracker {
     // Eigen::Matrix3d fromCamera, toCamera;
     // convertScalar(fromCamera, from->cameraMatrix);
     // convertScalar(toCamera, to->cameraMatrix);
-
-
+    
+    //Eigen::Isometry3d ig = initialGuess;
+    //ig.translation().setZero();
     matchClouds(result, 
 		from->cloud, to->cloud, 
 		from->sensorOffset, to->sensorOffset, 

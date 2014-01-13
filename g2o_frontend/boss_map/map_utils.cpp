@@ -34,8 +34,13 @@ namespace boss_map {
   }
   bool DistancePoseAcceptanceCriterion::accept(MapNode* n) {
     Eigen::Isometry3d _err=_invPose*n->transform();
-    if (_err.translation().squaredNorm()>_td2)
+    double dx = _err.translation().x();
+    double dy = _err.translation().y();
+    //hack
+    if (dx*dx + dy*dy>_td2)
       return false;
+    // if (_err.translation().squaredNorm()>_td2)
+    //   return false;
     Eigen::AngleAxisd aa(_err.linear());
     if (fabs(aa.angle())>_rotationalDistance)
       return false;
@@ -49,7 +54,7 @@ namespace boss_map {
   }
 
   void DistancePoseAcceptanceCriterion::deserialize(boss::ObjectData& data, boss::IdContext& context){
-    PoseAcceptanceCriterion::serialize(data,context);
+    PoseAcceptanceCriterion::deserialize(data,context);
     setTranslationalDistance(data.getFloat("translationalDistance"));
     setRotationalDistance(data.getFloat("rotationalDistance"));
   }

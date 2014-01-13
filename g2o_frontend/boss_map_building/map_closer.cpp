@@ -268,7 +268,7 @@ namespace boss_map_building {
     if (km){
       addKeyNode(km->keyNode);
     }
-    MapNodeRelation* rel = dynamic_cast<MapNodeBinaryRelation*>(s);
+    MapNodeRelation* rel = dynamic_cast<MapNodeRelation*>(s);
     if (rel){
       addRelation(rel);
     }

@@ -68,6 +68,9 @@ namespace boss_map_building {
   protected:
     MapManager* _manager;
     MapG2OReflector* _optimizer;
+    MapNode* _previousNode;
+    int _kfCount;
+    int _optimizeEachNKeyFrames;
   };
 
 }

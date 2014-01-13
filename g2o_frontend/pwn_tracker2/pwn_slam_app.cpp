@@ -34,15 +34,19 @@ int main(int argc, char** argv) {
   std::string fileout = argv[3];
 
   StreamProcessor* sp=0;
-  std::list<Serializable*> processingObjects;
+  std::list<Serializable*> objects;
   
   
   // read the configuration ans seek for a guy called "mySLAMPipeline".
   Deserializer confDes;
   confDes.setFilePath(fileconf);
-  sp=loadProcessor("mySLAMPipeline", confDes, processingObjects);
+  sp=loadProcessor("mySLAMPipeline", confDes, objects);
   
-
+  Serializable* o;
+  while (( o = confDes.readObject()) )
+    objects.push_back(o);
+    
+ 
   if (! sp){
     cerr << "object not found, aborting";
     return 0;
@@ -62,6 +66,12 @@ int main(int argc, char** argv) {
     return 0;
   }
 
+  // MapG2OReflector* optimizer = group->byType<MapG2OReflector>(pos);
+  // if (! optimizer) {
+  //   cerr << "unable to find the optimizer" << endl;
+  //   return 0;
+  // }
+
   Deserializer des;
   des.setFilePath(filein.c_str());
   
@@ -69,8 +79,6 @@ int main(int argc, char** argv) {
 
   // read the log up to the configuration file
   RobotConfiguration* conf = 0;
-  std::list<Serializable*> objects;
-  Serializable* o;
   while ( (o=des.readObject()) ){
     objects.push_back(o);
     RobotConfiguration * conf_ = dynamic_cast<RobotConfiguration*>(o);
@@ -102,7 +110,6 @@ int main(int argc, char** argv) {
 
   // read the data once at a time, and see if you have to do some gui business
   Serializable* s;
-  objects.push_back(manager);
   while((s=des.readObject())) {
     group->process(s);
     if (visProc && visProc->_needRedraw){
@@ -133,5 +140,6 @@ int main(int argc, char** argv) {
       app->processEvents();
     }
   }
-  
+
+  //optimizer->graph()->save("graph.g2o");
 }
