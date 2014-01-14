@@ -40,9 +40,10 @@ ocular::RE05Driver* laserone;
 ros::Publisher _scan_pub;
 
 robot_eye_driver::RobotEyeScan _scan_msg;
-double _desired_freq;
-roboteye::RobotEyeScan _scan;
-roboteye::RobotEyeConfig _roboteye_config;
+unsigned int num_readings = 0;
+double _desired_freq = 0.;
+roboteye::RobotEyeConfig _scan_config;
+std::vector<roboteye::RobotEyeScan> _scan_vector;
 
 
 void printandwriteLaserData(){
@@ -162,7 +163,6 @@ void stopandprint() {
 //    exit(0);
 }
 
-
 void init_parameters(int argc, char ** argv){
 
     // initialize parameters
@@ -209,6 +209,8 @@ void init_parameters(int argc, char ** argv){
         exit(1);
     }
 
+    _desired_freq = _laser_freq;
+
     // print parameters
     cout << "SENSOR IP:\t" << _sensor_IP << endl;
     cout << "LASER FREQUENCY:\t" << _laser_freq << endl;
@@ -222,9 +224,9 @@ void init_parameters(int argc, char ** argv){
 
 int publishScan(const roboteye::RobotEyeScan &scan) {
 
-/// !!!!!TODO: MODIFY WITH THE roboteye _scan and _scan_config
+/// !!!!!TODO: MODIFY WITH THE roboteye _scan and  _roboteye_config
 
-    unsigned int num_readings = _meas_all.size();
+    cout << "publishScan" << endl;
 
     ros::Time scan_time = ros::Time::now();
     //ros::Time().fromNSec((uint64_t)scan.system_time_stamp) + ros::Duration(driver_.config_.time_offset);
@@ -232,15 +234,16 @@ int publishScan(const roboteye::RobotEyeScan &scan) {
     //populate the RobotEyeScan message
     _scan_msg.header.stamp = scan_time;
     _scan_msg.header.frame_id = "roboteye_frame";
-    _scan_msg.azimuth_min = deg2rad(0);
-    _scan_msg.azimuth_max = deg2rad(360);
-    _scan_msg.azimuth_increment = deg2rad(0.01); //to be checked
-    _scan_msg.elevation_min = deg2rad(-35);
-    _scan_msg.elevation_max = deg2rad(35);
-    _scan_msg.elevation_increment = deg2rad(0.004);
-    _scan_msg.time_increment = (1 / _laser_freq) / (num_readings);
-    _scan_msg.range_min = 0.5; //see the documentation
-    _scan_msg.range_max = 250.0; //see the documentation
+    _scan_msg.azimuth_min = _scan_config.min_azimuth;
+    _scan_msg.azimuth_max = _scan_config.max_azimuth;
+    _scan_msg.azimuth_increment = _scan_config.azim_increment;
+    _scan_msg.elevation_min = _scan_config.min_elevation;
+    _scan_msg.elevation_max = _scan_config.max_elevation;
+    _scan_msg.elevation_increment = _scan_config.elev_increment;
+    _scan_msg.time_increment = _scan_config.time_increment;
+    _scan_msg.range_min = _scan_config.min_range;
+    _scan_msg.range_max = _scan_config.max_range;
+
 
     _scan_msg.measurements.resize(num_readings);
     _scan_msg.intensities.resize(num_readings);
@@ -255,19 +258,23 @@ int publishScan(const roboteye::RobotEyeScan &scan) {
         _scan_msg.intensities[i] = scan.intensities[i];
     }
 
-    _desired_freq = (1. / scan.config.scan_time);
+//    _desired_freq = (1. / scan.config.scan_time);
     _scan_pub.publish(_scan_msg);
 
-    //ROS_DEBUG("publishScan done");
+    cout << "publishScan done" << endl;
 
     return(0);
 }
 
 int main(int argc, char** argv) {
 
-    cout << "=== LASERONE ===" << endl << endl;
+    cout << "=== LASERONE node ===" << endl << endl;
 
     init_parameters(argc,argv);
+
+    ros::init(argc, argv, "roboteye_scan_publisher");
+    ros::NodeHandle handle;
+    ros::Rate r(10);
 
     //attention! one measurements one scan(to be modified)
     try {
@@ -306,27 +313,86 @@ int main(int argc, char** argv) {
 //    cout << "...streaming aperture position" << ", err: " << laserone->GetErrorString(err2) << std::endl;
 
     cout << "going to sleep for " << _seconds << " seconds." << endl;
-    sleep(_seconds);
+    int left_s = _seconds;
+    left_s = sleep(_seconds);
 
     stopandprint();
-
-    ros::init(argc, argv, "roboteye_scan_publisher");
-    ros::NodeHandle n;
-    _scan_pub = n.advertise<robot_eye_driver::RobotEyeScan>("roboteye_scan", 100);
 
     /*...to be modified from now on basing on
       laser_drivers/hokuyo_node/node/hokuyo_node.cpp
       and/or laser_scan_publisher_tutorial...*/
 
-    /// TODO
-    //create the struct roboteye::RobotEyeScan _scan
-    //use threads --> change the sleep routine
+    cout << "CREATING THE _SCAN_VECTOR" << endl;
 
-    ros::Rate r(1.0);
-    while(n.ok()){
+    //create the vector _scan_vector
+//    _mutex_meas.lock();
+//    {
+//    take the last element
+//    const PolarMeasurements pm = _meas_all_vector.back();
+//    _meas_all_vector.pop_back();
 
-        publishScan(_scan);
-        r.sleep();
+
+    for(int j = 0; j < _meas_all_vector.size(); j++){
+
+        num_readings = _meas_all_vector[j].size();
+
+//        cout << "fuck1 " << num_readings << endl;
+
+        _scan_config.min_azimuth = 0;
+        _scan_config.max_azimuth = 360;
+        _scan_config.azim_increment = 0.01; //to be checked
+        _scan_config.min_elevation = -35;
+        _scan_config.max_elevation = 35;
+        _scan_config.elev_increment = 0.004; //to be checked
+        _scan_config.time_increment = num_readings / _laser_freq;
+        _scan_config.scan_time = 1/_desired_freq;
+        _scan_config.min_range = 0.5; //see the documentation
+        _scan_config.max_range = 250.0; //see the documentation
+
+//        cout << "fuck2" << endl;
+        roboteye::RobotEyeScan _scan_tmp;
+        _scan_tmp.config = _scan_config;
+//        cout << "fuck3 " << _scan_tmp.config.max_azimuth << endl;
+
+        PolarMeasurements pm = _meas_all_vector[j];
+//        cout << "fuck4" << endl;
+
+        for(int i = 0; i < pm.size(); i++){
+//            cout << "fuck5" << endl;
+
+//            double intens = pm[i].intensity;
+//            cout << "fuck6 " << intens << endl;
+
+            _scan_tmp.intensities.push_back(pm[i].intensity);
+
+//            cout << "fuck7" << endl;
+            Eigen::Vector3d value = Eigen::Vector3d(pm[i].azimuth, pm[i].elevation,pm[i].range);
+            _scan_tmp.ranges.push_back(value);
+
+//            cout << "fuck8" << endl;
+        }
+        _scan_vector.push_back(_scan_tmp);
+    }
+    cout << "CREATING THE _SCAN_VECTOR done" << endl;
+
+
+//    }
+//    _mutex_meas.unlock();
+
+    _scan_pub = handle.advertise<robot_eye_driver::RobotEyeScan>("roboteye_scan", 1024);
+//    cout << "secondi rimanenti...: " << left_s << endl;
+
+    cout << "advertise" << endl;
+
+    while(handle.ok()/* && left_s != 0*/){
+
+        for(int i = 0; i < _scan_vector.size(); i++)
+        {
+            roboteye::RobotEyeScan _scan = _scan_vector[i];
+            publishScan(_scan);
+            r.sleep();
+        }
+        handle.shutdown();
     }
 
     cout << endl;
