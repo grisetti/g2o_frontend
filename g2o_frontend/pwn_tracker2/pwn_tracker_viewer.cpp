@@ -43,13 +43,13 @@ namespace pwn_tracker  {
 	pwn::Point& point = cloud->points()[i];
 	const pwn::Normal& normal = cloud->normals()[i];
 	if (normal.squaredNorm()>0.1f) {
-	  /*
-	  if (normal.z()>0.8) {
-	    glColor3f(.5,.5,.5);
-	  } else {
-	    glColor3f(1,0,0);
-	  }
-	  */
+	  
+	  // if (normal.z()>0.8) {
+	  //   glColor3f(.5,.5,.5);
+	  // } else {
+	  //   glColor3f(1,0,0);
+	  // }
+	  
 	  glNormal3f(normal.x(), normal.y(),normal.z());
 	  glVertex3f(point.x(), point.y(), point.z());
 	}
@@ -206,15 +206,12 @@ namespace pwn_tracker  {
       PwnCloudCache::HandleType h=_cache->get((SyncSensorDataNode*) km->keyNode);
       VisCloud* visCloud = new VisCloud(h.get());
       _visState->cloudMap.insert(make_pair(km->keyNode, visCloud));
-      cerr << "VisKeyframe" << endl;
     }
     ClosureScannedMessage* closureScanned = dynamic_cast<ClosureScannedMessage*> (s);
     if (closureScanned) {
       _visState->partitions=closureScanned->partitions;
       _visState->currentPartitionIndex = closureScanned->currentPartitionIndex;
       _needRedraw = true;
-      cerr << "numPartitions: " << closureScanned->partitions.size() << endl;
-      cerr << "VisClosureScanned" << endl;
     }
   }
 
