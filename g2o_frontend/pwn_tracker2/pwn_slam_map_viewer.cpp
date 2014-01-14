@@ -93,7 +93,6 @@ int main(int argc, char** argv) {
   viewer->show();
   while((s=des.readObject())) {
     objects.push_back(s);
-    cerr << objects.size() << " ";
     NewKeyNodeMessage* km = dynamic_cast<NewKeyNodeMessage*>(s);
     if (km) {
       PwnCloudCache::HandleType h=cache->get((SyncSensorDataNode*) km->keyNode);

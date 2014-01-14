@@ -74,6 +74,28 @@ namespace pwn_tracker {
     return cloud;
   }
 
+
+  void PwnMatcherBase::clearPriors(){
+    _aligner->clearPriors();
+  }
+  
+  void PwnMatcherBase::addRelativePrior(const Eigen::Isometry3d &mean_, const Matrix6d &informationMatrix_){
+    Eigen::Isometry3f mean;
+    Matrix6f info;
+    convertScalar(mean, mean_);
+    convertScalar(info, informationMatrix_);
+    _aligner->addRelativePrior(mean, info);
+  }
+  
+  void PwnMatcherBase::addAbsolutePrior(const Eigen::Isometry3d &refpose_, const Eigen::Isometry3d &mean_, const Matrix6d &informationMatrix_){
+    Eigen::Isometry3f refpose, mean;
+    Matrix6f info;
+    convertScalar(refpose, refpose_);
+    convertScalar(mean, mean_);
+    convertScalar(info, informationMatrix_);
+    _aligner->addAbsolutePrior(refpose, mean, info);
+  }
+
   void PwnMatcherBase::matchClouds(PwnMatcherBase::MatcherResult& result, 
 				   pwn::Cloud* fromCloud, pwn::Cloud* toCloud,
 				   const Eigen::Isometry3f& fromOffset, const Eigen::Isometry3f& toOffset, 

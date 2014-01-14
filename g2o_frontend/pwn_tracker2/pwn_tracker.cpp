@@ -120,7 +120,7 @@ namespace pwn_tracker{
     SyncSensorDataNode * otherNode = dynamic_cast<SyncSensorDataNode*>(otherNode_);
     if (! (keyNode && otherNode))
       return 0;
-
+    
     // fetch the clouds from the cache
     PwnCloudCache::HandleType _keyCloudHandler = _cache->get(keyNode);
     CloudWithImageSize* keyCloud = _keyCloudHandler.get();
@@ -129,12 +129,14 @@ namespace pwn_tracker{
     _scaledImageSize = otherCloud->imageRows*otherCloud->imageCols/(_matcher->scale()*_matcher->scale());
     Eigen::Isometry3d keyOffset_, otherOffset_;
     Eigen::Matrix3d   otherCameraMatrix_;
+    Eigen::Isometry3d odomGuess;
     {
       PinholeImageData* imdata = keyNode->sensorData()->sensorData<PinholeImageData>(_topic);
       if (! imdata) {
 	throw std::runtime_error("the required topic does not match the requested type");
       }
       keyOffset_ = _robotConfiguration->sensorOffset(imdata->sensor());
+      odomGuess = imdata->robotReferenceFrame()->transform().inverse();
     }
     {
       PinholeImageData* imdata = otherNode->sensorData()->sensorData<PinholeImageData>(_topic);
@@ -143,8 +145,20 @@ namespace pwn_tracker{
       }
       otherOffset_ = _robotConfiguration->sensorOffset(imdata->sensor());
       otherCameraMatrix_ = imdata->cameraMatrix();
+      odomGuess = odomGuess * imdata->robotReferenceFrame()->transform();
     }
-
+    
+    _matcher->clearPriors();
+    if (keyNode->imu() && otherNode->imu()){
+      MapNodeUnaryRelation* imuData=otherNode->imu();
+      Matrix6d info = imuData->informationMatrix()*1000;
+      _matcher->addAbsolutePrior(keyNode->transform(), imuData->transform(), info);
+    }
+    bool useOdom=true;
+    if (useOdom){
+      Matrix6d info = Matrix6d::Identity()*1000;
+      _matcher->addRelativePrior(odomGuess, info);
+    }
     // convert double to float to call the matcher
     Eigen::Isometry3f keyOffset, otherOffset;
     Eigen::Matrix3f otherCameraMatrix;

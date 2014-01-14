@@ -158,8 +158,8 @@ namespace boss_map {
 	t.linear() = imu->orientation().toRotationMatrix();
 	Eigen::Matrix<double, 6, 6> info;
 	info.setZero();
-	//info.block<3,3>(3,3) = imu->orientationCovariance().inverse();
-	info.block<3,3>(3,3).setIdentity();
+	info.block<3,3>(3,3) = imu->orientationCovariance().inverse();
+	//info.block<3,3>(3,3).setIdentity();
 	imuRel->setTransform(t);
 	imuRel->setInformationMatrix(info);
 	snode->setImu(imuRel);

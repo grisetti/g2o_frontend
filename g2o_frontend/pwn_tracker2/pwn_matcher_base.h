@@ -48,6 +48,10 @@ namespace pwn_tracker {
 		     int toRows, int toCols,
 		     const Eigen::Isometry3d& initialGuess=Eigen::Isometry3d::Identity());
 
+    void clearPriors();
+    void addRelativePrior(const Eigen::Isometry3d &mean, const Matrix6d &informationMatrix);
+    void addAbsolutePrior(const Eigen::Isometry3d &referenceTransform, const Eigen::Isometry3d &mean, const Matrix6d &informationMatrix);
+
     
     //! boss serialization
     virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
@@ -67,6 +71,7 @@ namespace pwn_tracker {
     pwn::Aligner* _aligner;
     pwn::DepthImageConverter* _converter;
     int _scale;
+
   private:
     pwn_boss::Aligner* _baligner;
     pwn_boss::DepthImageConverter* _bconverter;

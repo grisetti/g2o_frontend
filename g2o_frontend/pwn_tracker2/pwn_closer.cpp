@@ -131,19 +131,32 @@ namespace pwn_tracker {
     }
 
     // convert double to float to call the matcher
-    Eigen::Isometry3f keyOffset, otherOffset;//, initialGuess;
+    Eigen::Isometry3f keyOffset, otherOffset;
     Eigen::Matrix3f otherCameraMatrix;
     convertScalar(keyOffset, keyOffset_);
     convertScalar(otherOffset, otherOffset_);
     convertScalar(otherCameraMatrix, otherCameraMatrix_);
     otherCameraMatrix(2,2) = 1;
 
+    Eigen::Isometry3d ig=initialGuess_;
+    double nt = ig.translation().norm();
+    double clamp = .5;
+    if (nt>clamp)
+      ig.translation()*=(clamp/nt);
+
+    _matcher->clearPriors();
+    if (keyNode->imu() && otherNode->imu()){
+      MapNodeUnaryRelation* imuData=otherNode->imu();
+      Matrix6d info = imuData->informationMatrix();
+      _matcher->addAbsolutePrior(keyNode->transform(), imuData->transform(), info);
+    }
+
     PwnMatcherBase::MatcherResult result;
     _matcher->matchClouds(result, 
 			  keyCloud, otherCloud, 
 			  keyOffset, otherOffset,
 			  otherCameraMatrix, otherCloud->imageRows, otherCloud->imageCols, 
-			  initialGuess_);
+			  ig);
 
     if(result.image_nonZeros < _frameMinNonZeroThreshold ||
        result.image_outliers > _frameMaxOutliersThreshold || 
