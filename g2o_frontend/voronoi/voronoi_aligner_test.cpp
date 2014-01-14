@@ -145,7 +145,7 @@ void breadthFirst(VerticesMap& set, PointersDeque& deque, MatrixXi& boolean, Mat
             int x = parent->position().x();
             int y = parent->position().y();
             boolean(x, y) = 1;
-            parent->setVisited(true);
+            parent->setVisited();
 
             int childCounter = 0;
             for(short int r = -1; r < 2; ++r)
@@ -179,7 +179,7 @@ void breadthFirst(VerticesMap& set, PointersDeque& deque, MatrixXi& boolean, Mat
                     {
                         VoronoiVertex* v2 = &(pit->second);
                         boolean(currentX, currentY) = 1;
-                        v2->setVisited(true);
+                        v2->setVisited();
                         deque.push_back(v2);
                         VoronoiEdge e1(parent, v2);
                         parent->addToEdgeSet(e1);

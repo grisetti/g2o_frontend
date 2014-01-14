@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdint.h>
 #include "Eigen/Core"
+
 #include "utilities.h"
 
 #include "mutex.h"
@@ -92,7 +93,7 @@ namespace roboteye
                 Eigen::Vector4d xyzi = polar2euclidean(observations[i]);
                 xyz_meas_tmp.push_back(xyzi);
 
-                //adding the currentmeasurement in the global structures
+                //adding the current measurement in the global structures
                 _meas_all.push_back(observations[i]); //to cout/plot the data
                 _xyz_meas_all.push_back(xyzi);
             }
