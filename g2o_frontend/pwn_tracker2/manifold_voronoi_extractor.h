@@ -5,6 +5,7 @@
 #include "GL/gl.h"
 #include "g2o_frontend/boss_map/map_utils.h"
 #include "g2o_frontend/boss_map/stream_processor.h"
+#include <list>
 
 namespace manifold_voronoi {
   using namespace pwn;
@@ -31,6 +32,8 @@ namespace manifold_voronoi {
     void setResolution(float res) {_resolution = res;}
     float resolution() const {return _resolution;}
   protected:
+    std::list<PwnCloudCache::HandleType> cacheHandles;
+    size_t _dequeSize;
     MapManager* _manager;
     PwnCloudCache* _cache;
     float _resolution;

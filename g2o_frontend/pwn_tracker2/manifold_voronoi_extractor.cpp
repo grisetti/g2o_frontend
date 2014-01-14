@@ -28,17 +28,24 @@ namespace manifold_voronoi {
     _xSize = 100;
     _ySize = 100;
     _normalThreshold = 0.64;
+    _dequeSize = 30;
   }
 
   void ManifoldVoronoiExtractor::process(Serializable* s){
     put(s);
-    SyncSensorDataNode* n = dynamic_cast<SyncSensorDataNode*>(s);
+    NewKeyNodeMessage* km = dynamic_cast<NewKeyNodeMessage*>(s);
     int cx = _xSize/2;
     int cy = _ySize/2;
     float ires = 1./_resolution;
-    if (n) {
-      PwnCloudCache::HandleType h=_cache->get(n);
-      CloudWithImageSize* cloud = h.get();
+    if (km) {
+      PwnCloudCache::HandleType h=_cache->get((SyncSensorDataNode*) km->keyNode);
+      cacheHandles.push_back(h);
+      while(cacheHandles.size()>_dequeSize)
+	cacheHandles.pop_front();
+      
+      MapNode* n = km->keyNode;
+      Eigen::Isometry3d inT = n->transform().inverse();
+
       ManifoldVoronoiData* vdata = new ManifoldVoronoiData();
       vdata->resolution = _resolution;
       boss_map::ImageBLOB* imageBlob = new boss_map::ImageBLOB();
@@ -46,27 +53,39 @@ namespace manifold_voronoi {
       imageBlob->cvImage().setTo(30000);
       imageBlob->adjustFormat();
       vdata->setTimestamp(0);
-      for (size_t i = 0; i<cloud->points().size(); i++){
-	pwn::Normal& n = cloud->normals()[i];
-	pwn::Point& p = cloud->points()[i];
-	int x = cx + p.x()*ires;
-	int y = cy + p.y()*ires;
-	if ( (x<0) || 
-	     (x>=_xSize) || 
-	     (y < 0) || 
-	     (y>=_ySize) ){
-	     continue;
+      
+      for (std::list<PwnCloudCache::HandleType>::iterator it = cacheHandles.begin(); it!=cacheHandles.end(); it++) {
+	PwnCloudCache::HandleType& h = *it;
+	CloudWithImageSize* cloud_ = h.get();
+	MapNode* cn = h.key();
+	Eigen::Isometry3d currentTransform=inT * cn->transform();
+	pwn::Cloud cloud = *cloud_;
+	Eigen::Isometry3f  currentTransformf;
+	convertScalar(currentTransformf, currentTransform);
+	cloud.transformInPlace( currentTransformf);
+
+	for (size_t i = 0; i<cloud.points().size(); i++){
+	  pwn::Normal& n = cloud.normals()[i];
+	  pwn::Point& p = cloud.points()[i];
+	  int x = cx + p.x()*ires;
+	  int y = cy + p.y()*ires;
+	  if ( (x<0) || 
+	       (x>=_xSize) || 
+	       (y < 0) || 
+	       (y>=_ySize) ){
+	    continue;
+	  }
+	  uint16_t& imZ = imageBlob->cvImage().at<uint16_t>(x,y);
+	  int pz =  10000 -1000 * p.z();
+	  if (imZ < pz)
+	    continue;
+	  if (n.squaredNorm()< 0.1)
+	    continue;
+	  if (n.z()<_normalThreshold)
+	    continue;
+	  imZ = pz;
 	}
-	uint16_t& imZ = imageBlob->cvImage().at<uint16_t>(x,y);
-	int pz =  10000 -1000 * p.z();
-	if (imZ < pz)
-	  continue;
-	if (n.squaredNorm()< 0.1)
-	  continue;
-	if (n.z()<_normalThreshold)
-	  continue;
-	imZ = pz;
-	}
+      }
       vdata->imageBlob().set(imageBlob);
       vdata->node = n;
       put(vdata);
