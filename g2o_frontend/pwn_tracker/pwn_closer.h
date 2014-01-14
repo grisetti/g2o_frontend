@@ -2,15 +2,14 @@
 
 #include "opencv2/highgui/highgui.hpp"
 #include "g2o_frontend/boss_map/reference_frame.h"
-#include "g2o_frontend/pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/cloud.h"
 #include "g2o_frontend/pwn_core/pinholepointprojector.h"
 #include "g2o_frontend/pwn_core/depthimageconverter.h"
 #include "g2o_frontend/pwn_core/aligner.h"
-#include "g2o_frontend/boss_map_building/boss_map_g2o_reflector.h"
+#include "g2o_frontend/boss_map_building/map_g2o_reflector.h"
 #include "g2o_frontend/boss_map_building/map_closer.h"
 #include "g2o_frontend/boss_map/map_utils.h"
 #include "pwn_tracker.h"
-#include "g2o_frontend/boss_map_building/map_g2o_wrapper.h"
 
 namespace pwn_tracker {
   using namespace std;
@@ -50,8 +49,6 @@ namespace pwn_tracker {
     inline pwn::DepthImageConverter* converter() { return _converter;}
     inline void setConverter(pwn::DepthImageConverter* converter_) { _converter=converter_; updateCache();}
     */
-    inline boss_map::PoseAcceptanceCriterion* criterion() {return _criterion;}
-    void setCriterion(boss_map::PoseAcceptanceCriterion* criterion_) { _criterion= criterion_;}
 
     void setScale(int scale_) {PwnMatcherBase::setScale(scale_); updateCache();}
 
@@ -96,12 +93,12 @@ struct NewFrameCloserAdder: public PwnTracker::NewFrameAction {
   struct CloserRelationAdder: public PwnTracker::NewRelationAction {
     CloserRelationAdder(std::list<Serializable*>& objects_,
 			PwnCloser* closer, 
-			G2oWrapper* optimizer_, 
+			MapG2OReflector* optimizer_, 
 			PwnTracker* tracker);
     void compute (PwnTrackerRelation* relation);
   protected:
     PwnCloser* _closer;
-    G2oWrapper* _optimizer;
+    MapG2OReflector* _optimizer;
     std::list<Serializable*>& _objects;
   };
 }

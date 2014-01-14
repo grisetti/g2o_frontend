@@ -34,7 +34,7 @@ namespace pwn_tracker  {
     bool _standard;
   };
 
-  VisCloud::VisCloud(pwn::Frame* cloud) {
+  VisCloud::VisCloud(pwn::Cloud* cloud) {
     drawList = 0;
     if (cloud && (drawList = glGenLists(1)) ) {
       glNewList(drawList,GL_COMPILE);

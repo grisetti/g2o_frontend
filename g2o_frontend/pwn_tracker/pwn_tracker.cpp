@@ -29,7 +29,6 @@ namespace pwn_tracker{
 			 pwn::DepthImageConverter* converter, 
 			 boss_map::MapManager* manager,
 			 PwnCache* cache_): PwnMatcherBase(aligner, converter) {
-    _previousCloud = 0;
     _globalT.setIdentity();
     _previousCloudTransform.setIdentity();
     _counter = 0;
@@ -38,6 +37,8 @@ namespace pwn_tracker{
     this->_manager = manager;
     _cache=cache_;
     cumTime = 0;
+    _previousTrackerFrame = 0;
+    _previousCloud = 0;
   }
 
   void PwnTracker::init(){
@@ -119,9 +120,9 @@ namespace pwn_tracker{
     Eigen::Isometry3d relationMean;
     if (_previousCloud){
       _aligner->setCurrentSensorOffset(_currentCloudOffset);
-      _aligner->setCurrentFrame(_currentCloud);
+      _aligner->setCurrentCloud(_currentCloud);
       _aligner->setReferenceSensorOffset(_previousCloudOffset);
-      _aligner->setReferenceFrame(_previousCloud);
+      _aligner->setReferenceCloud(_previousCloud);
 
       _aligner->correspondenceFinder()->setImageSize(r,c);
       PinholePointProjector* alprojector=dynamic_cast<PinholePointProjector*>(_aligner->projector());

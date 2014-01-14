@@ -51,7 +51,6 @@ namespace boss_map {
       MapNode* n = relation->nodes()[i];
       std::map<MapNode*, NodeInfo>::iterator it=_nodeInfos.find(n);
       if (it == _nodeInfos.end()) {
-	cerr << "node: " << n << endl;
 	throw std::runtime_error("no node for relation");
       }
       it->second.relations.insert(relation);
@@ -102,11 +101,45 @@ namespace boss_map {
     return true;
   }
 
-  MapManagerActionHandler::MapManagerActionHandler(MapManager* manager_){
-    _manager = manager_;
+
+  MapManagerActionHandler::MapManagerActionHandler(MapManager* manager_, int id, IdContext* context):
+    Identifiable(id, context){
+    _manager = 0;
+    setManager(manager_);
   }
 
-  MapManagerActionHandler::~MapManagerActionHandler(){}
+  void MapManagerActionHandler::setManager(MapManager* manager_){
+    if (_manager){
+      throw std::runtime_error("handler already assigned");
+    }
+      
+    _manager=manager_;
+    cerr << "manager: " << _manager << endl;
+    if(_manager){
+      _manager->actionHandlers().push_back(this);
+    }
+  }
+
+  void MapManagerActionHandler::serialize(ObjectData& data, IdContext& context){
+    Identifiable::serialize(data,context);
+    data.setPointer("manager",_manager);
+  }
+
+  void MapManagerActionHandler::deserialize(ObjectData& data, IdContext& context){
+    Identifiable::deserialize(data,context);
+    data.getReference("manager").bind(_manager);
+    if(_manager){
+      _manager->actionHandlers().push_back(this);
+    }
+  }
+
+
+  MapManagerActionHandler::~MapManagerActionHandler(){
+    size_t i;
+    for (i = 0;  i<_manager->actionHandlers().size() && _manager->actionHandlers()[i]!=this;  i++);
+    if (i<_manager->actionHandlers().size())
+      _manager->actionHandlers().erase(_manager->actionHandlers().begin()+i);
+  }
 
   BOSS_REGISTER_CLASS(MapManager);
 

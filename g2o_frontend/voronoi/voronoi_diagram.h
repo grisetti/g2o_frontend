@@ -21,8 +21,11 @@ class VoronoiDiagram
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    VoronoiDiagram(std::istream&, int, int, float);
+    VoronoiDiagram(std::istream&, int);
     ~VoronoiDiagram();
+
+    /** UNUSED CONSTRUCTOR. WILL BE DELETED*/
+//    VoronoiDiagram(std::istream&, int, int, float);
 
     inline double get_time()
     {
@@ -31,52 +34,46 @@ public:
         return ts.tv_sec + ts.tv_usec*1e-6;
     }
 
-
-    void titSeeker(const Eigen::Vector2i& mouse_coords);
-    void proxySetter();
-    void spikeFinder();
-
-    void pruner();
-
-    void queueFiller();
+    void graph();
+    void checkQueue();
+    void checkStats();
 
     void distmap();
-
     void distmap2image();
     void distmap2voronoi();
 
-    void eroded2eigen();
+    void diagram2graph();
 
-    void fillLookUpTable(int dTh, float dRho, int maxDist);
-    void testLookUpTable(int dTh, float dRho, int maxDist);
+    void filter();
 
-    void cvmat2eigenmat();
+    void queueFiller();
 
-    void vmap2eigenmat();
-//    void eigenmat2cvmat(cv::Mat& out, const Eigen::MatrixXf& in);
+    /** UNUSED FUNCTIONS. THEY WILL BE DELETED*/
+//    void fillLookUpTable(int dTh, float dRho, int maxDist);
+//    void testLookUpTable(int dTh, float dRho, int maxDist);
+//    void titSeeker(const Eigen::Vector2i& mouse_coords);
+//    void proxySetter();
 
-    void newLoad();
     void loadPGM();
     void savePGM(const char *filename, const Eigen::MatrixXf& image_);
 
+
     int _squaredResolution;
-    int _thetaRes;
-    float _rhoRes;
+    std::istream& _file;
+    /** UNUSED PARAMETERS. WILL BE DELETED*/
+//    int _thetaRes;
+//    float _rhoRes;
+//    LookUpTable* _lut;
+//    Eigen::MatrixXf* _tit;
 
     VertexMap _vMap;
+    VertexMap _candidates;
 
     Eigen::MatrixXf _drawableDistmap;
-    Eigen::MatrixXf _drawableVoromap;
-    Eigen::MatrixXf _drawableEroded;
-    Eigen::MatrixXf _testVMap;
 
     cv::Mat* _voro;
-    cv::Mat* _ero;
+    cv::Mat* _graph;
     DistanceMap* _distmap;
-    DistanceQueue* _distqueue;
-    LookUpTable* _lut;
-    Eigen::MatrixXf* _tit;
-
-    std::istream& _file;
+    VoronoiQueue* _vQueue;
 };
 #endif // VORONOI_DIAGRAM_H

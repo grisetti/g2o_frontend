@@ -23,7 +23,7 @@ int main()
 
     cout << "sizeC:" << endl << cm.getConvolvedGrid().size() << endl;
     cout << "sizeS:" << endl << cm.getScanGrid().size() << endl;
-    const string logFile = "/home/erratic/datasets/carmen_log_files/dis.clf";
+    const string logFile = "/home/erratic/datasets/capybara/second_run.clf";
     LogReader lr(logFile, hV);
 
     vector<Vector2fVector> logScan = lr.getScans();

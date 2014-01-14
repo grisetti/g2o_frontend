@@ -126,8 +126,9 @@ namespace pwn_tracker {
     // Eigen::Matrix3d fromCamera, toCamera;
     // convertScalar(fromCamera, from->cameraMatrix);
     // convertScalar(toCamera, to->cameraMatrix);
-
-
+    
+    //Eigen::Isometry3d ig = initialGuess;
+    //ig.translation().setZero();
     matchClouds(result, 
 		from->cloud, to->cloud, 
 		from->sensorOffset, to->sensorOffset, 
@@ -252,13 +253,13 @@ namespace pwn_tracker {
     _closer = closer;
   }
   void NewFrameCloserAdder::compute (PwnTrackerFrame* frame) {
-    _closer->addFrame(frame);
+    _closer->addKeyNode(frame);
   }
 
 
   CloserRelationAdder::CloserRelationAdder(std::list<Serializable*>& objects_,
 		      PwnCloser* closer, 
-		      G2oWrapper* optimizer_, 
+		      MapG2OReflector* optimizer_, 
 		      PwnTracker* tracker):
     PwnTracker::NewRelationAction(tracker),
     _objects(objects_) {

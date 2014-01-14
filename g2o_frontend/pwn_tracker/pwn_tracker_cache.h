@@ -1,7 +1,7 @@
 #pragma once
 
 #include "g2o_frontend/boss_map/reference_frame.h"
-#include "g2o_frontend/pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/cloud.h"
 #include "g2o_frontend/boss_map/map_manager.h"
 #include "g2o_frontend/pwn_core/pinholepointprojector.h"
 #include "g2o_frontend/pwn_core/depthimageconverter.h"
@@ -16,9 +16,9 @@ namespace pwn_tracker {
   class PwnCache;
   class PwnTrackerFrame;
 
-  class PwnCacheEntry: public CacheEntry<PwnTrackerFrame, pwn::Frame>{
+  class PwnCacheEntry: public CacheEntry<PwnTrackerFrame, pwn::Cloud>{
   public:
-    PwnCacheEntry(PwnCache* cache, PwnTrackerFrame* k, pwn::Frame* d=0);
+    PwnCacheEntry(PwnCache* cache, PwnTrackerFrame* k, pwn::Cloud* d=0);
   protected:
     virtual DataType* fetch(KeyType* k);
     PwnCache* _pwnCache;
@@ -33,7 +33,7 @@ namespace pwn_tracker {
 
     inline int scale() const {return _scale;}
     inline void setScale(int scale_)  {_scale=scale_;}
-    pwn::Frame* loadFrame(PwnTrackerFrame* trackerFrame);
+    pwn::Cloud* loadFrame(PwnTrackerFrame* trackerFrame);
     double cumTime;
     int numCalls;
   protected:

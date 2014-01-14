@@ -15,14 +15,14 @@ namespace boss_map {
 
   struct SyncTopicInstance;
 
-  struct SyncCondition{
+  struct SyncCondition {
     SyncCondition(SyncTopicInstance* m1, SyncTopicInstance*m2);
     virtual bool eval() = 0;
     virtual bool canEval();
     SyncTopicInstance* m1, *m2;
   };
 
-  struct SyncTopicInstance{
+  struct SyncTopicInstance {
     SyncTopicInstance(std::string topic);
     std::string topic;
     BaseSensorData* sensorData;
@@ -35,20 +35,44 @@ namespace boss_map {
     double dt;
   };
 
-  struct Synchronizer: public StreamProcessor{
 
-    enum DroppedDataPolicy {KeepData,DeleteData};
-    enum DroppedReferenceFramePolicy {KeepReferenceFrame,DeleteReferenceFrame};
+  struct SynchronizedSensorData: public BaseSensorData {
+    SynchronizedSensorData(int id=-1, IdContext* context = 0);
+    virtual void serialize(ObjectData& data, IdContext& context);
+    virtual void deserialize(ObjectData& data, IdContext& context);
 
-    Synchronizer();
+    template <class SensorDataType> 
+    SensorDataType* sensorData(const std::string& topic_){
+      size_t i = 0;
+      for (; i<sensorDatas.size() && sensorDatas[i]->topic()!=topic_; i++);
+      SensorDataType* s = 0;
+      if (i<sensorDatas.size())
+	s=dynamic_cast<SensorDataType*>(sensorDatas[i]);
+      if (! s ){
+	std::cerr << "type mismatch" << "topic: " << topic_ << "does not match the requested type" << std::endl;
+      }
+      return i<sensorDatas.size() ? dynamic_cast<SensorDataType*>(sensorDatas[i]) : 0;
+    }
+
+    std::vector<BaseSensorData*> sensorDatas;
+  };
+
+
+  struct SensorDataSynchronizer: public StreamProcessor{
+    SensorDataSynchronizer();
     SyncTopicInstance* addSyncTopic(const std::string& topic);
     SyncTimeCondition* addSyncTimeCondition(const std::string& topic1, const std::string& topic2, double time);
     virtual void process(Serializable* s);
     SyncTopicInstance*  syncTopic(std::string topic);
-    void syncDone();
-    ~Synchronizer();
-  
+    ~SensorDataSynchronizer();
+    inline const std::string& topic() const {return _topic;}
+    inline void setTopic (const std::string& topic_) {_topic = topic_;}
+
+    virtual void serialize(ObjectData& data, IdContext& context);
+    virtual void deserialize(ObjectData& data, IdContext& context);
+    
   protected:
+    std::string _topic;
     void computeDependancies(std::set<SyncCondition*> & conditions, 
 			     std::set<SyncTopicInstance*>& dependancies,
 			     SyncTopicInstance* instance);
@@ -59,11 +83,7 @@ namespace boss_map {
 
     std::map<std::string, SyncTopicInstance*> syncTopics;
     std::set<SyncCondition*> syncConditions;
-    DroppedReferenceFramePolicy framePolcy;
-    DroppedDataPolicy  dataPolicy;
-    std::deque<BaseSensorData*> _syncDatas;
   };
-
   
 }
 #endif

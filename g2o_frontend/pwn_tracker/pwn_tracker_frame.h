@@ -1,7 +1,7 @@
 #pragma once
 #include "g2o_frontend/boss_map/map_manager.h"
 #include "g2o_frontend/boss_map/reference_frame.h"
-#include "g2o_frontend/pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/cloud.h"
 #include "g2o_frontend/boss_map/image_sensor.h"
 
 namespace pwn_tracker{
@@ -19,7 +19,7 @@ using namespace pwn;
     virtual void serialize(ObjectData& data, IdContext& context);
     //! boss deserialization
     virtual void deserialize(ObjectData& data, IdContext& context);
-    pwn::Frame* cloud;
+    pwn::Cloud* cloud;
     boss_map::ImageBLOBReference depthImage;
     int imageRows, imageCols;
     boss_map::ImageBLOBReference normalThumbnail;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "g2o_frontend/pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/cloud.h"
 #include "g2o_frontend/pwn_core/pinholepointprojector.h"
 #include "g2o_frontend/pwn_core/depthimageconverterintegralimage.h"
 #include "g2o_frontend/pwn_core/aligner.h"
@@ -33,20 +33,20 @@ namespace pwn_tracker {
     inline void setConverter(pwn::DepthImageConverter* converter_) { _converter=converter_;}
 
 
-    pwn::Frame* makeCloud(int& r, int& c,
+    pwn::Cloud* makeCloud(int& r, int& c,
 			  Eigen::Matrix3f& cameraMatrix, 
 			  const Eigen::Isometry3f& sensorOffset, 
 			  const DepthImage& depthImage);
 
     void matchClouds(PwnMatcherBase::MatcherResult& result, 
-		     pwn::Frame* fromCloud, pwn::Frame* toCloud,
+		     pwn::Cloud* fromCloud, pwn::Cloud* toCloud,
 		     const Eigen::Isometry3f& fromOffset_, const Eigen::Isometry3f& toOffset_, 
 		     const Eigen::Matrix3f& toCameraMatrix_,
 		     int toRows, int toCols,
 		     const Eigen::Isometry3d& initialGuess=Eigen::Isometry3d::Identity());
 
     void makeThumbnails(cv::Mat& depthThumbnail, cv::Mat& normalThumbnail, 
-			Frame* f, int r, int c, 
+			pwn::Cloud* f, int r, int c, 
 			const Eigen::Isometry3f& offset, 
 			const Eigen::Matrix3f& cameraMatrix,
 			float scale);

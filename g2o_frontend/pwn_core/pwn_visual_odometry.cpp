@@ -173,7 +173,7 @@ int main(int argc, char **argv) {
     // Write out global transformation
     std::cout << "Global transformation: " << std::endl << globalT.matrix() << std::endl; 
     std::cout << "********************************************************" << std::endl; 
-    // cloud->save((depthFilename + ".pwn").c_str(), globalT, 1, true);
+    cloud->save((depthFilename + ".pwn").c_str(), globalT, 1, true);
     Quaternionf globalRotation = Quaternionf(globalT.linear());
     globalRotation.normalize();
     os << timestamp << " " 

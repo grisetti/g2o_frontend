@@ -15,7 +15,7 @@ namespace pwn_tracker {
 
 
   void PwnMatcherBase::makeThumbnails(cv::Mat& depthThumbnail, cv::Mat& normalThumbnail, 
-				  Frame* f, int r, int c, 
+				      pwn::Cloud* f, int r, int c, 
 				  const Eigen::Isometry3f& offset, 
 				  const Eigen::Matrix3f& cameraMatrix,
 				  float scale){
@@ -54,7 +54,7 @@ namespace pwn_tracker {
     }
   }
 
-  pwn::Frame* PwnMatcherBase::makeCloud(int& r, int& c, Eigen::Matrix3f& cameraMatrix,
+  pwn::Cloud* PwnMatcherBase::makeCloud(int& r, int& c, Eigen::Matrix3f& cameraMatrix,
 				    const Eigen::Isometry3f& sensorOffset,  const DepthImage& depthImage) {
 
 
@@ -74,7 +74,7 @@ namespace pwn_tracker {
     cameraMatrix = projector->cameraMatrix();
     r = projector->imageRows();
     c = projector->imageCols();
-    pwn::Frame* cloud = new pwn::Frame;
+    pwn::Cloud* cloud = new pwn::Cloud;
     double t0 = g2o::get_time();
     _converter->compute(*cloud, scaledImage, sensorOffset);
     double t1 = g2o::get_time();
@@ -86,7 +86,7 @@ namespace pwn_tracker {
   }
 
   void PwnMatcherBase::matchClouds(PwnMatcherBase::MatcherResult& result, 
-				   pwn::Frame* fromCloud, pwn::Frame* toCloud,
+				   pwn::Cloud* fromCloud, pwn::Cloud* toCloud,
 				   const Eigen::Isometry3f& fromOffset, const Eigen::Isometry3f& toOffset, 
 				   const Eigen::Matrix3f& toCameraMatrix,
 				   int toRows, int toCols,
@@ -131,8 +131,8 @@ namespace pwn_tracker {
     // sprintf(dbgName, "match-%06d-%06d",from->seq, to->seq);
     // _aligner->debugPrefix()=dbgName;
     _aligner->correspondenceFinder()->setImageSize(r,c);
-    _aligner->setReferenceFrame(fromCloud);
-    _aligner->setCurrentFrame(toCloud);
+    _aligner->setReferenceCloud(fromCloud);
+    _aligner->setCurrentCloud(toCloud);
     _aligner->align();
     //_aligner->debugPrefix()=""; FICSMI
 

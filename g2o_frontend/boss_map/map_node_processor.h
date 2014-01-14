@@ -40,26 +40,4 @@ namespace boss_map {
     MapManager* _manager;
     RobotConfiguration* _config;
   };
-
-
-  class ImuRelationAdder : public MapNodeProcessor{
-  public:
-    ImuRelationAdder(MapManager* manager_,   RobotConfiguration* config_);
-    virtual void processNode(MapNode* node_);
-    inline MapNodeUnaryRelation* lastImu() { return _lastIMU; }
-  protected:
-    MapNodeUnaryRelation* _lastIMU;
-  };
-
-  struct OdometryRelationAdder : public MapNodeProcessor{
-  public:
-    OdometryRelationAdder(MapManager* manager_,   RobotConfiguration* config_);
-    virtual void processNode(MapNode* node_);
-    inline MapNodeBinaryRelation* lastOdometry() { return _lastOdometry; }
-  protected:
-    MapNode* _previousNode;
-    MapNodeBinaryRelation* _lastOdometry;
-    Eigen::Isometry3d _previousNodeTransform;
-  };
-
 }

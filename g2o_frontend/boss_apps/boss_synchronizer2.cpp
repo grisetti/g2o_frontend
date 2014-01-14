@@ -9,7 +9,8 @@
 #include "g2o_frontend/boss_map/imu_sensor.h"
 #include "g2o_frontend/boss_map/sensor_data_synchronizer.h"
 #include "g2o_frontend/boss_map/robot_configuration.h"
-#include "g2o_frontend/boss_map/sensing_frame_node.h"
+#include "g2o_frontend/boss_map/sensor_data_node.h"
+#include "g2o_frontend/boss_map/map_manager.h"
 
 using namespace boss_map;
 using namespace boss;
@@ -94,7 +95,7 @@ int parseArgs(std::list<CommandArg>& parsedArgs, int argc, char** argv){
   return c;
 }
 
-void handleParsedArgs(Synchronizer* sync, std::list<CommandArg> args){
+void handleParsedArgs(SensorDataSynchronizer* sync, std::list<CommandArg> args){
   for(std::list<CommandArg>::iterator it = args.begin(); it!=args.end(); it++){
     CommandArg& arg = *it;
     if (arg.asString(0)!="-sync")
@@ -126,9 +127,12 @@ int main(int argc, char** argv) {
   
 
   // create a synchronizer
-  Synchronizer sync;
+  SensorDataSynchronizer* sync = new SensorDataSynchronizer();
+  sync->setTopic("syncData");
+  
+  
 
-  handleParsedArgs(&sync, parsedArgs);
+  handleParsedArgs(sync, parsedArgs);
   std::string filein = argv[c];
   std::string fileout = argv[c+1];
 
@@ -141,20 +145,7 @@ int main(int argc, char** argv) {
   ser.setFilePath(fileout.c_str());
   
   cerr <<  "running logger with arguments: filein[" << filein << "] fileout: [" << fileout << "]" << endl;
-
-  // create a reframer object, that once all messages have been put together sets them to a unique frame
-  // Synchronizer::Reframer reframer;
-  // sync.addOutputHandler(&reframer);
-
-  // // create a writer object that dumps on the disk each block of synchronized objects
-  // Synchronizer::Writer writer(&ser);
-  // sync.addOutputHandler(&writer);
-
-  // // create a deleter object that polishes the memory after writing
-  // Synchronizer::Deleter deleter;
-  // sync.addOutputHandler(&deleter);
   
-  StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(&sync, &ser);
 
   std::vector<BaseSensorData*> sensorDatas;
   RobotConfiguration* conf = readLog(sensorDatas, des);
@@ -162,14 +153,22 @@ int main(int argc, char** argv) {
   cerr << "# sensors: " << conf->sensorMap().size() << endl;
   cerr << "# sensorDatas: " << sensorDatas.size() << endl;
 
+
+  MapManager* manager = new MapManager();
+  SyncSensorDataNodeMaker * nodeMaker = new SyncSensorDataNodeMaker(manager, conf);
+  nodeMaker->setTopic("syncData");
+  StreamProcessor::PropagatorOutputHandler* s2nm = new StreamProcessor::PropagatorOutputHandler(sync, nodeMaker);
+  StreamProcessor::WriterOutputHandler* writer = new StreamProcessor::WriterOutputHandler(nodeMaker, &ser);
+
   conf->serializeInternals(ser);
   ser.writeObject(*conf);
+  ser.writeObject(*manager);
   TSCompare comp;
   std::sort(sensorDatas.begin(), sensorDatas.end(), comp);
 
   for (size_t i = 0; i< sensorDatas.size(); i++){
     BaseSensorData* data = sensorDatas[i];
-    sync.process(data);
+    sync->process(data);
   }
 
 }

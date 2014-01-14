@@ -2,7 +2,7 @@
 
 #include "g2o_frontend/boss_map/map_manager.h"
 #include "g2o_frontend/boss_map/reference_frame.h"
-#include "g2o_frontend/pwn_core/frame.h"
+#include "g2o_frontend/pwn_core/cloud.h"
 #include "g2o_frontend/boss_map/image_sensor.h"
 #include  "pwn_tracker_frame.h"
 
