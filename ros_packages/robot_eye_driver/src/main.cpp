@@ -2,22 +2,18 @@
 
 using namespace std;
 
-// parameters
-std::string outfilename;
-std::string _sensor_IP;
-int _seconds;
-double _az_rate;
-double _N_lines;
-double _laser_freq;
-double _averaging;
-bool _intensity;
-
 void init_parameters(int argc, char ** argv){
 
     // initialize parameters
-    _sensor_IP = "169.254.111.100";
+    std::string outfilename;
+    int _seconds;
+    double _az_rate;
+    double _N_lines;
+    double _laser_freq;
+    double _averaging;
+    bool _intensity;
     g2o::CommandArgs arg;
-    arg.param("t", _seconds, 15, "choose for how many seconds you want to exec this routine");
+    arg.param("t",_seconds, 15, "choose for how many seconds you want to exec this routine");
     arg.param("az_rate", _az_rate, 10, "set the number of rounds per second [max:15(5400 degrees/sec)]");
     arg.param("nlines", _N_lines, 100, "set the number of horizontal lines (vertical resolution) [min:_az_rate]");
     arg.param("avg", _averaging, 1, "set the 'averaging' value range:[1,5]");
@@ -59,7 +55,6 @@ void init_parameters(int argc, char ** argv){
     }
 
     // print parameters
-    cout << "SENSOR IP:\t" << _sensor_IP << endl;
     cout << "LASER FREQUENCY:\t" << _laser_freq << endl;
     cout << "AVERAGING:\t" << _averaging << endl;
     cout << "GET INTENSITY:\t" << (_intensity? "YES" : "NO") << endl;
@@ -76,7 +71,7 @@ int main(int argc, char **argv)
     init_parameters(argc,argv);
 
     ros::init(argc, argv, "roboteye_node");
-    roboteye_node re;
+//    roboteye_node re;
     ros::Rate r(10);
     ros::spin();
 

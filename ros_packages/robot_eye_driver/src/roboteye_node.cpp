@@ -1,20 +1,21 @@
 #include "roboteye_node.h"
 
-//using namespace ocular;
-//using namespace std;
-//using namespace roboteye;
+using namespace ocular;
+using namespace std;
+using namespace Eigen;
+using namespace roboteye;
 
-roboteye_node::roboteye_node()
+roboteye_node::roboteye_node() : _sensor_IP("169.254.111.100")
 {
-//    try {
-//        std::cout << "creating RE05Driver" << std::endl;
-//        // connecting to RobotEye
-//        laserone = new ocular::RE05Driver("169.254.111.100"/*_sensor_IP.c_str()*/);
-//    }
-//    catch(std::exception  &e) {
-//        std::cout << "Something went wrong, caught exception: " << e.what() << std::endl;
-//        return;
-//    }
+    try {
+        std::cout << "creating RE05Driver" << std::endl;
+        // connecting to RobotEye
+        laserone = new ocular::RE05Driver("169.254.111.100"/*_sensor_IP.c_str()*/);
+    }
+    catch(std::exception  &e) {
+        std::cout << "Something went wrong, caught exception: " << e.what() << std::endl;
+        return;
+    }
 
-//    cout << "[....]" << endl;
+    cout << "[....]" << endl;
 }
