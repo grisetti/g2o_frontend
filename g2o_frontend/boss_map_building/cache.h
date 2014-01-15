@@ -52,6 +52,7 @@ namespace cache_ns {
     ~CacheEntryHandle() {if (_entry) _entry->_numLocks--;}
     CacheEntryHandle& operator = (const CacheEntryHandle&);
     DataType* get();
+    inline KeyType* key() { if (_entry) return _entry->_key; return 0; }
     void taint();
     inline void release(){_entry = 0;}
     CacheEntryHandle() : _entry(0){}
