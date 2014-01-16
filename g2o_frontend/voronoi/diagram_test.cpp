@@ -38,8 +38,8 @@ int main(int argc, char** argv)
         exit(-1);
     }
 
-    int res = 2500; // res = 2500 for MIT dataset
-//    int res = 100; // res = 100 for DIS basement
+//    int res = 2500; // res = 2500 for MIT dataset
+    int res = 100; // res = 100 for DIS basement
 //    int dt = 256;
 //    float dr = 0.125;
 //    int max = 20;
