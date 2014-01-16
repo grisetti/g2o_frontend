@@ -7,23 +7,29 @@
 #include "g2o_frontend/boss_map/stream_processor.h"
 #include <list>
 
-namespace manifold_voronoi {
-  using namespace pwn;
-  using namespace boss_map;
-  using namespace boss_map_building;
-  using namespace pwn_tracker;
 
-  class ManifoldVoronoiData: public ImageData {
-  public:
+namespace manifold_voronoi
+{
+using namespace pwn;
+using namespace boss_map;
+using namespace boss_map_building;
+using namespace pwn_tracker;
+
+
+class ManifoldVoronoiData: public ImageData
+{
+public:
     ManifoldVoronoiData(int id=-1, IdContext* context = 0);
     virtual void serialize(ObjectData& data, IdContext& context);
     virtual void deserialize(ObjectData& data, IdContext& context);
     float resolution;
     MapNode* node;
-  };
+};
 
-  class ManifoldVoronoiExtractor: public StreamProcessor{
-  public:
+
+class ManifoldVoronoiExtractor: public StreamProcessor
+{
+public:
     ManifoldVoronoiExtractor(int id = -1, boss::IdContext* context = 0);
     void init();
     virtual void process(Serializable* s);
@@ -31,7 +37,7 @@ namespace manifold_voronoi {
     virtual void deserialize(ObjectData& data, IdContext& context);
     void setResolution(float res) {_resolution = res;}
     float resolution() const {return _resolution;}
-  protected:
+protected:
     std::list<PwnCloudCache::HandleType> cacheHandles;
     size_t _dequeSize;
     MapManager* _manager;
@@ -39,8 +45,5 @@ namespace manifold_voronoi {
     float _resolution;
     float _normalThreshold;
     int _xSize, _ySize;
-  };
-
-
-
+};
 }
