@@ -157,10 +157,6 @@ void stopandprint() {
     }
 
     printandwriteLaserData();
-
-//    cout << endl;
-//    cout << "=== END ===" << endl;
-//    exit(0);
 }
 
 void init_parameters(int argc, char ** argv){

@@ -7,7 +7,7 @@
 
 #include "utilities.h"
 
-#include "mutex.h"
+//#include "mutex.h"
 
 namespace roboteye
 {
@@ -20,11 +20,13 @@ namespace roboteye
 
     //global variables
     PolarMeasurements _meas_all; // [az, el, range, intensity]
+    PolarMeasurements _meas_current; // [az, el, range, intensity]
     PolarVector _meas_all_vector;
     EuclideanMeasurements _xyz_meas_all; // [x, y, z, intensity]
+    EuclideanMeasurements _xyz_meas_current; // [x, y, z, intensity]
     EuclideanVector _xyz_meas_all_vector;
 
-    Mutex _mutex_meas;
+//    Mutex _mutex_meas;
 
     //! A struct for returning configuration from the RobotEye
     struct RobotEyeConfig
@@ -49,8 +51,8 @@ namespace roboteye
         float min_range;
         //! Maximum range [m]
         float max_range;
-        //! Range Resolution [m]
-        float range_res;
+//        //! Range Resolution [m]
+//        float range_res;
     };
 
 
@@ -83,23 +85,31 @@ namespace roboteye
         virtual void LaserDataCallback(std::vector<ocular::ocular_rbe_obs_t> observations){
             //    std::cerr << "laser callback triggered" << std::endl;
             std::cerr << observations.size() << " ";
-            // in case of parallel callbacks that would modify the measurements vector, not needed
-            //    _mutex_meas.lock();
 
-            _meas_all_vector.push_back(observations);
+            // in case of parallel callbacks that would modify the measurements vector, not needed
+//            _mutex_meas.lock();
+
+            _meas_current.clear();
+            _xyz_meas_current.clear();
+
             EuclideanMeasurements xyz_meas_tmp;
 
             for(unsigned int i = 0; i <= observations.size(); i++){
                 Eigen::Vector4d xyzi = polar2euclidean(observations[i]);
                 xyz_meas_tmp.push_back(xyzi);
 
-                //adding the current measurement in the global structures
-                _meas_all.push_back(observations[i]); //to cout/plot the data
+                _meas_current.push_back(observations[i]);
+                _xyz_meas_current.push_back(xyzi);
+
+                //adding the current measurement in the global structures to cout/print the whole data at the end
+                _meas_all.push_back(observations[i]);
                 _xyz_meas_all.push_back(xyzi);
+
             }
+            _meas_all_vector.push_back(observations);
             _xyz_meas_all_vector.push_back(xyz_meas_tmp);
 
-            //    _mutex_meas.unlock();
+//            _mutex_meas.unlock();
         }
     };
 
