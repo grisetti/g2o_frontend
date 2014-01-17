@@ -49,7 +49,7 @@ namespace manifold_voronoi {
       ManifoldVoronoiData* vdata = new ManifoldVoronoiData();
       vdata->resolution = _resolution;
       boss_map::ImageBLOB* imageBlob = new boss_map::ImageBLOB();
-      imageBlob->cvImage().create(100,100, CV_16UC1);
+      imageBlob->cvImage().create(_xSize, _ySize, CV_16UC1);
       imageBlob->cvImage().setTo(30000);
       imageBlob->adjustFormat();
       vdata->setTimestamp(0);

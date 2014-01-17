@@ -40,6 +40,9 @@ namespace pwn_tracker {
     inline int frameMinInliersThreshold() const { return _frameMinInliersThreshold; }
     inline void  setFrameMinInliersThreshold( int t)  { _frameMinInliersThreshold = t; }
 
+    inline float closureClampingDistance() const {return _closureClampingDistance;}
+    inline void setClosureClampingDistance(float closureClampingDiustance_) { _closureClampingDistance = closureClampingDiustance_;}
+
     inline bool enabled() const { return _enabled; };
     inline void setEnabled(bool e) { _enabled = e; }
 
@@ -71,6 +74,7 @@ namespace pwn_tracker {
     int _frameMaxOutliersThreshold;
     int _frameMinInliersThreshold;
     bool _enabled;
+    float _closureClampingDistance;
   };
 
 }
