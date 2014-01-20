@@ -43,18 +43,17 @@ void ManifoldVoronoiExtractor::process(Serializable* s){
         cacheHandles.push_back(h);
         while(cacheHandles.size()>_dequeSize)
             cacheHandles.pop_front();
-
         MapNode* n = km->keyNode;
         Eigen::Isometry3d inT = n->transform().inverse();
 
         ManifoldVoronoiData* vdata = new ManifoldVoronoiData();
         vdata->resolution = _resolution;
         boss_map::ImageBLOB* imageBlob = new boss_map::ImageBLOB();
-        imageBlob->cvImage().create(100,100, CV_16UC1);
+        imageBlob->cvImage().create(_xSize,_ySize, CV_16UC1);
         imageBlob->cvImage().setTo(30000);
         imageBlob->adjustFormat();
         vdata->setTimestamp(0);
-
+	uint16_t obstacle = 65535;
         for (std::list<PwnCloudCache::HandleType>::iterator it = cacheHandles.begin(); it!=cacheHandles.end(); it++) {
             PwnCloudCache::HandleType& h = *it;
             CloudWithImageSize* cloud_ = h.get();
@@ -78,13 +77,16 @@ void ManifoldVoronoiExtractor::process(Serializable* s){
                 }
                 uint16_t& imZ = imageBlob->cvImage().at<uint16_t>(x,y);
                 int pz =  10000 -1000 * p.z();
+		if (imZ == obstacle)
+		  continue;
                 if (imZ < pz)
                     continue;
-                if (n.squaredNorm()< 0.1)
+                if (n.squaredNorm()< 0.1) 
                     continue;
-                if (n.z()<_normalThreshold)
-                    continue;
-                imZ = pz;
+                if (n.z()<_normalThreshold) {
+		  imZ = obstacle;
+		} else 
+		  imZ = pz;
             }
         }
         vdata->imageBlob().set(imageBlob);

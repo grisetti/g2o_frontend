@@ -37,6 +37,7 @@ namespace pwn_tracker {
     _selector = 0;
     _enabled = true;
     _cache = cache_;
+    _closureClampingDistance = 1e9;
     setMatcher(matcher_);
     setManager(manager_);
     setRobotConfiguration(configuration_);
@@ -50,6 +51,7 @@ namespace pwn_tracker {
     data.setInt("frameMinNonZeroThreshold", _frameMinNonZeroThreshold);
     data.setInt("frameMaxOutliersThreshold", _frameMaxOutliersThreshold);
     data.setInt("frameMinInliersThreshold", _frameMinInliersThreshold);
+    data.setFloat("closureClampingDistance", _closureClampingDistance);
   }
     
   
@@ -60,6 +62,7 @@ namespace pwn_tracker {
     _frameMinNonZeroThreshold = data.getInt("frameMinNonZeroThreshold");
     _frameMaxOutliersThreshold = data.getInt("frameMaxOutliersThreshold");
     _frameMinInliersThreshold = data.getInt("frameMinInliersThreshold");
+    _closureClampingDistance = data.getFloat("closureClampingDistance");
    }
 
 
@@ -140,7 +143,7 @@ namespace pwn_tracker {
 
     Eigen::Isometry3d ig=initialGuess_;
     double nt = ig.translation().norm();
-    double clamp = .5;
+    double clamp = _closureClampingDistance;
     if (nt>clamp)
       ig.translation()*=(clamp/nt);
 
