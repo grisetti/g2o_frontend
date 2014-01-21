@@ -2,19 +2,26 @@
 
 namespace roboteye {
 
-    LaserCB::LaserCB(){
-
-//        _mutex_meas = 0;
-    }
-
-    bool LaserCB::pop(PolarMeasurements& m){
+    bool LaserCB::pop(PolarMeasurements& pm){
 
          if(_pmlist.empty())
              return false;
 
         _mutex_meas.lock();
-        m = _pmlist.front();
+        pm = _pmlist.front();
         _pmlist.pop_front();
+        _mutex_meas.unlock();
+
+        return true;
+    }
+    bool LaserCB::pop(EuclideanMeasurements& em){
+
+         if(_emlist.empty())
+             return false;
+
+        _mutex_meas.lock();
+        em = _emlist.front();
+        _emlist.pop_front();
         _mutex_meas.unlock();
 
         return true;
@@ -22,27 +29,20 @@ namespace roboteye {
 
     void LaserCB::LaserDataCallback(std::vector<ocular::ocular_rbe_obs_t> observations){
         //    std::cerr << "laser callback triggered" << std::endl;
-        std::cerr /*<< observations.size()*/ << " . ";
+        std::cerr /*<< observations.size()*/<< " . ";
 
         _mutex_meas.lock();
 
         //list to be published
         _pmlist.push_back(observations);
 
-        /// just to print the data
-//        _meas_current.clear();
-//        _xyz_meas_current.clear();
-
-        roboteye::EuclideanMeasurements xyz_meas_tmp;
+        // conversion to euclidean to create a pcd cloud
+        roboteye::EuclideanMeasurements xyz_meas;
         for(unsigned int i = 0; i <= observations.size(); i++){
             Eigen::Vector4f xyzi = polar2euclidean(observations[i]);
-            xyz_meas_tmp.push_back(xyzi);
-//            _meas_current.push_back(observations[i]);
-//            _xyz_meas_current.push_back(xyzi);
+            xyz_meas.push_back(xyzi);
         }
-//        _meas_all_vector.push_back(observations);
-        _xyz_meas_all_vector.push_back(xyz_meas_tmp);
-
+        _emlist.push_back(xyz_meas);
 
         _mutex_meas.unlock();
     }

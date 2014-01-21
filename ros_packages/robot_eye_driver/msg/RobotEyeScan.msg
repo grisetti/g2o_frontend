@@ -12,13 +12,13 @@ Header header            # timestamp in the header is the acquisition time of
                          # around the positive Y axis (counterclockwise, if Y is on the left)
                          # with zero angle being forward along the x axis
                          
-float32 azimuth_min        # start angle of the scan (orizontal) [deg]
-float32 azimuth_max        # end angle of the scan (orizontal) [deg]
-float32 azimuth_increment  # angular distance between measurements [deg]
+float32 azimuth_min        # start angle of the scan (orizontal) [rad]
+float32 azimuth_max        # end angle of the scan (orizontal) [rad]
+float32 azimuth_increment  # angular distance between measurements [rad]
 
-float32 elevation_min        # start angle of the scan (vertical) [deg]
-float32 elevation_max        # end angle of the scan (vertical) [deg]
-float32 elevation_increment  # angular distance between measurements [deg]
+float32 elevation_min        # start angle of the scan (vertical) [rad]
+float32 elevation_max        # end angle of the scan (vertical) [rad]
+float32 elevation_increment  # angular distance between measurements [rad]
 
 float32 time_increment   # time between measurements [seconds] - if your scanner
                          # is moving, this will be used in interpolating position

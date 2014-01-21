@@ -31,17 +31,17 @@ namespace roboteye
     //! A struct for returning configuration from the RobotEye
     struct RobotEyeConfig
     {
-        //! Start orizontal angle for the laser scan [deg].  0 is forward and angles are considered positive in clockwise way.
+        //! Start orizontal angle for the laser scan [rad].  0 is forward and angles are considered positive in clockwise way.
         float min_azimuth;
-        //! Stop orizontal angle for the laser scan [deg].   0 is forward and angles are considered positive in clockwise way.
+        //! Stop orizontal angle for the laser scan [rad].   0 is forward and angles are considered positive in clockwise way.
         float max_azimuth;
-        //! Scan orizontal resolution [deg].
+        //! Scan orizontal resolution [rad].
         float azim_increment;
-        //! Start vertical angle for the laser scan [deg].  a positive rotation means to look up (angles measured counterclockwise way)
+        //! Start vertical angle for the laser scan [rad].  a positive rotation means to look up (angles measured counterclockwise way)
         float min_elevation;
-        //! Stop vertical angle for the laser scan [deg].   a positive rotation means to look up (angles measured counterclockwise way)
+        //! Stop vertical angle for the laser scan [rad].   a positive rotation means to look up (angles measured counterclockwise way)
         float max_elevation;
-        //! Scan vertical resolution [deg].
+        //! Scan vertical resolution [rad].
         float elev_increment;
         //! Scan resoltuion [s]
         float time_increment;

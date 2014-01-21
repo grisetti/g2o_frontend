@@ -83,7 +83,9 @@ void publishScan(roboteye_node& re){
     robot_eye_driver::RobotEyeScan scan_msg;
 
     PolarMeasurements pm_current;
+    cerr << "b";
     bool pm_exist = re.laserCallBack().pop(pm_current);
+    cerr << "a";
     if (!pm_exist) {
         cerr << "!";
     }
@@ -92,13 +94,14 @@ void publishScan(roboteye_node& re){
     unsigned int nr = pm_current.size();
     re.setNumReadings(nr);
     roboteye::RobotEyeConfig scan_config;
-    scan_config.time_increment = nr/re._laser_freq;
-    scan_config.scan_time = 1/re._laser_freq;
+    scan_config.time_increment = nr/re.laserFreq();
+    // to be used for interpolating the scan in case of the robot is moving
+    scan_config.scan_time = 1./re.laserFreq();
 
     re.setConfig(scan_config);
 
     roboteye::RobotEyeScan scan_current;
-    for(int i = 0; i < nr; i++){
+    for(unsigned int i = 0; i < nr; ++i){
         scan_current.intensities.push_back(pm_current[i].intensity);
         Eigen::Vector3d range = Eigen::Vector3d(pm_current[i].azimuth, pm_current[i].elevation, pm_current[i].range);
         scan_current.ranges.push_back(range);
@@ -111,15 +114,16 @@ void publishScan(roboteye_node& re){
     // populate the RobotEyeScan message
     scan_msg.header.stamp = scan_time;
     scan_msg.header.frame_id = "roboteye_frame";
-    scan_msg.azimuth_min = scan_config.min_azimuth;
-    scan_msg.azimuth_max = scan_config.max_azimuth;
-    scan_msg.azimuth_increment = scan_config.azim_increment;
-    scan_msg.elevation_min = scan_config.min_elevation;
-    scan_msg.elevation_max = scan_config.max_elevation;
-    scan_msg.elevation_increment = scan_config.elev_increment;
-    scan_msg.time_increment = scan_config.time_increment;
-    scan_msg.range_min = scan_config.min_range;
-    scan_msg.range_max = scan_config.max_range;
+    scan_msg.azimuth_min = re.config().min_azimuth;
+    scan_msg.azimuth_max = re.config().max_azimuth;
+    scan_msg.azimuth_increment = re.config().azim_increment;
+    scan_msg.elevation_min = re.config().min_elevation;
+    scan_msg.elevation_max = re.config().max_elevation;
+    scan_msg.elevation_increment = re.config().elev_increment;
+    scan_msg.time_increment = re.config().time_increment;
+    scan_msg.scan_time = re.config().scan_time;
+    scan_msg.range_min = re.config().min_range;
+    scan_msg.range_max = re.config().max_range;
 
     scan_msg.measurements.resize(nr);
     scan_msg.intensities.resize(nr);
@@ -138,7 +142,6 @@ void publishScan(roboteye_node& re){
     cout << "p ";
 }
 
-
 int main(int argc, char **argv)
 {
     cout << "=== LASERONE node ===" << endl << endl;
@@ -148,11 +151,10 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "roboteye_node");
     ros::Time::init();
     roboteye_node re(az_rate, n_lines, laser_freq, averaging, intensity, outfilename);
-    ros::Rate r(10);
+    ros::Rate r(20);
 
     while(ros::ok()) {
         ros::spinOnce();
-        cerr << "ok";
         publishScan(re);
         cerr << "ok";
 

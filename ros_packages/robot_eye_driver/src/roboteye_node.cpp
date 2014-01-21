@@ -17,7 +17,6 @@ namespace roboteye {
         _outfilename = outfilename;
 
         _num_readings = 0;
-    //    _desired_freq = 0.;
         _lastStamp = ros::Time::now();
 
         // connecting to RobotEye
@@ -32,19 +31,18 @@ namespace roboteye {
             return;
         }
 
-        _scan_config.min_azimuth = 0;
-        _scan_config.max_azimuth = 360;
-        _scan_config.azim_increment = 0.01; //to be checked
-        _scan_config.min_elevation = -35;
-        _scan_config.max_elevation = 35;
-        _scan_config.elev_increment = 0.004; //to be checked
+        _scan_config.min_azimuth = deg2rad(0);
+        _scan_config.max_azimuth = deg2rad(360);
+        _scan_config.azim_increment = deg2rad(0.01); //to be checked
+        _scan_config.min_elevation = deg2rad(-35);
+        _scan_config.max_elevation = deg2rad(35);
+        _scan_config.elev_increment = deg2rad(0.004); //to be checked
         _scan_config.min_range = 0.5; //see the documentation
         _scan_config.max_range = 250.0; //see the documentation
 
         _scan_pub = _handle.advertise<robot_eye_driver::RobotEyeScan>("roboteye_scan", 1024);
 
         _thrd = boost::thread(&roboteye_node::roboteyeRunning, this);
-
     }
 
     roboteye_node::~roboteye_node() {
@@ -65,6 +63,8 @@ namespace roboteye {
         _scan.intensities = scan.intensities;
         _scan.ranges = scan.ranges;
     }
+
+
 
     void roboteye_node::roboteyeRunning(){
 
@@ -158,47 +158,36 @@ namespace roboteye {
             exit(1);
         }
 
+        /// printing the laser data
         this->printAndWriteLaserData(_outfilename);
     }
 
     void roboteye_node::printAndWriteLaserData(string outfilename) {
 
-
-        /// printing the laser data
-        //to prevent possible later callbacks
-        //    _mutex_meas->lock();
-
         /// debug
-    //    cerr << "output ALL" << endl;
-    //    for(unsigned int i = 0; i < _laser_callback._meas_all.size(); i++) {
-    //        ocular::ocular_rbe_obs_t meas = _meas_all[i];
-    //        cerr << "azim: " << meas.azimuth << ",\telev: " << meas.elevation << ",\trange: " << meas.range << ",\tintensity: " << meas.intensity << endl;
-    //    }
-
-//        for(unsigned int i = 0; i < _laser_callback.measAllVector().size(); i++) {
-//            PolarMeasurements _meas_all_callback = _laser_callback.measAllVector()[i];
-
-//            for(unsigned int j = 0; j < _meas_all_callback.size(); j++) {
-//                ocular::ocular_rbe_obs_t meas = _meas_all_callback[j];
+//        PolarList& meas_list = _laser_callback.measList();
+//        for (PolarList::iterator it = meas_list.begin(); it != meas_list.end(); ++it) {
+//            PolarMeasurements meas_all_callback = *it;
+//            for(unsigned int j = 0; j < meas_all_callback.size(); j++) {
+//                ocular::ocular_rbe_obs_t meas = meas_all_callback[j];
 //                cerr << "azim: " << meas.azimuth << ",\telev: " << meas.elevation << ",\trange: " << meas.range << ",\tintensity: " << meas.intensity << endl;
 //            }
 //        }
-
         cout << "writing Data for octave plotting and for PCD_viewer" << endl;
         ofstream plotting("plottami.txt");
         pcl::PointCloud<pcl::PointXYZI> cloud;
 
         // !!! all the observations have the same size
-        EuclideanVector& xyz_vector = _laser_callback.xyzMeasAllVector();
-        unsigned int obs_dimension = xyz_vector[0].size();
+        EuclideanList& xyz_list = _laser_callback.xyzMeasList();
+        unsigned int obs_dim = xyz_list.front().size();
 
         /// total number of points: number of observations * size of one observation
-        cloud.width = xyz_vector.size() * obs_dimension;
+        cloud.width = xyz_list.size() * obs_dim;
         cloud.height = 1;
     //    cout  << ">>>>>>>>>>>>>> "<< cloud.width << " " << _laser_callback._xyz_meas_all.size() << endl;
 
-        for(unsigned int i = 0; i < xyz_vector.size(); i++){
-            EuclideanMeasurements _xyz_all_callback = xyz_vector[i];
+        for (EuclideanList::iterator it = xyz_list.begin(); it != xyz_list.end(); ++it) {
+            EuclideanMeasurements _xyz_all_callback = *it;
 
             for(unsigned int j = 0; j < _xyz_all_callback.size(); j++) {
                 Eigen::Vector4f xyz_p = _xyz_all_callback[j];
@@ -215,6 +204,7 @@ namespace roboteye {
                 pcl_p.intensity = xyz_p[3];
                 cloud.points.push_back(pcl_p);
             }
+
         }
 
         cout << "Saving " << cloud.points.size() << " data points to " << outfilename.c_str() << endl;
@@ -222,9 +212,6 @@ namespace roboteye {
 
         plotting.flush();
         plotting.close();
-
-        //    _mutex_meas->unlock();
     }
-
 
 }

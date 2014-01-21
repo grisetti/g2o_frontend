@@ -17,39 +17,31 @@
 namespace roboteye
 {
     typedef std::vector<ocular::ocular_rbe_obs_t>  PolarMeasurements;
-    typedef std::vector<PolarMeasurements> PolarVector;
-
     typedef std::vector<Eigen::Vector4f>  EuclideanMeasurements;
-    typedef std::vector<EuclideanMeasurements> EuclideanVector;
+    typedef std::list<PolarMeasurements> PolarList;
+    typedef std::list<EuclideanMeasurements> EuclideanList;
 
 
     inline double deg2rad(double deg){
         return deg*M_PI/180;
     }
 
-    class roboteye_node;
-
     class LaserCB : public ocular::RobotEyeLaserDataCallbackClass{
 
     public:
-
-        LaserCB();
-        bool pop(PolarMeasurements& p);
-        Mutex & getMutex() {return _mutex_meas; }
-//        PolarVector& measAllVector() {return _meas_all_vector; }
-        EuclideanVector& xyzMeasAllVector() {return _xyz_meas_all_vector; }
+        bool pop(PolarMeasurements& pm);
+        bool pop(EuclideanMeasurements& em);
+        Mutex& getMutex() {return _mutex_meas; }
+        PolarList& measList() {return _pmlist; }
+        EuclideanList& xyzMeasList() {return _emlist; }
+        Eigen::Vector4f polar2euclidean(ocular::ocular_rbe_obs_t obs);
 
         virtual void LaserDataCallback(std::vector<ocular::ocular_rbe_obs_t> observations);
-        Eigen::Vector4f polar2euclidean(ocular::ocular_rbe_obs_t obs);
 
     protected:
         Mutex _mutex_meas;
-        std::list<PolarMeasurements> _pmlist;
-
-//        PolarMeasurements _meas_current; // [az, el, range, intensity]
-//        PolarVector _meas_all_vector;
-//        EuclideanMeasurements _xyz_meas_current; // [x, y, z, intensity]
-        EuclideanVector _xyz_meas_all_vector;
+        PolarList _pmlist;      // [az, el, range, intensity]
+        EuclideanList _emlist;  // [x, y, z, intensity]
     };
 
     //class AngleCB : public ocular::RobotEyeApertureAnglesCallbackClass{

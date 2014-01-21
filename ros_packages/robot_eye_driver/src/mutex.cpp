@@ -2,20 +2,12 @@
 
 Mutex::Mutex(){
   // std::cout << "creating mutex.";
-  while(pthread_mutex_init(&_mutex, NULL) == -1){
-    std::cout << '.';
-    usleep(2e4);
-  }
-  // std::cout << "\tDONE" << std::endl;
+  pthread_mutex_init(&_mutex, NULL);
 }
 
 Mutex::~Mutex(){
   // std::cout << "destroying mutex.";
-  while(pthread_mutex_destroy(&_mutex) == -1){
-    // std::cout << '.';
-    usleep(2e4);
-  }
-  // std::cout << "\tDONE" << std::endl;
+  pthread_mutex_destroy(&_mutex);
 }
 
 bool Mutex::lock(){
