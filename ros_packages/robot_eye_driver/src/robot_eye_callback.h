@@ -36,7 +36,7 @@ namespace roboteye
         EuclideanList& xyzMeasList() {return _emlist; }
         Eigen::Vector4f polar2euclidean(ocular::ocular_rbe_obs_t obs);
 
-        virtual void LaserDataCallback(std::vector<ocular::ocular_rbe_obs_t> observations);
+        void LaserDataCallback(std::vector<ocular::ocular_rbe_obs_t> observations);
 
     protected:
         Mutex _mutex_meas;
@@ -44,19 +44,20 @@ namespace roboteye
         EuclideanList _emlist;  // [x, y, z, intensity]
     };
 
+    class NotificationCB : public ocular::RobotEyeNotificationCallbackClass{
+
+        void NotificationCallback(ocular::ocular_error_t ErrCode){
+            std::cerr << "notification callback triggered" << std::endl;
+            if(ErrCode != 0)
+                std::cerr << "with errorcode = " << ErrCode << std::endl;
+        }
+    };
+
     //class AngleCB : public ocular::RobotEyeApertureAnglesCallbackClass{
 
-    //    virtual void ApertureAnglesCallback(double az, double el, unsigned int timestamp){
+    //    void ApertureAnglesCallback(double az, double el, unsigned int timestamp){
     //        //        std::cerr << "angle callback triggered: az " << az << " ,el " << el << ", timestamp" << timestamp << std::endl;
     //        std::cerr << ".";
-    //    }
-    //};
-    //class NotificationCB : public ocular::RobotEyeNotificationCallbackClass{
-
-    //    virtual void NotificationCallback(ocular::ocular_error_t ErrCode){
-    //        std::cerr << "notification callback triggered" << std::endl;
-    //        if(ErrCode != 0)
-    //            std::cerr << "with errorcode = " << ErrCode << std::endl;
     //    }
     //};
 

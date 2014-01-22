@@ -39,12 +39,19 @@ namespace roboteye
         void setLastStamp(ros::Time ls) {_lastStamp = ls; }
         unsigned int numReadings() {return _num_readings; }
         void setNumReadings(unsigned int nr) {_num_readings = nr; }
+        bool isRunning() {return _isrunning;}
+        void setIsRunning();
+        roboteyeState state() {return _state;}
+        void setState(roboteyeState s) {_state = s;}
 
-        void stopAndPrint();
+        void stop();
+        void setDesideredApertureAngles();
         void printAndWriteLaserData(std::string outfilename);
-        void roboteyeRunning();
+        void roboteyeRun();
+        void roboteyeStop();
+        void roboteyePause();
+
     protected:
-//        int state;
         // config parameters
         std::string _sensor_IP;
         double _az_rate;
@@ -65,9 +72,12 @@ namespace roboteye
         /*Laser Callback specific stuff*/
         LaserCB _laser_callback;
         ocular::RE05Driver* laserone;
+        NotificationCB _notif_callback;
         //    AngleCB _angle_callback;
-        //    NotificationCB _notif_callback;
         unsigned int _num_readings;
+
+        roboteyeState _state;
+        bool _isrunning;
 
         /*Boost specific stuff*/
         boost::thread _thrd;

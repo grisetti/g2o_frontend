@@ -50,6 +50,12 @@ namespace roboteye
         RobotEyeConfig config;
     };
 
+    enum roboteyeState
+    {
+       STOP,
+       RUN,
+       PAUSE
+    };
 }
 
 #endif // ROBOTEYESTRUCT_H

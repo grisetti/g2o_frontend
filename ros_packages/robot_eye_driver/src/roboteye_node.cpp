@@ -16,6 +16,8 @@ namespace roboteye {
         _intensity = intensity;
         _outfilename = outfilename;
 
+        _isrunning = false;
+
         _num_readings = 0;
         _lastStamp = ros::Time::now();
 
@@ -23,8 +25,6 @@ namespace roboteye {
         try {
             std::cout << "creating RE05Driver" << std::endl;
             laserone = new ocular::RE05Driver(_sensor_IP.c_str());
-            cout << "[....] IP address of the RobotEye Laser scanner: " << _sensor_IP << endl;
-
         }
         catch(std::exception  &e) {
             std::cout << "Something went wrong, caught exception: " << e.what() << std::endl;
@@ -42,12 +42,15 @@ namespace roboteye {
 
         _scan_pub = _handle.advertise<robot_eye_driver::RobotEyeScan>("roboteye_scan", 1024);
 
-        _thrd = boost::thread(&roboteye_node::roboteyeRunning, this);
+        _thrd = boost::thread(&roboteye_node::setIsRunning, this);
     }
 
     roboteye_node::~roboteye_node() {
 
-        this->stopAndPrint();
+        /// stopping laser and motors
+        this->stop();
+        /// printing the whole laser data acquired
+        this->printAndWriteLaserData(_outfilename);
 //        _laser_callback.getMutex().lock();
 //        _laser_callback.getMutex().~Mutex();
 //        _thrd.interrupt();
@@ -65,19 +68,55 @@ namespace roboteye {
     }
 
 
+    void roboteye_node::setIsRunning() {
+        // the _state variable is modified by a subscriber that check if
+        // an external command switch form running to pause or stop
 
-    void roboteye_node::roboteyeRunning(){
+        if(_state == RUN) {
+            cout <<  "QUI" << endl;
+            _isrunning = true;
+            this->roboteyeRun();
+        }
+        else if(_state == STOP) {
+            _isrunning = false;
+            this->roboteyeStop();
+        }
+        else if(_state == PAUSE) {
+            _isrunning = false;
+            this->roboteyePause();
+        }
+    }
+
+    void roboteye_node::roboteyePause() {
+      // to be done: for now simply put the laser in home position or in a specific desired position
+//        ocular::ocular_error_t err0 = laserone->Home();
+//        if(err0 != 0) {
+//            cout << "home error err: " << laserone->GetErrorString(err0) << endl;
+//            exit(1);
+//        }
+        this->setDesideredApertureAngles();
+    }
+
+    void roboteye_node::roboteyeStop() {
+
+        ROS_WARN_ONCE_NAMED("eval", "Stopping RobotEye Laser-Data Acquisition");
+        this->stop();
+        this->setDesideredApertureAngles();
+    }
+
+    void roboteye_node::roboteyeRun(){
+
+        ROS_WARN_ONCE_NAMED("eval", "IP address of the RobotEye Laser scanner: %s", _sensor_IP.c_str());
 
         /// homing the RobotEye, no need to call a sleep(), because Home() is blocking
         ocular::ocular_error_t err0 = laserone->Home();
-
         if(err0 != 0) {
             cout << "home error err: " << laserone->GetErrorString(err0) << endl;
             exit(1);
         }
         double azimuth, elevation;
         err0 = laserone->GetApertureAngles(azimuth, elevation);
-        cout << "the initial home position is:\tazimuth = " << azimuth << ",\televation = " << elevation << ", err: " << laserone->GetErrorString(err0) << endl;
+//        cout << "the initial home position is:\tazimuth = " << azimuth << ",\televation = " << elevation << ", err: " << laserone->GetErrorString(err0) << endl;
 
         /// start a Full Field Scan
         err0 = laserone->StartFullFieldScan(_az_rate, _N_lines); // e.g. 3600 degrees/sec (10 revolution/sec) with NLines_min = 3600/360
@@ -86,8 +125,10 @@ namespace roboteye {
             exit(1);
         }
         /// start the Laser
-        err0 = laserone->StartLaser(_laser_freq, _averaging, _intensity, &_laser_callback);
         cout << "...starting streaming laser measurements" << endl;
+        err0 = laserone->StartLaser(_laser_freq, _averaging, _intensity, &_laser_callback);
+
+        ROS_WARN_ONCE_NAMED("eval", "First RobotEye Laser-Data Received");
         if(err0 != 0) {
             cout << "Start laser err: " << laserone->GetErrorString(err0) << endl;
             exit(1);
@@ -96,13 +137,11 @@ namespace roboteye {
     //    cout << "...streaming aperture position" << ", err: " << laserone->GetErrorString(err2) << std::endl;
 
     //    cout << "going to sleep for " << _seconds << " seconds." << endl;
-    //    int left_s = _seconds;
-    //    left_s = sleep(_seconds);
+    //    sleep(_seconds);
 
     }
 
-
-    void roboteye_node::stopAndPrint() {
+    void roboteye_node::stop() {
 
         /// stopping laser callback
         cout << endl << "stopping laser" << endl;
@@ -143,23 +182,24 @@ namespace roboteye {
         //    exit(1);
         //  }
 
-        /// setting a desired final position
-        cout << "setting a desired final position" << endl;
-        attempts = 0;
-        //  err_ = laserone->SetApertureAngles(0.0f, -35.0f, 1, &_notif_callback); // look down
-        err_ = laserone->Home(); //home position should be az=0, el=0;
+    }
+
+    void roboteye_node::setDesideredApertureAngles() {
+
+        /// setting a desired position
+        cout << "setting a desired position" << endl;
+        int attempts = 0;
+        ocular::ocular_error_t err_ = laserone->SetApertureAngles(0.0f, -35.0f, 1, &_notif_callback); // look down
+//        err_ = laserone->Home(); //home position should be az=0, el=0;
         while(err_ != 0 && attempts < 10){
-            //    err_ = laserone->SetApertureAngles(0.0f, -35.0f, 1, &_notif_callback);
-            err_ = laserone->Home();
+            err_ = laserone->SetApertureAngles(0.0f, -35.0f, 1, &_notif_callback);
+//            err_ = laserone->Home();
             attempts++;
         }
         if(err_ != 0){
-            std::cout << "got an error(setting home): " << laserone->GetErrorString(err_) << std::endl;
+            std::cout << "got an error(setting position): " << laserone->GetErrorString(err_) << std::endl;
             exit(1);
         }
-
-        /// printing the laser data
-        this->printAndWriteLaserData(_outfilename);
     }
 
     void roboteye_node::printAndWriteLaserData(string outfilename) {
@@ -204,7 +244,6 @@ namespace roboteye {
                 pcl_p.intensity = xyz_p[3];
                 cloud.points.push_back(pcl_p);
             }
-
         }
 
         cout << "Saving " << cloud.points.size() << " data points to " << outfilename.c_str() << endl;

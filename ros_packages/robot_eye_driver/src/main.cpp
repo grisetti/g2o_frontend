@@ -153,10 +153,17 @@ int main(int argc, char **argv)
     roboteye_node re(az_rate, n_lines, laser_freq, averaging, intensity, outfilename);
     ros::Rate r(20);
 
+    //TODO COMMAND SUBSCRIBED FROM EXTERNAL: STATE -> RUNNING?
+    re.setState(RUN);
+    usleep(2e3);
+
     while(ros::ok()) {
         ros::spinOnce();
-        publishScan(re);
-        cerr << "ok";
+        bool run = re.isRunning();
+        if (run)
+            publishScan(re);
+        else
+            ROS_WARN_ONCE_NAMED("eval", "Waiting for RobotEye Laser-Data Acquisition");
 
         r.sleep();
     }
