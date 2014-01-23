@@ -33,18 +33,35 @@ namespace roboteye {
 
         _mutex_meas.lock();
 
+        PolarMeasurements radObservations = deg2radObservation(observations);
         //list to be published
-        _pmlist.push_back(observations);
+        _pmlist.push_back(radObservations);
 
         // conversion to euclidean to create a pcd cloud
         roboteye::EuclideanMeasurements xyz_meas;
-        for(unsigned int i = 0; i <= observations.size(); i++){
+        for(unsigned int i = 0; i < observations.size(); i++){
             Eigen::Vector4f xyzi = polar2euclidean(observations[i]);
             xyz_meas.push_back(xyzi);
         }
         _emlist.push_back(xyz_meas);
 
         _mutex_meas.unlock();
+    }
+
+    PolarMeasurements LaserCB::deg2radObservation(PolarMeasurements &pm) {
+
+        PolarMeasurements radObservations;
+        ocular::ocular_rbe_obs_t tmp;
+        for(unsigned int i = 0; i <= pm.size(); i++){
+            tmp = pm[i];
+            float az = deg2rad(-tmp.azimuth);
+            float el = deg2rad(-tmp.elevation);
+            tmp.azimuth = az;
+            tmp.elevation = el;
+//            std::cerr << "azim: " << tmp.azimuth << ",\telev: " << tmp.elevation << ",\trange: " << tmp.range << ",\tintensity: " << tmp.intensity << std::endl;
+            radObservations.push_back(tmp);
+        }
+        return radObservations;
     }
 
     Eigen::Vector4f LaserCB::polar2euclidean(ocular::ocular_rbe_obs_t obs){

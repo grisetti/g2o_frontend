@@ -34,6 +34,7 @@ namespace roboteye
         Mutex& getMutex() {return _mutex_meas; }
         PolarList& measList() {return _pmlist; }
         EuclideanList& xyzMeasList() {return _emlist; }
+        PolarMeasurements deg2radObservation(PolarMeasurements& pm);
         Eigen::Vector4f polar2euclidean(ocular::ocular_rbe_obs_t obs);
 
         void LaserDataCallback(std::vector<ocular::ocular_rbe_obs_t> observations);
