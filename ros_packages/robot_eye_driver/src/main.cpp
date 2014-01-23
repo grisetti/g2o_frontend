@@ -83,9 +83,7 @@ void publishScan(roboteye_node& re){
     robot_eye_driver::RobotEyeScan scan_msg;
 
     PolarMeasurements pm_current;
-    cerr << "b";
     bool pm_exist = re.laserCallBack().pop(pm_current);
-    cerr << "a";
     if (!pm_exist) {
         cerr << "!";
     }
@@ -95,7 +93,7 @@ void publishScan(roboteye_node& re){
     re.setNumReadings(nr);
     roboteye::RobotEyeConfig scan_config;
     scan_config.time_increment = nr/re.laserFreq();
-    // to be used for interpolating the scan in case of the robot is moving
+    // scan_config is to be used for interpolating the scan in case of the robot is moving
     scan_config.scan_time = 1./re.laserFreq();
 
     re.setConfig(scan_config);
@@ -144,7 +142,7 @@ void publishScan(roboteye_node& re){
 
 int main(int argc, char **argv)
 {
-    cout << "=== LASERONE node ===" << endl << endl;
+    cout << "=== ROBOTEYE node ===" << endl << endl;
 
     init_parameters(argc,argv);
 
@@ -154,6 +152,8 @@ int main(int argc, char **argv)
     ros::Rate r(20);
 
     //TODO COMMAND SUBSCRIBED FROM EXTERNAL: STATE -> RUNNING?
+    //the _state variableof re is modified by a subscriber that check if an external command switches from run to pause or stop
+
     re.setState(RUN);
     usleep(2e3);
 

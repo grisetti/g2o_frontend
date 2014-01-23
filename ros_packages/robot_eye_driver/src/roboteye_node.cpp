@@ -69,9 +69,6 @@ namespace roboteye {
 
 
     void roboteye_node::setIsRunning() {
-        // the _state variable is modified by a subscriber that check if
-        // an external command switch form running to pause or stop
-
         if(_state == RUN) {
             cout <<  "QUI" << endl;
             _isrunning = true;
@@ -169,7 +166,7 @@ namespace roboteye {
             exit(1);
         }
 
-        /// stopping aperture angles callback
+//      /// stopping aperture angles callback
         //  cout << "stopping aperture angles streaming" << endl;
         //  attempts = 0;
         //  err_ = laserone->StopStreamingApertureAngles();
@@ -186,11 +183,11 @@ namespace roboteye {
 
     void roboteye_node::setDesideredApertureAngles() {
 
-        /// setting a desired position
+//      /// setting a desired position
         cout << "setting a desired position" << endl;
         int attempts = 0;
         ocular::ocular_error_t err_ = laserone->SetApertureAngles(0.0f, -35.0f, 1, &_notif_callback); // look down
-//        err_ = laserone->Home(); //home position should be az=0, el=0;
+//        err_ = laserone->Home(); //home position is az=0, el=0;
         while(err_ != 0 && attempts < 10){
             err_ = laserone->SetApertureAngles(0.0f, -35.0f, 1, &_notif_callback);
 //            err_ = laserone->Home();
@@ -217,11 +214,11 @@ namespace roboteye {
         ofstream plotting("plottami.txt");
         pcl::PointCloud<pcl::PointXYZI> cloud;
 
-        // !!! all the observations have the same size
+        /** Because of all the observations have the same size the
+         *  total number of points are equal to the number of observations * size of one observation
+         */
         EuclideanList& xyz_list = _laser_callback.xyzMeasList();
         unsigned int obs_dim = xyz_list.front().size();
-
-        /// total number of points: number of observations * size of one observation
         cloud.width = xyz_list.size() * obs_dim;
         cloud.height = 1;
     //    cout  << ">>>>>>>>>>>>>> "<< cloud.width << " " << _laser_callback._xyz_meas_all.size() << endl;

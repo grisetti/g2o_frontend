@@ -41,8 +41,10 @@ namespace roboteye
 
     protected:
         Mutex _mutex_meas;
-        PolarList _pmlist;      // [az, el, range, intensity]
-        EuclideanList _emlist;  // [x, y, z, intensity]
+        /** A list of observation in polar coordinate [az, el, range, intensity] */
+        PolarList _pmlist;
+        /** A list of observation in  cartesian coordinate [x, y, z, intensity] */
+        EuclideanList _emlist;
     };
 
     class NotificationCB : public ocular::RobotEyeNotificationCallbackClass{
