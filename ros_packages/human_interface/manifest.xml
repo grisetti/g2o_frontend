@@ -1,0 +1,18 @@
+<package>
+  <description brief="human_interface">
+
+     joy2twist
+
+  </description>
+  <author>William Woodall, slightly patched by Giorgio Grisetti</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/joy2twist</url>
+  <depend package="joy"/>
+  <depend package="rospy"/>
+  <depend package="sensor_msgs"/>
+  <depend package="geometry_msgs"/>
+
+</package>
+
+

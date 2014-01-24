@@ -1,0 +1,9 @@
+<launch>
+    <node name="clf_writer" pkg="ros2carmen" type="clf_writer" output="screen" >
+        <param name="odom_frame_id" type="str" value="odom"/>
+        <param name="base_link_frame_id" type="str" value="base_link"/>
+        <param name="laser_frame_id" type="str" value="laser_frame"/>
+        <param name="laser_topic" type="str" value="scan"/>
+        <param name="carmen_filename" type="str" value="/tmp/does_not_work.clf"/>
+    </node>
+</launch>

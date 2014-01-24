@@ -137,7 +137,7 @@ namespace boss_map_building {
       throw std::runtime_error("no node selection criterion set");
     }
     if (! _selector) {
-      throw std::runtime_error("no node selector set");
+      throw std::runtime_error("no relation selector set");
     }
     if (!_pendingTrackerFrame)
       return;

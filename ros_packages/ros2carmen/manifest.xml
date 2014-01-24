@@ -1,0 +1,22 @@
+<package>
+  <description brief="ros2carmen">
+
+     ros2carmen
+
+  </description>
+  <author>giorgio</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/ros2carmen</url>
+<!--  <depend package="eigen"/> -->
+  <depend package="bullet"/>
+  <depend package="tf"/>
+  <depend package="sensor_msgs"/>
+  <depend package="nav_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="rosparam"/>
+<!--  <depend package="dis_stage"/>  -->
+
+</package>
+
+

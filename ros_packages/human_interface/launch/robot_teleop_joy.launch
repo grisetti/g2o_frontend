@@ -1,0 +1,11 @@
+<launch>
+    <node name="joy_node" pkg="joy" type="joy_node" output="screen" >
+		<param name="~deadzone" type="double" value="0.2"/> 
+		<param name="~autorepeat_rate" type="double" value="20."/> 
+	<!--    <param name="~dev" type="str" value="/etc/robot_devices/joy0"/> -->
+		<param name="~dev" type="str" value="/dev/input/js0"/>	
+    </node>
+    <node name="joy2twist" pkg="human_interface" type="joy2twist.py" output="screen" >
+	    <remap from="/cmd_vel" to ="/cmd_vel_mux/input/teleop"/>
+    </node>
+</launch>
