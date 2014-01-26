@@ -195,7 +195,11 @@ namespace pwn_tracker{
     r->nodes()[0]=keyNode;
     r->nodes()[1]=otherNode;
     r->fromResult(result);
-       return r;
+    //HACK: override the information matrix
+    Matrix6d info=Matrix6d::Identity();
+    r->setInformationMatrix(info);
+
+    return r;
   }
   
   BOSS_REGISTER_CLASS(PwnTrackerRelation);

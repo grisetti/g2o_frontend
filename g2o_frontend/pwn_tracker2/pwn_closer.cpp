@@ -40,8 +40,8 @@ namespace pwn_tracker {
     _closureClampingDistance = 1e9;
     setMatcher(matcher_);
     setManager(manager_);
-    setRobotConfiguration(configuration_);
     setCache(cache_);
+    setRobotConfiguration(configuration_);
   }
 
   void PwnCloser::serialize(boss::ObjectData& data, boss::IdContext& context){
@@ -174,6 +174,11 @@ namespace pwn_tracker {
     r->nodes()[0]=keyNode;
     r->nodes()[1]=otherNode;
     r->fromResult(result);
+
+    //HACK: override the information matrix
+    Matrix6d info=Matrix6d::Identity();
+    r->setInformationMatrix(info);
+
     return r;
   }
 
