@@ -174,11 +174,10 @@ namespace pwn_tracker {
     r->nodes()[0]=keyNode;
     r->nodes()[1]=otherNode;
     r->fromResult(result);
-
-    //HACK: override the information matrix
-    Matrix6d info=Matrix6d::Identity();
+    Matrix6d info = Matrix6d::Identity();
+    info.block<3,3>(0,0) = Eigen::Matrix3d::Identity()*100;
+    info.block<3,3>(3,3) = Eigen::Matrix3d::Identity()*1000;
     r->setInformationMatrix(info);
-
     return r;
   }
 

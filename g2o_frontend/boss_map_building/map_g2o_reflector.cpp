@@ -186,23 +186,35 @@ namespace boss_map_building {
     g2o::VertexSE3* vg = (g2o::VertexSE3*)gauge;
     cerr << "T0: " << t2v(vg->estimate()).transpose() << endl;
 
-    //_graph->setVerbose(true);
     _graph->optimize(10);
-    /*
-    for (size_t i = 0; i<_graph->activeVertices().size(); i++){
-      g2o::VertexSE3* v = dynamic_cast<g2o::VertexSE3*>(_graph->activeVertices()[i]);
-      if (!v)
-	continue;
-      MapNode* n = node(v);
-      n->setTransform(v->estimate());
-      if (v == gauge)
-	cerr << "T0_copied: " << t2v(n->transform()).transpose() << endl;
-    }
-    */
-    gauge->setFixed(false);
-    //cerr << "copying estimate" << endl;
+     gauge->setFixed(false);
     copyEstimatesFromG2O();
-    //cerr << "done" << endl;
+  }
+
+
+  void MapG2OReflector::optimize(MapNode* gauge_, std::set<MapNodeRelation*>& relations){
+    copyEstimatesToG2O();
+    g2o::VertexSE3* gauge = node(gauge_);
+    if (! gauge)
+      return;
+
+    cerr << "optimizing" << endl;
+    g2o::OptimizableGraph::EdgeSet eset;
+    cerr << "total number of relations: " << _manager->relations().size() << endl;
+    for (std::set<MapNodeRelation*>::iterator it=relations.begin(); it!=relations.end(); it++){
+      g2o::OptimizableGraph::Edge* e=relation(*it);
+      if (!e)
+	continue;
+      eset.insert(e);
+    }
+    
+    _graph->initializeOptimization(eset);
+    cerr << "LOCAL OPT: " << gauge->id() << endl;
+    g2o::VertexSE3* vg = (g2o::VertexSE3*)gauge;
+    cerr << "T0: " << t2v(vg->estimate()).transpose() << endl;
+    _graph->optimize(10);
+    gauge->setFixed(false);
+    copyEstimatesFromG2O();
   }
 
   g2o::SparseOptimizer * MapG2OReflector::g2oInit(){
@@ -230,7 +242,6 @@ namespace boss_map_building {
     _manager = 0;
     _kfCount = 0;
     _optimizeEachNKeyFrames = 1000000;
-    _previousNode = 0;
   }
 
   void OptimizerProcessor::serialize(boss::ObjectData& data, boss::IdContext& context){
@@ -248,7 +259,6 @@ namespace boss_map_building {
   void OptimizerProcessor::process(Serializable* s){
     NewKeyNodeMessage* km = dynamic_cast<NewKeyNodeMessage*>(s);
     if (km) {
-      // optimizer->optimize();
       _kfCount ++;
     }
 
@@ -260,7 +270,31 @@ namespace boss_map_building {
     put(s);
   }
 
+  LocalOptimizerProcessor::LocalOptimizerProcessor(int id, boss::IdContext* context):
+    OptimizerProcessor(id,context){
+    _previousNode  = 0;
+  }
+
+  void LocalOptimizerProcessor::process(Serializable* s) {
+    MapNodeRelation* rel = dynamic_cast<MapNodeRelation*>(s);
+    if (rel)
+      _lastRelations.insert(rel);
+
+    NewKeyNodeMessage* km = dynamic_cast<NewKeyNodeMessage*>(s);
+    if (km) {
+      if (_previousNode) {
+	_optimizer->optimize(_previousNode, _lastRelations);
+      }
+      _kfCount ++;
+      _previousNode  = km->keyNode;
+      _lastRelations.clear();
+    }
+    put(s);
+  }
+
+
   BOSS_REGISTER_CLASS(MapG2OReflector);
   BOSS_REGISTER_CLASS(OptimizerProcessor);
+  BOSS_REGISTER_CLASS(LocalOptimizerProcessor);
 
 }

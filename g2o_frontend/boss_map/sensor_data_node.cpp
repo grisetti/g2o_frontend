@@ -64,7 +64,7 @@ namespace boss_map {
 	  odom->setTransform(_previousNodeTransform.inverse()*currentNodeTransform);	
 	  Eigen::Matrix<double, 6, 6> info;
 	  info.setIdentity();
-	  info = info * 100;
+	  info.block<3,3>(3,3) *= 10;
 	  odom->setInformationMatrix(info);
 	  _mapManager->addRelation(odom);
 	  currentNode->setOdometry(odom);
@@ -125,7 +125,8 @@ namespace boss_map {
 	  odom->setTransform(_previousNodeTransform.inverse()*currentNodeTransform);	
 	  Eigen::Matrix<double, 6, 6> info;
 	  info.setIdentity();
-	  info = info * 10;
+	  //info = info * 10;
+	  info.block<3,3>(3,3) *= 10;
 	  odom->setInformationMatrix(info);
 	  _mapManager->addRelation(odom);
 	  currentNode->setOdometry(odom);
