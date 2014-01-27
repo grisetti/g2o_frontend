@@ -135,7 +135,7 @@ void writeLaser(ostream& os, const sensor_msgs::LaserScan::ConstPtr& scan){
   std::string error;
 
   double rotThreshold = 0.05*0.05;
-  double linThreshold = 0.3*0.3;
+  double linThreshold = 0.1*0.1;
 
   if (listener->waitForTransform (odom_frame_id, laser_frame_id, t, ros::Duration(0.5), ros::Duration(0.01), &error)){
     listener->lookupTransform(odom_frame_id, laser_frame_id, t, laserPose);
@@ -181,7 +181,7 @@ void writeLaser(ostream& os, const sensor_msgs::LaserScan::ConstPtr& scan){
        <<  scan->ranges.size() << " ";
     os << setprecision(2);
     for (uint i=0; i<scan->ranges.size(); i++){
-      if (scan->ranges[i]<scan->range_min)
+      if (scan->ranges[i]<scan->range_min || scan->ranges[i] > scan->range_max)
 	os  << scan->range_max;
       else 
 	os << scan->ranges[i];

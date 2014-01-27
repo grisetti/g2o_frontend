@@ -71,6 +71,7 @@ namespace boss_map_building {
       doStuff();
     }
     _outputQueue.push_back(s);
+    flushQueue();
   }
 
   bool BaseTracker::shouldChangeKeyNode(MapNodeBinaryRelation* ){
