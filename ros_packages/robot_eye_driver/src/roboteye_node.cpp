@@ -6,13 +6,69 @@ namespace roboteye {
     using namespace std;
     using namespace Eigen;
 
+roboteye_node::roboteye_node() : _sensor_IP("169.254.111.100")
+{
+    ros::NodeHandle private_handle("~");
+    _az_rate = 10;
+    private_handle.getParam("_az_rate", _az_rate);
+    ROS_INFO("RobotEyeNode: azimuth_rate = %f", _az_rate);
 
-    roboteye_node::roboteye_node(double az_rate, double n_lines, double laser_freq, double averaging, bool intensity, std::string outfilename) : _sensor_IP("169.254.111.100")
+    _N_lines = 100;
+    private_handle.getParam("_N_lines", _N_lines);
+    ROS_INFO("RobotEyeNode: number_lines = %f", _N_lines);
+
+    _averaging = 1;
+    private_handle.getParam("_averaging", _averaging);
+    ROS_INFO("RobotEyeNode: _averaging = %f", _averaging);
+
+    _laser_freq = 10000;
+    private_handle.getParam("_laser_freq", _laser_freq);
+    ROS_INFO("RobotEyeNode: _laser_freq = %f", _laser_freq);
+
+    _intensity = 0;
+    private_handle.getParam("_intensity", _az_rate);
+    ROS_INFO("RobotEyeNode: _intensity = %i", _intensity);
+
+    _outfilename = "EyebotPcd.pcd";
+    private_handle.getParam("_outfilename", _outfilename);
+    ROS_INFO("RobotEyeNode: _outfilename = %s", _outfilename.c_str());
+
+    _isrunning = false;
+    _num_readings = 0;
+    _lastStamp = ros::Time::now();
+
+
+    // connecting to RobotEye
+    try {
+        std::cout << "creating RE05Driver" << std::endl;
+        laserone = new ocular::RE05Driver(_sensor_IP.c_str());
+    }
+    catch(std::exception  &e) {
+        std::cout << "Something went wrong, caught exception: " << e.what() << std::endl;
+        return;
+    }
+
+    _scan_config.min_azimuth = deg2rad(0);
+    _scan_config.max_azimuth = deg2rad(360);
+    _scan_config.azim_increment = deg2rad(0.01); //to be checked
+    _scan_config.min_elevation = deg2rad(-35);
+    _scan_config.max_elevation = deg2rad(35);
+    _scan_config.elev_increment = deg2rad(0.004); //to be checked
+    _scan_config.min_range = 0.5; //see the documentation
+    _scan_config.max_range = 250.0; //see the documentation
+
+    _scan_pub = _handle.advertise<robot_eye_driver::RobotEyeScan>("roboteye_scan", 1024);
+
+    _thrd = boost::thread(&roboteye_node::setIsRunning, this);
+
+}
+
+    roboteye_node::roboteye_node(double az_rate, double n_lines, double averaging, double laser_freq, bool intensity, std::string outfilename) : _sensor_IP("169.254.111.100")
     {
         _az_rate = az_rate;
         _N_lines = n_lines;
-        _laser_freq = laser_freq;
         _averaging = averaging;
+        _laser_freq = laser_freq;
         _intensity = intensity;
         _outfilename = outfilename;
 

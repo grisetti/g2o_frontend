@@ -23,6 +23,7 @@ namespace roboteye
     class roboteye_node
     {
     public:
+        roboteye_node();
         roboteye_node(double az_rate, double n_lines, double laser_freq, double averaging, bool intensity, std::string outfilename);
         ~roboteye_node();
 

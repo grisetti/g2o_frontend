@@ -70,10 +70,10 @@ rosbuild_genmsg()
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 
-# rosbuild_add_executable(robot_eye_test src/eyebot_test.cpp)
-# target_link_libraries(robot_eye_test ${RobotEye_LIBRARIES} ${G2O_STUFF_LIBRARY} ${PCL_LIBRARIES})
+rosbuild_add_executable(robot_eye_test src/old/eyebot_test.cpp)
+target_link_libraries(robot_eye_test ${RobotEye_LIBRARIES} ${G2O_STUFF_LIBRARY} ${PCL_LIBRARIES})
 
-# rosbuild_add_executable(robot_eye_driver src/roboteye_scan_publisher.cpp)
+# rosbuild_add_executable(robot_eye_driver src/old/roboteye_scan_publisher.cpp)
 # target_link_libraries(robot_eye_driver ${RobotEye_LIBRARIES} ${G2O_STUFF_LIBRARY} ${PCL_LIBRARIES})
 
 rosbuild_add_executable(robot_eye_node src/main.cpp src/mutex.cpp src/roboteye_node.cpp src/robot_eye_callback.cpp)

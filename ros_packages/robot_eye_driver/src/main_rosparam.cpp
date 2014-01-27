@@ -4,7 +4,6 @@ using namespace std;
 using namespace roboteye;
 
 //global parameters
-//    int seconds;
 double az_rate;
 double n_lines;
 double laser_freq;
@@ -23,7 +22,7 @@ void init_parameters(int argc, char ** argv){
     arg.param("avg", averaging, 1, "set the 'averaging' value range:[1,5]");
     arg.param("lfreq", laser_freq, 10000, "set the measurement frequency [range:[1, 30000]]");
     arg.param("intensity", intensity, 0, "enable the streaming of intensity values [can be 'on' only if lfreq <= 10000] default off");
-    arg.param("o", outfilename, "Eyebot_pcd.pcd", "output filename of a pcd format file");
+    arg.param("o", outfilename, "EyebotPcd.pcd", "output filename of a pcd format file");
 
     arg.parseArgs(argc, argv);
 
@@ -144,11 +143,11 @@ int main(int argc, char **argv)
 {
     cout << "=== ROBOTEYE node ===" << endl << endl;
 
-    init_parameters(argc,argv);
+//    init_parameters(argc,argv);
 
     ros::init(argc, argv, "roboteye_node");
     ros::Time::init();
-    roboteye_node re(az_rate, n_lines, averaging, laser_freq, intensity, outfilename);
+    roboteye_node re/*(az_rate, n_lines, averaging, laser_freq, intensity, outfilename)*/;
     ros::Rate r(20);
 
     //TODO COMMAND SUBSCRIBED FROM EXTERNAL: STATE -> RUNNING?
