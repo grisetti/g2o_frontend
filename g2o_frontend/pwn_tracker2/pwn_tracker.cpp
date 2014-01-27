@@ -52,7 +52,6 @@ namespace pwn_tracker{
     _cache = cache_;
     _matcher = matcher_;
     _robotConfiguration = configuration_;
-    DepthImageConverter* conv = (_matcher) ? _matcher->converter() : 0;
     cerr << "setting topic" << endl;
     setTopic("/camera/depth_registered/image_rect_raw");
     _newFrameCloudInliersFraction = 0.4;
@@ -195,7 +194,11 @@ namespace pwn_tracker{
     r->nodes()[0]=keyNode;
     r->nodes()[1]=otherNode;
     r->fromResult(result);
-       return r;
+    Matrix6d info = Matrix6d::Identity();
+    info.block<3,3>(0,0) = Eigen::Matrix3d::Identity()*10;
+    info.block<3,3>(3,3) = Eigen::Matrix3d::Identity()*100;
+    r->setInformationMatrix(info);
+    return r;
   }
   
   BOSS_REGISTER_CLASS(PwnTrackerRelation);

@@ -46,7 +46,7 @@ namespace boss_map_building {
     partitions.clear();
     currentPartitionIndex = data.getInt("currentPartitionIndex");
     ArrayData& adata = data.getField("partitions")->getArray();
-    for (int i=0; i<adata.size(); i++){
+    for (size_t i=0; i<adata.size(); i++){
       std::set<MapNode*> pnodes;
       ArrayData& pdata = adata[i].getArray();
       for (size_t k=0; k<pdata.size(); k++)

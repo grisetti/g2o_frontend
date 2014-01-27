@@ -59,7 +59,8 @@ namespace pwn_tracker {
     inline PwnMatcherBase* matcher() { return _matcher; }
     inline void setMatcher(PwnMatcherBase* matcher_) { _matcher=matcher_; }
 
-    
+    inline void setRobotConfiguration(RobotConfiguration* conf) {_robotConfiguration = conf; if (_cache) _cache->_robotConfiguration = conf;} 
+
   protected:
     virtual void processPartition(std::list<MapNodeBinaryRelation*>& newRelations, std::set<MapNode*> & otherPartition, MapNode* current_);
     PwnCloserRelation* registerNodes(SyncSensorDataNode* keyNode, SyncSensorDataNode* otherNode, const Eigen::Isometry3d& initialGuess);
