@@ -6,9 +6,9 @@ using namespace roboteye;
 //global parameters
 //    int seconds;
 double az_rate;
-double n_lines;
-double laser_freq;
-double averaging;
+int n_lines;
+int laser_freq;
+int averaging;
 bool intensity;
 
 std::string outfilename;
@@ -28,7 +28,7 @@ void init_parameters(int argc, char ** argv){
     arg.parseArgs(argc, argv);
 
     // check parameters consistency
-    if(averaging > 5){
+    if(averaging < 1 || averaging > 5){
         cout << "-avg must be an integer value from 1 to 5" << endl << endl;
         exit(1);
     }

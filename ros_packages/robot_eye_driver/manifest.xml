@@ -12,6 +12,7 @@
   <depend package="sensor_msgs"/>
   <depend package="pcl"/>
   <depend package="geometry_msgs"/>
+  <depend package="dynamic_reconfigure"/>
 
 </package>
 

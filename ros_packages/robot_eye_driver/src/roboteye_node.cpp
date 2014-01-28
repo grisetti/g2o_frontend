@@ -8,35 +8,45 @@ namespace roboteye {
 
 roboteye_node::roboteye_node() : _sensor_IP("169.254.111.100")
 {
-    ros::NodeHandle private_handle("~");
-    _az_rate = 10;
-    private_handle.getParam("_az_rate", _az_rate);
-    ROS_INFO("RobotEyeNode: azimuth_rate = %f", _az_rate);
-
-    _N_lines = 100;
-    private_handle.getParam("_N_lines", _N_lines);
-    ROS_INFO("RobotEyeNode: number_lines = %f", _N_lines);
-
-    _averaging = 1;
-    private_handle.getParam("_averaging", _averaging);
-    ROS_INFO("RobotEyeNode: _averaging = %f", _averaging);
-
-    _laser_freq = 10000;
-    private_handle.getParam("_laser_freq", _laser_freq);
-    ROS_INFO("RobotEyeNode: _laser_freq = %f", _laser_freq);
-
-    _intensity = 0;
-    private_handle.getParam("_intensity", _az_rate);
-    ROS_INFO("RobotEyeNode: _intensity = %i", _intensity);
-
-    _outfilename = "EyebotPcd.pcd";
-    private_handle.getParam("_outfilename", _outfilename);
-    ROS_INFO("RobotEyeNode: _outfilename = %s", _outfilename.c_str());
-
     _isrunning = false;
     _num_readings = 0;
     _lastStamp = ros::Time::now();
 
+    ros::NodeHandle private_handle("~");
+//    _az_rate = 10;
+    private_handle.param("az_rate", _az_rate, 10.);
+    ROS_INFO("RobotEyeNode: az_rate = %f", _az_rate);
+
+//    _N_lines = 100;
+    private_handle.param("n_lines", _N_lines, 100);
+    ROS_INFO("RobotEyeNode: n_lines = %i", _N_lines);
+
+//    _averaging = 1;
+    private_handle.param("averaging", _averaging, 1);
+    ROS_INFO("RobotEyeNode: averaging = %i", _averaging);
+
+//    _laser_freq = 10000;
+    private_handle.param("laser_freq",_laser_freq, 10000);
+    ROS_INFO("RobotEyeNode: laser_freq = %i", _laser_freq);
+
+//    _intensity = 0;
+    private_handle.param("intensity", _intensity, false);
+    ROS_INFO("RobotEyeNode: intensity = %i", _intensity);
+
+//    _node_state = RUN;
+    // schifezza!
+    XmlRpc::XmlRpcValue nstate = XmlRpc::XmlRpcValue(static_cast<int>(_node_state));
+    private_handle.getParam("node_state", nstate);
+    int stato = nstate;
+    cout << "PANICO" << stato << endl;
+    if(stato==1)  _node_state = RUN;
+    else if(stato==0) _node_state = STOP;
+    else if(stato==2) _node_state = PAUSE;
+    ROS_INFO("RobotEyeNode: state = %i", _node_state);
+
+//    _outfilename = "EyebotPcd.pcd";
+    private_handle.param<std::string>("outfilename", _outfilename, "EyebotPcd.pcd");
+    ROS_INFO("RobotEyeNode: outfilename = %s", _outfilename.c_str());
 
     // connecting to RobotEye
     try {
@@ -63,7 +73,7 @@ roboteye_node::roboteye_node() : _sensor_IP("169.254.111.100")
 
 }
 
-    roboteye_node::roboteye_node(double az_rate, double n_lines, double averaging, double laser_freq, bool intensity, std::string outfilename) : _sensor_IP("169.254.111.100")
+    roboteye_node::roboteye_node(double az_rate, int n_lines, int averaging, int laser_freq, bool intensity, std::string outfilename) : _sensor_IP("169.254.111.100")
     {
         _az_rate = az_rate;
         _N_lines = n_lines;
@@ -113,6 +123,27 @@ roboteye_node::roboteye_node() : _sensor_IP("169.254.111.100")
 //        _thrd.~thread();
     }
 
+    void roboteye_node::dynamic_reconf_callback(robot_eye_driver::RobotEyeParametersConfig& config, uint32_t level) {
+        ROS_INFO("Reconfigure Request: %f %d %d %d %s %d",
+                 config.az_rate,
+                 config.n_lines,
+                 config.averaging,
+                 config.laser_freq,
+                 config.intensity?"True":"False",
+                 config.node_state);
+        //....
+        _az_rate = config.az_rate;
+        _N_lines = config.n_lines;
+        _averaging = config.averaging;
+        _laser_freq = config.laser_freq;
+        _intensity = config.intensity;
+        if(config.node_state == 1) _node_state = RUN;
+        else if(config.node_state == 0) _node_state = STOP;
+        else if(config.node_state == 2) _node_state = PAUSE;
+//        ROS_INFO("RobotEyeNode: az_rate = %f", _az_rate);
+
+    }
+
     void roboteye_node::setConfig(roboteye::RobotEyeConfig& scan_config) {
         _scan_config.time_increment = scan_config.time_increment;
         _scan_config.scan_time = scan_config.scan_time;
@@ -125,16 +156,16 @@ roboteye_node::roboteye_node() : _sensor_IP("169.254.111.100")
 
 
     void roboteye_node::setIsRunning() {
-        if(_state == RUN) {
+        if(_node_state == RUN) {
             cout <<  "QUI" << endl;
             _isrunning = true;
             this->roboteyeRun();
         }
-        else if(_state == STOP) {
+        else if(_node_state == STOP) {
             _isrunning = false;
             this->roboteyeStop();
         }
-        else if(_state == PAUSE) {
+        else if(_node_state == PAUSE) {
             _isrunning = false;
             this->roboteyePause();
         }
@@ -142,11 +173,14 @@ roboteye_node::roboteye_node() : _sensor_IP("169.254.111.100")
 
     void roboteye_node::roboteyePause() {
       // to be done: for now simply put the laser in home position or in a specific desired position
-//        ocular::ocular_error_t err0 = laserone->Home();
+
+        //        ocular::ocular_error_t err0 = laserone->Home();
 //        if(err0 != 0) {
 //            cout << "home error err: " << laserone->GetErrorString(err0) << endl;
 //            exit(1);
 //        }
+        ROS_WARN_ONCE_NAMED("eval", "Pausing RobotEye Laser-Data Acquisition");
+        this->stop();
         this->setDesideredApertureAngles();
     }
 
@@ -182,6 +216,7 @@ roboteye_node::roboteye_node() : _sensor_IP("169.254.111.100")
         err0 = laserone->StartLaser(_laser_freq, _averaging, _intensity, &_laser_callback);
 
         ROS_WARN_ONCE_NAMED("eval", "First RobotEye Laser-Data Received");
+        ROS_INFO("RobotEyeNode: outfilename = %s", _outfilename.c_str());
         if(err0 != 0) {
             cout << "Start laser err: " << laserone->GetErrorString(err0) << endl;
             exit(1);
