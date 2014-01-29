@@ -9,9 +9,8 @@
 #include <Eigen/Core>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
-#include <boost/thread/thread.hpp>
+//#include <boost/thread/thread.hpp>
 #include <g2o/stuff/command_args.h>
-#include <XmlRpcValue.h>
 #include "roboteyestruct.h"
 #include "robot_eye_callback.h"
 
@@ -42,12 +41,12 @@ namespace roboteye
         void setLastStamp(ros::Time ls) {_lastStamp = ls; }
         unsigned int numReadings() {return _num_readings; }
         void setNumReadings(unsigned int nr) {_num_readings = nr; }
-        bool isRunning() {return _isrunning;}
-        void setIsRunning();
         roboteyeState state() {return _node_state; }
         void setState(roboteyeState s) {_node_state = s; }
-
+        bool isRunning() {return _isrunning; }
+        void setIsRunning();
         void dynamic_reconf_callback(robot_eye_driver::RobotEyeParametersConfig& config, uint32_t level);
+        bool check_consistency();
         void stop();
         void setDesideredApertureAngles();
         void printAndWriteLaserData(std::string outfilename);
@@ -84,8 +83,8 @@ namespace roboteye
         bool _isrunning;
 
         /*Boost specific stuff*/
-        boost::thread _thrd;
-        //    boost::mutex mtx;
+//        boost::thread _thrd;
+//        boost::mutex mtx;
 
     };
 

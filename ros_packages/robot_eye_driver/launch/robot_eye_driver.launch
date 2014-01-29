@@ -1,0 +1,10 @@
+<launch>
+    <node name="robot_eye" pkg="robot_eye_driver" type="robot_eye_node" output="screen" >
+        <param name="outfilename" type="str" value="$(find robot_eye_driver)/output/EyebotPcd.pcd"/>
+
+    </node>
+
+
+    <node name="robot_eye_dynamic_conf" pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen" />
+
+</launch>

@@ -263,21 +263,21 @@ class DEFAULT
         boost::any val;
         (*i)->getValue(config, val);
 
+        if("node_state"==(*i)->name){node_state = boost::any_cast<int>(val);}
         if("az_rate"==(*i)->name){az_rate = boost::any_cast<double>(val);}
         if("n_lines"==(*i)->name){n_lines = boost::any_cast<int>(val);}
         if("averaging"==(*i)->name){averaging = boost::any_cast<int>(val);}
         if("laser_freq"==(*i)->name){laser_freq = boost::any_cast<int>(val);}
         if("intensity"==(*i)->name){intensity = boost::any_cast<bool>(val);}
-        if("node_state"==(*i)->name){node_state = boost::any_cast<int>(val);}
       }
     }
 
-    double az_rate;
+    int node_state;
+double az_rate;
 int n_lines;
 int averaging;
 int laser_freq;
 bool intensity;
-int node_state;
 
     bool state;
     std::string name;
@@ -288,6 +288,8 @@ int node_state;
 
 
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
+      int node_state;
+//#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
       double az_rate;
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
       int n_lines;
@@ -297,8 +299,6 @@ int node_state;
       int laser_freq;
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
       bool intensity;
-//#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
-      int node_state;
 //#line 255 "/opt/ros/groovy/share/dynamic_reconfigure/templates/ConfigType.h.template"
 
     bool __fromMessage__(dynamic_reconfigure::Config &msg)
@@ -435,6 +435,16 @@ int node_state;
     {
 RobotEyeParametersConfig::GroupDescription<RobotEyeParametersConfig::DEFAULT, RobotEyeParametersConfig> Default("Default", "", 0, 0, true, &RobotEyeParametersConfig::groups);
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
+      __min__.node_state = 0;
+//#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
+      __max__.node_state = 2;
+//#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
+      __default__.node_state = 2;
+//#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
+      Default.abstract_parameters.push_back(RobotEyeParametersConfig::AbstractParamDescriptionConstPtr(new RobotEyeParametersConfig::ParamDescription<int>("node_state", "int", 0, "A state parameter which is edited via an enum", "{'enum_description': 'An enum to set the state od the publisher node', 'enum': [{'srcline': 11, 'description': 'The state is STOP', 'srcfile': '../cfg/RobotEyeParameters.cfg', 'cconsttype': 'const int', 'value': 0, 'ctype': 'int', 'type': 'int', 'name': 'stop'}, {'srcline': 12, 'description': 'The state is RUN', 'srcfile': '../cfg/RobotEyeParameters.cfg', 'cconsttype': 'const int', 'value': 1, 'ctype': 'int', 'type': 'int', 'name': 'run'}, {'srcline': 13, 'description': 'The state is PAUSE', 'srcfile': '../cfg/RobotEyeParameters.cfg', 'cconsttype': 'const int', 'value': 2, 'ctype': 'int', 'type': 'int', 'name': 'pause'}]}", &RobotEyeParametersConfig::node_state)));
+//#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
+      __param_descriptions__.push_back(RobotEyeParametersConfig::AbstractParamDescriptionConstPtr(new RobotEyeParametersConfig::ParamDescription<int>("node_state", "int", 0, "A state parameter which is edited via an enum", "{'enum_description': 'An enum to set the state od the publisher node', 'enum': [{'srcline': 11, 'description': 'The state is STOP', 'srcfile': '../cfg/RobotEyeParameters.cfg', 'cconsttype': 'const int', 'value': 0, 'ctype': 'int', 'type': 'int', 'name': 'stop'}, {'srcline': 12, 'description': 'The state is RUN', 'srcfile': '../cfg/RobotEyeParameters.cfg', 'cconsttype': 'const int', 'value': 1, 'ctype': 'int', 'type': 'int', 'name': 'run'}, {'srcline': 13, 'description': 'The state is PAUSE', 'srcfile': '../cfg/RobotEyeParameters.cfg', 'cconsttype': 'const int', 'value': 2, 'ctype': 'int', 'type': 'int', 'name': 'pause'}]}", &RobotEyeParametersConfig::node_state)));
+//#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
       __min__.az_rate = 1.0;
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
       __max__.az_rate = 15.0;
@@ -445,9 +455,9 @@ RobotEyeParametersConfig::GroupDescription<RobotEyeParametersConfig::DEFAULT, Ro
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
       __param_descriptions__.push_back(RobotEyeParametersConfig::AbstractParamDescriptionConstPtr(new RobotEyeParametersConfig::ParamDescription<double>("az_rate", "double", 0, "Number of rounds per second [max:15(5400 degrees/sec)]", "", &RobotEyeParametersConfig::az_rate)));
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
-      __min__.n_lines = -2147483648;
+      __min__.n_lines = 1;
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
-      __max__.n_lines = 2147483647;
+      __max__.n_lines = 1000;
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
       __default__.n_lines = 100;
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
@@ -484,16 +494,6 @@ RobotEyeParametersConfig::GroupDescription<RobotEyeParametersConfig::DEFAULT, Ro
       Default.abstract_parameters.push_back(RobotEyeParametersConfig::AbstractParamDescriptionConstPtr(new RobotEyeParametersConfig::ParamDescription<bool>("intensity", "bool", 0, "Enable the streaming of intensity values [can be 'on' only if laser_freq <= 10000]", "", &RobotEyeParametersConfig::intensity)));
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
       __param_descriptions__.push_back(RobotEyeParametersConfig::AbstractParamDescriptionConstPtr(new RobotEyeParametersConfig::ParamDescription<bool>("intensity", "bool", 0, "Enable the streaming of intensity values [can be 'on' only if laser_freq <= 10000]", "", &RobotEyeParametersConfig::intensity)));
-//#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
-      __min__.node_state = 0;
-//#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
-      __max__.node_state = 2;
-//#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
-      __default__.node_state = 1;
-//#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
-      Default.abstract_parameters.push_back(RobotEyeParametersConfig::AbstractParamDescriptionConstPtr(new RobotEyeParametersConfig::ParamDescription<int>("node_state", "int", 0, "A state parameter which is edited via an enum", "{'enum_description': 'An enum to set the state od the publisher node', 'enum': [{'srcline': 17, 'description': 'The state is STOP', 'srcfile': '../cfg/RobotEyeParameters.cfg', 'cconsttype': 'const int', 'value': 0, 'ctype': 'int', 'type': 'int', 'name': 'stop'}, {'srcline': 18, 'description': 'The state is RUN', 'srcfile': '../cfg/RobotEyeParameters.cfg', 'cconsttype': 'const int', 'value': 1, 'ctype': 'int', 'type': 'int', 'name': 'run'}, {'srcline': 19, 'description': 'The state is PAUSE', 'srcfile': '../cfg/RobotEyeParameters.cfg', 'cconsttype': 'const int', 'value': 2, 'ctype': 'int', 'type': 'int', 'name': 'pause'}]}", &RobotEyeParametersConfig::node_state)));
-//#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
-      __param_descriptions__.push_back(RobotEyeParametersConfig::AbstractParamDescriptionConstPtr(new RobotEyeParametersConfig::ParamDescription<int>("node_state", "int", 0, "A state parameter which is edited via an enum", "{'enum_description': 'An enum to set the state od the publisher node', 'enum': [{'srcline': 17, 'description': 'The state is STOP', 'srcfile': '../cfg/RobotEyeParameters.cfg', 'cconsttype': 'const int', 'value': 0, 'ctype': 'int', 'type': 'int', 'name': 'stop'}, {'srcline': 18, 'description': 'The state is RUN', 'srcfile': '../cfg/RobotEyeParameters.cfg', 'cconsttype': 'const int', 'value': 1, 'ctype': 'int', 'type': 'int', 'name': 'run'}, {'srcline': 19, 'description': 'The state is PAUSE', 'srcfile': '../cfg/RobotEyeParameters.cfg', 'cconsttype': 'const int', 'value': 2, 'ctype': 'int', 'type': 'int', 'name': 'pause'}]}", &RobotEyeParametersConfig::node_state)));
 //#line 233 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
       Default.convertParams();
 //#line 233 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
@@ -573,11 +573,11 @@ RobotEyeParametersConfig::GroupDescription<RobotEyeParametersConfig::DEFAULT, Ro
     return statics;
   }
 
-//#line 17 "../cfg/RobotEyeParameters.cfg"
+//#line 11 "../cfg/RobotEyeParameters.cfg"
       const int RobotEyeParameters_stop = 0;
-//#line 18 "../cfg/RobotEyeParameters.cfg"
+//#line 12 "../cfg/RobotEyeParameters.cfg"
       const int RobotEyeParameters_run = 1;
-//#line 19 "../cfg/RobotEyeParameters.cfg"
+//#line 13 "../cfg/RobotEyeParameters.cfg"
       const int RobotEyeParameters_pause = 2;
 }
 
