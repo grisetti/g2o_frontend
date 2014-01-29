@@ -481,9 +481,9 @@ RobotEyeParametersConfig::GroupDescription<RobotEyeParametersConfig::DEFAULT, Ro
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
       __default__.laser_freq = 10000;
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
-      Default.abstract_parameters.push_back(RobotEyeParametersConfig::AbstractParamDescriptionConstPtr(new RobotEyeParametersConfig::ParamDescription<int>("laser_freq", "int", 0, "Measurement frequency [range:[1, 30000]]", "", &RobotEyeParametersConfig::laser_freq)));
+      Default.abstract_parameters.push_back(RobotEyeParametersConfig::AbstractParamDescriptionConstPtr(new RobotEyeParametersConfig::ParamDescription<int>("laser_freq", "int", 0, "Measurement frequency [range:[1,10000] or 30000]", "", &RobotEyeParametersConfig::laser_freq)));
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
-      __param_descriptions__.push_back(RobotEyeParametersConfig::AbstractParamDescriptionConstPtr(new RobotEyeParametersConfig::ParamDescription<int>("laser_freq", "int", 0, "Measurement frequency [range:[1, 30000]]", "", &RobotEyeParametersConfig::laser_freq)));
+      __param_descriptions__.push_back(RobotEyeParametersConfig::AbstractParamDescriptionConstPtr(new RobotEyeParametersConfig::ParamDescription<int>("laser_freq", "int", 0, "Measurement frequency [range:[1,10000] or 30000]", "", &RobotEyeParametersConfig::laser_freq)));
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
       __min__.intensity = 0;
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
