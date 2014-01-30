@@ -1,8 +1,13 @@
 #include "pwn_odometry_controller.h"
 
+#include <opencv2/highgui/highgui.hpp>
+
+#include "g2o_frontend/pwn_core/pwn_static.h"
+
 namespace pwn {
 
-  PWNOdometryController::PWNOdometryController(const char *configFilename, const char *logFilename) {
+  PWNOdometryController::PWNOdometryController(const char *configFilename, const char *logFilename) 
+    : OdometryController::OdometryController() {
     // Pwn objects init
     _updateReference = false;
     _counter = 0;
@@ -23,8 +28,8 @@ namespace pwn {
     _localPose = Eigen::Isometry3f::Identity();
     _localPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
 
-    _referenceFrame = 0;
-    _currentFrame = 0;
+    _referenceCloud = 0;
+    _currentCloud = 0;
     _converter = 0;
     _aligner = 0;  
   
@@ -33,8 +38,8 @@ namespace pwn {
     std::vector<boss::Serializable*> instances = readPWNConfigFile(configFilename);
     cout << "... done" << endl;
 
-    _scene = new Frame();
-    _merger = new Merger();
+    _scene = new Cloud();
+    _merger = new pwn_boss::Merger();
     _merger->setDepthImageConverter(_converter);
     _merger->setMaxPointDepth(6.0f);
     _merger->setDistanceThreshold(0.5f);
@@ -53,7 +58,7 @@ namespace pwn {
 
   PWNOdometryController::~PWNOdometryController() {}
 
-  bool PWNOdometryController::loadFrame(Frame *&frame) {
+  bool PWNOdometryController::loadCloud(Cloud *&cloud) {
     // Read a line from associations
     char line[4096];    
     if (!_ifsAssociations.getline(line, 4096)) {
@@ -63,55 +68,58 @@ namespace pwn {
     string dummy;
     issAssociations >> _timestamp >> dummy;
     issAssociations >> dummy >> _depthFilename;
-    
-    // Load depth image      
-    if (!_depthImage.load((_depthFilename.substr(0, _depthFilename.size() - 3) + "pgm").c_str(), true, _scaleFactor)) {
+
+    // Load depth image
+    _rawDepthImage = cv::imread(_depthFilename.substr(0, _depthFilename.size() - 3) + "pgm", 
+				CV_LOAD_IMAGE_UNCHANGED);
+    if(_rawDepthImage.data == NULL) {
       return false;
     }
-    DepthImage::scale(_scaledDepthImage, _depthImage, _scale);
-    
+    DepthImage_convert_16UC1_to_32FC1(_depthImage, _rawDepthImage, _scaleFactor);
+    DepthImage_scale(_scaledDepthImage, _depthImage, _scale);
+
     // Compute cloud
     update();
-    PinholePointProjector *projector = dynamic_cast<PinholePointProjector*>(_converter->projector());
+    pwn_boss::PinholePointProjector *projector = dynamic_cast<pwn_boss::PinholePointProjector*>(_converter->projector());
     projector->setCameraMatrix(_scaledCameraMatrix);
     projector->setImageSize(_scaledImageRows, _scaledImageCols);
 
-    frame = new pwn::Frame();
-    _converter->compute(*frame, _scaledDepthImage, _sensorOffset);
+    cloud = new pwn::Cloud();
+    _converter->compute(*cloud, _scaledDepthImage, _sensorOffset);
 
-    if (!_referenceFrame) {
+    if(!_referenceCloud) {
       cout << "Starting timestamp: " << _timestamp << endl;
       getGroundTruthPose(_startingPose, atof(_timestamp.c_str()));
       _globalPose = _startingPose;
       _referencePose = _startingPose;
       std::cout << "Starting pose: " << t2v(_startingPose).transpose() << std::endl;
-      _referenceFrame = frame;
-      _scene->add(*_referenceFrame, Eigen::Isometry3f::Identity());
+      _referenceCloud = cloud;
+      _scene->add(*_referenceCloud, Eigen::Isometry3f::Identity());
     }
-    else if (!_currentFrame) {
-      _currentFrame = frame;
+    else if(!_currentCloud) {
+      _currentCloud = cloud;
     }
-    else if (_updateReference) {
-      _referenceFrame = _currentFrame;
-      _currentFrame = frame;
+    else if(_updateReference) {
+      _referenceCloud = _currentCloud;
+      _currentCloud = cloud;
       _referencePose = _globalPose;
       _updateReference = false;
-      _scene->add(*_referenceFrame, Eigen::Isometry3f::Identity());
+      _scene->add(*_referenceCloud, Eigen::Isometry3f::Identity());
     }
     else {
       // Merge clouds
-      _scene->add(*_currentFrame, _aligner->T());
+      _scene->add(*_currentCloud, _aligner->T());
       _merger->merge(_scene, _aligner->T() * _sensorOffset);
       
-      _currentFrame = frame;
+      _currentCloud = cloud;
     }
     _counter++;
     
     return true;
   }
 
-  bool PWNOdometryController::processFrame() {
-    if(!_referenceFrame || !_currentFrame) {
+  bool PWNOdometryController::processCloud() {
+    if(!_referenceCloud || !_currentCloud) {
       return false;
     }
     
@@ -124,8 +132,8 @@ namespace pwn {
     Isometry3f initialGuess = Isometry3f::Identity();
     initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
     // _aligner->setReferenceFrame(_referenceFrame);
-    _aligner->setReferenceFrame(_scene);
-    _aligner->setCurrentFrame(_currentFrame);
+    _aligner->setReferenceCloud(_scene);
+    _aligner->setCurrentCloud(_currentCloud);
     _aligner->setInitialGuess(initialGuess);
     _aligner->setSensorOffset(_sensorOffset);
     _ostart = g2o::get_time();
@@ -142,26 +150,22 @@ namespace pwn {
     std::cout << "Inliers found: " << _aligner->inliers() << std::endl;
     std::cout << "Inliers fraction: " << inliersFraction << std::endl;
     
-    if (inliersFraction < _inliersFraction) {
+    if(inliersFraction < _inliersFraction) {
       _updateReference = true;
       std::cout << "New reference frame selected" << std::endl;
       char name[1024];
       sprintf(name, "./depth/pwn-part-%05d.pwn", _counter);
-      _scene->save(name, 5, true, _referencePose);
+      _scene->save(name,  _referencePose, 5, true);
       _scene->clear();
     }
-
-    else if (!_counter%50 && _counter != 0) {
+    else if(_counter % 50 && _counter != 0) {
       Eigen::Matrix3f R = _globalPose.linear();
       Eigen::Matrix3f E = R.transpose() * R;
       E.diagonal().array() -= 1;
       _globalPose.linear() -= 0.5 * R * E;
     }
     _globalPose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-    
-    // Save current frame for debug
-    // _currentFrame->save(("pwn_" + _depthFilename.substr(0, _depthFilename.size() - 3) + "pwn").c_str(), 10, true, _globalPose);   
-    
+      
     return true;
   }
 
@@ -172,13 +176,13 @@ namespace pwn {
     des.setFilePath(configFilename);
     boss::Serializable *s;
     std::vector<boss::Serializable*> instances;
-    while ((s = des.readObject())) {
+    while((s = des.readObject())) {
       instances.push_back(s);
-      Aligner *al = dynamic_cast<Aligner*>(s);
+      pwn_boss::Aligner *al = dynamic_cast<pwn_boss::Aligner*>(s);
       if (al) {
 	_aligner = al;
       }
-      DepthImageConverter *conv = dynamic_cast<DepthImageConverter*>(s);
+      pwn_boss::DepthImageConverter *conv = dynamic_cast<pwn_boss::DepthImageConverter*>(s);
       if (conv) {      
 	_converter = conv;
       }
@@ -206,38 +210,38 @@ namespace pwn {
 
   void PWNOdometryController::update() {
     _cameraMatrix.setIdentity();
-    if (_sensorType == "xtion640") {
+    if(_sensorType == "xtion640") {
       _cameraMatrix << 
 	570.342f,   0.0f,   320.0f,
         0,      570.342f, 240.0f,
         0.0f,     0.0f,     1.0f;  
     }  
-    else if (_sensorType == "xtion320") {
+    else if(_sensorType == "xtion320") {
       _cameraMatrix << 
 	570.342f,  0.0f,   320.0f,
         0.0f,  570.342f, 240.0f,
         0.0f,    0.0f,     1.0f;  
       _cameraMatrix.block<2,3>(0,0) *= 0.5;
     } 
-    else if (_sensorType == "kinect") {
+    else if(_sensorType == "kinect") {
       _cameraMatrix << 
 	525.0f,   0.0f, 319.5f,
         0.0f, 525.0f, 239.5f,
         0.0f,   0.0f,   1.0f;  
     }
-    else if (_sensorType == "kinectFreiburg1") {
+    else if(_sensorType == "kinectFreiburg1") {
       _cameraMatrix << 
 	517.3f,   0.0f, 318.6f,
         0.0f, 516.5f, 255.3f,
         0.0f,   0.0f,   1.0f;  
     }
-    else if (_sensorType == "kinectFreiburg2") {
+    else if(_sensorType == "kinectFreiburg2") {
       _cameraMatrix << 
 	520.9f,   0.0f, 325.1f,
 	0.0f,   521.0f, 249.7f,
 	0.0f,     0.0f,   1.0f;  
     }
-    else if (_sensorType == "kinectFreiburg3") {
+    else if(_sensorType == "kinectFreiburg3") {
       _cameraMatrix << 
 	535.4f,   0.0f, 320.1f,
 	0.0f,   539.2f, 247.6f,
@@ -257,8 +261,7 @@ namespace pwn {
     _scaledCameraMatrix = _cameraMatrix * invScale;
     _scaledCameraMatrix(2, 2) = 1.0f;
 
-    _scaledImageRows = _depthImage.rows() / _scale;
-    _scaledImageCols = _depthImage.cols() / _scale;
-    
+    _scaledImageRows = _depthImage.rows / _scale;
+    _scaledImageCols = _depthImage.cols / _scale;    
   }
 }

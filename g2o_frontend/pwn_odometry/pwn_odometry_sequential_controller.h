@@ -7,10 +7,10 @@
 #include "g2o_frontend/boss/serializer.h"
 #include "g2o_frontend/boss/deserializer.h"
 
-#include "g2o_frontend/pwn_core/pinholepointprojector.h"
-#include "g2o_frontend/pwn_core/depthimageconverter.h"
-#include "g2o_frontend/pwn_core/aligner.h"
-#include "g2o_frontend/pwn_core/merger.h"
+#include "g2o_frontend/pwn_boss/pinholepointprojector.h"
+#include "g2o_frontend/pwn_boss/depthimageconverter.h"
+#include "g2o_frontend/pwn_boss/aligner.h"
+#include "g2o_frontend/pwn_boss/merger.h"
 
 namespace pwn {
 
@@ -21,10 +21,10 @@ namespace pwn {
     PWNOdometrySequentialController(const char *configFilename_, const char *logFilename_);
     virtual ~PWNOdometrySequentialController();
 
-    // Load next frame
-    virtual bool loadFrame(Frame *&frame);
-    // Procces current frame
-    virtual bool processFrame();
+    // Load next cloud
+    virtual bool loadCloud(Cloud *&cloud);
+    // Procces current cloud
+    virtual bool processCloud();
     // Write current result
     virtual void writeResults();
 
@@ -46,10 +46,13 @@ namespace pwn {
     inline Eigen::Isometry3f relativePose() { return _aligner->T(); }
     inline int counter() { return _counter; }
     inline string timestamp() { return _timestamp; }
-    inline Frame* referenceFrame() { return _referenceFrame; }
-    inline Frame* currentFrame() { return _currentFrame; }
+    inline Cloud* referenceCloud() { return _referenceCloud; }
+    inline Cloud* currentCloud() { return _currentCloud; }
 
   protected:
+    // Pwn configuration file reader
+    std::vector<boss::Serializable*> readPWNConfigFile(const char *configFilename);
+
     // File streams
     ofstream _ofsLog;
 
@@ -61,16 +64,14 @@ namespace pwn {
     string _timestamp, _depthFilename, _sensorType;
     Matrix3f _cameraMatrix, _scaledCameraMatrix;
     Eigen::Isometry3f _sensorOffset, _startingPose, _globalPose, _referencePose, _localPose;
+    RawDepthImage _rawDepthImage;
     DepthImage _depthImage, _scaledDepthImage;
-    MatrixXi _scaledIndexImage;
-    Frame *_currentFrame, *_referenceFrame, *_scene, *_subScene;
+    IntImage _scaledIndexImage;
+    Cloud *_currentCloud, *_referenceCloud, *_scene, *_subScene;
     std::vector<boss::Serializable*> pwnStructures;
-    DepthImageConverter *_converter;
-    Aligner *_aligner;
-    Merger *_merger;
-
-    // Pwn configuration file reader
-    std::vector<boss::Serializable*> readPWNConfigFile(const char *configFilename);
+    pwn_boss::DepthImageConverter *_converter;
+    pwn_boss::Aligner *_aligner;
+    pwn_boss::Merger *_merger;
   };
 
 }

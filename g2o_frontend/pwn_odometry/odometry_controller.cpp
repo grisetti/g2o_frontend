@@ -1,7 +1,6 @@
 #include "odometry_controller.h"
 
 namespace pwn {
-
   bool OdometryController::fileInitialization(const char *groundtruthFilename_, const char *associationsFilename_,
 					      const char *trajectoryFilename_, const char *benchmarkFilename_) {
     _groundtruthFilename = groundtruthFilename_;
@@ -16,7 +15,6 @@ namespace pwn {
       cerr << "Impossible to create the file containing the values of the benchmark." << endl;
       return false;
     }
-    // _ofsBenchmark << "time" << std::endl;
     cout << "done." << endl;
   
     // Create trajectory file
@@ -72,10 +70,4 @@ namespace pwn {
     }
     pose.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
   }
-
-  bool OdometryController::loadFrame(Frame *&) { 
-    std::cout << "WARNING: you should overwrite this method" << std::endl; 
-    return false;
-  }
-
 }
