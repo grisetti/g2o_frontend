@@ -151,7 +151,8 @@ namespace pwn {
     _pointInformationMatrix.resize(k + cloud.pointInformationMatrix().size());
     _normalInformationMatrix.resize(k + cloud.normalInformationMatrix().size());
     _gaussians.resize(k + cloud.gaussians().size());
-    _traversabilityVector.resize(k + cloud.traversabilityVector().size());
+    if (_traversabilityVector.size() && cloud.traversabilityVector().size())
+      _traversabilityVector.resize(k + cloud.traversabilityVector().size());
     for(int i = 0; k < _points.size(); k++, i++) {
       _points[k] = cloud.points()[i];
       _normals[k] = cloud.normals()[i];
