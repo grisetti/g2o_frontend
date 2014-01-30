@@ -25,7 +25,7 @@ namespace boss_map_building {
    
     g2o::SparseOptimizer * g2oInit();
     void optimize();
-    
+    void optimize(MapNode* gauge, std::set<MapNodeRelation*>& relations);
     virtual void nodeAdded(MapNode* n);
     virtual void nodeRemoved(MapNode* n);
     virtual void relationAdded(MapNodeRelation* _r);
@@ -68,9 +68,19 @@ namespace boss_map_building {
   protected:
     MapManager* _manager;
     MapG2OReflector* _optimizer;
-    MapNode* _previousNode;
     int _kfCount;
     int _optimizeEachNKeyFrames;
+  };
+
+  class LocalOptimizerProcessor: public OptimizerProcessor {
+  public:
+    LocalOptimizerProcessor(int id=-1, boss::IdContext* context = 0);
+
+    virtual void process(Serializable* s);
+
+  protected:
+    MapNode* _previousNode;
+    std::set<MapNodeRelation*> _lastRelations;
   };
 
 }

@@ -46,7 +46,7 @@ namespace boss_map_building {
     partitions.clear();
     currentPartitionIndex = data.getInt("currentPartitionIndex");
     ArrayData& adata = data.getField("partitions")->getArray();
-    for (int i=0; i<adata.size(); i++){
+    for (size_t i=0; i<adata.size(); i++){
       std::set<MapNode*> pnodes;
       ArrayData& pdata = adata[i].getArray();
       for (size_t k=0; k<pdata.size(); k++)
@@ -336,6 +336,7 @@ namespace boss_map_building {
       // now get the matrix of consensus.
       // for each relation, count its consensus, add it to all inliers
       std::vector<bool> relInliers(rels.size());
+      std::map<MapNodeBinaryRelation*, std::set<MapNodeBinaryRelation*> > relInliersMap;;
       //for (size_t i=0; i<rels.size(); i++){
       // 	rels[i]->outlierCount=0;
       // 	rels[i]->inlierCount=0;
@@ -343,13 +344,16 @@ namespace boss_map_building {
       for (size_t i=0; i<rels.size(); i++){
 	//PwnCloserRelation* rOut=rels[i];
 	int inliersCount=0;
+	std::set<MapNodeBinaryRelation*> inlierRelations;
 	for (size_t j=0; j<rels.size(); j++){
 	  float te=translationalErrors(j,i);
 	  float re=fabs(rotationalErrors(j,i));
 	  bool isIn=(te<_consensusInlierTranslationalThreshold) && (re<_consensusInlierRotationalThreshold);
 	  relInliers[j]=isIn;
 	  inliersCount+=isIn;
+	  inlierRelations.insert(rels[j]);
 	}
+	relInliersMap.insert(make_pair(rels[i], inlierRelations));
 	if (! inliersCount ) {
 	  cerr << "te: " << endl;
 	  cerr << translationalErrors << endl;
@@ -390,8 +394,21 @@ namespace boss_map_building {
 	  if (_debug) 
 	    cerr << "accept" << endl;
 	  _committedRelations.push_back(r);
+	  /*
+	    std::set<MapNodeBinaryRelation*>& inlierRels = relInliersMap[r];
+	    for (std::set<MapNodeBinaryRelation*>::iterator it = inlierRels.begin(); it!=inlierRels.end(); it++) {
+	    MapNodeBinaryRelation* otherRel = *it;
+	    ClosureInfo* cOther = dynamic_cast<ClosureInfo*>(otherRel);
+	    if (! cOther->accepted){
+	      cOther->accepted = true;
+	      _committedRelations.push_back(otherRel);
+	      _outputQueue.push_back(otherRel);
+	    }
+	  }
+	  */
 	} else {
 	  _manager->removeRelation(r);
+	  _relations.erase(r);
 	  if (_debug) 
 	    cerr << "delete" << endl;
 	}

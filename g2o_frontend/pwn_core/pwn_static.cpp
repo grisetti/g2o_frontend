@@ -2,7 +2,7 @@
 
 namespace pwn {
 
-  void DepthImage_scale(DepthImage &dest, const DepthImage &src, int step) {
+  void DepthImage_scale(DepthImage &dest, const DepthImage &src, int step, float maxDepthCov) {
     int rows = src.rows / step;
     int cols = src.cols / step;
     dest.create(rows, cols);
@@ -10,19 +10,27 @@ namespace pwn {
     for(int r = 0; r < dest.rows; r++) {
       for(int c = 0; c < dest.cols; c++) {
 	float acc = 0;
+	float acc2 = 0;
 	int np = 0;
 	int sr = r * step;
 	int sc = c * step;
 	for(int i = 0; i < step; i++) {
 	  for(int j = 0; j < step; j++) {
 	    if(sr + i < src.rows && sc + j < src.cols) {
-	      acc += src(sr + i, sc + j);
+	      const float& f  = src(sr + i, sc + j);
+	      acc += f;
+	      acc2 += f*f;
 	      np += src(sr + i, sc + j) > 0;
 	    }
 	  }
 	}
-	if(np)
-	  dest(r, c) = acc / np;
+	if(np){
+	  float mu = acc/np;
+	  float sigma = acc2/np-mu*mu;
+	  if (sigma>maxDepthCov)
+	    continue;
+	  dest(r, c) = mu;
+	}
       }
     }
   }

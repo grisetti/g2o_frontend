@@ -9,25 +9,27 @@
 #include <Eigen/Core>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
-#include <boost/thread/thread.hpp>
+//#include <boost/thread/thread.hpp>
 #include <g2o/stuff/command_args.h>
-
 #include "roboteyestruct.h"
 #include "robot_eye_callback.h"
 
 #include <ros/ros.h>
 #include <robot_eye_driver/RobotEyeScan.h>
+#include <dynamic_reconfigure/server.h>
+#include <robot_eye_driver/RobotEyeParametersConfig.h>
 
 namespace roboteye
 {
     class roboteye_node
     {
     public:
-        roboteye_node(double az_rate, double n_lines, double laser_freq, double averaging, bool intensity, std::string outfilename);
+        roboteye_node();
+        roboteye_node(double az_rate, int n_lines, int laser_freq, int averaging, bool intensity, std::string outfilename);
         ~roboteye_node();
 
-        double laserFreq() {return _laser_freq; }
-        void setLaserFreq(double lf) {_laser_freq = lf; }
+        int laserFreq() {return _laser_freq; }
+        void setLaserFreq(int lf) {_laser_freq = lf; }
         ros::Publisher scanPub() {return _scan_pub; }
         RobotEyeScan scan() {return _scan; }
         void setScan(RobotEyeScan &scan);
@@ -39,11 +41,12 @@ namespace roboteye
         void setLastStamp(ros::Time ls) {_lastStamp = ls; }
         unsigned int numReadings() {return _num_readings; }
         void setNumReadings(unsigned int nr) {_num_readings = nr; }
-        bool isRunning() {return _isrunning;}
+        roboteyeState state() {return _node_state; }
+        void setState(roboteyeState s) {_node_state = s; }
+        bool isRunning() {return _isrunning; }
         void setIsRunning();
-        roboteyeState state() {return _state;}
-        void setState(roboteyeState s) {_state = s;}
-
+        void dynamic_reconf_callback(robot_eye_driver::RobotEyeParametersConfig& config, uint32_t level);
+        bool check_consistency();
         void stop();
         void setDesideredApertureAngles();
         void printAndWriteLaserData(std::string outfilename);
@@ -55,9 +58,9 @@ namespace roboteye
         // config parameters
         std::string _sensor_IP;
         double _az_rate;
-        double _N_lines;
-        double _laser_freq;
-        double _averaging;
+        int _N_lines;
+        int _laser_freq;
+        int _averaging;
         bool _intensity;
         std::string _outfilename;
         //    int _seconds;
@@ -76,12 +79,12 @@ namespace roboteye
         //    AngleCB _angle_callback;
         unsigned int _num_readings;
 
-        roboteyeState _state;
+        roboteyeState _node_state;
         bool _isrunning;
 
         /*Boost specific stuff*/
-        boost::thread _thrd;
-        //    boost::mutex mtx;
+//        boost::thread _thrd;
+//        boost::mutex mtx;
 
     };
 
