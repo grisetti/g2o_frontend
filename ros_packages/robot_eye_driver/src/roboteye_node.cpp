@@ -154,28 +154,30 @@ roboteye_node::roboteye_node() : _sensor_IP("169.254.111.100")
                  config.laser_freq,
                  config.intensity?"True":"False");
 
-        _az_rate = config.az_rate;
-        _N_lines = config.n_lines;
-        _averaging = config.averaging;
-        _laser_freq = config.laser_freq;
-        _intensity = config.intensity;
-        if(check_consistency())
+        if(!(_node_state == RUN))
         {
-            if(config.node_state == 1)
-                _node_state = RUN;
-            else if(config.node_state == 0)
-                _node_state = STOP;
-            else if(config.node_state == 2)
-                _node_state = PAUSE;
-        }
-        else
-        {
-            _node_state = PAUSE;
-            cerr << "FUCK YOU!" << endl;
-            ROS_WARN("Some inconsistency in parameters settings. Check the product manual.");
-        }
+            _az_rate = config.az_rate;
+            _N_lines = config.n_lines;
+            _averaging = config.averaging;
+            _laser_freq = config.laser_freq;
+            _intensity = config.intensity;
+            if(check_consistency())
+            {
+                if(config.node_state == 1)
+                    _node_state = RUN;
+                else if(config.node_state == 0)
+                    _node_state = STOP;
+                else if(config.node_state == 2)
+                    _node_state = PAUSE;
 
-        this->setIsRunning();
+                this->setIsRunning();
+            }
+            else
+            {
+                cerr << "FUCK YOU!" << endl;
+                ROS_WARN("Some inconsistency in parameters settings. Check the product manual.");
+            }
+        }
     }
 
     void roboteye_node::setConfig(roboteye::RobotEyeConfig& scan_config) {
