@@ -4,11 +4,9 @@
 
 #include "g2o/stuff/command_args.h"
 
-#include "g2o_frontend/pwn_core/frame.h"
-
 #include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
-#include "g2o_frontend/pwn_viewer/drawable_frame.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_frame.h"
+#include "g2o_frontend/pwn_viewer/drawable_cloud.h"
+#include "g2o_frontend/pwn_viewer/gl_parameter_cloud.h"
 #include "g2o_frontend/pwn_viewer/drawable_trajectory.h"
 #include "g2o_frontend/pwn_viewer/gl_parameter_trajectory.h"
 
@@ -77,7 +75,7 @@ int main (int argc, char** argv) {
 
   // Compute odometry
   bool sceneHasChanged = false;
-  Frame *frame = 0, *groundTruthReferenceFrame = 0;
+  Cloud *cloud = 0, *groundTruthReferenceCloud = 0;
   Isometry3f groundTruthPose;	
   GLParameterTrajectory *groundTruthTrajectoryParam = new GLParameterTrajectory(0.02f, Vector4f(0.0f, 1.0f, 0.0f, 0.6f));
   GLParameterTrajectory *trajectoryParam = new GLParameterTrajectory(0.02f, Vector4f(1.0f, 0.0f, 0.0f, 0.6f));
@@ -104,38 +102,38 @@ int main (int argc, char** argv) {
     if (finished) {
       continue;
     }
-    if (pwnOdometrySequentialController->loadFrame(frame)) {    
+    if (pwnOdometrySequentialController->loadCloud(cloud)) {    
       if(pwnOdometrySequentialController->counter() == 1) {
 	pwnOdometrySequentialController->getGroundTruthPose(groundTruthPose, atof(pwnOdometrySequentialController->timestamp().c_str()));
-	// Add first frame to draw
-	groundTruthReferenceFrame = new Frame();
-	*groundTruthReferenceFrame = *frame;
-	GLParameterFrame *groundTruthReferenceFrameParams = new GLParameterFrame();
-	groundTruthReferenceFrameParams->setStep(vz_pointStep);
-	groundTruthReferenceFrameParams->setShow(true);	
-	groundTruthReferenceFrameParams->parameterPoints()->setColor(Vector4f(1.0f, 0.0f, 1.0f, vz_alpha));
-	DrawableFrame *drawableGroundTruthReferenceFrame = new DrawableFrame(groundTruthPose, groundTruthReferenceFrameParams, groundTruthReferenceFrame);
+	// Add first cloud to draw
+	groundTruthReferenceCloud = new Cloud();
+	*groundTruthReferenceCloud = *cloud;
+	GLParameterCloud *groundTruthReferenceCloudParams = new GLParameterCloud();
+	groundTruthReferenceCloudParams->setStep(vz_pointStep);
+	groundTruthReferenceCloudParams->setShow(true);	
+	groundTruthReferenceCloudParams->parameterPoints()->setColor(Vector4f(1.0f, 0.0f, 1.0f, vz_alpha));
+	DrawableCloud *drawableGroundTruthReferenceCloud = new DrawableCloud(groundTruthPose, groundTruthReferenceCloudParams, groundTruthReferenceCloud);
 
-	GLParameterFrame *frameParams = new GLParameterFrame();
-	frameParams->setStep(vz_pointStep);
-	frameParams->setShow(true);	
-	DrawableFrame *drawableFrame = new DrawableFrame(pwnOdometrySequentialController->globalPose(), frameParams, frame);
+	GLParameterCloud *cloudParams = new GLParameterCloud();
+	cloudParams->setStep(vz_pointStep);
+	cloudParams->setShow(true);	
+	DrawableCloud *drawableCloud = new DrawableCloud(pwnOdometrySequentialController->globalPose(), cloudParams, cloud);
 
-	viewer->addDrawable(drawableGroundTruthReferenceFrame);
-	viewer->addDrawable(drawableFrame);
+	viewer->addDrawable(drawableGroundTruthReferenceCloud);
+	viewer->addDrawable(drawableCloud);
 
 	sceneHasChanged = true;
       }
       // Compute current transformation
-      if (pwnOdometrySequentialController->processFrame()) {
+      if (pwnOdometrySequentialController->processCloud()) {
 	pwnOdometrySequentialController->getGroundTruthPose(groundTruthPose, atof(pwnOdometrySequentialController->timestamp().c_str()));	
 	
-	// Add frame to draw
-	GLParameterFrame *frameParams = new GLParameterFrame();
-	frameParams->setStep(vz_pointStep);
-	frameParams->setShow(true);	
-	DrawableFrame *drawableFrame = new DrawableFrame(pwnOdometrySequentialController->globalPose(), frameParams, frame);
-	viewer->addDrawable(drawableFrame);
+	// Add cloud to draw
+	GLParameterCloud *cloudParams = new GLParameterCloud();
+	cloudParams->setStep(vz_pointStep);
+	cloudParams->setShow(true);	
+	DrawableCloud *drawableCloud = new DrawableCloud(pwnOdometrySequentialController->globalPose(), cloudParams, cloud);
+	viewer->addDrawable(drawableCloud);
 	
 	// Add trajectory pose
 	groundTruthTrajectory.push_back(groundTruthPose);
@@ -151,13 +149,13 @@ int main (int argc, char** argv) {
 	sceneHasChanged = true;
       }
  
-      // Remove old frames
+      // Remove old clouds
       if (viewer->drawableList().size() > 23) {
-	DrawableFrame *d = dynamic_cast<DrawableFrame*>(viewer->drawableList()[3]);
+	DrawableCloud *d = dynamic_cast<DrawableCloud*>(viewer->drawableList()[3]);
 	if (d) {
-	  Frame *f = d->frame();
-	  if (pwnOdometrySequentialController->referenceFrame() != f &&
-	      pwnOdometrySequentialController->currentFrame() != f) {
+	  Cloud *f = d->cloud();
+	  if (pwnOdometrySequentialController->referenceCloud() != f &&
+	      pwnOdometrySequentialController->currentCloud() != f) {
 	    viewer->erase(3);
 	    delete d;
 	    delete f; 
@@ -165,7 +163,7 @@ int main (int argc, char** argv) {
 	}
       }
 
-      frame = 0;
+      cloud = 0;
     }
     else {
       finished = true;

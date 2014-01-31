@@ -9,7 +9,7 @@ namespace pwn {
    *  @param step is the resize factor. If step is greater than 1 the image will be smaller
    *  (for example in case it's 2 the size of the image will be half the size of the original one).
    */
-  void DepthImage_scale(DepthImage &dest, const DepthImage &src, int step);
+  void DepthImage_scale(DepthImage &dest, const DepthImage &src, int step, float maxDepthCov = 0.01);
   
   /**
    *  This method converts a float cv::Mat to an unsigned char cv::Mat.

@@ -1,6 +1,8 @@
 #pragma once
 
-#include "g2o_frontend/pwn_core/frame.h"
+#include <fstream>
+
+#include "g2o_frontend/pwn_boss/cloud.h"
 
 #include "g2o_frontend/basemath/bm_se3.h"
 
@@ -11,7 +13,7 @@ namespace pwn {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
     OdometryController() {}
-    virtual ~OdometryController() { }
+    virtual ~OdometryController() {}
     
     // Input and output file initialization
     virtual bool fileInitialization(const char *groundtruthFilename_, const char *associationsFilename_,
@@ -19,9 +21,12 @@ namespace pwn {
     // Ground truth starting pose extrapolation
     virtual void getGroundTruthPose(Eigen::Isometry3f &pose, const double poseTimestamp);
     // Load next frame
-    virtual bool loadFrame(Frame *&frame); 
+    virtual bool loadCloud(Cloud *&/*cloud*/) {
+      std::cout << "WARNING: you should overwrite this method" << std::endl; 
+      return false;
+    }
     // Procces current frame
-    virtual bool processFrame() { 
+    virtual bool processCloud() { 
       std::cout << "WARNING: you should overwrite this method" << std::endl; 
       return false;
     }
@@ -30,10 +35,10 @@ namespace pwn {
 
   protected:
     // Filenames
-    string _groundtruthFilename, _associationsFilename, _trajectoryFilename, _benchmarkFilename;
+    std::string _groundtruthFilename, _associationsFilename, _trajectoryFilename, _benchmarkFilename;
     // File streams
-    ifstream _ifsGroundtruth, _ifsAssociations;
-    ofstream _ofsTrajectory, _ofsBenchmark;
+    std::ifstream _ifsGroundtruth, _ifsAssociations;
+    std::ofstream _ofsTrajectory, _ofsBenchmark;
   };
 
 }
