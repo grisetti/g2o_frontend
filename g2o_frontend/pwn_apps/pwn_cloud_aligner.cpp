@@ -1,4 +1,5 @@
 #include <dirent.h>
+#include <fstream>
 #include <set>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -166,7 +167,7 @@ int main(int argc, char **argv) {
 
   PWNQGLViewer *viewer = new PWNQGLViewer(mainWindow);
   viewer->init();
-  viewer->setAxisIsDrawn(true);
+  viewer->setAxisIsDrawn(false);
   viewerLayout->addWidget(viewer);
   QHBoxLayout *projectorsLayout = new QHBoxLayout();
   viewerLayout->addItem(projectorsLayout);
@@ -305,6 +306,7 @@ int main(int argc, char **argv) {
   cySpinBox->setMaximum(1000.0f);
   cySpinBox->setSingleStep(0.01f);
   cySpinBox->setValue(cy);
+  QPushButton *snapshotButton = new QPushButton("Snapshot", mainWindow);
   parametersGridLayout->addWidget(ng_minImageRadiusLabel, 0, 0, Qt::AlignLeft);
   parametersGridLayout->addWidget(ng_minImageRadiusSpinBox, 0, 1, Qt::AlignLeft);
   parametersGridLayout->addWidget(ng_maxImageRadiusLabel, 1, 0, Qt::AlignLeft);
@@ -349,6 +351,7 @@ int main(int argc, char **argv) {
   parametersGridLayout->addWidget(cxSpinBox, 5, 7, Qt::AlignLeft);
   parametersGridLayout->addWidget(cyLabel, 6, 6, Qt::AlignLeft);
   parametersGridLayout->addWidget(cySpinBox, 6, 7, Qt::AlignLeft);
+  parametersGridLayout->addWidget(snapshotButton, 6, 2, Qt::AlignLeft);
 
   QLabel *stepLabel = new QLabel("Step", mainWindow);
   QLabel *pointsLabel = new QLabel("Points", mainWindow);
@@ -441,9 +444,11 @@ int main(int argc, char **argv) {
   string referenceFilename, currentFilename;
   GLParameterCloud *referenceParameterCloud = new GLParameterCloud(vz_step);
   GLParameterCloud *currentParameterCloud = new GLParameterCloud(vz_step);
+  referenceParameterCloud->parameterPoints()->setColor(Vector4f(0.0f, 1.0f, 0.0f, 1.0f));
   currentParameterCloud->parameterPoints()->setColor(Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
   Isometry3f initialGuess = Isometry3f::Identity();
   initialGuess.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+  int snapshotCounter = 0;
   while(mainWindow->isVisible()) {
     // Control that at most one projector is selected
     checkProjectorSelection();
@@ -493,20 +498,6 @@ int main(int argc, char **argv) {
 
 	    string fname = item->text().toUtf8().constData();
 	    if (fname.substr(fname.size() - 3) == "pgm") {
-	      // if (!depthImage.load(fname.c_str(), true, di_scaleFactor)) {
-	      // 	cerr << "WARNING: the depth image was not added in the viewer because of a problem while loading it!" << endl;
-	      // 	cloud = 0;
-	      // 	if(referenceCloud) {
-	      // 	  delete referenceCloud;
-	      // 	  referenceCloud = 0;
-	      // 	}
-	      // 	else {
-	      // 	  delete currentCloud;
-	      // 	  currentCloud = 0;
-	      // 	}
-	      // 	continue;
-	      // }
-	      // DepthImage::scale(scaledDepthImage, depthImage, ng_scale);
 	      rawDepthImage = cv::imread(fname, CV_LOAD_IMAGE_UNCHANGED);
 	      DepthImage_convert_16UC1_to_32FC1(depthImage, rawDepthImage, di_scaleFactor);
 	      DepthImage_scale(scaledDepthImage, depthImage, ng_scale);	      
@@ -732,6 +723,14 @@ int main(int argc, char **argv) {
       initialGuess = aligner.T();
 
       optimizeButton->setEnabled(true);
+    }
+    if(snapshotButton->isDown()) {
+      char snapshotName[1024];
+      sprintf(snapshotName, "snapshot-%02d.png", snapshotCounter++);
+      viewer->setSnapshotFormat(QString("PNG"));
+      viewer->setSnapshotQuality(100);
+      viewer->saveSnapshot(QString(snapshotName), true); 
+      usleep(100000);
     }
 
     // Optimize button pressed with step-by-step mode selected

@@ -3,7 +3,7 @@
 namespace pwn {
 
   GLParameterCovariances::GLParameterCovariances() : GLParameter() {
-    _pointSize = 0.5f;
+    _pointSize = 1.0f;
     _colorLowCurvature = Eigen::Vector4f(0.0f, 1.0f, 0.0f, 0.5f);
     _colorHighCurvature = Eigen::Vector4f(1.0f, 0.0f, 0.0f, 0.5f);
     _curvatureThreshold = 0.02f;

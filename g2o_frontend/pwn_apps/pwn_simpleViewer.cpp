@@ -80,6 +80,8 @@ int main (int argc, char** argv) {
   listWidget->show();
 
   viewer->setAxisIsDrawn(true);
+
+  // Manage viewer
   while (mainWindow->isVisible()) {
     if(viewer->drawableList().size() == 0) {
       for(int i = 0; i < maxFiles; i+=step) {

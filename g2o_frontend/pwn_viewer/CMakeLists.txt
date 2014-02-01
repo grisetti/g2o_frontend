@@ -14,6 +14,7 @@ ADD_LIBRARY(pwn_viewer
   drawable_points.cpp drawable_points.h
   drawable_trajectory.cpp drawable_trajectory.h
   drawable_transform_covariance.cpp drawable_transform_covariance.h
+  drawable_uncertainty.cpp drawable_uncertainty.h
   gl_parameter.cpp gl_parameter.h
   gl_parameter_correspondences.cpp gl_parameter_correspondences.h
   gl_parameter_covariances.cpp gl_parameter_covariances.h
@@ -22,11 +23,18 @@ ADD_LIBRARY(pwn_viewer
   gl_parameter_points.cpp gl_parameter_points.h
   gl_parameter_trajectory.cpp gl_parameter_trajectory.h 
   gl_parameter_transform_covariance.cpp gl_parameter_transform_covariance.h
+  gl_parameter_uncertainty.cpp gl_parameter_uncertainty.h
   pwn_imageview.cpp pwn_imageview.h
   pwn_qglviewer.cpp pwn_qglviewer.h
   ${UI_HEADERS}
   ${UI_SOURCES}
 )
 SET_TARGET_PROPERTIES(pwn_viewer PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn_viewer)
-
 TARGET_LINK_LIBRARIES(pwn_viewer pwn_core ${OpenCV_LIBS} ${QGLVIEWER_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY})
+
+ADD_EXECUTABLE(pwn_cloud_prop_viewer pwn_cloud_prop_viewer.cpp )
+TARGET_LINK_LIBRARIES(pwn_cloud_prop_viewer pwn_viewer pwn_core 
+  ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
+  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
+  ${OpenCV_LIBS}
+)
