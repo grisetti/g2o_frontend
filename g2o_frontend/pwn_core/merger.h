@@ -107,7 +107,7 @@ namespace pwn {
 
     /**
      *  Method that computes the merged point cloud given a transformation pose and the point cloud to merge.
-     *  @param cloud is a to th cloud to merge.
+     *  @param cloud is a pointer to the cloud to merge.
      *  @param transform is the pose transofrmation to use in the merging process.
      */
     void merge(Cloud *cloud, Eigen::Isometry3f transform = Eigen::Isometry3f::Identity());

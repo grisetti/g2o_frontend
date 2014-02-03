@@ -22,3 +22,6 @@ TARGET_LINK_LIBRARIES(pwn_simpleViewer pwn_viewer pwn_core
   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
   ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
 )
+
+ADD_EXECUTABLE(pwn_merger pwn_merger.cpp )
+TARGET_LINK_LIBRARIES(pwn_merger pwn_core)

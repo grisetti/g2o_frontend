@@ -40,12 +40,12 @@ int main(int argc, char **argv) {
      string(argv[1]) == "-h" || string(argv[1]) == "-help" || 
      string(argv[1]) == "--h" || string(argv[1]) == "--help") {
     std::cout << "USAGE: ";
-    std::cout << "pwn_cloud_prop_viewer cloudFilename{.pgm,.pwn}" << std::endl;
-    std::cout << "   cloudFilename.pgm \t-->\t input depth image filename" << std::endl;
+    std::cout << "pwn_cloud_prop_viewer cloudFilename.pgm" << std::endl;
+    std::cout << "   cloudFilename{.pgm,.pwn} \t-->\t input depth image or point cloud filename" << std::endl;
     return 0;
   }  
   string filename(argv[1]);
-  if(filename.substr(filename.size() - 3) != "pgm") {
+  if(filename.substr(filename.size() - 3) != "pgm" && filename.substr(filename.size() - 3) != "pwn") {
     std::cerr << "ERROR: input filename " << filename << " of unknown extension ... quitting!" << std::endl;
     return 0;
   }
@@ -162,13 +162,20 @@ int main(int argc, char **argv) {
   RawDepthImage rawDepthImage;
   DepthImage depthImage;
   Cloud pointCloud;
-  rawDepthImage = cv::imread(filename, CV_LOAD_IMAGE_UNCHANGED);
-  if(rawDepthImage.data == NULL) {
-    std::cerr << "ERROR: impossible to load input .pgm depth image " << filename << " ... quitting!"<<endl;
-    return 0;
-  }   
-  DepthImage_convert_16UC1_to_32FC1(depthImage, rawDepthImage, 0.001f);
-  converter.compute(pointCloud, depthImage, sensorOffset); 
+  
+  if(filename.substr(filename.size() - 3) == "pgm") {
+    rawDepthImage = cv::imread(filename, CV_LOAD_IMAGE_UNCHANGED);
+    if(rawDepthImage.data == NULL) {
+      std::cerr << "ERROR: impossible to load input .pgm depth image " << filename << " ... quitting!"<<endl;
+      return 0;
+    }   
+    DepthImage_convert_16UC1_to_32FC1(depthImage, rawDepthImage, 0.001f);
+    converter.compute(pointCloud, depthImage, sensorOffset); 
+  }
+  else {
+    Eigen::Isometry3f tmp;
+    pointCloud.load(tmp, filename.c_str());
+  }
 
   // Manage GUI
   mainWindow->show();

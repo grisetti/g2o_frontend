@@ -37,6 +37,10 @@ ADD_LIBRARY(pwn_core
 SET_TARGET_PROPERTIES(pwn_core PROPERTIES OUTPUT_NAME ${LIB_PREFIX}_pwn_core)
 TARGET_LINK_LIBRARIES(pwn_core ${OpenCV_LIBS})
 
-ADD_EXECUTABLE(pwn_visual_odometry pwn_visual_odometry.cpp )
-SET_TARGET_PROPERTIES(pwn_visual_odometry PROPERTIES OUTPUT_NAME pwn_visual_odometry)
-TARGET_LINK_LIBRARIES(pwn_visual_odometry pwn_core ${OpenCV_LIBS})
+ADD_EXECUTABLE(pwn_simple_aligner pwn_simple_aligner.cpp )
+SET_TARGET_PROPERTIES(pwn_simple_aligner PROPERTIES OUTPUT_NAME pwn_simple_aligner)
+TARGET_LINK_LIBRARIES(pwn_simple_aligner pwn_core ${OpenCV_LIBS})
+
+ADD_EXECUTABLE(pwn_aligner pwn_aligner.cpp )
+SET_TARGET_PROPERTIES(pwn_aligner PROPERTIES OUTPUT_NAME pwn_aligner)
+TARGET_LINK_LIBRARIES(pwn_aligner pwn_core ${OpenCV_LIBS})
