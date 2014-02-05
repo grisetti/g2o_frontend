@@ -41,12 +41,12 @@ namespace pwn {
 
   void DrawableCovariances::draw() {
     GLParameterCovariances *covariancesParameter = dynamic_cast<GLParameterCovariances*>(_parameter);
-    if(covariancesParameter && 
+    if(_covarianceDrawList &&
+       covariancesParameter && 
        covariancesParameter->show() && 
        covariancesParameter->ellipsoidScale() > 0.0f) {
       glPushMatrix();
       glMultMatrixf(_transformation.data());
-      covariancesParameter->applyGLParameter();
       glCallList(_covarianceDrawList);
       glPopMatrix();
     }
@@ -55,20 +55,25 @@ namespace pwn {
   void DrawableCovariances::updateCovarianceDrawList() {
     GLParameterCovariances *covariancesParameter = dynamic_cast<GLParameterCovariances*>(_parameter);
     glNewList(_covarianceDrawList, GL_COMPILE); 
-    if(_covariances && 
+    if(_covarianceDrawList &&
+       _covariances && 
        covariancesParameter && 
-       covariancesParameter->show() && 
        covariancesParameter->ellipsoidScale() > 0.0f) {
+      covariancesParameter->applyGLParameter();
       float ellipsoidScale = covariancesParameter->ellipsoidScale();
-      Eigen::Vector4f colorLowCurvature = covariancesParameter->colorLowCurvature();
-      Eigen::Vector4f colorHighCurvature = covariancesParameter->colorHighCurvature();
-      float curvatureThreshold = covariancesParameter->curvatureThreshold();
+      // Find max curvature
+      float maxCurvature = 0.0f;
+      for(size_t i = 0; i < _covariances->size(); i += covariancesParameter->step()) {
+	if(_covariances->at(i).curvature() > maxCurvature)
+	  maxCurvature = _covariances->at(i).curvature();
+      }
+      maxCurvature = maxCurvature / 2.0f ;
       for(size_t i = 0; i < _covariances->size(); i += covariancesParameter->step()) {
 	Stats cov = _covariances->at(i);
 	Eigen::Vector3f lambda = cov.eigenValues();
 	Eigen::Isometry3f I = Eigen::Isometry3f::Identity();
 	I.linear() = cov.eigenVectors();
-	if(cov.n() == 0 )
+	if(cov.n() == 0)
 	  continue;
 	I.translation() = Eigen::Vector3f(cov.mean()[0], cov.mean()[1], cov.mean()[2]);
 	float sx = sqrt(lambda[0]) * ellipsoidScale;
@@ -77,19 +82,11 @@ namespace pwn {
 	float curvature = cov.curvature();
 	glPushMatrix();
 	glMultMatrixf(I.data());
-	if(curvature > curvatureThreshold) {
-	  glColor4f(colorHighCurvature[0] - curvature, colorHighCurvature[1], colorHighCurvature[2], colorHighCurvature[3]);
-	  sx = ellipsoidScale;
-	  sy = ellipsoidScale;
-	  sz = ellipsoidScale;
-	}
-	else {
-	  glColor4f(colorLowCurvature[0], colorLowCurvature[1] - curvature, colorLowCurvature[2], colorLowCurvature[3]);
-	  sx = 1e-03;
-	  sy = ellipsoidScale;
-	  sz = ellipsoidScale;
-	}
-
+	//std::cerr << "Curvature: " << curvature << std::endl;
+	glColor4f(curvature/maxCurvature, 1.0f - curvature/maxCurvature, 0.0f, 1.0f);
+	sx = 1e-03;
+	sy = ellipsoidScale;
+	sz = ellipsoidScale;
 	glScalef(sx, sy, sz);
 	glCallList(_sphereDrawList);
 	glPopMatrix();	    

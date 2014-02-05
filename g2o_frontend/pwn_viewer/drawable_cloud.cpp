@@ -47,7 +47,7 @@ namespace pwn {
   void DrawableCloud::constructDrawableObjects(){
     if(_cloud) {
       _drawablePoints = new DrawablePoints(Isometry3f::Identity(), 
-					   (GLParameter*)_parameter->parameterPoints(), &_cloud->points(), &_cloud->normals(), &_cloud->traversabilityVector());
+					   (GLParameter*)_parameter->parameterPoints(), &_cloud->points(), &_cloud->normals());
       _drawableNormals = new DrawableNormals(Isometry3f::Identity(), 
 					     (GLParameter*)_parameter->parameterNormals(), &_cloud->points(), &_cloud->normals());
       _drawableCovariances = new DrawableCovariances(Isometry3f::Identity(), 

@@ -114,8 +114,8 @@ namespace pwn {
 	float z = *f;
 	float zVariation = (_alpha * z * z) / (fB + z * _alpha);
 	J <<       
-	  z, 0, (float)r,
-	  0, z, (float)c,
+	  z, 0, (float)c,
+	  0, z, (float)r,
 	  0, 0, 1;
 	J = _iK * J;
 	Diagonal3f imageCovariance(3.0f, 3.0f, zVariation);

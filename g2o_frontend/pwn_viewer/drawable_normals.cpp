@@ -32,13 +32,12 @@ namespace pwn {
 
   void DrawableNormals::draw() {
     GLParameterNormals *normalsParameter = dynamic_cast<GLParameterNormals*>(_parameter);
-    if(normalsParameter &&
+    if(_normalDrawList &&
+       normalsParameter &&
        normalsParameter->show() && 
        normalsParameter->normalLength() > 0.0f) {
       glPushMatrix();
       glMultMatrixf(_transformation.data());
-      normalsParameter->applyGLParameter();
-      glLineWidth(1.0);
       glCallList(_normalDrawList);
       glPopMatrix();
     }
@@ -47,11 +46,13 @@ namespace pwn {
   void DrawableNormals::updateNormalDrawList() {
     GLParameterNormals *normalsParameter = dynamic_cast<GLParameterNormals*>(_parameter);
     glNewList(_normalDrawList, GL_COMPILE);  
-    if(_points &&
+    if(_normalDrawList &&
+       _points &&
        _normals && 
        normalsParameter &&
-       normalsParameter->show() && 
        normalsParameter->normalLength() > 0.0f) {
+      normalsParameter->applyGLParameter();
+      glLineWidth(1.0);
       float normalLength = normalsParameter->normalLength();
       glBegin(GL_LINES);
       for(size_t i = 0; i < _normals->size(); i += normalsParameter->step()) {

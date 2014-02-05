@@ -12,14 +12,11 @@ namespace pwn {
 
     DrawablePoints();
     DrawablePoints(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, PointVector *points_, NormalVector *normals_);
-    DrawablePoints(const Eigen::Isometry3f& transformation_, GLParameter *parameter_, PointVector *points_, NormalVector *normals_, 
-		   std::vector<int> *traversabilityVector_ );
     virtual ~DrawablePoints() { glDeleteLists(_pointDrawList, 1); }
 
     virtual GLParameter* parameter() { return _parameter; };
     virtual PointVector* points() { return _points; }
     virtual NormalVector* normals() { return _normals; }
-    virtual std::vector<int>* traversabilityVector() { return _traversabilityVector; }
     inline GLuint pointDrawList() { return _pointDrawList; }
   
     virtual bool setParameter(GLParameter *parameter_);
@@ -30,18 +27,13 @@ namespace pwn {
     virtual void setNormals(NormalVector *normals_) { 
       _normals = normals_; 
       updatePointDrawList();
-    }
-  
+    }  
     virtual void setPointsAndNormals(PointVector *points_, NormalVector *normals_) {
       _points = points_;
       _normals = normals_; 
       updatePointDrawList();
     }
 
-    virtual void setTraversabilityVector(std::vector<int> *traversabilityVector_) { 
-      _traversabilityVector = traversabilityVector_; 
-      updatePointDrawList();
-    }
     void setStep(int step_) {
       _parameter->setStep(step_);
       updatePointDrawList();

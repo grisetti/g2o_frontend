@@ -17,6 +17,9 @@ namespace pwn {
   
     virtual void applyGLParameter() {}
 
+    virtual void setStep(int step_);
+    virtual void setShow(bool show_);
+
     GLParameterPoints* parameterPoints() { return _parameterPoints; }
     void setParameterPoints(GLParameterPoints *parameterPoints_) { _parameterPoints = parameterPoints_; }
 
