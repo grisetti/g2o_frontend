@@ -16,7 +16,7 @@ roboteye_node::roboteye_node() : _sensor_IP("169.254.111.100")
     private_handle.param("az_rate", _az_rate, 10.);
     ROS_INFO("RobotEyeNode: az_rate = %f", _az_rate);
 
-    private_handle.param("n_lines", _N_lines, 100);
+    private_handle.param("n_lines", _N_lines, 500);
     ROS_INFO("RobotEyeNode: n_lines = %i", _N_lines);
 
     private_handle.param("averaging", _averaging, 1);
@@ -60,7 +60,6 @@ roboteye_node::roboteye_node() : _sensor_IP("169.254.111.100")
     _scan_config.max_range = 250.0; //see the documentation
 
     _scan_pub = _handle.advertise<robot_eye_driver::RobotEyeScan>("roboteye_scan", 1024);
-//    _thrd = boost::thread(&roboteye_node::setIsRunning, this);
 }
 
     roboteye_node::roboteye_node(double az_rate, int n_lines, int averaging, int laser_freq, bool intensity, std::string outfilename) : _sensor_IP("169.254.111.100")
@@ -154,30 +153,39 @@ roboteye_node::roboteye_node() : _sensor_IP("169.254.111.100")
                  config.laser_freq,
                  config.intensity?"True":"False");
 
-        if(!(_node_state == RUN))
+        _az_rate = config.az_rate;
+        _N_lines = config.n_lines;
+        _averaging = config.averaging;
+        _laser_freq = config.laser_freq;
+        _intensity = config.intensity;
+        if(check_consistency())
         {
-            _az_rate = config.az_rate;
-            _N_lines = config.n_lines;
-            _averaging = config.averaging;
-            _laser_freq = config.laser_freq;
-            _intensity = config.intensity;
-            if(check_consistency())
-            {
-                if(config.node_state == 1)
+            if(config.node_state == 1)  {
+                if(!(_node_state == RUN)) {
                     _node_state = RUN;
-                else if(config.node_state == 0)
-                    _node_state = STOP;
-                else if(config.node_state == 2)
-                    _node_state = PAUSE;
+                    usleep(1e3);
+                    _isrunning = true;
+                    this->roboteyeRun();
+                }
+                else
+                    ROS_WARN_STREAM("You cannot change laser parameters while the laser is running, first switch to STOP or PAUSE state");
 
-                this->setIsRunning();
             }
-            else
-            {
-                cerr << "FUCK YOU!" << endl;
-                ROS_WARN("Some inconsistency in parameters settings. Check the product manual.");
+            else if(config.node_state == 0) {
+                _node_state = STOP;
+                usleep(1e3);
+                _isrunning = false;
+                this->roboteyeStop();
+            }
+            else if(config.node_state == 2) {
+                _node_state = PAUSE;
+                usleep(1e3);
+                _isrunning = false;
+                this->roboteyePause();
             }
         }
+        else
+            ROS_WARN_STREAM("Some inconsistency in parameters settings. Check the product manual.");
     }
 
     void roboteye_node::setConfig(roboteye::RobotEyeConfig& scan_config) {
@@ -191,23 +199,23 @@ roboteye_node::roboteye_node() : _sensor_IP("169.254.111.100")
     }
 
 
-    void roboteye_node::setIsRunning() {
-        if(_node_state == RUN) {
-            usleep(2e3);
-            _isrunning = true;
-            this->roboteyeRun();
-        }
-        else if(_node_state == STOP) {
-            usleep(2e3);
-            _isrunning = false;
-            this->roboteyeStop();
-        }
-        else if(_node_state == PAUSE) {
-            usleep(2e3);
-            _isrunning = false;
-            this->roboteyePause();
-        }
-    }
+//    void roboteye_node::setIsRunning() {
+//        if(_node_state == RUN) {
+//            usleep(1e3);
+//            _isrunning = true;
+//            this->roboteyeRun();
+//        }
+//        else if(_node_state == STOP) {
+//            usleep(1e3);
+//            _isrunning = false;
+//            this->roboteyeStop();
+//        }
+//        else if(_node_state == PAUSE) {
+//            usleep(1e3);
+//            _isrunning = false;
+//            this->roboteyePause();
+//        }
+//    }
 
     void roboteye_node::roboteyePause() {
       // to be done:

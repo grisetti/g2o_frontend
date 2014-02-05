@@ -459,7 +459,7 @@ RobotEyeParametersConfig::GroupDescription<RobotEyeParametersConfig::DEFAULT, Ro
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
       __max__.n_lines = 1000;
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
-      __default__.n_lines = 100;
+      __default__.n_lines = 500;
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"
       Default.abstract_parameters.push_back(RobotEyeParametersConfig::AbstractParamDescriptionConstPtr(new RobotEyeParametersConfig::ParamDescription<int>("n_lines", "int", 0, "Number of horizontal lines (vertical resolution) [min:az_rate]", "", &RobotEyeParametersConfig::n_lines)));
 //#line 259 "/opt/ros/groovy/lib/python2.7/dist-packages/dynamic_reconfigure/parameter_generator.py"

@@ -91,15 +91,9 @@ int main(int argc, char **argv)
     f = boost::bind(&roboteye_node::dynamic_reconf_callback, &re, _1, _2);
     server.setCallback(f);
 
-    //TODO COMMAND SUBSCRIBED FROM EXTERNAL: STATE -> RUNNING?
-    //the _state variableof re is modified by a subscriber that check if an external command switches from run to pause or stop
-//    re.setState(RUN);
-//    usleep(2e3);
-
     while(ros::ok()) {
         ros::spinOnce();
-        bool run = re.isRunning();
-        if (run)
+        if (re.isRunning())
             publishScan(re);
         else
             ROS_WARN_ONCE_NAMED("eval", "Waiting for RobotEye Laser-Data Acquisition");

@@ -44,7 +44,7 @@ namespace roboteye
         roboteyeState state() {return _node_state; }
         void setState(roboteyeState s) {_node_state = s; }
         bool isRunning() {return _isrunning; }
-        void setIsRunning();
+//        void setIsRunning();
         void dynamic_reconf_callback(robot_eye_driver::RobotEyeParametersConfig& config, uint32_t level);
         bool check_consistency();
         void stop();
