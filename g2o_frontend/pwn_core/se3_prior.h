@@ -1,6 +1,6 @@
 #pragma once
 
-#include "g2o_frontend/basemath/bm_se3.h"
+#include "bm_se3.h"
 
 /*
    Base class that implements a simple prior on te transformation to be used in SE2 pose.

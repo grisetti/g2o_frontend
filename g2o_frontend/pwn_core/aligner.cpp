@@ -3,9 +3,8 @@
 #include <sys/time.h>
 #include <omp.h>
 
-#include "g2o/stuff/unscented.h"
-
-#include "g2o_frontend/basemath/bm_se3.h"
+#include "unscented.h"
+#include "bm_se3.h"
 
 using namespace std;
 
@@ -152,7 +151,7 @@ namespace pwn {
 
   void Aligner::_computeStatistics(Vector6f &mean, Matrix6f &Omega, 
 				   float &translationalRatio, float &rotationalRatio) const {
-    typedef g2o::SigmaPoint<Vector6f> SigmaPoint;
+    typedef SigmaPoint<Vector6f> SigmaPoint;
     typedef std::vector<SigmaPoint, Eigen::aligned_allocator<SigmaPoint> > SigmaPointVector;
   
     // Output init
@@ -174,7 +173,7 @@ namespace pwn {
     Matrix6f localSigma = svd.solve(Matrix6f::Identity());
     SigmaPointVector sigmaPoints;
     Vector6f localMean = Vector6f::Zero();
-    g2o::sampleUnscented(sigmaPoints, localMean, localSigma);
+    sampleUnscented(sigmaPoints, localMean, localSigma);
   
     Eigen::Isometry3f dT = _T;  // Transform from current to reference
     
@@ -185,7 +184,7 @@ namespace pwn {
       p._sample = t2v(dT * v2t(p._sample).inverse());
     }
     // Reconstruct the gaussian 
-    g2o::reconstructGaussian(mean, localSigma, sigmaPoints);
+    reconstructGaussian(mean, localSigma, sigmaPoints);
 
     // Compute the information matrix from the covariance
     Omega = localSigma.inverse();

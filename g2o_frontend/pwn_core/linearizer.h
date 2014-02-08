@@ -1,8 +1,8 @@
 #pragma once
 
+#include "bm_se3.h"
 #include "homogeneousvector4f.h"
 #include "informationmatrix.h"
-#include "g2o_frontend/basemath/bm_se3.h"
 
 using namespace Eigen;
 

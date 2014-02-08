@@ -104,11 +104,11 @@ int main(int argc, char** argv) {
   PinholeImageSensor* pinholeSensor = dynamic_cast<PinholeImageSensor*>(sensor);
   Eigen::Isometry3d T =conf->sensorOffset(pinholeSensor);
   Eigen::Isometry3d iT = T.inverse();
-  cerr << "sensor position on the robot:" << t2v(T).transpose() << endl;
+  cerr << "sensor position on the robot:" << pwn::t2v(T).transpose() << endl;
 
   group->setRobotConfiguration(conf);
   ofstream os("calib.dat");
-  os << "# initial transform: " << t2v(T).transpose() << endl;
+  os << "# initial transform: " << pwn::t2v(T).transpose() << endl;
   os << "# measurements, each line is: " << endl;
   os << "# ox oy oz qox qoy qoz sx sy sz qsx qsy qsz " << endl;
   while((s=des.readObject())) {
@@ -134,8 +134,8 @@ int main(int argc, char** argv) {
       
       Eigen::Isometry3d zOdom = t1.inverse()*t2;
       Eigen::Isometry3d zSensor = rel->transform();
-      os << t2v(zOdom).transpose() << " "
-	 << t2v(iT*zSensor*T).transpose() << endl;
+      os << pwn::t2v(zOdom).transpose() << " "
+	 << pwn::t2v(iT*zSensor*T).transpose() << endl;
     }
   }
 }
