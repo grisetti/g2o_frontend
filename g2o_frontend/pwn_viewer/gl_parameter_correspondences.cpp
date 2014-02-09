@@ -1,6 +1,6 @@
 #include "gl_parameter_correspondences.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   GLParameterCorrespondences::GLParameterCorrespondences() : GLParameter() {
     _pointSize = 0.1f;

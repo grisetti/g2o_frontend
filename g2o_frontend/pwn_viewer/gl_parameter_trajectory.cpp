@@ -1,6 +1,6 @@
 #include "gl_parameter_trajectory.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   GLParameterTrajectory::GLParameterTrajectory() : GLParameter() {
     _pyramidScale = 1.0f;

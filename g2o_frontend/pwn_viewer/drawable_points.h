@@ -4,7 +4,9 @@
 #include "drawable.h"
 #include "gl_parameter_points.h"
 
-namespace pwn {
+using namespace pwn;
+
+namespace pwn_viewer {
 
   class DrawablePoints : public Drawable {
   public:

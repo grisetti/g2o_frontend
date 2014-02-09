@@ -4,7 +4,7 @@
 
 #include <Eigen/Eigenvalues>
 
-namespace pwn {
+namespace pwn_viewer {
 
   DrawableUncertainty::DrawableUncertainty() : Drawable() {
     _parameter = 0;

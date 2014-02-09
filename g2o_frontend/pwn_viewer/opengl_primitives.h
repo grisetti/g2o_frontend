@@ -3,7 +3,7 @@
 #include <GL/gl.h>
 #include <GL/glut.h>
 
-namespace pwn {
+namespace pwn_viewer {
 
   /**
    * Draw a box that is centered in the current coordinate frame

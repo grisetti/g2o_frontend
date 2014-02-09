@@ -1,6 +1,6 @@
 #include "gl_parameter_transform_covariance.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   GLParameterTransformCovariance::GLParameterTransformCovariance() : GLParameter() {
     _color = Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f);

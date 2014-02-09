@@ -1,7 +1,7 @@
 #include "drawable_correspondences.h"
 #include "gl_parameter_correspondences.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   DrawableCorrespondences::DrawableCorrespondences() : Drawable() {
     _parameter = 0;

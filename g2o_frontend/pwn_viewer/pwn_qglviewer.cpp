@@ -6,7 +6,7 @@
 
 using namespace Eigen;
 
-namespace pwn {
+namespace pwn_viewer {
 
   class StandardCamera : public qglviewer::Camera {
   public:

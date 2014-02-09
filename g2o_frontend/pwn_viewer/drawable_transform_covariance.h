@@ -3,7 +3,7 @@
 #include "gl_parameter_transform_covariance.h"
 #include "drawable.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   class DrawableTransformCovariance : public Drawable {
   public:

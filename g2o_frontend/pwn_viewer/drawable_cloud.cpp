@@ -1,7 +1,7 @@
 #include "drawable_cloud.h"
 #include "opengl_primitives.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   DrawableCloud::DrawableCloud(const Eigen::Isometry3f &transformation_, GLParameter *parameter_, 
 			       Cloud *cloud_) : Drawable(transformation_) {

@@ -1,6 +1,6 @@
 #include "gl_parameter_points.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   GLParameterPoints::GLParameterPoints() : GLParameter() {
     _pointSize = 1.0f;

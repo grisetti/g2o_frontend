@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <cmath>
 
-namespace pwn {
+namespace pwn_viewer {
 
   class GLUWrapper {
   public:

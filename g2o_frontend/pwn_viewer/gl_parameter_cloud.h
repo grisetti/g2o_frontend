@@ -6,7 +6,7 @@
 #include "gl_parameter_covariances.h"
 #include "gl_parameter_correspondences.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   class GLParameterCloud : public GLParameter {
   public: 

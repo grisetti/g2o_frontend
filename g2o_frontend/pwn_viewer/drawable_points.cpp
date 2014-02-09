@@ -1,6 +1,6 @@
 #include "drawable_points.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   DrawablePoints::DrawablePoints() : Drawable() {
     _parameter = 0;

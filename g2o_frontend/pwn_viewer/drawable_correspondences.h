@@ -4,7 +4,9 @@
 #include "drawable.h"
 #include "gl_parameter_correspondences.h"
 
-namespace pwn {
+using namespace pwn;
+
+namespace pwn_viewer {
 
   class DrawableCorrespondences : public Drawable {
   public:

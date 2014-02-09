@@ -32,7 +32,7 @@
 
 using namespace Eigen;
 using namespace std;
-using namespace pwn;
+using namespace pwn_viewer;
 
 int main(int argc, char **argv) {
   // Input handling

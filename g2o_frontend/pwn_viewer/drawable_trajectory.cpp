@@ -1,7 +1,7 @@
 #include "drawable_trajectory.h"
 #include "opengl_primitives.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   DrawableTrajectory::DrawableTrajectory() : Drawable() {
     _parameter = 0;

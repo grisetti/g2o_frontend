@@ -13,7 +13,7 @@
 #include "gl_parameter_correspondences.h"
 #include "gl_parameter_cloud.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   class DrawableCloud : public Drawable {
   public:

@@ -1,6 +1,6 @@
 #include "gl_parameter_cloud.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   GLParameterCloud::GLParameterCloud(int step) : GLParameter() {
     _parameterPoints = new GLParameterPoints(1.0f, Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));

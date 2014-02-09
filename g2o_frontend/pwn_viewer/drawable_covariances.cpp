@@ -3,7 +3,7 @@
 #include "pwn_qglviewer.h"
 #include "opengl_primitives.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   DrawableCovariances::DrawableCovariances() : Drawable() {
     _parameter = 0;
