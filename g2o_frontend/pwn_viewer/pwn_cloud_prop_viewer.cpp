@@ -20,15 +20,15 @@
 #include "g2o_frontend/pwn_core/statscalculatorintegralimage.h"
 #include "g2o_frontend/pwn_core/depthimageconverterintegralimage.h"
 
-#include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
-#include "g2o_frontend/pwn_viewer/drawable_points.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_points.h"
-#include "g2o_frontend/pwn_viewer/drawable_normals.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_normals.h"
-#include "g2o_frontend/pwn_viewer/drawable_covariances.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_covariances.h"
-#include "g2o_frontend/pwn_viewer/drawable_uncertainty.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_uncertainty.h"
+#include "pwn_qglviewer.h"
+#include "drawable_points.h"
+#include "gl_parameter_points.h"
+#include "drawable_normals.h"
+#include "gl_parameter_normals.h"
+#include "drawable_covariances.h"
+#include "gl_parameter_covariances.h"
+#include "drawable_uncertainty.h"
+#include "gl_parameter_uncertainty.h"
 
 using namespace Eigen;
 using namespace std;
