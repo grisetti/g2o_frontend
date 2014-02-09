@@ -1,7 +1,5 @@
 #include "drawable_cloud.h"
-#include "g2o/stuff/opengl_primitives.h"
-
-using namespace g2o;
+#include "opengl_primitives.h"
 
 namespace pwn {
 
@@ -46,11 +44,11 @@ namespace pwn {
 
   void DrawableCloud::constructDrawableObjects(){
     if(_cloud) {
-      _drawablePoints = new DrawablePoints(Isometry3f::Identity(), 
+      _drawablePoints = new DrawablePoints(Eigen::Isometry3f::Identity(), 
 					   (GLParameter*)_parameter->parameterPoints(), &_cloud->points(), &_cloud->normals());
-      _drawableNormals = new DrawableNormals(Isometry3f::Identity(), 
+      _drawableNormals = new DrawableNormals(Eigen::Isometry3f::Identity(), 
 					     (GLParameter*)_parameter->parameterNormals(), &_cloud->points(), &_cloud->normals());
-      _drawableCovariances = new DrawableCovariances(Isometry3f::Identity(), 
+      _drawableCovariances = new DrawableCovariances(Eigen::Isometry3f::Identity(), 
 						     (GLParameter*)_parameter->parameterCovariances(), &_cloud->stats());
       _drawableCorrespondences = new DrawableCorrespondences();
       _drawableCorrespondences->setParameter((GLParameter*)_parameter->parameterCorrespondences());
@@ -80,8 +78,8 @@ namespace pwn {
 
       glPushMatrix();
       Eigen::Isometry3f sensorOffset;
-      sensorOffset.translation() = Vector3f(0.0f, 0.0f, 0.0f);
-      Quaternionf quaternion = Quaternionf(-.5f, -0.5f, 0.5f, 0.5f);
+      sensorOffset.translation() = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+      Eigen::Quaternionf quaternion = Eigen::Quaternionf(-.5f, -0.5f, 0.5f, 0.5f);
       sensorOffset.linear() = quaternion.toRotationMatrix();
       sensorOffset.matrix().row(3) << 0.0f, 0.0f, 0.0f, 1.0f;
       glMultMatrixf(sensorOffset.data());

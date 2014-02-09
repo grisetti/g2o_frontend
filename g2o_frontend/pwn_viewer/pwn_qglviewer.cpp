@@ -2,7 +2,7 @@
 
 #include "pwn_qglviewer.h"
 
-#include "g2o/stuff/opengl_primitives.h"
+#include "opengl_primitives.h"
 
 using namespace Eigen;
 
@@ -93,11 +93,11 @@ namespace pwn {
     // Compile draw lists.
     // Ellipsoid.
     glNewList(_ellipsoidDrawList, GL_COMPILE);
-    g2o::opengl::drawSphere(1.0f);
+    drawSphere(1.0f);
     glEndList();
     // Pyramid.
     glNewList(_pyramidDrawList, GL_COMPILE);
-    g2o::opengl::drawPyramid(0.5f, 0.5f);
+    drawPyramid(0.5f, 0.5f);
     glEndList();
   }
 

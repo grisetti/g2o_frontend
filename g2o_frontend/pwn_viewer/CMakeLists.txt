@@ -26,6 +26,7 @@ ADD_LIBRARY(pwn_viewer
   gl_parameter_uncertainty.cpp gl_parameter_uncertainty.h
   pwn_imageview.cpp pwn_imageview.h
   pwn_qglviewer.cpp pwn_qglviewer.h
+  opengl_primitives.cpp opengl_primitives.h
   ${UI_HEADERS}
   ${UI_SOURCES}
 )
