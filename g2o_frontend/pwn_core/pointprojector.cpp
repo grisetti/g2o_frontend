@@ -1,5 +1,5 @@
 #include "pointprojector.h"
-#include "g2o_frontend/basemath/bm_se3.h"
+#include "bm_se3.h"
 
 namespace pwn {
 

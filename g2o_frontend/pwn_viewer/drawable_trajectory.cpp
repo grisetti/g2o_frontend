@@ -1,7 +1,7 @@
 #include "drawable_trajectory.h"
-#include "g2o/stuff/opengl_primitives.h"
+#include "opengl_primitives.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   DrawableTrajectory::DrawableTrajectory() : Drawable() {
     _parameter = 0;
@@ -9,7 +9,7 @@ namespace pwn {
     _pyramidDrawList = glGenLists(1);
     _trajectoryDrawList = glGenLists(1);
     glNewList(_pyramidDrawList, GL_COMPILE);
-    g2o::opengl::drawPyramid(1.0f, 1.0f);
+    drawPyramid(1.0f, 1.0f);
     glEndList();
     _trajectorySize = 0;
     updateTrajectoryDrawList();
@@ -24,7 +24,7 @@ namespace pwn {
     _pyramidDrawList = glGenLists(1);
     _trajectoryDrawList = glGenLists(1);
     glNewList(_pyramidDrawList, GL_COMPILE);
-    g2o::opengl::drawPyramid(1.0f, 1.0f);
+    drawPyramid(1.0f, 1.0f);
     glEndList();
     if(_trajectory != 0)
       _trajectorySize = _trajectory->size();

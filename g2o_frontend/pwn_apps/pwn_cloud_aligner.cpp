@@ -43,6 +43,7 @@ using namespace std;
 using namespace Eigen;
 using namespace g2o;
 using namespace pwn;
+using namespace pwn_viewer;
 
 set<string> readDirectory(string dir);
 void applySettings();

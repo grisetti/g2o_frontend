@@ -1,6 +1,6 @@
 #include "gl_parameter_covariances.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   GLParameterCovariances::GLParameterCovariances() : GLParameter() {
     _pointSize = 1.0f;

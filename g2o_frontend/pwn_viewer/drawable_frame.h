@@ -1,23 +1,19 @@
 #pragma once
 
-#include "g2o_frontend/pwn_viewer/pwn_qglviewer.h"
-#include "g2o_frontend/pwn_viewer/pwn_imageview.h"
+#include "pwn_qglviewer.h"
+#include "pwn_imageview.h"
+#include "drawable_points.h"
+#include "drawable_normals.h"
+#include "drawable_covariances.h"
+#include "drawable_correspondences.h"
+#include "gl_parameter.h"
+#include "gl_parameter_points.h"
+#include "gl_parameter_normals.h"
+#include "gl_parameter_covariances.h"
+#include "gl_parameter_correspondences.h"
+#include "gl_parameter_cloud.h"
 
-#include "g2o_frontend/pwn_viewer/drawable_points.h"
-#include "g2o_frontend/pwn_viewer/drawable_normals.h"
-#include "g2o_frontend/pwn_viewer/drawable_covariances.h"
-#include "g2o_frontend/pwn_viewer/drawable_correspondences.h"
-
-#include "g2o_frontend/pwn_viewer/gl_parameter.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_points.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_normals.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_covariances.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_correspondences.h"
-#include "g2o_frontend/pwn_viewer/gl_parameter_cloud.h"
-
-#include "g2o/types/slam3d/types_slam3d.h"
-
-namespace pwn {
+namespace pwn_viewer {
 
   class DrawableCloud : public Drawable {
   public:

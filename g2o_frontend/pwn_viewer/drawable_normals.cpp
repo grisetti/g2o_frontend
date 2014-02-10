@@ -1,7 +1,7 @@
 #include "drawable_normals.h"
 #include "gl_parameter_normals.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   DrawableNormals::DrawableNormals() : Drawable() {
     _parameter = 0;

@@ -1,8 +1,6 @@
 #include "depthimageconverter.h"
 #include "pinholepointprojector.h"
 
-#include "g2o/stuff/timeutil.h"
-
 #include <iostream>
 #include <fstream>
 

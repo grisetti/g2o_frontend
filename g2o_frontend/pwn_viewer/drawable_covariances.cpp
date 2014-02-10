@@ -1,10 +1,9 @@
 #include "drawable_covariances.h"
 #include "gl_parameter_covariances.h"
 #include "pwn_qglviewer.h"
+#include "opengl_primitives.h"
 
-#include "g2o/stuff/opengl_primitives.h"
-
-namespace pwn {
+namespace pwn_viewer {
 
   DrawableCovariances::DrawableCovariances() : Drawable() {
     _parameter = 0;
@@ -13,7 +12,7 @@ namespace pwn {
     _covarianceDrawList = glGenLists(1);
     _sphereDrawList = glGenLists(1);
     glNewList(_sphereDrawList, GL_COMPILE);
-    g2o::opengl::drawSphere(1.0f);
+    drawSphere(1.0f);
     glEndList();
     updateCovarianceDrawList();
   }
@@ -24,7 +23,7 @@ namespace pwn {
     _covarianceDrawList = glGenLists(1);
     _sphereDrawList = glGenLists(1);
     glNewList(_sphereDrawList, GL_COMPILE);
-    g2o::opengl::drawSphere(1.0f);
+    drawSphere(1.0f);
     glEndList();
     updateCovarianceDrawList();
   }

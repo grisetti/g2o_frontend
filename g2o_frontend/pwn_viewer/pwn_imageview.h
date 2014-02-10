@@ -5,7 +5,9 @@
 
 #include "g2o_frontend/pwn_core/pwn_typedefs.h"
 
-namespace pwn {
+using namespace pwn;
+
+namespace pwn_viewer {
 
   struct DepthImageView {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;

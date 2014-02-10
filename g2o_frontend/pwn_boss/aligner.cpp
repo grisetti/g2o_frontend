@@ -13,8 +13,8 @@ namespace pwn_boss {
     boss::Identifiable::serialize(data, context);
     data.setInt("outerIterations", outerIterations());
     data.setInt("innerIterations", innerIterations());
-    t2v(_referenceSensorOffset).toBOSS(data, "referenceSensorOffset");
-    t2v(_currentSensorOffset).toBOSS(data, "currentSensorOffset");
+    pwn::t2v(_referenceSensorOffset).toBOSS(data, "referenceSensorOffset");
+    pwn::t2v(_currentSensorOffset).toBOSS(data, "currentSensorOffset");
     PointProjector *projector = dynamic_cast<PointProjector*>(_projector);
     if(!projector) {
       throw std::runtime_error("Impossible to convert pwn::PointProjector to pwn_boss::PointProjector");
@@ -36,11 +36,11 @@ namespace pwn_boss {
     boss::Identifiable::deserialize(data, context);
     setOuterIterations(data.getInt("outerIterations"));
     setInnerIterations(data.getInt("innerIterations"));
-    Vector6f v;
+    pwn::Vector6f v;
     v.fromBOSS(data, "referenceSensorOffset");
-    _referenceSensorOffset = v2t(v);
+    _referenceSensorOffset = pwn::v2t(v);
     v.fromBOSS(data, "currentSensorOffset");
-    _currentSensorOffset = v2t(v);
+    _currentSensorOffset = pwn::v2t(v);
     data.getReference("projector").bind(_projector);
     data.getReference("linearizer").bind(_linearizer);
     data.getReference("correspondenceFinder").bind(_correspondenceFinder);

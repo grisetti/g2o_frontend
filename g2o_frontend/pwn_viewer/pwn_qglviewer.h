@@ -8,7 +8,7 @@
 
 using namespace std;
 
-namespace pwn {
+namespace pwn_viewer {
 
   class PWNQGLViewer : public QGLViewer {
   public:

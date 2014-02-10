@@ -4,7 +4,7 @@
 #include <GL/gl.h>
 #include "gl_parameter.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   class GLParameterCorrespondences : public GLParameter {
   public:

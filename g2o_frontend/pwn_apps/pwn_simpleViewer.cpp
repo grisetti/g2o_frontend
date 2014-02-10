@@ -26,6 +26,7 @@ using namespace Eigen;
 using namespace g2o;
 using namespace std;
 using namespace pwn;
+using namespace pwn_viewer;
 
 int main (int argc, char** argv) {
   float pointSize;

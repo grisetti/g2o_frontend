@@ -3,7 +3,7 @@
 #include <GL/gl.h>
 #include <QObject>
 
-namespace pwn {
+namespace pwn_viewer {
 
   class GLParameter : public QObject {
     Q_OBJECT;

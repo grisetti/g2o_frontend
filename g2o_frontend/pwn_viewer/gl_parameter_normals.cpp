@@ -1,6 +1,6 @@
 #include "gl_parameter_normals.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   GLParameterNormals::GLParameterNormals() : GLParameter() {
     _pointSize = 0.1f;

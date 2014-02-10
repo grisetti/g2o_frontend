@@ -4,7 +4,9 @@
 #include "gl_parameter_normals.h"
 #include "drawable.h"
 
-namespace pwn {
+using namespace pwn;
+
+namespace pwn_viewer {
 
   class DrawableNormals : public Drawable {
   public:

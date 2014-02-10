@@ -4,7 +4,9 @@
 #include "gl_parameter_covariances.h"
 #include "drawable.h"
 
-namespace pwn {
+using namespace pwn;
+
+namespace pwn_viewer {
 
   class DrawableCovariances : public Drawable {
   public:

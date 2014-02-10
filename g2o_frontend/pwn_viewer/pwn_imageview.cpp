@@ -1,6 +1,6 @@
 #include "pwn_imageview.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   DepthImageView::DepthImageView() {
     computeColorMap (0, 255, 0xff);

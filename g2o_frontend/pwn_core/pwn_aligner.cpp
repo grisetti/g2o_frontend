@@ -4,12 +4,12 @@
 
 #include <opencv2/highgui/highgui.hpp>
 
-#include "g2o_frontend/pwn_core/pwn_static.h"
-#include <g2o_frontend/pwn_core/pinholepointprojector.h>
-#include <g2o_frontend/pwn_core/depthimageconverterintegralimage.h>
-#include <g2o_frontend/pwn_core/statscalculatorintegralimage.h>
-#include <g2o_frontend/pwn_core/aligner.h>
-#include <g2o_frontend/pwn_core/merger.h>
+#include "pwn_static.h"
+#include "pinholepointprojector.h"
+#include "depthimageconverterintegralimage.h"
+#include "statscalculatorintegralimage.h"
+#include "aligner.h"
+#include "merger.h"
 
 using namespace std;
 using namespace Eigen;

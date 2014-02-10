@@ -1,6 +1,6 @@
 #include "gl_parameter_uncertainty.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   GLParameterUncertainty::GLParameterUncertainty() : GLParameter() {
     _pointSize = 1.0f;

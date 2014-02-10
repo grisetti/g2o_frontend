@@ -1,6 +1,6 @@
 #include "gl_parameter.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   GLParameter::GLParameter() {
     _step = 1;

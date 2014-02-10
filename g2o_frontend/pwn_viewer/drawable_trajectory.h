@@ -6,7 +6,7 @@
 #include "drawable.h"
 #include "gl_parameter_trajectory.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   class DrawableTrajectory : public Drawable {
   public:

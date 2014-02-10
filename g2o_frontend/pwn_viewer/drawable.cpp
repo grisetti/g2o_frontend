@@ -1,6 +1,6 @@
 #include "drawable.h"
 
-namespace pwn {
+namespace pwn_viewer {
 
   Drawable::Drawable() {
     _transformation = Eigen::Isometry3f::Identity();
