@@ -81,5 +81,5 @@ target_link_libraries(robot_eye_test ${RobotEye_LIBRARIES} ${G2O_STUFF_LIBRARY} 
 # rosbuild_add_executable(robot_eye_driver src/old/roboteye_scan_publisher.cpp)
 # target_link_libraries(robot_eye_driver ${RobotEye_LIBRARIES} ${G2O_STUFF_LIBRARY} ${PCL_LIBRARIES})
 
-rosbuild_add_executable(robot_eye_node src/main_rosparam.cpp src/mutex.cpp src/roboteye_node.cpp src/robot_eye_callback.cpp)
+rosbuild_add_executable(robot_eye_node src/main.cpp src/mutex.cpp src/roboteye_node.cpp src/robot_eye_callback.cpp)
 target_link_libraries(robot_eye_node ${RobotEye_LIBRARIES} ${G2O_STUFF_LIBRARY} ${PCL_LIBRARIES})
