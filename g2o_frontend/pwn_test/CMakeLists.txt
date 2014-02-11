@@ -34,20 +34,25 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${CSPARSE_INCLUDE_DIR} ${QT_INCLUDES})
 
 # ADD_EXECUTABLE(pwn_dtcovariance_test pwn_dtcovariance_test.cpp)
 # SET_TARGET_PROPERTIES(pwn_dtcovariance_test PROPERTIES OUTPUT_NAME pwn_dtcovariance_test)
-# TARGET_LINK_LIBRARIES(pwn_dtcovariance_test pwn_viewer pwn_core ${G2O_STUFF_LIBRARY})
+# TARGET_LINK_LIBRARIES(pwn_dtcovariance_test 
+#   pwn_viewer pwn_core pwn_boss 
+#   ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTCORE_LIBRARY} 
+#   ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} 
+#   ${G2O_STUFF_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}
+# )
 
-ADD_EXECUTABLE(test_projections test_projections.cpp)
-SET_TARGET_PROPERTIES(test_projections PROPERTIES OUTPUT_NAME test_projections)
-TARGET_LINK_LIBRARIES(test_projections pwn_core 
-  ${CSPARSE_LIBRARY}
-  ${G2O_TYPES_DATA}
-  ${G2O_SOLVER_CSPARSE_EXTENSION}
-  ${G2O_SOLVER_CSPARSE}
-  ${G2O_CORE_LIBRARY}
-  ${G2O_STUFF_LIBRARY}
-  ${G2O_TYPES_SLAM2D}
-  ${G2O_TYPES_SLAM3D}
-  ${G2O_FRONTEND_SENSOR_DATA}
-  ${G2O_FRONTEND_PWN_CORE}
-  ${G2O_FRONTEND_BOSS}
-)
+# ADD_EXECUTABLE(test_projections test_projections.cpp)
+# SET_TARGET_PROPERTIES(test_projections PROPERTIES OUTPUT_NAME test_projections)
+# TARGET_LINK_LIBRARIES(test_projections pwn_core 
+#   ${CSPARSE_LIBRARY}
+#   ${G2O_TYPES_DATA}
+#   ${G2O_SOLVER_CSPARSE_EXTENSION}
+#   ${G2O_SOLVER_CSPARSE}
+#   ${G2O_CORE_LIBRARY}
+#   ${G2O_STUFF_LIBRARY}
+#   ${G2O_TYPES_SLAM2D}
+#   ${G2O_TYPES_SLAM3D}
+#   ${G2O_FRONTEND_SENSOR_DATA}
+#   ${G2O_FRONTEND_PWN_CORE}
+#   ${G2O_FRONTEND_BOSS}
+# )

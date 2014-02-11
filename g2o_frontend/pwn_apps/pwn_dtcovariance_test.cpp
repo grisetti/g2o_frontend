@@ -8,11 +8,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "g2o/stuff/command_args.h"
-#include "g2o/stuff/timeutil.h"
 
-#include "g2o_frontend/pwn_boss/pinholepointprojector.h"
-#include "g2o_frontend/pwn_boss/statscalculatorintegralimage.h"
-#include "g2o_frontend/pwn_boss/informationmatrixcalculator.h"
 #include "g2o_frontend/pwn_boss/depthimageconverterintegralimage.h"
 #include "g2o_frontend/pwn_boss/aligner.h"
 
@@ -27,17 +23,16 @@
 
 using namespace std;
 using namespace Eigen;
-using namespace cv;
-using namespace pwn_viewer;
-using namespace boss;
 
-std::vector<Serializable*> readConfig(pwn_boss::Aligner *&aligner, pwn_boss::DepthImageConverter *&converter, const std::string &configFile);
+std::vector<boss::Serializable*> readConfig(pwn_boss::Aligner *&aligner, 
+				      pwn_boss::DepthImageConverter *&converter, 
+				      const std::string &configFile);
 
 int main(int argc, char **argv) {
   int vz_step;
   float di_scaleFactor, di_scale, vz_ellipsoidScale;
   string configFilename, referenceDepthFilename, currentDepthFilename;
-  
+
   // Input parameters handling.
   g2o::CommandArgs arg;
 
@@ -58,7 +53,7 @@ int main(int argc, char **argv) {
   IntImage referenceIndex;
   RawDepthImage rawReferenceDepth;
   DepthImage referenceDepth, referenceScaledDepth;  
-  rawReferenceDepth = imread(referenceDepthFilename, CV_LOAD_IMAGE_UNCHANGED);
+  rawReferenceDepth = cv::imread(referenceDepthFilename, CV_LOAD_IMAGE_UNCHANGED);
   DepthImage_convert_16UC1_to_32FC1(referenceDepth, rawReferenceDepth, di_scaleFactor);
   DepthImage_scale(referenceScaledDepth, referenceDepth, di_scale);  
   if(referenceScaledDepth.rows != referenceIndex.rows || referenceScaledDepth.cols != referenceIndex.cols) {
@@ -68,7 +63,7 @@ int main(int argc, char **argv) {
   IntImage currentIndex;
   RawDepthImage rawCurrentDepth;
   DepthImage currentDepth, currentScaledDepth;
-  rawCurrentDepth = imread(currentDepthFilename, CV_LOAD_IMAGE_UNCHANGED);
+  rawCurrentDepth = cv::imread(currentDepthFilename, CV_LOAD_IMAGE_UNCHANGED);
   DepthImage_convert_16UC1_to_32FC1(currentDepth, rawCurrentDepth, di_scaleFactor);
   DepthImage_scale(currentScaledDepth, currentDepth, di_scale);  
   if(currentScaledDepth.rows != currentIndex.rows || currentScaledDepth.cols != currentIndex.cols) {
@@ -77,7 +72,7 @@ int main(int argc, char **argv) {
 
   pwn_boss::DepthImageConverter *converter = 0;  
   pwn_boss::Aligner *aligner = 0;
-  std::vector<Serializable*> elements = readConfig(aligner, converter, configFilename);
+  std::vector<boss::Serializable*> elements = readConfig(aligner, converter, configFilename);
 
   Eigen::Isometry3f sensorOffset = Eigen::Isometry3f::Identity();
   // sensorOffset.translation() = Vector3f(0.0f, 0.0f, 0.0f);
@@ -114,50 +109,47 @@ int main(int argc, char **argv) {
   hlayout->addItem(vlayout);
   QVBoxLayout* vlayout2 = new QVBoxLayout();
   hlayout->addItem(vlayout2);
-  hlayout->setStretch(1,1);
-
+  hlayout->setStretch(1, 1);
   QListWidget* listWidget = new QListWidget(mainWindow);
   listWidget->setSelectionMode(QAbstractItemView::MultiSelection);
   listWidget->addItem(QString("reference"));
   listWidget->addItem(QString("current"));
   listWidget->addItem(QString("aligned"));
   listWidget->addItem(QString("covariance"));
-
   vlayout->addWidget(listWidget);
-  PWNQGLViewer* viewer = new PWNQGLViewer(mainWindow);
+  pwn_viewer::PWNQGLViewer* viewer = new pwn_viewer::PWNQGLViewer(mainWindow);
   vlayout2->addWidget(viewer);
 
   viewer->init();
   mainWindow->show();
   viewer->show();
-  listWidget->show();
   viewer->setAxisIsDrawn(true);
 
   // Reference drawable
-  GLParameterPoints *referenceParams = new GLParameterPoints(1.0f, Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+  pwn_viewer::GLParameterPoints *referenceParams = new pwn_viewer::GLParameterPoints(1.0f, Eigen::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
   referenceParams->setStep(vz_step);
-  DrawablePoints *referenceDrawable = new DrawablePoints(Isometry3f::Identity(), referenceParams, &referenceCloud.points(), &referenceCloud.normals());
+  pwn_viewer::DrawablePoints *referenceDrawable = new pwn_viewer::DrawablePoints(Isometry3f::Identity(), referenceParams, &referenceCloud.points(), &referenceCloud.normals());
   viewer->addDrawable(referenceDrawable);
 
   // Current drawable
-  GLParameterPoints *currentParams = new GLParameterPoints(1.0f, Eigen::Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
+  pwn_viewer::GLParameterPoints *currentParams = new pwn_viewer::GLParameterPoints(1.0f, Eigen::Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
   currentParams->setStep(vz_step);
-  DrawablePoints *currentDrawable = new DrawablePoints(Isometry3f::Identity(), currentParams, &currentCloud.points(), &currentCloud.normals());
+  pwn_viewer::DrawablePoints *currentDrawable = new pwn_viewer::DrawablePoints(Isometry3f::Identity(), currentParams, &currentCloud.points(), &currentCloud.normals());
   viewer->addDrawable(currentDrawable);
 
   // Aligned drawable
-  GLParameterPoints *alignedParams = new GLParameterPoints(1.0f, Eigen::Vector4f(0.0f, 1.0f, 0.0f, 1.0f));
+  pwn_viewer::GLParameterPoints *alignedParams = new pwn_viewer::GLParameterPoints(1.0f, Eigen::Vector4f(0.0f, 1.0f, 0.0f, 1.0f));
   alignedParams->setStep(vz_step);
-  DrawablePoints *alignedDrawable = new DrawablePoints(aligner->T(), alignedParams, &currentCloud.points(), &currentCloud.normals());
+  pwn_viewer::DrawablePoints *alignedDrawable = new pwn_viewer::DrawablePoints(aligner->T(), alignedParams, &currentCloud.points(), &currentCloud.normals());
   viewer->addDrawable(alignedDrawable);
 
   // Transform covariance drawable
-  GLParameterTransformCovariance *covarianceParams = new GLParameterTransformCovariance(Eigen::Vector4f(1.0f, 0.0f, 1.0f, 1.0f), vz_ellipsoidScale);
+  pwn_viewer::GLParameterTransformCovariance *covarianceParams = new pwn_viewer::GLParameterTransformCovariance(Eigen::Vector4f(1.0f, 0.0f, 1.0f, 1.0f), vz_ellipsoidScale);
   covarianceParams->setStep(vz_step);
-  DrawableTransformCovariance *alignedCovariance = new DrawableTransformCovariance(Isometry3f::Identity(), covarianceParams, covariance, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+  pwn_viewer::DrawableTransformCovariance *alignedCovariance = new pwn_viewer::DrawableTransformCovariance(Isometry3f::Identity(), covarianceParams, covariance, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
   viewer->addDrawable(alignedCovariance);
 
-  while (mainWindow->isVisible()) {
+  while (mainWindow->isVisible()) {    
     for (size_t i = 0; i < viewer->drawableList().size(); i++) {
       if (listWidget->item(i)->isSelected()) {
     	viewer->drawableList()[i]->parameter()->setShow(true);
@@ -169,18 +161,18 @@ int main(int argc, char **argv) {
     
     viewer->updateGL();
     application.processEvents();
-    }
+  }
 
   return 0;
 }
 
-std::vector<Serializable*> readConfig(pwn_boss::Aligner *&aligner, pwn_boss::DepthImageConverter *&converter, const std::string &configFile) {
+std::vector<boss::Serializable*> readConfig(pwn_boss::Aligner *&aligner, pwn_boss::DepthImageConverter *&converter, const std::string &configFile) {
   aligner = 0;
   converter = 0;
-  Deserializer des;
+  boss::Deserializer des;
   des.setFilePath(configFile);
-  Serializable *s;
-  std::vector<Serializable*> instances;
+  boss::Serializable *s;
+  std::vector<boss::Serializable*> instances;
   cerr << "Reading configuration file" << endl;
   while ((s=des.readObject())){
     instances.push_back(s);
