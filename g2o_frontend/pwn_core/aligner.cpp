@@ -178,7 +178,7 @@ namespace pwn {
     Eigen::Isometry3f dT = _T;  // Transform from current to reference
     
     // Remap each of the sigma points to their original position
-#pragma omp parallel 
+    //#pragma omp parallel 
     for (size_t i = 0; i < sigmaPoints.size(); i++) {
       SigmaPoint &p = sigmaPoints[i];
       p._sample = t2v(dT * v2t(p._sample).inverse());
