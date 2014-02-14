@@ -17,6 +17,7 @@ VoronoiVertex::VoronoiVertex()
     _position = Eigen::Vector2i(INF, INF);
     _value = 0;
     _distance = 0.0;
+    _pushed = false;
 }
 
 
@@ -27,6 +28,7 @@ VoronoiVertex::VoronoiVertex(double distance_, const Eigen::Vector2i& position_)
     _position = position_;
     _merged = false;
     _visited = false;
+    _pushed = false;
 }
 
 
@@ -37,6 +39,7 @@ VoronoiVertex::VoronoiVertex(double distance_, int order_, const Eigen::Vector2i
     _position = position_;
     _merged = false;
     _visited = false;
+    _pushed = false;
 }
 
 
@@ -49,6 +52,7 @@ VoronoiVertex::VoronoiVertex(const Eigen::Vector2i& par_, const Eigen::Vector2i&
 
     _merged = false;
     _visited = false;
+    _pushed = false;
 }
 
 

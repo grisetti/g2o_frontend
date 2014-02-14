@@ -37,10 +37,19 @@ public:
     inline float distance() { return _distance; }
     inline float distance() const { return _distance; }
 
+    inline void setElevation(double elevation_) { _elevation = elevation_; }
+    inline float elevation() { return _elevation; }
+    inline float elevation() const { return _elevation; }
+
     inline void setMerged() { _merged = true; }
     inline void setUnmerged() { _merged = false; }
     inline bool merged() { return _merged; }
     inline bool merged() const { return _merged; }
+
+    inline void setPushed() { _pushed = true; }
+    inline void setUnpushed() { _pushed = false; }
+    inline bool pushed() { return _pushed; }
+    inline bool pushed() const { return _pushed; }
 
     inline void setVisited() { _visited = true; }
     inline void setUnvisited() { _visited = false; }
@@ -80,11 +89,13 @@ protected:
 //    Eigen::MatrixXf* _proxy;
     EdgeSet _edgeSet;
 
+    double _elevation;
     double _distance;
     int _value;
     int _order;
     bool _merged;
     bool _visited;
+    bool _pushed;
 };
 
 
@@ -129,7 +140,7 @@ struct VertexComparator
 
 typedef Eigen::Matrix<VoronoiVertex, Eigen::Dynamic, Eigen::Dynamic> DistanceMap;
 typedef std::priority_queue<VoronoiVertex*, std::vector<VoronoiVertex*>, VertexComparator> VoronoiQueue;
-typedef std::deque<VoronoiVertex*, VertexComparator> VoronoiDeque;
+//typedef std::deque<VoronoiVertex*, VertexComparator> VoronoiDeque;
 
 
 struct Comparator
@@ -170,9 +181,9 @@ struct DistanceComparator
 
 typedef std::deque<VoronoiVertex*> PointersDeque;
 typedef std::map<Eigen::Vector2i, VoronoiVertex*, Comparator> VertexMap;
-typedef std::multimap<double, VoronoiVertex*, DistanceComparator> MinMaxMap;
+//typedef std::multimap<double, VoronoiVertex*, DistanceComparator> MinMaxMap;
 typedef std::pair<Eigen::Vector2i, VoronoiVertex*> VoronoiPair;
-typedef std::pair<double, VoronoiVertex*> DistancePair;
+//typedef std::pair<double, VoronoiVertex*> DistancePair;
 
 
 #endif // VORONOI_VERTEX_H
