@@ -1,7 +1,10 @@
 #include "voronoi_diagram.h"
+#include "simple_timer.h"
+
 
 using namespace std;
 using namespace Eigen;
+
 
 
 VoronoiDiagram* vd = 0;
@@ -23,6 +26,28 @@ void mouseEvent(int evt, int x, int y, int flags, void *param)
 }
 
 
+void plotGraph(cv::Mat &img, std::vector<cv::Point2f> &nodes,
+               vector< vector<int> > &edges,
+               bool draw_edges = true, float scale = 1.0f )
+{
+    for(size_t i = 0; i < nodes.size(); i++)
+    {
+        cv::Point p1(cvRound(scale*nodes[i].x), cvRound(scale*nodes[i].y));
+        cv::circle(img, p1, 2, cv::Scalar(0,0,255), 2);
+        if(draw_edges)
+        {
+            vector<int> &neighbors = edges[i];
+            for(size_t j = 0; j < neighbors.size(); j++)
+            {
+                cv::Point p2(cvRound(scale*nodes[neighbors[j]].x), cvRound(scale*nodes[neighbors[j]].y));
+                cv::line(img, p1, p2, cv::Scalar(255,0,0));
+            }
+        }
+    }
+}
+
+
+
 int main(int argc, char** argv)
 {
     if(argc < 2 || argc > 3)
@@ -31,58 +56,31 @@ int main(int argc, char** argv)
         exit(-1);
     }
 
-    ifstream is(argv[1]);
-    if(!is)
+    //    int res = 2500; // res = 2500 for MIT dataset
+    int res = 100; // res = 100 for DIS basement
+
+    cv::Mat input = cv::imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
+    if(!input.data)
     {
         cerr << "Could not open map file for reading." << endl;
         exit(-1);
     }
 
-//    int res = 2500; // res = 2500 for MIT dataset
-    int res = 100; // res = 100 for DIS basement
-//    int dt = 256;
-//    float dr = 0.125;
-//    int max = 20;
-
-//    vd = new VoronoiDiagram(is, res, 256, (float) 0.125);
-
-    vd = new VoronoiDiagram(is, res);
-
-    double a = vd->get_time();
-    vd->loadPGM();
+    vd = new VoronoiDiagram(input, res);
     double b = vd->get_time();
-    cout << "IMAGE LOADED: " << b-a << endl;
-    vd->queueFiller();
+    vd->fillQueue();
     double c = vd->get_time();
     cout << "FILLING QUEUE: " << c-b << endl;
-    vd->distmap();
+    vd->distmapExtraction();
     vd->distmap2image();
     vd->checkStats();
     vd->savePGM("distance_map.pgm", vd->_drawableDistmap);
 
     double d = vd->get_time();
-    vd->distmap2voronoi();
+    vd->voronoiExtraction();
     double e = vd->get_time();
     cout << "VORO time: " << e-d << endl;
-    cv::imwrite("voronoi.pgm", (*(vd->_voro)).t());
-    vd->checkStats();
-//    vd->checkQueue();
-//    cout << "PRE FILTERING" << endl;
-//    vd->filter();
-//    cout << "POST FILTERING" << endl;
-    vd->checkStats();
-    double fc = vd->get_time();
-    vd->diagram2graph();
-    double fd = vd->get_time();
-    cout << "DIAGRAM2GRAPH TIME: " << fd - fc << endl;
-    vd->checkStats();
-    vd->graph();
-    cv::imwrite("graph.pgm", (*(vd->_graph)).t());
-
-
-    /** LOOK-UP TABLE ANALYSIS. DEAD END */
-//    vd->fillLookUpTable(dt, dr, max);
-//    vd->proxySetter();
+    cv::imwrite("voronoi.pgm", (*(vd->_voro)));
 
     cv::namedWindow("voronoi", CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
     cv::namedWindow("graph", CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
@@ -95,8 +93,43 @@ int main(int argc, char** argv)
     cv::Mat img2 = cv::imread("graph.pgm", CV_LOAD_IMAGE_UNCHANGED);
     cv::imshow("graph", img2);
 
-    cv::waitKey(0);
 
+
+
+
+    cv::Mat input_img = img.clone(),
+            dilated_input_img, skeleton, voronoi, voronoi2X;
+
+    cv::Mat element = cv::getStructuringElement( cv::MORPH_RECT,cv::Size( 7,7),cv::Point(3,3));
+    cv::dilate(input_img ,dilated_input_img, element );
+
+    SimpleTimer timer;
+
+    timer.reset();
+    vd->morphThinning( dilated_input_img, skeleton );
+    std::cout<<"Time morphThinning : "<<(unsigned long)timer.elapsedTimeUs()<<std::endl;
+
+    std::vector<cv::Point2f> nodes;
+    std::vector< std::vector<int> > edges;
+
+    timer.reset();
+    vd->graphExtraction( skeleton, nodes, edges, true, 3 );
+    std::cout<<"Time graphExtraction : "<<(unsigned long)timer.elapsedTimeUs()<<std::endl;
+
+    voronoi = cv::Mat(skeleton.size(), CV_8UC3);
+    cv::cvtColor(skeleton, voronoi, CV_GRAY2BGR);
+    plotGraph( voronoi, nodes, edges,true );
+    cv::resize(voronoi, voronoi2X, cv::Size(2*voronoi.cols, 2*voronoi.rows));
+    plotGraph( voronoi2X, nodes, edges,true, 2.0f );
+
+    cv::imshow("src",input_img);
+    cv::imshow("dilated",dilated_input_img);
+    cv::imshow("skeleton",skeleton);
+    cv::imshow("voronoi",voronoi);
+    cv::imshow("voronoi2X",voronoi2X);
+
+    cv::waitKey(0);
+    //    while(cv::waitKey() != 27);
     //cleaning up
     cv::destroyWindow("voronoi");
     cv::destroyWindow("graph");

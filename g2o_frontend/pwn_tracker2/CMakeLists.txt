@@ -15,6 +15,7 @@ TARGET_LINK_LIBRARIES(pwn_tracker2_library
   boss_map_building 
   boss_map 
   boss
+  voronoi_lib
   ${G2O_OPENGL_HELPER_LIBRARY}
   ${G2O_SOLVER_CSPARSE_EXTENSION}
   ${G2O_TYPES_SLAM3D} 
@@ -94,6 +95,7 @@ TARGET_LINK_LIBRARIES(pwn_voronoi_viewer
   boss_map_building 
   boss_map 
   boss
+  voronoi_lib
   ${G2O_OPENGL_HELPER_LIBRARY}
   ${G2O_SOLVER_CSPARSE_EXTENSION}
   ${G2O_TYPES_SLAM3D} 
