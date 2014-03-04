@@ -129,7 +129,7 @@ struct NiWrapper{
   
     const SensorInfo* sensorInfo = device.getSensorInfo(SENSOR_DEPTH);
     const Array<VideoMode>& depthVideoModes = sensorInfo->getSupportedVideoModes();
-    rc = depth.setVideoMode(depthVideoModes[4]);
+    rc = depth.setVideoMode(depthVideoModes[5]);
     if (rc != STATUS_OK) {
       cerr << "Couldn't set the desired depth video mode" << endl;
       return 0;

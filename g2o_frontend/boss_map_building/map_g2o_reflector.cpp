@@ -257,6 +257,7 @@ namespace boss_map_building {
   }
 
   void OptimizerProcessor::process(Serializable* s){
+    put(s);
     NewKeyNodeMessage* km = dynamic_cast<NewKeyNodeMessage*>(s);
     if (km) {
       _kfCount ++;
@@ -267,7 +268,6 @@ namespace boss_map_building {
       _optimizer->optimize();
       _kfCount = 0;
     }
-    put(s);
   }
 
   LocalOptimizerProcessor::LocalOptimizerProcessor(int id, boss::IdContext* context):
@@ -276,6 +276,7 @@ namespace boss_map_building {
   }
 
   void LocalOptimizerProcessor::process(Serializable* s) {
+    put(s);
     MapNodeRelation* rel = dynamic_cast<MapNodeRelation*>(s);
     if (rel)
       _lastRelations.insert(rel);
@@ -289,7 +290,6 @@ namespace boss_map_building {
       _previousNode  = km->keyNode;
       _lastRelations.clear();
     }
-    put(s);
   }
 
 

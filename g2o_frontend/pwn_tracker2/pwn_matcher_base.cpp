@@ -157,7 +157,7 @@ namespace pwn_tracker {
 
     Matrix6d omega;
     convertScalar(omega, _aligner->omega());
-    omega.setIdentity(); //HACK
+    //omega.setIdentity(); //HACK
     //omega*=100;
     //omega.block<3,3>(3,3)*=10;
     result.informationMatrix = omega;

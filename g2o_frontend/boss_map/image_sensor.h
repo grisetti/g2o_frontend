@@ -11,11 +11,12 @@ namespace boss_map {
   
   class ImageBLOB: public BLOB {
   public:
-    enum Format {mono8=0x0, mono16=0x1, rgb8=0x2};
+    enum Format {mono8=0x0, mono16=0x1, rgb8=0x2, threeDfloat=0x3};
     ImageBLOB();
     virtual const std::string& extension();
     void setExtension(const std::string& extension_) {_extension = extension_;}
     void resize(int width, int height, Format format);
+    void resize(int width, int height, int depth, Format format);
     Format format() const { return _format; }
     void adjustFormat();
     virtual bool read(std::istream& is);
