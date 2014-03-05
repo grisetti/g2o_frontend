@@ -29,8 +29,35 @@ namespace boss_map {
       _image = cv::Mat(width, height, CV_8UC3); 
       _extension = "pbm";
       break;
+    case threeDfloat:   
+      _image = cv::Mat(width, height, 1, CV_32FC1); 
+      _extension = "xml";
+      break;
     }
   }
+
+  void ImageBLOB::resize(int width, int height, int depth, Format format_) {
+    _format = format_;
+    switch  (_format) {
+    case mono8:  
+      _image = cv::Mat(width, height, CV_8UC1); 
+      _extension = "pgm";
+       break;
+    case mono16: 
+      _image = cv::Mat(width, height, CV_16UC1);
+      _extension = "pgm";
+       break;
+    case rgb8:   
+      _image = cv::Mat(width, height, CV_8UC3); 
+      _extension = "pbm";
+      break;
+    case threeDfloat:   
+      _image = cv::Mat(width, height, depth, CV_32FC1); 
+      _extension = "xml";
+      break;
+    }
+  }
+
 
   void ImageBLOB::adjustFormat() {
     switch (cvImage().type()){
@@ -45,6 +72,10 @@ namespace boss_map {
     case CV_8UC3:
       _format = rgb8;
       _extension = "pbm";
+      break;
+    case CV_32FC1:   
+      _format = threeDfloat;
+      _extension = "xml";
       break;
     }
   }
