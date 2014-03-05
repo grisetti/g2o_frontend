@@ -55,7 +55,7 @@ namespace roboteye
         void roboteyePause();
 
     protected:
-        // config parameters
+        /* onfig parameters*/
         std::string _sensor_IP;
         double _az_rate;
         int _N_lines;
