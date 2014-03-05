@@ -14,9 +14,9 @@ ros::Time getRosTime(roboteye_node& re) {
 void publishScan(roboteye_node& re){
 
     // creating the ros_msg to be published
+
 //    Mutex& m = re.laserCallBack().getMutex();
 //    m->lock();
-
     robot_eye_driver::RobotEyeScan scan_msg;
 
     PolarMeasurements pm_current;

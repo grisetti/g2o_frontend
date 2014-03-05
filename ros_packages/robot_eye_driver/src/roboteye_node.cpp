@@ -28,7 +28,6 @@ roboteye_node::roboteye_node() : _sensor_IP("169.254.111.100")
     private_handle.param("intensity", _intensity, false);
     ROS_INFO("RobotEyeNode: intensity = %i", _intensity);
 
-    // MERDACCIA
     int nstate = -1;
     private_handle.param("node_state", nstate, 2);
     if(nstate==1)  _node_state = RUN;

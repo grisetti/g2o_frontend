@@ -45,7 +45,7 @@ namespace roboteye {
         }
         _emlist.push_back(xyz_meas);
 
-        std::cerr << " size: " << _emlist.size() * observations.size() << "\t";
+//        std::cerr << " size: " << _emlist.size() * observations.size() << "\t";
 
         _mutex_meas.unlock();
     }
