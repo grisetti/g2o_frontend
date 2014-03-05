@@ -11,7 +11,6 @@ namespace boss_map {
 
   NodeAcceptanceCriterion::~NodeAcceptanceCriterion(){}
 
-
   void NodeAcceptanceCriterion::serialize(boss::ObjectData& data, boss::IdContext& context){
     Identifiable::serialize(data,context);
     data.setPointer("manager",_manager);
@@ -21,10 +20,45 @@ namespace boss_map {
     Identifiable::deserialize(data,context);
     data.getReference("manager").bind(_manager);
   }
-    
+   
 
   PoseAcceptanceCriterion::PoseAcceptanceCriterion(MapManager* manager_, int id, boss::IdContext* context): NodeAcceptanceCriterion(manager_, id, context){
     setReferencePose(Eigen::Isometry3d::Identity());
+  } 
+
+   GazePointAcceptanceCriterion::GazePointAcceptanceCriterion(MapManager* manager_, int id, boss::IdContext* context): PoseAcceptanceCriterion(manager_, id, context){
+    setTranslationalDistance(0.5);
+    setRotationalDistance(0.5);
+  }
+
+  bool GazePointAcceptanceCriterion::accept(MapNode* n) {
+    Eigen::Isometry3d _err=_invPose*n->transform();
+	if (_err.translation().squaredNorm()==0)
+		return true;
+	Eigen::Quaterniond q;
+	Eigen::Vector3d v1(n->transform().matrix().col(0).head(3));
+	Eigen::Vector3d v3(_pose2.translation()-n->transform().translation());
+	if (v3.squaredNorm()>_td2)
+		return false;
+	q=Eigen::Quaterniond::FromTwoVectors(v3,v1);
+	Eigen::AngleAxisd aa(q);
+	if (fabs(aa.angle())>_rotationalDistance)
+		return false;
+	return true;
+  }
+
+  void GazePointAcceptanceCriterion::serialize(boss::ObjectData& data, boss::IdContext& context){
+    PoseAcceptanceCriterion::serialize(data,context);
+    data.setFloat("translationalDistance", _translationalDistance);
+    data.setFloat("rotationalDistance", _rotationalDistance);
+    data.setFloat("forwardSliding", _forward_sliding);
+  }
+
+  void GazePointAcceptanceCriterion::deserialize(boss::ObjectData& data, boss::IdContext& context){
+    PoseAcceptanceCriterion::deserialize(data,context);
+    setTranslationalDistance(data.getFloat("translationalDistance"));
+    setRotationalDistance(data.getFloat("rotationalDistance"));
+    setForwardSliding(data.getFloat("forwardSliding"));
   }
 
 
@@ -163,6 +197,7 @@ namespace boss_map {
     }
   }
 
+  BOSS_REGISTER_CLASS(GazePointAcceptanceCriterion);
   BOSS_REGISTER_CLASS(DistancePoseAcceptanceCriterion);
   BOSS_REGISTER_CLASS(MahalanobisPoseAcceptanceCriterion);
 }

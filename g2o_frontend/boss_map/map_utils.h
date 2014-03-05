@@ -20,6 +20,7 @@ namespace boss_map {
     MapManager* _manager;
   };
 
+
   class PoseAcceptanceCriterion: public NodeAcceptanceCriterion {
   public:
     PoseAcceptanceCriterion(MapManager* manager_=0, int id = -1, boss::IdContext* context = 0);
@@ -29,6 +30,34 @@ namespace boss_map {
     Eigen::Isometry3d _pose;
     Eigen::Isometry3d _invPose;
   };
+
+
+  class GazePointAcceptanceCriterion: public PoseAcceptanceCriterion{
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    GazePointAcceptanceCriterion(MapManager* manager_=0, int id = -1, boss::IdContext* context = 0);
+    virtual void setReferencePose(const Eigen::Isometry3d& pose_) {_pose = pose_; _invPose=_pose.inverse(); 
+		Eigen::Isometry3d pose2_=Eigen::Isometry3d::Identity();
+		 pose2_.translation().x()=_forward_sliding;
+		_pose2=_pose*pose2_;
+		_invPose2=_pose2.inverse();
+	}
+    virtual void serialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual void deserialize(boss::ObjectData& data, boss::IdContext& context);
+    virtual bool accept(MapNode* n);
+    inline const Eigen::Isometry3d gazePointPose() const { return _pose2;}
+    inline double translationalDistance() const { return _translationalDistance;}
+    inline void setTranslationalDistance(double td)  { _translationalDistance = td; _td2=td*td;}
+    inline double rotationalDistance() const { return _rotationalDistance;}
+    inline void setRotationalDistance(double rd)  { _rotationalDistance = rd; }
+    inline void setForwardSliding(double fs)  { _forward_sliding = fs; }
+  protected:
+    double _translationalDistance, _rotationalDistance, _forward_sliding;
+    double _td2; // squared distances
+    Eigen::Isometry3d _pose2; // gaze frame
+    Eigen::Isometry3d _invPose2;
+  };
+
 
   class DistancePoseAcceptanceCriterion: public PoseAcceptanceCriterion{
   public:

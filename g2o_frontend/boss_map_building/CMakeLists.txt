@@ -7,6 +7,7 @@ ADD_LIBRARY(boss_map_building
   base_tracker.cpp base_tracker.h
   cache.hpp cache.h
   #map_g2o_wrapper.cpp map_g2o_wrapper.h
+  map_merger.cpp map_merger.h
 )
 
 INCLUDE_DIRECTORIES(boss_map_building  ${CSPARSE_INCLUDE_DIR})

@@ -1,6 +1,9 @@
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR} ${QGLVIEWER_INCLUDE_DIR} ${QT_INCLUDES})
 
-ADD_LIBRARY(pwn_tracker2_library  
+ADD_LIBRARY(pwn_tracker2_library 
+  merger2.cpp merger2.h
+  pwn_merger.cpp pwn_merger.h
+  pwn_closer_with_merger.cpp pwn_closer_with_merger.h 
   pwn_cloud_cache.cpp pwn_cloud_cache.h
   pwn_matcher_base.cpp pwn_matcher_base.h
   pwn_tracker.cpp pwn_tracker.h
