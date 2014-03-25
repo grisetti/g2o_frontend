@@ -74,19 +74,11 @@ public:
     inline int value() { return _value; }
     inline int value() const { return _value; }
 
-    /** Used when working with polar profiles. WILL BE DELETED*/
-//    inline void setProxy(Eigen::MatrixXf* proxy_) { _proxy = proxy_; }
-//    inline Eigen::MatrixXf* proxy() { return _proxy; }
-//    inline const Eigen::MatrixXf* proxy() const { return _proxy; }
-
-
 protected:
     Eigen::Vector2i _nearest;
     Eigen::Vector2i _parent;
     Eigen::Vector2i _position;
 
-    /** Used when working with polar profiles. WILL BE DELETED*/
-//    Eigen::MatrixXf* _proxy;
     EdgeSet _edgeSet;
 
     double _elevation;
@@ -140,7 +132,6 @@ struct VertexComparator
 
 typedef Eigen::Matrix<VoronoiVertex, Eigen::Dynamic, Eigen::Dynamic> DistanceMap;
 typedef std::priority_queue<VoronoiVertex*, std::vector<VoronoiVertex*>, VertexComparator> VoronoiQueue;
-//typedef std::deque<VoronoiVertex*, VertexComparator> VoronoiDeque;
 
 
 struct Comparator
@@ -162,28 +153,5 @@ struct Comparator
     }
 };
 
-
-struct DistanceComparator
-{
-    inline bool operator() (const double& lhs, const double& rhs) const
-    {
-        if(lhs < rhs)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-};
-
-
-typedef std::deque<VoronoiVertex*> PointersDeque;
 typedef std::map<Eigen::Vector2i, VoronoiVertex*, Comparator> VertexMap;
-//typedef std::multimap<double, VoronoiVertex*, DistanceComparator> MinMaxMap;
-typedef std::pair<Eigen::Vector2i, VoronoiVertex*> VoronoiPair;
-//typedef std::pair<double, VoronoiVertex*> DistancePair;
-
-
 #endif // VORONOI_VERTEX_H

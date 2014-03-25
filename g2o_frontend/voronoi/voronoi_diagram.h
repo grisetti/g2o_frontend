@@ -22,13 +22,6 @@ public:
     VoronoiDiagram(const cv::Mat& input, int);
     ~VoronoiDiagram();
 
-    inline double get_time()
-    {
-        struct timeval ts;
-        gettimeofday(&ts,0);
-        return ts.tv_sec + ts.tv_usec*1e-6;
-    }
-
     void checkQueue();
     void checkStats();
 
@@ -73,9 +66,8 @@ public:
     void loadPGM();
     void savePGM(const char *filename, const Eigen::MatrixXf& image_);
     static void shrinkIntersections( cv::Mat &skeleton, cv::Mat &dst);
-    static void findNeighborNodes( int src_node_idx, int x, int y, cv::Mat &mask, cv::Mat &index_mat,
-                                   std::vector<cv::Point2f> &nodes,
-                                   std::vector< std::vector<int> > &edges );
+    static void findNeighborNodes(int src_node_idx, int x, int y, cv::Mat &mask, cv::Mat &index_mat,
+                                  std::vector<cv::Point2f> &nodes, std::vector< std::vector<int> > &edges);
 
     int _squaredResolution;
     int _rows, _cols;

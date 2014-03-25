@@ -140,9 +140,9 @@ void VoronoiDiagram::morphThinning(cv::Mat &src, cv::Mat &dst, bool binarize, uc
                     if(p1)
                     {
                         int patterns_01  =  (p2 == 0 && p3 ) + (p3 == 0 && p4 ) +
-                                (p4 == 0 && p5 ) + (p5 == 0 && p6 ) +
-                                (p6 == 0 && p7 ) + (p7 == 0 && p8 ) +
-                                (p8 == 0 && p9 ) + (p9 == 0 && p2 );
+                                            (p4 == 0 && p5 ) + (p5 == 0 && p6 ) +
+                                            (p6 == 0 && p7 ) + (p7 == 0 && p8 ) +
+                                            (p8 == 0 && p9 ) + (p9 == 0 && p2 );
 
                         int nonzero_neighbors  =  p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
                         int cond_1 = (iter == 0 ? (p2 * p4 * p6) : (p2 * p4 * p8));
@@ -406,8 +406,8 @@ void VoronoiDiagram::graphExtraction(cv::Mat& skeleton, vector<cv::Point2f>& nod
 
 
 void VoronoiDiagram::findNeighborNodes( int src_node_idx, int x, int y, cv::Mat &mask, cv::Mat &index_mat,
-                               std::vector<cv::Point2f> &nodes,
-                               std::vector< std::vector<int> > &edges )
+                                        std::vector<cv::Point2f> &nodes,
+                                        std::vector< std::vector<int> > &edges )
 {
     if( !mask.at<uchar>(y,x) )
         return;
@@ -478,11 +478,9 @@ void VoronoiDiagram::distmapExtraction()
             int ny = current_y + coords_y[i];
 
             //Check if into boundaries or not an obstacle
-            //            if((nx >= 0) && (ny >= 0) && (nx < _rows) && (ny < _cols) && ((*_distmap)(nx, ny).distance() != 0))
             int nk = nx + ny * _rows;
             if((nx >= 0) && (ny >= 0) && (nx < _rows) && (ny < _cols) && (_dmap[nk].distance() != 0))
             {
-                //                VoronoiVertex* neighbor = &(*_distmap)(nx, ny);
                 VoronoiVertex* neighbor = &(_dmap[nk]);
                 Vector2i nc(nx, ny);
 
@@ -546,7 +544,7 @@ void VoronoiDiagram::voronoiExtraction()
                             //                            }
                             //                        }
                             _voro->at<uchar>(r, c) = 255;
-                            _vMap.insert(VoronoiPair(current->position(), current));
+                            _vMap.insert(make_pair(current->position(), current));
                         }
 
                         /*BAD VORONOI TO WORK ON, GOOD RECONSTRUCTED MAP*/
@@ -583,27 +581,34 @@ void VoronoiDiagram::fillQueue()
         int cr = c * _rows;
         for(int r = 0; r < _rows; ++r)
         {
-            //            VoronoiVertex* obstacle = &((*_distmap)(r, c));
             int k = r + cr;
             VoronoiVertex* obstacle = &(_dmap[k]);
-
+            if(obstacle->value() != 0)
+            {
+                continue;
+            }
             const int obstacle_x = obstacle->position().x();
             const int obstacle_y = obstacle->position().y();
 
             bool counter = false;
-            for(short int i = 0; (i < 8) && (counter == false); ++i)
+            short int neighbors = 0;
+            for(short int i = 0; i < 8; ++i)
             {
                 int neighbor_x = obstacle_x + coords_x[i];
                 int neighbor_y = obstacle_y + coords_y[i];
 
                 // If at least one of the neighbors is a free cell, put the current obstacle into the queue
-                //                if((neighbor_x >= 0) && (neighbor_y >= 0) && (neighbor_x < rows) && (neighbor_y < cols) && ((*_distmap)(neighbor_x, neighbor_y).distance() != 0))
                 int nk = neighbor_x + neighbor_y * _rows;
                 if((neighbor_x >= 0) && (neighbor_y >= 0) && (neighbor_x < _rows) && (neighbor_y < _cols) && (_dmap[nk].distance() != 0))
                 {
                     counter = true;
-                    _vQueue->push(obstacle);
+                    neighbors++;
                 }
+            }
+            if(counter && (neighbors < 6) && (neighbors > 0))
+            {
+                _vQueue->push(obstacle);
+                obstacle->setPushed();
             }
         }
     }
@@ -641,11 +646,7 @@ void VoronoiDiagram::init(const cv::Mat& img_)
     cout << "Converted image type: " << converted.type() << endl;
     cout << "Converted image depth: " << converted.depth() << endl;
 
-    double a = get_time();
-    _distmap = new DistanceMap(_rows, _cols);
     _dmap = new VoronoiVertex[_rows * _cols];
-    double b = get_time();
-    cout << "Creation of _distmap: " << b-a << endl;
     for(int c = 0; c < _cols; ++c)
     {
         int cr = c * _rows;
@@ -654,23 +655,16 @@ void VoronoiDiagram::init(const cv::Mat& img_)
             int k = r + cr;
             uchar pixel = converted.at<uchar>(r, c);
 
-            (*_distmap)(r, c).setPosition(r, c);
-            (*_distmap)(r, c).setValue(pixel);
-            (*_distmap)(r, c).setNearest(r, c);
             _dmap[k].setPosition(r, c);
             _dmap[k].setValue(pixel);
             _dmap[k].setNearest(r, c);
             if(pixel == 0)
             {
-                (*_distmap)(r, c).setDistance(0);
-                (*_distmap)(r, c).setParent(r, c);
                 _dmap[k].setDistance(0);
                 _dmap[k].setParent(r, c);
             }
             else
             {
-                (*_distmap)(r, c).setDistance(INF);
-                (*_distmap)(r, c).setParent(INF, INF);
                 _dmap[k].setDistance(INF);
                 _dmap[k].setParent(INF, INF);
             }

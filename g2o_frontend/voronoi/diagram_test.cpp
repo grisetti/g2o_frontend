@@ -67,74 +67,69 @@ int main(int argc, char** argv)
     }
 
     vd = new VoronoiDiagram(input, res);
-    double b = vd->get_time();
+    SimpleTimer timer;
+
+    timer.reset();
     vd->fillQueue();
-    double c = vd->get_time();
-    cout << "FILLING QUEUE: " << c-b << endl;
+    cout << "Time fillQueue: " << (unsigned long) timer.elapsedTimeUs() << endl;
+
+    timer.reset();
     vd->distmapExtraction();
+    cout << "Time distmapExtraction: " << (unsigned long) timer.elapsedTimeUs() << endl;
+
     vd->distmap2image();
     vd->checkStats();
     vd->savePGM("distance_map.pgm", vd->_drawableDistmap);
 
-    double d = vd->get_time();
+    timer.reset();
     vd->voronoiExtraction();
-    double e = vd->get_time();
-    cout << "VORO time: " << e-d << endl;
+    cout << "Time voronoiExtraction: " << (unsigned long) timer.elapsedTimeUs() << endl;
+
     cv::imwrite("voronoi.pgm", (*(vd->_voro)));
 
     cv::namedWindow("voronoi", CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
-    cv::namedWindow("graph", CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO);
-    cv::setMouseCallback("graph", mouseEvent, 0);
+    //    cv::setMouseCallback("graph", mouseEvent, 0);
 
     //load and display an image
     cv::Mat img = cv::imread("voronoi.pgm", CV_LOAD_IMAGE_UNCHANGED);
     cv::imshow("voronoi", img);
 
-    cv::Mat img2 = cv::imread("graph.pgm", CV_LOAD_IMAGE_UNCHANGED);
-    cv::imshow("graph", img2);
-
-
-
-
 
     cv::Mat input_img = img.clone(),
             dilated_input_img, skeleton, voronoi, voronoi2X;
 
-    cv::Mat element = cv::getStructuringElement( cv::MORPH_RECT,cv::Size( 7,7),cv::Point(3,3));
-    cv::dilate(input_img ,dilated_input_img, element );
-
-    SimpleTimer timer;
+    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT,cv::Size( 7,7),cv::Point(3,3));
+    cv::dilate(input_img, dilated_input_img, element);
 
     timer.reset();
-    vd->morphThinning( dilated_input_img, skeleton );
-    std::cout<<"Time morphThinning : "<<(unsigned long)timer.elapsedTimeUs()<<std::endl;
+    vd->morphThinning(dilated_input_img, skeleton);
+    cout << "Time morphThinning: " << (unsigned long)timer.elapsedTimeUs() << endl;
 
     std::vector<cv::Point2f> nodes;
     std::vector< std::vector<int> > edges;
 
     timer.reset();
-    vd->graphExtraction( skeleton, nodes, edges, true, 3 );
-    std::cout<<"Time graphExtraction : "<<(unsigned long)timer.elapsedTimeUs()<<std::endl;
+    vd->graphExtraction(skeleton, nodes, edges, true, 3);
+    cout << "Time graphExtraction: " << (unsigned long) timer.elapsedTimeUs() << endl;
 
     voronoi = cv::Mat(skeleton.size(), CV_8UC3);
     cv::cvtColor(skeleton, voronoi, CV_GRAY2BGR);
-    plotGraph( voronoi, nodes, edges,true );
+    plotGraph(voronoi, nodes, edges, true);
     cv::resize(voronoi, voronoi2X, cv::Size(2*voronoi.cols, 2*voronoi.rows));
-    plotGraph( voronoi2X, nodes, edges,true, 2.0f );
+    plotGraph(voronoi2X, nodes, edges, true, 2.0f);
 
-    cv::imshow("src",input_img);
-    cv::imshow("dilated",dilated_input_img);
-    cv::imshow("skeleton",skeleton);
-    cv::imshow("voronoi",voronoi);
-    cv::imshow("voronoi2X",voronoi2X);
+    cv::imshow("src", input_img);
+    cv::imshow("dilated", dilated_input_img);
+    cv::imshow("skeleton", skeleton);
+    cv::imshow("voronoi", voronoi);
+    cv::imshow("voronoi2X", voronoi2X);
 
     cv::waitKey(0);
     //    while(cv::waitKey() != 27);
     //cleaning up
-    cv::destroyWindow("voronoi");
-    cv::destroyWindow("graph");
+    cv::destroyAllWindows();
+//    cv::destroyWindow("voronoi");
     img.release();
-    img2.release();
 
     exit(0);
 }
