@@ -10,20 +10,20 @@ using namespace Eigen;
 VoronoiDiagram* vd = 0;
 
 
-void mouseEvent(int evt, int x, int y, int flags, void *param)
-{
-    if(evt == CV_EVENT_LBUTTONDOWN)
-    {
-        cout << "Coords: " << x << ", " << y << endl;
-        cout << (*vd->_distmap)(x, y).distance() << endl;
-        EdgeSet es = (*vd->_distmap)(x, y).edgeSet();
-        for(EdgeSet::iterator it = es.begin(); it != es.end(); it++)
-        {
-            VoronoiEdge e = *it;
-            cout << "(" << e.from()->position().x() << ", " << e.from()->position().y() << ") --> (" << e.to()->position().x() << ", " << e.to()->position().y() << ")" << endl;
-        }
-    }
-}
+//void mouseEvent(int evt, int x, int y, int flags, void *param)
+//{
+//    if(evt == CV_EVENT_LBUTTONDOWN)
+//    {
+//        cout << "Coords: " << x << ", " << y << endl;
+//        cout << (*vd->_distmap)(x, y).distance() << endl;
+//        EdgeSet es = (*vd->_distmap)(x, y).edgeSet();
+//        for(EdgeSet::iterator it = es.begin(); it != es.end(); it++)
+//        {
+//            VoronoiEdge e = *it;
+//            cout << "(" << e.from()->position().x() << ", " << e.from()->position().y() << ") --> (" << e.to()->position().x() << ", " << e.to()->position().y() << ")" << endl;
+//        }
+//    }
+//}
 
 
 void plotGraph(cv::Mat &img, std::vector<cv::Point2f> &nodes,
@@ -115,14 +115,14 @@ int main(int argc, char** argv)
     voronoi = cv::Mat(skeleton.size(), CV_8UC3);
     cv::cvtColor(skeleton, voronoi, CV_GRAY2BGR);
     plotGraph(voronoi, nodes, edges, true);
-    cv::resize(voronoi, voronoi2X, cv::Size(2*voronoi.cols, 2*voronoi.rows));
-    plotGraph(voronoi2X, nodes, edges, true, 2.0f);
+//    cv::resize(voronoi, voronoi2X, cv::Size(2*voronoi.cols, 2*voronoi.rows));
+//    plotGraph(voronoi2X, nodes, edges, true, 2.0f);
 
     cv::imshow("src", input_img);
     cv::imshow("dilated", dilated_input_img);
     cv::imshow("skeleton", skeleton);
     cv::imshow("voronoi", voronoi);
-    cv::imshow("voronoi2X", voronoi2X);
+//    cv::imshow("voronoi2X", voronoi2X);
 
     cv::waitKey(0);
     //    while(cv::waitKey() != 27);

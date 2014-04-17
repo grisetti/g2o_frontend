@@ -81,7 +81,7 @@ public:
     cv::Mat* _graph;
 
     VoronoiVertex* _dmap;
-    DistanceMap* _distmap;
+//    DistanceMap* _distmap;
     VoronoiQueue* _vQueue;
 };
 #endif // VORONOI_DIAGRAM_H

@@ -11,7 +11,7 @@ using namespace Eigen;
 
 VoronoiDiagram::VoronoiDiagram(const cv::Mat& input, int squaredResolution_) : _squaredResolution(squaredResolution_)
 {
-    _distmap = 0;
+//    _distmap = 0;
     _vQueue = 0;
     _voro = 0;
 
@@ -25,7 +25,7 @@ VoronoiDiagram::VoronoiDiagram(const cv::Mat& input, int squaredResolution_) : _
 VoronoiDiagram::~VoronoiDiagram()
 {
     delete[] _dmap;
-    delete _distmap;
+//    delete _distmap;
     delete _voro;
     delete _graph;
     delete _vQueue;

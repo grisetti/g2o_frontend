@@ -189,7 +189,7 @@ void ManifoldVoronoi::diagram2graph()
         VoronoiVertex* first = it->second;
         if(firstVertex)
         {
-            _candidates.insert(VoronoiPair(first->position(), first));
+            _candidates.insert(make_pair(first->position(), first));
             first->setNearest(first->position());
             firstVertex = false;
         }
@@ -225,7 +225,7 @@ void ManifoldVoronoi::diagram2graph()
                     else
                     {
                         neighbor->setNearest(neighbor->position());
-                        _candidates.insert(VoronoiPair(neighbor->position(), neighbor));
+                        _candidates.insert(make_pair(neighbor->position(), neighbor));
                     }
                 }
             }
@@ -324,7 +324,7 @@ void ManifoldVoronoi::distmap2voronoi()
                         if(pdist > _squaredResolution)
                         {
                             _voro->at<uint16_t>(r, c) = 65535;
-                            _vMap.insert(VoronoiPair(current->position(), current));
+                            _vMap.insert(make_pair(current->position(), current));
                         }
                     }
                 }
