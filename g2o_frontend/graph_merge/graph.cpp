@@ -20,9 +20,46 @@ Node::Node(int id, Graph* graph) : GraphElement(id, graph)
 }
 
 
+bool Node::addLaser(RobotLaser* l)
+{
+    RobotLaser* l1 = this->_laser;
+    if(l1)
+    {
+        return false;
+    }
+    this->_laser = l1;
+    return true;
+}
+
+
 const EdgeSet& Node::edges()
 {
     return _graph->edgesOf(this);
+}
+
+
+RobotLaser::RobotLaser(Node* node)
+{
+    this->_node = node;
+}
+
+
+RobotLaser::Vector2fVector RobotLaser::floatCartesian() const
+{
+    Vector2fVector points;
+    points.reserve(_ranges.size());
+    float angularStep = _fov / _ranges.size();
+    float alpha=_firstBeamAngle;
+    for(size_t i = 0; i < _ranges.size(); ++i)
+    {
+        const float& r = _ranges[i];
+        if(r < _maxRange)
+        {
+            points.push_back(Eigen::Vector2f(cos(alpha) * r, sin(alpha) * r));
+        }
+        alpha += angularStep;
+    }
+    return points;
 }
 
 
@@ -103,6 +140,7 @@ void Graph::initGraph(istream& is)
     string tag;
     const int maxDim = 32000;
     int eid = 0;
+    Node* previous = 0;
     while(is)
     {
         char line[maxDim];
@@ -118,6 +156,47 @@ void Graph::initGraph(istream& is)
             Node* n = new Node(id, this);
             n->_pose = utility::v2t(v);
             this->addNode(n);
+            previous = n;
+        }
+        else if(tag == "ROBOTLASER1")
+        {
+//            cout << "LASER" << endl;
+//            RobotLaser* rl = new RobotLaser();
+//            float res, remissionMode;
+//            is >> rl->_paramIndex >> rl->_firstBeamAngle >> rl->_fov >> res >> rl->_maxRange >> rl->_accuracy >> remissionMode;
+
+//            int beams;
+//            is >> beams;
+//            rl->_ranges.resize(beams);
+//            for(int i = 0; i < beams; i++)
+//            {
+//                is >> rl->_ranges[i];
+//            }
+
+//            is >> beams;
+//            rl->_intensities.resize(beams);
+//            for(int i = 0; i < beams; i++)
+//            {
+//                is >> rl->_intensities[i];
+//            }
+
+//            // special robot laser stuff
+//            double x,y,theta;
+//            //odom pose of the robot: no need
+//            is >> x >> y >> theta;
+//            //laser pose wrt to the world: no need
+//            is >> x >> y >> theta;
+//            is >> rl->_laserTv >>  rl->_laserRv >>  rl->_forwardSafetyDist >> rl->_sideSaftyDist >> rl->_turnAxis;
+
+//            // timestamp + hostname
+//            string hostname;
+//            double ts;
+//            is >> ts;
+//            is >> hostname;
+//            rl->_timestamp = ts;
+//            is >> ts;
+
+//            previous->addLaser(rl);
         }
         else if(tag == "EDGE_SE2")
         {
@@ -132,7 +211,7 @@ void Graph::initGraph(istream& is)
         }
         else
         {
-//            cerr << "Tag: " << tag << endl;
+
         }
     }
 }

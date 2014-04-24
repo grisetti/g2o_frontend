@@ -1,52 +1,44 @@
-/*
-struct RecursiveMatcher{
-  Graph* g1, *g2;
-  double visitDistance;
+#ifndef GRAPH_MATCHER_H
+#define GRAPH_MATCHER_H
 
+#include "g2o/types/slam2d/vertex_se2.h"
+#include "g2o/types/slam2d/edge_se2.h"
 
-  std::set<Edge*> matches;
-  std::set<Node*> visited1, visited2;
+#include <set>
+#include <vector>
 
-  double nodeDistance, nodeRotation;
+class Edge;
+class Graph;
+class Node;
 
-  matchChildren(Node* n1, Node* n2) {
-    Eigen::Isometry2d n2pose= n2->pose;
-    const EdgeSet& n1Set = n1->edges();
-    const EdgeSet& n2Set = n2->edges();
-    for (EdgeSet::const_iterator it = n1Set.begin(); it!=n1Set.end(); it++) {
-      Edge* e1=*it;
-      Node* n1Other = (n1 == e1->from)? e1->to : e1->from;
-      if (visited1.count(n1Other))
-    continue;
-      visited1.insert(n1Other);
+typedef std::vector<Graph*> Trajectories;
+typedef std::set<Edge*> Matches;
 
-      Node* bestN2 = 0;
-      float bestChi = 1e9;
+struct GraphMatcher
+{
+public:
+    GraphMatcher();
+    GraphMatcher(Graph* g1, Graph* g2);
+    ~GraphMatcher();
 
-      Eigen::Isometry2d n1OtherInverse = n1->pose.inverse();
-      for (EdgeSet::const_iterator it = n2Set.begin(); it!=n2Set.end(); it++) {
-    Edge* e2=*it;
-    Eigen::Isometry2d t = e2->transform;
-    Node* n2Other = e2->to;
-    if(n2 == e2->to){
-      t = t.inverse();
-      n2Other = e2->from;
-    }
-    if (visited2.count(n2Other))
-      continue;
-    n2Other.pose = n2.pose*t;
+    void createGraph(const char* in1, const char* in2, const char* out);
+    void recursiveMatch(Node *n1, Node *n2);
+    void circularMatch(Node *n1, Node *n2);
 
-    Vector3d delta = t2v(n1OtherInverse*n2Other.pose);
-    if (delta.squaredNorm()<bestChi){
-      bestN2 = n2Other;
-      bestChi = delta;
-    }
-      }
-      if (bestN2)
-    visited2.insert(bestN2);
-      visited1.erase(n1Other);
-    }
-  }
+    bool pushGraph(Graph* g);
+    void saveGraph(g2o::OptimizableGraph& output);
 
-}
-*/
+    Matches& matches() { return _matches; }
+    const Trajectories& graphs() { return _graphs; }
+
+protected:
+    Graph* _g1, *_g2;
+    Trajectories _graphs;
+
+    Matches _matches;
+    std::set<Node*> _visited1, _visited2;
+
+    double visitDistance;
+    double _nodeDistance, _nodeRotation;
+};
+#endif // GRAPH_MATCHER_H

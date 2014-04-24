@@ -32,7 +32,10 @@ float StandardCamera::zFar() const
 }
 
 
-GraphViewer::GraphViewer(QWidget *parent, const QGLWidget *shareWidget, Qt::WFlags flags): QGLViewer(parent,shareWidget,flags){}
+GraphViewer::GraphViewer(QWidget *parent, const QGLWidget *shareWidget, Qt::WFlags flags) : QGLViewer(parent,shareWidget,flags)
+{
+    cout << "Viewer Initialized" << endl;
+}
 
 
 GraphViewer::~GraphViewer() {}
@@ -43,7 +46,7 @@ void GraphViewer::init()
     // Init QGLViewer.
     QGLViewer::init();
     // Set background color light yellow.
-    setBackgroundColor(QColor::fromRgb(255, 255, 194));
+//    setBackgroundColor(QColor::fromRgb(255, 255, 194));
 
     // Set some default settings.
     glEnable(GL_LINE_SMOOTH);
@@ -67,6 +70,13 @@ void GraphViewer::init()
     cam->setPosition(qglviewer::Vec(0.0f, 0.0f, 10.0f));
     cam->setUpVector(qglviewer::Vec(1.0f, 0.0f, 0.0f));
     cam->lookAt(qglviewer::Vec(0.0f, 0.0f, 0.0f));
+
+
+//    setGridIsDrawn();
+//    startAnimation();
+//    setSceneRadius(10);
+//    cam->showEntireScene();
+
     delete oldcam;
 }
 

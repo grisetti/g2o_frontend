@@ -9,9 +9,9 @@
 
 namespace utility
 {
-    //Convert an isometry matrix into an equivalent vector
+    //Isometry matrix to vector
     Eigen::Vector3d t2v(const Eigen::Isometry2d& iso);
-    //Convert a vector into an equivalent isometry matrix
+    //Vector to isometry matrix
     Eigen::Isometry2d v2t(const Eigen::Vector3d& v);
 }
 
