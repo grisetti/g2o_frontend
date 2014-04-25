@@ -62,13 +62,14 @@ int main(int argc, char** argv)
     for(SparseOptimizer::VertexIDMap::iterator it = input1.vertices().begin(); it != input1.vertices().end(); it++)
     {
         VertexSE2* v = dynamic_cast<VertexSE2*>(it->second);
+
         VertexSE2* copy = new VertexSE2;
         copy->setId(v->id());
         copy->setEstimate(v->estimate());
         OptimizableGraph::Data* d = v->userData();
         if(d)
         {
-            cout << "centro" << endl;
+            cout << "centro1" << endl;
             const LaserRobotData* vdata = dynamic_cast<const LaserRobotData*>(d);
             LaserRobotData* copydata = new LaserRobotData;
             copydata->ranges() = vdata->ranges();
@@ -104,11 +105,25 @@ int main(int argc, char** argv)
         VertexSE2* copy = new VertexSE2;
         copy->setId(v->id() + offset);
         copy->setEstimate(v->estimate());
+        OptimizableGraph::Data* d = v->userData();
+        if(d)
+        {
+            cout << "centro2" << endl;
+            const LaserRobotData* vdata = dynamic_cast<const LaserRobotData*>(d);
+            LaserRobotData* copydata = new LaserRobotData;
+            copydata->ranges() = vdata->ranges();
+            copydata->intensities() = vdata->intensities();
+            copydata->setMinRange(vdata->minRange());
+            copydata->setMaxRange(vdata->maxRange());
+            copydata->setFov(vdata->fov());
+            copydata->setFirstBeamAngle(vdata->firstBeamAngle());
+            copy->addUserData(copydata);
+        }
 
         output.addVertex(copy);
     }
 
-    for(SparseOptimizer::EdgeSet::iterator it = input1.edges().begin(); it != input1.edges().end(); it++)
+    for(SparseOptimizer::EdgeSet::iterator it = input2.edges().begin(); it != input2.edges().end(); it++)
     {
         EdgeSE2* e = dynamic_cast<EdgeSE2*>(*it);
         EdgeSE2* newEdge = new EdgeSE2;
