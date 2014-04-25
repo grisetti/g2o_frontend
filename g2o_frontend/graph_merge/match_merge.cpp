@@ -11,7 +11,7 @@
 #include "g2o/core/optimization_algorithm_gauss_newton.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 
-#include "graph_simulator.h"
+#include "graph_matcher.h"
 
 
 using namespace Eigen;
@@ -45,67 +45,73 @@ int main(int argc, char** argv)
 
 
     SparseOptimizer::VertexIDMap merged_vertices = merged.vertices();
-    Information info;
 
     SparseOptimizer::VertexIDMap ref_vertices;
     SparseOptimizer::VertexIDMap curr_vertices;
 
-    VirtualMatcher vm;
+    GraphMatcher vm;
+    IdealNodeMatcher* im = new IdealNodeMatcher;
 
     // Load the vertices in the graphs
     for(SparseOptimizer::VertexIDMap::iterator it = merged_vertices.begin(); it != merged_vertices.end(); it++)
     {
-        VertexSE2* v = dynamic_cast<VertexSE2*>(it->second);
-        info._parent = NULL;
-        info._transform = v->estimate().toIsometry();
-        vm._currentInfo.insert(make_pair(v, info));
 
-        if(v->id() < samples)
-        {
-            ref_vertices.insert(make_pair(v->id(), v));
-        }
-        else
-        {
-            curr_vertices.insert(make_pair(v->id(), v));
-        }
+        VertexSE2* v = dynamic_cast<VertexSE2*>(it->second);
         VertexSE2* copy = new VertexSE2;
         copy->setId(v->id());
         copy->setEstimate(v->estimate());
-
         output.addVertex(copy);
+
+        Information info;
+        info._parent = NULL;
+        info._transform = copy->estimate().toIsometry();
+        vm._currentInfo.insert(make_pair(copy, info));
+
+        if(v->id() < samples)
+        {
+            ref_vertices.insert(make_pair(copy->id(), copy));
+        }
+        else
+        {
+            curr_vertices.insert(make_pair(copy->id(), copy));
+        }
+
     }
 
-    SparseOptimizer::EdgeSet edges = merged.edges();
-    SparseOptimizer::EdgeSet ref_edges;
-    SparseOptimizer::EdgeSet curr_edges;
-    SparseOptimizer::EdgeSet closures;
+    SparseOptimizer::EdgeSet& edges = merged.edges();
     cout << "Adding edges" << endl;
+
     for(SparseOptimizer::EdgeSet::iterator it = edges.begin(); it != edges.end(); it++)
     {
-        EdgeSE2* edge = dynamic_cast<EdgeSE2*>(*it);
-        int from_id = edge->vertices()[0]->id();
-        int to_id = edge->vertices()[1]->id();
-        if(from_id < samples)
+        EdgeSE2* e = dynamic_cast<EdgeSE2*>(*it);
+        EdgeSE2* newEdge = new EdgeSE2;
+        VertexSE2* v0New = (VertexSE2*)output.vertex(e->vertex(0)->id());
+        VertexSE2* v1New = (VertexSE2*)output.vertex(e->vertex(1)->id());
+        newEdge->setVertex(0,v0New);
+        newEdge->setVertex(1,v1New);
+        newEdge->setMeasurement(e->measurement());
+        newEdge->setInformation(e->information());
+
+
+        if(v0New->id() >= samples && v1New->id() < samples)
         {
-            ref_edges.insert(edge);
-            output.addEdge(edge);
-        }
-        if(from_id >= samples && to_id >= samples)
-        {
-            curr_edges.insert(edge);
-            output.addEdge(edge);
-        }
-        if(from_id >= samples && to_id < samples)
-        {
-            closures.insert(edge);
+            im->_eset.insert(newEdge);
+        } else {
+            output.addEdge(newEdge);
         }
     }
+
+    cerr << "loaded " << endl;
+    cerr<<  "       " << output.vertices().size() << " vertices" << endl;
+    cerr << "       " << output.edges().size() << " edges" << endl;
+    cerr << "       " << im->_eset.size() << " closures" << endl;
+    vm._matcher = im;
 
     cout << "Ref_vert size: " << ref_vertices.size() << endl;
     cout << "Curr_vert size: " << curr_vertices.size() << endl;
     VertexSE2* first = dynamic_cast<VertexSE2*>(curr_vertices.find(samples)->second);
-    vm.match(&ref_vertices, &curr_vertices, first, 2.0);
-
+    vm.match(&ref_vertices, first, 2.0);
+    
     EdgeSet matches = vm.results();
     for(EdgeSet::iterator it = matches.begin(); it != matches.end(); it++)
     {
@@ -114,14 +120,11 @@ int main(int argc, char** argv)
     }
 
     ostringstream result;
-    result << "result.g2o";
+    result << "simulated_result.g2o";
     output.save(result.str().c_str());
 
     cout << "Finished" << endl;
 
-    Factory::destroy();
-    OptimizationAlgorithmFactory::destroy();
-    HyperGraphActionLibrary::destroy();
 
     return 0;
 }

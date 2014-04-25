@@ -62,28 +62,32 @@ void CorrelativeMatcher::addToPrunedMap(map<DiscreteTriplet, CorrelativeMatcherR
 }
 
 
-void CorrelativeMatcher::match(OptimizableGraph::Vertex* ref, OptimizableGraph::Vertex* curr)
+// Search parameters should be set when instatiating the matcher
+void CorrelativeMatcher::match(OptimizableGraph::Vertex* ref, OptimizableGraph::Vertex* curr, const float& maxScore)
 {
     OptimizableGraph::Data* refData = ref->userData();
-    const LaserRobotData* previousLaserData = dynamic_cast<const LaserRobotData*>(refData);
-    VertexSE2* referenceSE2 = dynamic_cast<VertexSE2*>(ref);
+    const LaserRobotData* prevLaser = dynamic_cast<const LaserRobotData*>(refData);
+    VertexSE2* refSE2 = dynamic_cast<VertexSE2*>(ref);
 
     OptimizableGraph::Data* currData = curr->userData();
-    const LaserRobotData* currentLaserData = dynamic_cast<const LaserRobotData*>(currData);
-    VertexSE2* currentSE2 = dynamic_cast<VertexSE2*>(curr);
-    if(previousLaserData && referenceSE2 && currentLaserData && currentSE2)
+    const LaserRobotData* currLaser = dynamic_cast<const LaserRobotData*>(currData);
+    VertexSE2* currSE2 = dynamic_cast<VertexSE2*>(curr);
+    if(prevLaser && refSE2 && currLaser && currSE2)
     {
-        Isometry2d delta = referenceSE2->estimate().toIsometry().inverse() * currentSE2->estimate().toIsometry();
+        Isometry2d delta = refSE2->estimate().toIsometry().inverse() * currSE2->estimate().toIsometry();
         Matrix2f mat = delta.rotation().cast<float>();
         float angle = atan2(mat(1, 0), mat(0, 0));
         Vector3f initGuess(delta.translation().x(), delta.translation().y(), angle);
+        Vector3f lower(-0.3+initGuess.x(), -0.3+initGuess.y(), -0.2+initGuess.z());
+        Vector3f upper(0.3+initGuess.x(), 0.3+initGuess.y(), 0.2+initGuess.z());
+        float thetaRes = 0.01;
 
+        Vector2fVector prevScan = prevLaser->floatCartesian();
+        this->convolveScan(prevScan);
+        Vector2fVector currScan = currLaser->floatCartesian();
 
-        Vector2fVector scan = previousLaserData->floatCartesian();
-        convolveScan(scan);
-
+        this->scanMatch(currScan, lower, upper, thetaRes, maxScore);
     }
-
 }
 
 
@@ -221,13 +225,7 @@ void CorrelativeMatcher::scanMatch(vector<CorrelativeMatcherResult*>& mresvec, c
                     {
                         Vector2i ip = *_ip+offset;
                         _ip++;
-                        int ipX = ip.x();
-                        int ipY = ip.y();
-                        //                        if(ipX >= 0 && ipX < scanSizeX && ipY >= 0 && ipY < scanSizeY)
-                        //                        if(ipX >= 0 && ipY >= 0)
-                        {
-                            idsum += _convolvedGrid.cell(ip);
-                        }
+                        idsum += _convolvedGrid.cell(ip);
                     }
                     float dsum = (float)idsum * (float)ikscale;
                     dsum = k ? (dsum / (float) k) : maxScore+1;

@@ -12,7 +12,7 @@ using namespace match_this;
 
 
 
-int main()
+int main(int argc, char** argv)
 {
   float resolution = 0.3;
   float kernelRange = 0.5;
@@ -31,7 +31,7 @@ int main()
   cout << "res: " << gm.getScanGrid().resolution() << endl;
   cout << "ires: " << 1./gm.getScanGrid().resolution() << endl;
   
-  const string logFile = "/home/erratic/src/matcher/logFile/dis.clf";
+  const char* logFile = argv[argc-1];
   LogReader lr(logFile, hV);
 
   vector<Vector2fVector> logScan = lr.getScans();

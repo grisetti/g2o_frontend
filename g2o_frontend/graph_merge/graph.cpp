@@ -32,7 +32,7 @@ bool Node::addLaser(RobotLaser* l)
 }
 
 
-const EdgeSet& Node::edges()
+const Edges& Node::edges()
 {
     return _graph->edgesOf(this);
 }
@@ -94,7 +94,7 @@ bool Graph::addNode(Node* n)
         return false;
     }
     _nodes.insert(make_pair(n->_id, n));
-    _nodeEdges.insert(make_pair(n, EdgeSet()));
+    _nodeEdges.insert(make_pair(n, Edges()));
     return true;
 }
 
@@ -124,7 +124,7 @@ bool Graph::addEdge(Edge* e)
 }
 
 
-const EdgeSet& Graph::edgesOf(Node* n)
+const Edges& Graph::edgesOf(Node* n)
 {
     NodeEdgeMap::iterator it = _nodeEdges.find(n);
     if(it == _nodeEdges.end())

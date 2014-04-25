@@ -12,7 +12,7 @@ using namespace match_this;
 
 
 
-int main()
+int main(int argc, char** argv)
 {
     float resolution = 0.03;
     float kernelMaxValue = 1;
@@ -23,7 +23,8 @@ int main()
 
     cout << "sizeC:" << endl << cm.getConvolvedGrid().size() << endl;
     cout << "sizeS:" << endl << cm.getScanGrid().size() << endl;
-    const string logFile = "/home/erratic/datasets/capybara/second_run.clf";
+
+    const char* logFile = argv[argc-1];
     LogReader lr(logFile, hV);
 
     vector<Vector2fVector> logScan = lr.getScans();
@@ -59,7 +60,7 @@ int main()
         Vector3f lower(-0.3+initGuess.x(), -0.3+initGuess.y(), -0.2+initGuess.z());
         Vector3f upper(0.3+initGuess.x(), 0.3+initGuess.y(), 0.2+initGuess.z());
         float thetaRes = 0.01;
-        int max = 10000;
+        int max = 50;
 
         cm.convolveScan(previousReducedScan);
 

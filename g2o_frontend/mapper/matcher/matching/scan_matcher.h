@@ -89,7 +89,8 @@ class ScanMatcher : public Matcher
     typedef std::vector<char*> CellPointersVector;
     typedef std::vector<CellPointersVector*> GridPointer;
     
-    ScanMatcher(const float& resolution, const float& radius, const int& kernelSize, const float& kernelMaxValue, const int _gridKScale = 128);
+    ScanMatcher(const float& resolution, const float& radius, const int& kernelSize,
+                const float& kernelMaxValue, const int _gridKScale = 128);
     ScanMatcher(const CharGrid& fg, const int& kernelSize, const float& kernelMaxValue, const int _gridKScale = 128);
 
     virtual ~ScanMatcher();
@@ -99,7 +100,9 @@ class ScanMatcher : public Matcher
     //! represention of the graph
     //! @param ref: pointer to the vertex whose data is to use as reference
     //! @param curr: pointer to the vertex whose data is to be matched against the reference
-    virtual void match(g2o::OptimizableGraph::Vertex* ref, g2o::OptimizableGraph::Vertex* curr);
+    //! @param maxScore: maximum score of the match
+    virtual void match(g2o::OptimizableGraph::Vertex* ref, g2o::OptimizableGraph::Vertex* curr,
+                       const float &maxScore);
     
 
     void clear();
@@ -110,7 +113,6 @@ class ScanMatcher : public Matcher
     void saveConvolvedScanAsPPM(std::ostream& os, bool eq) const;
     void saveScanAsPPM(std::ostream& os, bool eq) const;
     void subsample(Vector2fVector& dest, const Vector2fVector& src);
-
 
     inline Vector2iVector& getConvolvedIndices() { return _convolvedIndices; }
     inline const Vector2iVector& getConvolvedIndices() const { return _convolvedIndices; }

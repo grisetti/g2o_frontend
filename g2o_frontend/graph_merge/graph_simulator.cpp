@@ -9,13 +9,6 @@ using namespace g2o;
 using namespace std;
 
 
-SimEdge::SimEdge()
-{
-//    this->_from = 0;
-//    this->_to = 0;
-}
-
-
 Isometry2d GraphSimulator::addNoise(const Isometry2d& lastPose, const Vector3d& noise)
 {
     Vector3d last = utility::t2v(lastPose);
@@ -124,9 +117,6 @@ void GraphSimulator::simulate(int samples, int trajectories, bool interClosures,
             Isometry2d nextMotion = generateMotion(direction, stepLength);
             SimNode nextPose = generatePose(poses.back(), nextMotion, noise);
 
-            int* n = new int(k);
-            prova.push_back(n);
-
             Isometry2d nextStepFinalPose = nextPose.real_pose * maxStepTransform;
             if(fabs(nextStepFinalPose.translation().x()) >= grid[0] || fabs(nextStepFinalPose.translation().y()) >= grid[1])
             {
@@ -169,10 +159,10 @@ void GraphSimulator::simulate(int samples, int trajectories, bool interClosures,
         if(lookForClosures)
         {
             // Closures
-            for(int i = poses.size() - 1; i >= 0; i--)
+            for(int i = poses.size()-1; i >= 0; i--)
             {
                 SimNode& sp = poses[i];
-                for(int j = 0; j < i; j++)
+                for(int j = 0; j < i; j+=20)
                 {
                     SimNode& candidate = poses[j];
                     Isometry2d transform = sp.real_pose.inverse() * candidate.real_pose;
@@ -192,7 +182,6 @@ void GraphSimulator::simulate(int samples, int trajectories, bool interClosures,
                 }
             }
         }
-        traj.vec2map();
     }
     cout << "Added Loop Closures" << endl;
 
@@ -207,10 +196,10 @@ void GraphSimulator::simulate(int samples, int trajectories, bool interClosures,
             SimGraph& t2 = _trajectories[i];
             const Poses& g1_poses = t1.poses();
             const Poses& g2_poses = t2.poses();
-            for(uint i = 0; i < g2_poses.size(); ++i)
+            for(uint i = 0; i < g2_poses.size(); i+=5)
             {
                 const SimNode& sp = g2_poses[i];
-                for(uint j = 0; j < g1_poses.size(); ++j)
+                for(uint j = 0; j < g1_poses.size(); j+=5)
                 {
                     const SimNode& candidate = g1_poses[j];
                     Isometry2d transform = sp.real_pose.inverse() * candidate.real_pose;
@@ -233,135 +222,3 @@ void GraphSimulator::simulate(int samples, int trajectories, bool interClosures,
         cout << "Added Inter Graph Closures" << endl;
     }
 }
-
-
-void SimGraph::vec2map()
-{
-    uint size = this->_poses.size();
-    for(uint i = 0; i < size; i++)
-    {
-        SimNode sn = this->_poses[i];
-        this->_nodes.insert(make_pair(sn.id, sn));
-    }
-}
-
-
-NodeSet VirtualMatcher::findNeighbors(g2o::HyperGraph::VertexIDMap* ref, const Isometry2d& transform, double epsilon)
-{
-    NodeSet result;
-    result.clear();
-
-//    OptimizableGraph::VertexIDMap vertices = ref->vertices();
-    OptimizableGraph::VertexIDMap vertices = *ref;
-    for(OptimizableGraph::VertexIDMap::const_iterator it = vertices.begin(); it != vertices.end(); it++)
-    {
-        VertexSE2* v = dynamic_cast<VertexSE2*>(it->second);
-        Isometry2d v_tranform = v->estimate().toIsometry();
-        Isometry2d candidate_tranform = transform.inverse() * v_tranform;
-        double distance = utility::t2v(candidate_tranform).squaredNorm();
-        if(fabs(distance) < epsilon)
-        {
-            result.insert(v);
-        }
-    }
-    return result;
-}
-
-
-void VirtualMatcher::tryMatch(VertexSE2* neighbor, VertexSE2* node, double& score, Isometry2d& tStar)
-{
-    Isometry2d neighbor_tsf = neighbor->estimate().toIsometry();
-    Isometry2d node_tsf = node->estimate().toIsometry();
-
-    tStar = node_tsf.inverse() * neighbor_tsf;
-    score = utility::t2v(tStar).squaredNorm();
-}
-
-
-void VirtualMatcher::match(OptimizableGraph::VertexIDMap* ref, OptimizableGraph::VertexIDMap* curr, VertexSE2* first, double epsilon)
-{
-    // Setting the parent of the first node to itself
-    if(this->_currentInfo.find(first) != this->_currentInfo.end())
-    {
-        Information& first_info = this->_currentInfo.find(first)->second;
-        first_info._parent = first;
-    }
-    else
-    {
-        cout << "Could not find first node, exiting" << endl;
-        return;
-    }
-
-    deque<VertexSE2*> queue;
-    queue.push_back(first);
-
-    while(!queue.empty())
-    {
-        VertexSE2* node = queue.front();
-        queue.pop_front();
-
-        // Save the node isometry. it will be overwritten
-        Isometry2d backup_transform = node->estimate().toIsometry();
-
-        if(node != first)
-        {
-            Information node_info;
-            if(this->_currentInfo.find(node) != this->_currentInfo.end()) {
-                node_info = this->_currentInfo.find(node)->second;
-            }
-            else {
-                cout << "Element not found, skipping" << endl;
-            }
-
-            if(node_info._parent) {
-                // Move the node onto the other graph
-                Information parent_info = this->_currentInfo.find(node_info._parent)->second;
-                Isometry2d parent_tranform = parent_info._transform;
-                Isometry2d current_transform = node_info._transform;
-
-                Isometry2d delta = parent_tranform.inverse() * current_transform;
-                node->setEstimate(parent_tranform * delta);
-            }
-            // Look for all the possible neighbors in the ref graph
-            NodeSet ref_neighbors = this->findNeighbors(ref, node->estimate().toIsometry(), epsilon);
-
-//            double bestScore = std::numeric_limits<double>::max();
-            double bestScore = epsilon;
-            double score = bestScore;
-            Isometry2d bestTransform = Isometry2d::Identity();
-            for(NodeSet::iterator it = ref_neighbors.begin(); it != ref_neighbors.end(); it++) {
-                VertexSE2* ref_neigbor = *it;
-                this->tryMatch(ref_neigbor, node, score, bestTransform);
-                if(score < bestScore) {
-                    bestScore = score;
-                    node->setEstimate(ref_neigbor->estimate().toIsometry() * bestTransform);
-                    EdgeSE2* edge = new EdgeSE2;
-                    edge->vertices()[0] = node;
-                    edge->vertices()[1] = ref_neigbor;
-                    edge->setMeasurement(node->estimate().toIsometry().inverse() * ref_neigbor->estimate().toIsometry());
-                    edge->setInformation(Matrix3d::Identity());
-                    this->_results.insert(edge);
-                }
-            }
-        }
-
-        // Look for all the children of the initial node in its graph
-//        NodeSet node_neighbors = this->findNeighbors(curr, backup_transform, epsilon);
-        NodeSet node_neighbors = this->findNeighbors(curr, backup_transform, epsilon);
-        for(NodeSet::iterator it = node_neighbors.begin(); it != node_neighbors.end(); it++) {
-            VertexSE2* curr_neighbor = *it;
-            if(this->_currentInfo.find(curr_neighbor) != this->_currentInfo.end()) {
-                Information& curr_neighbor_info = this->_currentInfo.find(curr_neighbor)->second;
-                if(!curr_neighbor_info._parent) {
-                    curr_neighbor_info._parent = node;
-                    queue.push_back(curr_neighbor);
-                }
-            }
-        }
-    }
-}
-
-
-
-
-

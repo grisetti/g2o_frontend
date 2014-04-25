@@ -225,7 +225,8 @@ void ScanMatcher::initializeKernel(const int size, const float res, const float 
 }
 
 
-void ScanMatcher::match(g2o::OptimizableGraph::Vertex *ref, g2o::OptimizableGraph::Vertex *curr) {}
+void ScanMatcher::match(g2o::OptimizableGraph::Vertex *ref, g2o::OptimizableGraph::Vertex *curr,
+                        const float &maxScore) {}
 
 
 void ScanMatcher::integrateScan(const Vector2fVector& ns, const float& val, const Isometry2f& transform)

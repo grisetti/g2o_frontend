@@ -1,44 +1,78 @@
 #ifndef GRAPH_MATCHER_H
 #define GRAPH_MATCHER_H
 
+#include <cstdlib>
+#include <cmath>
+#include <ctime>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <deque>
+#include <map>
+#include <vector>
+#include <set>
+#include "utility.h"
 #include "g2o/types/slam2d/vertex_se2.h"
 #include "g2o/types/slam2d/edge_se2.h"
+#include "g2o_frontend/mapper/matcher/matching/scan_matcher.h"
 
-#include <set>
-#include <vector>
+struct Information
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-class Edge;
-class Graph;
-class Node;
+    Information()
+    {
+        _transform.setIdentity();
+        _parent = 0;
+    }
 
-typedef std::vector<Graph*> Trajectories;
-typedef std::set<Edge*> Matches;
+    Eigen::Isometry2d _transform;
+    g2o::VertexSE2* _parent;
+};
+typedef std::set<g2o::VertexSE2*> NodeSet;
+typedef std::set<g2o::EdgeSE2*> EdgeSet;
+typedef std::map<g2o::VertexSE2*, Information, std::less<g2o::VertexSE2*>,
+        Eigen::aligned_allocator<std::pair<const g2o::VertexSE2*, Information> > > VertexInfoMap;
+
+
+struct NodeMatcher
+{
+    virtual float match(g2o::SE2& result, g2o::VertexSE2* v1, g2o::VertexSE2* v2) = 0;
+    virtual ~NodeMatcher();
+};
+
+
+struct IdealNodeMatcher : public NodeMatcher
+{
+    virtual float match(g2o::SE2& result, g2o::VertexSE2* v1, g2o::VertexSE2* v2);
+    g2o::EdgeSE2* findEdge(g2o::VertexSE2* v1, g2o::VertexSE2* v2);
+    EdgeSet _eset;
+};
+
+
+struct RealNodeMatcher : public NodeMatcher
+{
+    virtual float match(g2o::SE2& result, g2o::VertexSE2* v1, g2o::VertexSE2* v2);
+
+    match_this::ScanMatcher* _smatcher;
+    EdgeSet _eset;
+    float _mscore;
+};
+
 
 struct GraphMatcher
 {
 public:
-    GraphMatcher();
-    GraphMatcher(Graph* g1, Graph* g2);
-    ~GraphMatcher();
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    void createGraph(const char* in1, const char* in2, const char* out);
-    void recursiveMatch(Node *n1, Node *n2);
-    void circularMatch(Node *n1, Node *n2);
+    EdgeSet& results() { return _results; }
+    NodeSet findNeighbors(g2o::HyperGraph::VertexIDMap* ref, const Eigen::Isometry2d& transform, double epsilon);
+    void match(g2o::HyperGraph::VertexIDMap* ref, g2o::VertexSE2* first, double epsilon);
 
-    bool pushGraph(Graph* g);
-    void saveGraph(g2o::OptimizableGraph& output);
-
-    Matches& matches() { return _matches; }
-    const Trajectories& graphs() { return _graphs; }
-
-protected:
-    Graph* _g1, *_g2;
-    Trajectories _graphs;
-
-    Matches _matches;
-    std::set<Node*> _visited1, _visited2;
-
-    double visitDistance;
-    double _nodeDistance, _nodeRotation;
+    VertexInfoMap _currentInfo;
+    EdgeSet _results;
+    NodeMatcher* _matcher;
 };
+
+
 #endif // GRAPH_MATCHER_H

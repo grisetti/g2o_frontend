@@ -35,7 +35,6 @@ int main()
   float radius = 50;
   ScanMatcher sm(resolution, radius, kernelRange/resolution, kernelRange);
   
-  
   sm.subsample(reducedScan, scan);
   
   cout << "Scan size is: " << scan.size() << ", reducedScan size is: " << reducedScan.size() << endl;

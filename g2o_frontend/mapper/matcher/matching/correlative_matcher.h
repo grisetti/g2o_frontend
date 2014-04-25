@@ -85,7 +85,8 @@ class CorrelativeMatcher : public ScanMatcher
     //! represention of the graph
     //! @param ref: pointer to the vertex whose data is to use as reference
     //! @param curr: pointer to the vertex whose data is to be matched against the reference
-    void match(g2o::OptimizableGraph::Vertex* ref, g2o::OptimizableGraph::Vertex* curr);
+    //! @param maxScore: maximum score of the match
+    void match(g2o::OptimizableGraph::Vertex* ref, g2o::OptimizableGraph::Vertex* curr, const float &maxScore);
 
 
     //! search for the best in a region

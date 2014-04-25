@@ -37,7 +37,7 @@ void transformGraph(Graph* g, Isometry2d tsf)
 /** MAIN FOR REAL GRAPHS*/
 int main(int argc, char** argv)
 {
-    typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
+ /*   typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
     typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
 
     // allocating the optimizer
@@ -106,5 +106,5 @@ int main(int argc, char** argv)
     {
         app->processEvents();
         usleep(1000);
-    }
+    }*/
 }

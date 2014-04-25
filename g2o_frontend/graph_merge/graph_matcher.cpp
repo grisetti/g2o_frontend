@@ -1,293 +1,248 @@
-#include "graph.h"
 #include "graph_matcher.h"
-#include "utility.h"
-
-#include <deque>
 #include <iostream>
-#include <vector>
+
+#define DEG2RAD(x) ((x) * 0.01745329251994329575)
 
 
-using namespace std;
 using namespace Eigen;
 using namespace g2o;
+using namespace std;
 
 
+NodeMatcher::~NodeMatcher(){}
 
-GraphMatcher::GraphMatcher()
+
+float IdealNodeMatcher::match(SE2& result, VertexSE2* v1, VertexSE2* v2)
 {
-    _g1 = 0;
-    _g2 = 0;
+    EdgeSE2* e = findEdge(v1,v2);
+    if(!e)
+        return 0;
+
+    SE2 guess = v1->estimate().inverse()*v2->estimate();
+    SE2 delta = e->measurement().inverse()*guess;
+    Eigen::Vector3d vdelta = delta.toVector();
+    Eigen::Matrix3d scale;
+    scale <<1, 0, 0,
+            0, 1, 0,
+            0, 0, 10;
+    double diff = vdelta.transpose()*scale*vdelta;
+    double epsilon = 1;
+    if(diff > epsilon)
+        return 0;
+    result = e->measurement();
+    return 1;
 }
 
 
-GraphMatcher::GraphMatcher(Graph* g1, Graph* g2)
+EdgeSE2* IdealNodeMatcher::findEdge(VertexSE2* v1, VertexSE2* v2)
 {
-    _g1 = g1;
-    _g2 = g2;
-
-    _graphs.push_back(g1);
-    _graphs.push_back(g2);
-}
-
-
-GraphMatcher::~GraphMatcher(){}
-
-
-bool GraphMatcher::pushGraph(Graph* g)
-{
-    if(_g1 && _g2)
-    {
-        cout << "Graphs already initialized" << endl;
-        return false;
-    }
-    if(!_g1 && _g2)
-    {
-        cout << "This should not happen" << endl;
-        return false;
-    }
-
-    if(!_g1 && !_g2)
-    {
-        _g1 = g;
-        this->_graphs.push_back(g);
-        cout << "First graph initialized" << endl;
-        return true;
-    }
-
-    if(_g1 && !_g2)
-    {
-        _g2 = g;
-        this->_graphs.push_back(g);
-        cout << "Second graph initialized" << endl;
-        return true;
-    }
-}
-
-
-void GraphMatcher::saveGraph(OptimizableGraph &output)
-{
-    int offset = 10000;
-
-    Matrix3d information;
-    information.fill(0.);
-    information(0, 0) = 100;
-    information(1, 1) = 100;
-    information(2, 2) = 1000;
-
-    for(size_t k = 0; k < _graphs.size(); ++k)
-    {
-        Graph* traj = _graphs[k];
-        NodeMap nodes = traj->nodeMap();
-        for(NodeMap::const_iterator it = nodes.begin(); it != nodes.end(); it++)
-        {
-            Node* n = it->second;
-            int new_id = n->_id + k * offset;
-
-            VertexSE2* v = new VertexSE2;
-            v->setId(new_id);
-            v->setEstimate(n->_pose);
-
-            output.addVertex(v);
-        }
-
-        EdgeMap edges = traj->edgeMap();
-        for(EdgeMap::iterator eit = edges.begin(); eit != edges.end(); eit++)
-        {
-            Edge* edge = eit->second;
-
-            EdgeSE2* odometry = new EdgeSE2;
-            int new_from_id = edge->_from->_id + k * offset;
-            int new_to_id = edge->_to->_id + k * offset;
-            odometry->vertices()[0] = output.vertex(new_from_id);
-            odometry->vertices()[1] = output.vertex(new_to_id);
-            odometry->setMeasurement(edge->_transform);
-            odometry->setInformation(information);
-
-            output.addEdge(odometry);
+    for(EdgeSet::iterator it = _eset.begin(); it != _eset.end(); it++) {
+        EdgeSE2* e = *it;
+        if(e->vertex(0) == v1 && e->vertex(1) == v2) {
+            return e;
         }
     }
-
-    for(Matches::iterator mit = this->_matches.begin(); mit != this->_matches.end(); mit++)
-    {
-        Edge* edge = *mit;
-
-        EdgeSE2* closure = new EdgeSE2;
-        int new_from_id = edge->_from->_id + offset;
-        closure->vertices()[0] = output.vertex(new_from_id);
-        closure->vertices()[1] = output.vertex(edge->_to->_id);
-        closure->setMeasurement(edge->_transform);
-        closure->setInformation(information);
-
-        output.addEdge(closure);
-    }
-
-    ostringstream out;
-    out << "closed_graph.g2o";
-    output.save(out.str().c_str());
+    return 0;
 }
 
 
-void GraphMatcher::createGraph(const char* in1, const char* in2, const char* out)
+float RealNodeMatcher::match(SE2& result, VertexSE2 *v1, VertexSE2 *v2)
 {
-    int offset = 10000;
+    // the scan matcher should be given also other parameters (angular res and region size)
+    _smatcher->match(v1, v2, _mscore);
+    match_this::ScanMatcherResult* res = (match_this::ScanMatcherResult*) _smatcher->getMatches()[0];
 
-    vector<const char*> vec;
+    Isometry2f inner;
+    inner = Rotation2Df(res->_transformation.z());
+    inner.translation() = Vector2f(res->_transformation.x(), res->_transformation.y());
 
-    vec.push_back(in1);
-    vec.push_back(in2);
+    result = SE2(inner.cast<double>());
+    return res->matchingScore();
+}
 
-    ofstream os(out);
-    for(short unsigned int i = 0; i < vec.size(); i++)
+
+NodeSet GraphMatcher::findNeighbors(g2o::HyperGraph::VertexIDMap* ref, const Isometry2d& transform, double epsilon)
+{
+    NodeSet result;
+    result.clear();
+
+    OptimizableGraph::VertexIDMap vertices = *ref;
+    for(OptimizableGraph::VertexIDMap::const_iterator it = vertices.begin(); it != vertices.end(); it++)
     {
-        ifstream file(vec[i]);
-        string tag;
-        const int maxDim = 32000;
-        int counter = 0;
-        while(file)
+        VertexSE2* v = dynamic_cast<VertexSE2*>(it->second);
+        Isometry2d v_tranform = v->estimate().toIsometry();
+        Isometry2d candidate_tranform = transform.inverse() * v_tranform;
+        Eigen::Matrix3d scale;
+        scale <<
+                 1, 0, 0,
+                0, 1, 0,
+                0, 0, 10;
+
+        Eigen::Vector3d dv=utility::t2v(candidate_tranform);
+        double distance = dv.transpose()*scale*dv;
+        if(fabs(distance) < epsilon)
         {
-            char line[maxDim];
-            file.getline(line, maxDim);
-            istringstream ls(line);
-            ls >> tag;
-            if(tag == "VERTEX_SE2")
-            {
-                counter++;
-                int id;
-                Vector3d v;
-                ls >> id >> v.x() >> v.y() >> v.z();
-                os << "VERTEX_SE2 " << id + (i * offset) << " " << v.x() << " " << v.y() << " " << v.z() << endl;
-            }
-            else if(tag == "EDGE_SE2")
-            {
-                int id1, id2;
-                Vector3d v;
-                ls >> id1 >> id2 >> v.x() >> v.y() >> v.z();
-                os << "EDGE_SE2 " << id1 + (i * offset) << " " << id2 + (i * offset) << " " << v.x() << " " << v.y() << " " << v.x()
-                   << " 100 0 0 100 0 1000" << endl;
-            }
-            else
-            {
-                os << line << endl;
-            }
+            result.insert(v);
         }
     }
-
-    for(set<Edge*>::const_iterator it = _matches.begin(); it != _matches.end(); it++)
-    {
-        Edge* e = *it;
-        Vector3d eye_tsf = utility::t2v(e->_transform);
-        os << "EDGE_SE2 " << e->_from->_id + offset << " " << e->_to->_id << " " << eye_tsf.x() << " " << eye_tsf.y() << " " << eye_tsf.z()
-           << " 100 0 0 100 0 1000" << endl;
-    }
-    os.close();
+    return result;
 }
 
 
-void GraphMatcher::circularMatch(Node *n1, Node *n2)
+void GraphMatcher::match(OptimizableGraph::VertexIDMap* ref, VertexSE2* first, double epsilon)
 {
-    NodeMap nm1 = _g1->nodeMap();
-    NodeMap nm2 = _g2->nodeMap();
+    deque<VertexSE2*> queue;
+    queue.push_back(first);
+    Information& finfo = _currentInfo[first];
+    finfo._parent = first;
 
-    for(NodeMap::const_iterator fit = nm1.begin(); fit != nm1.end(); ++fit)
-    {
-        Node* n1 = fit->second;
-        for(NodeMap::const_iterator sit = nm2.begin(); sit != nm2.end(); ++sit)
-        {
-            Node* n2 = sit->second;
-            Isometry2d transform = n2->_pose.inverse() * n1->_pose;
-            double distance = utility::t2v(transform).squaredNorm();
-            if(fabs(distance) < 10)
-            {
-                Edge* match = new Edge;
-                match->_from = n2;
-                match->_to = n1;
-                match->_transform = transform;
+    while(!queue.empty()) {
+        VertexSE2* current = queue.front();
+        //cerr << current->id() << endl;
+        Information& cinfo = _currentInfo[current];
+        queue.pop_front();
 
-                _matches.insert(match);
-            }
-        }
-    }
-}
-
-
-void GraphMatcher::recursiveMatch(Node* root1, Node* root2)
-{
-    _visited1.insert(root1);
-    _visited2.insert(root2);
-
-    Edge* firstEdge = new Edge;
-    firstEdge->_from = root1;
-    firstEdge->_to = root2;
-    _matches.insert(firstEdge);
-
-    deque<Node*> q1, q2;
-    q1.push_back(root1);
-    q2.push_back(root2);
-
-    while(!q1.empty() && !q2.empty())
-    {
-        Node* n1 = q1.front();
-        q1.pop_front();
-        Node* n2 = q2.front();
-        q2.pop_front();
-
-        const EdgeSet& n1_es = n1->edges();
-        const EdgeSet& n2_es = n2->edges();
-
-        for(EdgeSet::const_iterator fit = n1_es.begin(); fit != n1_es.end(); fit++)
-        {
-            Edge* e1 = *fit;
-            Node* nn1 = (n1 == e1->_from) ? e1->_to : e1->_from;
-            if(_visited1.count(nn1))
-            {
-                continue;
-            }
-
-            Node* best_match = 0;
-            double best_chi = 1e5;
-            for(EdgeSet::const_iterator sit = n2_es.begin(); sit != n2_es.end(); sit++)
-            {
-                Edge* e2 = *sit;
-                Node* nn2 = (n2 == e2->_from) ? e2->_to : e2->_from;
-                if(_visited2.count(nn2))
-                {
+        // put all bloody childs in the queue
+        for(OptimizableGraph::EdgeSet::iterator it = current->edges().begin(); it!=current->edges().end(); it++) {
+            EdgeSE2* e = (EdgeSE2*)(*it);
+            for(uint i = 0; i < e->vertices().size(); i++) {
+                VertexSE2* other = (VertexSE2*) e->vertex(i);
+                if(other == current)
                     continue;
-                }
-
-                Isometry2d et = n2->_pose.inverse() * n1->_pose;
-                Isometry2d nn2_n1 = et * nn2->_pose;
-                Isometry2d delta_m = nn1->_pose.inverse() * nn2_n1;
-                Vector3d delta = utility::t2v(delta_m);
-                cout << "NN1: " << nn1->_id << ", NN2: " << nn2->_id << endl;
-                cout << "DELTA: " << delta.x() << " " << delta.y() << " " << delta.z() << endl;
-                cout << "Chi2: " << delta.squaredNorm() << "; nn1: " << nn1->_id << "; nn2: " << nn2->_id << endl;
-
-                q2.push_back(nn2);
-
-                if(delta.squaredNorm() < best_chi)
-                {
-                    if(delta.squaredNorm() < 10)
-                    {
-                        best_match = nn2;
-                        best_chi = delta.squaredNorm();
-
-                        cout << "Best chi2: " << best_chi << "; nn1: " << nn1->_id << "; nn2: " << nn2->_id << endl;
-                    }
-                }
+                Information& otherInfo = _currentInfo[other];
+                if(otherInfo._parent)
+                    continue;
+                otherInfo._parent = current;
+                queue.push_back(other);
             }
-            if(best_match)
-            {
-                Edge* e = new Edge;
-                e->_from = nn1;
-                e->_to = best_match;
-
-                _matches.insert(e);
-                _visited1.insert(nn1);
-                _visited2.insert(best_match);
-            }
-            q1.push_back(nn1);
         }
-        _visited1.insert(n1);
-        _visited2.insert(n2);
+
+        // reassign the trasforms if not the first node
+        if(cinfo._parent !=current) {
+            Eigen::Isometry2d cT = cinfo._transform;
+            VertexSE2* parent=cinfo._parent;
+
+            Information& pinfo = _currentInfo[parent];
+            Eigen::Isometry2d pT = pinfo._transform;
+            Eigen::Isometry2d dt = pT.inverse()*cT;
+
+            current->setEstimate(parent->estimate()*SE2(dt));
+
+            NodeSet ref_neighbors = this->findNeighbors(ref, current->estimate().toIsometry(), epsilon);
+            double bestScore = 0;
+            SE2 bestTransform;
+            VertexSE2* bestNeighbor = 0;
+            for(NodeSet::iterator it = ref_neighbors.begin(); it != ref_neighbors.end(); it++) {
+                VertexSE2* ref_neighbor = *it;
+                SE2 transform;
+                float score = _matcher->match(transform, current, ref_neighbor);
+                if(score>bestScore) {
+                    bestScore = score;
+                    bestTransform = transform;
+                    bestNeighbor = ref_neighbor;
+                }
+            }
+            if(bestScore>0) {
+                EdgeSE2* newEdge = new EdgeSE2;
+                newEdge->setVertex(0,current);
+                newEdge->setVertex(1,bestNeighbor);
+                newEdge->setMeasurement(bestTransform);
+                Eigen::Matrix3d info=Eigen::Matrix3d::Identity()*1000;
+                newEdge->setInformation(info);
+                _results.insert(newEdge);
+                cerr << "found closure edge between " << current->id() << " and " << bestNeighbor->id() << endl;
+                current->setEstimate(bestNeighbor->estimate()*bestTransform.inverse());
+            }
+        }
     }
 }
+
+/*
+void GraphMatcher::match(OptimizableGraph::VertexIDMap* ref, OptimizableGraph::VertexIDMap* curr, VertexSE2* first, double epsilon)
+{
+    // Setting the parent of the first node to itself
+    if(this->_currentInfo.find(first) != this->_currentInfo.end())
+    {
+        Information& first_info = this->_currentInfo.find(first)->second;
+        first_info._parent = first;
+    }
+    else
+    {
+        cout << "Could not find first node, exiting" << endl;
+        return;
+    }
+
+    deque<VertexSE2*> queue;
+    queue.push_back(first);
+
+    while(!queue.empty())
+    {
+        VertexSE2* node = queue.front();
+        queue.pop_front();
+    cerr << "id: " << node->id() << endl;
+
+        // Save the node isometry. it will be overwritten
+        Isometry2d backup_transform = node->estimate().toIsometry();
+
+        if(node != first)
+        {
+            Information node_info;
+            if(this->_currentInfo.find(node) != this->_currentInfo.end()) {
+                node_info = this->_currentInfo.find(node)->second;
+            }
+            else {
+                cout << "Element not found, skipping" << endl;
+            }
+
+            if(node_info._parent) {
+                // Move the node onto the other graph
+                Information parent_info = this->_currentInfo.find(node_info._parent)->second;
+                Isometry2d parent_tranform = parent_info._transform;
+                Isometry2d current_transform = node_info._transform;
+
+                Isometry2d delta = parent_tranform.inverse() * current_transform;
+                node->setEstimate(parent_tranform * delta);
+            }
+            // Look for all the possible neighbors in the ref graph
+            NodeSet ref_neighbors = this->findNeighbors(ref, node->estimate().toIsometry(), epsilon);
+
+//            double bestScore = std::numeric_limits<double>::max();
+            double bestScore = 0;
+            SE2 bestTransform;
+        VertexSE2* bestNeighbor = 0;
+            for(NodeSet::iterator it = ref_neighbors.begin(); it != ref_neighbors.end(); it++) {
+                VertexSE2* ref_neigbor = *it;
+        SE2 transform;
+        float score = _matcher->match(transform, ref_neigbor, node);
+                if(score>bestScore) {
+                    bestScore = score;
+            bestTransform = transform;
+            bestNeighbor = ref_neigbor;
+                }
+            }
+        if (bestScore>0){
+          EdgeSE2* newEdge;
+          newEdge->setVertex(0,node);
+          newEdge->setVertex(1,bestNeighbor);
+          newEdge->setMeasurement(bestTransform);
+          Eigen::Matrix3d info=Eigen::Matrix3d::Identity()*1000;
+          newEdge->setInformation(info);
+          _results.insert(newEdge);
+        }
+        }
+
+        // Look for all the children of the initial node in its graph
+        NodeSet node_neighbors = this->findNeighbors(curr, backup_transform, epsilon);
+        for(NodeSet::iterator it = node_neighbors.begin(); it != node_neighbors.end(); it++) {
+            VertexSE2* curr_neighbor = *it;
+            if(this->_currentInfo.find(curr_neighbor) != this->_currentInfo.end()) {
+                Information& curr_neighbor_info = this->_currentInfo.find(curr_neighbor)->second;
+                if(!curr_neighbor_info._parent) {
+                    curr_neighbor_info._parent = node;
+                    queue.push_back(curr_neighbor);
+                }
+            }
+        }
+    }
+}
+*/

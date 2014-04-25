@@ -12,7 +12,7 @@ using namespace match_this;
 
 
 
-int main()
+int main(int argc, char** argv)
 {
   float resolution = 0.03;
   float kernelMaxValue = 3;
@@ -21,7 +21,7 @@ int main()
   float radius = 50;
   GradientMatcher cm(resolution, radius, kernelMaxValue, kernelMaxValue);
   
-  const string logFile = "/home/erratic/src/matcher/logFile/dis.clf";
+  const char* logFile = argv[argc-1];
   LogReader lr(logFile, hV);
 
   vector<Vector2fVector> logScan = lr.getScans();

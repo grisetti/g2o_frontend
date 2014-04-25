@@ -17,9 +17,9 @@ struct Edge;
 struct RobotLaser;
 
 
-typedef std::set<Edge*> EdgeSet;
-typedef std::set<Node*> NodeSet;
-typedef std::map<Node*, EdgeSet> NodeEdgeMap;
+typedef std::set<Edge*> Edges;
+typedef std::set<Node*> Nodes;
+typedef std::map<Node*, Edges> NodeEdgeMap;
 typedef std::map<int, Edge*> EdgeMap;
 typedef std::map<int, Node*> NodeMap;
 
@@ -42,7 +42,7 @@ struct Node : public GraphElement
     Node(int id = -1, Graph* graph = 0);
 
     bool addLaser(RobotLaser* l);
-    const EdgeSet& edges();
+    const Edges& edges();
 
     Eigen::Isometry2d _pose;
     RobotLaser* _laser;
@@ -112,7 +112,7 @@ struct Graph
     Edge* edge(int id);
     bool addEdge(Edge* e);
 
-    const EdgeSet& edgesOf(Node* n);
+    const Edges& edgesOf(Node* n);
     void initGraph(std::istream& is);
 
     inline const EdgeMap& edgeMap() { return this->_edges; }

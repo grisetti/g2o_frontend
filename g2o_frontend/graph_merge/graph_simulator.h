@@ -46,6 +46,7 @@ struct Noise
     }
 };
 
+
 struct SimEdge;
 typedef std::set<SimEdge*> Edges;
 
@@ -53,7 +54,7 @@ struct SimNode
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    const Edges& connections() const { return _connections; }
+    inline const Edges& connections() const { return _connections; }
 
     int id;
     Eigen::Isometry2d real_pose;
@@ -61,14 +62,11 @@ struct SimNode
     Edges _connections;
 };
 typedef std::vector<SimNode, Eigen::aligned_allocator<SimNode> > Poses;
-typedef std::map<int, SimNode> NodeMap;
+
 
 struct SimEdge
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-    SimEdge();
-    ~SimEdge();
 
     int from_id;
     int to_id;
@@ -78,59 +76,18 @@ struct SimEdge
     Eigen::Matrix3d information;
 };
 
+
 struct SimGraph
 {
-    void vec2map();
-    inline const NodeMap& nodeMap() const { return _nodes; }
     inline const Poses& poses() const { return _poses; }
     inline const Edges& edges() const { return _edges; }
 
-    NodeMap _nodes;
     Poses _poses;
     Edges _edges;
 };
 typedef std::vector<SimGraph> Trajectories;
 
 
-struct Information
-{
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-    Information()
-    {
-        _transform.setIdentity();
-        _parent = 0;
-    }
-
-    Eigen::Isometry2d _transform;
-    g2o::VertexSE2* _parent;
-};
-typedef std::map<g2o::VertexSE2*, Information, std::less<g2o::VertexSE2*>,
-                 Eigen::aligned_allocator<std::pair<const g2o::VertexSE2*, Information> > > VertexInfoMap;
-
-
-typedef std::set<g2o::VertexSE2*> NodeSet;
-typedef std::set<g2o::EdgeSE2*> EdgeSet;
-
-
-struct VirtualMatcher
-{
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-    EdgeSet& results() { return _results; }
-    NodeSet findNeighbors(g2o::HyperGraph::VertexIDMap* ref, const Eigen::Isometry2d& transform, double epsilon);
-    void match(g2o::HyperGraph::VertexIDMap *ref, g2o::HyperGraph::VertexIDMap *curr, g2o::VertexSE2* first, double epsilon);
-    void tryMatch(g2o::VertexSE2* neighbor, g2o::VertexSE2* node, double &score, Eigen::Isometry2d& tStar);
-
-    std::set<SimEdge*> _matches;
-    std::set<SimNode*> _visited1, _visited2;
-    VertexInfoMap _currentInfo;
-    EdgeSet _results;
-};
-
-typedef std::vector<int*> Prova;
 struct GraphSimulator
 {
 public:
@@ -148,10 +105,9 @@ public:
     void simulate(int samples, const Eigen::Isometry2d& offset = Eigen::Isometry2d::Identity());
     void simulate(int samples, int trajectories, bool interClosures = 0, bool lookForClosures = 1, const Eigen::Isometry2d& offset = Eigen::Isometry2d::Identity());
 
-    const Trajectories& trajectories() const { return _trajectories; }
-    const Edges& closures() const { return _closures; }
+    inline const Trajectories& trajectories() const { return _trajectories; }
+    inline const Edges& closures() const { return _closures; }
 
-    Prova prova;
 protected:
     Trajectories _trajectories;
     Edges _closures;

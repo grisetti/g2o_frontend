@@ -29,13 +29,6 @@ int main()
     GraphSimulator gs;
     gs.simulate(samples, trajectories, interGraphClosures, loopClosures);
 
-    cout << "Prova size: " << gs.prova.size() << endl;
-    for(size_t i = 0; i < gs.prova.size(); i++)
-    {
-        int* k = gs.prova[i];
-        cout << "MAh: " << k << " " << *k << endl;
-    }
-
     typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
     typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
 
@@ -147,10 +140,6 @@ int main()
     ostringstream merged_after;
     merged_after << "merged_after.g2o";
     merged.save(merged_after.str().c_str());
-
-    Factory::destroy();
-    OptimizationAlgorithmFactory::destroy();
-    HyperGraphActionLibrary::destroy();
 
     return 0;
 }

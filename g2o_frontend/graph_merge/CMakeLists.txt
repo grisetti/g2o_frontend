@@ -30,17 +30,17 @@ TARGET_LINK_LIBRARIES(graph_merging ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${Q
 
 
 
-ADD_EXECUTABLE(graph_merge  graph_merge.cpp
-                            graph_gui.cpp
-                            viewer.cpp
-                            ${my_FORMS_HEADERS} ${my_HEADERS_MOC}
-)
-TARGET_LINK_LIBRARIES(graph_merge   graph_merging
-                                    ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY}
-                                    ${QT_QTCORE_LIBRARY} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${QGLVIEWER_LIBRARY_RELEASE} ${QT_LIBRARIES}
+#ADD_EXECUTABLE(graph_merge  graph_merge.cpp
+#                            graph_gui.cpp
+#                            viewer.cpp
+#                            ${my_FORMS_HEADERS} ${my_HEADERS_MOC}
+#)
+#TARGET_LINK_LIBRARIES(graph_merge   graph_merging
+#                                    ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTGUI_LIBRARY}
+#                                    ${QT_QTCORE_LIBRARY} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${QGLVIEWER_LIBRARY_RELEASE} ${QT_LIBRARIES}
 #                                    ${G2O_TYPES_SLAM2D} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION}
 #                                    ${G2O_CORE_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}   ${CSPARSE_LIBRARY}
-)
+#)
 
 
 
@@ -72,6 +72,13 @@ ADD_EXECUTABLE(multi_simulation_merge	multi_simulation_merge.cpp
 TARGET_LINK_LIBRARIES(multi_simulation_merge    graph_merging
 #                                                ${G2O_TYPES_SLAM2D} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION}
 #                                                ${G2O_CORE_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}   ${CSPARSE_LIBRARY}
+)
+
+
+ADD_EXECUTABLE(file_merge   file_merge.cpp
+)
+TARGET_LINK_LIBRARIES(file_merge    graph_merging
+                                    sensor_data_library
 )
 
 
