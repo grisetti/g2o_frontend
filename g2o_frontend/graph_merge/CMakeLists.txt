@@ -82,11 +82,18 @@ TARGET_LINK_LIBRARIES(file_merge    graph_merging
 )
 
 
-ADD_EXECUTABLE(match_merge	match_merge.cpp
-                                        graph_simulator.cpp
+ADD_EXECUTABLE(match_merge  match_merge.cpp
+                            graph_simulator.cpp
 )
-TARGET_LINK_LIBRARIES(match_merge    graph_merging
-#                                                ${G2O_TYPES_SLAM2D} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION}
-#                                                ${G2O_CORE_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}   ${CSPARSE_LIBRARY}
+TARGET_LINK_LIBRARIES(match_merge   graph_merging
+)
+
+
+ADD_EXECUTABLE(merge_real_graphs    real_merge.cpp
+                                    graph_simulator.cpp
+)
+TARGET_LINK_LIBRARIES(merge_real_graphs     graph_merging
+                                            matching_library
+                                            sensor_data_library
 )
 

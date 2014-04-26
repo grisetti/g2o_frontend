@@ -32,6 +32,17 @@ public:
     void fillQueue();
 
     /**
+     * @brief Provides a graph consisting of voronoi vertices.
+     *        Denser than a standard Voronoi Graph.
+     */
+    void denseGraphExtraction();
+    void save2g2o(std::ostream& os, bool sparse = true);
+    bool saveEdge(std::ostream& os, VoronoiEdge* e);
+    bool saveData(std::ostream& os, VoronoiData* d);
+    bool saveVertex(std::ostream& os, VoronoiVertex* v);
+
+
+    /**
      * @brief Simple thinning algorithm
      *
      * @param src Input image: it should be a binary (1 and 0 values) 8 bits single channel image.
@@ -53,8 +64,8 @@ public:
      *
      * @param skeleton Input skeleton image: it should be a general, 0 and X values binary
      *                 8 bits single channel image.
-     * @param nodes Outout graph nodes
-     * @param edges Outout graph edges, by means of a vecto of vectors of index
+     * @param nodes Output graph nodes
+     * @param edges Output graph edges, by means of a vecto of vectors of index
      * @param find_leafs true if you want to extract also the leaf nodes, defaults to true
      * @param min_dist minimum distance between nodes, it should be >= 1, default to 1
      */
@@ -65,7 +76,7 @@ public:
     void init(const cv::Mat& img_);
     void loadPGM();
     void savePGM(const char *filename, const Eigen::MatrixXf& image_);
-    static void shrinkIntersections( cv::Mat &skeleton, cv::Mat &dst);
+    static void shrinkIntersections(cv::Mat &skeleton, cv::Mat &dst);
     static void findNeighborNodes(int src_node_idx, int x, int y, cv::Mat &mask, cv::Mat &index_mat,
                                   std::vector<cv::Point2f> &nodes, std::vector< std::vector<int> > &edges);
 
@@ -73,7 +84,7 @@ public:
     int _rows, _cols;
 
     VertexMap _vMap;
-    VertexMap _candidates;
+    EdgeSet _edges;
 
     Eigen::MatrixXf _drawableDistmap;
 

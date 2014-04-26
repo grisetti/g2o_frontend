@@ -12,11 +12,16 @@
 #include "g2o/core/optimization_algorithm_gauss_newton.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 
+#include "graph_matcher.h"
+#include "g2o_frontend/mapper/matcher/matching/correlative_matcher.h"
+
+
 #define MARKUSED(x) x = x
 
 
 using namespace Eigen;
 using namespace g2o;
+using namespace match_this;
 using namespace std;
 
 
@@ -28,10 +33,6 @@ int main(int argc, char** argv)
         cerr << "Expected: file_merge <input1>.g2o <input2>.g2o <output>.g2o" << endl;
         return -1;
     }
-
-    // this is here otherwise the linker would mess things up
-    RobotLaser rl;
-    MARKUSED(rl);
 
     char* ref_filename = argv[1];
     char* curr_filename = argv[2];
@@ -64,6 +65,18 @@ int main(int argc, char** argv)
     OptimizationAlgorithmGaussNewton* solver3 = new OptimizationAlgorithmGaussNewton(blockSolver3);
     output.setAlgorithm(solver3);
 
+    float resolution = 0.03;
+    float kernelMaxValue = 1;
+    float radius = 100;
+    CorrelativeMatcher* cm = new CorrelativeMatcher(resolution, radius, kernelMaxValue, kernelMaxValue);
+
+    RealNodeMatcher* rm = new RealNodeMatcher(cm, 250);
+    GraphMatcher* gm = new GraphMatcher(rm);
+
+    SparseOptimizer::VertexIDMap ref_vertices;
+    SparseOptimizer::VertexIDMap curr_vertices;
+
+
     for(SparseOptimizer::VertexIDMap::iterator it = input1.vertices().begin(); it != input1.vertices().end(); it++)
     {
         VertexSE2* v = dynamic_cast<VertexSE2*>(it->second);
@@ -86,6 +99,12 @@ int main(int argc, char** argv)
             }
         }
         output.addVertex(copy);
+
+        Information info;
+        info._parent = NULL;
+        info._transform = copy->estimate().toIsometry();
+        gm->_currentInfo.insert(make_pair(copy, info));
+        ref_vertices.insert(make_pair(copy->id(), copy));
     }
 
     for(SparseOptimizer::EdgeSet::iterator it = input1.edges().begin(); it != input1.edges().end(); it++)
@@ -124,6 +143,12 @@ int main(int argc, char** argv)
             }
         }
         output.addVertex(copy);
+
+        Information info;
+        info._parent = NULL;
+        info._transform = copy->estimate().toIsometry();
+        gm->_currentInfo.insert(make_pair(copy, info));
+        curr_vertices.insert(make_pair(copy->id(), copy));
     }
 
     for(SparseOptimizer::EdgeSet::iterator it = input2.edges().begin(); it != input2.edges().end(); it++)
@@ -144,6 +169,18 @@ int main(int argc, char** argv)
         output.addEdge(newEdge);
     }
 
+    VertexSE2* first = dynamic_cast<VertexSE2*>(curr_vertices.find(offset)->second);
+
+    gm->match(&ref_vertices, first, 5.0);
+//    EdgeSet matches = gm->results();
+//    for(EdgeSet::iterator it = matches.begin(); it != matches.end(); it++)
+//    {
+//        EdgeSE2* e = *it;
+
+//        output.addEdge(e);
+//    }
+
+    cout << "Finished." << endl;
     output.save(out_filename);
     return 0;
 }

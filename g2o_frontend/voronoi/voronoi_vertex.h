@@ -11,20 +11,34 @@
 #include "voronoi_edge.h"
 
 
+class VoronoiData
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    typedef std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d> > Point2DVector;
+    typedef std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > Vector2fVector;
+
+    bool write(std::ostream& os);
+};
+
+
 class VoronoiVertex
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     VoronoiVertex();
-    VoronoiVertex(double, const Eigen::Vector2i&);
-    VoronoiVertex(double, int, const Eigen::Vector2i&);
+    VoronoiVertex(double& distance, const Eigen::Vector2i& position_);
     VoronoiVertex(const Eigen::Vector2i& par_, const Eigen::Vector2i& pos_, const double& dis_, const int& val_);
 
     ~VoronoiVertex();
 
-    inline void addToEdgeSet(const VoronoiEdge& edge_) { _edgeSet.insert(edge_); }
-    void addToEdgeSet(const EdgeSet& es_);
+    inline void setId(int id) { _id = id; }
+    inline int& id() { return _id; }
+    inline const int& id() const { return _id; }
+
+    inline void addToEdgeSet(VoronoiEdge* edge_) { _edgeSet.insert(edge_); }
     inline EdgeSet& edgeSet() { return _edgeSet;}
     inline const EdgeSet& edgeSet() const { return _edgeSet;}
 
@@ -66,13 +80,13 @@ public:
     inline Eigen::Vector2i& parent() { return _parent;}
     inline const Eigen::Vector2i& parent() const{ return _parent;}
 
-    inline void setOrder(int order_) { _order = order_; }
-    inline int order() { return _order; }
-    inline int order() const { return _order; }
-
     inline void setValue(int value_) { _value = value_; }
     inline int value() { return _value; }
     inline int value() const { return _value; }
+
+    bool write(std::ostream& os);
+
+    inline VoronoiData* data() { return _data; }
 
 protected:
     Eigen::Vector2i _nearest;
@@ -84,10 +98,12 @@ protected:
     double _elevation;
     double _distance;
     int _value;
-    int _order;
+    int _id;
     bool _merged;
     bool _visited;
     bool _pushed;
+
+    VoronoiData* _data;
 };
 
 

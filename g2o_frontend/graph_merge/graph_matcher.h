@@ -52,6 +52,8 @@ struct IdealNodeMatcher : public NodeMatcher
 
 struct RealNodeMatcher : public NodeMatcher
 {
+    RealNodeMatcher(match_this::ScanMatcher* sm, const float& max);
+
     virtual float match(g2o::SE2& result, g2o::VertexSE2* v1, g2o::VertexSE2* v2);
 
     match_this::ScanMatcher* _smatcher;
@@ -64,6 +66,9 @@ struct GraphMatcher
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    GraphMatcher();
+    GraphMatcher(NodeMatcher* m);
 
     EdgeSet& results() { return _results; }
     NodeSet findNeighbors(g2o::HyperGraph::VertexIDMap* ref, const Eigen::Isometry2d& transform, double epsilon);

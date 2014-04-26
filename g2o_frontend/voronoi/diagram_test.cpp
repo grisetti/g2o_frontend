@@ -26,9 +26,8 @@ VoronoiDiagram* vd = 0;
 //}
 
 
-void plotGraph(cv::Mat &img, std::vector<cv::Point2f> &nodes,
-               vector< vector<int> > &edges,
-               bool draw_edges = true, float scale = 1.0f )
+void plotGraph(cv::Mat &img, vector<cv::Point2f> &nodes, vector< vector<int> > &edges,
+               bool draw_edges = true, float scale = 1.0f)
 {
     for(size_t i = 0; i < nodes.size(); i++)
     {
@@ -45,7 +44,6 @@ void plotGraph(cv::Mat &img, std::vector<cv::Point2f> &nodes,
         }
     }
 }
-
 
 
 int main(int argc, char** argv)

@@ -62,15 +62,14 @@ void CorrelativeMatcher::addToPrunedMap(map<DiscreteTriplet, CorrelativeMatcherR
 }
 
 
-// Search parameters should be set when instatiating the matcher
 void CorrelativeMatcher::match(OptimizableGraph::Vertex* ref, OptimizableGraph::Vertex* curr, const float& maxScore)
 {
     OptimizableGraph::Data* refData = ref->userData();
-    const LaserRobotData* prevLaser = dynamic_cast<const LaserRobotData*>(refData);
+    const RobotLaser* prevLaser = dynamic_cast<const RobotLaser*>(refData);
     VertexSE2* refSE2 = dynamic_cast<VertexSE2*>(ref);
 
     OptimizableGraph::Data* currData = curr->userData();
-    const LaserRobotData* currLaser = dynamic_cast<const LaserRobotData*>(currData);
+    const RobotLaser* currLaser = dynamic_cast<const RobotLaser*>(currData);
     VertexSE2* currSE2 = dynamic_cast<VertexSE2*>(curr);
     if(prevLaser && refSE2 && currLaser && currSE2)
     {
@@ -82,12 +81,16 @@ void CorrelativeMatcher::match(OptimizableGraph::Vertex* ref, OptimizableGraph::
         Vector3f upper(0.3+initGuess.x(), 0.3+initGuess.y(), 0.2+initGuess.z());
         float thetaRes = 0.01;
 
-        Vector2fVector prevScan = prevLaser->floatCartesian();
+        Vector2fVector prevScan = point2vector(prevLaser->cartesian());
         this->convolveScan(prevScan);
-        Vector2fVector currScan = currLaser->floatCartesian();
+        Vector2fVector currScan = point2vector(currLaser->cartesian());
 
         this->scanMatch(currScan, lower, upper, thetaRes, maxScore);
     }
+    else
+    {
+        cout << "SM: some data is missing" << endl;
+    };
 }
 
 

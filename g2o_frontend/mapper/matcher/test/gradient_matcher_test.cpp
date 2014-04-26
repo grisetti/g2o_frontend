@@ -53,10 +53,10 @@ int main(int argc, char** argv)
     MatrixXf mat = delta.rotation();
     float angle = atan2(mat(1, 0), mat(0, 0));
     Vector3f initGuess(delta.translation().x(), delta.translation().y(), angle);
-    Vector3f lower(-0.3+initGuess.x(), -0.3+initGuess.y(), -0.2+initGuess.z());
-    Vector3f upper(0.3+initGuess.x(), 0.3+initGuess.y(), 0.2+initGuess.z());
-    float thetaRes = 0.01; //was 0.025
-    float max = 350;
+//    Vector3f lower(-0.3+initGuess.x(), -0.3+initGuess.y(), -0.2+initGuess.z());
+//    Vector3f upper(0.3+initGuess.x(), 0.3+initGuess.y(), 0.2+initGuess.z());
+//    float thetaRes = 0.01; //was 0.025
+//    float max = 350;
 
     cm.convolveScan(previousScan);
     

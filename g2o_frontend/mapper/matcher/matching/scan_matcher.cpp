@@ -296,4 +296,20 @@ void ScanMatcher::subsample(Vector2fVector& dest, const Vector2fVector& src)
         i++;
     }
 }
+
+
+Vector2fVector ScanMatcher::point2vector(const Point2DVector& in)
+{
+    Vector2fVector result;
+    for(size_t i = 0; i < in.size(); i++)
+    {
+        Vector2d current = in[i];
+        result.push_back(current.cast<float>());
+
+    }
+    return result;
 }
+
+
+}
+

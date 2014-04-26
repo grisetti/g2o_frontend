@@ -19,22 +19,35 @@ VoronoiEdge::VoronoiEdge(VoronoiVertex* from_, VoronoiVertex* to_)
 }
 
 
-bool EdgeComparator::operator()(const VoronoiEdge& lhs, const VoronoiEdge& rhs) const
+bool VoronoiEdge::write(ostream& os)
 {
-    const VoronoiVertex* lhs_from = lhs.from();
+    Rotation2Dd r(0);
+    r.fromRotationMatrix(_transform.linear());
+    Vector2d t = _transform.translation();
+
+    os << _from->id() << " " << _to->id();
+    os << " " << t.x() << " " << t.y() << " " << r.angle();
+    os << " 1000 0 0 1000 0 1000";
+    return os.good();
+}
+
+
+bool EdgeComparator::operator()(const VoronoiEdge* lhs, const VoronoiEdge* rhs) const
+{
+    const VoronoiVertex* lhs_from = lhs->from();
     const int lhs_from_x = lhs_from->position().x();
     const int lhs_from_y = lhs_from->position().y();
 
-    const VoronoiVertex* lhs_to = lhs.to();
+    const VoronoiVertex* lhs_to = lhs->to();
     const int lhs_to_x = lhs_to->position().x();
     const int lhs_to_y = lhs_to->position().y();
 
 
-    const VoronoiVertex* rhs_from = rhs.from();
+    const VoronoiVertex* rhs_from = rhs->from();
     const int rhs_from_x = rhs_from->position().x();
     const int rhs_from_y = rhs_from->position().y();
 
-    const VoronoiVertex* rhs_to = rhs.to();
+    const VoronoiVertex* rhs_to = rhs->to();
     const int rhs_to_x = rhs_to->position().x();
     const int rhs_to_y = rhs_to->position().y();
 

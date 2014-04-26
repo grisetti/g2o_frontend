@@ -3,6 +3,7 @@
 
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <set>
 
 
@@ -24,15 +25,18 @@ public:
     inline VoronoiVertex* to() { return _to; }
     inline const VoronoiVertex* to() const { return _to; }
 
+    bool write(std::ostream& os);
+
 private:
     VoronoiVertex* _from;
     VoronoiVertex* _to;
+    Eigen::Isometry2d _transform;
 };
 
 
 struct EdgeComparator
 {
-    bool operator() (const VoronoiEdge& lhs, const VoronoiEdge& rhs) const;
+    bool operator() (const VoronoiEdge* lhs, const VoronoiEdge* rhs) const;
 };
-typedef std::set<VoronoiEdge, EdgeComparator> EdgeSet;
+typedef std::set<VoronoiEdge*, EdgeComparator> EdgeSet;
 #endif // VORONOI_EDGE_H

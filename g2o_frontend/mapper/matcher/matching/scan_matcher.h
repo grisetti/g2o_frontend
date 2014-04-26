@@ -1,8 +1,9 @@
 #ifndef SCANMATCHER_H
 #define SCANMATCHER_H
 
-
-#include "g2o_frontend/sensor_data/laser_robot_data.h"
+#include "g2o/types/slam2d/vertex_se2.h"
+#include "g2o/types/slam2d/edge_se2.h"
+#include "g2o/types/data/robot_laser.h"
 
 #include "matcher.h"
 #include "../structures/gridmap.h"
@@ -13,7 +14,7 @@ namespace match_this
 struct PointAccumulator
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  
+
     PointAccumulator()
     {
         _acc.setZero();
@@ -21,7 +22,7 @@ struct PointAccumulator
     }
 
     inline int count() const {return _count;}
-  
+
     inline Eigen::Vector2f mean() const
     {
         if(_count)
@@ -36,7 +37,7 @@ struct PointAccumulator
         _acc += p;
         _count ++;
     }
-  
+
     inline void remove(const Eigen::Vector2f& p)
     {
         if(_count==0)
@@ -77,13 +78,15 @@ public:
 };
 
 
+typedef std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > Vector2fVector;
 class ScanMatcher : public Matcher
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  
+
     typedef std::vector<Eigen::Vector2i, Eigen::aligned_allocator<Eigen::Vector2i> > Vector2iVector;
-    typedef std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > Vector2fVector;
+
+    typedef std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d> > Point2DVector;
     typedef Eigen::Matrix<char, Eigen::Dynamic, Eigen::Dynamic> MatrixXChar;
     typedef _GridMap<char> CharGrid;
     typedef std::vector<char*> CellPointersVector;
@@ -96,7 +99,7 @@ class ScanMatcher : public Matcher
     virtual ~ScanMatcher();
 
 
-    //! function inherited from the super-classes Matcher, compatible with g2o
+    //! function inherited from the super-class Matcher, compatible with g2o
     //! represention of the graph
     //! @param ref: pointer to the vertex whose data is to use as reference
     //! @param curr: pointer to the vertex whose data is to be matched against the reference
@@ -104,6 +107,11 @@ class ScanMatcher : public Matcher
     virtual void match(g2o::OptimizableGraph::Vertex* ref, g2o::OptimizableGraph::Vertex* curr,
                        const float &maxScore);
     
+    //! brief: tranforms laser in g2o format to scan-matcher format (double to float)
+    //! @param ref: pointer to the vertex whose data is to use as reference
+    //! @param curr: pointer to the vertex whose data is to be matched against the reference
+    //! @param maxScore: maximum score of the match
+    Vector2fVector point2vector(const Point2DVector& in);
 
     void clear();
     void convolveScan(const Vector2fVector& ns, const Eigen::Isometry2f& transform = Eigen::Isometry2f::Identity());

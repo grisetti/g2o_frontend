@@ -6,6 +6,7 @@
 
 using namespace Eigen;
 using namespace g2o;
+using namespace match_this;
 using namespace std;
 
 
@@ -46,18 +47,55 @@ EdgeSE2* IdealNodeMatcher::findEdge(VertexSE2* v1, VertexSE2* v2)
 }
 
 
+RealNodeMatcher::RealNodeMatcher(ScanMatcher* sm, const float& max)
+{
+    _smatcher= sm;
+    _mscore = max;
+}
+
+
+//Lo scan matcher non trova un cavolo o sono io che non gli passo un cavolo?
 float RealNodeMatcher::match(SE2& result, VertexSE2 *v1, VertexSE2 *v2)
 {
     // the scan matcher should be given also other parameters (angular res and region size)
     _smatcher->match(v1, v2, _mscore);
-    match_this::ScanMatcherResult* res = (match_this::ScanMatcherResult*) _smatcher->getMatches()[0];
+    _smatcher->clear();
+    if(_smatcher->getMatches().size() > 0)
+    {
+        ScanMatcherResult* res = (ScanMatcherResult*) _smatcher->getMatches()[0];
+        Vector3f tsf = res->_transformation;
+        float score = res->matchingScore();
 
-    Isometry2f inner;
-    inner = Rotation2Df(res->_transformation.z());
-    inner.translation() = Vector2f(res->_transformation.x(), res->_transformation.y());
+        Isometry2f inner;
+        inner = Rotation2Df(tsf.z());
+        inner.translation() = Vector2f(tsf.x(), tsf.y());
 
-    result = SE2(inner.cast<double>());
-    return res->matchingScore();
+        result = SE2(inner.cast<double>());
+        _smatcher->clearMatchResults();
+        return score;
+    }
+    else
+    {
+        cout << "no match" << endl;
+        result = v1->estimate().toIsometry().inverse() * v2->estimate().toIsometry();
+
+        _smatcher->clearMatchResults();
+        return 0;
+    }
+
+
+}
+
+
+GraphMatcher::GraphMatcher() {;}
+
+
+GraphMatcher::GraphMatcher(NodeMatcher* m)
+{
+    if(m)
+    {
+        this->_matcher = m;
+    }
 }
 
 

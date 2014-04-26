@@ -34,43 +34,42 @@ VoronoiDiagram::~VoronoiDiagram()
 
 void VoronoiDiagram::checkQueue()
 {
-    cout << "CHECKING QUEUE SIZE: " << _vQueue->size() << endl;
-    for(VertexMap::const_iterator it = _vMap.begin(); it != _vMap.end(); ++it)
-    {
-        VoronoiVertex* v = it->second;
-        _vQueue->push(v);
-    }
-    VoronoiQueue tmp = *_vQueue;
-    while(!tmp.empty())
-    {
-        VoronoiVertex* v = tmp.top();
-        tmp.pop();
+//    cout << "CHECKING QUEUE SIZE: " << _vQueue->size() << endl;
+//    for(VertexMap::const_iterator it = _vMap.begin(); it != _vMap.end(); ++it)
+//    {
+//        VoronoiVertex* v = it->second;
+//        _vQueue->push(v);
+//    }
+//    VoronoiQueue tmp = *_vQueue;
+//    while(!tmp.empty())
+//    {
+//        VoronoiVertex* v = tmp.top();
+//        tmp.pop();
 
-        cout << v->distance() << "; " << v->position().x() << ", " << v->position().y() << endl;
-    }
+//        cout << v->distance() << "; " << v->position().x() << ", " << v->position().y() << endl;
+//    }
 }
 
 
 void VoronoiDiagram::checkStats()
 {
-    int visited_counter = 0;
-    int merged_counter = 0;
-    for(VertexMap::const_iterator it = _vMap.begin(); it != _vMap.end(); ++it)
-    {
-        VoronoiVertex* v = it->second;
-        if(v->visited())
-        {
-            visited_counter++;
-        }
-        if(v->merged())
-        {
-            merged_counter++;
-        }
-    }
-    cout << "VMAP VERTICES: " << _vMap.size() << endl;
-    cout << "CANDIDATES VERTICES: " << _candidates.size() << endl;
-    cout << "TOTAL VISITED: " << visited_counter << endl;
-    cout << "TOTAL MERGED: " << merged_counter << endl;
+//    int visited_counter = 0;
+//    int merged_counter = 0;
+//    for(VertexMap::const_iterator it = _vMap.begin(); it != _vMap.end(); ++it)
+//    {
+//        VoronoiVertex* v = it->second;
+//        if(v->visited())
+//        {
+//            visited_counter++;
+//        }
+//        if(v->merged())
+//        {
+//            merged_counter++;
+//        }
+//    }
+//    cout << "VMAP VERTICES: " << _vMap.size() << endl;
+//    cout << "TOTAL VISITED: " << visited_counter << endl;
+//    cout << "TOTAL MERGED: " << merged_counter << endl;
 }
 
 
@@ -98,9 +97,9 @@ void VoronoiDiagram::morphThinning(cv::Mat &src, cv::Mat &dst, bool binarize, uc
     do
     {
         n_deleted = 0;
-        for( int iter = 0; iter < 2; iter++)
+        for(int iter = 0; iter < 2; iter++)
         {
-            for( int y = 1; y < bin_img.rows - 1; y++)
+            for(int y = 1; y < bin_img.rows - 1; y++)
             {
                 /* Image patch:
                 * p9 p2 p3
@@ -405,11 +404,10 @@ void VoronoiDiagram::graphExtraction(cv::Mat& skeleton, vector<cv::Point2f>& nod
 }
 
 
-void VoronoiDiagram::findNeighborNodes( int src_node_idx, int x, int y, cv::Mat &mask, cv::Mat &index_mat,
-                                        std::vector<cv::Point2f> &nodes,
-                                        std::vector< std::vector<int> > &edges )
+void VoronoiDiagram::findNeighborNodes(int src_node_idx, int x, int y, cv::Mat &mask, cv::Mat &index_mat,
+                                       vector<cv::Point2f> &nodes, vector< vector<int> > &edges)
 {
-    if( !mask.at<uchar>(y,x) )
+    if(!mask.at<uchar>(y,x))
         return;
 
     mask.at<uchar>(y,x) = 0;
@@ -444,9 +442,11 @@ void VoronoiDiagram::findNeighborNodes( int src_node_idx, int x, int y, cv::Mat 
         }
     }
 
-    for( int tx = std::max<int>(0, x - 1); tx <= std::min<int>(mask.cols, x + 1); tx++)
-        for( int ty = std::max<int>(0, y - 1); ty <= std::min<int>(mask.rows, y + 1); ty++)
-            if( (tx != x || ty != y ) && mask.at<uchar>(ty,tx))
+    for(int tx = std::max<int>(0, x - 1); tx <= std::min<int>(mask.cols, x + 1); tx++)
+    {
+        for(int ty = std::max<int>(0, y - 1); ty <= std::min<int>(mask.rows, y + 1); ty++)
+        {
+            if((tx != x || ty != y ) && mask.at<uchar>(ty,tx))
             {
                 //         if( neighbor_node )
                 //         {
@@ -456,6 +456,8 @@ void VoronoiDiagram::findNeighborNodes( int src_node_idx, int x, int y, cv::Mat 
                 //         else
                 findNeighborNodes(src_node_idx, tx, ty, mask, index_mat, nodes, edges);
             }
+        }
+    }
 }
 
 
@@ -544,7 +546,7 @@ void VoronoiDiagram::voronoiExtraction()
                             //                            }
                             //                        }
                             _voro->at<uchar>(r, c) = 255;
-                            _vMap.insert(make_pair(current->position(), current));
+//                            _vMap.insert(make_pair(current->position(), current));
                         }
 
                         /*BAD VORONOI TO WORK ON, GOOD RECONSTRUCTED MAP*/
@@ -671,6 +673,72 @@ void VoronoiDiagram::init(const cv::Mat& img_)
         }
     }
 }
+
+
+void VoronoiDiagram::save2g2o(ostream& os, bool sparse)
+{
+    // Go for the denser version of the graph (no voronoi graph)
+    if(!sparse)
+    {
+        this->denseGraphExtraction();
+    }
+    for(VertexMap::iterator it = _vMap.begin(); it != _vMap.end(); it++)
+    {
+        VoronoiVertex* v = it->second;
+        this->saveVertex(os, v);
+    }
+
+    for(EdgeSet::iterator it = _edges.begin(); it != _edges.end(); it++)
+    {
+        VoronoiEdge* e = *it;
+        this->saveEdge(os, e);
+    }
+}
+
+
+bool VoronoiDiagram::saveEdge(std::ostream& os, VoronoiEdge* e)
+{
+    if(e)
+    {
+        os << "EDGE_SE2 ";
+        e->write(os);
+        os << endl;
+        return os.good();
+    }
+    return false;
+}
+
+
+bool VoronoiDiagram::saveData(ostream &os, VoronoiData* d)
+{
+    if(d)
+    {
+        os << "ROBOTLASER1 ";
+        d->write(os);
+        return os.good();
+    }
+    return false;
+}
+
+
+bool VoronoiDiagram::saveVertex(ostream& os, VoronoiVertex* v)
+{
+    if(v)
+    {
+        os << "VERTEX_SE2 ";
+        v->write(os);
+        os << endl;
+        if(v->data())
+        {
+            saveData(os, v->data());
+        }
+        return os.good();
+    }
+    return false;
+}
+
+
+void VoronoiDiagram::denseGraphExtraction(){}
 
 
 void VoronoiDiagram::loadPGM()
