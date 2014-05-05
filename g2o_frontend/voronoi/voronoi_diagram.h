@@ -19,8 +19,13 @@ class VoronoiDiagram
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    VoronoiDiagram(const cv::Mat& input, int);
+    VoronoiDiagram(const cv::Mat& input, const int& vres, const float& _mapResolution= 0.05);
     ~VoronoiDiagram();
+
+    bool addVertex(VoronoiVertex* v);
+    bool addEdge(VoronoiEdge* e);
+
+    void createObservations();
 
     void checkQueue();
     void checkStats();
@@ -35,12 +40,15 @@ public:
      * @brief Provides a graph consisting of voronoi vertices.
      *        Denser than a standard Voronoi Graph.
      */
+    void initialGraphExtraction();
     void denseGraphExtraction();
+
     void save2g2o(std::ostream& os, bool sparse = true);
     bool saveEdge(std::ostream& os, VoronoiEdge* e);
     bool saveData(std::ostream& os, VoronoiData* d);
     bool saveVertex(std::ostream& os, VoronoiVertex* v);
 
+    void skeleton2vmap();
 
     /**
      * @brief Simple thinning algorithm
@@ -56,7 +64,7 @@ public:
      * T. Y. Zhang and C. Y. Suen
      * Communications of the ACM March 1984 Volume 27 Number 3
      */
-    void morphThinning(cv::Mat &src, cv::Mat &dst, bool binarize = true, uchar thresh = 0);
+    void morphThinning(bool binarize = true, uchar thresh = 0);
 
 
     /**
@@ -69,9 +77,10 @@ public:
      * @param find_leafs true if you want to extract also the leaf nodes, defaults to true
      * @param min_dist minimum distance between nodes, it should be >= 1, default to 1
      */
-    void graphExtraction(cv::Mat &skeleton, std::vector<cv::Point2f> &nodes,
+    void graphExtraction(std::vector<cv::Point2f> &nodes,
                          std::vector< std::vector<int> > &edges,
                          bool find_leafs = true, int min_dist = 1);
+
 
     void init(const cv::Mat& img_);
     void loadPGM();
@@ -80,14 +89,20 @@ public:
     static void findNeighborNodes(int src_node_idx, int x, int y, cv::Mat &mask, cv::Mat &index_mat,
                                   std::vector<cv::Point2f> &nodes, std::vector< std::vector<int> > &edges);
 
+    EdgeSet vertexEdges(VoronoiVertex* v);
     int _squaredResolution;
+    float _mapResolution;
+
     int _rows, _cols;
 
-    VertexMap _vMap;
+    VertexMap _vertices;
+    VertexMap _candidates;
     EdgeSet _edges;
 
     Eigen::MatrixXf _drawableDistmap;
 
+    cv::Mat _map;
+    cv::Mat _skeleton;
     cv::Mat* _voro;
     cv::Mat* _graph;
 

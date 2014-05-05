@@ -85,12 +85,5 @@ int main()
 
         optimizer.clear();
     }
-
-    cout << "SEE YA" << endl;
-
-    Factory::destroy();
-    OptimizationAlgorithmFactory::destroy();
-    HyperGraphActionLibrary::destroy();
-
     return 0;
 }

@@ -9,7 +9,7 @@
 #include "g2o/core/block_solver.h"
 #include "g2o/core/factory.h"
 #include "g2o/core/optimization_algorithm_factory.h"
-#include "g2o/core/optimization_algorithm_gauss_newton.h"
+#include "g2o/core/optimization_algorithm_levenberg.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 
 #include "graph_matcher.h"
@@ -46,7 +46,7 @@ int main(int argc, char** argv)
     SlamLinearSolver* linearSolver1 = new SlamLinearSolver();
     linearSolver1->setBlockOrdering(false);
     SlamBlockSolver* blockSolver1 = new SlamBlockSolver(linearSolver1);
-    OptimizationAlgorithmGaussNewton* solver1 = new OptimizationAlgorithmGaussNewton(blockSolver1);
+    OptimizationAlgorithmLevenberg* solver1 = new OptimizationAlgorithmLevenberg(blockSolver1);
     input1.setAlgorithm(solver1);
     input1.load(ref_filename);
 
@@ -54,7 +54,7 @@ int main(int argc, char** argv)
     SlamLinearSolver* linearSolver2 = new SlamLinearSolver();
     linearSolver2->setBlockOrdering(false);
     SlamBlockSolver* blockSolver2 = new SlamBlockSolver(linearSolver2);
-    OptimizationAlgorithmGaussNewton* solver2 = new OptimizationAlgorithmGaussNewton(blockSolver2);
+    OptimizationAlgorithmLevenberg* solver2 = new OptimizationAlgorithmLevenberg(blockSolver2);
     input2.setAlgorithm(solver2);
     input2.load(curr_filename);
 
@@ -62,7 +62,7 @@ int main(int argc, char** argv)
     SlamLinearSolver* linearSolver3 = new SlamLinearSolver();
     linearSolver2->setBlockOrdering(false);
     SlamBlockSolver* blockSolver3 = new SlamBlockSolver(linearSolver3);
-    OptimizationAlgorithmGaussNewton* solver3 = new OptimizationAlgorithmGaussNewton(blockSolver3);
+    OptimizationAlgorithmLevenberg* solver3 = new OptimizationAlgorithmLevenberg(blockSolver3);
     output.setAlgorithm(solver3);
 
     float resolution = 0.03;
@@ -70,13 +70,12 @@ int main(int argc, char** argv)
     float radius = 100;
     CorrelativeMatcher* cm = new CorrelativeMatcher(resolution, radius, kernelMaxValue, kernelMaxValue);
 
-    RealNodeMatcher* rm = new RealNodeMatcher(cm, 250);
+    const float maxScore = 100; // It was 250
+    RealNodeMatcher* rm = new RealNodeMatcher(cm, maxScore);
     GraphMatcher* gm = new GraphMatcher(rm);
 
     SparseOptimizer::VertexIDMap ref_vertices;
     SparseOptimizer::VertexIDMap curr_vertices;
-
-
     for(SparseOptimizer::VertexIDMap::iterator it = input1.vertices().begin(); it != input1.vertices().end(); it++)
     {
         VertexSE2* v = dynamic_cast<VertexSE2*>(it->second);
@@ -170,17 +169,67 @@ int main(int argc, char** argv)
     }
 
     VertexSE2* first = dynamic_cast<VertexSE2*>(curr_vertices.find(offset)->second);
-
     gm->match(&ref_vertices, first, 5.0);
-//    EdgeSet matches = gm->results();
-//    for(EdgeSet::iterator it = matches.begin(); it != matches.end(); it++)
-//    {
-//        EdgeSE2* e = *it;
 
-//        output.addEdge(e);
-//    }
+    EdgeSet res=gm->results();
+    int cnt = 0;
+    for (EdgeSet::iterator it=res.begin(); it!=res.end(); it++)
+    {
+        output.addEdge(*it);
+        if(cnt%5 == 0)
+        {
+            ostringstream name;
+            name << "out-" << cnt << ".g2o";
+            output.save(name.str().c_str());
+        }
+        cnt++;
+    }
 
-    cout << "Finished." << endl;
     output.save(out_filename);
+
+
+
+    VertexSE2* firstRobotPose = dynamic_cast<VertexSE2*>(output.vertex(0));
+    firstRobotPose->setFixed(true);
+    output.setVerbose(true);
+
+    output.initializeOptimization();
+    output.optimize(10);
+
+    ofstream os1("optimized_subset1.g2o");
+    ofstream os2("optimized_subset2.g2o");
+
+    OptimizableGraph::VertexSet vset1, vset2;
+    for(OptimizableGraph::VertexIDMap::const_iterator it = output.vertices().begin(); it != output.vertices().end(); it++)
+    {
+        VertexSE2* v = (VertexSE2*) it->second;
+        if(v->id() < offset)
+        {
+            vset1.insert(v);
+        }
+        else
+        {
+            v->setId(v->id()-offset);
+            vset2.insert(v);
+        }
+    }
+
+    OptimizableGraph::EdgeSet eset1, eset2;
+    for(SparseOptimizer::EdgeSet::iterator it = output.edges().begin(); it != output.edges().end(); it++)
+    {
+        EdgeSE2* e = dynamic_cast<EdgeSE2*>(*it);
+        if(e->vertex(0)->id() < offset && e->vertex(1)->id() < offset)
+        {
+            eset1.insert(e);
+        }
+        else if(e->vertex(0)->id() >= offset && e->vertex(1)->id() >= offset)
+        {
+            eset2.insert(e);
+        }
+    }
+
+    output.saveSubset(os1, vset1);
+    output.saveSubset(os2, vset2);
+
     return 0;
 }

@@ -8,7 +8,7 @@ using namespace Eigen;
 
 VoronoiEdge::VoronoiEdge()
 {
-    _to = 0;
+    _transform.setIdentity();
 }
 
 
@@ -16,6 +16,7 @@ VoronoiEdge::VoronoiEdge(VoronoiVertex* from_, VoronoiVertex* to_)
 {
     _from = from_;
     _to = to_;
+    _transform.setIdentity();
 }
 
 

@@ -1,8 +1,8 @@
 #ifndef GRIDMAP_HH
 #define GRIDMAP_HH
 
-#include <eigen3/Eigen/Core>
-#include <eigen3/Eigen/Geometry>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <iostream>
 #include "../utils/array_allocator.h"
 
@@ -11,7 +11,7 @@ Supports copy constuction, assignment, resize, and indicidual cell access.*/
 template <class T>
 struct _GridMap
 {
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   typedef T CellType;
 

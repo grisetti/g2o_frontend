@@ -50,6 +50,7 @@ int main()
 
     cout << "Trajectories size: " << gs.trajectories().size() << endl;
 
+    int offset = samples + 10000;
     for(size_t k = 0; k < gs.trajectories().size(); ++k)
     {
         const SimGraph& traj = gs.trajectories()[k];
@@ -63,7 +64,7 @@ int main()
             optimizer.addVertex(robot);
 
             VertexSE2* copy = new VertexSE2;
-            int new_id = pose.id + k * samples;
+            int new_id = pose.id + k * offset;
             copy->setId(new_id);
             copy->setEstimate(transform);
             merged.addVertex(copy);
@@ -82,8 +83,8 @@ int main()
             optimizer.addEdge(odometry);
 
             EdgeSE2* e1 = new EdgeSE2;
-            int new_from_id = edge->from_id + k * samples;
-            int new_to_id = edge->to_id + k * samples;
+            int new_from_id = edge->from_id + k * offset;
+            int new_to_id = edge->to_id + k * offset;
             e1->vertices()[0] = merged.vertex(new_from_id);
             e1->vertices()[1] = merged.vertex(new_to_id);
             e1->setMeasurement(edge->noisy_transform);
@@ -117,7 +118,7 @@ int main()
         SimEdge* simClosure = *cit;
 
         EdgeSE2* closure = new EdgeSE2;
-        int new_from_id = simClosure->from_id + samples;
+        int new_from_id = simClosure->from_id + offset;
         closure->vertices()[0] = merged.vertex(new_from_id);
         closure->vertices()[1] = merged.vertex(simClosure->to_id);
         closure->setMeasurement(simClosure->real_transform);

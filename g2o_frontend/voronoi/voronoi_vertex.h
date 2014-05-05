@@ -1,6 +1,7 @@
 #ifndef VORONOI_VERTEX_H
 #define VORONOI_VERTEX_H
 
+#include <ctime>
 #include <deque>
 #include <iostream>
 #include <map>
@@ -11,15 +12,55 @@
 #include "voronoi_edge.h"
 
 
+
 class VoronoiData
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+    VoronoiData()
+    {
+        _sensorPose.setIdentity();
+    }
+
+    inline void setPose(const Eigen::Isometry2d& sp) { _sensorPose = sp; }
+    virtual bool write(std::ostream& os) = 0;
+
+    Eigen::Isometry2d _sensorPose;
+    std::string _tag;
+};
+
+
+class VoronoiLaser : public VoronoiData
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    VoronoiLaser();
+
     typedef std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d> > Point2DVector;
     typedef std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > Vector2fVector;
 
-    bool write(std::ostream& os);
+    inline const std::vector<double>& ranges() const { return _ranges;}
+    inline void setRanges(const std::vector<double>& ranges) { _ranges = ranges; }
+
+    virtual bool write(std::ostream& os);
+
+    inline double& maxRange() { return _maxRange; }
+    inline double& angularStep() { return _angularStep; }
+    inline double& firstBeamAngle() { return _firstBeamAngle; }
+    inline double& fov() { return _fov; }
+
+protected:
+    std::vector<double> _ranges;
+
+    int _type;
+    double _firstBeamAngle;
+    double _fov;
+    double _angularStep;
+    double _accuracy;
+    int _remissionMode;
+    double _maxRange;
 };
 
 
@@ -29,8 +70,6 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     VoronoiVertex();
-    VoronoiVertex(double& distance, const Eigen::Vector2i& position_);
-    VoronoiVertex(const Eigen::Vector2i& par_, const Eigen::Vector2i& pos_, const double& dis_, const int& val_);
 
     ~VoronoiVertex();
 
@@ -86,12 +125,18 @@ public:
 
     bool write(std::ostream& os);
 
+    inline void setData(VoronoiData* d) { _data = d; }
     inline VoronoiData* data() { return _data; }
+
+    inline void setGraphPose(const Eigen::Vector3d& gp) { _graphPose = gp; }
+    inline Eigen::Vector3d& graphPose() { return _graphPose; }
+    inline const Eigen::Vector3d& graphPose() const { return _graphPose; }
 
 protected:
     Eigen::Vector2i _nearest;
     Eigen::Vector2i _parent;
     Eigen::Vector2i _position;
+    Eigen::Vector3d _graphPose;
 
     EdgeSet _edgeSet;
 
@@ -166,6 +211,16 @@ struct Comparator
         {
             return false;
         }
+    }
+};
+
+
+struct IDCompare
+{
+    inline bool operator() (const VoronoiVertex* lhs, const VoronoiVertex* rhs) const
+    {
+        if(lhs->id() < rhs->id()) return true;
+        else return false;
     }
 };
 

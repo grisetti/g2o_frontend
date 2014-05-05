@@ -17,7 +17,9 @@ float IdealNodeMatcher::match(SE2& result, VertexSE2* v1, VertexSE2* v2)
 {
     EdgeSE2* e = findEdge(v1,v2);
     if(!e)
-        return 0;
+    {
+        return 1e9;
+    }
 
     SE2 guess = v1->estimate().inverse()*v2->estimate();
     SE2 delta = e->measurement().inverse()*guess;
@@ -29,9 +31,9 @@ float IdealNodeMatcher::match(SE2& result, VertexSE2* v1, VertexSE2* v2)
     double diff = vdelta.transpose()*scale*vdelta;
     double epsilon = 1;
     if(diff > epsilon)
-        return 0;
+        return 1e9;
     result = e->measurement();
-    return 1;
+    return 0.01;
 }
 
 
@@ -54,12 +56,11 @@ RealNodeMatcher::RealNodeMatcher(ScanMatcher* sm, const float& max)
 }
 
 
-//Lo scan matcher non trova un cavolo o sono io che non gli passo un cavolo?
 float RealNodeMatcher::match(SE2& result, VertexSE2 *v1, VertexSE2 *v2)
 {
-    // the scan matcher should be given also other parameters (angular res and region size)
     _smatcher->match(v1, v2, _mscore);
     _smatcher->clear();
+
     if(_smatcher->getMatches().size() > 0)
     {
         ScanMatcherResult* res = (ScanMatcherResult*) _smatcher->getMatches()[0];
@@ -82,8 +83,6 @@ float RealNodeMatcher::match(SE2& result, VertexSE2 *v1, VertexSE2 *v2)
         _smatcher->clearMatchResults();
         return 0;
     }
-
-
 }
 
 
@@ -134,16 +133,18 @@ void GraphMatcher::match(OptimizableGraph::VertexIDMap* ref, VertexSE2* first, d
     Information& finfo = _currentInfo[first];
     finfo._parent = first;
 
-    while(!queue.empty()) {
+    while(!queue.empty())
+    {
         VertexSE2* current = queue.front();
-        //cerr << current->id() << endl;
         Information& cinfo = _currentInfo[current];
         queue.pop_front();
 
         // put all bloody childs in the queue
-        for(OptimizableGraph::EdgeSet::iterator it = current->edges().begin(); it!=current->edges().end(); it++) {
+        for(OptimizableGraph::EdgeSet::iterator it = current->edges().begin(); it!=current->edges().end(); it++)
+        {
             EdgeSE2* e = (EdgeSE2*)(*it);
-            for(uint i = 0; i < e->vertices().size(); i++) {
+            for(uint i = 0; i < e->vertices().size(); i++)
+            {
                 VertexSE2* other = (VertexSE2*) e->vertex(i);
                 if(other == current)
                     continue;
@@ -155,8 +156,8 @@ void GraphMatcher::match(OptimizableGraph::VertexIDMap* ref, VertexSE2* first, d
             }
         }
 
-        // reassign the trasforms if not the first node
-        if(cinfo._parent !=current) {
+        // reassign the transforms if not the first node
+        if(cinfo._parent != current) {
             Eigen::Isometry2d cT = cinfo._transform;
             VertexSE2* parent=cinfo._parent;
 
@@ -167,21 +168,25 @@ void GraphMatcher::match(OptimizableGraph::VertexIDMap* ref, VertexSE2* first, d
             current->setEstimate(parent->estimate()*SE2(dt));
 
             NodeSet ref_neighbors = this->findNeighbors(ref, current->estimate().toIsometry(), epsilon);
-            double bestScore = 0;
+            float bestScore = 1e9;
             SE2 bestTransform;
             VertexSE2* bestNeighbor = 0;
-            for(NodeSet::iterator it = ref_neighbors.begin(); it != ref_neighbors.end(); it++) {
+            for(NodeSet::iterator it = ref_neighbors.begin(); it != ref_neighbors.end(); it++)
+            {
                 VertexSE2* ref_neighbor = *it;
                 SE2 transform;
                 float score = _matcher->match(transform, current, ref_neighbor);
-                if(score>bestScore) {
+                if(score < bestScore)
+                {
                     bestScore = score;
                     bestTransform = transform;
                     bestNeighbor = ref_neighbor;
                 }
             }
-            if(bestScore>0) {
+            if(bestScore < 1)
+            {
                 EdgeSE2* newEdge = new EdgeSE2;
+                cerr << "bestScore: " << bestScore <<  " bestTransform: " << bestTransform.toVector().transpose() << endl;
                 newEdge->setVertex(0,current);
                 newEdge->setVertex(1,bestNeighbor);
                 newEdge->setMeasurement(bestTransform);
@@ -194,93 +199,3 @@ void GraphMatcher::match(OptimizableGraph::VertexIDMap* ref, VertexSE2* first, d
         }
     }
 }
-
-/*
-void GraphMatcher::match(OptimizableGraph::VertexIDMap* ref, OptimizableGraph::VertexIDMap* curr, VertexSE2* first, double epsilon)
-{
-    // Setting the parent of the first node to itself
-    if(this->_currentInfo.find(first) != this->_currentInfo.end())
-    {
-        Information& first_info = this->_currentInfo.find(first)->second;
-        first_info._parent = first;
-    }
-    else
-    {
-        cout << "Could not find first node, exiting" << endl;
-        return;
-    }
-
-    deque<VertexSE2*> queue;
-    queue.push_back(first);
-
-    while(!queue.empty())
-    {
-        VertexSE2* node = queue.front();
-        queue.pop_front();
-    cerr << "id: " << node->id() << endl;
-
-        // Save the node isometry. it will be overwritten
-        Isometry2d backup_transform = node->estimate().toIsometry();
-
-        if(node != first)
-        {
-            Information node_info;
-            if(this->_currentInfo.find(node) != this->_currentInfo.end()) {
-                node_info = this->_currentInfo.find(node)->second;
-            }
-            else {
-                cout << "Element not found, skipping" << endl;
-            }
-
-            if(node_info._parent) {
-                // Move the node onto the other graph
-                Information parent_info = this->_currentInfo.find(node_info._parent)->second;
-                Isometry2d parent_tranform = parent_info._transform;
-                Isometry2d current_transform = node_info._transform;
-
-                Isometry2d delta = parent_tranform.inverse() * current_transform;
-                node->setEstimate(parent_tranform * delta);
-            }
-            // Look for all the possible neighbors in the ref graph
-            NodeSet ref_neighbors = this->findNeighbors(ref, node->estimate().toIsometry(), epsilon);
-
-//            double bestScore = std::numeric_limits<double>::max();
-            double bestScore = 0;
-            SE2 bestTransform;
-        VertexSE2* bestNeighbor = 0;
-            for(NodeSet::iterator it = ref_neighbors.begin(); it != ref_neighbors.end(); it++) {
-                VertexSE2* ref_neigbor = *it;
-        SE2 transform;
-        float score = _matcher->match(transform, ref_neigbor, node);
-                if(score>bestScore) {
-                    bestScore = score;
-            bestTransform = transform;
-            bestNeighbor = ref_neigbor;
-                }
-            }
-        if (bestScore>0){
-          EdgeSE2* newEdge;
-          newEdge->setVertex(0,node);
-          newEdge->setVertex(1,bestNeighbor);
-          newEdge->setMeasurement(bestTransform);
-          Eigen::Matrix3d info=Eigen::Matrix3d::Identity()*1000;
-          newEdge->setInformation(info);
-          _results.insert(newEdge);
-        }
-        }
-
-        // Look for all the children of the initial node in its graph
-        NodeSet node_neighbors = this->findNeighbors(curr, backup_transform, epsilon);
-        for(NodeSet::iterator it = node_neighbors.begin(); it != node_neighbors.end(); it++) {
-            VertexSE2* curr_neighbor = *it;
-            if(this->_currentInfo.find(curr_neighbor) != this->_currentInfo.end()) {
-                Information& curr_neighbor_info = this->_currentInfo.find(curr_neighbor)->second;
-                if(!curr_neighbor_info._parent) {
-                    curr_neighbor_info._parent = node;
-                    queue.push_back(curr_neighbor);
-                }
-            }
-        }
-    }
-}
-*/

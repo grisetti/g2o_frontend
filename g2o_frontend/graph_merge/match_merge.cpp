@@ -52,6 +52,8 @@ int main(int argc, char** argv)
     GraphMatcher vm;
     IdealNodeMatcher* im = new IdealNodeMatcher;
 
+    int offset = samples + 10000;
+
     // Load the vertices in the graphs
     for(SparseOptimizer::VertexIDMap::iterator it = merged_vertices.begin(); it != merged_vertices.end(); it++)
     {
@@ -67,7 +69,7 @@ int main(int argc, char** argv)
         info._transform = copy->estimate().toIsometry();
         vm._currentInfo.insert(make_pair(copy, info));
 
-        if(v->id() < samples)
+        if(v->id() < offset)
         {
             ref_vertices.insert(make_pair(copy->id(), copy));
         }
@@ -93,7 +95,7 @@ int main(int argc, char** argv)
         newEdge->setInformation(e->information());
 
 
-        if(v0New->id() >= samples && v1New->id() < samples)
+        if(v0New->id() >= offset && v1New->id() < offset)
         {
             im->_eset.insert(newEdge);
         } else {
@@ -109,9 +111,9 @@ int main(int argc, char** argv)
 
     cout << "Ref_vert size: " << ref_vertices.size() << endl;
     cout << "Curr_vert size: " << curr_vertices.size() << endl;
-    VertexSE2* first = dynamic_cast<VertexSE2*>(curr_vertices.find(samples)->second);
+    VertexSE2* first = dynamic_cast<VertexSE2*>(curr_vertices.find(offset)->second);
     vm.match(&ref_vertices, first, 2.0);
-    
+
     EdgeSet matches = vm.results();
     for(EdgeSet::iterator it = matches.begin(); it != matches.end(); it++)
     {
@@ -124,7 +126,5 @@ int main(int argc, char** argv)
     output.save(result.str().c_str());
 
     cout << "Finished" << endl;
-
-
     return 0;
 }

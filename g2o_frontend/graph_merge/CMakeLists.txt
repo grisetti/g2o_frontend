@@ -14,7 +14,6 @@ INCLUDE(${QT_USE_FILE})
 #ADD_DEFINITIONS(${QT_DEFINITIONS})
 
 
-
 ADD_LIBRARY(graph_merging   SHARED
                             drawable.cpp        drawable.h
                             graph.cpp           graph.h
@@ -41,11 +40,6 @@ TARGET_LINK_LIBRARIES(graph_merging ${QGLVIEWER_LIBRARY} ${QT_QTXML_LIBRARY} ${Q
 #                                    ${G2O_TYPES_SLAM2D} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION}
 #                                    ${G2O_CORE_LIBRARY} ${G2O_OPENGL_HELPER_LIBRARY}   ${CSPARSE_LIBRARY}
 #)
-
-
-
-ADD_EXECUTABLE(transform_graph  transform_graph.cpp)
-TARGET_LINK_LIBRARIES(transform_graph   graph_merging)
 
 
 ADD_EXECUTABLE(graph_simulator_test     graph_simulator_test.cpp
@@ -97,3 +91,8 @@ TARGET_LINK_LIBRARIES(merge_real_graphs     graph_merging
                                             sensor_data_library
 )
 
+ADD_EXECUTABLE(transform_graph  transform_graph.cpp)
+TARGET_LINK_LIBRARIES(transform_graph   graph_merging)
+
+ADD_EXECUTABLE(compute_entropy  compute_entropy.cpp)
+TARGET_LINK_LIBRARIES(compute_entropy graph_merging opencv_core opencv_imgproc opencv_highgui)

@@ -90,7 +90,7 @@ void CorrelativeMatcher::match(OptimizableGraph::Vertex* ref, OptimizableGraph::
     else
     {
         cout << "SM: some data is missing" << endl;
-    };
+    }
 }
 
 
@@ -101,6 +101,7 @@ void CorrelativeMatcher::scanMatch(const Vector2fVector& points, const Vector3f&
     float dx = _scanGrid.resolution()*4;
     float dy = _scanGrid.resolution()*4;
     float dth = thetaRes *4;
+
     scanMatch(mresvec, points, lowerLeftF, upperRightF, thetaRes, maxScore, dx, dy, dth);
     if(mresvec.size())
     {
@@ -228,7 +229,10 @@ void CorrelativeMatcher::scanMatch(vector<CorrelativeMatcherResult*>& mresvec, c
                     {
                         Vector2i ip = *_ip+offset;
                         _ip++;
-                        idsum += _convolvedGrid.cell(ip);
+                        if(_convolvedGrid.isInside(ip))
+                        {
+                            idsum += _convolvedGrid.cell(ip);
+                        }
                     }
                     float dsum = (float)idsum * (float)ikscale;
                     dsum = k ? (dsum / (float) k) : maxScore+1;

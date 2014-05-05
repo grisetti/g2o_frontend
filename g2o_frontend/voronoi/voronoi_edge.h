@@ -25,9 +25,13 @@ public:
     inline VoronoiVertex* to() { return _to; }
     inline const VoronoiVertex* to() const { return _to; }
 
+    inline void setTransform(const Eigen::Isometry2d& tsf) { _transform = tsf; }
+    Eigen::Isometry2d& transform() { return _transform; }
+    const Eigen::Isometry2d& transform() const { return _transform; }
+
     bool write(std::ostream& os);
 
-private:
+protected:
     VoronoiVertex* _from;
     VoronoiVertex* _to;
     Eigen::Isometry2d _transform;
