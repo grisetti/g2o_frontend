@@ -11,7 +11,6 @@ using namespace Eigen;
 VoronoiDiagram::VoronoiDiagram(const cv::Mat &input, const int& vres, const float& _mapResolution)
     : _squaredResolution(vres), _mapResolution(_mapResolution)
 {
-    //    _distmap = 0;
     _vQueue = 0;
     _voro = 0;
 
@@ -19,13 +18,13 @@ VoronoiDiagram::VoronoiDiagram(const cv::Mat &input, const int& vres, const floa
     _dmap = 0;
 
     this->init(input);
+    this->newinit(input);
 }
 
 
 VoronoiDiagram::~VoronoiDiagram()
 {
     delete[] _dmap;
-    //    delete _distmap;
     delete _voro;
     delete _graph;
     delete _vQueue;
@@ -48,58 +47,11 @@ bool VoronoiDiagram::addVertex(VoronoiVertex* v)
 }
 
 
-void VoronoiDiagram::checkQueue()
-{
-    //    cout << "CHECKING QUEUE SIZE: " << _vQueue->size() << endl;
-    //    for(VertexMap::const_iterator it = _vMap.begin(); it != _vMap.end(); ++it)
-    //    {
-    //        VoronoiVertex* v = it->second;
-    //        _vQueue->push(v);
-    //    }
-    //    VoronoiQueue tmp = *_vQueue;
-    //    while(!tmp.empty())
-    //    {
-    //        VoronoiVertex* v = tmp.top();
-    //        tmp.pop();
-
-    //        cout << v->distance() << "; " << v->position().x() << ", " << v->position().y() << endl;
-    //    }
-}
-
-
-void VoronoiDiagram::checkStats()
-{
-    int visited_counter = 0;
-    int merged_counter = 0;
-    int pushed_counter = 0;
-    for(VertexMap::const_iterator it = _vertices.begin(); it != _vertices.end(); ++it)
-    {
-        VoronoiVertex* v = it->second;
-        if(v->visited())
-        {
-            visited_counter++;
-        }
-        if(v->merged())
-        {
-            merged_counter++;
-        }
-        if(v->pushed())
-        {
-            pushed_counter++;
-        }
-    }
-    cout << "VMAP VERTICES: " << _vertices.size() << endl;
-    cout << "TOTAL VISITED: " << visited_counter << endl;
-    cout << "TOTAL MERGED: " << merged_counter << endl;
-    cout << "TOTAL PUSHED: " << pushed_counter << endl;
-}
-
-
-//void VoronoiDiagram::morphThinning(cv::Mat &src, cv::Mat &dst, bool binarize, uchar thresh)
 void VoronoiDiagram::morphThinning(bool binarize, uchar thresh)
 {
-    cv::Mat dilated_voro;
-    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(7, 7),cv::Point(3, 3));
+    cv::Mat dilated_voro = _voro->clone();
+//    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(7, 7),cv::Point(3, 3));
+    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3, 3),cv::Point(1, 1));
     cv::dilate(*_voro, dilated_voro, element);
 
     if(dilated_voro.depth() != cv::DataType<uchar>::type || dilated_voro.channels() != 1 || !dilated_voro.rows || !dilated_voro.cols)
@@ -489,8 +441,56 @@ void VoronoiDiagram::findNeighborNodes(int src_node_idx, int x, int y, cv::Mat &
 }
 
 
+void VoronoiDiagram::fillQueue()
+{
+    _vQueue = new VoronoiQueue;
+
+    const short int coords_x[8] = {-1, -1, -1,  0, 0,  1, 1, 1};
+    const short int coords_y[8] = {-1,  0,  1, -1, 1, -1, 0, 1};
+
+    for(int c = 0; c < _cols; ++c)
+    {
+        int cr = c * _rows;
+        for(int r = 0; r < _rows; ++r)
+        {
+            int k = r + cr;
+            VoronoiVertex* obstacle = &(_dmap[k]);
+            if(obstacle->value() != 0)
+            {
+                continue;
+            }
+            const int obstacle_x = obstacle->position().x();
+            const int obstacle_y = obstacle->position().y();
+
+            bool counter = false;
+            short int neighbors = 0;
+            for(short int i = 0; i < 8; ++i)
+            {
+                int neighbor_x = obstacle_x + coords_x[i];
+                int neighbor_y = obstacle_y + coords_y[i];
+
+                // If at least one of the neighbors is a free cell, put the current obstacle into the queue
+                int nk = neighbor_x + neighbor_y * _rows;
+                if((neighbor_x >= 0) && (neighbor_y >= 0) && (neighbor_x < _rows) && (neighbor_y < _cols) && (_dmap[nk].distance() != 0))
+                {
+                    counter = true;
+                    neighbors++;
+                }
+            }
+            if(counter && (neighbors < 6) && (neighbors > 0))
+            {
+                _vQueue->push(obstacle);
+                obstacle->setPushed();
+            }
+        }
+    }
+}
+
+
 void VoronoiDiagram::distmapExtraction()
 {
+    this->fillQueue();
+
     const short int coords_x[8] = {-1, -1, -1,  0, 0,  1, 1, 1};
     const short int coords_y[8] = {-1,  0,  1, -1, 1, -1, 0, 1};
 
@@ -499,9 +499,11 @@ void VoronoiDiagram::distmapExtraction()
         VoronoiVertex* current = _vQueue->top();
         _vQueue->pop();
 
+        // Current coordinates
         const int current_x = current->position().x();
         const int current_y = current->position().y();
 
+        // Iterate over the neighbors
         for(short int i = 0; i < 8; ++i)
         {
             int nx = current_x + coords_x[i];
@@ -514,6 +516,7 @@ void VoronoiDiagram::distmapExtraction()
                 VoronoiVertex* neighbor = &(_dmap[nk]);
                 Vector2i nc(nx, ny);
 
+                // If needed, update the neighbor's distance from the obstacle
                 double neighbor_to_current_parent_dist = (nc - current->parent()).squaredNorm();
                 if(neighbor_to_current_parent_dist < neighbor->distance())
                 {
@@ -565,52 +568,6 @@ void VoronoiDiagram::voronoiExtraction()
 }
 
 
-void VoronoiDiagram::fillQueue()
-{
-    _vQueue = new VoronoiQueue;
-
-    const short int coords_x[8] = {-1, -1, -1,  0, 0,  1, 1, 1};
-    const short int coords_y[8] = {-1,  0,  1, -1, 1, -1, 0, 1};
-
-    for(int c = 0; c < _cols; ++c)
-    {
-        int cr = c * _rows;
-        for(int r = 0; r < _rows; ++r)
-        {
-            int k = r + cr;
-            VoronoiVertex* obstacle = &(_dmap[k]);
-            if(obstacle->value() != 0)
-            {
-                continue;
-            }
-            const int obstacle_x = obstacle->position().x();
-            const int obstacle_y = obstacle->position().y();
-
-            bool counter = false;
-            short int neighbors = 0;
-            for(short int i = 0; i < 8; ++i)
-            {
-                int neighbor_x = obstacle_x + coords_x[i];
-                int neighbor_y = obstacle_y + coords_y[i];
-
-                // If at least one of the neighbors is a free cell, put the current obstacle into the queue
-                int nk = neighbor_x + neighbor_y * _rows;
-                if((neighbor_x >= 0) && (neighbor_y >= 0) && (neighbor_x < _rows) && (neighbor_y < _cols) && (_dmap[nk].distance() != 0))
-                {
-                    counter = true;
-                    neighbors++;
-                }
-            }
-            if(counter && (neighbors < 6) && (neighbors > 0))
-            {
-                _vQueue->push(obstacle);
-                obstacle->setPushed();
-            }
-        }
-    }
-}
-
-
 void VoronoiDiagram::distmap2image()
 {
     _drawableDistmap = MatrixXf::Zero(_cols, _rows);
@@ -621,7 +578,6 @@ void VoronoiDiagram::distmap2image()
         for(int r = 0; r < _rows; ++r)
         {
             int k = r + cr;
-            //            _drawableDistmap(x, y) = (*_distmap)(x, y).distance();
             _drawableDistmap(c, r) = _dmap[k].distance();
         }
     }
@@ -681,7 +637,7 @@ void VoronoiDiagram::skeleton2vmap()
         for(int r = 0; r < _skeleton.rows; r++)
         {
             int k = r + cr;
-            if(_voro->at<uchar>(r,c) == 255)
+            if(_skeleton.at<uchar>(r,c) == 255)
             {
                 VoronoiVertex* v = &_dmap[k];
                 this->addVertex(v);
@@ -691,156 +647,184 @@ void VoronoiDiagram::skeleton2vmap()
 }
 
 
-void VoronoiDiagram::initialGraphExtraction()
+void VoronoiDiagram::vmap2image()
 {
-    const short coords_x[8] = {-1, -1, -1,  0, 0,  1, 1, 1};
-    const short coords_y[8] = {-1,  0,  1, -1, 1, -1, 0, 1};
-
-    VoronoiQueue tmp;
-    bool firstVertex = true;
+    _prova = cv::Mat(_rows, _cols, CV_8UC1, cv::Scalar(0));
+    cout << "here we are" << endl;
     for(VertexMap::const_iterator it = _vertices.begin(); it != _vertices.end(); it++)
     {
-        VoronoiVertex* first = it->second;
-        if(firstVertex)
-        {
-            _candidates.insert(make_pair(first->position(), first));
-            first->setNearest(first->position());
-            firstVertex = false;
-        }
-        if(!first->visited())
-        {
-            first->setVisited();
-            tmp.push(first);
-        }
-        while(!tmp.empty())
-        {
-            VoronoiVertex* current = tmp.top();
-            tmp.pop();
-
-            const int cx = current->position().x();
-            const int cy = current->position().y();
-
-            for(short int i = 0; i < 8; ++i)
-            {
-                const int nx = cx + coords_x[i];
-                const int ny = cy + coords_y[i];
-
-                int nk = nx + ny * _rows;
-                if((nx >= 0) && (ny >= 0) && (nx < _rows) && (ny < _cols) && ((*_voro).at<uchar>(nx, ny) != 0) && (!_dmap[nk].visited()))
-                {
-                    VoronoiVertex* neighbor = &(_dmap[nk]);
-                    neighbor->setVisited();
-                    tmp.push(neighbor);
-
-                    neighbor->setNearest(neighbor->position());
-                    _candidates.insert(make_pair(neighbor->position(), neighbor));
-
-                    Vector2i nposition = current->nearest();
-                    VoronoiVertex* near = &_dmap[nposition.x() + nposition.y() * _rows];
-                    VoronoiEdge* e = new VoronoiEdge(near, neighbor);
-                    Vector2d cp(nposition.x(), nposition.y());
-                    Vector2d np(neighbor->position().x(), neighbor->position().y());
-                    Isometry2d currTsf = Isometry2d::Identity();
-                    currTsf.translation() = cp;
-                    Isometry2d neigTsf = Isometry2d::Identity();
-                    neigTsf.translation() = np;
-                    e->setTransform(currTsf.inverse() * neigTsf);
-                    _edges.insert(e);
-                }
-            }
-        }
+        VoronoiVertex* v = it->second;
+        _prova.at<uchar>(v->position().x(), v->position().y()) = 255;
     }
+    cv::imwrite("prova.pgm", _prova);
 }
 
 
 void VoronoiDiagram::denseGraphExtraction()
 {
+    _regions = new ComponentMap;
+
     const short coords_x[8] = {-1, -1, -1,  0, 0,  1, 1, 1};
     const short coords_y[8] = {-1,  0,  1, -1, 1, -1, 0, 1};
 
-    VoronoiQueue tmp;
-    bool firstVertex = true;
-    cout << "SIZE: " << _vertices.size() << endl;
-    for(VertexMap::const_iterator it = _vertices.begin(); it != _vertices.end(); it++)
+    VoronoiQueue vq;
+
+    int cnt = 0;
+    Component* fcomp = new Component;
+    fcomp->setId(cnt++);
+    bool first = true;
+    for(VertexMap::iterator it = _vertices.begin(); it != _vertices.end(); it++)
     {
-        VoronoiVertex* first = it->second;
-        if(firstVertex)
+        VoronoiVertex* v = it->second;
+        if(first)
         {
-            _candidates.insert(make_pair(first->position(), first));
-            first->setNearest(first->position());
-            firstVertex = false;
+            _candidates.insert(make_pair(v->position(), v));
+            vq.push(v);
+            first = false;
         }
-        if(!first->visited())
+
+        // first node of a disconnected component
+        if(!v->visited() && !first)
         {
-            first->setVisited();
-            tmp.push(first);
+            if(fcomp->vset()->size() > 0)
+            {
+                _regions->insert(make_pair(fcomp->id(), fcomp));
+            }
+
+            fcomp = new Component;
+            fcomp->setId(cnt++);
+
+            vq.push(v);
         }
-        while(!tmp.empty())
+        while(!vq.empty())
         {
-            VoronoiVertex* current = tmp.top();
-            tmp.pop();
+            VoronoiVertex* curr = vq.top();
+            vq.pop();
 
-            const int cx = current->position().x();
-            const int cy = current->position().y();
+            curr->setVisited();
 
-            for(short int i = 0; i < 8; ++i)
+            //Check neighbors
+            const int cx = curr->position().x();
+            const int cy = curr->position().y();
+
+            for(short int i = 0; i < 8; i++)
             {
                 const int nx = cx + coords_x[i];
                 const int ny = cy + coords_y[i];
 
-                int nk = nx + ny * _rows;
-                if((nx >= 0) && (ny >= 0) && (nx < _rows) && (ny < _cols) && ((*_voro).at<uchar>(nx, ny) != 0) && (!_dmap[nk].visited()))
+                int nk = nx + (ny *_rows);
+                if(nx > 0 && ny > 0 && nx < _rows && ny < _cols && _skeleton.at<uchar>(nx,ny) == 255 && !_dmap[nk].visited() && !_dmap[nk].merged())
                 {
                     VoronoiVertex* neighbor = &(_dmap[nk]);
-                    neighbor->setVisited();
-                    tmp.push(neighbor);
 
-                    double dist = (neighbor->position() - current->nearest()).squaredNorm();
-                    if(dist <= _squaredResolution)
+                    //Check distance stuff
+                    double dist = (neighbor->nearest() - curr->nearest()).squaredNorm();
+                    if(dist < _squaredResolution)
                     {
-                        neighbor->setNearest(current->nearest());
+                        neighbor->setNearest(curr->nearest());
+                        neighbor->setMerged();
                     }
                     else
                     {
                         neighbor->setNearest(neighbor->position());
+                        fcomp->add(neighbor);
+                        neighbor->setComponent(fcomp->id());
+
                         _candidates.insert(make_pair(neighbor->position(), neighbor));
 
-                        Vector2i nposition = current->nearest();
+                        Vector2i nposition = curr->nearest();
                         VoronoiVertex* near = &_dmap[nposition.x() + nposition.y() * _rows];
                         VoronoiEdge* e = new VoronoiEdge(near, neighbor);
-                        Vector2d cp(near->graphPose().x(), near->graphPose().y());
-                        Vector2d np(neighbor->graphPose().x(), neighbor->graphPose().y());
-                        Isometry2d currTsf = Isometry2d::Identity();
-                        currTsf.translation() = cp;
-                        Isometry2d neigTsf = Isometry2d::Identity();
-                        neigTsf.translation() = np;
-                        e->setTransform(currTsf.inverse() * neigTsf);
+                        e->setTransform(near->toIsometry().inverse() * neighbor->toIsometry());
                         _edges.insert(e);
-
-
-//                        Vector2i nposition = current->nearest();
-//                        VoronoiVertex* near = &_dmap[nposition.x() + nposition.y() * _rows];
-//                        VoronoiEdge* e = new VoronoiEdge(near, neighbor);
-//                        Vector2d cp(nposition.x(), nposition.y());
-//                        Vector2d np(neighbor->position().x(), neighbor->position().y());
-//                        Isometry2d currTsf = Isometry2d::Identity();
-//                        currTsf.translation() = cp;
-//                        Isometry2d neigTsf = Isometry2d::Identity();
-//                        neigTsf.translation() = np;
-//                        e->setTransform(currTsf.inverse() * neigTsf);
-//                        _edges.insert(e);
                     }
+                    vq.push(neighbor);
                 }
             }
         }
     }
+    if(_regions->size() > 1)
+    {
+        this->reconnect();
+    }
+}
+
+
+void VoronoiDiagram::reconnect()
+{
+    // Find the biggest component
+    Component* biggest = 0;
+    size_t bs = 0;
+    // Find the biggest component
+    for(ComponentMap::const_iterator it = _regions->begin(); it != _regions->end(); it++)
+    {
+        Component* cand = it->second;
+        if(cand->vset()->size() > bs)
+        {
+            bs = cand->vset()->size();
+            biggest = cand;
+        }
+    }
+
+    // Every other component must be merged with the biggest one
+    _regions->erase(biggest->id());
+    bool merged = true;
+    while(merged)
+    {
+        merged = false;
+        VertexSet* bset = biggest->vset();
+
+        double best = 1e9;
+        VoronoiVertex* b1 = 0;
+        VoronoiVertex* b2 = 0;
+        for(ComponentMap::const_iterator it = _regions->begin(); it != _regions->end(); it++)
+        {
+            Component* curr = it->second;
+            if(curr == biggest)
+            {
+                continue;
+            }
+            VertexSet* cset = curr->vset();
+            for(VertexSet::const_iterator fit = cset->begin(); fit != cset->end(); fit++)
+            {
+                VoronoiVertex* cand = *fit;
+                for(VertexSet::const_iterator bit = bset->begin(); bit != bset->end(); bit++)
+                {
+                    VoronoiVertex* ref = *bit;
+                    double dist = (ref->position() - cand->position()).squaredNorm();
+                    if(dist < best)
+                    {
+                        best = dist;
+                        b1 = ref;
+                        b2 = cand;
+                    }
+                }
+            }
+        }
+        if(b1 && b2)
+        {
+            VoronoiEdge* e = new VoronoiEdge(b1, b2);
+            _edges.insert(e);
+
+            Component* mergeable = (_regions->find(b2->component()))->second;
+            VertexSet* mergset = mergeable->vset();
+            for(VertexSet::const_iterator it = mergset->begin(); it != mergset->end(); it++)
+            {
+                biggest->vset()->insert(*it);
+            }
+            _regions->erase(mergeable->id());
+            merged = true;
+        }
+    }
+    biggest->setId(0);
+    _regions->insert(make_pair(biggest->id(), biggest));
 }
 
 
 EdgeSet VoronoiDiagram::vertexEdges(VoronoiVertex* v)
 {
     EdgeSet returned;
-    for(EdgeSet::iterator it=_edges.begin(); it!=_edges.end(); it++)
+    for(EdgeSet::iterator it = _edges.begin(); it != _edges.end(); it++)
     {
         VoronoiEdge* e = *it;
         if(e->from() == v || e->to() == v)
@@ -854,8 +838,11 @@ EdgeSet VoronoiDiagram::vertexEdges(VoronoiVertex* v)
 
 void VoronoiDiagram::createObservations()
 {
-    int cnt = 0;
-    for(VertexMap::const_iterator it = _vertices.begin(); it != _vertices.end(); it++)
+    float sx = 0;
+    float sy = 0;
+    float cth = 0;
+    float sth = 0;
+    for(VertexMap::const_iterator it = _candidates.begin(); it != _candidates.end(); it++)
     {
         //I have the vertex and a laser
         VoronoiVertex* v = it->second;
@@ -872,17 +859,18 @@ void VoronoiDiagram::createObservations()
         float incr = (float) l->angularStep();
         float firstBeamAngle = (float) l->firstBeamAngle();
         float fov = (float) l->fov();
+
         for(float th = firstBeamAngle; th < fov; th+= incr)
         {
-            float sx = 0;
-            float sy = 0;
+            sx = 0;
+            sy = 0;
 
-            float cth = cos(th);
-            float sth = sin(th);
+            cth = cos(th);
+            sth = sin(th);
 
             // Step increment along line direction
-            float dx = cth; // It was _mapResolution * cth;
-            float dy = sth; // It was _mapResolution * sth;
+            float dx = _mapResolution*cth; // It was cth;
+            float dy = _mapResolution*sth; // It was sth;
 
             // Distance from the initial vertex v
             double distance = 0;
@@ -905,21 +893,18 @@ void VoronoiDiagram::createObservations()
             ranges.push_back(distance);
         }
         Isometry2d lpose = Isometry2d::Identity();
-//        lpose.translation() = Vector2d(v->position().x(), v->position().y());
         lpose.translation() = Vector2d(v->graphPose().x(), v->graphPose().y());
+        lpose.linear() = Rotation2Dd(v->graphPose().z()).toRotationMatrix();
         l->setPose(lpose);
         l->setRanges(ranges);
 
         v->setData(l);
-        cnt++;
     }
-    cerr << cnt << " sz: " << _vertices.size() << endl;
 }
 
 
 void VoronoiDiagram::save2g2o(ostream& os, bool sparse)
 {
-    // Go for the denser version of the graph (no voronoi graph)
     if(!sparse)
     {
         this->denseGraphExtraction();
@@ -935,8 +920,7 @@ void VoronoiDiagram::save2g2o(ostream& os, bool sparse)
         EdgeSet myEdges = vertexEdges(v);
         if(myEdges.size() > 1)
         {
-            v->setId(id);
-            id++;
+            v->setId(id++);
             savedVertices.insert(make_pair(v->id(), v));
         }
     }
@@ -948,7 +932,7 @@ void VoronoiDiagram::save2g2o(ostream& os, bool sparse)
         for(set<VoronoiEdge*>::iterator it2 = ves.begin(); it2 != ves.end(); it2++)
         {
             VoronoiEdge* e = *it2;
-            if(v == e->from() && savedVertices.find(e->to()->id()) != savedVertices.end())
+            if((savedVertices.find(e->to()->id()) != savedVertices.end()) && (savedVertices.find(e->from()->id()) != savedVertices.end()))
             {
                 savedEdges.insert(*it2);
             }
@@ -1004,7 +988,8 @@ bool VoronoiDiagram::saveVertex(ostream& os, VoronoiVertex* v)
         if(v->data())
         {
             saveData(os, v->data());
-            os << "VERTEX_TAG " << v->id() << " 0 0 0 0 0 0 0.0 fava 0.0 " << endl;
+            Vector3d vp = v->graphPose();
+            os << "VERTEX_TAG " << v->id() << " 0 0 0 " << vp.x() << " " << vp.y() << " " << vp.z() << " 0.0 hostname 0.0 " << endl;
         }
         return os.good();
     }
@@ -1114,3 +1099,85 @@ void VoronoiDiagram::savePGM(const char *filename, const MatrixXf& image_)
     //    cerr << "MAXVAL:" << maxval << endl;
     fclose(F);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void VoronoiDiagram::newinit(const cv::Mat& img_)
+{
+    _map = img_.clone();
+
+    _rows = img_.rows;
+    _cols = img_.cols;
+
+    cv::Mat converted;
+    img_.convertTo(converted, CV_32FC1);
+
+    double min = -1e9;
+    double max = 1e9;
+    minMaxIdx(converted, &min, &max);
+
+    cout << "min: " << min << endl;
+    cout << "max: " << max << endl;
+
+    cv::Mat a = cv::Mat(5, 5, CV_8UC1);
+    for(int c = 0; c < a.cols; c++)
+    {
+        for(int r = 0; r < a.rows; r++)
+        {
+            a.at<uchar>(r, c) = c * a.rows + r;
+            cout << " " << (short int) a.at<uchar>(r, c);
+        }
+        cout << endl;
+    }
+
+    for(int c = 1; c < a.cols-1; c++)
+    {
+        const uchar* rp = a.ptr<uchar>(c-1);
+        const uchar* r = a.ptr<uchar>(c);
+        const uchar* rd = a.ptr<uchar>(c+1);
+
+        cout << "rp1: " << (int*) rp << ", " << (int) *rp << endl;
+        rp++;
+        cout << "rp11: " << (int*) rp << ", " << (int) *rp << endl;
+        cout << "rp2: " << (int*) r << ", " << (int) *r << endl;
+        cout << "rp3: " << (int*) rd << ", " << (int) *rd << endl;
+
+        for(int r = 1; r < a.rows-1; r++)
+        {
+//            cout << " " << (short int) a.at<uchar>(r, c);
+        }
+        cout << endl;
+    }
+
+//    for(int y = 1; y < _rows-1; y++)
+//    {
+//        const float* row_up = converted.ptr<float>(y-1);
+//        const float* row = converted.ptr<float>(y);
+//        const float* row_down = converted.ptr<float>(y+1);
+
+//        for(int x = 1; x < _cols-1; x++)
+//        {
+//        }
+//    }
+}
+
+
+
+
+
+

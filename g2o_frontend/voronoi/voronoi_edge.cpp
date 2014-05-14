@@ -16,7 +16,7 @@ VoronoiEdge::VoronoiEdge(VoronoiVertex* from_, VoronoiVertex* to_)
 {
     _from = from_;
     _to = to_;
-    _transform.setIdentity();
+    _transform = _from->toIsometry().inverse() * _to->toIsometry();
 }
 
 

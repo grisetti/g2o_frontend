@@ -115,7 +115,7 @@ NodeSet GraphMatcher::findNeighbors(g2o::HyperGraph::VertexIDMap* ref, const Iso
                 0, 1, 0,
                 0, 0, 10;
 
-        Eigen::Vector3d dv=utility::t2v(candidate_tranform);
+        Eigen::Vector3d dv = utility::t2v(candidate_tranform);
         double distance = dv.transpose()*scale*dv;
         if(fabs(distance) < epsilon)
         {
@@ -174,6 +174,7 @@ void GraphMatcher::match(OptimizableGraph::VertexIDMap* ref, VertexSE2* first, d
             for(NodeSet::iterator it = ref_neighbors.begin(); it != ref_neighbors.end(); it++)
             {
                 VertexSE2* ref_neighbor = *it;
+                cout << "neighbor id: " << ref_neighbor->id() << endl;
                 SE2 transform;
                 float score = _matcher->match(transform, current, ref_neighbor);
                 if(score < bestScore)

@@ -4,6 +4,7 @@
 #include "g2o/types/slam2d/vertex_se2.h"
 #include "g2o/types/slam2d/edge_se2.h"
 #include "g2o/types/data/robot_laser.h"
+#include "g2o/types/data/vertex_tag.h"
 
 #include "g2o/core/sparse_optimizer.h"
 #include "g2o/core/block_solver.h"
@@ -27,16 +28,17 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-    if(argc != 4)
+    if(argc != 5)
     {
         cerr << "Missing arguments." << endl;
-        cerr << "Expected: file_merge <input1>.g2o <input2>.g2o <output>.g2o" << endl;
+        cerr << "Expected: file_merge <input1>.g2o <input2>.g2o <output>.g2o offset_id" << endl;
         return -1;
     }
 
     char* ref_filename = argv[1];
     char* curr_filename = argv[2];
     char* out_filename = argv[3];
+    int reference_id = atoi(argv[argc-1]);
 
     typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
     typedef LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
@@ -84,8 +86,18 @@ int main(int argc, char** argv)
         copy->setId(v->id());
         copy->setEstimate(v->estimate());
         OptimizableGraph::Data* d = v->userData();
-        if(d)
+        while(d)
         {
+            const VertexTag* vtag = dynamic_cast<const VertexTag*>(d);
+            if(vtag)
+            {
+                VertexTag* copytag = new VertexTag;
+                stringstream ss;
+                ss << copy->id();
+                copytag->setName(ss.str());
+                copy->addUserData(copytag);
+            }
+
             const RobotLaser* vdata = dynamic_cast<const RobotLaser*>(d);
             if(vdata)
             {
@@ -96,6 +108,7 @@ int main(int argc, char** argv)
                 copydata->setOdomPose(vdata->odomPose());
                 copy->addUserData(copydata);
             }
+            d = d->next();
         }
         output.addVertex(copy);
 
@@ -120,7 +133,8 @@ int main(int argc, char** argv)
         output.addEdge(newEdge);
     }
 
-    int offset = input1.vertices().size() + 10000;
+//    int offset = input1.vertices().size() + 10000;
+    int offset = 100000;
     for(SparseOptimizer::VertexIDMap::iterator it = input2.vertices().begin(); it != input2.vertices().end(); it++)
     {
         VertexSE2* v = dynamic_cast<VertexSE2*>(it->second);
@@ -128,8 +142,18 @@ int main(int argc, char** argv)
         copy->setId(v->id() + offset);
         copy->setEstimate(v->estimate());
         OptimizableGraph::Data* d = v->userData();
-        if(d)
+        while(d)
         {
+            const VertexTag* vtag = dynamic_cast<const VertexTag*>(d);
+            if(vtag)
+            {
+                VertexTag* copytag = new VertexTag;
+                stringstream ss;
+                ss << copy->id();
+                copytag->setName(ss.str());
+                copy->addUserData(copytag);
+            }
+
             const RobotLaser* vdata = dynamic_cast<const RobotLaser*>(d);
             if(vdata)
             {
@@ -140,6 +164,7 @@ int main(int argc, char** argv)
                 copydata->setOdomPose(vdata->odomPose());
                 copy->addUserData(copydata);
             }
+            d = d->next();
         }
         output.addVertex(copy);
 
@@ -168,26 +193,16 @@ int main(int argc, char** argv)
         output.addEdge(newEdge);
     }
 
-    VertexSE2* first = dynamic_cast<VertexSE2*>(curr_vertices.find(offset)->second);
+    VertexSE2* first = dynamic_cast<VertexSE2*>(curr_vertices.find(offset + reference_id)->second);
     gm->match(&ref_vertices, first, 5.0);
 
     EdgeSet res=gm->results();
-    int cnt = 0;
     for (EdgeSet::iterator it=res.begin(); it!=res.end(); it++)
     {
         output.addEdge(*it);
-        if(cnt%5 == 0)
-        {
-            ostringstream name;
-            name << "out-" << cnt << ".g2o";
-            output.save(name.str().c_str());
-        }
-        cnt++;
     }
 
     output.save(out_filename);
-
-
 
     VertexSE2* firstRobotPose = dynamic_cast<VertexSE2*>(output.vertex(0));
     firstRobotPose->setFixed(true);

@@ -15,6 +15,7 @@
 #include "g2o/types/slam2d/edge_se2.h"
 #include "g2o_frontend/mapper/matcher/matching/scan_matcher.h"
 
+
 struct Information
 {
 public:

@@ -70,6 +70,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     VoronoiVertex();
+    VoronoiVertex(const VoronoiVertex* v);
 
     ~VoronoiVertex();
 
@@ -85,6 +86,10 @@ public:
     inline void setPosition(int x, int y) { _position.x() = x; _position.y() = y; }
     inline Eigen::Vector2i& position() { return _position; }
     inline const Eigen::Vector2i& position() const { return _position; }
+
+    inline void setComponent(double component_) { _component = component_; }
+    inline float component() { return _component; }
+    inline float component() const { return _component; }
 
     inline void setDistance(double distance_) { _distance = distance_; }
     inline float distance() { return _distance; }
@@ -132,6 +137,14 @@ public:
     inline Eigen::Vector3d& graphPose() { return _graphPose; }
     inline const Eigen::Vector3d& graphPose() const { return _graphPose; }
 
+    inline Eigen::Isometry2d toIsometry() const
+    {
+        Eigen::Isometry2d iso = Eigen::Isometry2d::Identity();
+        iso.linear() = Eigen::Rotation2Dd(_graphPose.z()).toRotationMatrix();
+        iso.translation() = Eigen::Vector2d(_graphPose.x(), _graphPose.y());
+        return iso;
+    }
+
 protected:
     Eigen::Vector2i _nearest;
     Eigen::Vector2i _parent;
@@ -144,28 +157,13 @@ protected:
     double _distance;
     int _value;
     int _id;
+    int _component;
     bool _merged;
     bool _visited;
     bool _pushed;
 
     VoronoiData* _data;
 };
-
-
-//struct VertexComparator
-//{
-//    inline bool operator() (const VoronoiVertex* lhs, const VoronoiVertex* rhs) const
-//    {
-//        if(lhs->distance() <= rhs->distance())
-//        {
-//            return false;
-//        }
-//        else
-//        {
-//            return true;
-//        }
-//    }
-//};
 
 
 struct VertexComparator
@@ -199,11 +197,11 @@ struct Comparator
 {
     inline bool operator() (const Eigen::Vector2i& lhs, const Eigen::Vector2i& rhs) const
     {
-        if(lhs.x() < rhs.x())
+        if(lhs.y() < rhs.y())
         {
             return true;
         }
-        else if((lhs.x() == rhs.x()) && (lhs.y() < rhs.y()))
+        else if((lhs.y() == rhs.y()) && (lhs.x() < rhs.x()))
         {
             return true;
         }
@@ -213,6 +211,25 @@ struct Comparator
         }
     }
 };
+
+//struct Comparator
+//{
+//    inline bool operator() (const Eigen::Vector2i& lhs, const Eigen::Vector2i& rhs) const
+//    {
+//        if(lhs.x() < rhs.x())
+//        {
+//            return true;
+//        }
+//        else if((lhs.x() == rhs.x()) && (lhs.y() < rhs.y()))
+//        {
+//            return true;
+//        }
+//        else
+//        {
+//            return false;
+//        }
+//    }
+//};
 
 
 struct IDCompare

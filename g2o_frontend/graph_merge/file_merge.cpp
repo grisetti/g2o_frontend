@@ -4,6 +4,7 @@
 #include "g2o/types/slam2d/vertex_se2.h"
 #include "g2o/types/slam2d/edge_se2.h"
 #include "g2o/types/data/robot_laser.h"
+#include "g2o/types/data/vertex_tag.h"
 
 #include "g2o/core/sparse_optimizer.h"
 #include "g2o/core/block_solver.h"
@@ -72,8 +73,18 @@ int main(int argc, char** argv)
         copy->setId(v->id());
         copy->setEstimate(v->estimate());
         OptimizableGraph::Data* d = v->userData();
-        if(d)
+        while(d)
         {
+            const VertexTag* vtag = dynamic_cast<const VertexTag*>(d);
+            if(vtag)
+            {
+                VertexTag* copytag = new VertexTag;
+                stringstream ss;
+                ss << copy->id();
+                copytag->setName(ss.str());
+                copy->addUserData(copytag);
+            }
+
             const RobotLaser* vdata = dynamic_cast<const RobotLaser*>(d);
             if(vdata)
             {
@@ -84,6 +95,7 @@ int main(int argc, char** argv)
                 copydata->setOdomPose(vdata->odomPose());
                 copy->addUserData(copydata);
             }
+            d = d->next();
         }
         output.addVertex(copy);
     }
@@ -102,7 +114,8 @@ int main(int argc, char** argv)
         output.addEdge(newEdge);
     }
 
-    int offset = input1.vertices().size() + 10000;
+//    int offset = input1.vertices().size() + 10000;
+    int offset = 100000;
     for(SparseOptimizer::VertexIDMap::iterator it = input2.vertices().begin(); it != input2.vertices().end(); it++)
     {
         VertexSE2* v = dynamic_cast<VertexSE2*>(it->second);
@@ -110,8 +123,18 @@ int main(int argc, char** argv)
         copy->setId(v->id() + offset);
         copy->setEstimate(v->estimate());
         OptimizableGraph::Data* d = v->userData();
-        if(d)
+        while(d)
         {
+            const VertexTag* vtag = dynamic_cast<const VertexTag*>(d);
+            if(vtag)
+            {
+                VertexTag* copytag = new VertexTag;
+                stringstream ss;
+                ss << copy->id();
+                copytag->setName(ss.str());
+                copy->addUserData(copytag);
+            }
+
             const RobotLaser* vdata = dynamic_cast<const RobotLaser*>(d);
             if(vdata)
             {
@@ -122,6 +145,7 @@ int main(int argc, char** argv)
                 copydata->setOdomPose(vdata->odomPose());
                 copy->addUserData(copydata);
             }
+            d = d->next();
         }
         output.addVertex(copy);
     }

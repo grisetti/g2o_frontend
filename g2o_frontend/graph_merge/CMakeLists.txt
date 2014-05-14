@@ -91,8 +91,12 @@ TARGET_LINK_LIBRARIES(merge_real_graphs     graph_merging
                                             sensor_data_library
 )
 
+
 ADD_EXECUTABLE(transform_graph  transform_graph.cpp)
-TARGET_LINK_LIBRARIES(transform_graph   graph_merging)
+TARGET_LINK_LIBRARIES(transform_graph   graph_merging
+                                        sensor_data_library
+)
+
 
 ADD_EXECUTABLE(compute_entropy  compute_entropy.cpp)
 TARGET_LINK_LIBRARIES(compute_entropy graph_merging opencv_core opencv_imgproc opencv_highgui)

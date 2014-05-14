@@ -13,6 +13,29 @@
 
 #include "voronoi_vertex.h"
 
+typedef std::set<VoronoiVertex*> VertexSet;
+
+struct Component
+{
+    Component()
+    {
+        _vset = new VertexSet;
+        _id = -1;
+    }
+
+    inline void add(VoronoiVertex* v) { _vset->insert(v); }
+
+    inline VertexSet* vset() { return _vset; }
+    inline const VertexSet* vset() const { return _vset; }
+
+    inline void setId(const int id){ _id = id; }
+    inline int& id() { return _id; }
+    inline const int& id() const { return _id; }
+
+    VertexSet* _vset;
+    int _id;
+};
+typedef std::map<int, Component*> ComponentMap;
 
 class VoronoiDiagram
 {
@@ -27,20 +50,16 @@ public:
 
     void createObservations();
 
-    void checkQueue();
-    void checkStats();
-
     void distmapExtraction();
     void distmap2image();
     void voronoiExtraction();
 
-    void fillQueue();
+    void reconnect();
 
     /**
      * @brief Provides a graph consisting of voronoi vertices.
      *        Denser than a standard Voronoi Graph.
      */
-    void initialGraphExtraction();
     void denseGraphExtraction();
 
     void save2g2o(std::ostream& os, bool sparse = true);
@@ -49,6 +68,7 @@ public:
     bool saveVertex(std::ostream& os, VoronoiVertex* v);
 
     void skeleton2vmap();
+    void vmap2image();
 
     /**
      * @brief Simple thinning algorithm
@@ -83,9 +103,10 @@ public:
 
 
     void init(const cv::Mat& img_);
+    void newinit(const cv::Mat& img_);
     void loadPGM();
     void savePGM(const char *filename, const Eigen::MatrixXf& image_);
-    static void shrinkIntersections(cv::Mat &skeleton, cv::Mat &dst);
+    void shrinkIntersections(cv::Mat &skeleton, cv::Mat &dst);
     static void findNeighborNodes(int src_node_idx, int x, int y, cv::Mat &mask, cv::Mat &index_mat,
                                   std::vector<cv::Point2f> &nodes, std::vector< std::vector<int> > &edges);
 
@@ -103,11 +124,15 @@ public:
 
     cv::Mat _map;
     cv::Mat _skeleton;
+    cv::Mat _prova;
     cv::Mat* _voro;
     cv::Mat* _graph;
 
     VoronoiVertex* _dmap;
-//    DistanceMap* _distmap;
     VoronoiQueue* _vQueue;
+    ComponentMap* _regions;
+
+protected:
+    void fillQueue();
 };
 #endif // VORONOI_DIAGRAM_H

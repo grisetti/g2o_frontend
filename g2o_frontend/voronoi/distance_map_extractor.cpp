@@ -25,7 +25,6 @@ int main(int argc, char** argv)
 
     VoronoiDiagram* vd = new VoronoiDiagram(input, res);
 
-    vd->fillQueue();
     vd->distmapExtraction();
     vd->distmap2image();
     vd->savePGM("distance_map.pgm", vd->_drawableDistmap);

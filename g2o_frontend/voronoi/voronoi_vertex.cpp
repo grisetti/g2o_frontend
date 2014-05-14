@@ -23,12 +23,28 @@ VoronoiVertex::VoronoiVertex()
 }
 
 
+VoronoiVertex::VoronoiVertex(const VoronoiVertex* v)
+{
+    this->_merged = false;
+    this->_pushed = false;
+    this->_visited = false;
+
+    this->_nearest = v->nearest();
+    this->_parent = v->parent();
+    this->_position = v->position();
+    this->_graphPose = v->graphPose();
+
+    this->_id = v->id();
+    this->_distance = v->distance();
+    this->_value = v->value();
+}
+
+
 VoronoiVertex::~VoronoiVertex() {;}
 
 
 bool VoronoiVertex::write(ostream& os)
 {
-//    os << _id << " " << _position.x() << " " << _position.y() << " " << 0;
     os << _id << " " << _graphPose.x() << " " << _graphPose.y() << " " << _graphPose.z();
     return os.good();
 }
