@@ -100,3 +100,6 @@ TARGET_LINK_LIBRARIES(transform_graph   graph_merging
 
 ADD_EXECUTABLE(compute_entropy  compute_entropy.cpp)
 TARGET_LINK_LIBRARIES(compute_entropy graph_merging opencv_core opencv_imgproc opencv_highgui)
+
+ADD_EXECUTABLE(compute_score    compute_score.cpp)
+TARGET_LINK_LIBRARIES(compute_score graph_merging)

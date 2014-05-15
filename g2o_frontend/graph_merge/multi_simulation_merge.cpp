@@ -50,7 +50,7 @@ int main()
 
     cout << "Trajectories size: " << gs.trajectories().size() << endl;
 
-    int offset = samples + 10000;
+    int offset = samples + 100000;
     for(size_t k = 0; k < gs.trajectories().size(); ++k)
     {
         const SimGraph& traj = gs.trajectories()[k];
@@ -112,6 +112,7 @@ int main()
     }
 
     Edges closures = gs.closures();
+    ofstream ofs("closures.g2o");
     cout << "Number of Inter Graph Closures: " << closures.size() << endl;
     for(Edges::iterator cit = closures.begin(); cit != closures.end(); cit++)
     {
@@ -125,7 +126,16 @@ int main()
         closure->setInformation(simClosure->information);
 
         merged.addEdge(closure);
+
+        ofs << "EDGE_SE2 " << closure->vertex(0)->id() << " " << closure->vertex(1)->id();
+        Vector3d p = closure->measurement().toVector();
+        ofs << " " << p.x() << " " << p.y() << " " << p.z();
+        for(int i = 0; i < 3; ++i)
+            for(int j = i; j < 3; ++j)
+                ofs << " " << closure->information()(i, j);
+        ofs << endl;
     }
+    ofs.close();
 
     ostringstream merged_pre;
     merged_pre << "merged_before.g2o";

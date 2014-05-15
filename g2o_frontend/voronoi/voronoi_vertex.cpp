@@ -55,12 +55,10 @@ VoronoiLaser::VoronoiLaser() : VoronoiData()
     _tag = "ROBOTLASER1";
 
     _type = 0;
-//    _firstBeamAngle = -M_PI;
-//    _fov = 2*M_PI;
     _firstBeamAngle = -M_PI * 0.5;
     _fov = M_PI;
-    _angularStep = 0.03066406; // It was 0.00872222;
-    _maxRange = 200.;
+    _angularStep = 0.00490625; // It was 0.00872222;
+    _maxRange = 20.;
     _accuracy = 0.1;
     _remissionMode = 0;
 }

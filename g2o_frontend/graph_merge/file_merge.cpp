@@ -114,8 +114,7 @@ int main(int argc, char** argv)
         output.addEdge(newEdge);
     }
 
-//    int offset = input1.vertices().size() + 10000;
-    int offset = 100000;
+    int offset = input1.vertices().size() + 100000;
     for(SparseOptimizer::VertexIDMap::iterator it = input2.vertices().begin(); it != input2.vertices().end(); it++)
     {
         VertexSE2* v = dynamic_cast<VertexSE2*>(it->second);

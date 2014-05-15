@@ -869,8 +869,8 @@ void VoronoiDiagram::createObservations()
             sth = sin(th);
 
             // Step increment along line direction
-            float dx = _mapResolution*cth; // It was cth;
-            float dy = _mapResolution*sth; // It was sth;
+            float dx = cth;// It was _mapResolution*cth;
+            float dy = sth;// It was _mapResolution*sth;
 
             // Distance from the initial vertex v
             double distance = 0;
@@ -879,8 +879,8 @@ void VoronoiDiagram::createObservations()
                 sx += dx;
                 sy += dy;
 
-                int ix = lrint(sx + vx);
-                int iy = lrint(sy + vy);
+                int ix = sx + vx/*lrint(sx + vx)*/;
+                int iy = sy + vy/*lrint(sy + vy)*/;
                 //                if(ix >= 0 && iy >= 0 && ix < _map.rows && iy < _map.cols)
                 //                {
                 if(mah.at<uchar>(ix, iy) == 0)

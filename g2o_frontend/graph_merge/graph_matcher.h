@@ -73,7 +73,7 @@ public:
 
     EdgeSet& results() { return _results; }
     NodeSet findNeighbors(g2o::HyperGraph::VertexIDMap* ref, const Eigen::Isometry2d& transform, double epsilon);
-    void match(g2o::HyperGraph::VertexIDMap* ref, g2o::VertexSE2* first, double epsilon);
+    void match(g2o::HyperGraph::VertexIDMap* ref, g2o::VertexSE2* first, const double& epsilon, const int& cnt);
 
     VertexInfoMap _currentInfo;
     EdgeSet _results;

@@ -39,9 +39,11 @@ float IdealNodeMatcher::match(SE2& result, VertexSE2* v1, VertexSE2* v2)
 
 EdgeSE2* IdealNodeMatcher::findEdge(VertexSE2* v1, VertexSE2* v2)
 {
-    for(EdgeSet::iterator it = _eset.begin(); it != _eset.end(); it++) {
+    for(EdgeSet::iterator it = _eset.begin(); it != _eset.end(); it++)
+    {
         EdgeSE2* e = *it;
-        if(e->vertex(0) == v1 && e->vertex(1) == v2) {
+        if(e->vertex(0) == v1 && e->vertex(1) == v2)
+        {
             return e;
         }
     }
@@ -126,15 +128,16 @@ NodeSet GraphMatcher::findNeighbors(g2o::HyperGraph::VertexIDMap* ref, const Iso
 }
 
 
-void GraphMatcher::match(OptimizableGraph::VertexIDMap* ref, VertexSE2* first, double epsilon)
+void GraphMatcher::match(OptimizableGraph::VertexIDMap* ref, VertexSE2* first, const double& epsilon, const int& cnt)
 {
     deque<VertexSE2*> queue;
     queue.push_back(first);
     Information& finfo = _currentInfo[first];
     finfo._parent = first;
 
-    while(!queue.empty())
-    {
+    int iter = 0;
+    while(!queue.empty() && iter != cnt)
+    {   
         VertexSE2* current = queue.front();
         Information& cinfo = _currentInfo[current];
         queue.pop_front();
@@ -157,7 +160,8 @@ void GraphMatcher::match(OptimizableGraph::VertexIDMap* ref, VertexSE2* first, d
         }
 
         // reassign the transforms if not the first node
-        if(cinfo._parent != current) {
+        if(cinfo._parent != current)
+        {
             Eigen::Isometry2d cT = cinfo._transform;
             VertexSE2* parent=cinfo._parent;
 
@@ -174,7 +178,6 @@ void GraphMatcher::match(OptimizableGraph::VertexIDMap* ref, VertexSE2* first, d
             for(NodeSet::iterator it = ref_neighbors.begin(); it != ref_neighbors.end(); it++)
             {
                 VertexSE2* ref_neighbor = *it;
-                cout << "neighbor id: " << ref_neighbor->id() << endl;
                 SE2 transform;
                 float score = _matcher->match(transform, current, ref_neighbor);
                 if(score < bestScore)
@@ -187,16 +190,18 @@ void GraphMatcher::match(OptimizableGraph::VertexIDMap* ref, VertexSE2* first, d
             if(bestScore < 1)
             {
                 EdgeSE2* newEdge = new EdgeSE2;
-                cerr << "bestScore: " << bestScore <<  " bestTransform: " << bestTransform.toVector().transpose() << endl;
+//                cerr << "bestScore: " << bestScore <<  " bestTransform: " << bestTransform.toVector().transpose() << endl;
                 newEdge->setVertex(0,current);
                 newEdge->setVertex(1,bestNeighbor);
                 newEdge->setMeasurement(bestTransform);
-                Eigen::Matrix3d info=Eigen::Matrix3d::Identity()*1000;
+                Matrix3d info = Matrix3d::Identity()*1000;
                 newEdge->setInformation(info);
                 _results.insert(newEdge);
-                cerr << "found closure edge between " << current->id() << " and " << bestNeighbor->id() << endl;
+//                cerr << "found closure edge between " << current->id() << " and " << bestNeighbor->id() << endl;
                 current->setEstimate(bestNeighbor->estimate()*bestTransform.inverse());
             }
         }
+        iter++;
     }
+    cout << "iter: " << iter << endl;
 }
