@@ -194,7 +194,7 @@ int main(int argc, char** argv)
     }
 
     VertexSE2* first = dynamic_cast<VertexSE2*>(curr_vertices.find(offset + reference_id)->second);
-    gm->match(&ref_vertices, first, 5.0, -1);
+    gm->match(&ref_vertices, first, 1, -1);
 
     EdgeSet res=gm->results();
     for (EdgeSet::iterator it=res.begin(); it!=res.end(); it++)

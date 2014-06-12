@@ -93,6 +93,8 @@ struct GraphSimulator
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+    GraphSimulator(const Eigen::Vector3d& noise = Eigen::Vector3d::Identity(), bool randomize=false);
+
     enum MotionType
     {
       LEFT,
@@ -100,7 +102,7 @@ public:
       POSSIBLE_MOTIONS
     };
 
-    static Eigen::Isometry2d addNoise(const Eigen::Isometry2d& lastPose, const Eigen::Vector3d& noise);
+    Eigen::Isometry2d addNoise(const Eigen::Isometry2d& lastPose);
 
     void simulate(int samples, const Eigen::Isometry2d& offset = Eigen::Isometry2d::Identity());
     void simulate(int samples, int trajectories, bool interClosures = 0, bool lookForClosures = 1, const Eigen::Isometry2d& offset = Eigen::Isometry2d::Identity());
@@ -112,7 +114,8 @@ protected:
     Trajectories _trajectories;
     Edges _closures;
 
+    Eigen::Vector3d _noise;
     Eigen::Isometry2d generateMotion(int dir, double step);
-    SimNode generatePose(const SimNode& last, const Eigen::Isometry2d& motion, const Eigen::Vector3d& noise);
+    SimNode generatePose(const SimNode& last, const Eigen::Isometry2d& motion);
 };
 #endif // GRAPH_SIMULATOR_H

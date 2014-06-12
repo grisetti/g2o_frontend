@@ -190,15 +190,15 @@ void GraphMatcher::match(OptimizableGraph::VertexIDMap* ref, VertexSE2* first, c
             if(bestScore < 1)
             {
                 EdgeSE2* newEdge = new EdgeSE2;
-//                cerr << "bestScore: " << bestScore <<  " bestTransform: " << bestTransform.toVector().transpose() << endl;
                 newEdge->setVertex(0,current);
                 newEdge->setVertex(1,bestNeighbor);
                 newEdge->setMeasurement(bestTransform);
                 Matrix3d info = Matrix3d::Identity()*1000;
                 newEdge->setInformation(info);
                 _results.insert(newEdge);
-//                cerr << "found closure edge between " << current->id() << " and " << bestNeighbor->id() << endl;
-                current->setEstimate(bestNeighbor->estimate()*bestTransform.inverse());
+                current->setEstimate(bestNeighbor->estimate()*bestTransform.inverse());                
+//                cerr << "bestScore: " << bestScore <<  " bestTransform: " << bestTransform.toVector().transpose() << endl;
+                cerr << "found closure edge between " << current->id() << " and " << bestNeighbor->id() << endl;
             }
         }
         iter++;

@@ -24,7 +24,9 @@ int main()
 {
     int samples = 1500;
     int trajectories = 2;
-    GraphSimulator gs;
+
+    Vector3d noise(0.05, 0.01, DEG2RAD(2.));
+    GraphSimulator gs(noise);
     gs.simulate(samples, trajectories);
 
     typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;

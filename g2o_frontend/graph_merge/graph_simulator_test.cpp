@@ -23,7 +23,9 @@ using namespace std;
 int main()
 {
     int samples = 1500;
-    GraphSimulator gs;
+
+    Vector3d noise(0.05, 0.01, DEG2RAD(2.));
+    GraphSimulator gs(noise);
     gs.simulate(samples);
 
     typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;

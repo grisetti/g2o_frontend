@@ -9,20 +9,31 @@ using namespace g2o;
 using namespace std;
 
 
-Isometry2d GraphSimulator::addNoise(const Isometry2d& lastPose, const Vector3d& noise)
+GraphSimulator::GraphSimulator(const Vector3d& noise, bool randomize)
+{
+    _noise = noise;
+//    if(randomize)
+//    {
+        time_t seed = time(0);
+        Noise::rand_seed(static_cast<unsigned int>(seed));
+//    }
+}
+
+
+Isometry2d GraphSimulator::addNoise(const Isometry2d& lastPose)
 {
     Vector3d last = utility::t2v(lastPose);
-    Vector3d noisy(last.x() + Noise::gaussian(0.0, noise.x()), last.y() + Noise::gaussian(0.0, noise.y()), last.z() + Noise::gaussian(0.0, noise.z()));
+    Vector3d noisy(last.x() + Noise::gaussian(0.0, _noise.x()), last.y() + Noise::gaussian(0.0, _noise.y()), last.z() + Noise::gaussian(0.0, _noise.z()));
     return utility::v2t(noisy);
 }
 
 
-SimNode GraphSimulator::generatePose(const SimNode& last, const Isometry2d& motion, const Vector3d& noise)
+SimNode GraphSimulator::generatePose(const SimNode& last, const Isometry2d& motion)
 {
     SimNode nextPose;
     nextPose.id = last.id + 1;
     nextPose.real_pose = last.real_pose * motion;
-    Isometry2d noiseMotion = addNoise(motion, noise);
+    Isometry2d noiseMotion = addNoise(motion);
     nextPose.noisy_pose = last.noisy_pose * noiseMotion;
     return nextPose;
 }
@@ -64,7 +75,6 @@ void GraphSimulator::simulate(int samples, int trajectories, bool interClosures,
 
     Vector2d grid(size >> 1, size >> 1);
     cout << "Grid: " << grid.x() << ", " << grid.y() << endl;
-    Vector3d noise(0.05, 0.01, DEG2RAD(2.));
 
     VectorXd probLimits(POSSIBLE_MOTIONS);
     for(int i = 0; i < probLimits.size(); ++i)
@@ -74,9 +84,9 @@ void GraphSimulator::simulate(int samples, int trajectories, bool interClosures,
 
     Matrix3d covariance;
     covariance.fill(0.);
-    covariance(0, 0) = noise[0] * noise[0];
-    covariance(1, 1) = noise[1] * noise[1];
-    covariance(2, 2) = noise[2] * noise[2];
+    covariance(0, 0) = _noise[0] * _noise[0];
+    covariance(1, 1) = _noise[1] * _noise[1];
+    covariance(2, 2) = _noise[2] * _noise[2];
     Matrix3d information = covariance.inverse();
 
     SimNode start;
@@ -99,7 +109,7 @@ void GraphSimulator::simulate(int samples, int trajectories, bool interClosures,
             // go straight for some steps ...
             for(int i = 1; i < forwardSteps && (int) poses.size() < samples; ++i)
             {
-                SimNode nextPose = generatePose(poses.back(), utility::v2t(Vector3d(stepLength, 0, 0)), noise);
+                SimNode nextPose = generatePose(poses.back(), utility::v2t(Vector3d(stepLength, 0, 0)));
                 poses.push_back(nextPose);
             }
             if((int) poses.size() == samples)
@@ -115,7 +125,7 @@ void GraphSimulator::simulate(int samples, int trajectories, bool interClosures,
                 direction++;
             }
             Isometry2d nextMotion = generateMotion(direction, stepLength);
-            SimNode nextPose = generatePose(poses.back(), nextMotion, noise);
+            SimNode nextPose = generatePose(poses.back(), nextMotion);
 
             Isometry2d nextStepFinalPose = nextPose.real_pose * maxStepTransform;
             if(fabs(nextStepFinalPose.translation().x()) >= grid[0] || fabs(nextStepFinalPose.translation().y()) >= grid[1])
@@ -123,7 +133,7 @@ void GraphSimulator::simulate(int samples, int trajectories, bool interClosures,
                 for(int i = 0; i < POSSIBLE_MOTIONS; ++i)
                 {
                     nextMotion = generateMotion(i, stepLength);
-                    nextPose = generatePose(poses.back(), nextMotion, noise);
+                    nextPose = generatePose(poses.back(), nextMotion);
                     nextStepFinalPose = nextPose.real_pose * maxStepTransform;
                     if(fabs(nextStepFinalPose.translation().x()) < grid[0] && fabs(nextStepFinalPose.translation().y()) < grid[1])
                     {
@@ -162,7 +172,8 @@ void GraphSimulator::simulate(int samples, int trajectories, bool interClosures,
             for(int i = poses.size()-1; i >= 0; i--)
             {
                 SimNode& sp = poses[i];
-                for(int j = 0; j < i; j+=20)
+//                for(int j = 0; j < i; j+=20)
+                for(int j = 0; j < i; j+=5)
                 {
                     SimNode& candidate = poses[j];
                     Isometry2d transform = sp.real_pose.inverse() * candidate.real_pose;

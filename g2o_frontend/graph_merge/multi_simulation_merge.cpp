@@ -20,13 +20,23 @@ using namespace std;
 
 
 
-int main()
+int main(int argc, char** argv)
 {
+    float nx = 0.05;
+    float ny = 0.01;
+    float nz = 2.;
+    if(argc == 4)
+    {
+        nx = atof(argv[1]);
+        ny = atof(argv[2]);
+        nz = atof(argv[3]);
+    }
     int samples = 1500;
     int trajectories = 2;
     bool interGraphClosures = true;
     bool loopClosures = true;
-    GraphSimulator gs;
+    Vector3d noise(nx, ny, DEG2RAD(nz));
+    GraphSimulator gs(noise);
     gs.simulate(samples, trajectories, interGraphClosures, loopClosures);
 
     typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;

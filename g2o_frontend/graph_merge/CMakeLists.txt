@@ -103,3 +103,6 @@ TARGET_LINK_LIBRARIES(compute_entropy graph_merging opencv_core opencv_imgproc o
 
 ADD_EXECUTABLE(compute_score    compute_score.cpp)
 TARGET_LINK_LIBRARIES(compute_score graph_merging)
+
+ADD_EXECUTABLE(noise_experiment noise_experiment.cpp)
+TARGET_LINK_LIBRARIES(noise_experiment graph_merging)

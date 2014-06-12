@@ -166,7 +166,7 @@ int main(int argc, char** argv)
     cout << "Curr_vert size: " << curr_vertices.size() << endl;
 
     VertexSE2* first = dynamic_cast<VertexSE2*>(curr_vertices.find(offset)->second);
-    vm.match(&ref_vertices, first, 50.0, maxIter);
+    vm.match(&ref_vertices, first, 5.0, maxIter);
 
     EdgeSet matches = vm.results();
     for(EdgeSet::iterator it = matches.begin(); it != matches.end(); it++)
